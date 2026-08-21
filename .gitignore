@@ -1,0 +1,33 @@
+# Visual Studio / .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# C++ / CUDA
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.idb
+*.tlog
+*.obj
+*.o
+*.log
+x64/
+x86/
+Debug/
+Release/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
