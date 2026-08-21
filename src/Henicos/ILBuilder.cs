@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Henicos;
 
-public class GpuContext
+public class ILBuilder
 {
     private StringBuilder _sb = new StringBuilder();
     private int _tempCounter = 0;
@@ -23,9 +23,13 @@ public class GpuContext
     
     public GpuRegister Register(string name) => new GpuRegister(name);
     
-    public void Emit(string cmd) => _sb.AppendLine(cmd);
+    public ILBuilder Emit(string cmd) 
+    {
+        _sb.AppendLine(cmd);
+        return this;
+    }
     
-    public void Assign(GpuRegister dest, GpuExpr expr)
+    public ILBuilder Assign(GpuRegister dest, GpuExpr expr)
     {
         var src = expr.Compile(this);
         if (src.RegName != dest.Name)
@@ -33,13 +37,41 @@ public class GpuContext
             Emit($"COPY {dest.Name} {src.RegName}");
         }
         if (src.IsTemp) FreeTemp(src.RegName);
+        return this;
     }
     
-    public void BeginLoopE() => Emit("LOOP_E");
-    public void BeginLoopEMinus4() => Emit("LOOP_E_MINUS_4");
-    public void EndLoop() => Emit("END_LOOP");
+    public ILBuilder LoopE(Action<ILBuilder> body)
+    {
+        Emit("LOOP_E");
+        body(this);
+        Emit("END_LOOP");
+        return this;
+    }
+
+    public ILBuilder LoopEMinus4(Action<ILBuilder> body)
+    {
+        Emit("LOOP_E_MINUS_4");
+        body(this);
+        Emit("END_LOOP");
+        return this;
+    }
+
+    public ILBuilder For(int count, Action<ILBuilder> body)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            body(this);
+        }
+        return this;
+    }
     
-    public string GetIL() => _sb.ToString();
+    public ILBuilder Apply(Action<ILBuilder> action)
+    {
+        action(this);
+        return this;
+    }
+
+    public string Build() => _sb.ToString();
 }
 
 public class ValueInfo
@@ -50,7 +82,7 @@ public class ValueInfo
 
 public abstract class GpuExpr
 {
-    public abstract ValueInfo Compile(GpuContext ctx);
+    public abstract ValueInfo Compile(ILBuilder ctx);
 
     public GpuExpr Square() => new SquareExpr(this);
 
@@ -65,7 +97,7 @@ public class GpuRegister : GpuExpr
 {
     public string Name { get; }
     public GpuRegister(string name) { Name = name; }
-    public override ValueInfo Compile(GpuContext ctx) => new ValueInfo { RegName = Name, IsTemp = false };
+    public override ValueInfo Compile(ILBuilder ctx) => new ValueInfo { RegName = Name, IsTemp = false };
 }
 
 public class BinaryExpr : GpuExpr
@@ -79,7 +111,7 @@ public class BinaryExpr : GpuExpr
         Op = op; Left = left; Right = right;
     }
     
-    public override ValueInfo Compile(GpuContext ctx)
+    public override ValueInfo Compile(ILBuilder ctx)
     {
         var left = Left.Compile(ctx);
         var right = Right.Compile(ctx);
@@ -102,7 +134,7 @@ public class ShiftExpr : GpuExpr
         Op = op; Left = left; Bits = bits;
     }
     
-    public override ValueInfo Compile(GpuContext ctx)
+    public override ValueInfo Compile(ILBuilder ctx)
     {
         var left = Left.Compile(ctx);
         string tempReg = ctx.AllocateTemp();
@@ -117,7 +149,7 @@ public class SquareExpr : GpuExpr
     public GpuExpr Target { get; }
     public SquareExpr(GpuExpr target) { Target = target; }
     
-    public override ValueInfo Compile(GpuContext ctx)
+    public override ValueInfo Compile(ILBuilder ctx)
     {
         var tgt = Target.Compile(ctx);
         string tempReg = ctx.AllocateTemp();
@@ -131,47 +163,41 @@ public static class FermatILGenerator
 {
     public static string Generate(int E)
     {
-        var ctx = new GpuContext();
+        var il = new ILBuilder();
         int bit2E1 = 2 * E + 1;
 
-        var T = ctx.Register("T");
-        var MaskR = ctx.Register("MaskR");
-        var Q = ctx.Register("Q");
-        var R = ctx.Register("R");
+        var T = il.Register("T");
+        var MaskR = il.Register("MaskR");
+        var Q = il.Register("Q");
+        var R = il.Register("R");
 
-        void SquareAndReduce()
-        {
-            ctx.Assign(T, T.Square());
-            for (int pass = 0; pass < 3; pass++)
-            {
-                ctx.Assign(Q, T >> bit2E1);
-                ctx.Assign(R, T & MaskR);
-                ctx.Assign(T, R + (Q << E) - Q - (Q << 1) - (Q << 3));
-            }
-        }
+        void SquareAndReduce(ILBuilder b) => b
+            .Assign(T, T.Square())
+            .For(3, b2 => b2
+                .Assign(Q, T >> bit2E1)
+                .Assign(R, T & MaskR)
+                .Assign(T, R + (Q << E) - Q - (Q << 1) - (Q << 3))
+            );
 
-        void MultiplyBy2AndReduce()
-        {
-            ctx.Assign(T, T << 1);
-            ctx.Assign(Q, T >> bit2E1);
-            ctx.Assign(R, T & MaskR);
-            ctx.Assign(T, R + (Q << E) - Q - (Q << 1) - (Q << 3));
-        }
+        void MultiplyBy2AndReduce(ILBuilder b) => b
+            .Assign(T, T << 1)
+            .Assign(Q, T >> bit2E1)
+            .Assign(R, T & MaskR)
+            .Assign(T, R + (Q << E) - Q - (Q << 1) - (Q << 3));
 
-        ctx.BeginLoopE();
-        SquareAndReduce();
-        MultiplyBy2AndReduce();
-        ctx.EndLoop();
-
-        ctx.BeginLoopEMinus4();
-        SquareAndReduce();
-        ctx.EndLoop();
-
-        SquareAndReduce(); MultiplyBy2AndReduce(); // bit 3 (1)
-        SquareAndReduce(); // bit 2 (0)
-        SquareAndReduce(); MultiplyBy2AndReduce(); // bit 1 (1)
-        SquareAndReduce(); // bit 0 (0)
-
-        return ctx.GetIL();
+        return il
+            .LoopE(b => {
+                SquareAndReduce(b);
+                MultiplyBy2AndReduce(b);
+            })
+            .LoopEMinus4(b => {
+                SquareAndReduce(b);
+            })
+            // The remaining exponent bits are 1010
+            .Apply(SquareAndReduce).Apply(MultiplyBy2AndReduce) // bit 3 (1)
+            .Apply(SquareAndReduce)                             // bit 2 (0)
+            .Apply(SquareAndReduce).Apply(MultiplyBy2AndReduce) // bit 1 (1)
+            .Apply(SquareAndReduce)                             // bit 0 (0)
+            .Build();
     }
 }

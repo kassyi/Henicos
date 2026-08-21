@@ -23,8 +23,8 @@ class Program
         Console.WriteLine("To run formal benchmarks, pass '--benchmark' argument.");
         Console.WriteLine("---------------------------------------------------------------");
 
-        // Benchmark target E values
-        int[] testEs = { 10, 50, 100, 500, 1000, 2000, 5000, 10000 };
+        // Benchmark target E values (Crossover Test)
+        int[] testEs = { 1000, 5000, 10000, 20000, 50000, 100000 };
         
         foreach (var E in testEs)
         {

@@ -8,15 +8,16 @@
 // -------------------------------------------------------------------------
 // Global State & Context
 // -------------------------------------------------------------------------
-extern cufftHandle planR2C;
-extern cufftHandle planC2R;
-extern double* d_real;
-extern cufftDoubleComplex* d_complex;
+extern uint32_t* d_twiddle1_fwd;
+extern uint32_t* d_twiddle1_inv;
+extern uint32_t* d_twiddle2_fwd;
+extern uint32_t* d_twiddle2_inv;
 extern unsigned int* d_data;
-extern void* d_cufftWorkspace;
+extern uint32_t* d_ntt_buf1;
+extern uint32_t* d_ntt_buf2;
+extern uint32_t* d_ntt_tmp;
 
-extern int g_M;          // FFT Size (must be a power of 2 for optimal performance)
-extern int g_ComplexM;   // Size of the complex array after Real-to-Complex FFT (M/2 + 1)
+extern int g_M;          // NTT Size (must be a power of 2 for optimal performance)
 
 extern long long* d_genericCarryBuffer;
 extern int g_genericMaxChunks;

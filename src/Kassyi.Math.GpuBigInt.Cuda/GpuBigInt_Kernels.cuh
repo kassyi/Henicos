@@ -5,51 +5,116 @@
 // FFT Convolution Kernels
 // -------------------------------------------------------------------------
 
-__global__ void UnpackKernel16(const unsigned int* A, double* B, int M, int numWords) {
-    int k = blockIdx.x * blockDim.x + threadIdx.x;
-    if (k < M) {
-        double val = 0.0;
-        int wordIdx = k / 2;
+#include "GpuBigInt_NTT.cuh"
+
+// -------------------------------------------------------------------------
+// NTT Convolution Kernels
+// -------------------------------------------------------------------------
+
+__global__ void Kernel_UnpackAndBitReverse16(const unsigned int* d_src, uint32_t* d_dst1, uint32_t* d_dst2, int N, int log2N, int numWords) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < N) {
+        int rev = 0;
+        for (int i = 0; i < log2N; i++) {
+            rev = (rev << 1) | ((tid >> i) & 1);
+        }
+        
+        uint32_t val = 0;
+        int wordIdx = tid / 2;
         if (wordIdx < numWords) {
-             unsigned int w = A[wordIdx];
-             if (k % 2 == 0) {
-                 val = (double)(w & 0xFFFF);
+             unsigned int w = d_src[wordIdx];
+             if (tid % 2 == 0) {
+                 val = (w & 0xFFFF);
              } else {
-                 val = (double)(w >> 16);
+                 val = (w >> 16);
              }
         }
-        B[k] = val;
+        d_dst1[rev] = val;
+        d_dst2[rev] = val;
     }
 }
 
-__global__ void PointwiseSquareKernel(cufftDoubleComplex* data, int numElements, double scale) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < numElements) {
-        cufftDoubleComplex v = data[i];
-        cufftDoubleComplex res;
-        res.x = (v.x * v.x - v.y * v.y) * scale;
-        res.y = (v.x * v.y + v.y * v.x) * scale;
-        data[i] = res;
-    }
-}
-
-__global__ void ResolveCarryAndPackKernel16(double* d_real, unsigned int* out_uint, int M, int outNumWords) {
+__global__ void Kernel_BitReverse(const uint32_t* d_src, uint32_t* d_dst, int N, int log2N) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < N) {
+        int rev = 0;
+        for (int i = 0; i < log2N; i++) {
+            rev = (rev << 1) | ((tid >> i) & 1);
+        }
+        d_dst[rev] = d_src[tid];
+    }
+}
+
+__global__ void Kernel_NTT_Stage(uint32_t* d_data, const uint32_t* d_twiddle, int N, int len, uint32_t p, uint64_t m) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid >= N / 2) return;
+    
+    int block = tid / (len / 2);
+    int idx = tid % (len / 2);
+    
+    int pos = block * len + idx;
+    
+    // Twiddle factor index
+    int twiddle_idx = idx * (N / len);
+    uint32_t w = d_twiddle[twiddle_idx];
+    
+    uint32_t u = d_data[pos];
+    uint32_t v = ModMulBarrett(d_data[pos + len / 2], w, p, m);
+    
+    d_data[pos] = ModAdd(u, v, p);
+    d_data[pos + len / 2] = ModSub(u, v, p);
+}
+
+__global__ void Kernel_NTT_PointwiseSquare(uint32_t* d_data1, uint32_t* d_data2, int N) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < N) {
+        d_data1[tid] = ModMulBarrett(d_data1[tid], d_data1[tid], NTT_P1, NTT_M1);
+        d_data2[tid] = ModMulBarrett(d_data2[tid], d_data2[tid], NTT_P2, NTT_M2);
+    }
+}
+
+__global__ void Kernel_CRT_ResolveCarry(const uint32_t* d_res1, const uint32_t* d_res2, unsigned int* out_uint, int N, int outNumWords) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    // We must run this sequentially due to ripple carry for now, 
+    // or we can use a parallel prefix sum for carries later.
+    // For now, doing it sequentially on thread 0 to ensure correctness.
     if (tid == 0) {
         for(int i=0; i<outNumWords; i++) out_uint[i] = 0;
-        unsigned long long carry = 0;
-        for (int k = 0; k < M; k++) {
-            double raw = d_real[k];
-            unsigned long long val = (unsigned long long)(raw + 0.5) + carry;
+        
+        uint64_t carry = 0;
+        
+        // p1 = 2013265921, p2 = 2113929217
+        // M = p1 * p2 = 4255904944883302417
+        uint64_t p1 = NTT_P1;
+        uint64_t p2 = NTT_P2;
+        uint64_t p1_inv_p2 = 21; // invMod(p1, p2)
+        
+        // Calculate invN for inverse NTT
+        uint32_t invN1 = ModPow(N, NTT_P1 - 2, NTT_P1, NTT_M1);
+        uint32_t invN2 = ModPow(N, NTT_P2 - 2, NTT_P2, NTT_M2);
+        
+        for (int k = 0; k < N; k++) {
+            // Apply 1/N scaling
+            uint64_t v1 = ModMulBarrett(d_res1[k], invN1, NTT_P1, NTT_M1);
+            uint64_t v2 = ModMulBarrett(d_res2[k], invN2, NTT_P2, NTT_M2);
+            
+            // Garner's algorithm for CRT
+            // x = v1 + p1 * [ (v2 - v1) * (p1^-1 mod p2) mod p2 ]
+            uint64_t diff = v2 >= v1 ? v2 - v1 : v2 + p2 - v1;
+            uint64_t h = (diff * p1_inv_p2) % p2;
+            uint64_t val = v1 + p1 * h + carry;
+            
             unsigned int lower16 = (unsigned int)(val & 0xFFFF);
             carry = val >> 16;
+            
             int wordIdx = k / 2;
             if (wordIdx < outNumWords) {
                 if (k % 2 == 0) out_uint[wordIdx] = lower16;
                 else out_uint[wordIdx] |= (lower16 << 16);
             }
         }
-        int k = M;
+        
+        int k = N;
         while (carry > 0) {
             int wordIdx = k / 2;
             if (wordIdx >= outNumWords) break;

@@ -14,15 +14,16 @@
 // -------------------------------------------------------------------------
 // Global State Implementation
 // -------------------------------------------------------------------------
-cufftHandle planR2C = 0;
-cufftHandle planC2R = 0;
-double* d_real = nullptr;
-cufftDoubleComplex* d_complex = nullptr;
+uint32_t* d_twiddle1_fwd = nullptr;
+uint32_t* d_twiddle1_inv = nullptr;
+uint32_t* d_twiddle2_fwd = nullptr;
+uint32_t* d_twiddle2_inv = nullptr;
 unsigned int* d_data = nullptr;
-void* d_cufftWorkspace = nullptr;
+uint32_t* d_ntt_buf1 = nullptr;
+uint32_t* d_ntt_buf2 = nullptr;
+uint32_t* d_ntt_tmp = nullptr;
 
 int g_M = 0;
-int g_ComplexM = 0;
 
 long long* d_genericCarryBuffer = nullptr;
 int g_genericMaxChunks = 0;
@@ -31,15 +32,26 @@ int g_genericMaxChunks = 0;
 // Core Memory Management
 // -------------------------------------------------------------------------
 void CleanupGPU_Internal() {
-    if (d_real) { cudaFree(d_real); d_real = nullptr; }
-    if (d_complex) { cudaFree(d_complex); d_complex = nullptr; }
+    if (d_twiddle1_fwd) { cudaFree(d_twiddle1_fwd); d_twiddle1_fwd = nullptr; }
+    if (d_twiddle1_inv) { cudaFree(d_twiddle1_inv); d_twiddle1_inv = nullptr; }
+    if (d_twiddle2_fwd) { cudaFree(d_twiddle2_fwd); d_twiddle2_fwd = nullptr; }
+    if (d_twiddle2_inv) { cudaFree(d_twiddle2_inv); d_twiddle2_inv = nullptr; }
+    if (d_ntt_buf1) { cudaFree(d_ntt_buf1); d_ntt_buf1 = nullptr; }
+    if (d_ntt_buf2) { cudaFree(d_ntt_buf2); d_ntt_buf2 = nullptr; }
+    if (d_ntt_tmp) { cudaFree(d_ntt_tmp); d_ntt_tmp = nullptr; }
     if (d_data) { cudaFree(d_data); d_data = nullptr; }
-    if (g_M > 0) {
-        if (d_cufftWorkspace) { cudaFree(d_cufftWorkspace); d_cufftWorkspace = nullptr; }
-        if (planR2C) { cufftDestroy(planR2C); planR2C = 0; }
-        if (planC2R) { cufftDestroy(planC2R); planC2R = 0; }
-        g_M = 0;
+    g_M = 0;
+}
+
+uint32_t CpuModPow(uint64_t base, uint64_t exp, uint32_t p) {
+    uint64_t res = 1;
+    base %= p;
+    while (exp > 0) {
+        if (exp & 1) res = (res * base) % p;
+        base = (base * base) % p;
+        exp >>= 1;
     }
+    return (uint32_t)res;
 }
 
 bool InitializeGPU_Internal(int E) {
@@ -47,27 +59,58 @@ bool InitializeGPU_Internal(int E) {
 
     int requiredElements = (4 * E + 2 + 15) / 16;
     g_M = NextPowerOf2(requiredElements);
-    g_ComplexM = g_M / 2 + 1;
     
-    printf("Initializing cuFFT: E=%d, Required Radix-16 Elements=%d, FFT Size=%d\n", E, requiredElements, g_M);
+    printf("Initializing NTT: E=%d, Required Radix-16 Elements=%d, NTT Size=%d\n", E, requiredElements, g_M);
     
-    cufftCreate(&planR2C);
-    cufftSetAutoAllocation(planR2C, 0);
-    size_t workSizeR2C;
-    cufftMakePlan1d(planR2C, g_M, CUFFT_D2Z, 1, &workSizeR2C);
+    cudaMalloc((void**)&d_twiddle1_fwd, sizeof(uint32_t) * g_M);
+    cudaMalloc((void**)&d_twiddle1_inv, sizeof(uint32_t) * g_M);
+    cudaMalloc((void**)&d_twiddle2_fwd, sizeof(uint32_t) * g_M);
+    cudaMalloc((void**)&d_twiddle2_inv, sizeof(uint32_t) * g_M);
     
-    cufftCreate(&planC2R);
-    cufftSetAutoAllocation(planC2R, 0);
-    size_t workSizeC2R;
-    cufftMakePlan1d(planC2R, g_M, CUFFT_Z2D, 1, &workSizeC2R);
+    uint32_t* h_t1_fwd = new uint32_t[g_M];
+    uint32_t* h_t1_inv = new uint32_t[g_M];
+    uint32_t* h_t2_fwd = new uint32_t[g_M];
+    uint32_t* h_t2_inv = new uint32_t[g_M];
     
-    size_t maxWorkSize = (workSizeR2C > workSizeC2R) ? workSizeR2C : workSizeC2R;
-    cudaMalloc(&d_cufftWorkspace, maxWorkSize);
-    cufftSetWorkArea(planR2C, d_cufftWorkspace);
-    cufftSetWorkArea(planC2R, d_cufftWorkspace);
+    // Calculate principal root of unity for length g_M
+    // p1 = 15 * 2^27 + 1, g1 = 31
+    // p2 = 63 * 2^25 + 1, g2 = 5
+    // w = g ^ ((p-1)/M) mod p
+    uint32_t p1 = 2013265921;
+    uint32_t p2 = 2113929217;
+    uint32_t w1 = CpuModPow(31, (p1 - 1) / g_M, p1);
+    uint32_t w2 = CpuModPow(5, (p2 - 1) / g_M, p2);
     
-    cudaMalloc((void**)&d_real, sizeof(double) * g_M);
-    cudaMalloc((void**)&d_complex, sizeof(cufftDoubleComplex) * g_ComplexM);
+    uint32_t iw1 = CpuModPow(w1, p1 - 2, p1);
+    uint32_t iw2 = CpuModPow(w2, p2 - 2, p2);
+    
+    uint64_t curr_w1 = 1, curr_iw1 = 1;
+    uint64_t curr_w2 = 1, curr_iw2 = 1;
+    
+    for (int i = 0; i < g_M; i++) {
+        h_t1_fwd[i] = (uint32_t)curr_w1;
+        h_t1_inv[i] = (uint32_t)curr_iw1;
+        h_t2_fwd[i] = (uint32_t)curr_w2;
+        h_t2_inv[i] = (uint32_t)curr_iw2;
+        
+        curr_w1 = (curr_w1 * w1) % p1;
+        curr_iw1 = (curr_iw1 * iw1) % p1;
+        curr_w2 = (curr_w2 * w2) % p2;
+        curr_iw2 = (curr_iw2 * iw2) % p2;
+    }
+    
+    cudaMemcpy(d_twiddle1_fwd, h_t1_fwd, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_twiddle1_inv, h_t1_inv, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_twiddle2_fwd, h_t2_fwd, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_twiddle2_inv, h_t2_inv, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
+    
+    delete[] h_t1_fwd; delete[] h_t1_inv;
+    delete[] h_t2_fwd; delete[] h_t2_inv;
+
+    cudaMalloc((void**)&d_ntt_buf1, sizeof(uint32_t) * g_M);
+    cudaMalloc((void**)&d_ntt_buf2, sizeof(uint32_t) * g_M);
+    cudaMalloc((void**)&d_ntt_tmp, sizeof(uint32_t) * g_M);
+
     int maxUintWords = (g_M * 16 + 31) / 32;
     cudaMalloc((void**)&d_data, sizeof(unsigned int) * maxUintWords);
     
@@ -257,9 +300,6 @@ extern "C" {
             if (iterations <= 0) return;
             cudaGraph_t graph;
             
-            cufftSetStream(planR2C, stream);
-            cufftSetStream(planC2R, stream);
-            
             cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
             
             runSnippet(snippet);
@@ -298,8 +338,6 @@ extern "C" {
         }
         delete[] h_mask;
         cudaStreamDestroy(stream);
-        cufftSetStream(planR2C, 0);
-        cufftSetStream(planC2R, 0);
 
         return true;
     }
