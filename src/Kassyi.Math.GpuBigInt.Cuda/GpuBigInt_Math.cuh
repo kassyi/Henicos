@@ -11,42 +11,67 @@ bool MultiplySquare_Internal(unsigned int* data, int numWords, cudaStream_t stre
     
     int blockSize = 256;
     
-    // Step 1: Unpack and Bit Reverse
-    int log2N = 0;
-    while ((1 << log2N) < g_M) log2N++;
-    
+    // Step 1: Unpack
     int unpackGrid = (g_M + blockSize - 1) / blockSize;
-    Kernel_UnpackAndBitReverse16<<<unpackGrid, blockSize, 0, stream>>>(data, d_ntt_buf1, d_ntt_buf2, g_M, log2N, numWords);
+    Kernel_Unpack16<<<unpackGrid, blockSize, 0, stream>>>(data, d_ntt_buf1, d_ntt_buf2, g_M, numWords);
     
-    // Step 2: Forward NTT for both buffers (Iterative Cooley-Tukey)
-    for (int len = 2; len <= g_M; len <<= 1) {
-        int stageGrid = ((g_M / 2) + blockSize - 1) / blockSize;
-        Kernel_NTT_Stage<<<stageGrid, blockSize, 0, stream>>>(d_ntt_buf1, d_twiddle1_fwd, g_M, len, NTT_P1, NTT_M1);
-        Kernel_NTT_Stage<<<stageGrid, blockSize, 0, stream>>>(d_ntt_buf2, d_twiddle2_fwd, g_M, len, NTT_P2, NTT_M2);
-    }
+    // Six-Step FFT Configuration
+    int N2 = 1;
+    while (N2 * N2 < g_M) N2 *= 2;
+    int N1 = g_M / N2;
+    
+    dim3 blockT(32, 32);
+    dim3 gridT1((N2 + 31) / 32, (N1 + 31) / 32);
+    dim3 gridT2((N1 + 31) / 32, (N2 + 31) / 32);
+    int sharedSize1 = N2 * sizeof(uint32_t);
+    int sharedSize2 = N1 * sizeof(uint32_t);
+
+    auto do_forward_ntt = [&](uint32_t* buf, const uint32_t* twiddle, uint32_t p, uint64_t m) {
+        if (g_M <= 2048) {
+            Kernel_NTT_Shared_Row<<<1, g_M / 2, g_M * sizeof(uint32_t), stream>>>(buf, twiddle, g_M, g_M, p, m, false, false);
+            return;
+        }
+        // 1. Transpose N1xN2 -> N2xN1
+        Kernel_Transpose_32x32<<<gridT1, blockT, 0, stream>>>(buf, d_ntt_tmp, N2, N1);
+        // 2. Row NTT (length N1) with twiddle
+        Kernel_NTT_Shared_Row<<<N2, N1 / 2, sharedSize2, stream>>>(d_ntt_tmp, twiddle, g_M, N1, p, m, false, true);
+        // 3. Transpose N2xN1 -> N1xN2
+        Kernel_Transpose_32x32<<<gridT2, blockT, 0, stream>>>(d_ntt_tmp, buf, N1, N2);
+        // 4. Row NTT (length N2)
+        Kernel_NTT_Shared_Row<<<N1, N2 / 2, sharedSize1, stream>>>(buf, twiddle, g_M, N2, p, m, false, false);
+    };
+
+    // Step 2: Forward NTT for both buffers
+    do_forward_ntt(d_ntt_buf1, d_twiddle1_fwd, NTT_P1, NTT_M1);
+    do_forward_ntt(d_ntt_buf2, d_twiddle2_fwd, NTT_P2, NTT_M2);
     
     // Step 3: Pointwise Square
     int pointGrid = (g_M + blockSize - 1) / blockSize;
     Kernel_NTT_PointwiseSquare<<<pointGrid, blockSize, 0, stream>>>(d_ntt_buf1, d_ntt_buf2, g_M);
     
-    // Step 4: Bit Reverse for Inverse NTT
-    Kernel_BitReverse<<<unpackGrid, blockSize, 0, stream>>>(d_ntt_buf1, d_ntt_tmp, g_M, log2N);
-    cudaMemcpyAsync(d_ntt_buf1, d_ntt_tmp, sizeof(uint32_t) * g_M, cudaMemcpyDeviceToDevice, stream);
-    
-    Kernel_BitReverse<<<unpackGrid, blockSize, 0, stream>>>(d_ntt_buf2, d_ntt_tmp, g_M, log2N);
-    cudaMemcpyAsync(d_ntt_buf2, d_ntt_tmp, sizeof(uint32_t) * g_M, cudaMemcpyDeviceToDevice, stream);
-    
-    // Step 5: Inverse NTT
-    for (int len = 2; len <= g_M; len <<= 1) {
-        int stageGrid = ((g_M / 2) + blockSize - 1) / blockSize;
-        Kernel_NTT_Stage<<<stageGrid, blockSize, 0, stream>>>(d_ntt_buf1, d_twiddle1_inv, g_M, len, NTT_P1, NTT_M1);
-        Kernel_NTT_Stage<<<stageGrid, blockSize, 0, stream>>>(d_ntt_buf2, d_twiddle2_inv, g_M, len, NTT_P2, NTT_M2);
-    }
+    auto do_inverse_ntt = [&](uint32_t* buf, const uint32_t* twiddle, uint32_t p, uint64_t m) {
+        if (g_M <= 2048) {
+            Kernel_NTT_Shared_Row<<<1, g_M / 2, g_M * sizeof(uint32_t), stream>>>(buf, twiddle, g_M, g_M, p, m, false, false);
+            return;
+        }
+        // 1. Row INTT (length N2) with twiddle
+        Kernel_NTT_Shared_Row<<<N1, N2 / 2, sharedSize1, stream>>>(buf, twiddle, g_M, N2, p, m, false, true);
+        // 2. Transpose N1xN2 -> N2xN1
+        Kernel_Transpose_32x32<<<gridT1, blockT, 0, stream>>>(buf, d_ntt_tmp, N2, N1);
+        // 3. Row INTT (length N1)
+        Kernel_NTT_Shared_Row<<<N2, N1 / 2, sharedSize2, stream>>>(d_ntt_tmp, twiddle, g_M, N1, p, m, false, false);
+        // 4. Transpose N2xN1 -> N1xN2
+        Kernel_Transpose_32x32<<<gridT2, blockT, 0, stream>>>(d_ntt_tmp, buf, N1, N2);
+    };
+
+    // Step 4 & 5: Inverse NTT
+    do_inverse_ntt(d_ntt_buf1, d_twiddle1_inv, NTT_P1, NTT_M1);
+    do_inverse_ntt(d_ntt_buf2, d_twiddle2_inv, NTT_P2, NTT_M2);
     
     // Step 6: CRT Resolve and Pack
     int outNumWords = numWords * 2;
     cudaMemsetAsync(data, 0, sizeof(unsigned int) * outNumWords, stream);
-    Kernel_CRT_ResolveCarry<<<1, 1, 0, stream>>>(d_ntt_buf1, d_ntt_buf2, data, g_M, outNumWords);
+    Kernel_CRT_ParallelAtomic<<<unpackGrid, blockSize, 0, stream>>>(d_ntt_buf1, d_ntt_buf2, data, g_M, outNumWords);
     
     return true;
 }
