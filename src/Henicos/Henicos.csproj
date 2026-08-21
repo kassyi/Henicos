@@ -17,4 +17,8 @@
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Kassyi.Math.GpuBigInt\Kassyi.Math.GpuBigInt.csproj" />
+  </ItemGroup>
+
 </Project>

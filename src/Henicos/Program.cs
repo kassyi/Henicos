@@ -263,25 +263,18 @@ class Program
             custom4Result = new BigInteger(resBytes);
         }
 
-        // 6. Zero-Overhead VRAM Loop (V5)
+        // 6. Phase A Generic GPU API (V5 replacement)
         BigInteger custom5Result = BigInteger.Zero;
         Stopwatch swCustom5 = new Stopwatch();
-        bool gpuInitV5 = CudaInterop.InitializeGPU(E);
-        if (gpuInitV5)
+        try
         {
-            uint[] v5Data = new uint[numWords * 4];
-            v5Data[0] = 2; // Initial state: X = 2
-
             swCustom5.Start();
-            CudaInterop.RunFermatLoopV5(v5Data, numWords, E);
+            custom5Result = ModularReductionGpu.FermatPRPTest(E, N);
             swCustom5.Stop();
-
-            CudaInterop.CleanupGPU();
-
-            byte[] resBytes = new byte[numWords * 4 + 1];
-            Buffer.BlockCopy(v5Data, 0, resBytes, 0, numWords * 4);
-            resBytes[numWords * 4] = 0;
-            custom5Result = new BigInteger(resBytes);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[V5 Error] {ex.Message}");
         }
 
         // Check Correctness
