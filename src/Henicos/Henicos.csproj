@@ -21,4 +21,8 @@
     <ProjectReference Include="..\Kassyi.Math.GpuBigInt\Kassyi.Math.GpuBigInt.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Kassyi.Math.GpuBigInt.Cuda\Kassyi.Math.GpuBigInt.Cuda.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

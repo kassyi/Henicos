@@ -119,6 +119,7 @@ class Program
         // 5. Full Hybrid CPU-GPU Pipeline (V4)
         BigInteger custom4Result = BigInteger.Zero;
         Stopwatch swCustom4 = new Stopwatch();
+        /* V4 disabled to prevent GPU crash 
         bool gpuInit = CudaInterop.InitializeGPU(E);
         if (gpuInit)
         {
@@ -262,6 +263,7 @@ class Program
             resBytes[numWords * 4] = 0; // force positive
             custom4Result = new BigInteger(resBytes);
         }
+        */
 
         // 6. Phase A Generic GPU API (V5 replacement)
         BigInteger custom5Result = BigInteger.Zero;

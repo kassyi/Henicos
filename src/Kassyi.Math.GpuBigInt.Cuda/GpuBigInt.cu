@@ -132,7 +132,11 @@ __global__ void ResolveCarryAndPackKernel16(double* d_real, unsigned int* out_ui
     }
 }
 
+void CleanupGPU_Internal();
+
 bool InitializeGPU_Internal(int E) {
+    CleanupGPU_Internal();
+
     // E determines the bit size: 2E+1 bits
     // numWords is around (2E+1)/32
     // Max value fits in 2E+1 bits. Squaring makes it 4E+2 bits.
@@ -186,6 +190,7 @@ bool MultiplySquare_Internal(unsigned int* data, int numWords) {
     // 2. Unpack uint array to double array (Base 2^16)
     int blockSize = 256;
     int gridSize = (g_M + blockSize - 1) / blockSize;
+    
     UnpackKernel16<<<gridSize, blockSize>>>(data, d_real, g_M, numWords);
     cudaDeviceSynchronize();
     
@@ -212,11 +217,14 @@ bool MultiplySquare_Internal(unsigned int* data, int numWords) {
 }
 
 void CleanupGPU_Internal() {
-    if (d_real) cudaFree(d_real);
-    if (d_complex) cudaFree(d_complex);
-    if (d_data) cudaFree(d_data);
-    cufftDestroy(planR2C);
-    cufftDestroy(planC2R);
+    if (d_real) { cudaFree(d_real); d_real = nullptr; }
+    if (d_complex) { cudaFree(d_complex); d_complex = nullptr; }
+    if (d_data) { cudaFree(d_data); d_data = nullptr; }
+    if (g_M > 0) {
+        cufftDestroy(planR2C);
+        cufftDestroy(planC2R);
+        g_M = 0;
+    }
 }
 
 // -------------------------------------------------------------------------

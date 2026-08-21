@@ -23,6 +23,20 @@ x86/
 Debug/
 Release/
 
+# Executables and Libraries
+*.dll
+*.exe
+*.so
+*.dylib
+
+# NVCC Temporary files
+tmpxft*
+*.cudafe*
+*.fatbin*
+*.cubin
+*.ptx
+*.module_id
+
 # OS generated files
 .DS_Store
 .DS_Store?
@@ -31,3 +45,8 @@ Release/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+#tmp
+scratch/
+tmp/
+benchmark_results.txt

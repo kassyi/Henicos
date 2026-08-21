@@ -83,11 +83,9 @@ namespace Kassyi.Math.GpuBigInt
             NativeMethods.GpuBigInt_ShiftRight(a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
         }
 
-        public void Square()
+        public bool Square(int logicalWords)
         {
-            // Note: Our current Square implementation expects the buffer to be large enough to hold 2x the output
-            // and performs it in-place based on the context's FFT plan.
-            NativeMethods.GpuBigInt_Square(DevicePointer, NumWords / 2); // Pass logical size, assumes buffer is 2x
+            return NativeMethods.GpuBigInt_Square(DevicePointer, logicalWords);
         }
 
         public void Dispose()

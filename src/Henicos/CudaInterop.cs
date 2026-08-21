@@ -7,12 +7,12 @@ public static class CudaInterop
 {
     private const string DllName = "Kassyi.Math.GpuBigInt.Cuda.dll";
 
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool InitializeGPU(int E);
+    [DllImport(DllName, EntryPoint = "GpuBigInt_Init", CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool InitializeGPU(int maxWords);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(DllName, EntryPoint = "GpuBigInt_Square", CallingConvention = CallingConvention.Cdecl)]
     public static extern bool MultiplySquare(uint[] data, int numWords);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(DllName, EntryPoint = "GpuBigInt_Cleanup", CallingConvention = CallingConvention.Cdecl)]
     public static extern void CleanupGPU();
 }
