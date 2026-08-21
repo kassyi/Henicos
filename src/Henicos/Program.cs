@@ -40,97 +40,69 @@ class Program
         BigInteger N = (BigInteger.One << (2 * E + 1)) - X + 11;
         BigInteger a = 2;
         BigInteger exponent = N - 1;
+        double totalDigits = ((2 * E + 1) * Math.Log10(2)) * E;
 
-        // Validation for HybridReduction
-        bool hybridPass = false;
-        if (E <= 10000)
+        bool hybridPass = E <= 10000 ? TestHybridReduction(E, N) : false;
+
+        var std = RunTest(() => BigInteger.ModPow(a, exponent, N), totalDigits);
+        var v1 = RunTest(() => ModularReduction.ModPowCustom(a, exponent, E, N), totalDigits);
+        var v2 = RunTest(() => ModularReduction2.FermatPRPTest(E, N), totalDigits);
+        var v5 = RunTest(() => {
+            try { return ModularReductionGpu.FermatPRPTest(E, N); }
+            catch (Exception ex) { Console.WriteLine($"[V5 Error] {ex.Message}"); return BigInteger.Zero; }
+        }, totalDigits);
+
+        double hybridMs = MeasureHybridV3(E, X);
+
+        Console.WriteLine($"  - Standard BigInteger : {std.Ms,5} ms | {std.MDps,6:F2} M-Digit/s (Baseline)");
+        Console.WriteLine($"  - Custom Reduction V1 : {v1.Ms,5} ms | {v1.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v1.Ms):F2}x)");
+        Console.WriteLine($"  - Ultra Optimized V2  : {v2.Ms,5} ms | {v2.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v2.Ms):F2}x vs Std)");
+        Console.WriteLine($"  - Hybrid CPU V3 (Reduc): {hybridMs,6:F3} ms/iter (Extremely Fast Parallel Chunking)");
+        Console.WriteLine($"  - ZERO Overhead VRAM V5: {v5.Ms,5} ms | {v5.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v5.Ms):F2}x vs Std)");
+
+        bool pass = (std.Result == v1.Result) && (std.Result == v2.Result) && (std.Result == v5.Result) && (E > 10000 || hybridPass);
+        if (!pass)
         {
-            hybridPass = TestHybridReduction(E, N);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("  [FAIL] Mismatch detected!");
+            Console.WriteLine($"    Standard : {std.Result}");
+            Console.WriteLine($"    Custom V1: {v1.Result} (Pass: {std.Result == v1.Result})");
+            Console.WriteLine($"    Custom V2: {v2.Result} (Pass: {std.Result == v2.Result})");
+            Console.WriteLine($"    Hybrid V3: Pass={hybridPass}");
+            Console.WriteLine($"    Zero V5  : {v5.Result} (Pass: {std.Result == v5.Result})");
+            Console.ResetColor();
         }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("  [PASS] All logic matches standard result.");
+            Console.ResetColor();
+        }
+    }
 
-        // 1. Standard BigInteger.ModPow
-        Stopwatch swStandard = Stopwatch.StartNew();
-        BigInteger standardResult = BigInteger.ModPow(a, exponent, N);
-        swStandard.Stop();
+    static (BigInteger Result, long Ms, double MDps) RunTest(Func<BigInteger> test, double totalDigits)
+    {
+        var sw = Stopwatch.StartNew();
+        var result = test();
+        sw.Stop();
+        double mdps = sw.ElapsedMilliseconds > 0 ? (totalDigits / sw.ElapsedMilliseconds) / 1000.0 : 0;
+        return (result, sw.ElapsedMilliseconds, mdps);
+    }
 
-        // 2. Custom (Phase 1 Baseline)
-        Stopwatch swCustom1 = Stopwatch.StartNew();
-        BigInteger custom1Result = ModularReduction.ModPowCustom(a, exponent, E, N);
-        swCustom1.Stop();
-
-        // 3. Ultra Optimized (Phase 1.5 Breakthrough)
-        Stopwatch swCustom2 = Stopwatch.StartNew();
-        BigInteger custom2Result = ModularReduction2.FermatPRPTest(E, N);
-        swCustom2.Stop();
-
-        // 4. Hybrid Reduction V3 (Timing only the reduction step, simulating CPU offload)
+    static double MeasureHybridV3(int E, BigInteger X)
+    {
         int numWords = (2 * E + 1 + 31) / 32;
         BigInteger T = BigInteger.Pow(X, 2) + 123456789;
         byte[] tBytes = T.ToByteArray();
         uint[] data = new uint[numWords * 4];
         Buffer.BlockCopy(tBytes, 0, data, 0, tBytes.Length);
         
-        Stopwatch swCustom3 = Stopwatch.StartNew();
-        int hybridIters = (E <= 1000) ? 10000 : 100;
-        for (int i = 0; i < hybridIters; i++)
-        {
+        var sw = Stopwatch.StartNew();
+        int iters = (E <= 1000) ? 10000 : 100;
+        for (int i = 0; i < iters; i++)
             HybridReduction.ReduceInPlace(data, E, numWords);
-        }
-        swCustom3.Stop();
-        double hybridMsPerIter = (double)swCustom3.ElapsedMilliseconds / hybridIters;
-
-
-        // 5. Phase A Generic GPU API (V5 replacement)
-        BigInteger custom5Result = BigInteger.Zero;
-        Stopwatch swCustom5 = new Stopwatch();
-        try
-        {
-            swCustom5.Start();
-            custom5Result = ModularReductionGpu.FermatPRPTest(E, N);
-            swCustom5.Stop();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[V5 Error] {ex.Message}");
-        }
-
-        // Check Correctness
-        bool pass1 = (standardResult == custom1Result);
-        bool pass2 = (standardResult == custom2Result);
-        bool pass5 = (standardResult == custom5Result);
-
-        // Calculate M-Digits/sec
-        double digitsPerLoop = (2 * E + 1) * Math.Log10(2);
-        double totalDigits = digitsPerLoop * E; 
-        
-        double stdMDps = (swStandard.ElapsedMilliseconds > 0) ? (totalDigits / swStandard.ElapsedMilliseconds) / 1000.0 : 0;
-        double v1MDps = (swCustom1.ElapsedMilliseconds > 0) ? (totalDigits / swCustom1.ElapsedMilliseconds) / 1000.0 : 0;
-        double v2MDps = (swCustom2.ElapsedMilliseconds > 0) ? (totalDigits / swCustom2.ElapsedMilliseconds) / 1000.0 : 0;
-        double v5MDps = (swCustom5.ElapsedMilliseconds > 0) ? (totalDigits / swCustom5.ElapsedMilliseconds) / 1000.0 : 0;
-        
-        // Output Times
-        Console.WriteLine($"  - Standard BigInteger : {swStandard.ElapsedMilliseconds,5} ms | {stdMDps,6:F2} M-Digit/s (Baseline)");
-        Console.WriteLine($"  - Custom Reduction V1 : {swCustom1.ElapsedMilliseconds,5} ms | {v1MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom1.ElapsedMilliseconds):F2}x)");
-        Console.WriteLine($"  - Ultra Optimized V2  : {swCustom2.ElapsedMilliseconds,5} ms | {v2MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom2.ElapsedMilliseconds):F2}x vs Std)");
-        Console.WriteLine($"  - Hybrid CPU V3 (Reduc): {hybridMsPerIter,6:F3} ms/iter (Extremely Fast Parallel Chunking)");
-        Console.WriteLine($"  - ZERO Overhead VRAM V5: {swCustom5.ElapsedMilliseconds,5} ms | {v5MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom5.ElapsedMilliseconds):F2}x vs Std)");
-
-        if (!pass1 || !pass2 || (E <= 10000 && !hybridPass) || !pass5)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("  [FAIL] Mismatch detected!");
-            Console.WriteLine($"    Standard : {standardResult}");
-            Console.WriteLine($"    Custom V1: {custom1Result} (Pass: {pass1})");
-            Console.WriteLine($"    Custom V2: {custom2Result} (Pass: {pass2})");
-            Console.WriteLine($"    Hybrid V3: Pass={hybridPass}");
-            Console.WriteLine($"    Zero V5  : {custom5Result} (Pass: {pass5})");
-            Console.ResetColor();
-            return;
-        }
-
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("  [PASS] All logic matches standard result.");
-        Console.ResetColor();
+        sw.Stop();
+        return (double)sw.ElapsedMilliseconds / iters;
     }
 
     static bool TestHybridReduction(int E, BigInteger N)
@@ -154,7 +126,6 @@ class Program
         resBytes[data.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
         
         BigInteger actual = new BigInteger(resBytes);
-        
         actual %= N;
         if (actual < 0) actual += N;
 
@@ -165,14 +136,12 @@ class Program
             Console.ResetColor();
             return true;
         }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"  [WARN] HybridReduction output MISMATCH for E={E}");
-            Console.WriteLine($"         Expected: {expected}");
-            Console.WriteLine($"         Actual  : {actual}");
-            Console.ResetColor();
-            return false;
-        }
+        
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine($"  [WARN] HybridReduction output MISMATCH for E={E}");
+        Console.WriteLine($"         Expected: {expected}");
+        Console.WriteLine($"         Actual  : {actual}");
+        Console.ResetColor();
+        return false;
     }
 }

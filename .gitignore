@@ -50,3 +50,6 @@ Thumbs.db
 scratch/
 tmp/
 benchmark_results.txt
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
