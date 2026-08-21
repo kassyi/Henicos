@@ -30,15 +30,5 @@ public class FermatBenchmark
         return BigInteger.ModPow(a, exponent, N);
     }
 
-    [Benchmark]
-    public BigInteger CustomReductionV1()
-    {
-        return ModularReduction.ModPowCustom(a, exponent, E, N);
-    }
 
-    [Benchmark]
-    public BigInteger UltraOptimizedV2()
-    {
-        return ModularReduction2.FermatPRPTest(E, N);
-    }
 }

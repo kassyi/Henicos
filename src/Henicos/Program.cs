@@ -45,8 +45,6 @@ class Program
         bool hybridPass = E <= 10000 ? TestHybridReduction(E, N) : false;
 
         var std = RunTest(() => BigInteger.ModPow(a, exponent, N), totalDigits);
-        var v1 = RunTest(() => ModularReduction.ModPowCustom(a, exponent, E, N), totalDigits);
-        var v2 = RunTest(() => ModularReduction2.FermatPRPTest(E, N), totalDigits);
         var v5 = RunTest(() => {
             try { return ModularReductionGpu.FermatPRPTest(E, N); }
             catch (Exception ex) { Console.WriteLine($"[V5 Error] {ex.Message}"); return BigInteger.Zero; }
@@ -55,19 +53,15 @@ class Program
         double hybridMs = MeasureHybridV3(E, X);
 
         Console.WriteLine($"  - Standard BigInteger : {std.Ms,5} ms | {std.MDps,6:F2} M-Digit/s (Baseline)");
-        Console.WriteLine($"  - Custom Reduction V1 : {v1.Ms,5} ms | {v1.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v1.Ms):F2}x)");
-        Console.WriteLine($"  - Ultra Optimized V2  : {v2.Ms,5} ms | {v2.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v2.Ms):F2}x vs Std)");
         Console.WriteLine($"  - Hybrid CPU V3 (Reduc): {hybridMs,6:F3} ms/iter (Extremely Fast Parallel Chunking)");
         Console.WriteLine($"  - ZERO Overhead VRAM V5: {v5.Ms,5} ms | {v5.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v5.Ms):F2}x vs Std)");
 
-        bool pass = (std.Result == v1.Result) && (std.Result == v2.Result) && (std.Result == v5.Result) && (E > 10000 || hybridPass);
+        bool pass = (std.Result == v5.Result) && (E > 10000 || hybridPass);
         if (!pass)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("  [FAIL] Mismatch detected!");
             Console.WriteLine($"    Standard : {std.Result}");
-            Console.WriteLine($"    Custom V1: {v1.Result} (Pass: {std.Result == v1.Result})");
-            Console.WriteLine($"    Custom V2: {v2.Result} (Pass: {std.Result == v2.Result})");
             Console.WriteLine($"    Hybrid V3: Pass={hybridPass}");
             Console.WriteLine($"    Zero V5  : {v5.Result} (Pass: {std.Result == v5.Result})");
             Console.ResetColor();
