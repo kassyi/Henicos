@@ -644,14 +644,34 @@ extern "C" {
         if (!InitializeGPU_Internal(E)) return false;
 
         std::unordered_map<std::string, unsigned int*> vars;
-        cudaMalloc((void**)&vars["T"], sizeof(unsigned int) * outNumWords * 2);
-        cudaMalloc((void**)&vars["Q"], sizeof(unsigned int) * outNumWords * 2);
-        cudaMalloc((void**)&vars["R"], sizeof(unsigned int) * outNumWords * 2);
-        cudaMalloc((void**)&vars["Temp"], sizeof(unsigned int) * outNumWords * 2);
-        cudaMalloc((void**)&vars["MaskR"], sizeof(unsigned int) * outNumWords * 2);
-        cudaMalloc((void**)&vars["N"], sizeof(unsigned int) * outNumWords * 2);
+        
+        // Pre-scan IL to find all required variables
+        std::istringstream stream_prescan(ilScript);
+        std::string pre_line;
+        while (std::getline(stream_prescan, pre_line)) {
+            if (pre_line.empty() || pre_line[0] == '\r') continue;
+            std::istringstream iss(pre_line);
+            std::string op;
+            iss >> op;
+            if (op == "SQUARE" || op == "COPY") {
+                std::string dest, src; iss >> dest >> src;
+                vars[dest] = nullptr; vars[src] = nullptr;
+            } else if (op == "SHR" || op == "SHL") {
+                std::string dest, src; int bits; iss >> dest >> src >> bits;
+                vars[dest] = nullptr; vars[src] = nullptr;
+            } else if (op == "ADD" || op == "SUB" || op == "AND") {
+                std::string dest, a, b; iss >> dest >> a >> b;
+                vars[dest] = nullptr; vars[a] = nullptr; vars[b] = nullptr;
+            }
+        }
+        
+        // Ensure critical registers exist even if not used in IL
+        vars["T"] = nullptr;
+        vars["MaskR"] = nullptr;
+        vars["N"] = nullptr;
 
         for (auto& pair : vars) {
+            cudaMalloc((void**)&pair.second, sizeof(unsigned int) * outNumWords * 2);
             cudaMemsetAsync(pair.second, 0, sizeof(unsigned int) * outNumWords * 2);
         }
 
@@ -702,7 +722,10 @@ extern "C" {
                 iss >> op;
                 if (op == "SQUARE") {
                     std::string dest, src; iss >> dest >> src;
-                    GpuBigInt_Square(vars[src], numWords + 1, stream);
+                    if (dest != src) {
+                        cudaMemcpyAsync(vars[dest], vars[src], sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToDevice, stream);
+                    }
+                    GpuBigInt_Square(vars[dest], numWords + 1, stream);
                 }
                 else if (op == "SHR") {
                     std::string dest, src; int bits; iss >> dest >> src >> bits;
