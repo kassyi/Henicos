@@ -3,12 +3,17 @@
 #include <cufft.h>
 #include <stdio.h>
 #include <math.h>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <unordered_map>
 
 cufftHandle planR2C;
 cufftHandle planC2R;
 double* d_real = nullptr;
 cufftDoubleComplex* d_complex = nullptr;
 unsigned int* d_data = nullptr;
+void* d_cufftWorkspace = nullptr;
 
 int g_M = 0;          // FFT Size (must be a power of 2 for optimal performance)
 int g_ComplexM = 0;   // Size of the complex array after Real-to-Complex FFT (M/2 + 1)
@@ -150,13 +155,25 @@ bool InitializeGPU_Internal(int E) {
     
     printf("Initializing cuFFT: E=%d, Required Radix-16 Elements=%d, FFT Size=%d\n", E, requiredElements, g_M);
     
-    cufftResult res1 = cufftPlan1d(&planR2C, g_M, CUFFT_D2Z, 1);
-    cufftResult res2 = cufftPlan1d(&planC2R, g_M, CUFFT_Z2D, 1);
+    cufftCreate(&planR2C);
+    cufftSetAutoAllocation(planR2C, 0);
+    size_t workSizeR2C;
+    cufftResult res1 = cufftMakePlan1d(planR2C, g_M, CUFFT_D2Z, 1, &workSizeR2C);
+    
+    cufftCreate(&planC2R);
+    cufftSetAutoAllocation(planC2R, 0);
+    size_t workSizeC2R;
+    cufftResult res2 = cufftMakePlan1d(planC2R, g_M, CUFFT_Z2D, 1, &workSizeC2R);
     
     if (res1 != CUFFT_SUCCESS || res2 != CUFFT_SUCCESS) {
-        printf("cuFFT Plan creation failed.\n");
+        printf("cuFFT Plan creation failed. res1=%d res2=%d\n", res1, res2);
         return false;
     }
+    
+    size_t maxWorkSize = (workSizeR2C > workSizeC2R) ? workSizeR2C : workSizeC2R;
+    cudaMalloc(&d_cufftWorkspace, maxWorkSize);
+    cufftSetWorkArea(planR2C, d_cufftWorkspace);
+    cufftSetWorkArea(planC2R, d_cufftWorkspace);
     
     cudaMalloc((void**)&d_real, sizeof(double) * g_M);
     cudaMalloc((void**)&d_complex, sizeof(cufftDoubleComplex) * g_ComplexM);
@@ -181,37 +198,51 @@ bool InitializeGPU_Internal(int E) {
  * @param data Device pointer to the BigInteger data (must be pre-allocated with enough space).
  * @param numWords Number of 32-bit words in the input.
  */
-bool MultiplySquare_Internal(unsigned int* data, int numWords) {
+bool MultiplySquare_Internal(unsigned int* data, int numWords, cudaStream_t stream = 0) {
     if (!d_real || !d_complex || !d_data) return false;
-    
-    // 1. Copy input from CPU to GPU (data only contains numWords elements for the input X)
-    cudaMemcpy(d_data, data, sizeof(unsigned int) * numWords, cudaMemcpyDeviceToDevice); // Fixed logical naming, technically it's an internal buffer copy if data is already device ptr
     
     // 2. Unpack uint array to double array (Base 2^16)
     int blockSize = 256;
     int gridSize = (g_M + blockSize - 1) / blockSize;
     
-    UnpackKernel16<<<gridSize, blockSize>>>(data, d_real, g_M, numWords);
-    cudaDeviceSynchronize();
+    // 1. Unpack uint array to double array
+    UnpackKernel16<<<gridSize, blockSize, 0, stream>>>(data, d_real, g_M, numWords);
+    cudaError_t err1 = cudaGetLastError();
+    if (err1 != cudaSuccess) printf("Error UnpackKernel16: %s\n", cudaGetErrorString(err1));
     
     // 3. FFT (Real to Complex)
-    cufftExecD2Z(planR2C, d_real, d_complex);
-    cudaDeviceSynchronize();
+    cufftResult res1 = cufftExecD2Z(planR2C, d_real, d_complex);
+    if (res1 != CUFFT_SUCCESS) {
+        printf("cufftExecD2Z failed: %d\n", res1);
+    }
+    cudaError_t err2 = cudaGetLastError();
+    if (err2 != cudaSuccess) printf("Error cufftExecD2Z: %s\n", cudaGetErrorString(err2));
     
     // 4. Pointwise Square
     int complexGrid = (g_ComplexM + blockSize - 1) / blockSize;
     double scale = 1.0 / g_M;
-    PointwiseSquareKernel<<<complexGrid, blockSize>>>(d_complex, g_ComplexM, scale);
-    cudaDeviceSynchronize();
+    PointwiseSquareKernel<<<complexGrid, blockSize, 0, stream>>>(d_complex, g_ComplexM, scale);
+    cudaError_t err3 = cudaGetLastError();
+    if (err3 != cudaSuccess) printf("Error PointwiseSquareKernel: %s\n", cudaGetErrorString(err3));
     
     // 5. IFFT (Complex to Real)
-    cufftExecZ2D(planC2R, d_complex, d_real);
-    cudaDeviceSynchronize();
+    cufftResult res2 = cufftExecZ2D(planC2R, d_complex, d_real);
+    if (res2 != CUFFT_SUCCESS) {
+        printf("cufftExecZ2D failed: %d\n", res2);
+    }
+    cudaError_t err4 = cudaGetLastError();
+    if (err4 != cudaSuccess) printf("Error cufftExecZ2D: %s\n", cudaGetErrorString(err4));
     
-    // 6. Resolve Carry and Pack back to uint (Result takes roughly numWords*2 space)
-    int outNumWords = numWords * 2 + 1; // Generous
-    ResolveCarryAndPackKernel16<<<1, 1>>>(d_real, data, g_M, outNumWords);
-    cudaDeviceSynchronize();
+    // 6. Resolve Carry and Pack back to uint
+    // The maximum possible result is roughly numWords*2 length in 32-bit words
+    int outNumWords = numWords * 2;
+    cudaMemsetAsync(data, 0, sizeof(unsigned int) * outNumWords, stream);
+    cudaError_t err5 = cudaGetLastError();
+    if (err5 != cudaSuccess) printf("Error cudaMemsetAsync: %s\n", cudaGetErrorString(err5));
+    
+    ResolveCarryAndPackKernel16<<<1, 1, 0, stream>>>(d_real, data, g_M, outNumWords);
+    cudaError_t err6 = cudaGetLastError();
+    if (err6 != cudaSuccess) printf("Error ResolveCarryAndPackKernel16: %s\n", cudaGetErrorString(err6));
     
     return true;
 }
@@ -221,8 +252,9 @@ void CleanupGPU_Internal() {
     if (d_complex) { cudaFree(d_complex); d_complex = nullptr; }
     if (d_data) { cudaFree(d_data); d_data = nullptr; }
     if (g_M > 0) {
-        cufftDestroy(planR2C);
-        cufftDestroy(planC2R);
+        if (d_cufftWorkspace) { cudaFree(d_cufftWorkspace); d_cufftWorkspace = nullptr; }
+        if (planR2C) { cufftDestroy(planR2C); planR2C = 0; }
+        if (planC2R) { cufftDestroy(planC2R); planC2R = 0; }
         g_M = 0;
     }
 }
@@ -285,7 +317,7 @@ __global__ void ApplyAddCarryKernel(unsigned int* d_result, long long* carryBuff
             int end = start + chunkSize;
             if (end > numWords) end = numWords;
             
-            rippleCarry += carryBuffer[chunkIdx + 1];
+            rippleCarry += carryBuffer[chunkIdx];
             if (rippleCarry == 0) continue;
             
             for (int i = start; i < end; i++) {
@@ -337,7 +369,7 @@ __global__ void ApplySubBorrowKernel(unsigned int* d_result, long long* carryBuf
             int end = start + chunkSize;
             if (end > numWords) end = numWords;
             
-            rippleBorrow += carryBuffer[chunkIdx + 1];
+            rippleBorrow += carryBuffer[chunkIdx];
             if (rippleBorrow == 0) continue;
             
             for (int i = start; i < end; i++) {
@@ -439,16 +471,16 @@ extern "C" {
         if (ptr) cudaFree(ptr);
     }
 
-    EXPORT_API bool GpuBigInt_CopyHostToDevice(unsigned int* d_dst, const unsigned int* h_src, int numWords) {
-        return cudaMemcpy(d_dst, h_src, sizeof(unsigned int) * numWords, cudaMemcpyHostToDevice) == cudaSuccess;
+    EXPORT_API bool GpuBigInt_CopyHostToDevice(unsigned int* d_dst, const unsigned int* h_src, int numWords, cudaStream_t stream) {
+        return cudaMemcpyAsync(d_dst, h_src, sizeof(unsigned int) * numWords, cudaMemcpyHostToDevice, stream) == cudaSuccess;
     }
 
-    EXPORT_API bool GpuBigInt_CopyDeviceToHost(unsigned int* h_dst, const unsigned int* d_src, int numWords) {
-        return cudaMemcpy(h_dst, d_src, sizeof(unsigned int) * numWords, cudaMemcpyDeviceToHost) == cudaSuccess;
+    EXPORT_API bool GpuBigInt_CopyDeviceToHost(unsigned int* h_dst, const unsigned int* d_src, int numWords, cudaStream_t stream) {
+        return cudaMemcpyAsync(h_dst, d_src, sizeof(unsigned int) * numWords, cudaMemcpyDeviceToHost, stream) == cudaSuccess;
     }
 
-    EXPORT_API bool GpuBigInt_CopyDeviceToDevice(unsigned int* d_dst, const unsigned int* d_src, int numWords) {
-        return cudaMemcpy(d_dst, d_src, sizeof(unsigned int) * numWords, cudaMemcpyDeviceToDevice) == cudaSuccess;
+    EXPORT_API bool GpuBigInt_CopyDeviceToDevice(unsigned int* d_dst, const unsigned int* d_src, int numWords, cudaStream_t stream) {
+        return cudaMemcpyAsync(d_dst, d_src, sizeof(unsigned int) * numWords, cudaMemcpyDeviceToDevice, stream) == cudaSuccess;
     }
 
     __global__ void BitwiseAndKernel(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords) {
@@ -458,68 +490,338 @@ extern "C" {
         }
     }
 
-    EXPORT_API bool GpuBigInt_BitwiseAnd(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords) {
+    EXPORT_API bool GpuBigInt_BitwiseAnd(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream) {
         int blockSize = 256;
         int gridSize = (numWords + blockSize - 1) / blockSize;
         if (gridSize == 0) gridSize = 1;
-        BitwiseAndKernel<<<gridSize, blockSize>>>(d_a, d_b, d_result, numWords);
-        cudaDeviceSynchronize();
+        BitwiseAndKernel<<<gridSize, blockSize, 0, stream>>>(d_a, d_b, d_result, numWords);
         return true;
     }
 
-    EXPORT_API bool GpuBigInt_Square(unsigned int* data, int numWords) { 
-        return MultiplySquare_Internal(data, numWords); 
+    EXPORT_API bool GpuBigInt_Square(unsigned int* data, int numWords, cudaStream_t stream) { 
+        return MultiplySquare_Internal(data, numWords, stream); 
     }
 
-    EXPORT_API bool GpuBigInt_Add(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords) {
+    EXPORT_API bool GpuBigInt_Add(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream) {
         int chunkSize = 256; // Words per chunk thread
         int numChunks = (numWords + chunkSize - 1) / chunkSize;
         int blockSize = 256;
         int gridSize = (numChunks + blockSize - 1) / blockSize;
         if (gridSize == 0) gridSize = 1;
         
-        cudaMemset(d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1));
-        ChunkAddKernel<<<gridSize, blockSize>>>(d_a, d_b, d_result, d_genericCarryBuffer, numWords, chunkSize);
-        ApplyAddCarryKernel<<<1, 1>>>(d_result, d_genericCarryBuffer, numChunks, numWords, chunkSize);
-        cudaDeviceSynchronize();
+        cudaMemsetAsync(d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1), stream);
+        ChunkAddKernel<<<gridSize, blockSize, 0, stream>>>(d_a, d_b, d_result, d_genericCarryBuffer, numWords, chunkSize);
+        ApplyAddCarryKernel<<<1, 1, 0, stream>>>(d_result, d_genericCarryBuffer, numChunks, numWords, chunkSize);
         return true;
     }
 
-    EXPORT_API bool GpuBigInt_Sub(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords) {
+    EXPORT_API bool GpuBigInt_Sub(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream) {
         int chunkSize = 256;
         int numChunks = (numWords + chunkSize - 1) / chunkSize;
         int blockSize = 256;
         int gridSize = (numChunks + blockSize - 1) / blockSize;
         if (gridSize == 0) gridSize = 1;
         
-        cudaMemset(d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1));
-        ChunkSubKernel<<<gridSize, blockSize>>>(d_a, d_b, d_result, d_genericCarryBuffer, numWords, chunkSize);
-        ApplySubBorrowKernel<<<1, 1>>>(d_result, d_genericCarryBuffer, numChunks, numWords, chunkSize);
-        cudaDeviceSynchronize();
+        cudaMemsetAsync(d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1), stream);
+        ChunkSubKernel<<<gridSize, blockSize, 0, stream>>>(d_a, d_b, d_result, d_genericCarryBuffer, numWords, chunkSize);
+        ApplySubBorrowKernel<<<1, 1, 0, stream>>>(d_result, d_genericCarryBuffer, numChunks, numWords, chunkSize);
         return true;
     }
 
-    EXPORT_API bool GpuBigInt_ShiftLeft(const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords) {
+    EXPORT_API bool GpuBigInt_ShiftLeft(const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords, cudaStream_t stream) {
         int wordShift = shiftBits / 32;
         int bitShift = shiftBits % 32;
         int blockSize = 256;
         int gridSize = (numWords + blockSize - 1) / blockSize;
         if (gridSize == 0) gridSize = 1;
         
-        ShiftLeftKernel<<<gridSize, blockSize>>>(d_a, wordShift, bitShift, d_result, numWords);
-        cudaDeviceSynchronize();
+        ShiftLeftKernel<<<gridSize, blockSize, 0, stream>>>(d_a, wordShift, bitShift, d_result, numWords);
         return true;
     }
 
-    EXPORT_API bool GpuBigInt_ShiftRight(const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords) {
+    EXPORT_API bool GpuBigInt_ShiftRight(const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords, cudaStream_t stream) {
         int wordShift = shiftBits / 32;
         int bitShift = shiftBits % 32;
         int blockSize = 256;
         int gridSize = (numWords + blockSize - 1) / blockSize;
         if (gridSize == 0) gridSize = 1;
         
-        ShiftRightKernel<<<gridSize, blockSize>>>(d_a, wordShift, bitShift, d_result, numWords);
+        ShiftRightKernel<<<gridSize, blockSize, 0, stream>>>(d_a, wordShift, bitShift, d_result, numWords);
+        return true;
+    }
+    EXPORT_API bool GpuBigInt_FermatPRPTest(int E, unsigned int* out_data) {
+        int numWords = (2 * E + 1 + 31) / 32;
+        int outNumWords = numWords * 2 + 4;
+
+        if (!d_real) return false; // Ensure GPU is initialized
+
+        unsigned int *d_T, *d_Q, *d_R, *d_Temp, *d_MaskR;
+        cudaMalloc((void**)&d_T, sizeof(unsigned int) * outNumWords);
+        cudaMalloc((void**)&d_Q, sizeof(unsigned int) * outNumWords);
+        cudaMalloc((void**)&d_R, sizeof(unsigned int) * outNumWords);
+        cudaMalloc((void**)&d_Temp, sizeof(unsigned int) * outNumWords);
+        cudaMalloc((void**)&d_MaskR, sizeof(unsigned int) * outNumWords);
+
+        cudaMemsetAsync(d_T, 0, sizeof(unsigned int) * outNumWords);
+        cudaMemsetAsync(d_Q, 0, sizeof(unsigned int) * outNumWords);
+        cudaMemsetAsync(d_R, 0, sizeof(unsigned int) * outNumWords);
+        cudaMemsetAsync(d_Temp, 0, sizeof(unsigned int) * outNumWords);
+        cudaMemsetAsync(d_MaskR, 0, sizeof(unsigned int) * outNumWords);
+
+        unsigned int val2 = 2;
+        cudaMemcpyAsync(d_T, &val2, sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+        int bit2E1 = 2 * E + 1;
+        int word2E1 = bit2E1 / 32;
+        int rem2E1 = bit2E1 % 32;
+        unsigned int* h_mask = new unsigned int[outNumWords]();
+        for (int i = 0; i < word2E1; i++) h_mask[i] = 0xFFFFFFFF;
+        if (rem2E1 > 0) h_mask[word2E1] = (1U << rem2E1) - 1;
+        cudaMemcpyAsync(d_MaskR, h_mask, sizeof(unsigned int) * outNumWords, cudaMemcpyHostToDevice);
+
+        auto SquareAndReduce = [&]() {
+            GpuBigInt_Square(d_T, numWords + 1);
+            for (int pass = 0; pass < 3; pass++) {
+                GpuBigInt_ShiftRight(d_T, bit2E1, d_Q, outNumWords);
+                GpuBigInt_BitwiseAnd(d_T, d_MaskR, d_R, outNumWords);
+                cudaMemcpyAsync(d_T, d_R, sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToDevice);
+                GpuBigInt_ShiftLeft(d_Q, E, d_Temp, outNumWords);
+                GpuBigInt_Add(d_T, d_Temp, d_T, outNumWords);
+                GpuBigInt_Sub(d_T, d_Q, d_T, outNumWords);
+                GpuBigInt_ShiftLeft(d_Q, 1, d_Temp, outNumWords);
+                GpuBigInt_Sub(d_T, d_Temp, d_T, outNumWords);
+                GpuBigInt_ShiftLeft(d_Q, 3, d_Temp, outNumWords);
+                GpuBigInt_Sub(d_T, d_Temp, d_T, outNumWords);
+            }
+        };
+
+        auto MultiplyBy2AndReduce = [&]() {
+            GpuBigInt_ShiftLeft(d_T, 1, d_T, outNumWords);
+            GpuBigInt_ShiftRight(d_T, bit2E1, d_Q, outNumWords);
+            GpuBigInt_BitwiseAnd(d_T, d_MaskR, d_R, outNumWords);
+            cudaMemcpyAsync(d_T, d_R, sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToDevice);
+            GpuBigInt_ShiftLeft(d_Q, E, d_Temp, outNumWords);
+            GpuBigInt_Add(d_T, d_Temp, d_T, outNumWords);
+            GpuBigInt_Sub(d_T, d_Q, d_T, outNumWords);
+            GpuBigInt_ShiftLeft(d_Q, 1, d_Temp, outNumWords);
+            GpuBigInt_Sub(d_T, d_Temp, d_T, outNumWords);
+            GpuBigInt_ShiftLeft(d_Q, 3, d_Temp, outNumWords);
+            GpuBigInt_Sub(d_T, d_Temp, d_T, outNumWords);
+        };
+
+        for (int i = 0; i < E; i++) {
+            SquareAndReduce();
+            MultiplyBy2AndReduce();
+        }
+
+        for (int i = 0; i < E - 4; i++) {
+            SquareAndReduce();
+        }
+
+        SquareAndReduce(); MultiplyBy2AndReduce(); // bit 3 (1)
+        SquareAndReduce(); // bit 2 (0)
+        SquareAndReduce(); MultiplyBy2AndReduce(); // bit 1 (1)
+        SquareAndReduce(); // bit 0 (0)
+
         cudaDeviceSynchronize();
+        cudaMemcpy(out_data, d_T, sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToHost);
+
+        cudaFree(d_T);
+        cudaFree(d_Q);
+        cudaFree(d_R);
+        cudaFree(d_Temp);
+        cudaFree(d_MaskR);
+        delete[] h_mask;
+
+        return true;
+    }
+
+    EXPORT_API bool GpuBigInt_ExecuteIL(int E, const char* ilScript, unsigned int* out_data) {
+        int numWords = (2 * E + 1 + 31) / 32;
+        int outNumWords = numWords * 2 + 16; // Add generous padding
+        
+        // Re-initialize for this exact E to ensure optimal FFT sizes
+        if (!InitializeGPU_Internal(E)) return false;
+
+        std::unordered_map<std::string, unsigned int*> vars;
+        cudaMalloc((void**)&vars["T"], sizeof(unsigned int) * outNumWords * 2);
+        cudaMalloc((void**)&vars["Q"], sizeof(unsigned int) * outNumWords * 2);
+        cudaMalloc((void**)&vars["R"], sizeof(unsigned int) * outNumWords * 2);
+        cudaMalloc((void**)&vars["Temp"], sizeof(unsigned int) * outNumWords * 2);
+        cudaMalloc((void**)&vars["MaskR"], sizeof(unsigned int) * outNumWords * 2);
+        cudaMalloc((void**)&vars["N"], sizeof(unsigned int) * outNumWords * 2);
+
+        for (auto& pair : vars) {
+            cudaMemsetAsync(pair.second, 0, sizeof(unsigned int) * outNumWords * 2);
+        }
+
+        unsigned int val2 = 2;
+        cudaMemcpy(vars["T"], &val2, sizeof(unsigned int), cudaMemcpyHostToDevice);
+
+        int bit2E1 = 2 * E + 1;
+        int word2E1 = bit2E1 / 32;
+        int rem2E1 = bit2E1 % 32;
+        unsigned int* h_mask = new unsigned int[outNumWords]();
+        for (int i = 0; i < word2E1; i++) h_mask[i] = 0xFFFFFFFF;
+        if (rem2E1 > 0) h_mask[word2E1] = (1U << rem2E1) - 1;
+        cudaMemcpy(vars["MaskR"], h_mask, sizeof(unsigned int) * outNumWords, cudaMemcpyHostToDevice);
+
+        unsigned int* h_N = new unsigned int[outNumWords]();
+        h_N[0] = 11;
+        h_N[word2E1] |= (1U << rem2E1);
+        int wordE = E / 32;
+        int remE = E % 32;
+        // Sub 2^E
+        unsigned int borrow = 0;
+        unsigned int subVal = (1U << remE);
+        for (int i = 0; i < outNumWords; i++) {
+            unsigned int s = (i == wordE) ? subVal : 0;
+            long long diff = (long long)h_N[i] - s - borrow;
+            if (diff < 0) {
+                diff += 0x100000000LL;
+                borrow = 1;
+            } else {
+                borrow = 0;
+            }
+            h_N[i] = (unsigned int)diff;
+        }
+        cudaMemcpy(vars["N"], h_N, sizeof(unsigned int) * outNumWords, cudaMemcpyHostToDevice);
+        delete[] h_N;
+
+        cudaStream_t stream;
+        cudaStreamCreate(&stream);
+
+        // Define the block to interpret one snippet of IL
+        auto runSnippet = [&](const std::string& snippet) {
+            std::istringstream stream_il(snippet);
+            std::string line;
+            while (std::getline(stream_il, line)) {
+                if (line.empty() || line[0] == '\r') continue;
+                std::istringstream iss(line);
+                std::string op;
+                iss >> op;
+                if (op == "SQUARE") {
+                    std::string dest, src; iss >> dest >> src;
+                    GpuBigInt_Square(vars[src], numWords + 1, stream);
+                }
+                else if (op == "SHR") {
+                    std::string dest, src; int bits; iss >> dest >> src >> bits;
+                    GpuBigInt_ShiftRight(vars[src], bits, vars[dest], outNumWords, stream);
+                }
+                else if (op == "SHL") {
+                    std::string dest, src; int bits; iss >> dest >> src >> bits;
+                    GpuBigInt_ShiftLeft(vars[src], bits, vars[dest], outNumWords, stream);
+                }
+                else if (op == "AND") {
+                    std::string dest, src, mask; iss >> dest >> src >> mask;
+                    GpuBigInt_BitwiseAnd(vars[src], vars[mask], vars[dest], outNumWords, stream);
+                }
+                else if (op == "ADD") {
+                    std::string dest, a, b; iss >> dest >> a >> b;
+                    GpuBigInt_Add(vars[a], vars[b], vars[dest], outNumWords, stream);
+                }
+                else if (op == "SUB") {
+                    std::string dest, a, b; iss >> dest >> a >> b;
+                    GpuBigInt_Sub(vars[a], vars[b], vars[dest], outNumWords, stream);
+                }
+                else if (op == "COPY") {
+                    std::string dest, src; iss >> dest >> src;
+                    cudaMemcpyAsync(vars[dest], vars[src], sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToDevice, stream);
+                }
+                cudaError_t err = cudaGetLastError();
+                if (err != cudaSuccess) {
+                    printf("Error after %s: %s\n", op.c_str(), cudaGetErrorString(err));
+                }
+            }
+        };
+
+        // Parse full IL into segments
+        std::vector<std::string> segments; // 0=Before Loop, 1=LoopE, 2=LoopEMinus4, 3=After Loop
+        std::istringstream full_il(ilScript);
+        std::string line;
+        std::string currentSegment = "";
+        while (std::getline(full_il, line)) {
+            if (line.find("LOOP_E") != std::string::npos && line.find("END") == std::string::npos && line.find("MINUS") == std::string::npos) {
+                segments.push_back(currentSegment); currentSegment = "";
+            }
+            else if (line.find("LOOP_E_MINUS_4") != std::string::npos) {
+                segments.push_back(currentSegment); currentSegment = "";
+            }
+            else if (line.find("END_LOOP") != std::string::npos) {
+                segments.push_back(currentSegment); currentSegment = "";
+            }
+            else {
+                currentSegment += line + "\n";
+            }
+        }
+        segments.push_back(currentSegment);
+        // segments layout:
+        // segments[0]: init
+        // segments[1]: loopE body
+        // segments[2]: inter
+        // segments[3]: loopE-4 body
+        // segments[4]: post
+
+        auto captureAndExecute = [&](const std::string& snippet, int iterations) {
+            if (iterations <= 0) return;
+            cudaGraph_t graph;
+            
+            cufftSetStream(planR2C, stream);
+            cufftSetStream(planC2R, stream);
+            
+            cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+            
+            runSnippet(snippet);
+            
+            cudaError_t errEnd = cudaStreamEndCapture(stream, &graph);
+            if (errEnd != cudaSuccess) {
+                printf("cudaStreamEndCapture failed: %s\n", cudaGetErrorString(errEnd));
+                return;
+            }
+            cudaGraphExec_t instance;
+            cudaError_t errInst = cudaGraphInstantiate(&instance, graph, NULL, NULL, 0);
+            if (errInst != cudaSuccess) {
+                printf("cudaGraphInstantiate failed: %s\n", cudaGetErrorString(errInst));
+                return;
+            }
+            
+            for (int i = 0; i < iterations; i++) {
+                cudaError_t glErr = cudaGraphLaunch(instance, stream);
+                if (glErr != cudaSuccess) {
+                    printf("cudaGraphLaunch failed at iter %d: %s\n", i, cudaGetErrorString(glErr));
+                }
+            }
+            cudaError_t syncErr = cudaStreamSynchronize(stream);
+            if (syncErr != cudaSuccess) {
+                printf("cudaStreamSynchronize failed: %s\n", cudaGetErrorString(syncErr));
+            }
+            cudaGraphExecDestroy(instance);
+            cudaGraphDestroy(graph);
+        };
+        
+        runSnippet(segments[0]); // Run inline (no loop)
+        cudaStreamSynchronize(stream);
+        
+        captureAndExecute(segments[1], E); // LOOP_E
+        
+        runSnippet(segments[2]);
+        cudaStreamSynchronize(stream);
+        
+        captureAndExecute(segments[3], E - 4); // LOOP_E_MINUS_4
+        
+        runSnippet(segments[4]);
+        cudaStreamSynchronize(stream);
+
+        cudaMemcpy(out_data, vars["T"], sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToHost);
+
+        for (auto& pair : vars) {
+            cudaFree(pair.second);
+        }
+        delete[] h_mask;
+        cudaStreamDestroy(stream);
+        cufftSetStream(planR2C, 0);
+        cufftSetStream(planC2R, 0);
+
         return true;
     }
 }
