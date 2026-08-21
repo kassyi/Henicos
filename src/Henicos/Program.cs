@@ -15,7 +15,7 @@ class Program
             return;
         }
 
-        using var tee = new TeeTextWriter(Console.Out, "benchmark_results.txt");
+        using var tee = new TeeTextWriter(Console.Out, "benchmark_results.log");
         Console.SetOut(tee);
 
         Console.WriteLine("Henicos Project - Ultra Optimized Modular Reduction Benchmark");

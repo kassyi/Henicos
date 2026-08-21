@@ -49,7 +49,7 @@ Thumbs.db
 #tmp
 scratch/
 tmp/
-benchmark_results.txt
+*.log
 
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
