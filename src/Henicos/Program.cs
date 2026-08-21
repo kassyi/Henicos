@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Numerics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using System.IO;
+using System.Text;
 
 namespace Henicos;
 
@@ -45,6 +47,48 @@ public class FermatBenchmark
     }
 }
 
+class TeeTextWriter : TextWriter
+{
+    private TextWriter _originalOut;
+    private StreamWriter _fileOut;
+
+    public TeeTextWriter(TextWriter originalOut, string filePath)
+    {
+        _originalOut = originalOut;
+        _fileOut = new StreamWriter(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read));
+        _fileOut.AutoFlush = true;
+    }
+
+    public override Encoding Encoding => _originalOut.Encoding;
+
+    public override void Write(char value)
+    {
+        _originalOut.Write(value);
+        _fileOut.Write(value);
+    }
+
+    public override void Write(string? value)
+    {
+        _originalOut.Write(value);
+        _fileOut.Write(value);
+    }
+
+    public override void WriteLine(string? value)
+    {
+        _originalOut.WriteLine(value);
+        _fileOut.WriteLine(value);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _fileOut.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+}
+
 class Program
 {
     static void Main(string[] args)
@@ -54,6 +98,9 @@ class Program
             var summary = BenchmarkRunner.Run<FermatBenchmark>();
             return;
         }
+
+        using var tee = new TeeTextWriter(Console.Out, "benchmark_results.txt");
+        Console.SetOut(tee);
 
         Console.WriteLine("Henicos Project - Ultra Optimized Modular Reduction Benchmark");
         Console.WriteLine("---------------------------------------------------------------");
@@ -116,154 +163,6 @@ class Program
         swCustom3.Stop();
         double hybridMsPerIter = (double)swCustom3.ElapsedMilliseconds / hybridIters;
 
-        // 5. Full Hybrid CPU-GPU Pipeline (V4)
-        BigInteger custom4Result = BigInteger.Zero;
-        Stopwatch swCustom4 = new Stopwatch();
-        /* V4 disabled to prevent GPU crash 
-        bool gpuInit = CudaInterop.InitializeGPU(E);
-        if (gpuInit)
-        {
-            // Initial state: X = 2
-            uint[] hybridData = new uint[numWords * 4];
-            hybridData[0] = 2;
-            
-            // Precalculate N for normalization
-            uint[] n_arr = new uint[numWords];
-            int bit2E1 = 2 * E + 1;
-            int rem2E1 = bit2E1 % 32;
-            int word2E1 = bit2E1 / 32;
-            if (word2E1 < numWords) n_arr[word2E1] |= (1U << rem2E1);
-            n_arr[0] += 11;
-
-            int bitE = E;
-            int remE = bitE % 32;
-            int wordE = bitE / 32;
-            uint borrow = 0;
-            for (int i = 0; i < numWords; i++)
-            {
-                uint sub = (i == wordE) ? (1U << remE) : 0;
-                long temp = (long)n_arr[i] - sub - borrow;
-                if (temp < 0) { borrow = 1; temp += 0x100000000; } else { borrow = 0; }
-                n_arr[i] = (uint)temp;
-            }
-
-            swCustom4.Start();
-            
-            // Define a helper action for one step of "Square and Reduce"
-            Action SquareAndReduce = () =>
-            {
-                CudaInterop.MultiplySquare(hybridData, numWords);
-                HybridReduction.ReduceInPlace(hybridData, E, numWords);
-                
-                // Normalization
-                if ((hybridData[numWords - 1] & 0x80000000) != 0)
-                {
-                    uint carry = 0;
-                    for (int j = 0; j < numWords; j++)
-                    {
-                        ulong sum = (ulong)hybridData[j] + n_arr[j] + carry;
-                        hybridData[j] = (uint)sum;
-                        carry = (uint)(sum >> 32);
-                    }
-                }
-                for (int loop = 0; loop < 2; loop++)
-                {
-                    bool geq = false;
-                    for (int j = numWords - 1; j >= 0; j--)
-                    {
-                        if (hybridData[j] > n_arr[j]) { geq = true; break; }
-                        if (hybridData[j] < n_arr[j]) { break; }
-                        if (j == 0) geq = true;
-                    }
-                    if (geq)
-                    {
-                        uint borrowSub = 0;
-                        for (int j = 0; j < numWords; j++)
-                        {
-                            long temp = (long)hybridData[j] - n_arr[j] - borrowSub;
-                            if (temp < 0) { borrowSub = 1; temp += 0x100000000; } else { borrowSub = 0; }
-                            hybridData[j] = (uint)temp;
-                        }
-                    }
-                }
-                hybridData[numWords - 1] &= (rem2E1 == 0) ? 0xFFFFFFFFU : ((1U << rem2E1) - 1);
-            };
-
-            // Define a helper action for "Multiply by 2 and Reduce"
-            Action MultiplyBy2AndReduce = () =>
-            {
-                uint carry = 0;
-                for (int j = 0; j < numWords; j++)
-                {
-                    uint next_carry = hybridData[j] >> 31;
-                    hybridData[j] = (hybridData[j] << 1) | carry;
-                    carry = next_carry;
-                }
-                
-                // Normalization (sub N if >= N)
-                for (int loop = 0; loop < 2; loop++)
-                {
-                    bool geq = false;
-                    for (int j = numWords - 1; j >= 0; j--)
-                    {
-                        if (hybridData[j] > n_arr[j]) { geq = true; break; }
-                        if (hybridData[j] < n_arr[j]) { break; }
-                        if (j == 0) geq = true;
-                    }
-                    if (geq || carry > 0)
-                    {
-                        uint borrowSub = 0;
-                        for (int j = 0; j < numWords; j++)
-                        {
-                            long temp = (long)hybridData[j] - n_arr[j] - borrowSub;
-                            if (temp < 0) { borrowSub = 1; temp += 0x100000000; } else { borrowSub = 0; }
-                            hybridData[j] = (uint)temp;
-                        }
-                        carry = 0; // consumed
-                    }
-                }
-                hybridData[numWords - 1] &= (rem2E1 == 0) ? 0xFFFFFFFFU : ((1U << rem2E1) - 1);
-            };
-
-            // Fermat PRP Loop (N-1)
-            for (int i = 0; i < E - 4; i++) { SquareAndReduce(); }
-            SquareAndReduce(); MultiplyBy2AndReduce();
-            SquareAndReduce();
-            SquareAndReduce(); MultiplyBy2AndReduce();
-            SquareAndReduce();
-            
-            // Final adjustments
-            // (n_arr is already calculated above)
-
-            for (int k = 0; k < 10; k++)
-            {
-                bool geq = false;
-                for (int j = numWords - 1; j >= 0; j--)
-                {
-                    if (hybridData[j] > n_arr[j]) { geq = true; break; }
-                    if (hybridData[j] < n_arr[j]) { break; }
-                    if (j == 0) geq = true;
-                }
-                if (!geq) break;
-                
-                uint borrowFinal = 0;
-                for (int j = 0; j < numWords; j++)
-                {
-                    long temp = (long)hybridData[j] - n_arr[j] - borrowFinal;
-                    if (temp < 0) { borrowFinal = 1; temp += 0x100000000; } else { borrowFinal = 0; }
-                    hybridData[j] = (uint)temp;
-                }
-            }
-            swCustom4.Stop();
-            CudaInterop.CleanupGPU();
-            
-            // Convert to BigInteger for comparison
-            byte[] resBytes = new byte[numWords * 4 + 1];
-            Buffer.BlockCopy(hybridData, 0, resBytes, 0, numWords * 4);
-            resBytes[numWords * 4] = 0; // force positive
-            custom4Result = new BigInteger(resBytes);
-        }
-        */
 
         // 6. Phase A Generic GPU API (V5 replacement)
         BigInteger custom5Result = BigInteger.Zero;
@@ -282,7 +181,6 @@ class Program
         // Check Correctness
         bool pass1 = (standardResult == custom1Result);
         bool pass2 = (standardResult == custom2Result);
-        bool pass4 = (standardResult == custom4Result);
         bool pass5 = (standardResult == custom5Result);
 
         // Calculate M-Digits/sec
@@ -292,7 +190,6 @@ class Program
         double stdMDps = (swStandard.ElapsedMilliseconds > 0) ? (totalDigits / swStandard.ElapsedMilliseconds) / 1000.0 : 0;
         double v1MDps = (swCustom1.ElapsedMilliseconds > 0) ? (totalDigits / swCustom1.ElapsedMilliseconds) / 1000.0 : 0;
         double v2MDps = (swCustom2.ElapsedMilliseconds > 0) ? (totalDigits / swCustom2.ElapsedMilliseconds) / 1000.0 : 0;
-        double v4MDps = (swCustom4.ElapsedMilliseconds > 0) ? (totalDigits / swCustom4.ElapsedMilliseconds) / 1000.0 : 0;
         double v5MDps = (swCustom5.ElapsedMilliseconds > 0) ? (totalDigits / swCustom5.ElapsedMilliseconds) / 1000.0 : 0;
         
         // Output Times
@@ -300,10 +197,9 @@ class Program
         Console.WriteLine($"  - Custom Reduction V1 : {swCustom1.ElapsedMilliseconds,5} ms | {v1MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom1.ElapsedMilliseconds):F2}x)");
         Console.WriteLine($"  - Ultra Optimized V2  : {swCustom2.ElapsedMilliseconds,5} ms | {v2MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom2.ElapsedMilliseconds):F2}x vs Std)");
         Console.WriteLine($"  - Hybrid CPU V3 (Reduc): {hybridMsPerIter,6:F3} ms/iter (Extremely Fast Parallel Chunking)");
-        Console.WriteLine($"  - FULL Hybrid CPU/GPU V4: {swCustom4.ElapsedMilliseconds,5} ms | {v4MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom4.ElapsedMilliseconds):F2}x vs Std)");
         Console.WriteLine($"  - ZERO Overhead VRAM V5: {swCustom5.ElapsedMilliseconds,5} ms | {v5MDps,6:F2} M-Digit/s ({(double)swStandard.ElapsedMilliseconds / Math.Max(1, swCustom5.ElapsedMilliseconds):F2}x vs Std)");
 
-        if (!pass1 || !pass2 || (E <= 10000 && !hybridPass) || !pass4 || !pass5)
+        if (!pass1 || !pass2 || (E <= 10000 && !hybridPass) || !pass5)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("  [FAIL] Mismatch detected!");
@@ -311,7 +207,6 @@ class Program
             Console.WriteLine($"    Custom V1: {custom1Result} (Pass: {pass1})");
             Console.WriteLine($"    Custom V2: {custom2Result} (Pass: {pass2})");
             Console.WriteLine($"    Hybrid V3: Pass={hybridPass}");
-            Console.WriteLine($"    Hybrid V4: {custom4Result} (Pass: {pass4})");
             Console.WriteLine($"    Zero V5  : {custom5Result} (Pass: {pass5})");
             Console.ResetColor();
             return;

@@ -10,8 +10,11 @@ public static class CudaInterop
     [DllImport(DllName, EntryPoint = "GpuBigInt_Init", CallingConvention = CallingConvention.Cdecl)]
     public static extern bool InitializeGPU(int maxWords);
 
-    [DllImport(DllName, EntryPoint = "GpuBigInt_Square", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool MultiplySquare(uint[] data, int numWords);
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool GpuBigInt_FermatPRPTest(int E, uint[] resultData);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool GpuBigInt_ExecuteIL(int E, string ilScript, uint[] resultData);
 
     [DllImport(DllName, EntryPoint = "GpuBigInt_Cleanup", CallingConvention = CallingConvention.Cdecl)]
     public static extern void CleanupGPU();
