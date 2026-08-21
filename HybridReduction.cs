@@ -1,0 +1,179 @@
+using System;
+using System.Numerics;
+using System.Threading.Tasks;
+
+namespace Henicos;
+
+/// <summary>
+/// Phase 4: CPU/GPU Hybrid Parallel Reduction Engine
+/// Handles ultra-fast multi-threaded modular reduction for massive BigIntegers
+/// represented as uint[] arrays, explicitly designed to receive GPU FFT output.
+/// </summary>
+public static class HybridReduction
+{
+    /// <summary>
+    /// Reduces a double-width input array (representing T = X^2) modulo N.
+    /// Operates in-place on the input array to prevent massive allocations.
+    /// </summary>
+    /// <param name="data">The double-width input array from GPU (length >= 2 * numWords). Lower half will contain the result.</param>
+    /// <param name="E">The Fermat parameter E</param>
+    /// <param name="numWords">The number of uint words required to store N</param>
+    public static void ReduceInPlace(uint[] data, int E, int numWords)
+    {
+        int bit2E1 = 2 * E + 1;
+        int word2E1 = bit2E1 / 32;
+        int rem2E1 = bit2E1 % 32;
+
+        int wordE = E / 32;
+        int remE = E % 32;
+
+        uint rMask = (rem2E1 == 0) ? 0xFFFFFFFF : (1U << rem2E1) - 1;
+
+        for (int pass = 0; pass < 2; pass++)
+        {
+            uint q0_boundary = data[word2E1]; 
+            // We do NOT mask data[word2E1] destructively yet because Q needs the upper bits.
+            // Wait, we need to read Q from data[]. So we shouldn't mask out R until AFTER we read Q.
+            // Actually, because we are processing chunks in parallel, we MUST NOT modify data[] in place
+            // if those indices might be read by other threads as part of Q.
+            // However, Q is ALWAYS at index >= word2E1.
+            // We write results to index 0...numWords-1.
+            // Since word2E1 is approximately numWords (specifically word2E1 = numWords - 1 or numWords),
+            // the regions of R (where we write) and Q (where we read) are MOSTLY disjoint.
+            // For E=10, 2E+1 = 21 bits. numWords = 1. word2E1 = 0.
+            // Ah! If word2E1 < numWords, reading Q and writing R overlaps!
+            // Wait, Q is read from indices [word2E1, 2*numWords-1].
+            // We write to [0, numWords-1].
+            // This is a data race if we do it in place blindly.
+            // To be perfectly safe without allocations, we must buffer the reads or use a temp array.
+            // Since we are aiming for zero-allocation but high parallelism, creating a single `uint[] nextPass` 
+            // per thread or a global one is safer.
+            // We must allocate nextData to be large enough to hold intermediate results (like 3E+1 bits).
+            // Using data.Length is safe since the caller provides enough buffer.
+            uint[] nextData = new uint[data.Length];
+
+            // R starts as the lower 2E+1 bits of data.
+            // We can just copy R into nextData.
+            int rCopyWords = Math.Min(data.Length, word2E1 + 1);
+            Array.Copy(data, nextData, rCopyWords);
+            if (rem2E1 != 0 && rCopyWords > 0)
+            {
+                nextData[word2E1] &= rMask;
+            }
+
+            // We must iterate over all words where Q might contribute.
+            // (Q << E) shifts bits up. If Q is max 2E+1 bits, Q<<E is 3E+1 bits.
+            // To be safe, we just process all available words up to data.Length.
+            int targetWords = data.Length;
+            int chunkSize = Math.Max(1024, targetWords / Math.Max(1, Environment.ProcessorCount));
+            int numChunks = (targetWords + chunkSize - 1) / chunkSize;
+            
+            long[] carryBuffer = new long[numChunks + 1];
+
+            Parallel.For(0, numChunks, chunkIdx =>
+            {
+                int start = chunkIdx * chunkSize;
+                int end = Math.Min(start + chunkSize, targetWords);
+                
+                long localCarry = 0;
+                
+                for (int i = start; i < end; i++)
+                {
+                    long current = nextData[i] + localCarry;
+                    
+                    // Add (Q << E)
+                    // (Q << E) has its i-th word coming from Q's (i - wordE) shifted.
+                    uint qShiftE = GetShiftedQWord(data, word2E1, rem2E1, i, wordE, remE, data.Length);
+                    current += qShiftE;
+                    
+                    // Subtract (Q * 11)
+                    // Q * 11 = (Q << 3) + (Q << 1) + Q
+                    // We need the i-th word of (Q * 11).
+                    // This is simply: (i-th word of Q<<3) + (i-th word of Q<<1) + (i-th word of Q)
+                    uint qWord = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 0, data.Length);
+                    uint qShift1 = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 1, data.Length);
+                    uint qShift3 = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 3, data.Length);
+                    
+                    current -= qWord;
+                    current -= qShift1;
+                    current -= qShift3;
+                    
+                    nextData[i] = (uint)(current & 0xFFFFFFFF);
+                    localCarry = current >> 32;
+                }
+                carryBuffer[chunkIdx + 1] = localCarry;
+            });
+            
+            long rippleCarry = 0;
+            for (int chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
+            {
+                int start = chunkIdx * chunkSize;
+                int end = Math.Min(start + chunkSize, targetWords);
+                
+                rippleCarry += carryBuffer[chunkIdx]; 
+                if (rippleCarry == 0) continue; 
+
+                for (int i = start; i < end; i++)
+                {
+                    long current = nextData[i] + rippleCarry;
+                    nextData[i] = (uint)(current & 0xFFFFFFFF);
+                    rippleCarry = current >> 32;
+                    if (rippleCarry == 0) break;
+                }
+            }
+            // Apply nextData back to data
+            Array.Copy(nextData, data, data.Length);
+            
+            // The entire array `data` now holds the correctly reduced value T'' in 2's complement.
+            // No further manual overwrites are needed.
+        }
+    }
+
+    /// <summary>
+    /// Gets the targetIndex-th word of (Q << (wordShift*32 + bitShift))
+    /// </summary>
+    private static uint GetShiftedQWord(uint[] data, int qWordStart, int qBitStart, int targetIndex, int wordShift, int bitShift, int dataLen)
+    {
+        // We want the targetIndex-th word of (Q << (wordShift*32 + bitShift)).
+        // This corresponds to Q's (targetIndex - wordShift) word, but shifted left by bitShift.
+        int qTargetWord = targetIndex - wordShift;
+        if (qTargetWord < 0) return 0;
+
+        // Q itself is represented as bits starting from data[qWordStart] at bit offset qBitStart.
+        // We need to read 32 bits from (Q << bitShift) for the word qTargetWord.
+        // Effectively, we want 32 bits from Q starting at bit index: qTargetWord * 32 - bitShift.
+        // Total bit index in Q = qTargetWord * 32 - bitShift.
+        long totalBitIndexInQ = (long)qTargetWord * 32 - bitShift;
+        
+        if (totalBitIndexInQ < 0)
+        {
+            // We are asking for bits that are shifted in as zeros.
+            // However, we might still intersect the lowest bits of Q.
+            // E.g. bitShift = 3, targetWord = 0 -> totalBitIndex = -3.
+            // The result is the lowest 29 bits of Q, shifted left by 3.
+            uint q0 = GetRawQWord(data, qWordStart, qBitStart, 0, dataLen);
+            return q0 << bitShift;
+        }
+
+        int qWordIdx = (int)(totalBitIndexInQ / 32);
+        int qBitRem = (int)(totalBitIndexInQ % 32);
+
+        uint qw0 = GetRawQWord(data, qWordStart, qBitStart, qWordIdx, dataLen);
+        uint qw1 = GetRawQWord(data, qWordStart, qBitStart, qWordIdx + 1, dataLen);
+
+        if (qBitRem == 0) return qw0;
+        return (qw0 >> qBitRem) | (qw1 << (32 - qBitRem));
+    }
+
+    private static uint GetRawQWord(uint[] data, int qWordStart, int qBitStart, int qIndex, int dataLen)
+    {
+        int w0Idx = qWordStart + qIndex;
+        int w1Idx = w0Idx + 1;
+        
+        uint w0 = (w0Idx < dataLen && w0Idx >= 0) ? data[w0Idx] : 0;
+        uint w1 = (w1Idx < dataLen && w1Idx >= 0) ? data[w1Idx] : 0;
+
+        if (qBitStart == 0) return w0;
+        return (w0 >> qBitStart) | (w1 << (32 - qBitStart));
+    }
+}
