@@ -1,93 +1,9 @@
 using System;
 using System.Diagnostics;
 using System.Numerics;
-using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using System.IO;
-using System.Text;
 
 namespace Henicos;
-
-[MarkdownExporterAttribute.GitHub]
-public class FermatBenchmark
-{
-    [Params(10, 50, 100, 500, 1000, 2000, 5000, 10000)]
-    public int E { get; set; }
-
-    private BigInteger X;
-    private BigInteger N;
-    private BigInteger a;
-    private BigInteger exponent;
-
-    [GlobalSetup]
-    public void Setup()
-    {
-        X = BigInteger.One << E;
-        N = (BigInteger.One << (2 * E + 1)) - X + 11;
-        a = 2;
-        exponent = N - 1;
-    }
-
-    [Benchmark(Baseline = true)]
-    public BigInteger StandardBigInteger()
-    {
-        return BigInteger.ModPow(a, exponent, N);
-    }
-
-    [Benchmark]
-    public BigInteger CustomReductionV1()
-    {
-        return ModularReduction.ModPowCustom(a, exponent, E, N);
-    }
-
-    [Benchmark]
-    public BigInteger UltraOptimizedV2()
-    {
-        return ModularReduction2.FermatPRPTest(E, N);
-    }
-}
-
-class TeeTextWriter : TextWriter
-{
-    private TextWriter _originalOut;
-    private StreamWriter _fileOut;
-
-    public TeeTextWriter(TextWriter originalOut, string filePath)
-    {
-        _originalOut = originalOut;
-        _fileOut = new StreamWriter(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read));
-        _fileOut.AutoFlush = true;
-    }
-
-    public override Encoding Encoding => _originalOut.Encoding;
-
-    public override void Write(char value)
-    {
-        _originalOut.Write(value);
-        _fileOut.Write(value);
-    }
-
-    public override void Write(string? value)
-    {
-        _originalOut.Write(value);
-        _fileOut.Write(value);
-    }
-
-    public override void WriteLine(string? value)
-    {
-        _originalOut.WriteLine(value);
-        _fileOut.WriteLine(value);
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _fileOut.Dispose();
-        }
-        base.Dispose(disposing);
-    }
-}
 
 class Program
 {
@@ -107,9 +23,9 @@ class Program
         Console.WriteLine("To run formal benchmarks, pass '--benchmark' argument.");
         Console.WriteLine("---------------------------------------------------------------");
 
-        // 比較対象の E
-        // E=1,2,3 は最適化版でも制約に引っかかるか、静的展開の固定ビットの前提 (E >= 4) が崩れるため除外
+        // Benchmark target E values
         int[] testEs = { 10, 50, 100, 500, 1000, 2000, 5000, 10000 };
+        
         foreach (var E in testEs)
         {
             RunBenchmarkForE(E);
@@ -164,7 +80,7 @@ class Program
         double hybridMsPerIter = (double)swCustom3.ElapsedMilliseconds / hybridIters;
 
 
-        // 6. Phase A Generic GPU API (V5 replacement)
+        // 5. Phase A Generic GPU API (V5 replacement)
         BigInteger custom5Result = BigInteger.Zero;
         Stopwatch swCustom5 = new Stopwatch();
         try
@@ -219,32 +135,26 @@ class Program
 
     static bool TestHybridReduction(int E, BigInteger N)
     {
-        // Generate a large number T = X^2 where X ~ 2^2E
         BigInteger T = BigInteger.Pow(BigInteger.One << (2 * E), 2) + 123456789;
         BigInteger expected = T % N;
         if (expected < 0) expected += N;
 
         int numWords = (2 * E + 1 + 31) / 32;
         byte[] tBytes = T.ToByteArray();
-        uint[] data = new uint[numWords * 4]; // Give plenty of room for Q
+        uint[] data = new uint[numWords * 4]; 
         Buffer.BlockCopy(tBytes, 0, data, 0, tBytes.Length);
 
         HybridReduction.ReduceInPlace(data, E, numWords);
 
-        // Extract result (which is now properly stored across the entire data array)
         uint highestWord = data[data.Length - 1];
         byte[] resBytes = new byte[data.Length * 4 + 1];
         Buffer.BlockCopy(data, 0, resBytes, 0, data.Length * 4);
         
-        // Strictly check the most significant bit (MSB) of the very last word to determine the sign
         bool isNegative = (highestWord & 0x80000000) != 0;
         resBytes[data.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
         
         BigInteger actual = new BigInteger(resBytes);
         
-        // Final normalization loop (similar to what V2 does)
-        // Since we did 2 passes, it is very close to [0, N-1], but might be slightly negative
-        // or slightly above N.
         actual %= N;
         if (actual < 0) actual += N;
 
