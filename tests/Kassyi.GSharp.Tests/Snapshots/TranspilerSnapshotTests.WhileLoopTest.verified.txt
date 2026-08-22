@@ -1,0 +1,5 @@
+﻿loc_0 = 0;
+while ((loc_0 < len)){
+    array[loc_0] = (array[loc_0] * 2);
+    loc_0 = (loc_0 + 1);
+}

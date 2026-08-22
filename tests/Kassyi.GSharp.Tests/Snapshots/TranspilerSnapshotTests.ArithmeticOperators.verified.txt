@@ -1,0 +1,10 @@
+﻿result[0] = (a + b);
+result[1] = (a - b);
+result[2] = (a * b);
+result[3] = (a / b);
+result[4] = (a % b);
+result[5] = (a & b);
+result[6] = (a | b);
+result[7] = (a ^ b);
+result[8] = (a << 5);
+result[9] = (a >> 5);

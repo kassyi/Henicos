@@ -22,6 +22,9 @@ namespace Kassyi.GSharp.Tests
                 TranspilerRunner.Run(typeof(DummyMath).Assembly);
                 
                 var output = sw.ToString();
+                originalOut.WriteLine("--- TEST OUTPUT ---");
+                originalOut.WriteLine(output);
+                originalOut.WriteLine("-------------------");
                 Assert.Contains("=== JIT Transpiler E2E Test ===", output);
                 Assert.Contains("=== Generated CUDA Code ===", output);
             }
