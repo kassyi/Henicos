@@ -138,7 +138,7 @@ public class AstBuilder
         }
         else
         {
-            for (int i = 0; i < depth; i++)
+            for (var i = 0; i < depth; i++)
             {
                 stack.Push(new VariableNode($"__stack_{i}"));
             }
@@ -217,7 +217,7 @@ public class AstBuilder
 
         var elements = stack.ToArray();
         stack.Clear();
-        for (int i = elements.Length - 1; i >= 0; i--)
+        for (var i = elements.Length - 1; i >= 0; i--)
         {
             var tempVar = new VariableNode($"__stack_{i}");
             if (elements[elements.Length - 1 - i] is not VariableNode vn || vn.Name != tempVar.Name)
