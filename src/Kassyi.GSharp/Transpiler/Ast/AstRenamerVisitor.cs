@@ -1,6 +1,11 @@
 namespace Kassyi.GSharp.Transpiler.Ast;
 
-public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar, AstContext targetContext, AstContext? sourceContext = null)
+public class AstRenamerVisitor(
+    string prefix,
+    string endLabel,
+    string? returnVar,
+    AstContext targetContext,
+    AstContext? sourceContext = null)
     : IAstVisitor
 {
     private readonly List<IAstNode> _newStatements = [];
@@ -14,6 +19,7 @@ public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar
         {
             targetContext.LocalVariables[newName] = type;
         }
+
         return newName;
     }
 
@@ -97,6 +103,12 @@ public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar
     public void Visit(IfGotoNode node) =>
         _newStatements.Add(new IfGotoNode(VisitAndGet(node.Condition), prefix + node.TrueTargetName));
 
+    public void Visit(SwitchNode node)
+    {
+        var newLabels = node.CaseLabels.Select(label => prefix + label).ToArray();
+        _newStatements.Add(new SwitchNode(VisitAndGet(node.Value), newLabels));
+    }
+
     public void Visit(ReturnNode node)
     {
         if (node.Value != null && returnVar != null)
@@ -114,13 +126,21 @@ public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar
     public void Visit(DereferenceAssignNode node) =>
         _newStatements.Add(new DereferenceAssignNode(VisitAndGet(node.Pointer), VisitAndGet(node.Value)));
 
-    public void Visit(ExpressionStatementNode node) => _newStatements.Add(new ExpressionStatementNode(VisitAndGet(node.Expression)));
+    public void Visit(ExpressionStatementNode node) =>
+        _newStatements.Add(new ExpressionStatementNode(VisitAndGet(node.Expression)));
 
-    public void Visit(FieldAccessNode node) => _newStatements.Add(new FieldAccessNode(VisitAndGet(node.Target), node.FieldName, node.IsPointer));
+    public void Visit(FieldAccessNode node) => _newStatements.Add(node with { Target = VisitAndGet(node.Target) });
 
-    public void Visit(FieldAssignNode node) => _newStatements.Add(new FieldAssignNode(VisitAndGet(node.Target), node.FieldName, VisitAndGet(node.Value), node.IsPointer));
+    public void Visit(FieldAssignNode node) =>
+        _newStatements.Add(node with { Target = VisitAndGet(node.Target), Value = VisitAndGet(node.Value) });
 
-    public void Visit(FieldAddressNode node) => _newStatements.Add(new FieldAddressNode(VisitAndGet(node.Target), node.FieldName, node.IsPointer));
+    public void Visit(FieldAddressNode node) => _newStatements.Add(node with { Target = VisitAndGet(node.Target) });
+
+    public void Visit(IntrinsicNode node)
+    {
+        var newArgs = node.Arguments.Select(VisitAndGet).ToList();
+        _newStatements.Add(node with { Arguments = newArgs });
+    }
 
     private IAstNode VisitAndGet(IAstNode node)
     {

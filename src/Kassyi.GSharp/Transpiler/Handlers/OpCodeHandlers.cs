@@ -162,14 +162,22 @@ public class ArrayHandler : IOpCodeHandler
     private static readonly Code[] s_codes =
     [
         Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_I8, Code.Ldelem_R4, Code.Ldelem_R8, Code.Ldelem_Ref, Code.Ldelem_Any,
-        Code.Stelem_I4, Code.Stelem_I8, Code.Stelem_R4, Code.Stelem_R8, Code.Stelem_Ref, Code.Stelem_Any
+        Code.Stelem_I4, Code.Stelem_I8, Code.Stelem_R4, Code.Stelem_R8, Code.Stelem_Ref, Code.Stelem_Any,
+        Code.Ldelema
     ];
 
     public IEnumerable<Code> SupportedOpCodes => s_codes;
 
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
-        if (ins.OpCode.Code.ToString().StartsWith("Ldelem"))
+        var codeStr = ins.OpCode.Code.ToString();
+        if (codeStr.StartsWith("Ldelema"))
+        {
+            var index = stack.Pop();
+            var arrayRef = stack.Pop();
+            stack.Push(new AddressOfNode(new ArrayAccessNode((arrayRef as VariableNode)?.Name ?? "unknown_array", index)));
+        }
+        else if (codeStr.StartsWith("Ldelem"))
         {
             var index = stack.Pop();
             var arrayRef = stack.Pop();
@@ -182,6 +190,16 @@ public class ArrayHandler : IOpCodeHandler
             var arrayRef = stack.Pop();
             stmts.Add(new ArrayAssignNode((arrayRef as VariableNode)?.Name ?? "unknown_array", index, value));
         }
+    }
+}
+
+public class PopHandler : IOpCodeHandler
+{
+    public IEnumerable<Code> SupportedOpCodes => [Code.Pop];
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+    {
+        stmts.Add(new ExpressionStatementNode(stack.Pop()));
     }
 }
 
@@ -250,6 +268,35 @@ public class MethodCallHandler : IOpCodeHandler
             }
 
             return;
+        }
+
+        if (methodRef.DeclaringType.FullName == "Kassyi.GSharp.Cuda")
+        {
+            var name = methodRef.Name;
+            if (name.StartsWith("get_"))
+            {
+                name = name.Substring(4);
+            }
+
+            if (Enum.TryParse<IntrinsicType>(name, out var intrinsic))
+            {
+                var args = new IAstNode[methodRef.Parameters.Count];
+                for (var i = args.Length - 1; i >= 0; i--)
+                {
+                    args[i] = stack.Pop();
+                }
+
+                var intrinsicNode = new IntrinsicNode(intrinsic, args);
+                if (methodRef.ReturnType.FullName == "System.Void")
+                {
+                    stmts.Add(new ExpressionStatementNode(intrinsicNode));
+                }
+                else
+                {
+                    stack.Push(intrinsicNode);
+                }
+                return;
+            }
         }
 
         if (!isGpuKernel)
@@ -322,6 +369,23 @@ public class BranchHandler : IOpCodeHandler
         }
 
         stmts.Add(new IfGotoNode(condition, $"IL_{target.Offset:x4}"));
+    }
+}
+
+public class SwitchHandler : IOpCodeHandler
+{
+    public IEnumerable<Code> SupportedOpCodes => [Code.Switch];
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+    {
+        var value = stack.Pop();
+        var targets = (Instruction[])ins.Operand;
+        var labels = new string[targets.Length];
+        for (int i = 0; i < targets.Length; i++)
+        {
+            labels[i] = $"IL_{targets[i].Offset:x4}";
+        }
+        stmts.Add(new SwitchNode(value, labels));
     }
 }
 

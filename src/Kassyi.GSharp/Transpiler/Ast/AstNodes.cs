@@ -21,6 +21,7 @@ public interface IAstVisitor
     void Visit(LabelNode node);
     void Visit(GotoNode node);
     void Visit(IfGotoNode node);
+    void Visit(SwitchNode node);
     void Visit(ReturnNode node);
     void Visit(AddressOfNode node);
     void Visit(DereferenceNode node);
@@ -29,6 +30,7 @@ public interface IAstVisitor
     void Visit(FieldAccessNode node);
     void Visit(FieldAssignNode node);
     void Visit(FieldAddressNode node);
+    void Visit(IntrinsicNode node);
 }
 
 public record BlockNode(IReadOnlyList<IAstNode> Statements) : IAstNode
@@ -108,6 +110,11 @@ public record IfGotoNode(IAstNode Condition, string TrueTargetName) : IAstNode
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }
 
+public record SwitchNode(IAstNode Value, string[] CaseLabels) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
 public record ReturnNode(IAstNode? Value) : IAstNode
 {
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
@@ -144,6 +151,20 @@ public record FieldAssignNode(IAstNode Target, string FieldName, IAstNode Value,
 }
 
 public record FieldAddressNode(IAstNode Target, string FieldName, bool IsPointer) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+public enum IntrinsicType
+{
+    ThreadIdxX, ThreadIdxY, ThreadIdxZ,
+    BlockIdxX, BlockIdxY, BlockIdxZ,
+    BlockDimX, BlockDimY, BlockDimZ,
+    GridDimX, GridDimY, GridDimZ,
+    SyncThreads,
+    AtomicAdd
+}
+
+public record IntrinsicNode(IntrinsicType Intrinsic, IReadOnlyList<IAstNode> Arguments) : IAstNode
 {
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }

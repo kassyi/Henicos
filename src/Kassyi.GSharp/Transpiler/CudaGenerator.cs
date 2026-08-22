@@ -1,9 +1,33 @@
+using System.Security.Cryptography;
+using Kassyi.GSharp.Transpiler.Pipeline;
 
 namespace Kassyi.GSharp.Transpiler;
 
 public class CudaGenerator : IAstVisitor
 {
     private readonly CodeWriter _writer = new();
+
+    /// <summary>
+    /// Pipeline Step 3: Generates CUDA C++ code from the AST model.
+    /// </summary>
+    public static TranspiledSource Generate(AstContext context)
+    {
+        if (context.Metadata == null || context.RootBlock == null)
+        {
+            throw new ArgumentException("AstContext is incomplete. Must have Metadata and RootBlock.");
+        }
+
+        var generator = new CudaGenerator();
+        var cudaCode = generator.Generate(context.RootBlock, context.LocalVariables);
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(cudaCode));
+        var hashString = Convert.ToHexStringLower(hashBytes);
+
+        return new TranspiledSource(
+            Metadata: context.Metadata,
+            CudaCode: cudaCode,
+            SourceHash: hashString
+        );
+    }
 
     public string Generate(BlockNode root, Dictionary<string, TypeReference>? variables)
     {
@@ -73,13 +97,15 @@ public class CudaGenerator : IAstVisitor
             Visit(node.TrueBlock);
         }
 
-        if (node.FalseBlock != null)
+        if (node.FalseBlock == null)
         {
-            _writer.Write("else");
-            using (_writer.Block())
-            {
-                Visit(node.FalseBlock);
-            }
+            return;
+        }
+
+        _writer.Write("else");
+        using (_writer.Block())
+        {
+            Visit(node.FalseBlock);
         }
     }
 
@@ -185,6 +211,23 @@ public class CudaGenerator : IAstVisitor
         _writer.WriteLine($" goto {node.TrueTargetName};");
     }
 
+    public void Visit(SwitchNode node)
+    {
+        _writer.Write("switch ");
+        using (_writer.Parens())
+        {
+            node.Value.Accept(this);
+        }
+
+        using (_writer.Block())
+        {
+            for (var i = 0; i < node.CaseLabels.Length; i++)
+            {
+                _writer.WriteLine($"case {i}: goto {node.CaseLabels[i]};");
+            }
+        }
+    }
+
     public void Visit(ReturnNode node)
     {
         if (node.Value != null)
@@ -261,6 +304,46 @@ public class CudaGenerator : IAstVisitor
             node.Target.Accept(this);
             _writer.Write(node.IsPointer ? "->" : ".");
             _writer.Write(node.FieldName);
+        }
+    }
+
+    public void Visit(IntrinsicNode node)
+    {
+        switch (node.Intrinsic)
+        {
+            case IntrinsicType.ThreadIdxX: _writer.Write("threadIdx.x"); break;
+            case IntrinsicType.ThreadIdxY: _writer.Write("threadIdx.y"); break;
+            case IntrinsicType.ThreadIdxZ: _writer.Write("threadIdx.z"); break;
+
+            case IntrinsicType.BlockIdxX: _writer.Write("blockIdx.x"); break;
+            case IntrinsicType.BlockIdxY: _writer.Write("blockIdx.y"); break;
+            case IntrinsicType.BlockIdxZ: _writer.Write("blockIdx.z"); break;
+
+            case IntrinsicType.BlockDimX: _writer.Write("blockDim.x"); break;
+            case IntrinsicType.BlockDimY: _writer.Write("blockDim.y"); break;
+            case IntrinsicType.BlockDimZ: _writer.Write("blockDim.z"); break;
+
+            case IntrinsicType.GridDimX: _writer.Write("gridDim.x"); break;
+            case IntrinsicType.GridDimY: _writer.Write("gridDim.y"); break;
+            case IntrinsicType.GridDimZ: _writer.Write("gridDim.z"); break;
+
+            case IntrinsicType.SyncThreads:
+                _writer.Write("__syncthreads()");
+                break;
+
+            case IntrinsicType.AtomicAdd:
+                _writer.Write("atomicAdd");
+                using (_writer.Parens())
+                {
+                    node.Arguments[0].Accept(this);
+                    _writer.Write(", ");
+                    node.Arguments[1].Accept(this);
+                }
+
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(node.Intrinsic), node.Intrinsic, null);
         }
     }
 }
