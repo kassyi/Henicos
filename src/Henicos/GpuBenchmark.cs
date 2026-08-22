@@ -11,12 +11,18 @@ namespace Henicos;
 
 public class DummyKernelDef
 {
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static uint HelperScale(uint x, uint scale)
+    {
+        return x * scale;
+    }
+
     [GpuKernel]
     public static void VectorScale(uint[] T, int length)
     {
         for (int i = 0; i < length; i++)
         {
-            T[i] = T[i] * 2;
+            T[i] = HelperScale(T[i], 2);
         }
     }
 }
