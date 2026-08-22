@@ -11,10 +11,14 @@ namespace Kassyi.GSharp.Transpiler.Ast
     {
         void Visit(BlockNode node);
         void Visit(ForLoopNode node);
+        void Visit(WhileNode node);
+        void Visit(IfNode node);
         void Visit(AssignNode node);
+        void Visit(ArrayAssignNode node);
         void Visit(BinaryOpNode node);
         void Visit(LiteralNode node);
         void Visit(VariableNode node);
+        void Visit(ArrayAccessNode node);
         void Visit(MethodCallNode node);
     }
 
@@ -28,7 +32,22 @@ namespace Kassyi.GSharp.Transpiler.Ast
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
+    public record WhileNode(IAstNode Condition, BlockNode Body) : IAstNode
+    {
+        public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+    }
+
+    public record IfNode(IAstNode Condition, BlockNode TrueBlock, BlockNode FalseBlock) : IAstNode
+    {
+        public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+    }
+
     public record AssignNode(string TargetName, IAstNode Value) : IAstNode
+    {
+        public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+    }
+
+    public record ArrayAssignNode(string ArrayName, IAstNode Index, IAstNode Value) : IAstNode
     {
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
@@ -51,6 +70,11 @@ namespace Kassyi.GSharp.Transpiler.Ast
     }
 
     public record VariableNode(string Name) : IAstNode
+    {
+        public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+    }
+
+    public record ArrayAccessNode(string ArrayName, IAstNode Index) : IAstNode
     {
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
