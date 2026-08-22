@@ -1,18 +1,21 @@
+
 namespace Kassyi.GSharp.Transpiler;
 
 public class CudaGenerator : IAstVisitor
 {
     private readonly CodeWriter _writer = new();
 
-    public string Generate(BlockNode root, HashSet<string>? variables)
+    public string Generate(BlockNode root, Dictionary<string, TypeReference>? variables)
     {
         if (variables != null)
         {
-            foreach (var v in variables)
+            foreach (var kvp in variables)
             {
-                _writer.WriteLine($"int {v};");
+                var typeStr = CudaTypeMapper.MapType(kvp.Value);
+                _writer.WriteLine($"{typeStr} {kvp.Key};");
             }
         }
+
         Visit(root);
         return _writer.ToString();
     }
@@ -22,12 +25,6 @@ public class CudaGenerator : IAstVisitor
         foreach (var stmt in node.Statements)
         {
             stmt.Accept(this);
-
-            if (stmt is not (AssignNode or ArrayAssignNode or ForLoopNode or WhileNode or IfNode or BlockNode
-                or LabelNode or GotoNode or IfGotoNode or ReturnNode))
-            {
-                _writer.WriteLine(";");
-            }
         }
     }
 
@@ -100,30 +97,32 @@ public class CudaGenerator : IAstVisitor
         {
             node.Index.Accept(this);
         }
+
         _writer.Write(" = ");
         node.Value.Accept(this);
         _writer.WriteLine(";");
     }
 
-    private static readonly FrozenDictionary<BinaryOperator, string> s_binOpStrs = new Dictionary<BinaryOperator, string>
-    {
-        { BinaryOperator.Add, " + " },
-        { BinaryOperator.Sub, " - " },
-        { BinaryOperator.Mul, " * " },
-        { BinaryOperator.Div, " / " },
-        { BinaryOperator.Mod, " % " },
-        { BinaryOperator.BitAnd, " & " },
-        { BinaryOperator.BitOr, " | " },
-        { BinaryOperator.BitXor, " ^ " },
-        { BinaryOperator.ShiftLeft, " << " },
-        { BinaryOperator.ShiftRight, " >> " },
-        { BinaryOperator.Eq, " == " },
-        { BinaryOperator.Neq, " != " },
-        { BinaryOperator.Lt, " < " },
-        { BinaryOperator.Lte, " <= " },
-        { BinaryOperator.Gt, " > " },
-        { BinaryOperator.Gte, " >= " }
-    }.ToFrozenDictionary();
+    private static readonly FrozenDictionary<BinaryOperator, string> s_binOpStrs =
+        new Dictionary<BinaryOperator, string>
+        {
+            { BinaryOperator.Add, " + " },
+            { BinaryOperator.Sub, " - " },
+            { BinaryOperator.Mul, " * " },
+            { BinaryOperator.Div, " / " },
+            { BinaryOperator.Mod, " % " },
+            { BinaryOperator.BitAnd, " & " },
+            { BinaryOperator.BitOr, " | " },
+            { BinaryOperator.BitXor, " ^ " },
+            { BinaryOperator.ShiftLeft, " << " },
+            { BinaryOperator.ShiftRight, " >> " },
+            { BinaryOperator.Eq, " == " },
+            { BinaryOperator.Neq, " != " },
+            { BinaryOperator.Lt, " < " },
+            { BinaryOperator.Lte, " <= " },
+            { BinaryOperator.Gt, " > " },
+            { BinaryOperator.Gte, " >= " }
+        }.ToFrozenDictionary();
 
     public void Visit(BinaryOpNode node)
     {
@@ -165,6 +164,7 @@ public class CudaGenerator : IAstVisitor
                 {
                     _writer.Write(", ");
                 }
+
                 node.Arguments[i].Accept(this);
             }
         }
@@ -181,6 +181,7 @@ public class CudaGenerator : IAstVisitor
         {
             node.Condition.Accept(this);
         }
+
         _writer.WriteLine($" goto {node.TrueTargetName};");
     }
 
@@ -195,6 +196,71 @@ public class CudaGenerator : IAstVisitor
         else
         {
             _writer.WriteLine("return;");
+        }
+    }
+
+    public void Visit(AddressOfNode node)
+    {
+        _writer.Write("&");
+        using (_writer.Parens())
+        {
+            node.Target.Accept(this);
+        }
+    }
+
+    public void Visit(DereferenceNode node)
+    {
+        _writer.Write("*");
+        using (_writer.Parens())
+        {
+            node.Pointer.Accept(this);
+        }
+    }
+
+    public void Visit(DereferenceAssignNode node)
+    {
+        _writer.Write("*");
+        using (_writer.Parens())
+        {
+            node.Pointer.Accept(this);
+        }
+
+        _writer.Write(" = ");
+        node.Value.Accept(this);
+        _writer.WriteLine(";");
+    }
+
+    public void Visit(ExpressionStatementNode node)
+    {
+        node.Expression.Accept(this);
+        _writer.WriteLine(";");
+    }
+
+    public void Visit(FieldAccessNode node)
+    {
+        node.Target.Accept(this);
+        _writer.Write(node.IsPointer ? "->" : ".");
+        _writer.Write(node.FieldName);
+    }
+
+    public void Visit(FieldAssignNode node)
+    {
+        node.Target.Accept(this);
+        _writer.Write(node.IsPointer ? "->" : ".");
+        _writer.Write(node.FieldName);
+        _writer.Write(" = ");
+        node.Value.Accept(this);
+        _writer.WriteLine(";");
+    }
+
+    public void Visit(FieldAddressNode node)
+    {
+        _writer.Write("&");
+        using (_writer.Parens())
+        {
+            node.Target.Accept(this);
+            _writer.Write(node.IsPointer ? "->" : ".");
+            _writer.Write(node.FieldName);
         }
     }
 }

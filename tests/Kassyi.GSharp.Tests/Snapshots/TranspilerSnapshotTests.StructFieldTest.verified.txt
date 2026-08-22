@@ -1,0 +1,4 @@
+﻿v->X = (v->X * scale);
+v->Y = (v->Y * scale);
+v->Z = (v->Z * scale);
+return;

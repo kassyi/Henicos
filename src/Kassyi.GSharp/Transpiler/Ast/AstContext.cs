@@ -3,8 +3,8 @@ namespace Kassyi.GSharp.Transpiler.Ast;
 public class AstContext(AstBuilder builder)
 {
     public AstBuilder Builder { get; } = builder;
-    public HashSet<string> LocalVariables { get; } = [];
-    
+    public Dictionary<string, TypeReference> LocalVariables { get; } = new();
+
     private int _inlineCounter;
 
     public string GetNextInlinePrefix()

@@ -2,10 +2,7 @@ namespace Kassyi.GSharp.Transpiler.Handlers;
 
 public interface IOpCodeHandler
 {
-    IEnumerable<Code> SupportedOpCodes
-    {
-        get;
-    }
+    IEnumerable<Code> SupportedOpCodes { get; }
     void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method);
 }
 
@@ -18,7 +15,11 @@ public static class OpCodeHelper
             return paramDef.Name;
         }
 
-        var index = ins.OpCode.Code switch { Code.Ldarg_0 => 0, Code.Ldarg_1 => 1, Code.Ldarg_2 => 2, Code.Ldarg_3 => 3, _ => Convert.ToInt32(ins.Operand) };
+        var index = ins.OpCode.Code switch
+        {
+            Code.Ldarg_0 => 0, Code.Ldarg_1 => 1, Code.Ldarg_2 => 2, Code.Ldarg_3 => 3,
+            _ => Convert.ToInt32(ins.Operand)
+        };
         return method.Parameters[index].Name;
     }
 
@@ -38,18 +39,28 @@ public static class OpCodeHelper
 
 public class LoadArgumentHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = [Code.Ldarg_0, Code.Ldarg_1, Code.Ldarg_2, Code.Ldarg_3, Code.Ldarg_S, Code.Ldarg
+    private static readonly Code[] s_codes =
+    [
+        Code.Ldarg_0, Code.Ldarg_1, Code.Ldarg_2, Code.Ldarg_3, Code.Ldarg_S, Code.Ldarg
     ];
+
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
         => stack.Push(new VariableNode(OpCodeHelper.GetArgName(ins, method)));
 }
 
 public class LoadConstantHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = [Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3, Code.Ldc_I4_4, Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1
+    private static readonly Code[] s_codes =
+    [
+        Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3, Code.Ldc_I4_4,
+        Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1,
+        Code.Ldc_I8, Code.Ldc_R4, Code.Ldc_R8
     ];
+
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
         var value = ins.OpCode.Code switch
@@ -64,17 +75,30 @@ public class LoadConstantHandler : IOpCodeHandler
             Code.Ldc_I4_6 => 6,
             Code.Ldc_I4_7 => 7,
             Code.Ldc_I4_8 => 8,
-            _ => Convert.ToInt32(ins.Operand)
+            _ => ins.Operand
         };
-        stack.Push(new LiteralNode(value));
+
+        var strValue = value switch
+        {
+            float f => f.ToString("0.0#######") + "f",
+            double d => d.ToString("0.0###############"),
+            _ => value.ToString()!
+        };
+
+        stack.Push(new LiteralNode(strValue));
     }
 }
 
 public class BinaryOpHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = [Code.Add, Code.Sub, Code.Mul, Code.Div, Code.Rem, Code.And, Code.Or, Code.Xor, Code.Shl, Code.Shr, Code.Shr_Un, Code.Ceq, Code.Cgt, Code.Clt
+    private static readonly Code[] s_codes =
+    [
+        Code.Add, Code.Sub, Code.Mul, Code.Div, Code.Rem, Code.And, Code.Or, Code.Xor, Code.Shl, Code.Shr, Code.Shr_Un,
+        Code.Ceq, Code.Cgt, Code.Clt
     ];
+
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
         var op = ins.OpCode.Code switch
@@ -104,15 +128,21 @@ public class StoreArgumentHandler : IOpCodeHandler
 {
     private static readonly Code[] s_codes = [Code.Starg, Code.Starg_S];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
         => stmts.Add(new AssignNode(OpCodeHelper.GetArgName(ins, method), stack.Pop()));
 }
 
 public class LocalVariableHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = [Code.Stloc_0, Code.Stloc_1, Code.Stloc_2, Code.Stloc_3, Code.Stloc_S, Code.Stloc, Code.Ldloc_0, Code.Ldloc_1, Code.Ldloc_2, Code.Ldloc_3, Code.Ldloc_S, Code.Ldloc
+    private static readonly Code[] s_codes =
+    [
+        Code.Stloc_0, Code.Stloc_1, Code.Stloc_2, Code.Stloc_3, Code.Stloc_S, Code.Stloc, Code.Ldloc_0, Code.Ldloc_1,
+        Code.Ldloc_2, Code.Ldloc_3, Code.Ldloc_S, Code.Ldloc
     ];
+
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
         var name = "loc_" + OpCodeHelper.GetLocIndex(ins);
@@ -129,9 +159,14 @@ public class LocalVariableHandler : IOpCodeHandler
 
 public class ArrayHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = [Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_Ref, Code.Stelem_I4, Code.Stelem_Ref
+    private static readonly Code[] s_codes =
+    [
+        Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_I8, Code.Ldelem_R4, Code.Ldelem_R8, Code.Ldelem_Ref, Code.Ldelem_Any,
+        Code.Stelem_I4, Code.Stelem_I8, Code.Stelem_R4, Code.Stelem_R8, Code.Stelem_Ref, Code.Stelem_Any
     ];
+
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
         if (ins.OpCode.Code.ToString().StartsWith("Ldelem"))
@@ -155,16 +190,19 @@ public class MethodCallHandler : IOpCodeHandler
     private static readonly Code[] s_codes = [Code.Call];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
 
-    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod) => throw new NotSupportedException("Use the overload with AstContext");
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod) =>
+        throw new NotSupportedException("Use the overload with AstContext");
 
-    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod, AstContext ctx)
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod,
+        AstContext ctx)
     {
         var methodRef = (MethodReference)ins.Operand;
         var resolvedMethod = methodRef.Resolve();
-        
-        bool isGpuKernel = resolvedMethod?.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute") == true;
-        
-        bool isInline = false;
+
+        var isGpuKernel = resolvedMethod?.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute") ==
+                          true;
+
+        var isInline = false;
         if (resolvedMethod != null)
         {
             isInline = (resolvedMethod.ImplAttributes & Mono.Cecil.MethodImplAttributes.AggressiveInlining) != 0;
@@ -179,28 +217,29 @@ public class MethodCallHandler : IOpCodeHandler
                 args[i] = stack.Pop();
             }
 
-            string prefix = ctx.GetNextInlinePrefix();
-            string endLabel = prefix + "end";
+            var prefix = ctx.GetNextInlinePrefix();
+            var endLabel = prefix + "end";
             string? returnVar = null;
 
             if (methodRef.ReturnType.FullName != "System.Void")
             {
                 returnVar = prefix + "ret";
-                ctx.LocalVariables.Add(returnVar);
+                ctx.LocalVariables.Add(returnVar, methodRef.ReturnType);
             }
 
             // Bind arguments
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
             {
                 var argName = prefix + resolvedMethod.Parameters[i].Name;
-                ctx.LocalVariables.Add(argName);
+                ctx.LocalVariables.Add(argName, resolvedMethod.Parameters[i].ParameterType);
                 stmts.Add(new AssignNode(argName, args[i]));
             }
 
-            var inlinedBlock = ctx.Builder.ParseMethod(resolvedMethod, ctx);
-            var renamer = new AstRenamerVisitor(prefix, endLabel, returnVar, ctx);
+            var inlineCtx = new AstContext(ctx.Builder);
+            var inlinedBlock = ctx.Builder.ParseMethod(resolvedMethod, inlineCtx);
+            var renamer = new AstRenamerVisitor(prefix, endLabel, returnVar, ctx, inlineCtx);
             renamer.Visit(inlinedBlock);
-            
+
             // Add transformed statements
             stmts.Add(new BlockNode(renamer.TransformedStatements.ToList()));
             stmts.Add(new LabelNode(endLabel));
@@ -209,12 +248,14 @@ public class MethodCallHandler : IOpCodeHandler
             {
                 stack.Push(new VariableNode(returnVar));
             }
+
             return;
         }
 
         if (!isGpuKernel)
         {
-            throw new NotSupportedException($"Unsupported method call: {methodRef.FullName}. Only [GpuKernel] or [MethodImpl(AggressiveInlining)] methods are allowed.");
+            throw new NotSupportedException(
+                $"Unsupported method call: {methodRef.FullName}. Only [GpuKernel] or [MethodImpl(AggressiveInlining)] methods are allowed.");
         }
 
         var kernelArgs = new IAstNode[methodRef.Parameters.Count];
@@ -226,7 +267,7 @@ public class MethodCallHandler : IOpCodeHandler
         var callNode = new MethodCallNode(methodRef.Name, kernelArgs);
         if (methodRef.ReturnType.FullName == "System.Void")
         {
-            stmts.Add(callNode);
+            stmts.Add(new ExpressionStatementNode(callNode));
         }
         else
         {
@@ -237,9 +278,16 @@ public class MethodCallHandler : IOpCodeHandler
 
 public class BranchHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = [Code.Br, Code.Br_S, Code.Leave, Code.Leave_S, Code.Blt, Code.Blt_S, Code.Blt_Un, Code.Blt_Un_S, Code.Brtrue, Code.Brtrue_S, Code.Brfalse, Code.Brfalse_S, Code.Beq, Code.Beq_S, Code.Ble, Code.Ble_S, Code.Ble_Un, Code.Ble_Un_S, Code.Bgt, Code.Bgt_S, Code.Bgt_Un, Code.Bgt_Un_S, Code.Bge, Code.Bge_S, Code.Bge_Un, Code.Bge_Un_S, Code.Bne_Un, Code.Bne_Un_S
+    private static readonly Code[] s_codes =
+    [
+        Code.Br, Code.Br_S, Code.Leave, Code.Leave_S, Code.Blt, Code.Blt_S, Code.Blt_Un, Code.Blt_Un_S, Code.Brtrue,
+        Code.Brtrue_S, Code.Brfalse, Code.Brfalse_S, Code.Beq, Code.Beq_S, Code.Ble, Code.Ble_S, Code.Ble_Un,
+        Code.Ble_Un_S, Code.Bgt, Code.Bgt_S, Code.Bgt_Un, Code.Bgt_Un_S, Code.Bge, Code.Bge_S, Code.Bge_Un,
+        Code.Bge_Un_S, Code.Bne_Un, Code.Bne_Un_S
     ];
+
     public IEnumerable<Code> SupportedOpCodes => s_codes;
+
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
         var target = (Instruction)ins.Operand;
@@ -250,7 +298,9 @@ public class BranchHandler : IOpCodeHandler
         }
 
         var condition = stack.Pop();
-        if (ins.OpCode.Code is Code.Brtrue or Code.Brtrue_S) { }
+        if (ins.OpCode.Code is Code.Brtrue or Code.Brtrue_S)
+        {
+        }
         else if (ins.OpCode.Code is Code.Brfalse or Code.Brfalse_S)
         {
             condition = new BinaryOpNode(BinaryOperator.Eq, condition, new LiteralNode(0));
@@ -270,6 +320,94 @@ public class BranchHandler : IOpCodeHandler
             };
             condition = new BinaryOpNode(op, left, condition);
         }
+
         stmts.Add(new IfGotoNode(condition, $"IL_{target.Offset:x4}"));
+    }
+}
+
+public class LoadAddressHandler : IOpCodeHandler
+{
+    private static readonly Code[] s_codes = [Code.Ldarga, Code.Ldarga_S, Code.Ldloca, Code.Ldloca_S];
+    public IEnumerable<Code> SupportedOpCodes => s_codes;
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+    {
+        string name;
+        if (ins.OpCode.Code is Code.Ldarga or Code.Ldarga_S)
+        {
+            name = OpCodeHelper.GetArgName(ins, method);
+        }
+        else
+        {
+            name = "loc_" + OpCodeHelper.GetLocIndex(ins);
+        }
+
+        stack.Push(new AddressOfNode(new VariableNode(name)));
+    }
+}
+
+public class IndirectLoadHandler : IOpCodeHandler
+{
+    private static readonly Code[] s_codes =
+    [
+        Code.Ldind_I1, Code.Ldind_U1, Code.Ldind_I2, Code.Ldind_U2,
+        Code.Ldind_I4, Code.Ldind_U4, Code.Ldind_I8, Code.Ldind_R4,
+        Code.Ldind_R8, Code.Ldind_I, Code.Ldind_Ref
+    ];
+
+    public IEnumerable<Code> SupportedOpCodes => s_codes;
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+    {
+        var ptr = stack.Pop();
+        stack.Push(new DereferenceNode(ptr));
+    }
+}
+
+public class IndirectStoreHandler : IOpCodeHandler
+{
+    private static readonly Code[] s_codes =
+    [
+        Code.Stind_I1, Code.Stind_I2, Code.Stind_I4, Code.Stind_I8,
+        Code.Stind_R4, Code.Stind_R8, Code.Stind_I, Code.Stind_Ref
+    ];
+
+    public IEnumerable<Code> SupportedOpCodes => s_codes;
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+    {
+        var value = stack.Pop();
+        var ptr = stack.Pop();
+        stmts.Add(new DereferenceAssignNode(ptr, value));
+    }
+}
+
+public class FieldAccessHandler : IOpCodeHandler
+{
+    private static readonly Code[] s_codes = [Code.Ldfld, Code.Stfld, Code.Ldflda];
+    public IEnumerable<Code> SupportedOpCodes => s_codes;
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+    {
+        var fieldRef = (FieldReference)ins.Operand;
+        var fieldName = fieldRef.Name;
+        bool isPointer = true; // Assume access via pointer for ref parameters and localloc
+
+        if (ins.OpCode.Code == Code.Ldfld)
+        {
+            var target = stack.Pop();
+            stack.Push(new FieldAccessNode(target, fieldName, isPointer));
+        }
+        else if (ins.OpCode.Code == Code.Ldflda)
+        {
+            var target = stack.Pop();
+            stack.Push(new FieldAddressNode(target, fieldName, isPointer));
+        }
+        else if (ins.OpCode.Code == Code.Stfld)
+        {
+            var value = stack.Pop();
+            var target = stack.Pop();
+            stmts.Add(new FieldAssignNode(target, fieldName, value, isPointer));
+        }
     }
 }

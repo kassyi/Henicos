@@ -16,7 +16,11 @@ public class AstBuilder
             new LocalVariableHandler(),
             new ArrayHandler(),
             new MethodCallHandler(),
-            new BranchHandler()
+            new BranchHandler(),
+            new LoadAddressHandler(),
+            new IndirectLoadHandler(),
+            new IndirectStoreHandler(),
+            new FieldAccessHandler()
         };
 
         foreach (var handler in handlers)
@@ -26,6 +30,7 @@ public class AstBuilder
                 dict[code] = handler;
             }
         }
+
         s_handlers = dict.ToFrozenDictionary();
     }
 
@@ -42,7 +47,7 @@ public class AstBuilder
 
         foreach (var v in method.Body.Variables)
         {
-            context.LocalVariables.Add($"loc_{v.Index}");
+            context.LocalVariables.Add($"loc_{v.Index}", v.VariableType);
         }
 
 
@@ -64,14 +69,11 @@ public class AstBuilder
                     foreach (var t in targets)
 
                     {
-
                         branchTargets.Add(t.Offset);
-
                     }
 
                     break;
                 }
-
             }
         }
 
@@ -82,17 +84,16 @@ public class AstBuilder
                 statements.Add(new LabelNode($"IL_{ins.Offset:x4}"));
             }
 
-            if (ins.OpCode.Code == Code.Nop)
+            switch (ins.OpCode.Code)
             {
-                continue;
-            }
+                case Code.Nop:
+                    continue;
+                case Code.Ret:
+                    statements.Add(method.ReturnType.FullName != "System.Void"
+                        ? new ReturnNode(stack.Pop())
+                        : new ReturnNode(null));
 
-            if (ins.OpCode.Code == Code.Ret)
-            {
-                statements.Add(method.ReturnType.FullName != "System.Void"
-                    ? new ReturnNode(stack.Pop())
-                    : new ReturnNode(null));
-                continue;
+                    continue;
             }
 
             if (s_handlers.TryGetValue(ins.OpCode.Code, out var handler))
@@ -110,7 +111,6 @@ public class AstBuilder
             {
                 throw new NotSupportedException($"Unsupported IL OpCode: {ins.OpCode}");
             }
-
         }
 
         return new BlockNode(statements);

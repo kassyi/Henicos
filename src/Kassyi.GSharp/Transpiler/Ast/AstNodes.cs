@@ -22,6 +22,13 @@ public interface IAstVisitor
     void Visit(GotoNode node);
     void Visit(IfGotoNode node);
     void Visit(ReturnNode node);
+    void Visit(AddressOfNode node);
+    void Visit(DereferenceNode node);
+    void Visit(DereferenceAssignNode node);
+    void Visit(ExpressionStatementNode node);
+    void Visit(FieldAccessNode node);
+    void Visit(FieldAssignNode node);
+    void Visit(FieldAddressNode node);
 }
 
 public record BlockNode(IReadOnlyList<IAstNode> Statements) : IAstNode
@@ -102,6 +109,41 @@ public record IfGotoNode(IAstNode Condition, string TrueTargetName) : IAstNode
 }
 
 public record ReturnNode(IAstNode? Value) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record AddressOfNode(IAstNode Target) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record DereferenceNode(IAstNode Pointer) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record DereferenceAssignNode(IAstNode Pointer, IAstNode Value) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record ExpressionStatementNode(IAstNode Expression) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record FieldAccessNode(IAstNode Target, string FieldName, bool IsPointer) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record FieldAssignNode(IAstNode Target, string FieldName, IAstNode Value, bool IsPointer) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record FieldAddressNode(IAstNode Target, string FieldName, bool IsPointer) : IAstNode
 {
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }

@@ -1,4 +1,4 @@
-﻿int loc_0;
+﻿bool loc_0;
 loc_0 = (data[0] > threshold);
 if ((loc_0 == 0)) goto IL_0013;
 data[1] = 1;

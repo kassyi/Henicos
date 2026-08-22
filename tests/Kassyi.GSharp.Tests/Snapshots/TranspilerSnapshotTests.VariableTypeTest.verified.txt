@@ -1,0 +1,8 @@
+﻿unsigned long long loc_0;
+float loc_1;
+double loc_2;
+loc_0 = 1234567890123456789;
+loc_1 = 3.14f;
+loc_2 = 2.718;
+data[0] = loc_0;
+return;

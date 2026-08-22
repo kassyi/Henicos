@@ -159,5 +159,34 @@ namespace Kassyi.GSharp.Tests
             }
             data[0] = 1;
         }
+
+        [GpuKernel]
+        public static void PointerTest(int[] data, ref int a, out int b)
+        {
+            b = a * 2;
+            data[0] = b;
+        }
+
+        [GpuKernel]
+        public static void VariableTypeTest(ulong[] data)
+        {
+            ulong x = 1234567890123456789;
+            float y = 3.14f;
+            double z = 2.718;
+            data[0] = x;
+        }
+
+        public struct Vector3
+        {
+            public float X, Y, Z;
+        }
+
+        [GpuKernel]
+        public static void StructFieldTest(ref Vector3 v, float scale)
+        {
+            v.X = v.X * scale;
+            v.Y = v.Y * scale;
+            v.Z = v.Z * scale;
+        }
     }
 }

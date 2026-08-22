@@ -1,4 +1,4 @@
-﻿int loc_0;
+﻿bool loc_0;
 loc_0 = (flag == 0);
 if ((loc_0 == 0)) goto IL_0010;
 data[0] = -1;

@@ -1,16 +1,19 @@
 namespace Kassyi.GSharp.Transpiler.Ast;
 
-public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar, AstContext context)
+public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar, AstContext targetContext, AstContext? sourceContext = null)
     : IAstVisitor
 {
     private readonly List<IAstNode> _newStatements = [];
-    
+
     public IReadOnlyList<IAstNode> TransformedStatements => _newStatements;
 
     private string Rename(string name)
     {
         var newName = prefix + name;
-        context.LocalVariables.Add(newName);
+        if (sourceContext != null && sourceContext.LocalVariables.TryGetValue(name, out var type))
+        {
+            targetContext.LocalVariables[newName] = type;
+        }
         return newName;
     }
 
@@ -27,55 +30,59 @@ public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar
         var it = Rename(node.IteratorName);
         var start = VisitAndGet(node.Start);
         var end = VisitAndGet(node.End);
-        
-        var bodyVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, context);
+
+        var bodyVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, targetContext, sourceContext);
         bodyVisitor.Visit(node.Body);
         var newBody = new BlockNode(bodyVisitor.TransformedStatements);
-        
+
         _newStatements.Add(new ForLoopNode(it, start, end, newBody));
     }
 
     public void Visit(WhileNode node)
     {
         var cond = VisitAndGet(node.Condition);
-        
-        var bodyVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, context);
+
+        var bodyVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, targetContext, sourceContext);
         bodyVisitor.Visit(node.Body);
         var newBody = new BlockNode(bodyVisitor.TransformedStatements);
-        
+
         _newStatements.Add(new WhileNode(cond, newBody));
     }
 
     public void Visit(IfNode node)
     {
         var cond = VisitAndGet(node.Condition);
-        
-        var trueVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, context);
+
+        var trueVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, targetContext, sourceContext);
         trueVisitor.Visit(node.TrueBlock);
         var newTrue = new BlockNode(trueVisitor.TransformedStatements);
-        
+
         BlockNode? newFalse = null;
         if (node.FalseBlock != null)
         {
-            var falseVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, context);
+            var falseVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, targetContext, sourceContext);
             falseVisitor.Visit(node.FalseBlock);
             newFalse = new BlockNode(falseVisitor.TransformedStatements);
         }
-        
+
         _newStatements.Add(new IfNode(cond, newTrue, newFalse));
     }
 
-    public void Visit(AssignNode node) => _newStatements.Add(new AssignNode(Rename(node.TargetName), VisitAndGet(node.Value)));
+    public void Visit(AssignNode node) =>
+        _newStatements.Add(new AssignNode(Rename(node.TargetName), VisitAndGet(node.Value)));
 
-    public void Visit(ArrayAssignNode node) => _newStatements.Add(new ArrayAssignNode(Rename(node.ArrayName), VisitAndGet(node.Index), VisitAndGet(node.Value)));
+    public void Visit(ArrayAssignNode node) => _newStatements.Add(new ArrayAssignNode(Rename(node.ArrayName),
+        VisitAndGet(node.Index), VisitAndGet(node.Value)));
 
-    public void Visit(BinaryOpNode node) => _newStatements.Add(new BinaryOpNode(node.Op, VisitAndGet(node.Left), VisitAndGet(node.Right)));
+    public void Visit(BinaryOpNode node) =>
+        _newStatements.Add(new BinaryOpNode(node.Op, VisitAndGet(node.Left), VisitAndGet(node.Right)));
 
     public void Visit(LiteralNode node) => _newStatements.Add(node);
 
     public void Visit(VariableNode node) => _newStatements.Add(new VariableNode(Rename(node.Name)));
 
-    public void Visit(ArrayAccessNode node) => _newStatements.Add(new ArrayAccessNode(Rename(node.ArrayName), VisitAndGet(node.Index)));
+    public void Visit(ArrayAccessNode node) =>
+        _newStatements.Add(new ArrayAccessNode(Rename(node.ArrayName), VisitAndGet(node.Index)));
 
     public void Visit(MethodCallNode node)
     {
@@ -87,7 +94,8 @@ public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar
 
     public void Visit(GotoNode node) => _newStatements.Add(new GotoNode(prefix + node.TargetName));
 
-    public void Visit(IfGotoNode node) => _newStatements.Add(new IfGotoNode(VisitAndGet(node.Condition), prefix + node.TrueTargetName));
+    public void Visit(IfGotoNode node) =>
+        _newStatements.Add(new IfGotoNode(VisitAndGet(node.Condition), prefix + node.TrueTargetName));
 
     public void Visit(ReturnNode node)
     {
@@ -95,12 +103,28 @@ public class AstRenamerVisitor(string prefix, string endLabel, string? returnVar
         {
             _newStatements.Add(new AssignNode(returnVar, VisitAndGet(node.Value)));
         }
+
         _newStatements.Add(new GotoNode(endLabel));
     }
-    
+
+    public void Visit(AddressOfNode node) => _newStatements.Add(new AddressOfNode(VisitAndGet(node.Target)));
+
+    public void Visit(DereferenceNode node) => _newStatements.Add(new DereferenceNode(VisitAndGet(node.Pointer)));
+
+    public void Visit(DereferenceAssignNode node) =>
+        _newStatements.Add(new DereferenceAssignNode(VisitAndGet(node.Pointer), VisitAndGet(node.Value)));
+
+    public void Visit(ExpressionStatementNode node) => _newStatements.Add(new ExpressionStatementNode(VisitAndGet(node.Expression)));
+
+    public void Visit(FieldAccessNode node) => _newStatements.Add(new FieldAccessNode(VisitAndGet(node.Target), node.FieldName, node.IsPointer));
+
+    public void Visit(FieldAssignNode node) => _newStatements.Add(new FieldAssignNode(VisitAndGet(node.Target), node.FieldName, VisitAndGet(node.Value), node.IsPointer));
+
+    public void Visit(FieldAddressNode node) => _newStatements.Add(new FieldAddressNode(VisitAndGet(node.Target), node.FieldName, node.IsPointer));
+
     private IAstNode VisitAndGet(IAstNode node)
     {
-        var subVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, context);
+        var subVisitor = new AstRenamerVisitor(prefix, endLabel, returnVar, targetContext, sourceContext);
         node.Accept(subVisitor);
         return subVisitor.TransformedStatements[0];
     }

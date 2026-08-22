@@ -1,5 +1,5 @@
 ﻿int loc_0;
-int loc_1;
+bool loc_1;
 loc_0 = 0;
 goto IL_0011;
 IL_0005:
