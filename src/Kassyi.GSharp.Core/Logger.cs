@@ -109,7 +109,10 @@ public abstract class Logger : ILogger
                     buffer.Add(msg);
                 }
 
-                if (buffer.Count == 0) continue;
+                if (buffer.Count == 0)
+                {
+                    continue;
+                }
 
                 var retryCount = 0;
                 while (retryCount < MaxRetries)
@@ -126,7 +129,8 @@ public abstract class Logger : ILogger
                         {
                             // 非同期awaitの O(N) 回のコンテキストスイッチを排除し、O(1) 回で出力
                             var errBody = string.Join(Environment.NewLine, buffer);
-                            var errLine = $"[LOGGER_FALLBACK_ERROR] Failed to write logs (Reason: {ex.Message}){Environment.NewLine}{errBody}";
+                            var errLine =
+                                $"[LOGGER_FALLBACK_ERROR] Failed to write logs (Reason: {ex.Message}){Environment.NewLine}{errBody}";
                             await Console.Error.WriteLineAsync(errLine).ConfigureAwait(false);
                             Debug.WriteLine(errLine);
                         }
@@ -185,10 +189,7 @@ public abstract class Logger : ILogger
         s_logChannel.Writer.TryWrite(logLine);
     }
 
-    public static void Clear()
-    {
-        s_logChannel.Writer.TryWrite("__CLEAR__");
-    }
+    public static void Clear() => s_logChannel.Writer.TryWrite("__CLEAR__");
 
     protected static void AddInterval(string key, long elapsedMilliseconds) =>
         s_accumulatedTimes.AddOrUpdate(key, elapsedMilliseconds, (_, current) => current + elapsedMilliseconds);

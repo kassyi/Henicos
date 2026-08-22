@@ -216,10 +216,7 @@ public readonly ref struct SourceWriterInlineScope
         _writer.Append(openingText);
     }
 
-    public void Dispose()
-    {
-        _writer.Append(_closingText);
-    }
+    public void Dispose() => _writer.Append(_closingText);
 }
 
 /// <summary>The handler that enables zero-allocation string interpolation using <see cref="SourceWriter"/>.</summary>
