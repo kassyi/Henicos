@@ -3,6 +3,7 @@
     <Project Path="src/Henicos/Henicos.csproj" />
     <Project Path="src/Kassyi.Generators.GSharp/Kassyi.Generators.GSharp.csproj" />
     <Project Path="src/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />
+    <Project Path="src/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />
     <Project Path="src/Kassyi.Math.GpuBigInt/Kassyi.Math.GpuBigInt.csproj" />
   </Folder>
   <Folder Name="/tests/">

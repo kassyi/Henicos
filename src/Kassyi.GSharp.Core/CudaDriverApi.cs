@@ -1,58 +1,56 @@
+// ReSharper disable UnusedMember.Global
+#pragma warning disable IDE0051 // Remove unused private members
+
 using System.Runtime.InteropServices;
 
-namespace Kassyi.GSharp.Runtime.Core;
+namespace Kassyi.GSharp.Core;
 
 public enum CUresult
 {
-    CUDA_SUCCESS = 0,
-    CUDA_ERROR_INVALID_VALUE = 1,
-    CUDA_ERROR_OUT_OF_MEMORY = 2,
-    CUDA_ERROR_NOT_INITIALIZED = 3,
-    CUDA_ERROR_DEINITIALIZED = 4,
-    CUDA_ERROR_NO_DEVICE = 100,
-    CUDA_ERROR_INVALID_DEVICE = 101,
-    CUDA_ERROR_INVALID_IMAGE = 200,
-    CUDA_ERROR_INVALID_CONTEXT = 201,
-    CUDA_ERROR_CONTEXT_ALREADY_CURRENT = 202,
-    CUDA_ERROR_MAP_FAILED = 205,
-    CUDA_ERROR_UNMAP_FAILED = 206,
-    CUDA_ERROR_ARRAY_IS_MAPPED = 207,
-    CUDA_ERROR_ALREADY_MAPPED = 208,
-    CUDA_ERROR_NO_BINARY_FOR_GPU = 209,
-    CUDA_ERROR_ALREADY_ACQUIRED = 210,
-    CUDA_ERROR_NOT_MAPPED = 211,
-    CUDA_ERROR_NOT_MAPPED_AS_ARRAY = 212,
-    CUDA_ERROR_NOT_MAPPED_AS_POINTER = 213,
-    CUDA_ERROR_ECC_UNCORRECTABLE = 214,
-    CUDA_ERROR_UNSUPPORTED_LIMIT = 215,
-    CUDA_ERROR_CONTEXT_ALREADY_IN_USE = 216,
-    CUDA_ERROR_INVALID_SOURCE = 300,
-    CUDA_ERROR_FILE_NOT_FOUND = 301,
-    CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND = 302,
-    CUDA_ERROR_SHARED_OBJECT_INIT_FAILED = 303,
-    CUDA_ERROR_OPERATING_SYSTEM = 304,
-    CUDA_ERROR_INVALID_HANDLE = 400,
-    CUDA_ERROR_NOT_FOUND = 500,
-    CUDA_ERROR_NOT_READY = 600,
-    CUDA_ERROR_LAUNCH_FAILED = 700,
-    CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES = 701,
-    CUDA_ERROR_LAUNCH_TIMEOUT = 702,
-    CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING = 703,
-    CUDA_ERROR_UNKNOWN = 999
+    CudaSuccess = 0,
+    CudaErrorInvalidValue = 1,
+    CudaErrorOutOfMemory = 2,
+    CudaErrorNotInitialized = 3,
+    CudaErrorDeinitialized = 4,
+    CudaErrorNoDevice = 100,
+    CudaErrorInvalidDevice = 101,
+    CudaErrorInvalidImage = 200,
+    CudaErrorInvalidContext = 201,
+    CudaErrorContextAlreadyCurrent = 202,
+    CudaErrorMapFailed = 205,
+    CudaErrorUnmapFailed = 206,
+    CudaErrorArrayIsMapped = 207,
+    CudaErrorAlreadyMapped = 208,
+    CudaErrorNoBinaryForGpu = 209,
+    CudaErrorAlreadyAcquired = 210,
+    CudaErrorNotMapped = 211,
+    CudaErrorNotMappedAsArray = 212,
+    CudaErrorNotMappedAsPointer = 213,
+    CudaErrorEccUncorrectable = 214,
+    CudaErrorUnsupportedLimit = 215,
+    CudaErrorContextAlreadyInUse = 216,
+    CudaErrorInvalidSource = 300,
+    CudaErrorFileNotFound = 301,
+    CudaErrorSharedObjectSymbolNotFound = 302,
+    CudaErrorSharedObjectInitFailed = 303,
+    CudaErrorOperatingSystem = 304,
+    CudaErrorInvalidHandle = 400,
+    CudaErrorNotFound = 500,
+    CudaErrorNotReady = 600,
+    CudaErrorLaunchFailed = 700,
+    CudaErrorLaunchOutOfResources = 701,
+    CudaErrorLaunchTimeout = 702,
+    CudaErrorLaunchIncompatibleTexturing = 703,
+    CudaErrorUnknown = 999
 }
 
-public class CudaException : Exception
+public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
 {
-    public CUresult Result { get; }
-
-    public CudaException(CUresult result) : base($"CUDA Error: {result}")
-    {
-        Result = result;
-    }
+    public CUresult Result { get; } = result;
 
     public static void ThrowIfError(CUresult result)
     {
-        if (result != CUresult.CUDA_SUCCESS)
+        if (result != CUresult.CudaSuccess)
         {
             throw new CudaException(result);
         }
@@ -79,10 +77,14 @@ public static class CudaDriverApi
     public static extern CUresult cuCtxSetCurrent(IntPtr ctx);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions, IntPtr[]? options, IntPtr[]? optionValues);
+    public static extern CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
+        IntPtr[]? options, IntPtr[]? optionValues);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
     public static extern CUresult cuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+    public static extern CUresult cuModuleUnload(IntPtr hmod);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
     public static extern CUresult cuMemAlloc_v2(out IntPtr dptr, IntPtr bytesize);
@@ -91,10 +93,10 @@ public static class CudaDriverApi
     public static extern CUresult cuMemFree_v2(IntPtr dptr);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemcpyHtoD_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr ByteCount);
+    public static extern CUresult cuMemcpyHtoD_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemcpyDtoH_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr ByteCount);
+    public static extern CUresult cuMemcpyDtoH_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
     public static extern CUresult cuLaunchKernel(

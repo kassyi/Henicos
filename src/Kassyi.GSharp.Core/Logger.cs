@@ -1,3 +1,12 @@
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Local
+// ReSharper disable UnusedType.Local
+#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable IDE0052 // Remove unread private members
+
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
@@ -26,7 +35,12 @@ public abstract class Logger : ILogger
         "gsharp_diagnostics.log"
     );
 
-    private static readonly Channel<string> s_logChannel = Channel.CreateUnbounded<string>();
+    private static readonly BoundedChannelOptions s_channelOptions = new(10000)
+    {
+        FullMode = BoundedChannelFullMode.DropOldest
+    };
+
+    private static readonly Channel<string> s_logChannel = Channel.CreateBounded<string>(s_channelOptions);
 
     private static readonly CancellationTokenSource s_cts = new();
 
@@ -127,6 +141,10 @@ public abstract class Logger : ILogger
         {
             // Shutdown
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[LOGGER_FATAL] Background logging task failed: {ex}");
+        }
     }
 
     public static void Shutdown()
@@ -161,16 +179,9 @@ public abstract class Logger : ILogger
 
     public static void Clear()
     {
-        try
+        if (File.Exists(s_logPath))
         {
-            if (File.Exists(s_logPath))
-            {
-                File.Delete(s_logPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to clear log file: {ex.Message}");
+            File.Delete(s_logPath);
         }
     }
 
