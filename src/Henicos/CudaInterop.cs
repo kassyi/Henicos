@@ -7,7 +7,7 @@ namespace Henicos;
 
 public static class CudaInterop
 {
-    private const string DllName = "Kassyi.Math.GpuBigInt.Cuda.dll";
+    private const string DllName = "Kassyi.GSharp.GpuBigInt.Cuda.dll";
 
     [DllImport(DllName, EntryPoint = "GpuBigInt_Init", CallingConvention = CallingConvention.Cdecl)]
     public static extern bool InitializeGPU(int maxWords);

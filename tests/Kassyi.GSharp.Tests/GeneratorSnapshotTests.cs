@@ -64,7 +64,7 @@ public class GeneratorSnapshotTests
         var source = """
             using Kassyi.GSharp.Core;
 
-            namespace Kassyi.Math.GpuBigInt
+            namespace Kassyi.GSharp.GpuBigInt
             {
                 public static class GpuBigIntKernels
                 {

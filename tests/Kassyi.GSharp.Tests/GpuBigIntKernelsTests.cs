@@ -1,4 +1,4 @@
-using Kassyi.Math.GpuBigInt;
+using Kassyi.GSharp.GpuBigInt;
 using Kassyi.GSharp.Runtime.Transpiler.Pipeline;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,8 +17,7 @@ public class GpuBigIntKernelsTests(ITestOutputHelper output)
         _output.WriteLine(generatedSource);
 
         Assert.Contains("extern \"C\" __global__ void ChunkAddKernel", generatedSource);
-        Assert.Contains("localCarry=", generatedSource);
-        Assert.Contains(">>32", generatedSource);
+        Assert.Contains("__gsharp_add_cc", generatedSource);
     }
 
     [Fact]
