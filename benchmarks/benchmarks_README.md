@@ -13,6 +13,7 @@ For a deep dive into the specific bottlenecks, discoveries, and performance gain
 - [Phase 6: VRAM Reduction Parallelization (Grid/Block)](phase6_vram_parallel.md)
 - [Phase 7: GPU Saturation & Parallel Normalization](phase7_gpu_saturation.md)
 - [Phase 8: Six-Step FFT Architecture (Grid Sync Elimination)](phase8_six_step_fft.md)
+- [Phase 9: G# Transpiler vs Raw CUDA Benchmark](phase9_gsharp_vs_cuda.md)
 
 ## Overall Progress Summary
 
