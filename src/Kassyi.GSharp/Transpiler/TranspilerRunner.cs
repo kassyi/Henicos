@@ -30,10 +30,11 @@ public class TranspilerRunner
         }
 
         var builder = new AstBuilder();
-        var ast = builder.ParseMethod(targetMethod);
+        var ctx = new AstContext(builder);
+        var ast = builder.ParseMethod(targetMethod, ctx);
 
         var generator = new CudaGenerator();
-        return generator.Generate(ast, targetMethod.HasBody ? targetMethod.Body.Variables : null);
+        return generator.Generate(ast, ctx.LocalVariables);
     }
 
     public static void Run(Assembly targetAssembly)

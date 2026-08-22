@@ -7,14 +7,13 @@ public class CudaGenerator : IAstVisitor
 {
     private readonly CodeWriter _writer = new();
 
-    public string Generate(BlockNode root, Mono.Collections.Generic.Collection<Mono.Cecil.Cil.VariableDefinition> variables)
+    public string Generate(BlockNode root, System.Collections.Generic.HashSet<string> variables)
     {
         if (variables != null)
         {
             foreach (var v in variables)
             {
-                // Simple mapping for demo. In reality, map type.
-                _writer.WriteLine($"int loc_{v.Index};");
+                _writer.WriteLine($"int {v};");
             }
         }
         Visit(root);
@@ -183,5 +182,19 @@ public class CudaGenerator : IAstVisitor
             node.Condition.Accept(this);
         }
         _writer.WriteLine($" goto {node.TrueTargetName};");
+    }
+
+    public void Visit(ReturnNode node)
+    {
+        if (node.Value != null)
+        {
+            _writer.Write("return ");
+            node.Value.Accept(this);
+            _writer.WriteLine(";");
+        }
+        else
+        {
+            _writer.WriteLine("return;");
+        }
     }
 }

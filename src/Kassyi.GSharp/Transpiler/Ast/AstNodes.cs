@@ -21,6 +21,7 @@ public interface IAstVisitor
     void Visit(LabelNode node);
     void Visit(GotoNode node);
     void Visit(IfGotoNode node);
+    void Visit(ReturnNode node);
 }
 
 public record BlockNode(IReadOnlyList<IAstNode> Statements) : IAstNode
@@ -96,6 +97,11 @@ public record GotoNode(string TargetName) : IAstNode
 }
 
 public record IfGotoNode(IAstNode Condition, string TrueTargetName) : IAstNode
+{
+    public void Accept(IAstVisitor visitor) => visitor.Visit(this);
+}
+
+public record ReturnNode(IAstNode Value) : IAstNode
 {
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }

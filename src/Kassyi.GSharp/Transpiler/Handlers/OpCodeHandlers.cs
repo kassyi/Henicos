@@ -148,22 +148,79 @@ public class MethodCallHandler : IOpCodeHandler
 {
     private static readonly Code[] s_codes = { Code.Call };
     public IEnumerable<Code> SupportedOpCodes => s_codes;
-    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod)
+    {
+        throw new NotSupportedException("Use the overload with AstContext");
+    }
+
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod, AstContext ctx)
     {
         var methodRef = (MethodReference)ins.Operand;
         var resolvedMethod = methodRef.Resolve();
-        if (resolvedMethod?.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute") != true)
+        
+        bool isGpuKernel = resolvedMethod?.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute") == true;
+        
+        bool isInline = false;
+        if (resolvedMethod != null)
         {
-            throw new NotSupportedException($"Unsupported method call: {methodRef.FullName}. Only [GpuKernel] methods are allowed.");
+            isInline = (resolvedMethod.ImplAttributes & MethodImplAttributes.AggressiveInlining) != 0;
         }
 
-        var args = new IAstNode[methodRef.Parameters.Count];
-        for (var i = args.Length - 1; i >= 0; i--)
+        if (isInline && resolvedMethod != null && resolvedMethod.HasBody)
         {
-            args[i] = stack.Pop();
+            // Perform inlining
+            var args = new IAstNode[methodRef.Parameters.Count];
+            for (var i = args.Length - 1; i >= 0; i--)
+            {
+                args[i] = stack.Pop();
+            }
+
+            string prefix = ctx.GetNextInlinePrefix();
+            string endLabel = prefix + "end";
+            string returnVar = null;
+
+            if (methodRef.ReturnType.FullName != "System.Void")
+            {
+                returnVar = prefix + "ret";
+                ctx.LocalVariables.Add(returnVar);
+            }
+
+            // Bind arguments
+            for (int i = 0; i < args.Length; i++)
+            {
+                var argName = prefix + resolvedMethod.Parameters[i].Name;
+                ctx.LocalVariables.Add(argName);
+                stmts.Add(new AssignNode(argName, args[i]));
+            }
+
+            var inlinedBlock = ctx.Builder.ParseMethod(resolvedMethod, ctx);
+            var renamer = new AstRenamerVisitor(prefix, endLabel, returnVar, ctx);
+            renamer.Visit(inlinedBlock);
+            
+            // Add transformed statements
+            stmts.Add(new BlockNode(renamer.TransformedStatements.ToList()));
+            stmts.Add(new LabelNode(endLabel));
+
+            if (returnVar != null)
+            {
+                stack.Push(new VariableNode(returnVar));
+            }
+            return;
         }
 
-        var callNode = new MethodCallNode(methodRef.Name, args);
+        if (!isGpuKernel)
+        {
+            throw new NotSupportedException($"Unsupported method call: {methodRef.FullName}. Only [GpuKernel] or [MethodImpl(AggressiveInlining)] methods are allowed.");
+        }
+
+        var kernelArgs = new IAstNode[methodRef.Parameters.Count];
+        for (var i = kernelArgs.Length - 1; i >= 0; i--)
+        {
+            kernelArgs[i] = stack.Pop();
+        }
+
+        var callNode = new MethodCallNode(methodRef.Name, kernelArgs);
         if (methodRef.ReturnType.FullName == "System.Void")
         {
             stmts.Add(callNode);

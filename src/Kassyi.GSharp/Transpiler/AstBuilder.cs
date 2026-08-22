@@ -35,14 +35,22 @@ public class AstBuilder
         s_handlers = dict.ToFrozenDictionary();
     }
 
-    public BlockNode ParseMethod(MethodDefinition method)
+    public BlockNode ParseMethod(MethodDefinition method, AstContext context = null)
     {
         var statements = new List<IAstNode>();
+
+        context ??= new AstContext(this);
 
         if (!method.HasBody)
         {
             return new BlockNode(statements);
         }
+
+        foreach (var v in method.Body.Variables)
+        {
+            context.LocalVariables.Add($"loc_{v.Index}");
+        }
+
 
         var instructions = method.Body.Instructions;
         var stack = new Stack<IAstNode>();
@@ -73,14 +81,34 @@ public class AstBuilder
                 statements.Add(new LabelNode($"IL_{ins.Offset:x4}"));
             }
 
-            if (ins.OpCode.Code == Code.Nop || ins.OpCode.Code == Code.Ret)
+            if (ins.OpCode.Code == Code.Nop)
             {
+                continue;
+            }
+
+            if (ins.OpCode.Code == Code.Ret)
+            {
+                if (method.ReturnType.FullName != "System.Void")
+                {
+                    statements.Add(new ReturnNode(stack.Pop()));
+                }
+                else
+                {
+                    statements.Add(new ReturnNode(null));
+                }
                 continue;
             }
 
             if (s_handlers.TryGetValue(ins.OpCode.Code, out var handler))
             {
-                handler.Handle(ins, stack, statements, method);
+                if (handler is MethodCallHandler callHandler)
+                {
+                    callHandler.Handle(ins, stack, statements, method, context);
+                }
+                else
+                {
+                    handler.Handle(ins, stack, statements, method);
+                }
             }
             else
             {
