@@ -52,6 +52,8 @@ public static partial class ComprehensiveSpecKernel
 
     public unsafe struct PhysicsState
     {
+        public const uint MaxParticles = 1000;
+
         public fixed uint Buffer[16];
         public ulong Flags;
     }
@@ -66,6 +68,8 @@ public static partial class ComprehensiveSpecKernel
         [JitConstant] int unrollFactor)
     {
         successFlag = false;
+
+        const float Gravity = 9.8f; // Triggers const evaluation in C++
 
         // 1. All Intrinsics Indexing
         int tx = ThreadIndex.X;
@@ -108,7 +112,7 @@ public static partial class ComprehensiveSpecKernel
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
-                mag = (float)Math.Max(mag, p.X * i);
+                mag = (float)Math.Max(mag, p.X * i + Gravity);
             }
 
             if (!IsPositive(mag))
@@ -158,16 +162,16 @@ public static partial class ComprehensiveSpecKernel
             Vector8 inlineVec = new Vector8();
             inlineVec[0] = 123;
             inlineVec[1] = 456;
-            
+
             unsafe
             {
                 PhysicsState state = new PhysicsState();
                 state.Buffer[0] = inlineVec[0];
                 state.Buffer[1] = inlineVec[1];
-                
+
                 ulong carry = 0;
                 uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
-                
+
                 long borrow = 0;
                 uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
 
@@ -183,5 +187,22 @@ public static partial class ComprehensiveSpecKernel
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// Demonstrates the host-side AST construction for GpuBigInt.
+    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDevice].
+    /// </summary>
+    public static void HostSideGpuBigIntDemo()
+    {
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+
+        using var a = new GpuBigInteger(context, 1024);
+        using var b = new GpuBigInteger(context, 1024);
+        using var result = new GpuBigInteger(context, 1024);
+
+        // AST Construction: evaluated lazily and dispatched to GPU
+        GpuBigInteger.Add(a, b, result);
+        GpuBigInteger.Sub(result, a, b);
     }
 }

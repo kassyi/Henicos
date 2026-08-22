@@ -8,15 +8,37 @@ namespace TestNamespace
 public static partial class TestKernelsWrapper
 {
 public const string AddKernel_CudaSource = @"// GSharp Prelude
+#include <cooperative_groups.h>
+namespace cg = cooperative_groups;
+
 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
-    unsigned long long sum = (unsigned long long)a + b + *carry;
-    *carry = sum >> 32;
-    return (unsigned int)sum;
+    unsigned int res;
+    unsigned int c_in = (unsigned int)*carry;
+    unsigned int c_out;
+    asm volatile(
+        ""add.cc.u32 %0, %2, -1;\n\t""
+        ""addc.cc.u32 %0, %3, %4;\n\t""
+        ""addc.u32 %1, 0, 0;""
+        : ""=&r""(res), ""=r""(c_out)
+        : ""r""(c_in), ""r""(a), ""r""(b)
+    );
+    *carry = c_out;
+    return res;
 }
 __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
-    long long diff = (long long)a - b - *borrow;
-    *borrow = diff < 0 ? 1 : 0;
-    return (unsigned int)diff;
+    unsigned int res;
+    unsigned int dummy;
+    unsigned int b_in = (unsigned int)*borrow;
+    unsigned int b_out;
+    asm volatile(
+        ""sub.cc.u32 %1, 0, %3;\n\t""
+        ""subc.cc.u32 %0, %4, %5;\n\t""
+        ""subc.u32 %2, 0, 0;""
+        : ""=&r""(res), ""=&r""(dummy), ""=r""(b_out)
+        : ""r""(b_in), ""r""(a), ""r""(b)
+    );
+    *borrow = b_out & 1;
+    return res;
 }
 extern ""C"" __global__ void AddKernel(int* a,int* b,int* c){
 c[0]=(a[0]+b[0]);
@@ -133,6 +155,42 @@ if (pArg_a != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pA
 if (d_b != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_b);
 if (pArg_b != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_b);
 if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
+if (pArg_c != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_c);
+}
+}
+public static void Launch_AddKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+{
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(AddKernel_CudaSource, "AddKernel");
+IntPtr pArg_a = IntPtr.Zero;
+IntPtr pArg_b = IntPtr.Zero;
+IntPtr pArg_c = IntPtr.Zero;
+try
+{
+// Marshal device array: a
+pArg_a = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_a, a);
+// Marshal device array: b
+pArg_b = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_b, b);
+// Marshal device array: c
+pArg_c = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_c, c);
+IntPtr[] kernelParams = [pArg_a, pArg_b, pArg_c];
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+    hfunc,
+    gridDimX, gridDimY, gridDimZ, // Grid dim
+    blockDimX, blockDimY, blockDimZ, // Block dim
+    sharedMemBytes, // Shared mem
+    IntPtr.Zero, // Stream
+    kernelParams,
+    IntPtr.Zero // Extra
+));
+}
+finally
+{
+if (pArg_a != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_a);
+if (pArg_b != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_b);
 if (pArg_c != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_c);
 }
 }

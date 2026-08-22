@@ -1,24 +1,19 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using Kassyi.GSharp.Runtime.Transpiler.Pipeline;
 using Xunit;
 
 namespace Kassyi.GSharp.GpuBigInt.Tests
 {
-    public class GpuBigIntTests : IDisposable
+    public class GpuBigIntTests
     {
-        private readonly GpuContext _context;
         private const int TestSizeWords = 1024; // 32768 bits
 
         public GpuBigIntTests()
         {
-            // MaxWords enough to hold our tests
-            _context = new GpuContext(TestSizeWords * 2);
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
+            // Ensure CUDA context is initialized for GSharpJit tests
+            using var scope = new JitEngine.CudaContextScope();
         }
 
         private uint[] GenerateRandomArray(int numWords, int seed = 42)
@@ -29,6 +24,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             {
                 result[i] = (uint)rnd.Next() | ((uint)rnd.Next() << 16);
             }
+
             // Clear highest bit of highest word to ensure positive BigInteger for simplicity
             result[numWords - 1] &= 0x7FFFFFFF;
             return result;
@@ -50,9 +46,12 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             return words;
         }
 
-        [Fact]
-        public void Test_Add_Correctness()
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_Add_Correctness(GpuExecutionEngine engine)
         {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 1);
             var arrB = GenerateRandomArray(TestSizeWords, 2);
 
@@ -60,9 +59,9 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             var bigB = ToBigInteger(arrB);
             var expectedBig = bigA + bigB;
 
-            using var gpuA = new GpuBigInteger(_context, arrA);
-            using var gpuB = new GpuBigInteger(_context, arrB);
-            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
             GpuBigInteger.Add(gpuA, gpuB, gpuResult);
 
@@ -78,9 +77,12 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
-        [Fact]
-        public void Test_Sub_Correctness()
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 3);
             var arrB = GenerateRandomArray(TestSizeWords, 4);
 
@@ -93,9 +95,9 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             var bigB = ToBigInteger(arrB);
             var expectedBig = bigA - bigB;
 
-            using var gpuA = new GpuBigInteger(_context, arrA);
-            using var gpuB = new GpuBigInteger(_context, arrB);
-            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
             GpuBigInteger.Sub(gpuA, gpuB, gpuResult);
 
@@ -105,17 +107,20 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
-        [Fact]
-        public void Test_ShiftLeft_Correctness()
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine)
         {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 5);
             int shiftBits = 143; // Random shift
 
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA << shiftBits;
 
-            using var gpuA = new GpuBigInteger(_context, arrA);
-            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
             GpuBigInteger.ShiftLeft(gpuA, shiftBits, gpuResult);
 
@@ -128,17 +133,20 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
-        [Fact]
-        public void Test_ShiftRight_Correctness()
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_ShiftRight_Correctness(GpuExecutionEngine engine)
         {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 6);
             int shiftBits = 143; // Random shift
 
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA >> shiftBits;
 
-            using var gpuA = new GpuBigInteger(_context, arrA);
-            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
             GpuBigInteger.ShiftRight(gpuA, shiftBits, gpuResult);
 
@@ -147,13 +155,17 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
 
             Assert.Equal(expectedBig, actualBig);
         }
-        [Fact]
-        public void Test_ExpressionTree_Correctness()
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_ExpressionTree_Correctness(GpuExecutionEngine engine)
         {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 7);
             var arrB = GenerateRandomArray(TestSizeWords, 8);
             var arrC = GenerateRandomArray(TestSizeWords, 9);
-            
+
             // Ensure A > B and B > C to avoid negative wraparound
             arrA[TestSizeWords - 1] |= 0x60000000;
             arrB[TestSizeWords - 1] = (arrB[TestSizeWords - 1] & 0x1FFFFFFF) | 0x20000000;
@@ -162,7 +174,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
             var bigC = ToBigInteger(arrC);
-            
+
             int shiftBits = 128;
 
             // Mathematical equivalent: (((A + B) << 128) - C) & A
@@ -170,10 +182,10 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             var mask = (BigInteger.One << (TestSizeWords * 32)) - 1;
             expectedBig &= mask;
 
-            using var gpuA = new GpuBigInteger(_context, arrA);
-            using var gpuB = new GpuBigInteger(_context, arrB);
-            using var gpuC = new GpuBigInteger(_context, arrC);
-            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuC = new GpuBigInteger(context, arrC);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
             // Magic Expression Tree evaluation
             gpuResult.Value = (((gpuA + gpuB) << shiftBits) - gpuC) & gpuA;

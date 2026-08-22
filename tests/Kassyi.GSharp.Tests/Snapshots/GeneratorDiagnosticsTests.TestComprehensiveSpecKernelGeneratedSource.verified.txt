@@ -8,16 +8,42 @@ namespace DebugReduc
 public static partial class ComprehensiveSpecKernelWrapper
 {
 public const string ProcessPhysics_CudaSource = @"// GSharp Prelude
+#include <cooperative_groups.h>
+namespace cg = cooperative_groups;
+
 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
-    unsigned long long sum = (unsigned long long)a + b + *carry;
-    *carry = sum >> 32;
-    return (unsigned int)sum;
+    unsigned int res;
+    unsigned int c_in = (unsigned int)*carry;
+    unsigned int c_out;
+    asm volatile(
+        ""add.cc.u32 %0, %2, -1;\n\t""
+        ""addc.cc.u32 %0, %3, %4;\n\t""
+        ""addc.u32 %1, 0, 0;""
+        : ""=&r""(res), ""=r""(c_out)
+        : ""r""(c_in), ""r""(a), ""r""(b)
+    );
+    *carry = c_out;
+    return res;
 }
 __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
-    long long diff = (long long)a - b - *borrow;
-    *borrow = diff < 0 ? 1 : 0;
-    return (unsigned int)diff;
+    unsigned int res;
+    unsigned int dummy;
+    unsigned int b_in = (unsigned int)*borrow;
+    unsigned int b_out;
+    asm volatile(
+        ""sub.cc.u32 %1, 0, %3;\n\t""
+        ""subc.cc.u32 %0, %4, %5;\n\t""
+        ""subc.u32 %2, 0, 0;""
+        : ""=&r""(res), ""=&r""(dummy), ""=r""(b_out)
+        : ""r""(b_in), ""r""(a), ""r""(b)
+    );
+    *borrow = b_out & 1;
+    return res;
 }
+__forceinline__ __device__ float ComputeMagnitude(PhysicsVector v);
+
+__noinline__ __device__ bool IsPositive(float value);
+
 struct PhysicsVector
 {
 float X;
@@ -76,6 +102,7 @@ unsigned long long Flags;
 ;
 extern ""C"" __global__ void ProcessPhysics(PhysicsVector* particles,float* totalMagnitude,bool* successFlag,SpecTypes largeStructVal,int particleCount){
 successFlag=false;
+float Gravity=9.8f;
 int tx=threadIdx.x;
 int ty=threadIdx.y;
 int tz=threadIdx.z;
@@ -108,7 +135,7 @@ for(int i=0;(i<unrollFactor);i++)
 {
 if((i==1))
 continue;
-mag=(float)max(mag,(p.X*i));
+mag=(float)max(mag,((p.X*i)+Gravity));
 }
 if(!IsPositive(mag))
 {
@@ -272,6 +299,94 @@ System.Runtime.InteropServices.Marshal.FreeHGlobal(p_successFlag_temp);
 finally
 {
 if (d_particles != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_particles);
+if (pArg_particles != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_particles);
+if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_totalMagnitude);
+if (pArg_totalMagnitude != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_totalMagnitude);
+if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_successFlag);
+if (pArg_successFlag != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_successFlag);
+if (pArg_largeStructVal != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_largeStructVal);
+if (pArg_particleCount != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_particleCount);
+}
+}
+public static void Launch_ProcessPhysics_Device(IntPtr particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+{
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
+var __gsharp_dynamic_src = string.Join(System.Environment.NewLine, new string[] {
+    $"#define unrollFactor {unrollFactor}",
+    ProcessPhysics_CudaSource
+});
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics");
+IntPtr pArg_particles = IntPtr.Zero;
+IntPtr pArg_totalMagnitude = IntPtr.Zero;
+IntPtr pArg_successFlag = IntPtr.Zero;
+IntPtr pArg_largeStructVal = IntPtr.Zero;
+IntPtr pArg_particleCount = IntPtr.Zero;
+try
+{
+// Marshal device array: particles
+pArg_particles = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_particles, particles);
+// Marshal ref/out scalar: totalMagnitude
+int totalMagnitude_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(float));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_totalMagnitude, totalMagnitude_size));
+IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(totalMagnitude_size);
+try
+{
+System.Runtime.InteropServices.Marshal.StructureToPtr(totalMagnitude, p_totalMagnitude_temp, false);
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_totalMagnitude, p_totalMagnitude_temp, totalMagnitude_size));
+}
+finally
+{
+System.Runtime.InteropServices.Marshal.FreeHGlobal(p_totalMagnitude_temp);
+}
+pArg_totalMagnitude = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_totalMagnitude, d_totalMagnitude);
+// Marshal ref/out scalar: successFlag
+int successFlag_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(bool));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
+pArg_successFlag = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_successFlag, d_successFlag);
+// Marshal scalar: largeStructVal
+pArg_largeStructVal = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(DebugReduc.SpecTypes)));
+System.Runtime.InteropServices.Marshal.StructureToPtr(largeStructVal, pArg_largeStructVal, false);
+// Marshal scalar: particleCount
+pArg_particleCount = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
+System.Runtime.InteropServices.Marshal.StructureToPtr(particleCount, pArg_particleCount, false);
+IntPtr[] kernelParams = [pArg_particles, pArg_totalMagnitude, pArg_successFlag, pArg_largeStructVal, pArg_particleCount];
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+    hfunc,
+    gridDimX, gridDimY, gridDimZ, // Grid dim
+    blockDimX, blockDimY, blockDimZ, // Block dim
+    sharedMemBytes, // Shared mem
+    IntPtr.Zero, // Stream
+    kernelParams,
+    IntPtr.Zero // Extra
+));
+// Unmarshal ref/out scalar: totalMagnitude
+IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(totalMagnitude_size);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_totalMagnitude_temp, d_totalMagnitude, totalMagnitude_size));
+totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float));
+}
+finally
+{
+System.Runtime.InteropServices.Marshal.FreeHGlobal(p_totalMagnitude_temp);
+}
+// Unmarshal ref/out scalar: successFlag
+IntPtr p_successFlag_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(successFlag_size);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_successFlag_temp, d_successFlag, successFlag_size));
+successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool));
+}
+finally
+{
+System.Runtime.InteropServices.Marshal.FreeHGlobal(p_successFlag_temp);
+}
+}
+finally
+{
 if (pArg_particles != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_particles);
 if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_totalMagnitude);
 if (pArg_totalMagnitude != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_totalMagnitude);
