@@ -199,16 +199,36 @@ public class GpuKernelGenerator : IIncrementalGenerator
         writer.AppendLine($"public static void Launch_{method.Name}({paramList})");
     }
 
+    private static bool IsJitConstant(IParameterSymbol p) => p.GetAttributes().Any(a =>
+        a.AttributeClass?.Name == "JitConstantAttribute" || a.AttributeClass?.Name == "JitConstant");
+
     private static void WriteKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine(
-            $"""IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel({method.Name}_CudaSource, "{method.Name}");""");
+        var jitConstants = method.Parameters.Where(IsJitConstant).ToList();
+        if (jitConstants.Any())
+        {
+            var defines = string.Join(",\n", jitConstants.Select(jc => $"$\"#define {jc.Name} {{{jc.Name}}}\""));
+            writer.AppendLine($$"""
+                var __gsharp_dynamic_src = string.Join(System.Environment.NewLine, new string[] {
+                    {{defines}},
+                    {{method.Name}}_CudaSource
+                });
+                """);
+            writer.AppendLine(
+                $"""IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "{method.Name}");""");
+        }
+        else
+        {
+            writer.AppendLine(
+                $"""IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel({method.Name}_CudaSource, "{method.Name}");""");
+        }
+
         writer.AppendLine();
     }
 
     private static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method)
     {
-        foreach (var p in method.Parameters)
+        foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
             if (p.Type is IArrayTypeSymbol)
             {
@@ -223,7 +243,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var kernelParamsArray = new List<string>();
 
-        foreach (var p in method.Parameters)
+        foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
             WriteParameterMarshal(writer, p, kernelParamsArray);
         }
@@ -234,7 +254,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         WriteLaunchKernelCall(writer);
 
-        foreach (var p in method.Parameters)
+        foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
             WriteParameterUnmarshal(writer, p);
         }
@@ -242,7 +262,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static void WriteCleanup(SourceWriter writer, IMethodSymbol method)
     {
-        foreach (var p in method.Parameters)
+        foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
             WriteParameterFree(writer, p);
         }

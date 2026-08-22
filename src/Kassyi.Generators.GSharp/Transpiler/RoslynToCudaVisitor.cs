@@ -32,58 +32,8 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         _indentLevel = 0;
         _hasEmittedDynamicSmemBase = false;
 
-        if (isDevice)
-        {
-            _writer.AppendKeyword("__device__");
-            _writer.AppendSpace();
-            var returnType = semanticModel.GetDeclaredSymbol(method)?.ReturnType;
-            if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
-            {
-                _writer.Append(MapType(returnType));
-            }
-            else
-            {
-                _writer.AppendKeyword("void");
-            }
-        }
-        else
-        {
-            var returnType = semanticModel.GetDeclaredSymbol(method)?.ReturnType;
-            if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
-            {
-                reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
-                    method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
-            }
-
-            _writer.AppendKeyword("extern \"C\" __global__ void");
-        }
-
-        _writer.AppendSpace();
-        _writer.Append(method.Identifier.Text);
-        using (_writer.Parentheses())
-        {
-            WriteParameters(method.ParameterList.Parameters);
-        }
-
-        using (_writer.Scope())
-        {
-            _indentLevel++;
-
-            if (method.Body != null)
-            {
-                Visit(method.Body);
-            }
-            else if (method.ExpressionBody != null)
-            {
-                AppendIndent();
-                // Assuming the expression body is something simple. A real transpile needs to handle returning or assigning.
-                // For now, we only visit the expression.
-                Visit(method.ExpressionBody.Expression);
-                _writer.AppendSemiColon();
-            }
-
-            _indentLevel--;
-        }
+        WriteMethodSignature(method, isDevice);
+        WriteMethodBody(method);
 
         _writer = mainWriter;
 
@@ -99,11 +49,144 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         return result;
     }
 
+    private void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice)
+    {
+        var methodSymbol = semanticModel.GetDeclaredSymbol(method);
+
+        if (isDevice)
+        {
+            WriteDeviceMethodPrefix(methodSymbol);
+        }
+        else
+        {
+            WriteKernelMethodPrefix(method, methodSymbol);
+        }
+
+        _writer.AppendSpace();
+        _writer.Append(method.Identifier.Text);
+        using (_writer.Parentheses())
+        {
+            WriteParameters(method.ParameterList.Parameters);
+        }
+    }
+
+    private void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol)
+    {
+        var hasAggressiveInlining = false;
+        var hasNoInlining = false;
+
+        if (methodSymbol != null)
+        {
+            foreach (var attr in methodSymbol.GetAttributes())
+            {
+                if (attr.AttributeClass?.Name != "MethodImplAttribute" || attr.ConstructorArguments.Length <= 0 ||
+                    attr.ConstructorArguments[0].Value is not int intVal)
+                {
+                    continue;
+                }
+
+                switch (intVal)
+                {
+                    case 256:
+                        hasAggressiveInlining = true;
+                        break;
+                    case 8:
+                        hasNoInlining = true;
+                        break;
+                }
+            }
+        }
+
+        if (hasAggressiveInlining)
+        {
+            _writer.AppendKeyword("__forceinline__");
+        }
+        else if (hasNoInlining)
+        {
+            _writer.AppendKeyword("__noinline__");
+        }
+        else
+        {
+            _writer.AppendKeyword("inline");
+        }
+
+        _writer.AppendSpace();
+        _writer.AppendKeyword("__device__");
+        _writer.AppendSpace();
+
+        var returnType = methodSymbol?.ReturnType;
+        if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+        {
+            _writer.Append(MapType(returnType));
+        }
+        else
+        {
+            _writer.AppendKeyword("void");
+        }
+    }
+
+    private void WriteKernelMethodPrefix(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol)
+    {
+        var returnType = methodSymbol?.ReturnType;
+        if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+        {
+            reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
+                method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
+        }
+
+        _writer.AppendKeyword("extern \"C\" __global__ void");
+    }
+
+    private void WriteMethodBody(MethodDeclarationSyntax method)
+    {
+        using (_writer.Scope())
+        {
+            _indentLevel++;
+
+            if (method.Body != null)
+            {
+                Visit(method.Body);
+            }
+            else if (method.ExpressionBody != null)
+            {
+                AppendIndent();
+                // Assuming the expression body is something simple.
+                Visit(method.ExpressionBody.Expression);
+                _writer.AppendSemiColon();
+            }
+
+            _indentLevel--;
+        }
+    }
+
     private void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters)
     {
-        for (var i = 0; i < parameters.Count; i++)
+        var validParameters = new List<ParameterSyntax>();
+        foreach (var p in parameters)
         {
-            var p = parameters[i];
+            var paramSymbol = semanticModel.GetDeclaredSymbol(p);
+            var isJitConstant = false;
+            if (paramSymbol != null)
+            {
+                foreach (var attr in paramSymbol.GetAttributes())
+                {
+                    if (attr.AttributeClass?.Name == "JitConstantAttribute")
+                    {
+                        isJitConstant = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isJitConstant)
+            {
+                validParameters.Add(p);
+            }
+        }
+
+        for (var i = 0; i < validParameters.Count; i++)
+        {
+            var p = validParameters[i];
             var typeSymbol = semanticModel.GetTypeInfo(p.Type!).Type;
 
             // Check if it's a custom struct
@@ -149,7 +232,7 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
             _writer.Append(cppType);
             _writer.AppendSpace();
             _writer.Append(p.Identifier.Text);
-            if (i < parameters.Count - 1)
+            if (i < validParameters.Count - 1)
             {
                 _writer.AppendComma();
             }
@@ -293,11 +376,29 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         {
             _writer.Append("*");
             Visit(node.Operand);
+            return;
         }
-        else
+
+        var op = node.OperatorToken.Text;
+        _writer.Append(op);
+        Visit(node.Operand);
+    }
+
+    public override void VisitCastExpression(CastExpressionSyntax node)
+    {
+        using (_writer.Parentheses())
         {
-            _writer.Append(node.OperatorToken.Text);
-            Visit(node.Operand);
+            _writer.Append(MapType(semanticModel.GetTypeInfo(node.Type).Type));
+        }
+
+        Visit(node.Expression);
+    }
+
+    public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
+    {
+        using (_writer.Parentheses())
+        {
+            Visit(node.Expression);
         }
     }
 
@@ -330,6 +431,8 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
 
     public override void VisitForStatement(ForStatementSyntax node)
     {
+        _writer.AppendLine("#pragma unroll");
+        AppendIndent();
         _writer.AppendKeyword("for");
         using (_writer.Parentheses())
         {
@@ -531,7 +634,8 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         }
     }
 
-    private void WriteStaticSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, object constantValue, string cppElementType, ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i)
+    private void WriteStaticSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, object constantValue,
+        string cppElementType, ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i)
     {
         var elemSize = GetApproximateSize(typeArg);
         var byteSize = (int)constantValue * elemSize;
@@ -559,7 +663,8 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         }
     }
 
-    private void WriteDynamicSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, string cppElementType, LocalDeclarationStatementSyntax node, int i)
+    private void WriteDynamicSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, string cppElementType,
+        LocalDeclarationStatementSyntax node, int i)
     {
         if (!_hasEmittedDynamicSmemBase)
         {
@@ -596,6 +701,11 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
     {
         var typeSymbol = semanticModel.GetTypeInfo(node.Type).Type;
+        if (typeSymbol is { SpecialType: SpecialType.System_String })
+        {
+            reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.Type.GetLocation()));
+        }
+
         if (typeSymbol is { TypeKind: TypeKind.Struct } &&
             typeSymbol.ContainingNamespace.ToDisplayString() != "System")
         {
@@ -734,5 +844,12 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         }
 
         base.VisitPredefinedType(node);
+    }
+
+    public override void DefaultVisit(SyntaxNode node)
+    {
+        reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
+            node.Kind().ToString()));
+        base.DefaultVisit(node);
     }
 }
