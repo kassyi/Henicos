@@ -1,4 +1,72 @@
-﻿result[0] = (a + b);
+﻿--- IL DUMP ---
+// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::ArithmeticOperators(System.Int32[],System.Int32,System.Int32)
+
+IL_0000: nop
+IL_0001: ldarg.0
+IL_0002: ldc.i4.0
+IL_0003: ldarg.1
+IL_0004: ldarg.2
+IL_0005: add
+IL_0006: stelem.i4
+IL_0007: ldarg.0
+IL_0008: ldc.i4.1
+IL_0009: ldarg.1
+IL_000a: ldarg.2
+IL_000b: sub
+IL_000c: stelem.i4
+IL_000d: ldarg.0
+IL_000e: ldc.i4.2
+IL_000f: ldarg.1
+IL_0010: ldarg.2
+IL_0011: mul
+IL_0012: stelem.i4
+IL_0013: ldarg.0
+IL_0014: ldc.i4.3
+IL_0015: ldarg.1
+IL_0016: ldarg.2
+IL_0017: div
+IL_0018: stelem.i4
+IL_0019: ldarg.0
+IL_001a: ldc.i4.4
+IL_001b: ldarg.1
+IL_001c: ldarg.2
+IL_001d: rem
+IL_001e: stelem.i4
+IL_001f: ldarg.0
+IL_0020: ldc.i4.5
+IL_0021: ldarg.1
+IL_0022: ldarg.2
+IL_0023: and
+IL_0024: stelem.i4
+IL_0025: ldarg.0
+IL_0026: ldc.i4.6
+IL_0027: ldarg.1
+IL_0028: ldarg.2
+IL_0029: or
+IL_002a: stelem.i4
+IL_002b: ldarg.0
+IL_002c: ldc.i4.7
+IL_002d: ldarg.1
+IL_002e: ldarg.2
+IL_002f: xor
+IL_0030: stelem.i4
+IL_0031: ldarg.0
+IL_0032: ldc.i4.8
+IL_0033: ldarg.1
+IL_0034: ldc.i4.5
+IL_0035: shl
+IL_0036: stelem.i4
+IL_0037: ldarg.0
+IL_0038: ldc.i4.s 9
+IL_003a: ldarg.1
+IL_003b: ldc.i4.5
+IL_003c: shr
+IL_003d: stelem.i4
+IL_003e: ret
+
+
+--- CPP CODE ---
+result[0] = (a + b);
 result[1] = (a - b);
 result[2] = (a * b);
 result[3] = (a / b);

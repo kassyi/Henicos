@@ -1,6 +1,38 @@
-﻿bool loc_0;
+﻿--- IL DUMP ---
+// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::IfElseTest(System.Int32[],System.Int32)
+// Variables:
+//   [0] System.Boolean
+
+IL_0000: nop
+IL_0001: ldarg.0
+IL_0002: ldc.i4.0
+IL_0003: ldelem.i4
+IL_0004: ldarg.1
+IL_0005: cgt
+IL_0007: stloc.0
+IL_0008: ldloc.0
+IL_0009: brfalse.s IL_0013
+IL_000b: nop
+IL_000c: ldarg.0
+IL_000d: ldc.i4.1
+IL_000e: ldc.i4.1
+IL_000f: stelem.i4
+IL_0010: nop
+IL_0011: br.s IL_0019
+IL_0013: nop
+IL_0014: ldarg.0
+IL_0015: ldc.i4.1
+IL_0016: ldc.i4.0
+IL_0017: stelem.i4
+IL_0018: nop
+IL_0019: ret
+
+
+--- CPP CODE ---
+bool loc_0;
 loc_0 = (data[0] > threshold);
-if ((loc_0 == 0)) goto IL_0013;
+__stack_0 = loc_0;
+if ((__stack_0 == 0)) goto IL_0013;
 data[1] = 1;
 goto IL_0019;
 IL_0013:

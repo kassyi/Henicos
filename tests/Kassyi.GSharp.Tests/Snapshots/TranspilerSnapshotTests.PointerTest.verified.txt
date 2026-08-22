@@ -1,3 +1,22 @@
-﻿*(b) = (*(a) * 2);
+﻿--- IL DUMP ---
+// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::PointerTest(System.Int32[],System.Int32&,System.Int32&)
+
+IL_0000: nop
+IL_0001: ldarg.2
+IL_0002: ldarg.1
+IL_0003: ldind.i4
+IL_0004: ldc.i4.2
+IL_0005: mul
+IL_0006: stind.i4
+IL_0007: ldarg.0
+IL_0008: ldc.i4.0
+IL_0009: ldarg.2
+IL_000a: ldind.i4
+IL_000b: stelem.i4
+IL_000c: ret
+
+
+--- CPP CODE ---
+*(b) = (*(a) * 2);
 data[0] = *(b);
 return;

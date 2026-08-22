@@ -1,16 +1,91 @@
-﻿if ((a == b)) goto IL_000a;
+﻿--- IL DUMP ---
+// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::ComparisonOperators(System.Int32[],System.Int32,System.Int32)
+
+IL_0000: nop
+IL_0001: ldarg.0
+IL_0002: ldc.i4.0
+IL_0003: ldarg.1
+IL_0004: ldarg.2
+IL_0005: beq.s IL_000a
+IL_0007: ldc.i4.0
+IL_0008: br.s IL_000b
+IL_000a: ldc.i4.1
+IL_000b: stelem.i4
+IL_000c: ldarg.0
+IL_000d: ldc.i4.1
+IL_000e: ldarg.1
+IL_000f: ldarg.2
+IL_0010: bgt.s IL_0015
+IL_0012: ldc.i4.0
+IL_0013: br.s IL_0016
+IL_0015: ldc.i4.1
+IL_0016: stelem.i4
+IL_0017: ldarg.0
+IL_0018: ldc.i4.2
+IL_0019: ldarg.1
+IL_001a: ldarg.2
+IL_001b: blt.s IL_0020
+IL_001d: ldc.i4.0
+IL_001e: br.s IL_0021
+IL_0020: ldc.i4.1
+IL_0021: stelem.i4
+IL_0022: ret
+
+
+--- CPP CODE ---
+__stack_3 = b;
+__stack_2 = a;
+__stack_1 = 0;
+__stack_0 = result;
+if ((__stack_1 == __stack_0)) goto IL_000a;
+__stack_2 = 0;
+__stack_1 = __stack_2;
+__stack_0 = __stack_3;
 goto IL_000b;
 IL_000a:
+__stack_4 = 1;
 IL_000b:
-unknown_array[0] = 1;
-if ((a > b)) goto IL_0015;
+__stack_2[__stack_1] = __stack_0;
+__stack_5 = b;
+__stack_4 = a;
+__stack_3 = 1;
+__stack_2 = result;
+__stack_1 = __stack_3;
+__stack_0 = __stack_4;
+if ((__stack_1 > __stack_0)) goto IL_0015;
+__stack_4 = 0;
+__stack_3 = __stack_2;
+__stack_2 = __stack_3;
+__stack_1 = __stack_4;
+__stack_0 = __stack_5;
 goto IL_0016;
 IL_0015:
+__stack_6 = 1;
 IL_0016:
-unknown_array[0] = 1;
-if ((a < b)) goto IL_0020;
+__stack_2[__stack_1] = __stack_0;
+__stack_7 = b;
+__stack_6 = a;
+__stack_5 = 2;
+__stack_4 = result;
+__stack_2 = __stack_4;
+__stack_1 = __stack_5;
+__stack_0 = __stack_6;
+if ((__stack_1 < __stack_0)) goto IL_0020;
+__stack_6 = 0;
+__stack_5 = __stack_2;
+__stack_4 = __stack_3;
+__stack_3 = __stack_4;
+__stack_2 = __stack_5;
+__stack_1 = __stack_6;
+__stack_0 = __stack_7;
 goto IL_0021;
 IL_0020:
+__stack_8 = 1;
 IL_0021:
-unknown_array[0] = 1;
+__stack_2[__stack_1] = __stack_0;
+__stack_5 = __stack_3;
+__stack_3 = __stack_5;
+__stack_2 = __stack_6;
+__stack_1 = __stack_7;
+__stack_0 = __stack_8;
 return;

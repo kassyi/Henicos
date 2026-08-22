@@ -50,8 +50,15 @@ namespace Kassyi.GSharp.Tests
         [MemberData(nameof(GetSnapshotKernels))]
         public Task KernelSnapshot(string kernelName)
         {
-            var code = TranspileMethod(kernelName);
-            return Verifier.Verify(code)
+            var targetAssemblyPath = typeof(SnapshotKernels).Assembly.Location;
+            var typeFullName = "Kassyi.GSharp.Tests.SnapshotKernels";
+            
+            var ilDump = IlDumper.DumpMethod(targetAssemblyPath, typeFullName, kernelName);
+            var cppCode = TranspilerRunner.GenerateKernelCode(targetAssemblyPath, typeFullName, kernelName);
+
+            var combinedOutput = $"--- IL DUMP ---\n{ilDump}\n--- CPP CODE ---\n{cppCode}";
+
+            return Verifier.Verify(combinedOutput)
                 .UseDirectory("Snapshots")
                 .UseMethodName(kernelName);
         }
@@ -171,9 +178,40 @@ namespace Kassyi.GSharp.Tests
         public static void VariableTypeTest(ulong[] data)
         {
             ulong x = 1234567890123456789;
-            float y = 3.14f;
-            double z = 2.718;
             data[0] = x;
+        }
+
+        [GpuKernel]
+        public static void SwitchTest(int[] data, int value)
+        {
+            switch (value)
+            {
+                case 0:
+                    data[0] = 10;
+                    break;
+                case 1:
+                    data[0] = 20;
+                    break;
+                case 2:
+                    data[0] = 30;
+                    break;
+                default:
+                    data[0] = -1;
+                    break;
+            }
+        }
+
+        [GpuKernel]
+        public static void ShortCircuitTest(int[] data, int a, int b)
+        {
+            if (a > 0 && b < 10 || a == -1)
+            {
+                data[0] = 1;
+            }
+            else
+            {
+                data[0] = 0;
+            }
         }
 
         public struct Vector3

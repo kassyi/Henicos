@@ -1,0 +1,63 @@
+﻿--- IL DUMP ---
+// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::SwitchTest(System.Int32[],System.Int32)
+// Variables:
+//   [0] System.Int32
+//   [1] System.Int32
+
+IL_0000: nop
+IL_0001: ldarg.1
+IL_0002: stloc.1
+IL_0003: ldloc.1
+IL_0004: stloc.0
+IL_0005: ldloc.0
+IL_0006: switch IL_0019,IL_0020,IL_0027
+IL_0017: br.s IL_002e
+IL_0019: ldarg.0
+IL_001a: ldc.i4.0
+IL_001b: ldc.i4.s 10
+IL_001d: stelem.i4
+IL_001e: br.s IL_0034
+IL_0020: ldarg.0
+IL_0021: ldc.i4.0
+IL_0022: ldc.i4.s 20
+IL_0024: stelem.i4
+IL_0025: br.s IL_0034
+IL_0027: ldarg.0
+IL_0028: ldc.i4.0
+IL_0029: ldc.i4.s 30
+IL_002b: stelem.i4
+IL_002c: br.s IL_0034
+IL_002e: ldarg.0
+IL_002f: ldc.i4.0
+IL_0030: ldc.i4.m1
+IL_0031: stelem.i4
+IL_0032: br.s IL_0034
+IL_0034: ret
+
+
+--- CPP CODE ---
+int loc_0;
+int loc_1;
+loc_1 = value;
+loc_0 = loc_1;
+__stack_0 = loc_0;
+switch (__stack_0){
+case 0: goto IL_0019;
+case 1: goto IL_0020;
+case 2: goto IL_0027;
+}
+goto IL_002e;
+IL_0019:
+data[0] = 10;
+goto IL_0034;
+IL_0020:
+data[0] = 20;
+goto IL_0034;
+IL_0027:
+data[0] = 30;
+goto IL_0034;
+IL_002e:
+data[0] = -1;
+goto IL_0034;
+IL_0034:
+return;

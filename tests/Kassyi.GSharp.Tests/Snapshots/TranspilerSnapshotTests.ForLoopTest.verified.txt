@@ -1,4 +1,36 @@
-﻿int loc_0;
+﻿--- IL DUMP ---
+// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::ForLoopTest(System.Int32[],System.Int32)
+// Variables:
+//   [0] System.Int32
+//   [1] System.Boolean
+
+IL_0000: nop
+IL_0001: ldc.i4.0
+IL_0002: stloc.0
+IL_0003: br.s IL_0011
+IL_0005: nop
+IL_0006: ldarg.0
+IL_0007: ldloc.0
+IL_0008: ldloc.0
+IL_0009: ldc.i4.2
+IL_000a: mul
+IL_000b: stelem.i4
+IL_000c: nop
+IL_000d: ldloc.0
+IL_000e: ldc.i4.1
+IL_000f: add
+IL_0010: stloc.0
+IL_0011: ldloc.0
+IL_0012: ldarg.1
+IL_0013: clt
+IL_0015: stloc.1
+IL_0016: ldloc.1
+IL_0017: brtrue.s IL_0005
+IL_0019: ret
+
+
+--- CPP CODE ---
+int loc_0;
 bool loc_1;
 loc_0 = 0;
 goto IL_0011;
@@ -7,5 +39,6 @@ data[loc_0] = (loc_0 * 2);
 loc_0 = (loc_0 + 1);
 IL_0011:
 loc_1 = (loc_0 < length);
-if (loc_1) goto IL_0005;
+__stack_0 = loc_1;
+if (__stack_0) goto IL_0005;
 return;
