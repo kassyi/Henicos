@@ -79,20 +79,13 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         {
             foreach (var attr in methodSymbol.GetAttributes())
             {
-                if (attr.AttributeClass?.Name != "MethodImplAttribute" || attr.ConstructorArguments.Length <= 0 ||
-                    attr.ConstructorArguments[0].Value is not int intVal)
+                if (attr.AttributeClass?.Name == "GpuInlineAttribute")
                 {
-                    continue;
+                    hasAggressiveInlining = true;
                 }
-
-                switch (intVal)
+                else if (attr.AttributeClass?.Name == "GpuNoInlineAttribute")
                 {
-                    case 256:
-                        hasAggressiveInlining = true;
-                        break;
-                    case 8:
-                        hasNoInlining = true;
-                        break;
+                    hasNoInlining = true;
                 }
             }
         }
@@ -161,7 +154,14 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
 
     private void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters)
     {
-        var validParameters = parameters.Where(p => !IsJitConstant(p)).ToList();
+        var validParameters = new List<ParameterSyntax>(parameters.Count);
+        foreach (var p in parameters)
+        {
+            if (!IsJitConstant(p))
+            {
+                validParameters.Add(p);
+            }
+        }
 
         for (var i = 0; i < validParameters.Count; i++)
         {
@@ -185,8 +185,20 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
     private bool IsJitConstant(ParameterSyntax p)
     {
         var paramSymbol = semanticModel.GetDeclaredSymbol(p);
-        return paramSymbol != null && paramSymbol.GetAttributes()
-            .Any(attr => attr.AttributeClass?.Name == "JitConstantAttribute");
+        if (paramSymbol == null)
+        {
+            return false;
+        }
+
+        foreach (var attr in paramSymbol.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "JitConstantAttribute")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol)
@@ -209,10 +221,14 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
             cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "*";
         }
 
-        if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword)))
+        foreach (var m in p.Modifiers)
         {
-            cppType += "*";
-            isPointer = true;
+            if (m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword))
+            {
+                cppType += "*";
+                isPointer = true;
+                break;
+            }
         }
 
         return (cppType, isPointer);
@@ -272,9 +288,17 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
         _writer.AppendLine($"struct {structSym.Name}");
         using (_writer.Scope())
         {
-            foreach (var member in structSym.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+            var members = structSym.GetMembers().Where(m => !m.IsStatic && !m.IsImplicitlyDeclared);
+            foreach (var member in members)
             {
-                _writer.AppendLine($"{MapType(member.Type)} {member.Name};");
+                if (member is IFieldSymbol field)
+                {
+                    _writer.AppendLine($"{MapType(field.Type)} {field.Name};");
+                }
+                else if (member is IPropertySymbol prop)
+                {
+                    _writer.AppendLine($"{MapType(prop.Type)} {prop.Name};");
+                }
             }
         }
 
@@ -566,7 +590,13 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
     public override void VisitBreakStatement(BreakStatementSyntax node)
     {
         _writer.AppendKeyword("break");
-        _writer.Append(";");
+        _writer.AppendSemiColon();
+    }
+
+    public override void VisitContinueStatement(ContinueStatementSyntax node)
+    {
+        _writer.AppendKeyword("continue");
+        _writer.AppendSemiColon();
     }
 
     public override void VisitReturnStatement(ReturnStatementSyntax node)

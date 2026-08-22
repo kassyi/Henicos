@@ -33,17 +33,19 @@ public struct PhysicsVector
     public float Z;
 }
 
+public record struct Point(float X, float Y);
+
 public static partial class ComprehensiveSpecKernel
 {
     [GpuDevice]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [GpuInline]
     public static float ComputeMagnitude(PhysicsVector v)
     {
         return (float)Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
     }
 
     [GpuDevice]
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [GpuNoInline]
     public static bool IsPositive(float value)
     {
         return value > 0;
@@ -89,6 +91,10 @@ public static partial class ComprehensiveSpecKernel
             PhysicsVector p = particles[tid];
             SpecTypes types = largeStructVal; // Proves compilation of all primitive types
 
+            // 3.5 Record struct and var keyword support
+            var origin = new Point(0, 0);
+            var distance = origin.X + p.X;
+
             // 4. All Math Mappings and Device Method invocation
             float mag = ComputeMagnitude(p);
             mag = (float)Math.Abs(mag);
@@ -96,6 +102,7 @@ public static partial class ComprehensiveSpecKernel
             // 5. Automatic Loop Unrolling via JitConstant (for)
             for (int i = 0; i < unrollFactor; i++)
             {
+                if (i == 1) continue;
                 mag = (float)Math.Max(mag, p.X * i);
             }
 
@@ -304,3 +311,4 @@ This explicit trace proves that:
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.
 5. **`continue` statements are currently silently ignored** (documented limitation).
 6. **Phase 5 Target Identified**: `ref` and `out` scalars are correctly transpiled to pointers in `.cu` but their Device-to-Host copy-back logic is currently **missing** in the host C# launcher.
+
