@@ -6,7 +6,7 @@ public class GpuContext : IDisposable
     {
         get;
     }
-    private bool _disposed = false;
+    private bool _disposed;
 
     public GpuContext(int maxWords)
     {
