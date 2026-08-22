@@ -1,34 +1,34 @@
-using System;
+namespace Kassyi.Math.GpuBigInt;
 
-namespace Kassyi.Math.GpuBigInt
+public class GpuContext : IDisposable
 {
-    public class GpuContext : IDisposable
+    public int MaxWords
     {
-        public int MaxWords { get; }
-        private bool _disposed = false;
+        get;
+    }
+    private bool _disposed = false;
 
-        public GpuContext(int maxWords)
+    public GpuContext(int maxWords)
+    {
+        MaxWords = maxWords;
+        if (!NativeMethods.GpuBigInt_Init(maxWords))
         {
-            MaxWords = maxWords;
-            if (!NativeMethods.GpuBigInt_Init(maxWords))
-            {
-                throw new InvalidOperationException("Failed to initialize GPU context.");
-            }
+            throw new InvalidOperationException("Failed to initialize GPU context.");
         }
+    }
 
-        public void Dispose()
+    public void Dispose()
+    {
+        if (!_disposed)
         {
-            if (!_disposed)
-            {
-                NativeMethods.GpuBigInt_Cleanup();
-                _disposed = true;
-            }
-            GC.SuppressFinalize(this);
+            NativeMethods.GpuBigInt_Cleanup();
+            _disposed = true;
         }
+        GC.SuppressFinalize(this);
+    }
 
-        ~GpuContext()
-        {
-            Dispose();
-        }
+    ~GpuContext()
+    {
+        Dispose();
     }
 }
