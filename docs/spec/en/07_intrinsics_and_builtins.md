@@ -35,7 +35,14 @@ The `Gpu` static class provides essential synchronization primitives and atomic 
 * **`Gpu.SyncThreads()`**: Maps to `__syncthreads()`. Creates a barrier synchronization point for all threads within a block.
 * **`Gpu.AtomicAdd(ref T address, T val)`**: Maps to `atomicAdd(&address, val)`. Performs an atomic read-modify-write operation to prevent race conditions on shared or global memory.
 
-## 7.4 Shared Memory (`SharedMemory<T>`)
+## 7.4 Multi-Precision Arithmetic (PTX Optimization)
+
+The `Gpu` static class also provides highly optimized multi-precision arithmetic functions. These are transpiled into custom prelude functions (`__gsharp_add_cc`, `__gsharp_sub_cc`) that utilize `unsigned long long` casting to coax the NVCC compiler into emitting highly efficient PTX instructions (`add.cc`, `addc.cc`, `sub.cc`, `subc.cc`).
+
+* **`Gpu.AddWithCarry(uint a, uint b, ref ulong carry)`**: Adds two 32-bit integers with a 64-bit carry in/out. Maps to `__gsharp_add_cc`.
+* **`Gpu.SubWithBorrow(uint a, uint b, ref long borrow)`**: Subtracts two 32-bit integers with a 64-bit borrow in/out. Maps to `__gsharp_sub_cc`.
+
+## 7.5 Shared Memory (`SharedMemory<T>`)
 
 The `SharedMemory<T>` struct is a C# `ref struct` that abstracts CUDA's `__shared__` memory space. 
 

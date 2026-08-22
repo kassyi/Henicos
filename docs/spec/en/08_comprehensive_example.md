@@ -51,6 +51,18 @@ public static partial class ComprehensiveSpecKernel
         return value > 0;
     }
 
+    [System.Runtime.CompilerServices.InlineArray(8)]
+    public struct Vector8
+    {
+        private uint _element0;
+    }
+
+    public unsafe struct PhysicsState
+    {
+        public fixed uint Buffer[16];
+        public ulong Flags;
+    }
+
     [GpuKernel]
     public static void ProcessPhysics(
         PhysicsVector[] particles,
@@ -149,7 +161,30 @@ public static partial class ComprehensiveSpecKernel
                 successFlag = true;
             }
 
-            // 11. Early return
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+            inlineVec[0] = 123;
+            inlineVec[1] = 456;
+            
+            unsafe
+            {
+                PhysicsState state = new PhysicsState();
+                state.Buffer[0] = inlineVec[0];
+                state.Buffer[1] = inlineVec[1];
+                
+                ulong carry = 0;
+                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
+                
+                long borrow = 0;
+                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
+
+                if (sum > diff)
+                {
+                    state.Flags = 1;
+                }
+            }
+
+            // 12. Early return
             if (ty > 0)
             {
                 return;
@@ -182,99 +217,177 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
-public const string ProcessPhysics_CudaSource = @"
-__forceinline__ __device__ float ComputeMagnitude(PhysicsVector v){
-    return (float)sqrt((((v.X*v.X)+(v.Y*v.Y))+(v.Z*v.Z)));
+public const string ProcessPhysics_CudaSource = @"// GSharp Prelude
+__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
+    unsigned long long sum = (unsigned long long)a + b + *carry;
+    *carry = sum >> 32;
+    return (unsigned int)sum;
 }
+__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
+    long long diff = (long long)a - b - *borrow;
+    *borrow = diff < 0 ? 1 : 0;
+    return (unsigned int)diff;
+}
+struct PhysicsVector
+{
+float X;
+float Y;
+float Z;
+}
+;
+__forceinline__ __device__ float ComputeMagnitude(PhysicsVector v){
+return (float)sqrt((((v.X*v.X)+(v.Y*v.Y))+(v.Z*v.Z)));
+}
+
 
 __noinline__ __device__ bool IsPositive(float value){
-    return (value>0);
+return (value>0);
 }
 
-struct PhysicsVector { float X; float Y; float Z; };
-struct SpecTypes { bool BooleanValue; unsigned char ByteValue; char SByteValue; short ShortValue; unsigned short UShortValue; int IntValue; unsigned int UIntValue; long long LongValue; unsigned long long ULongValue; float FloatValue; double DoubleValue; };
 
+struct PhysicsVector
+{
+float X;
+float Y;
+float Z;
+}
+;
+struct SpecTypes
+{
+bool BooleanValue;
+unsigned char ByteValue;
+char SByteValue;
+short ShortValue;
+unsigned short UShortValue;
+int IntValue;
+unsigned int UIntValue;
+long long LongValue;
+unsigned long long ULongValue;
+float FloatValue;
+double DoubleValue;
+}
+;
+struct Point
+{
+float X;
+float Y;
+}
+;
+struct Vector8
+{
+unsigned int _element0[8];
+__device__ inline unsigned int& operator[](int index) { return _element0[index]; }
+__device__ inline const unsigned int& operator[](int index) const { return _element0[index]; }
+}
+;
+struct PhysicsState
+{
+unsigned int Buffer[16];
+unsigned long long Flags;
+}
+;
 extern ""C"" __global__ void ProcessPhysics(PhysicsVector* particles,float* totalMagnitude,bool* successFlag,SpecTypes largeStructVal,int particleCount){
-    successFlag=false;
-    int tx=threadIdx.x;
-    int ty=threadIdx.y;
-    int tz=threadIdx.z;
-    int bx=blockIdx.x;
-    int by=blockIdx.y;
-    int bz=blockIdx.z;
-    int bdimX=blockDim.x;
-    int bdimY=blockDim.y;
-    int bdimZ=blockDim.z;
-    int gdimX=gridDim.x;
-    int gdimY=gridDim.y;
-    int gdimZ=gridDim.z;
-    int tid=(tx+(bx*bdimX));
+successFlag=false;
+int tx=threadIdx.x;
+int ty=threadIdx.y;
+int tz=threadIdx.z;
+int bx=blockIdx.x;
+int by=blockIdx.y;
+int bz=blockIdx.z;
+int bdimX=blockDim.x;
+int bdimY=blockDim.y;
+int bdimZ=blockDim.z;
+int gdimX=gridDim.x;
+int gdimY=gridDim.y;
+int gdimZ=gridDim.z;
+int tid=(tx+(bx*bdimX));
+__shared__ int staticCache[10000];
+extern __shared__ char __gsharp_dynamic_smem[];
+size_t __smem_offset = 0;
+__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
+float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
+__smem_offset += (particleCount) * sizeof(float);
+if((tid<particleCount))
+{
+PhysicsVector p=particles[tid];
+SpecTypes types=largeStructVal;
+Point origin=Point00;
+float distance=(origin.X+p.X);
+float mag=ComputeMagnitude(p);
+mag=(float)abs(mag);
+#pragma unroll
+for(int i=0;(i<unrollFactor);i++)
+{
+if((i==1))
+continue;
 
-    __shared__ int staticCache[10000];
-    extern __shared__ char __gsharp_dynamic_smem[];
-    size_t __smem_offset = 0;
-    __smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-    float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
-    __smem_offset += (particleCount) * sizeof(float);
-    
-    if((tid<particleCount))
-    {
-        PhysicsVector p=particles[tid];
-        SpecTypes types=largeStructVal;
-        float mag=ComputeMagnitude(p);
-        mag=(float)abs(mag);
+mag=(float)max(mag,(p.X*i));
+}
 
-        #pragma unroll
-        for(int i=0;(i<unrollFactor);i++)
-        {
-            mag=(float)max(mag,(p.X*i));
-        }
+if(!IsPositive(mag))
+{
+mag=0;
+}
 
-        if(!IsPositive(mag))
-        {
-            mag=0;
-        }
+int counter=0;
+while((counter<2))
+{
+mag=(float)min(mag,(mag+1));
+counter++;
+}
 
-        int counter=0;
-        while((counter<2))
-        {
-            mag=(float)min(mag,(mag+1));
-            counter++;
-        }
+do
+{
+counter--;
+}
+while((counter>0));
 
-        do
-        {
-            counter--;
-        }
-        while((counter>0));
+switch(tx)
+{
+case 0:
+mag+=1;
+break;
+default:
+mag+=0;
+break;
+}
 
-        switch(tx)
-        {
-            case 0:
-                mag+=1;
-                break;
-            default:
-                mag+=0;
-                break;
-        }
+staticCache[tx]=tid;
+dynamicCache[tx]=mag;
+__syncthreads();
+if((tx==0))
+{
+atomicAdd(&totalMagnitude,dynamicCache[0]);
+successFlag=true;
+}
 
-        staticCache[tx]=tid;
-        dynamicCache[tx]=mag;
+Vector8 inlineVec=Vector8;
+inlineVec[0]=123;
+inlineVec[1]=456;
+{
+PhysicsState state=PhysicsState;
+state.Buffer[0]=inlineVec[0];
+state.Buffer[1]=inlineVec[1];
+unsigned long long carry=0;
+unsigned int sum=__gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
+long long borrow=0;
+unsigned int diff=__gsharp_sub_cc(sum,state.Buffer[1],&borrow);
+if((sum>diff))
+{
+state.Flags=1;
+}
 
-        __syncthreads();
+}
 
-        if((tx==0))
-        {
-            atomicAdd(&totalMagnitude,dynamicCache[0]);
-            successFlag=true;
-        }
+if((ty>0))
+{
+return;
+}
 
-        if((ty>0))
-        {
-            return;
-        }
-    }
-}";
+}
+
+}
+";
 // Host launcher omitted for brevity...
 ```
 
