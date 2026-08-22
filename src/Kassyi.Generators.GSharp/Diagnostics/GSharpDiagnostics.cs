@@ -56,4 +56,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor GpuBigIntExprDirectAssignment = new(
+        id: "GSH0005",
+        title: "GpuBigIntExpr must be assigned via .Value",
+        messageFormat: "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
