@@ -1,0 +1,38 @@
+name: GPU Optimization Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-on-gpu:
+    name: Run Tests on Self-Hosted GPU Runner
+    # Using 'self-hosted' and 'gpu' labels to target the user's home PC or dedicated GPU machine
+    runs-on: [self-hosted, gpu, windows]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    # Ensure CUDA Toolkit is available (usually pre-installed on the self-hosted runner)
+    - name: Verify CUDA Installation
+      run: nvcc --version
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build project
+      run: dotnet build --no-restore -c Release
+
+    - name: Run Static Compilation Tests (Physical GPU not required for execution)
+      run: dotnet test tests/Kassyi.GSharp.Tests --filter ArchitectureAndOptimizationTests --no-build -c Release
+
+    - name: Run Execution Tests (Requires physical GPU matching compiled architecture)
+      run: dotnet test tests/Kassyi.GSharp.Tests --filter PtxEngineExperimentTests --no-build -c Release
