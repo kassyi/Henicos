@@ -1,39 +1,31 @@
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
-
 namespace Kassyi.GSharp;
 
-public class JitCompiledKernel<TDelegate> : IDisposable where TDelegate : Delegate
+public class JitCompiledKernel<TDelegate>(
+    IntPtr hModule,
+    TDelegate kernel,
+    Action<IntPtr> freeFunc,
+    Action deleteFileFunc)
+    : IDisposable
+    where TDelegate : Delegate
 {
-    private IntPtr _hModule;
-    private readonly Action<IntPtr> _freeFunc;
-    private readonly Action _deleteFileFunc;
+    private IntPtr _hModule = hModule;
 
     public TDelegate Kernel
     {
         get;
-    }
+    } = kernel;
 
     public IntPtr NativeHandle => _hModule;
-
-    public JitCompiledKernel(IntPtr hModule, TDelegate kernel, Action<IntPtr> freeFunc, Action deleteFileFunc)
-    {
-        _hModule = hModule;
-        Kernel = kernel;
-        _freeFunc = freeFunc;
-        _deleteFileFunc = deleteFileFunc;
-    }
 
     public void Dispose()
     {
         if (_hModule != IntPtr.Zero)
         {
-            _freeFunc?.Invoke(_hModule);
+            freeFunc(_hModule);
             _hModule = IntPtr.Zero;
         }
 
-        _deleteFileFunc?.Invoke();
+        deleteFileFunc();
     }
 }
 
@@ -45,7 +37,7 @@ public static class NvccCompiler
         get; set;
     } = psi =>
     {
-        using var process = Process.Start(psi);
+        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start process");
         process.WaitForExit();
         if (process.ExitCode != 0)
         {
@@ -58,7 +50,7 @@ public static class NvccCompiler
         get; set;
     } = () =>
     {
-        var programFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var vswhere = FileSystem.Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
 
         if (!FileSystem.File.Exists(vswhere))
@@ -73,7 +65,7 @@ public static class NvccCompiler
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(psi);
+        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start vswhere process");
         var output = process.StandardOutput.ReadToEnd().Trim();
         process.WaitForExit();
         return output;
@@ -118,7 +110,7 @@ public static class NvccCompiler
         return "nvcc.exe";
     }
 
-    public static void Compile(string cuFile, string dllFile, string includePath, string tempDir)
+    public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
         var vcvars = GetVcvarsPath();
         var nvcc = GetNvccPath();
@@ -211,15 +203,24 @@ public static class NativeModuleLoader
 
         var del = Marshal.GetDelegateForFunctionPointer<TDelegate>(pFunc);
 
-        var deleteAction = () =>
-        {
-            if (FileSystem.File.Exists(dllFile))
-            {
-                try { FileSystem.File.Delete(dllFile); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete dll file: {ex.Message}"); }
-            }
-        };
-
         return new JitCompiledKernel<TDelegate>(hModule, del, FreeLibraryFunc, deleteAction);
+
+        void deleteAction()
+        {
+            if (!FileSystem.File.Exists(dllFile))
+            {
+                return;
+            }
+
+            try
+            {
+                FileSystem.File.Delete(dllFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete dll file: {ex.Message}");
+            }
+        }
     }
 }
 
@@ -227,7 +228,7 @@ public class JitCompiler
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
 
-    public static JitCompiledKernel<TDelegate> CompileAndLoad<TDelegate>(string cuCode, string functionName, string includePath = null) where TDelegate : Delegate
+    public static JitCompiledKernel<TDelegate> CompileAndLoad<TDelegate>(string cuCode, string functionName, string? includePath = null) where TDelegate : Delegate
     {
         var tempDir = FileSystem.Path.Combine(FileSystem.Path.GetTempPath(), "KassyiGSharpJit");
         FileSystem.Directory.CreateDirectory(tempDir);
