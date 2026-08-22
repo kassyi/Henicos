@@ -1,199 +1,95 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Frozen;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Kassyi.GSharp.Transpiler.Ast;
+using Kassyi.GSharp.Transpiler.Handlers;
 
-namespace Kassyi.GSharp.Transpiler
+namespace Kassyi.GSharp.Transpiler;
+
+public class AstBuilder
 {
-    public class AstBuilder
+    private static readonly FrozenDictionary<Code, IOpCodeHandler> s_handlers;
+
+    static AstBuilder()
     {
-        private readonly Dictionary<Code, Action<Instruction, Stack<IAstNode>, List<IAstNode>, MethodDefinition>> _handlers = new();
-
-        public AstBuilder()
+        var dict = new Dictionary<Code, IOpCodeHandler>();
+        var handlers = new IOpCodeHandler[]
         {
-            Register(Code.Nop, (ins, stack, stmts, method) => { /* Ignore Nop */ });
+            new LoadArgumentHandler(),
+            new LoadConstantHandler(),
+            new BinaryOpHandler(),
+            new StoreArgumentHandler(),
+            new LocalVariableHandler(),
+            new ArrayHandler(),
+            new MethodCallHandler(),
+            new BranchHandler()
+        };
 
-            Register(new[] { Code.Ldarg_0, Code.Ldarg_1, Code.Ldarg_2, Code.Ldarg_3, Code.Ldarg_S, Code.Ldarg }, 
-                (ins, stack, stmts, method) => stack.Push(new VariableNode(GetArgName(ins, method))));
-
-            Register(new[] { Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3,
-                 Code.Ldc_I4_4, Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1 }, 
-                (ins, stack, stmts, method) => stack.Push(new LiteralNode(GetLdcI4Value(ins))));
-
-            RegisterBinaryOp(Code.Add, BinaryOperator.Add);
-            RegisterBinaryOp(Code.Sub, BinaryOperator.Sub);
-            RegisterBinaryOp(Code.Mul, BinaryOperator.Mul);
-            RegisterBinaryOp(Code.Div, BinaryOperator.Div);
-            RegisterBinaryOp(Code.Rem, BinaryOperator.Mod);
-            
-            RegisterBinaryOp(Code.Ceq, BinaryOperator.Eq);
-            RegisterBinaryOp(Code.Cgt, BinaryOperator.Gt);
-            RegisterBinaryOp(Code.Clt, BinaryOperator.Lt);
-
-            Register(new[] { Code.Starg, Code.Starg_S }, 
-                (ins, stack, stmts, method) => stmts.Add(new AssignNode(GetArgName(ins, method), stack.Pop())));
-
-            Register(new[] { Code.Stloc_0, Code.Stloc_1, Code.Stloc_2, Code.Stloc_3, Code.Stloc_S, Code.Stloc }, 
-                (ins, stack, stmts, method) => stmts.Add(new AssignNode("loc_" + GetLocIndex(ins), stack.Pop())));
-
-            Register(new[] { Code.Ldloc_0, Code.Ldloc_1, Code.Ldloc_2, Code.Ldloc_3, Code.Ldloc_S, Code.Ldloc }, 
-                (ins, stack, stmts, method) => stack.Push(new VariableNode("loc_" + GetLocIndex(ins))));
-
-            // Array support
-            Register(new[] { Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_Ref }, 
-                (ins, stack, stmts, method) => {
-                    var index = stack.Pop();
-                    var arrayRef = stack.Pop();
-                    string arrayName = (arrayRef as VariableNode)?.Name ?? "unknown_array";
-                    stack.Push(new ArrayAccessNode(arrayName, index));
-                });
-            
-            Register(new[] { Code.Stelem_I4, Code.Stelem_Ref }, 
-                (ins, stack, stmts, method) => {
-                    var value = stack.Pop();
-                    var index = stack.Pop();
-                    var arrayRef = stack.Pop();
-                    string arrayName = (arrayRef as VariableNode)?.Name ?? "unknown_array";
-                    stmts.Add(new ArrayAssignNode(arrayName, index, value));
-                });
-
-            Register(Code.Call, (ins, stack, stmts, method) => 
+        foreach (var handler in handlers)
+        {
+            foreach (var code in handler.SupportedOpCodes)
             {
-                var methodRef = (MethodReference)ins.Operand;
-                
-                // Only allow calls to methods with [GpuKernel] attribute (Whitelist approach)
-                var resolvedMethod = methodRef.Resolve();
-                bool isSupported = resolvedMethod?.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute") == true;
-                
-                if (!isSupported)
-                {
-                    throw new NotSupportedException($"Unsupported method call: {methodRef.FullName}. Only [GpuKernel] methods are allowed in G#.");
-                }
-
-                var args = new IAstNode[methodRef.Parameters.Count];
-                for (int i = args.Length - 1; i >= 0; i--)
-                {
-                    args[i] = stack.Pop();
-                }
-                
-                var callNode = new MethodCallNode(methodRef.Name, args);
-                
-                if (methodRef.ReturnType.FullName == "System.Void")
-                {
-                    stmts.Add(callNode);
-                }
-                else
-                {
-                    stack.Push(callNode);
-                }
-            });
-
-            Register(Code.Ret, (ins, stack, stmts, method) => { /* Ignore return */ });
-
-            // Control flow graph support (Basic block placeholders)
-            Register(new[] { 
-                Code.Br, Code.Br_S, Code.Blt, Code.Blt_S, Code.Brtrue, Code.Brtrue_S, 
-                Code.Brfalse, Code.Brfalse_S, Code.Beq, Code.Beq_S, Code.Ble, Code.Ble_S, 
-                Code.Bgt, Code.Bgt_S, Code.Bge, Code.Bge_S, Code.Bne_Un, Code.Bne_Un_S 
-            }, (ins, stack, stmts, method) => {
-                throw new NotSupportedException($"Control Flow (Branching) is not yet supported in this phase. OpCode: {ins.OpCode}");
-            });
-        }
-
-        private void Register(Code code, Action<Instruction, Stack<IAstNode>, List<IAstNode>, MethodDefinition> handler)
-            => _handlers[code] = handler;
-
-        private void Register(IEnumerable<Code> codes, Action<Instruction, Stack<IAstNode>, List<IAstNode>, MethodDefinition> handler)
-        {
-            foreach (var code in codes)
-                _handlers[code] = handler;
-        }
-
-        private void RegisterBinaryOp(Code code, BinaryOperator op)
-        {
-            _handlers[code] = (ins, stack, stmts, method) => 
-            {
-                var right = stack.Pop();
-                var left = stack.Pop();
-                stack.Push(new BinaryOpNode(op, left, right));
-            };
-        }
-
-        public BlockNode ParseMethod(MethodDefinition method)
-        {
-            var statements = new List<IAstNode>();
-            
-            if (!method.HasBody)
-                return new BlockNode(statements);
-
-            var instructions = method.Body.Instructions;
-            var stack = new Stack<IAstNode>();
-            
-            for (int i = 0; i < instructions.Count; i++)
-            {
-                var ins = instructions[i];
-                
-                if (_handlers.TryGetValue(ins.OpCode.Code, out var handler))
-                {
-                    handler(ins, stack, statements, method);
-                }
-                else
-                {
-                    throw new NotSupportedException($"Unsupported IL OpCode: {ins.OpCode}");
-                }
+                dict[code] = handler;
             }
+        }
+        s_handlers = dict.ToFrozenDictionary();
+    }
 
+    public BlockNode ParseMethod(MethodDefinition method)
+    {
+        var statements = new List<IAstNode>();
+
+        if (!method.HasBody)
+        {
             return new BlockNode(statements);
         }
-        
-        private static string GetArgName(Instruction ins, MethodDefinition method)
+
+        var instructions = method.Body.Instructions;
+        var stack = new Stack<IAstNode>();
+
+        // Pre-pass: find all branch targets
+        var branchTargets = new HashSet<int>();
+        foreach (var ins in instructions)
         {
-            if (ins.Operand is ParameterDefinition paramDef)
-                return paramDef.Name;
-                
-            int index = ins.OpCode.Code switch
+            if (ins.Operand is Instruction target)
             {
-                Code.Ldarg_0 => 0,
-                Code.Ldarg_1 => 1,
-                Code.Ldarg_2 => 2,
-                Code.Ldarg_3 => 3,
-                _ => Convert.ToInt32(ins.Operand)
-            };
-            
-            return method.Parameters[index].Name;
+                branchTargets.Add(target.Offset);
+            }
+            else if (ins.Operand is Instruction[] targets)
+            {
+                foreach (var t in targets)
+                {
+                    branchTargets.Add(t.Offset);
+                }
+            }
         }
 
-        private static int GetLocIndex(Instruction ins)
+        for (var i = 0; i < instructions.Count; i++)
         {
-            return ins.OpCode.Code switch
+            var ins = instructions[i];
+
+            if (branchTargets.Contains(ins.Offset))
             {
-                Code.Ldloc_0 or Code.Stloc_0 => 0,
-                Code.Ldloc_1 or Code.Stloc_1 => 1,
-                Code.Ldloc_2 or Code.Stloc_2 => 2,
-                Code.Ldloc_3 or Code.Stloc_3 => 3,
-                _ when ins.Operand is VariableDefinition varDef => varDef.Index,
-                _ => Convert.ToInt32(ins.Operand)
-            };
+                statements.Add(new LabelNode($"IL_{ins.Offset:x4}"));
+            }
+
+            if (ins.OpCode.Code == Code.Nop || ins.OpCode.Code == Code.Ret)
+            {
+                continue;
+            }
+
+            if (s_handlers.TryGetValue(ins.OpCode.Code, out var handler))
+            {
+                handler.Handle(ins, stack, statements, method);
+            }
+            else
+            {
+                throw new NotSupportedException($"Unsupported IL OpCode: {ins.OpCode}");
+            }
         }
 
-        private static int GetLdcI4Value(Instruction ins)
-        {
-            return ins.OpCode.Code switch
-            {
-                Code.Ldc_I4_M1 => -1,
-                Code.Ldc_I4_0 => 0,
-                Code.Ldc_I4_1 => 1,
-                Code.Ldc_I4_2 => 2,
-                Code.Ldc_I4_3 => 3,
-                Code.Ldc_I4_4 => 4,
-                Code.Ldc_I4_5 => 5,
-                Code.Ldc_I4_6 => 6,
-                Code.Ldc_I4_7 => 7,
-                Code.Ldc_I4_8 => 8,
-                _ => Convert.ToInt32(ins.Operand)
-            };
-        }
+        return new BlockNode(statements);
     }
 }
+
+

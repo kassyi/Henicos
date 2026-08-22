@@ -1,52 +1,56 @@
-using System;
 using System.Reflection;
-using System.IO;
-using System.Linq;
+using System.Collections.Concurrent;
 using Mono.Cecil;
 
-namespace Kassyi.GSharp.Transpiler
+namespace Kassyi.GSharp.Transpiler;
+
+public class TranspilerRunner
 {
-    public class TranspilerRunner
+    private static readonly ConcurrentDictionary<string, MethodDefinition> s_methodCache = new();
+
+    public static string GenerateKernelCode(string assemblyPath, string targetMethodName)
     {
-        public static void Run(Assembly targetAssembly)
+        var cacheKey = $"{assemblyPath}::{targetMethodName}";
+        if (!s_methodCache.TryGetValue(cacheKey, out var targetMethod))
         {
-            Console.WriteLine("=== JIT Transpiler E2E Test ===");
-            
-            // Read the specified assembly using Mono.Cecil
-            string assemblyPath = targetAssembly.Location;
             var md = ModuleDefinition.ReadModule(assemblyPath);
-            
-            var targetMethods = new System.Collections.Generic.List<MethodDefinition>();
-            foreach (var type in md.Types)
+            targetMethod = md.Types
+                .SelectMany(t => t.Methods)
+                .FirstOrDefault(m => m.Name == targetMethodName && m.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute"));
+
+            if (targetMethod != null)
             {
-                foreach (var m in type.Methods)
-                {
-                    if (m.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute"))
-                    {
-                        targetMethods.Add(m);
-                    }
-                }
+                s_methodCache[cacheKey] = targetMethod;
             }
-            
-            if (targetMethods.Count == 0) {
-                throw new InvalidOperationException("No methods marked with [GpuKernel] found.");
-            }
-            
-            var targetMethod = targetMethods[0];
-            
-            Console.WriteLine($"Found method: {targetMethod.FullName}");
-            
-            // 1. Build AST from IL
-            var builder = new AstBuilder();
-            var ast = builder.ParseMethod(targetMethod);
-            
-            // 2. Generate CUDA C++
-            var generator = new CudaGenerator();
-            string cudaCode = generator.Generate(ast);
-            
-            Console.WriteLine("=== Generated CUDA Code ===");
-            Console.WriteLine(cudaCode);
-            Console.WriteLine("===========================");
         }
+
+        if (targetMethod == null)
+        {
+            throw new InvalidOperationException($"Method {targetMethodName} marked with [GpuKernel] not found.");
+        }
+
+        var builder = new AstBuilder();
+        var ast = builder.ParseMethod(targetMethod);
+
+        var generator = new CudaGenerator();
+        return generator.Generate(ast);
+    }
+
+    public static void Run(Assembly targetAssembly)
+    {
+        Console.WriteLine("=== JIT Transpiler E2E Test ===");
+        var method = targetAssembly.GetTypes()
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance))
+            .FirstOrDefault(m => m.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute"));
+
+        if (method == null)
+        {
+            throw new InvalidOperationException("No methods marked with [GpuKernel] found.");
+        }
+
+        var cudaCode = GenerateKernelCode(targetAssembly.Location, method.Name);
+        Console.WriteLine("=== Generated CUDA Code ===");
+        Console.WriteLine(cudaCode);
+        Console.WriteLine("===========================");
     }
 }
