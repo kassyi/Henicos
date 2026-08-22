@@ -36,6 +36,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             return m.AttributeLists.Any(al => al.Attributes.Any(a => a.Name.ToString().Contains(attributeName)));
         }
+
         return false;
     }
 
@@ -61,7 +62,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static void Execute(Compilation compilation, ImmutableArray<IMethodSymbol?> kernelMethods, ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context)
+    private static void Execute(Compilation compilation, ImmutableArray<IMethodSymbol?> kernelMethods,
+        ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context)
     {
         if (kernelMethods.IsDefaultOrEmpty)
         {
@@ -69,23 +71,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var deviceSourceBuilder = new StringBuilder();
-        foreach (var method in deviceMethods.OfType<IMethodSymbol>().Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
-        {
-            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null) continue;
-
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null) continue;
-
-            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel);
-            var deviceCode = visitor.GenerateCudaSource(syntaxNode, isDevice: true);
-            deviceSourceBuilder.AppendLine(deviceCode);
-            deviceSourceBuilder.AppendLine();
-        }
-        var commonDeviceSource = deviceSourceBuilder.ToString();
-
-        foreach (var method in kernelMethods.OfType<IMethodSymbol>().Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        foreach (var method in deviceMethods.OfType<IMethodSymbol>()
+                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
         {
             var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
             if (syntaxRef == null)
@@ -100,7 +87,31 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel);
+            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
+            var deviceCode = visitor.GenerateCudaSource(syntaxNode, isDevice: true);
+            deviceSourceBuilder.AppendLine(deviceCode);
+            deviceSourceBuilder.AppendLine();
+        }
+
+        var commonDeviceSource = deviceSourceBuilder.ToString();
+
+        foreach (var method in kernelMethods.OfType<IMethodSymbol>()
+                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        {
+            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+            if (syntaxRef == null)
+            {
+                continue;
+            }
+
+            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
+            if (syntaxNode == null)
+            {
+                continue;
+            }
+
+            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
+            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
             var cppSource = visitor.GenerateCudaSource(syntaxNode, isDevice: false);
 
             var finalSource = commonDeviceSource + cppSource;
@@ -154,6 +165,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method)
     {
+        WriteLaunchMethodSignature(writer, method);
+        using (writer.Scope())
+        {
+            WriteKernelCompilationCall(writer, method);
+            WriteVariablesInitialization(writer, method);
+
+            writer.AppendLine("try");
+            using (writer.Scope())
+            {
+                WriteMarshalAndLaunchKernel(writer, method);
+            }
+
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                WriteCleanup(writer, method);
+            }
+        }
+    }
+
+    private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method)
+    {
         var paramList = string.Join(", ", method.Parameters.Select(p => $"{p.Type.ToDisplayString()} {p.Name}"));
         if (!string.IsNullOrEmpty(paramList))
         {
@@ -164,52 +197,54 @@ public class GpuKernelGenerator : IIncrementalGenerator
             "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0";
 
         writer.AppendLine($"public static void Launch_{method.Name}({paramList})");
-        using (writer.Scope())
+    }
+
+    private static void WriteKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
+    {
+        writer.AppendLine(
+            $"""IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel({method.Name}_CudaSource, "{method.Name}");""");
+        writer.AppendLine();
+    }
+
+    private static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method)
+    {
+        foreach (var p in method.Parameters)
         {
-            writer.AppendLine(
-                $"""IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel({method.Name}_CudaSource, "{method.Name}");""");
-            writer.AppendLine();
-
-            foreach (var p in method.Parameters)
+            if (p.Type is IArrayTypeSymbol)
             {
-                if (p.Type is IArrayTypeSymbol)
-                {
-                    writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
-                }
-
-                writer.AppendLine($"IntPtr pArg_{p.Name} = IntPtr.Zero;");
+                writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
             }
 
-            writer.AppendLine("try");
-            using (writer.Scope())
-            {
-                var kernelParamsArray = new List<string>();
+            writer.AppendLine($"IntPtr pArg_{p.Name} = IntPtr.Zero;");
+        }
+    }
 
-                foreach (var p in method.Parameters)
-                {
-                    WriteParameterMarshal(writer, p, kernelParamsArray);
-                }
+    private static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method)
+    {
+        var kernelParamsArray = new List<string>();
 
-                writer.AppendLine();
-                writer.AppendLine($"IntPtr[] kernelParams = [{string.Join(", ", kernelParamsArray)}];");
-                writer.AppendLine();
+        foreach (var p in method.Parameters)
+        {
+            WriteParameterMarshal(writer, p, kernelParamsArray);
+        }
 
-                WriteLaunchKernelCall(writer);
+        writer.AppendLine();
+        writer.AppendLine($"IntPtr[] kernelParams = [{string.Join(", ", kernelParamsArray)}];");
+        writer.AppendLine();
 
-                foreach (var p in method.Parameters)
-                {
-                    WriteParameterUnmarshal(writer, p);
-                }
-            }
+        WriteLaunchKernelCall(writer);
 
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                foreach (var p in method.Parameters)
-                {
-                    WriteParameterFree(writer, p);
-                }
-            }
+        foreach (var p in method.Parameters)
+        {
+            WriteParameterUnmarshal(writer, p);
+        }
+    }
+
+    private static void WriteCleanup(SourceWriter writer, IMethodSymbol method)
+    {
+        foreach (var p in method.Parameters)
+        {
+            WriteParameterFree(writer, p);
         }
     }
 
