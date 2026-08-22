@@ -7,104 +7,169 @@ namespace Kassyi.GSharp.Transpiler
 {
     public class CudaGenerator : IAstVisitor
     {
-        // 初期キャパシティを 4096 (4KB) 確保し、動的リサイズに伴うメモリアロケーションを防ぐ
-        private StringBuilder _sb = new StringBuilder(4096);
+        private CodeWriter _writer = new CodeWriter(4096);
 
         public string Generate(BlockNode root)
         {
-            _sb.Clear();
+            _writer = new CodeWriter(4096);
             Visit(root);
-            return _sb.ToString();
+            return _writer.ToString();
         }
 
         public void Visit(BlockNode node)
         {
             foreach (var stmt in node.Statements)
             {
+                if (stmt is not BlockNode) _writer.WriteIndent();
+                
                 stmt.Accept(this);
                 
-                // If it's an expression node acting as a statement, append a semicolon.
-                // Statements like AssignNode and ForLoopNode handle their own semicolons and newlines.
-                if (stmt is not AssignNode and not ForLoopNode and not BlockNode)
+                if (stmt is not AssignNode and not ArrayAssignNode and not ForLoopNode and not WhileNode and not IfNode and not BlockNode)
                 {
-                    _sb.AppendLine(";");
+                    _writer.WriteLine(";");
                 }
             }
         }
 
         public void Visit(ForLoopNode node)
         {
-            _sb.Append("for (int ").Append(node.IteratorName).Append(" = ");
-            node.Start.Accept(this);
-            _sb.Append("; ").Append(node.IteratorName).Append(" < ");
-            node.End.Accept(this);
-            _sb.Append("; ").Append(node.IteratorName).AppendLine("++) {");
+            _writer.Write("for ");
+            using (_writer.Parens())
+            {
+                _writer.Write("int ").Write(node.IteratorName).Write(" = ");
+                node.Start.Accept(this);
+                _writer.Write("; ").Write(node.IteratorName).Write(" < ");
+                node.End.Accept(this);
+                _writer.Write("; ").Write(node.IteratorName).Write("++");
+            }
             
-            Visit(node.Body);
+            using (_writer.Block())
+            {
+                Visit(node.Body);
+            }
+        }
+
+        public void Visit(WhileNode node)
+        {
+            _writer.Write("while ");
+            using (_writer.Parens())
+            {
+                node.Condition.Accept(this);
+            }
             
-            _sb.AppendLine("}");
+            using (_writer.Block())
+            {
+                Visit(node.Body);
+            }
+        }
+
+        public void Visit(IfNode node)
+        {
+            _writer.Write("if ");
+            using (_writer.Parens())
+            {
+                node.Condition.Accept(this);
+            }
+            
+            using (_writer.Block())
+            {
+                Visit(node.TrueBlock);
+            }
+            
+            if (node.FalseBlock != null)
+            {
+                _writer.WriteIndent().Write("else");
+                using (_writer.Block())
+                {
+                    Visit(node.FalseBlock);
+                }
+            }
         }
 
         public void Visit(AssignNode node)
         {
-            _sb.Append(node.TargetName).Append(" = ");
+            _writer.Write(node.TargetName).Write(" = ");
             node.Value.Accept(this);
-            _sb.AppendLine(";");
+            _writer.WriteLine(";");
+        }
+
+        public void Visit(ArrayAssignNode node)
+        {
+            _writer.Write(node.ArrayName);
+            using (_writer.Brackets())
+            {
+                node.Index.Accept(this);
+            }
+            _writer.Write(" = ");
+            node.Value.Accept(this);
+            _writer.WriteLine(";");
         }
 
         public void Visit(BinaryOpNode node)
         {
-            _sb.Append('(');
-            node.Left.Accept(this);
-            
-            string opStr = node.Op switch
+            using (_writer.Parens())
             {
-                BinaryOperator.Add => " + ",
-                BinaryOperator.Sub => " - ",
-                BinaryOperator.Mul => " * ",
-                BinaryOperator.Div => " / ",
-                BinaryOperator.Mod => " % ",
-                BinaryOperator.BitAnd => " & ",
-                BinaryOperator.BitOr => " | ",
-                BinaryOperator.BitXor => " ^ ",
-                BinaryOperator.ShiftLeft => " << ",
-                BinaryOperator.ShiftRight => " >> ",
-                BinaryOperator.Eq => " == ",
-                BinaryOperator.Neq => " != ",
-                BinaryOperator.Lt => " < ",
-                BinaryOperator.Lte => " <= ",
-                BinaryOperator.Gt => " > ",
-                BinaryOperator.Gte => " >= ",
-                _ => throw new NotImplementedException()
-            };
+                node.Left.Accept(this);
+                
+                string opStr = node.Op switch
+                {
+                    BinaryOperator.Add => " + ",
+                    BinaryOperator.Sub => " - ",
+                    BinaryOperator.Mul => " * ",
+                    BinaryOperator.Div => " / ",
+                    BinaryOperator.Mod => " % ",
+                    BinaryOperator.BitAnd => " & ",
+                    BinaryOperator.BitOr => " | ",
+                    BinaryOperator.BitXor => " ^ ",
+                    BinaryOperator.ShiftLeft => " << ",
+                    BinaryOperator.ShiftRight => " >> ",
+                    BinaryOperator.Eq => " == ",
+                    BinaryOperator.Neq => " != ",
+                    BinaryOperator.Lt => " < ",
+                    BinaryOperator.Lte => " <= ",
+                    BinaryOperator.Gt => " > ",
+                    BinaryOperator.Gte => " >= ",
+                    _ => throw new NotImplementedException()
+                };
 
-            _sb.Append(opStr);
-            node.Right.Accept(this);
-            _sb.Append(')');
+                _writer.Write(opStr);
+                node.Right.Accept(this);
+            }
         }
 
         public void Visit(LiteralNode node)
         {
-            _sb.Append(node.Value);
+            _writer.Write(node.Value);
         }
 
         public void Visit(VariableNode node)
         {
-            _sb.Append(node.Name);
+            _writer.Write(node.Name);
+        }
+
+        public void Visit(ArrayAccessNode node)
+        {
+            _writer.Write(node.ArrayName);
+            using (_writer.Brackets())
+            {
+                node.Index.Accept(this);
+            }
         }
 
         public void Visit(MethodCallNode node)
         {
-            _sb.Append(node.MethodName).Append('(');
-            for (int i = 0; i < node.Arguments.Count; i++)
+            _writer.Write(node.MethodName);
+            using (_writer.Parens())
             {
-                if (i > 0)
+                for (int i = 0; i < node.Arguments.Count; i++)
                 {
-                    _sb.Append(", ");
+                    if (i > 0)
+                    {
+                        _writer.Write(", ");
+                    }
+                    node.Arguments[i].Accept(this);
                 }
-                node.Arguments[i].Accept(this);
             }
-            _sb.Append(')');
         }
     }
 }
