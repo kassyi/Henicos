@@ -13,4 +13,9 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
+    <ProjectReference Include="..\Kassyi.Generators.GSharp\Kassyi.Generators.GSharp.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>
