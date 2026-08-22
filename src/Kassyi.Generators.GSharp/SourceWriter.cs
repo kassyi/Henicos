@@ -62,7 +62,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void AppendComma() => Builder.Append(',');
     public void AppendSpace() => Builder.Append(' ');
-    public void AppendSemiColon() => Builder.AppendLine(";");
+    public void AppendSemiColon() => Builder.Append(';');
     public void AppendOperator(string op) => Builder.Append(op);
     public void AppendKeyword(string keyword) => Builder.Append(keyword);
 
@@ -71,7 +71,15 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     {
     }
 
-    public void AppendLine() => Builder.AppendLine();
+    public void AppendLine()
+    {
+        if (Builder.Length > 0 && Builder[Builder.Length - 1] == '\n')
+        {
+            return;
+        }
+
+        Builder.AppendLine();
+    }
 
     public void AppendLine(string? value)
     {
@@ -81,12 +89,12 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         }
         else
         {
-            Builder.AppendLine();
+            AppendLine();
         }
     }
 
     public void AppendLine([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) =>
-        Builder.AppendLine();
+        AppendLine();
 
     public void Line() => AppendLine();
 
