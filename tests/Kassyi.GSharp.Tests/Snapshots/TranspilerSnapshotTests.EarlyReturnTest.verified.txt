@@ -1,0 +1,9 @@
+﻿int loc_0;
+loc_0 = (flag == 0);
+if ((loc_0 == 0)) goto IL_0010;
+data[0] = -1;
+goto IL_0014;
+IL_0010:
+data[0] = 1;
+IL_0014:
+return;

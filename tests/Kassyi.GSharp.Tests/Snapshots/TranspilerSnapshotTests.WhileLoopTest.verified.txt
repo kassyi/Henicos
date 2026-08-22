@@ -1,5 +1,11 @@
-﻿loc_0 = 0;
-while ((loc_0 < len)){
-    array[loc_0] = (array[loc_0] * 2);
-    loc_0 = (loc_0 + 1);
-}
+﻿int loc_0;
+int loc_1;
+loc_0 = 0;
+goto IL_0011;
+IL_0005:
+data[loc_0] = (loc_0 * 2);
+loc_0 = (loc_0 + 1);
+IL_0011:
+loc_1 = (loc_0 < length);
+if (loc_1) goto IL_0005;
+return;

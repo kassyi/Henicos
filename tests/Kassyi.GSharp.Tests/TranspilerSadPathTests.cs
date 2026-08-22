@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Kassyi.GSharp.Transpiler;
+using Kassyi.GSharp.Transpiler.Ast;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests

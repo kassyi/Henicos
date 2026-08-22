@@ -1,0 +1,34 @@
+﻿int loc_0;
+int loc_1;
+int inline_1_ret;
+int inline_1_a;
+int inline_1_b;
+int inline_1_loc_0;
+int inline_1_loc_1;
+int inline_2_ret;
+int inline_2_a;
+int inline_2_b;
+int inline_2_loc_0;
+int inline_2_loc_1;
+inline_1_a = data[0];
+inline_1_b = data[1];
+inline_1_loc_0 = (inline_1_a + inline_1_b);
+inline_1_loc_1 = (inline_1_loc_0 * 2);
+goto inline_1_IL_000b;
+inline_1_IL_000b:
+inline_1_ret = inline_1_loc_1;
+goto inline_1_end;
+inline_1_end:
+loc_0 = inline_1_ret;
+inline_2_a = data[2];
+inline_2_b = data[3];
+inline_2_loc_0 = (inline_2_a + inline_2_b);
+inline_2_loc_1 = (inline_2_loc_0 * 2);
+goto inline_2_IL_000b;
+inline_2_IL_000b:
+inline_2_ret = inline_2_loc_1;
+goto inline_2_end;
+inline_2_end:
+loc_1 = inline_2_ret;
+data[4] = (loc_0 + loc_1);
+return;

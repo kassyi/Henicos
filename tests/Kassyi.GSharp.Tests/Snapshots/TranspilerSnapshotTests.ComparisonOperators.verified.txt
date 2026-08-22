@@ -1,6 +1,16 @@
-﻿result[0] = 1;
-result[1] = 1;
-result[2] = 1;
-result[3] = 1;
-result[4] = 1;
-result[5] = 1;
+﻿if ((a == b)) goto IL_000a;
+goto IL_000b;
+IL_000a:
+IL_000b:
+unknown_array[0] = 1;
+if ((a > b)) goto IL_0015;
+goto IL_0016;
+IL_0015:
+IL_0016:
+unknown_array[0] = 1;
+if ((a < b)) goto IL_0020;
+goto IL_0021;
+IL_0020:
+IL_0021:
+unknown_array[0] = 1;
+return;

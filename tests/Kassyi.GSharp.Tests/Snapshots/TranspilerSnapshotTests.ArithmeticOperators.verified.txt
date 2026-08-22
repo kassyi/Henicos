@@ -8,3 +8,4 @@ result[6] = (a | b);
 result[7] = (a ^ b);
 result[8] = (a << 5);
 result[9] = (a >> 5);
+return;

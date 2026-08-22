@@ -1,0 +1,2 @@
+﻿Device_MultiplySquare(data, data[0]);
+return;
