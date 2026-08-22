@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Runtime.Core;
+using Kassyi.GSharp.Core;
 using Xunit;
 using Xunit.Abstractions;
 using System.Runtime.InteropServices;
@@ -75,19 +75,19 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     [GpuKernel]
     public static void IntrinsicsKernel(int[] data)
     {
-        int tid = Kassyi.GSharp.Runtime.Core.ThreadIdx.X;
+        int tid = ThreadIndex.X;
         if (tid < 10)
         {
             // Thread 0-9 adds its id to data[0] atomically
-            Kassyi.GSharp.Runtime.Core.Gpu.AtomicAdd(ref data[0], tid);
+            Gpu.AtomicAdd(ref data[0], tid);
         }
 
-        Kassyi.GSharp.Runtime.Core.Gpu.SyncThreads();
+        Gpu.SyncThreads();
 
         if (tid == 0)
         {
             // Just testing math function
-            data[1] = System.Math.Max(data[0], 100);
+            data[1] = Math.Max(data[0], 100);
         }
     }
 
@@ -102,9 +102,9 @@ public class SourceGeneratorTests(ITestOutputHelper output)
         dataArray[0] = 0; // atomic sum
         dataArray[1] = 0; // max value
 
-        SourceGeneratorTestsWrapper.Launch_IntrinsicsKernel(dataArray);
+        SourceGeneratorTestsWrapper.Launch_IntrinsicsKernel(dataArray, blockDimX: 10);
 
-        Assert.Equal(0, dataArray[0]);
+        Assert.Equal(45, dataArray[0]); // Sum of 0..9 is 45
         Assert.Equal(100, dataArray[1]);
     }
 
@@ -117,7 +117,7 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     [GpuKernel]
     public static void StructKernel(Vector2[] vectors, int length)
     {
-        int tid = Kassyi.GSharp.Runtime.Core.ThreadIdx.X;
+        int tid = Kassyi.GSharp.Core.ThreadIndex.X;
         if (tid < length)
         {
             Vector2 v = vectors[tid];
@@ -141,5 +141,18 @@ public class SourceGeneratorTests(ITestOutputHelper output)
 
         Assert.Equal(3.0f, dataArray[0].X);
         Assert.Equal(3.0f, dataArray[0].Y);
+    }
+
+    [Fact]
+    public void TestInvalidKernelCompilation_ThrowsWrappedException()
+    {
+        var invalidCode = "extern \"C\" __global__ void bad_kernel(int* x) { this is invalid c++ code }";
+
+        var ex = Assert.Throws<Exception>(() =>
+            Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(invalidCode, "bad_kernel")
+        );
+
+        Assert.Contains("NVCC Compilation Failed", ex.Message);
+        Assert.NotNull(ex.InnerException); // Assert inner exception is preserved
     }
 }

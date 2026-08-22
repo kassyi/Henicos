@@ -1,11 +1,32 @@
 using System.Diagnostics;
 using System.IO;
-using Kassyi.GSharp.Runtime.Core;
+using Kassyi.GSharp.Core;
 using Microsoft.Extensions.Logging;
+using Logger = Kassyi.GSharp.Core.Logger;
+using LogLevel = Kassyi.GSharp.Core.LogLevel;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests;
 
+public class LoggerFixture : IDisposable
+{
+    public LoggerFixture()
+    {
+        Logger.Clear();
+    }
+
+    public void Dispose()
+    {
+        Logger.Shutdown();
+    }
+}
+
+[CollectionDefinition("LoggerCollection")]
+public class LoggerCollectionDefinition : ICollectionFixture<LoggerFixture>
+{
+}
+
+[Collection("LoggerCollection")]
 public class LoggerTests
 {
     private class TestLogger : Logger
@@ -17,14 +38,10 @@ public class LoggerTests
     public async Task Log_ShouldFormatAndWriteMessagesAsync()
     {
         var logger = new TestLogger();
-        Logger.ActiveLogLevel = Kassyi.GSharp.Runtime.Core.LogLevel.Trace;
-        Logger.Clear();
-
+        Logger.ActiveLogLevel = LogLevel.Trace;
         logger.LogInformation("Test Info Message");
         logger.LogError("Test Error Message");
 
-        Logger.Shutdown();
-        
         // Allow background channel to flush
         await Task.Delay(100);
 
@@ -42,10 +59,9 @@ public class LoggerTests
     [Fact]
     public async Task MeasureScope_ShouldLogDuration()
     {
-        Logger.ActiveLogLevel = Kassyi.GSharp.Runtime.Core.LogLevel.Trace;
-        Logger.Clear();
+        Logger.ActiveLogLevel = LogLevel.Trace;
 
-        using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", Kassyi.GSharp.Runtime.Core.LogLevel.Info))
+        using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", LogLevel.Info))
         {
             await Task.Delay(10);
         }
