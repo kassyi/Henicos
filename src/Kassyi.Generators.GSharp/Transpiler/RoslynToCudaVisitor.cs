@@ -161,73 +161,16 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
 
     private void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters)
     {
-        var validParameters = new List<ParameterSyntax>();
-        foreach (var p in parameters)
-        {
-            var paramSymbol = semanticModel.GetDeclaredSymbol(p);
-            var isJitConstant = false;
-            if (paramSymbol != null)
-            {
-                foreach (var attr in paramSymbol.GetAttributes())
-                {
-                    if (attr.AttributeClass?.Name == "JitConstantAttribute")
-                    {
-                        isJitConstant = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!isJitConstant)
-            {
-                validParameters.Add(p);
-            }
-        }
+        var validParameters = parameters.Where(p => !IsJitConstant(p)).ToList();
 
         for (var i = 0; i < validParameters.Count; i++)
         {
             var p = validParameters[i];
             var typeSymbol = semanticModel.GetTypeInfo(p.Type!).Type;
 
-            // Check if it's a custom struct
-            var structType = typeSymbol;
-            if (structType is IArrayTypeSymbol arrayType)
-            {
-                structType = arrayType.ElementType;
-            }
-
-            if (structType is { TypeKind: TypeKind.Struct } &&
-                structType.ContainingNamespace.ToDisplayString() != "System")
-            {
-                _usedStructs.Add((INamedTypeSymbol)structType);
-            }
-
-            var cppType = MapType(typeSymbol);
-
-            // In Cuda, arrays are pointers.
-            if (typeSymbol is { TypeKind: TypeKind.Array })
-            {
-                cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "*";
-            }
-
-            // If it's a ref or out parameter, it's a pointer.
-            var isPointer = false;
-            if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword)))
-            {
-                cppType += "*";
-                isPointer = true;
-            }
-
-            if (!isPointer && typeSymbol is { TypeKind: TypeKind.Struct } &&
-                typeSymbol.ContainingNamespace.ToDisplayString() != "System")
-            {
-                var size = GetApproximateSize(typeSymbol);
-                if (size >= 32)
-                {
-                    reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.LargeStructByValueWarning,
-                        p.GetLocation(), p.Identifier.Text, size));
-                }
-            }
+            RegisterUsedStructIfApplicable(typeSymbol);
+            var (cppType, isPointer) = GetParameterCppType(p, typeSymbol);
+            CheckLargeStructByValue(p, typeSymbol, isPointer);
 
             _writer.Append(cppType);
             _writer.AppendSpace();
@@ -235,6 +178,56 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>
             if (i < validParameters.Count - 1)
             {
                 _writer.AppendComma();
+            }
+        }
+    }
+
+    private bool IsJitConstant(ParameterSyntax p)
+    {
+        var paramSymbol = semanticModel.GetDeclaredSymbol(p);
+        return paramSymbol != null && paramSymbol.GetAttributes()
+            .Any(attr => attr.AttributeClass?.Name == "JitConstantAttribute");
+    }
+
+    private void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol)
+    {
+        var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
+        if (structType is { TypeKind: TypeKind.Struct } &&
+            structType.ContainingNamespace.ToDisplayString() != "System")
+        {
+            _usedStructs.Add((INamedTypeSymbol)structType);
+        }
+    }
+
+    private (string CppType, bool IsPointer) GetParameterCppType(ParameterSyntax p, ITypeSymbol? typeSymbol)
+    {
+        var cppType = MapType(typeSymbol);
+        var isPointer = false;
+
+        if (typeSymbol is { TypeKind: TypeKind.Array })
+        {
+            cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "*";
+        }
+
+        if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword)))
+        {
+            cppType += "*";
+            isPointer = true;
+        }
+
+        return (cppType, isPointer);
+    }
+
+    private void CheckLargeStructByValue(ParameterSyntax p, ITypeSymbol? typeSymbol, bool isPointer)
+    {
+        if (!isPointer && typeSymbol is { TypeKind: TypeKind.Struct } &&
+            typeSymbol.ContainingNamespace.ToDisplayString() != "System")
+        {
+            var size = GetApproximateSize(typeSymbol);
+            if (size >= 32)
+            {
+                reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.LargeStructByValueWarning,
+                    p.GetLocation(), p.Identifier.Text, size));
             }
         }
     }
