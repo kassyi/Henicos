@@ -1,4 +1,3 @@
-using System;
 
 namespace Kassyi.GSharp.GpuBigInt.Expressions;
 

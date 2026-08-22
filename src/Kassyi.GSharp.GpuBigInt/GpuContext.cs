@@ -64,7 +64,10 @@ public class GpuContext : IDisposable
 
     internal void ReturnTemp(GpuBigInteger temp)
     {
-        if (temp == null || !temp.IsTemp) return;
+        if (!temp.IsTemp)
+        {
+            return;
+        }
 
         if (!_tempPool.TryGetValue(temp.NumWords, out var stack))
         {

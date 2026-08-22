@@ -1,25 +1,16 @@
-using System;
 using Kassyi.GSharp.GpuBigInt.Expressions;
 
 namespace Kassyi.GSharp.GpuBigInt;
 
-
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedType.Global
-
 public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 {
-    public IntPtr DevicePointer
-    {
-        get; private set;
-    }
-    public int NumWords
-    {
-        get;
-    }
-    
+    public IntPtr DevicePointer { get; private set; }
+    public int NumWords { get; }
+
     public GpuContext Context { get; }
-    
+
     internal bool IsTemp { get; set; }
 
     private bool _disposed;
@@ -31,7 +22,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         DevicePointer = NativeMethods.GpuBigInt_Alloc(numWords);
         if (DevicePointer == IntPtr.Zero)
         {
-            throw new OutOfMemoryException($"Failed to allocate GPU memory for {numWords} words ({numWords * 4} bytes).");
+            throw new OutOfMemoryException(
+                $"Failed to allocate GPU memory for {numWords} words ({numWords * 4} bytes).");
         }
     }
 
@@ -39,39 +31,43 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (!NativeMethods.GpuBigInt_CopyHostToDevice(DevicePointer, hostData, NumWords))
         {
-            throw new InvalidOperationException($"Failed to copy host data ({hostData.Length} words) to GPU device pointer 0x{DevicePointer:X} (expected {NumWords} words).");
+            throw new InvalidOperationException(
+                $"Failed to copy host data ({hostData.Length} words) to GPU device pointer 0x{DevicePointer:X} (expected {NumWords} words).");
         }
     }
 
     public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
     {
-        if (targetResult != null && targetResult != this)
+        if (targetResult == null || targetResult == this)
         {
-            targetResult.CopyFrom(this);
-            return targetResult;
+            return this;
         }
-        return this;
+
+        targetResult.CopyFrom(this);
+        return targetResult;
     }
 
     public GpuBigIntExpr Value
     {
-        get => new GpuBigIntExpr(this);
+        get => new(this);
         set => value.Node.Evaluate(this.Context, this);
     }
 
-    public static GpuBigIntExpr operator +(GpuBigInteger a, GpuBigInteger b) => new GpuBigIntExpr(new AddExpression(a, b));
-    public static GpuBigIntExpr operator -(GpuBigInteger a, GpuBigInteger b) => new GpuBigIntExpr(new SubExpression(a, b));
-    public static GpuBigIntExpr operator &(GpuBigInteger a, GpuBigInteger b) => new GpuBigIntExpr(new BitwiseAndExpression(a, b));
-    public static GpuBigIntExpr operator <<(GpuBigInteger a, int shiftBits) => new GpuBigIntExpr(new ShiftLeftExpression(a, shiftBits));
-    public static GpuBigIntExpr operator >>(GpuBigInteger a, int shiftBits) => new GpuBigIntExpr(new ShiftRightExpression(a, shiftBits));
+    public static GpuBigIntExpr operator +(GpuBigInteger a, GpuBigInteger b) => new(new AddExpression(a, b));
+    public static GpuBigIntExpr operator -(GpuBigInteger a, GpuBigInteger b) => new(new SubExpression(a, b));
+    public static GpuBigIntExpr operator &(GpuBigInteger a, GpuBigInteger b) => new(new BitwiseAndExpression(a, b));
+    public static GpuBigIntExpr operator <<(GpuBigInteger a, int shiftBits) => new(new ShiftLeftExpression(a, shiftBits));
+    public static GpuBigIntExpr operator >>(GpuBigInteger a, int shiftBits) => new(new ShiftRightExpression(a, shiftBits));
 
     public uint[] ToHostArray()
     {
         var hostData = new uint[NumWords];
         if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, DevicePointer, NumWords))
         {
-            throw new InvalidOperationException($"Failed to copy {NumWords} words from GPU device pointer 0x{DevicePointer:X} to host.");
+            throw new InvalidOperationException(
+                $"Failed to copy {NumWords} words from GPU device pointer 0x{DevicePointer:X} to host.");
         }
+
         return hostData;
     }
 
@@ -79,11 +75,15 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (source.NumWords != NumWords)
         {
-            throw new ArgumentException($"Size mismatch between GPU buffers: source has {source.NumWords} words, but target has {NumWords} words.", nameof(source));
+            throw new ArgumentException(
+                $"Size mismatch between GPU buffers: source has {source.NumWords} words, but target has {NumWords} words.",
+                nameof(source));
         }
+
         if (!NativeMethods.GpuBigInt_CopyDeviceToDevice(DevicePointer, source.DevicePointer, NumWords))
         {
-            throw new InvalidOperationException($"Failed to copy {NumWords} words on GPU from 0x{source.DevicePointer:X} to 0x{DevicePointer:X}.");
+            throw new InvalidOperationException(
+                $"Failed to copy {NumWords} words on GPU from 0x{source.DevicePointer:X} to 0x{DevicePointer:X}.");
         }
     }
 
@@ -91,7 +91,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (a.NumWords != b.NumWords || a.NumWords != result.NumWords)
         {
-            throw new ArgumentException($"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
+            throw new ArgumentException(
+                $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
         NativeMethods.GpuBigInt_BitwiseAnd(a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
@@ -101,7 +102,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (a.NumWords != b.NumWords || a.NumWords != result.NumWords)
         {
-            throw new ArgumentException($"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
+            throw new ArgumentException(
+                $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
         NativeMethods.GpuBigInt_Add(a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
@@ -111,7 +113,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (a.NumWords != b.NumWords || a.NumWords != result.NumWords)
         {
-            throw new ArgumentException($"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
+            throw new ArgumentException(
+                $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
         NativeMethods.GpuBigInt_Sub(a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
@@ -121,7 +124,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (a.NumWords != result.NumWords)
         {
-            throw new ArgumentException($"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
+            throw new ArgumentException(
+                $"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
         }
 
         NativeMethods.GpuBigInt_ShiftLeft(a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
@@ -131,7 +135,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (a.NumWords != result.NumWords)
         {
-            throw new ArgumentException($"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
+            throw new ArgumentException(
+                $"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
         }
 
         NativeMethods.GpuBigInt_ShiftRight(a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
@@ -148,8 +153,10 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 NativeMethods.GpuBigInt_Free(DevicePointer);
                 DevicePointer = IntPtr.Zero;
             }
+
             _disposed = true;
         }
+
         GC.SuppressFinalize(this);
     }
 
@@ -157,9 +164,10 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (IsTemp)
         {
-            Context?.ReturnTemp(this);
+            Context.ReturnTemp(this);
             return;
         }
+
         DisposeCore();
     }
 
