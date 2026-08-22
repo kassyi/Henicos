@@ -11,50 +11,43 @@ namespace Kassyi.GSharp.Core;
 /// </summary>
 public struct Dim3
 {
-    private const string Msg = "This property can only be executed on the GPU.";
-    public int X => throw new InvalidOperationException(Msg);
-    public int Y => throw new InvalidOperationException(Msg);
-    public int Z => throw new InvalidOperationException(Msg);
+    public int X => GpuOnlyException.Throw<int>();
+    public int Y => GpuOnlyException.Throw<int>();
+    public int Z => GpuOnlyException.Throw<int>();
 }
 
 public static class ThreadIndex
 {
-    private const string Msg = "This property can only be executed on the GPU.";
-    public static int X => throw new InvalidOperationException(Msg);
-    public static int Y => throw new InvalidOperationException(Msg);
-    public static int Z => throw new InvalidOperationException(Msg);
+    public static int X => GpuOnlyException.Throw<int>();
+    public static int Y => GpuOnlyException.Throw<int>();
+    public static int Z => GpuOnlyException.Throw<int>();
 }
 
 public static class BlockIndex
 {
-    private const string Msg = "This property can only be executed on the GPU.";
-    public static int X => throw new InvalidOperationException(Msg);
-    public static int Y => throw new InvalidOperationException(Msg);
-    public static int Z => throw new InvalidOperationException(Msg);
+    public static int X => GpuOnlyException.Throw<int>();
+    public static int Y => GpuOnlyException.Throw<int>();
+    public static int Z => GpuOnlyException.Throw<int>();
 }
 
 public static class BlockDimension
 {
-    private const string Msg = "This property can only be executed on the GPU.";
-    public static int X => throw new InvalidOperationException(Msg);
-    public static int Y => throw new InvalidOperationException(Msg);
-    public static int Z => throw new InvalidOperationException(Msg);
+    public static int X => GpuOnlyException.Throw<int>();
+    public static int Y => GpuOnlyException.Throw<int>();
+    public static int Z => GpuOnlyException.Throw<int>();
 }
 
 public static class GridDimension
 {
-    private const string Msg = "This property can only be executed on the GPU.";
-    public static int X => throw new InvalidOperationException(Msg);
-    public static int Y => throw new InvalidOperationException(Msg);
-    public static int Z => throw new InvalidOperationException(Msg);
+    public static int X => GpuOnlyException.Throw<int>();
+    public static int Y => GpuOnlyException.Throw<int>();
+    public static int Z => GpuOnlyException.Throw<int>();
 }
 
 public static class Gpu
 {
-    private const string Msg = "This method can only be executed on the GPU.";
+    public static void SyncThreads() => GpuOnlyException.Throw();
 
-    public static void SyncThreads() => throw new InvalidOperationException(Msg);
-
-    public static int AtomicAdd(ref int address, int val) => throw new InvalidOperationException(Msg);
-    public static float AtomicAdd(ref float address, float val) => throw new InvalidOperationException(Msg);
+    public static int AtomicAdd(ref int address, int val) => GpuOnlyException.Throw<int>();
+    public static float AtomicAdd(ref float address, float val) => GpuOnlyException.Throw<float>();
 }
