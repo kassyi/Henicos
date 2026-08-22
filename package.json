@@ -1,0 +1,16 @@
+{
+  "name": "henicos",
+  "version": "1.0.0",
+  "description": "本プロジェクトは、約4300万桁の巨大な代数構造 $N = 2X^2 - X + 11$ (ここで $X = 2^{71428571}$) の素数性を、ハードウェアの限界を引き出す特化型モジュラリダクションによって証明するための GPGPU 演算エンジンです。",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

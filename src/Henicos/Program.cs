@@ -9,6 +9,9 @@ class Program
 {
     static void Main(string[] args)
     {
+        Kassyi.GSharp.Transpiler.TranspilerRunner.Run();
+        return;
+
         if (args.Length > 0 && args[0] == "--benchmark")
         {
             var summary = BenchmarkRunner.Run<FermatBenchmark>();
