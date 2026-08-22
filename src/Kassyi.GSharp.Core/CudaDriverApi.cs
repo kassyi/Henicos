@@ -86,6 +86,9 @@ public static class CudaDriverApi
     public static extern CUresult cuCtxSetCurrent(IntPtr ctx);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+    public static extern CUresult cuCtxGetCurrent(out IntPtr pctx);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
     public static extern CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 

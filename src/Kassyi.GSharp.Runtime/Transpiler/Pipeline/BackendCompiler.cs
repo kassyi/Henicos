@@ -4,17 +4,35 @@ public static class NvccCompiler
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
 
-    public static Action<ProcessStartInfo> ProcessRunner { get; set; } = psi =>
+    public class ProcessFailedException(string message, string output) : Exception(message)
     {
-        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start process");
+        public string Output { get; } = output;
+    }
+
+    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
+    {
+        using var process = new Process { StartInfo = psi };
+        var outputBuilder = new StringBuilder();
+        process.OutputDataReceived += (_, e) => { if (e.Data != null) lock (outputBuilder) outputBuilder.AppendLine(e.Data); };
+        process.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (outputBuilder) outputBuilder.AppendLine(e.Data); };
+        
+        if (!process.Start()) throw new InvalidOperationException("Failed to start process");
+        
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
         process.WaitForExit();
+        
+        var output = outputBuilder.ToString();
         if (process.ExitCode != 0)
         {
-            throw new Exception("Process failed");
+            throw new ProcessFailedException($"Process failed with exit code {process.ExitCode}", output);
         }
+        return output;
     };
 
-    public static Func<string> GetVswhereOutputFunc { get; set; } = () =>
+    public static Func<string> GetVswhereOutputFunc { get; set; } = () => s_vswhereCache.Value;
+
+    private static readonly Lazy<string> s_vswhereCache = new(() =>
     {
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var vswhere = FileSystem.Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
@@ -37,7 +55,7 @@ public static class NvccCompiler
         var output = process.StandardOutput.ReadToEnd().Trim();
         process.WaitForExit();
         return output;
-    };
+    });
 
     public static string GetVcvarsPath()
     {
@@ -115,11 +133,13 @@ public static class NvccCompiler
         FileSystem.File.WriteAllLines(optsFile, opts, new UTF8Encoding(false));
 
         var psi = new ProcessStartInfo("cmd.exe",
-            $"/c \"call \"{vcvars}\" && \"{nvcc}\" --options-file \"{optsFile}\" > \"{logFile}\" 2>&1\"")
+            $"/c \"call \"{vcvars}\" && \"{nvcc}\" --options-file \"{optsFile}\"\"")
         {
             UseShellExecute = false,
             CreateNoWindow = true,
-            WorkingDirectory = tempDir
+            WorkingDirectory = tempDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
         };
 
         Console.WriteLine($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
@@ -127,12 +147,8 @@ public static class NvccCompiler
 
         try
         {
-            ProcessRunner(psi);
-            var logContent = "";
-            if (FileSystem.File.Exists(logFile))
-            {
-                logContent = FileSystem.File.ReadAllText(logFile);
-            }
+            var logContent = ProcessRunner(psi);
+            FileSystem.File.WriteAllText(logFile, logContent, new UTF8Encoding(false));
 
             var result = ParsePtxasOutput(logContent);
 
@@ -145,6 +161,11 @@ public static class NvccCompiler
 
             Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
             return result;
+        }
+        catch (ProcessFailedException ex)
+        {
+            FileSystem.File.WriteAllText(logFile, ex.Output, new UTF8Encoding(false));
+            throw new Exception($"NVCC Compilation Failed:\n{ex.Output}", ex);
         }
         catch (Exception ex)
         {

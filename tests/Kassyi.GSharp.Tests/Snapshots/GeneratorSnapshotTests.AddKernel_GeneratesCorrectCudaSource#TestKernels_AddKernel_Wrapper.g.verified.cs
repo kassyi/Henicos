@@ -24,6 +24,7 @@ c[0]=(a[0]+b[0]);
 ";
 public static void Launch_AddKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(AddKernel_CudaSource, "AddKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr pArg_a = IntPtr.Zero;

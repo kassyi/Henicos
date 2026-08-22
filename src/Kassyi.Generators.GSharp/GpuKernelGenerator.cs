@@ -180,6 +180,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         WriteLaunchMethodSignature(writer, method);
         using (writer.Scope())
         {
+            writer.AppendLine("using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();");
             WriteKernelCompilationCall(writer, method);
             WriteVariablesInitialization(writer, method);
 
