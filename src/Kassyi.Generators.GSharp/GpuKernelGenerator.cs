@@ -11,25 +11,35 @@ public class GpuKernelGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Find methods with [GpuKernel] attribute
-        var methodDeclarations = context.SyntaxProvider
+        var kernelMethods = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
+                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, "GpuKernel"),
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, "GpuKernel"))
             .Where(static m => m is not null);
 
-        // Combine all found methods
-        var compilationAndMethods = context.CompilationProvider.Combine(methodDeclarations.Collect());
+        var deviceMethods = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, "GpuDevice"),
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, "GpuDevice"))
+            .Where(static m => m is not null);
 
-        // Register the source generation phase
-        context.RegisterSourceOutput(compilationAndMethods,
-            static (spc, source) => Execute(source.Left, source.Right!, spc));
+        var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());
+        var compilationAndAll = context.CompilationProvider.Combine(kernelsAndDevices);
+
+        context.RegisterSourceOutput(compilationAndAll,
+            static (spc, source) => Execute(source.Left, source.Right.Left, source.Right.Right, spc));
     }
 
-    private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-        => node is MethodDeclarationSyntax { AttributeLists.Count: > 0 };
+    private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
+    {
+        if (node is MethodDeclarationSyntax { AttributeLists.Count: > 0 } m)
+        {
+            return m.AttributeLists.Any(al => al.Attributes.Any(a => a.Name.ToString().Contains(attributeName)));
+        }
+        return false;
+    }
 
-    private static IMethodSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    private static IMethodSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context, string attributeName)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration) as IMethodSymbol;
@@ -41,8 +51,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         foreach (var attribute in methodSymbol.GetAttributes())
         {
-            if (attribute.AttributeClass?.Name == "GpuKernelAttribute" ||
-                attribute.AttributeClass?.Name == "GpuKernel")
+            if (attribute.AttributeClass?.Name == $"{attributeName}Attribute" ||
+                attribute.AttributeClass?.Name == attributeName)
             {
                 return methodSymbol;
             }
@@ -51,29 +61,52 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static void Execute(Compilation compilation,
-        ImmutableArray<IMethodSymbol> methods, SourceProductionContext context)
+    private static void Execute(Compilation compilation, ImmutableArray<IMethodSymbol?> kernelMethods, ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context)
     {
-        if (methods.IsDefaultOrEmpty)
+        if (kernelMethods.IsDefaultOrEmpty)
         {
             return;
         }
 
-        foreach (var method in methods)
+        var deviceSourceBuilder = new StringBuilder();
+        foreach (var method in deviceMethods.OfType<IMethodSymbol>().Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
         {
             var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+            if (syntaxRef == null) continue;
 
-            if (syntaxRef?.GetSyntax() is not MethodDeclarationSyntax syntaxNode)
+            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
+            if (syntaxNode == null) continue;
+
+            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
+            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel);
+            var deviceCode = visitor.GenerateCudaSource(syntaxNode, isDevice: true);
+            deviceSourceBuilder.AppendLine(deviceCode);
+            deviceSourceBuilder.AppendLine();
+        }
+        var commonDeviceSource = deviceSourceBuilder.ToString();
+
+        foreach (var method in kernelMethods.OfType<IMethodSymbol>().Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        {
+            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+            if (syntaxRef == null)
+            {
+                continue;
+            }
+
+            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
+            if (syntaxNode == null)
             {
                 continue;
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
             var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel);
-            var cppSource = visitor.GenerateCudaSource(syntaxNode);
+            var cppSource = visitor.GenerateCudaSource(syntaxNode, isDevice: false);
+
+            var finalSource = commonDeviceSource + cppSource;
 
             // Generate the C# Wrapper Class
-            var wrapperSource = GenerateWrapperClass(method, cppSource);
+            var wrapperSource = GenerateWrapperClass(method, finalSource);
 
             context.AddSource($"{method.ContainingType.Name}_{method.Name}_Wrapper.g.cs",
                 SourceText.From(wrapperSource, Encoding.UTF8));

@@ -9,26 +9,46 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
     private SourceWriter _writer = new();
     private int _indentLevel;
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
+    private bool _hasEmittedDynamicSmemBase;
 
     private static readonly Dictionary<string, Func<string, string>> s_apiMappings = new()
     {
         { "Math", name => name.ToLowerInvariant() },
-        { "ThreadIdx", name => $"threadIdx.{name.ToLowerInvariant()}" },
-        { "BlockIdx", name => $"blockIdx.{name.ToLowerInvariant()}" },
-        { "BlockDim", name => $"blockDim.{name.ToLowerInvariant()}" },
-        { "GridDim", name => $"gridDim.{name.ToLowerInvariant()}" },
+        { "ThreadIndex", name => $"threadIdx.{name.ToLowerInvariant()}" },
+        { "BlockIndex", name => $"blockIdx.{name.ToLowerInvariant()}" },
+        { "BlockDimension", name => $"blockDim.{name.ToLowerInvariant()}" },
+        { "GridDimension", name => $"gridDim.{name.ToLowerInvariant()}" },
         { "Gpu", name => name == "SyncThreads" ? "__syncthreads" : (name == "AtomicAdd" ? "atomicAdd" : name) }
     };
 
-    public string GenerateCudaSource(MethodDeclarationSyntax method)
+    public string GenerateCudaSource(MethodDeclarationSyntax method, bool isDevice = false)
     {
         var bodyWriter = new SourceWriter();
         var mainWriter = _writer;
         _writer = bodyWriter;
 
         _indentLevel = 0;
+        _hasEmittedDynamicSmemBase = false;
 
-        _writer.AppendKeyword("extern \"C\" __global__ void");
+        if (isDevice)
+        {
+            _writer.AppendKeyword("__device__");
+            _writer.AppendSpace();
+            var returnType = semanticModel.GetDeclaredSymbol(method)?.ReturnType;
+            if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+            {
+                _writer.Append(MapType(returnType));
+            }
+            else
+            {
+                _writer.AppendKeyword("void");
+            }
+        }
+        else
+        {
+            _writer.AppendKeyword("extern \"C\" __global__ void");
+        }
+
         _writer.AppendSpace();
         _writer.Append(method.Identifier.Text);
         using (_writer.Parentheses())
@@ -36,24 +56,25 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
             WriteParameters(method.ParameterList.Parameters);
         }
 
-        _writer.AppendLine(" {");
-        _indentLevel++;
-
-        if (method.Body != null)
+        using (_writer.Scope())
         {
-            Visit(method.Body);
-        }
-        else if (method.ExpressionBody != null)
-        {
-            AppendIndent();
-            // Assuming the expression body is something simple. A real transpile needs to handle returning or assigning.
-            // For now, we only visit the expression.
-            Visit(method.ExpressionBody.Expression);
-            _writer.AppendLine(";");
-        }
+            _indentLevel++;
 
-        _indentLevel--;
-        _writer.AppendLine("}");
+            if (method.Body != null)
+            {
+                Visit(method.Body);
+            }
+            else if (method.ExpressionBody != null)
+            {
+                AppendIndent();
+                // Assuming the expression body is something simple. A real transpile needs to handle returning or assigning.
+                // For now, we only visit the expression.
+                Visit(method.ExpressionBody.Expression);
+                _writer.AppendSemiColon();
+            }
+
+            _indentLevel--;
+        }
 
         _writer = mainWriter;
 
@@ -63,7 +84,7 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
             WriteStructDefinition(structSym);
         }
 
-        var result = _writer.ToString() + bodyWriter.ToString();
+        var result = _writer + bodyWriter.ToString();
         _writer.Dispose();
         bodyWriter.Dispose();
         return result;
@@ -124,7 +145,7 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
             }
         }
 
-        _writer.AppendLine(";");
+        _writer.AppendSemiColon();
         _writer.AppendLine();
     }
 
@@ -168,7 +189,7 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
     {
         Visit(node.Expression);
-        _writer.Append(";");
+        _writer.AppendSemiColon();
     }
 
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
@@ -285,14 +306,14 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
                 }
             }
 
-            _writer.Append(";");
+            _writer.AppendSemiColon();
 
             if (node.Condition != null)
             {
                 Visit(node.Condition);
             }
 
-            _writer.Append(";");
+            _writer.AppendSemiColon();
 
             for (var i = 0; i < node.Incrementors.Count; i++)
             {
@@ -320,6 +341,81 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
         VisitStatementOrBlock(node.Statement);
     }
 
+    public override void VisitDoStatement(DoStatementSyntax node)
+    {
+        _writer.AppendKeyword("do");
+        _writer.AppendLine();
+        VisitStatementOrBlock(node.Statement);
+        AppendIndent();
+        _writer.AppendKeyword("while");
+        using (_writer.Parentheses())
+        {
+            Visit(node.Condition);
+        }
+
+        _writer.Append(";");
+        _writer.AppendLine();
+    }
+
+    public override void VisitSwitchStatement(SwitchStatementSyntax node)
+    {
+        _writer.AppendKeyword("switch");
+        using (_writer.Parentheses())
+        {
+            Visit(node.Expression);
+        }
+
+        _writer.AppendLine();
+        AppendIndent();
+        using (_writer.Scope())
+        {
+            _indentLevel++;
+            foreach (var section in node.Sections)
+            {
+                VisitSwitchSection(section);
+            }
+
+            _indentLevel--;
+            AppendIndent();
+        }
+    }
+
+    public override void VisitSwitchSection(SwitchSectionSyntax node)
+    {
+        foreach (var label in node.Labels)
+        {
+            AppendIndent();
+            Visit(label);
+            _writer.AppendLine();
+        }
+
+        _indentLevel++;
+        foreach (var stmt in node.Statements)
+        {
+            AppendIndent();
+            Visit(stmt);
+            _writer.AppendLine();
+        }
+
+        _indentLevel--;
+    }
+
+    public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
+    {
+        _writer.AppendKeyword("case");
+        _writer.AppendSpace();
+        Visit(node.Value);
+        _writer.Append(":");
+    }
+
+    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node) => _writer.Append("default:");
+
+    public override void VisitBreakStatement(BreakStatementSyntax node)
+    {
+        _writer.AppendKeyword("break");
+        _writer.Append(";");
+    }
+
     public override void VisitReturnStatement(ReturnStatementSyntax node)
     {
         _writer.AppendKeyword("return");
@@ -329,13 +425,93 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
             Visit(node.Expression);
         }
 
-        _writer.Append(";");
+        _writer.AppendSemiColon();
     }
 
     public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
     {
+        var typeSymbol = semanticModel.GetTypeInfo(node.Declaration.Type).Type;
+        if (typeSymbol?.Name == "SharedMemory" &&
+            typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
+        {
+            var typeArg = ((INamedTypeSymbol)typeSymbol).TypeArguments[0];
+            var cppElementType = MapType(typeArg);
+
+            for (var i = 0; i < node.Declaration.Variables.Count; i++)
+            {
+                var v = node.Declaration.Variables[i];
+                var sizeArg = (v.Initializer?.Value as ObjectCreationExpressionSyntax)?.ArgumentList?.Arguments
+                    .FirstOrDefault()?.Expression;
+                if (sizeArg == null && v.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
+                {
+                    sizeArg = implCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+                }
+
+                if (sizeArg != null)
+                {
+                    var constantValue = semanticModel.GetConstantValue(sizeArg);
+                    if (constantValue.HasValue)
+                    {
+                        // Static
+                        _writer.AppendKeyword("__shared__");
+                        _writer.AppendSpace();
+                        _writer.Append(cppElementType);
+                        _writer.AppendSpace();
+                        _writer.Append(v.Identifier.Text);
+                        using (_writer.Brackets())
+                        {
+                            _writer.Append(constantValue.Value?.ToString() ?? "");
+                        }
+
+                        _writer.Append(";");
+                        if (i < node.Declaration.Variables.Count - 1)
+                        {
+                            _writer.AppendLine();
+                            AppendIndent();
+                        }
+                    }
+                    else
+                    {
+                        // Dynamic
+                        if (!_hasEmittedDynamicSmemBase)
+                        {
+                            _writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
+                            AppendIndent();
+                            _writer.AppendLine("size_t __smem_offset = 0;");
+                            AppendIndent();
+                            _hasEmittedDynamicSmemBase = true;
+                        }
+
+                        _writer.Append(
+                            $"__smem_offset = (__smem_offset + alignof({cppElementType}) - 1) & ~(alignof({cppElementType}) - 1);");
+                        _writer.AppendLine();
+                        AppendIndent();
+                        _writer.Append(
+                            $"{cppElementType}* {v.Identifier.Text} = ({cppElementType}*)(__gsharp_dynamic_smem + __smem_offset);");
+                        _writer.AppendLine();
+                        AppendIndent();
+                        _writer.Append("__smem_offset += ");
+                        using (_writer.Parentheses())
+                        {
+                            Visit(sizeArg);
+                        }
+
+                        _writer.Append($" * sizeof({cppElementType});");
+
+                        if (i < node.Declaration.Variables.Count - 1)
+                        {
+                            _writer.AppendLine();
+                            AppendIndent();
+                        }
+                    }
+                }
+            }
+
+            return;
+        }
+
         VisitVariableDeclaration(node.Declaration);
-        _writer.Append(";");
+        _writer.AppendSemiColon();
     }
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)

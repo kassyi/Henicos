@@ -10,7 +10,8 @@ namespace Kassyi.Generators.GSharp;
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Library methods for Source Generators")]
 [SuppressMessage("ReSharper", "UnusedMethod.Global", Justification = "Library methods for Source Generators")]
-[SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Library methods for Source Generators")]
+[SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
+    Justification = "Library methods for Source Generators")]
 public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 {
     [ThreadStatic]
@@ -37,6 +38,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         {
             Builder = new StringBuilder(4096);
         }
+
         Builder.Clear();
     }
 
@@ -60,6 +62,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void AppendComma() => Builder.Append(',');
     public void AppendSpace() => Builder.Append(' ');
+    public void AppendSemiColon() => Builder.AppendLine(";");
     public void AppendOperator(string op) => Builder.Append(op);
     public void AppendKeyword(string keyword) => Builder.Append(keyword);
 
@@ -82,13 +85,15 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         }
     }
 
-    public void AppendLine([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) => Builder.AppendLine();
+    public void AppendLine([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) =>
+        Builder.AppendLine();
 
     public void Line() => AppendLine();
-    
+
     public void Line(string? value) => AppendLine(value);
 
-    public void Line([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) => AppendLine(ref handler);
+    public void Line([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) =>
+        AppendLine(ref handler);
 
     public void AppendIf(bool condition, string? value)
     {
@@ -98,7 +103,9 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         }
     }
 
-    public void AppendIf(bool condition, [InterpolatedStringHandlerArgument("", "condition")] ref SourceWriterInterpolatedStringHandler handler)
+    public void AppendIf(bool condition,
+        [InterpolatedStringHandlerArgument("", "condition")]
+        ref SourceWriterInterpolatedStringHandler handler)
     {
     }
 
@@ -110,7 +117,9 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         }
     }
 
-    public void AppendLineIf(bool condition, [InterpolatedStringHandlerArgument("", "condition")] ref SourceWriterInterpolatedStringHandler handler)
+    public void AppendLineIf(bool condition,
+        [InterpolatedStringHandlerArgument("", "condition")]
+        ref SourceWriterInterpolatedStringHandler handler)
     {
         if (condition)
         {
@@ -120,7 +129,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void LineIf(bool condition, string? value) => AppendLineIf(condition, value);
 
-    public void LineIf(bool condition, [InterpolatedStringHandlerArgument("", "condition")] ref SourceWriterInterpolatedStringHandler handler) => AppendLineIf(condition, ref handler);
+    public void LineIf(bool condition,
+        [InterpolatedStringHandlerArgument("", "condition")]
+        ref SourceWriterInterpolatedStringHandler handler) =>
+        AppendLineIf(condition, ref handler);
 
     public override string ToString() => Builder.ToString();
 
@@ -136,15 +148,18 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public override int GetHashCode() => _myDepth;
 
-    public SourceWriterScope Scope(string openingText = "{", string closingText = "}") => new(this, openingText, closingText);
-    public SourceWriterInlineScope InlineScope(string openingText, string closingText) => new(this, openingText, closingText);
+    public SourceWriterScope Scope(string openingText = "{", string closingText = "}") =>
+        new(this, openingText, closingText);
+
+    public SourceWriterInlineScope InlineScope(string openingText, string closingText) =>
+        new(this, openingText, closingText);
+
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
 
     public static bool operator ==(SourceWriter left, SourceWriter right) => left.Equals(right);
 
     public static bool operator !=(SourceWriter left, SourceWriter right) => !(left == right);
-
 }
 
 /// <summary>A zero-allocation scope that appends an opening string on creation and a closing string on disposal.</summary>
@@ -210,7 +225,8 @@ public readonly ref struct SourceWriterInterpolatedStringHandler
         _builder = writer.GetBuilder();
     }
 
-    public SourceWriterInterpolatedStringHandler(int literalLength, int formattedCount, SourceWriter writer, bool condition, out bool isHandlerEnabled)
+    public SourceWriterInterpolatedStringHandler(int literalLength, int formattedCount, SourceWriter writer,
+        bool condition, out bool isHandlerEnabled)
     {
         if (condition)
         {
@@ -236,5 +252,6 @@ public readonly ref struct SourceWriterInterpolatedStringHandler
 
     public void AppendFormatted<T>(T t) => _builder?.Append(t);
 
-    public void AppendFormatted<T>(T? t, string format) where T : IFormattable => _builder?.Append(t?.ToString(format, null));
+    public void AppendFormatted<T>(T? t, string format) where T : IFormattable =>
+        _builder?.Append(t?.ToString(format, null));
 }
