@@ -1,6 +1,5 @@
 namespace Kassyi.GSharp.Runtime.Transpiler.Pipeline;
 
-
 public static class NvccCompiler
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
@@ -79,125 +78,42 @@ public static class NvccCompiler
         return "nvcc.exe";
     }
 
+    // ReSharper disable UnusedMember.Global
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
-        var vcvars = GetVcvarsPath();
-        var nvcc = GetNvccPath();
-
-        // Generate an options file to prevent OS command injection
-        var optsFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".txt");
-        var opts = new List<string>
-        {
+        RunNvccInternal(cuFile, dllFile, includePath, tempDir, [
             "-shared",
             "-o", dllFile,
-            cuFile,
             "-lcufft",
             "-O3",
             "-arch=sm_86",
             "-std=c++17",
             "-rdc=true"
-        };
-        if (!string.IsNullOrEmpty(includePath))
-        {
-            opts.Add($"-I{includePath}");
-        }
-
-        FileSystem.File.WriteAllLines(optsFile, opts, new UTF8Encoding(false));
-
-        var batFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".bat");
-        var sb = new StringBuilder();
-        sb.AppendLine("@echo off");
-        sb.AppendLine($"call \"{vcvars}\"");
-        sb.AppendLine($"\"{nvcc}\" --options-file \"{optsFile}\" > \"{tempDir}\\out.log\" 2>&1");
-        FileSystem.File.WriteAllText(batFile, sb.ToString(), new UTF8Encoding(false));
-
-        var psi = new ProcessStartInfo("cmd.exe", $"/c \"{batFile}\"")
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WorkingDirectory = tempDir
-        };
-
-        Console.WriteLine("[JIT] Compiling dynamically generated CUDA code...");
-        var sw = Stopwatch.StartNew();
-
-        try
-        {
-            ProcessRunner(psi); // Injectable process execution
-        }
-        catch (Exception)
-        {
-            var log = FileSystem.File.Exists($"{tempDir}\\out.log")
-                ? FileSystem.File.ReadAllText($"{tempDir}\\out.log")
-                : "No log found.";
-            throw new Exception($"NVCC Compilation Failed:\n{log}");
-        }
-        finally
-        {
-            // Cleanup intermediate files
-            try
-            {
-                FileSystem.File.Delete(optsFile);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[JIT Warning] Failed to delete opts file: {ex.Message}");
-            }
-
-            try
-            {
-                FileSystem.File.Delete(batFile);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[JIT Warning] Failed to delete bat file: {ex.Message}");
-            }
-
-            try
-            {
-                FileSystem.File.Delete(FileSystem.Path.ChangeExtension(dllFile, ".lib"));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[JIT Warning] Failed to delete lib file: {ex.Message}");
-            }
-
-            try
-            {
-                FileSystem.File.Delete(FileSystem.Path.ChangeExtension(dllFile, ".exp"));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[JIT Warning] Failed to delete exp file: {ex.Message}");
-            }
-        }
-
-        sw.Stop();
-
-        if (!FileSystem.File.Exists(dllFile))
-        {
-            throw new Exception($"JIT Compilation failed! Expected {dllFile} to be created.");
-        }
-
-        Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
+        ], "out.log");
     }
 
     public static void CompileToFatbin(string cuFile, string fatbinFile, string? includePath, string tempDir)
     {
-        var vcvars = GetVcvarsPath();
-        var nvcc = GetNvccPath();
-
-        // Generate an options file to prevent OS command injection
-        var optsFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".txt");
-        var opts = new List<string>
-        {
+        RunNvccInternal(cuFile, fatbinFile, includePath, tempDir, [
             "--fatbin",
             "-o", fatbinFile,
-            cuFile,
             "-O3",
             "-arch=sm_86",
             "-std=c++17"
-        };
+        ], "out_fatbin.log");
+    }
+
+    private static void RunNvccInternal(string cuFile, string outFile, string? includePath, string tempDir,
+        List<string> specificOpts, string logName)
+    {
+        var vcvars = GetVcvarsPath();
+        var nvcc = GetNvccPath();
+
+        var optsFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".txt");
+        var logFile = FileSystem.Path.Combine(tempDir, logName);
+
+        var opts = new List<string>(specificOpts) { cuFile };
         if (!string.IsNullOrEmpty(includePath))
         {
             opts.Add($"-I{includePath}");
@@ -205,64 +121,79 @@ public static class NvccCompiler
 
         FileSystem.File.WriteAllLines(optsFile, opts, new UTF8Encoding(false));
 
-        var batFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".bat");
-        var sb = new StringBuilder();
-        sb.AppendLine("@echo off");
-        sb.AppendLine($"call \"{vcvars}\"");
-        sb.AppendLine($"\"{nvcc}\" --options-file \"{optsFile}\" > \"{tempDir}\\out_fatbin.log\" 2>&1");
-        FileSystem.File.WriteAllText(batFile, sb.ToString(), new UTF8Encoding(false));
-
-        var psi = new ProcessStartInfo("cmd.exe", $"/c \"{batFile}\"")
+        var psi = new ProcessStartInfo("cmd.exe",
+            $"/c \"call \"{vcvars}\" && \"{nvcc}\" --options-file \"{optsFile}\" > \"{logFile}\" 2>&1\"")
         {
             UseShellExecute = false,
             CreateNoWindow = true,
             WorkingDirectory = tempDir
         };
 
-        Console.WriteLine("[JIT] Compiling dynamically generated CUDA code to FATBIN...");
+        Console.WriteLine($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
         var sw = Stopwatch.StartNew();
 
         try
         {
-            ProcessRunner(psi); // Injectable process execution
+            ProcessRunner(psi);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            var log = FileSystem.File.Exists($"{tempDir}\\out_fatbin.log")
-                ? FileSystem.File.ReadAllText($"{tempDir}\\out_fatbin.log")
+            var log = FileSystem.File.Exists(logFile)
+                ? FileSystem.File.ReadAllText(logFile)
                 : "No log found.";
-            throw new Exception($"NVCC FATBIN Compilation Failed:\n{log}");
+            throw new Exception($"NVCC Compilation Failed:\n{log}", ex);
         }
         finally
         {
-            // Cleanup intermediate files
+            // Clean up temporary files on best-effort basis; ignore errors if files are locked or already deleted.
             try
             {
                 FileSystem.File.Delete(optsFile);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[JIT Warning] Failed to delete opts file: {ex.Message}");
+                // Ignore cleanup errors
             }
 
             try
             {
-                FileSystem.File.Delete(batFile);
+                FileSystem.File.Delete(logFile);
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[JIT Warning] Failed to delete bat file: {ex.Message}");
+                // Ignore cleanup errors
+            }
+
+            if (specificOpts.Contains("-shared"))
+            {
+                try
+                {
+                    FileSystem.File.Delete(FileSystem.Path.ChangeExtension(outFile, ".lib"));
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+
+                try
+                {
+                    FileSystem.File.Delete(FileSystem.Path.ChangeExtension(outFile, ".exp"));
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
             }
         }
 
         sw.Stop();
 
-        if (!FileSystem.File.Exists(fatbinFile))
+        if (!FileSystem.File.Exists(outFile))
         {
-            throw new Exception($"JIT FATBIN Compilation failed! Expected {fatbinFile} to be created.");
+            throw new Exception($"JIT Compilation failed! Expected {outFile} to be created.");
         }
 
-        Console.WriteLine($"[JIT] FATBIN Compilation successful in {sw.ElapsedMilliseconds} ms.");
+        Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
     }
 }
 

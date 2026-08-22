@@ -1,35 +1,69 @@
+// ReSharper disable UnusedMember.Global
 using System.Security.Cryptography;
-using Kassyi.GSharp.Runtime.Core;
+using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Runtime.Transpiler.Pipeline;
 
 public static class JitEngine
 {
-    private static bool _isInitialized;
-    private static IntPtr _context;
+    private static bool s_isGlobalInit;
+    private static IntPtr s_globalContext;
+    private static readonly Lock s_initLock = new();
 
-    // Cache for compiled functions: Hash of Source -> Function Handle
-    private static readonly ConcurrentDictionary<string, IntPtr> _functionCache = new();
+    [ThreadStatic]
+    private static bool s_isThreadBound;
+
+    private readonly struct GpuModule(IntPtr module, IntPtr function)
+    {
+        public IntPtr Module { get; } = module;
+        public IntPtr Function { get; } = function;
+    }
+
+    // Cache for compiled functions: Hash of Source -> GpuModule
+    private static readonly ConcurrentDictionary<string, GpuModule> s_functionCache = new();
 
     private static void EnsureInitialized()
     {
-        if (_isInitialized)
+        if (s_isThreadBound)
         {
             return;
         }
 
-        lock (_functionCache)
+        lock (s_initLock)
         {
-            if (_isInitialized)
+            if (!s_isGlobalInit)
             {
-                return;
+                CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+                s_isGlobalInit = true;
             }
-
-            CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
-            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
-            CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _context, 0, device));
-            _isInitialized = true;
         }
+
+        // Bind the global context to the current thread
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSetCurrent(s_globalContext));
+        s_isThreadBound = true;
+    }
+
+    /// <summary>
+    /// Unloads all cached modules and clears the cache to prevent device memory leaks.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
+    public static void Shutdown()
+    {
+        foreach (var kvp in s_functionCache)
+        {
+            try
+            {
+                CudaDriverApi.cuModuleUnload(kvp.Value.Module);
+            }
+            catch
+            {
+                // Ignore unload errors during shutdown to ensure we attempt to unload all modules.
+            }
+        }
+
+        s_functionCache.Clear();
     }
 
     /// <summary>
@@ -44,9 +78,9 @@ public static class JitEngine
         var sourceHash = ComputeHash(cppSource);
         var cacheKey = $"{sourceHash}_{kernelName}";
 
-        if (_functionCache.TryGetValue(cacheKey, out var cachedFunc))
+        if (s_functionCache.TryGetValue(cacheKey, out var cachedModule))
         {
-            return cachedFunc;
+            return cachedModule.Function;
         }
 
         // Compilation path
@@ -70,9 +104,10 @@ public static class JitEngine
         CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, 0, null, null));
         CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
 
-        _functionCache[cacheKey] = hfunc;
+        var gpuModule = new GpuModule(module, hfunc);
+        s_functionCache[cacheKey] = gpuModule;
 
-        return hfunc;
+        return gpuModule.Function;
     }
 
     private static string ComputeHash(string input)
