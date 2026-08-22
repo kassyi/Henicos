@@ -1,0 +1,224 @@
+﻿[
+  {
+    Descriptor: {
+      Id: GSH0004,
+      Title: {},
+      Description: {},
+      HelpLinkUri: ,
+      MessageFormat: {},
+      Category: GSharpTranspiler,
+      DefaultSeverity: Error,
+      IsEnabledByDefault: true
+    },
+    Id: GSH0004,
+    Severity: Error,
+    IsSuppressed: false,
+    Location: {
+      Kind: SourceFile,
+      SourceSpan: {
+        Start: 136,
+        Length: 3
+      },
+      SourceTree: {
+        FilePath: ,
+        Length: 272,
+        HasCompilationUnitRoot: true,
+        Options: {
+          LanguageVersion: CSharp13,
+          Language: C#,
+          DocumentationMode: Parse,
+          Errors: null
+        }
+      },
+      IsInSource: true,
+      IsInMetadata: false
+    },
+    DefaultSeverity: Error,
+    IsWarningAsError: false
+  },
+  {
+    Descriptor: {
+      Id: GSH0002,
+      Title: {},
+      Description: {},
+      HelpLinkUri: ,
+      MessageFormat: {},
+      Category: GSharpTranspiler,
+      DefaultSeverity: Error,
+      IsEnabledByDefault: true
+    },
+    Id: GSH0002,
+    Severity: Error,
+    IsSuppressed: false,
+    Location: {
+      Kind: SourceFile,
+      SourceSpan: {
+        Start: 174,
+        Length: 6
+      },
+      SourceTree: {
+        FilePath: ,
+        Length: 272,
+        HasCompilationUnitRoot: true,
+        Options: {
+          LanguageVersion: CSharp13,
+          Language: C#,
+          DocumentationMode: Parse,
+          Errors: null
+        }
+      },
+      IsInSource: true,
+      IsInMetadata: false
+    },
+    DefaultSeverity: Error,
+    IsWarningAsError: false
+  },
+  {
+    Descriptor: {
+      Id: GSH0001,
+      Title: {},
+      Description: {},
+      HelpLinkUri: ,
+      MessageFormat: {},
+      Category: GSharpTranspiler,
+      DefaultSeverity: Error,
+      IsEnabledByDefault: true
+    },
+    Id: GSH0001,
+    Severity: Error,
+    IsSuppressed: false,
+    Location: {
+      Kind: SourceFile,
+      SourceSpan: {
+        Start: 219,
+        Length: 12
+      },
+      SourceTree: {
+        FilePath: ,
+        Length: 272,
+        HasCompilationUnitRoot: true,
+        Options: {
+          LanguageVersion: CSharp13,
+          Language: C#,
+          DocumentationMode: Parse,
+          Errors: null
+        }
+      },
+      IsInSource: true,
+      IsInMetadata: false
+    },
+    DefaultSeverity: Error,
+    IsWarningAsError: false
+  },
+  {
+    Descriptor: {
+      Id: GSH0003,
+      Title: {},
+      Description: {},
+      HelpLinkUri: ,
+      MessageFormat: {},
+      Category: GSharpTranspiler,
+      DefaultSeverity: Error,
+      IsEnabledByDefault: true
+    },
+    Id: GSH0003,
+    Severity: Error,
+    IsSuppressed: false,
+    Location: {
+      Kind: SourceFile,
+      SourceSpan: {
+        Start: 219,
+        Length: 12
+      },
+      SourceTree: {
+        FilePath: ,
+        Length: 272,
+        HasCompilationUnitRoot: true,
+        Options: {
+          LanguageVersion: CSharp13,
+          Language: C#,
+          DocumentationMode: Parse,
+          Errors: null
+        }
+      },
+      IsInSource: true,
+      IsInMetadata: false
+    },
+    DefaultSeverity: Error,
+    IsWarningAsError: false
+  },
+  {
+    Descriptor: {
+      Id: GSH0003,
+      Title: {},
+      Description: {},
+      HelpLinkUri: ,
+      MessageFormat: {},
+      Category: GSharpTranspiler,
+      DefaultSeverity: Error,
+      IsEnabledByDefault: true
+    },
+    Id: GSH0003,
+    Severity: Error,
+    IsSuppressed: false,
+    Location: {
+      Kind: SourceFile,
+      SourceSpan: {
+        Start: 223,
+        Length: 6
+      },
+      SourceTree: {
+        FilePath: ,
+        Length: 272,
+        HasCompilationUnitRoot: true,
+        Options: {
+          LanguageVersion: CSharp13,
+          Language: C#,
+          DocumentationMode: Parse,
+          Errors: null
+        }
+      },
+      IsInSource: true,
+      IsInMetadata: false
+    },
+    DefaultSeverity: Error,
+    IsWarningAsError: false
+  },
+  {
+    Descriptor: {
+      Id: GSH0003,
+      Title: {},
+      Description: {},
+      HelpLinkUri: ,
+      MessageFormat: {},
+      Category: GSharpTranspiler,
+      DefaultSeverity: Error,
+      IsEnabledByDefault: true
+    },
+    Id: GSH0003,
+    Severity: Error,
+    IsSuppressed: false,
+    Location: {
+      Kind: SourceFile,
+      SourceSpan: {
+        Start: 229,
+        Length: 2
+      },
+      SourceTree: {
+        FilePath: ,
+        Length: 272,
+        HasCompilationUnitRoot: true,
+        Options: {
+          LanguageVersion: CSharp13,
+          Language: C#,
+          DocumentationMode: Parse,
+          Errors: null
+        }
+      },
+      IsInSource: true,
+      IsInMetadata: false
+    },
+    DefaultSeverity: Error,
+    IsWarningAsError: false
+  }
+]
