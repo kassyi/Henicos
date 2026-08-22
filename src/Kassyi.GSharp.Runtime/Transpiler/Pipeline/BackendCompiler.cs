@@ -49,12 +49,7 @@ public static class NvccCompiler
         }
 
         var vcvars = FileSystem.Path.Combine(output, "VC", "Auxiliary", "Build", "vcvars64.bat");
-        if (!FileSystem.File.Exists(vcvars))
-        {
-            throw new Exception($"vcvars64.bat not found at {vcvars}");
-        }
-
-        return vcvars;
+        return !FileSystem.File.Exists(vcvars) ? throw new Exception($"vcvars64.bat not found at {vcvars}") : vcvars;
     }
 
     public static string GetNvccPath()
@@ -69,17 +64,13 @@ public static class NvccCompiler
             }
         }
 
-        var fallback = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin\nvcc.exe";
-        if (FileSystem.File.Exists(fallback))
-        {
-            return fallback;
-        }
-
-        return "nvcc.exe";
+        const string Fallback = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin\nvcc.exe";
+        return FileSystem.File.Exists(Fallback) ? Fallback : "nvcc.exe";
     }
 
     // ReSharper disable UnusedMember.Global
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
+        Justification = "Public API for library")]
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
         RunNvccInternal(cuFile, dllFile, includePath, tempDir, [
@@ -93,18 +84,20 @@ public static class NvccCompiler
         ], "out.log");
     }
 
-    public static void CompileToFatbin(string cuFile, string fatbinFile, string? includePath, string tempDir, string smVersion = "sm_52")
+    public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
+        string tempDir, string smVersion = "sm_52")
     {
-        RunNvccInternal(cuFile, fatbinFile, includePath, tempDir, [
+        return RunNvccInternal(cuFile, fatbinFile, includePath, tempDir, [
             "--fatbin",
             "-o", fatbinFile,
             "-O3",
             $"-arch={smVersion}",
-            "-std=c++17"
+            "-std=c++17",
+            "--ptxas-options=-v"
         ], "out_fatbin.log");
     }
 
-    private static void RunNvccInternal(string cuFile, string outFile, string? includePath, string tempDir,
+    private static CompilationResult RunNvccInternal(string cuFile, string outFile, string? includePath, string tempDir,
         List<string> specificOpts, string logName)
     {
         var vcvars = GetVcvarsPath();
@@ -135,6 +128,23 @@ public static class NvccCompiler
         try
         {
             ProcessRunner(psi);
+            var logContent = "";
+            if (FileSystem.File.Exists(logFile))
+            {
+                logContent = FileSystem.File.ReadAllText(logFile);
+            }
+
+            var result = ParsePtxasOutput(logContent);
+
+            sw.Stop();
+
+            if (!FileSystem.File.Exists(outFile))
+            {
+                throw new Exception($"JIT Compilation failed! Expected {outFile} to be created.");
+            }
+
+            Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
+            return result;
         }
         catch (Exception ex)
         {
@@ -185,15 +195,35 @@ public static class NvccCompiler
                 }
             }
         }
+    }
 
-        sw.Stop();
-
-        if (!FileSystem.File.Exists(outFile))
+    private static CompilationResult ParsePtxasOutput(string logContent)
+    {
+        var result = new CompilationResult();
+        if (string.IsNullOrWhiteSpace(logContent))
         {
-            throw new Exception($"JIT Compilation failed! Expected {outFile} to be created.");
+            return result;
         }
 
-        Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
+        var regMatch = System.Text.RegularExpressions.Regex.Match(logContent, @"Used (\d+) registers");
+        if (regMatch.Success)
+        {
+            result.RegistersUsed = int.Parse(regMatch.Groups[1].Value);
+        }
+
+        var smemMatch = System.Text.RegularExpressions.Regex.Match(logContent, @"(\d+) bytes smem");
+        if (smemMatch.Success)
+        {
+            result.SharedMemoryBytes = int.Parse(smemMatch.Groups[1].Value);
+        }
+
+        var cmemMatch = System.Text.RegularExpressions.Regex.Match(logContent, @"(\d+) bytes cmem");
+        if (cmemMatch.Success)
+        {
+            result.ConstantMemoryBytes = int.Parse(cmemMatch.Groups[1].Value);
+        }
+
+        return result;
     }
 }
 
