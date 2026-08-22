@@ -55,3 +55,4 @@ tmp/
 BenchmarkDotNet.Artifacts/
 
 .agents/
+TestResults/
