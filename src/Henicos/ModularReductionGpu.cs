@@ -27,9 +27,11 @@ public static class ModularReductionGpu
     }
 
     // Dummy intrinsics to allow compilation of the C# kernel
+    [GpuKernel]
     private static void Device_MultiplySquare(uint[] a, int b, int c, uint[] d, uint[] e, uint[] f, uint[] g, uint[] h, uint[] i, uint[] j)
     {
     }
+    [GpuKernel]
     private static void Device_ShiftRight(uint[] a, int b, uint[] c, int d)
     {
     }
