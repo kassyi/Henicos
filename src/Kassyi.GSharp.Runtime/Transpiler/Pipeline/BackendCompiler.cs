@@ -81,7 +81,7 @@ public static class NvccCompiler
             "-arch=sm_86",
             "-std=c++17",
             "-rdc=true"
-        ], "out.log");
+        ], $"out_{Guid.CreateVersion7():N}.log");
     }
 
     public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
@@ -94,7 +94,7 @@ public static class NvccCompiler
             $"-arch={smVersion}",
             "-std=c++17",
             "--ptxas-options=-v"
-        ], "out_fatbin.log");
+        ], $"out_fatbin_{Guid.CreateVersion7():N}.log");
     }
 
     private static CompilationResult RunNvccInternal(string cuFile, string outFile, string? includePath, string tempDir,
