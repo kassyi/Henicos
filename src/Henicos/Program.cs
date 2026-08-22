@@ -12,12 +12,12 @@ class Program
         {
             if (args.Length > 1 && args[1] == "gpu")
             {
-                var summary = BenchmarkRunner.Run<GpuBenchmark>();
+                BenchmarkRunner.Run<GpuBenchmark>();
                 return;
             }
             else
             {
-                var summary = BenchmarkRunner.Run<FermatBenchmark>();
+                BenchmarkRunner.Run<FermatBenchmark>();
                 return;
             }
         }
@@ -33,38 +33,38 @@ class Program
         // Benchmark target E values (Crossover Test)
         int[] testEs = [1000, 5000, 10000, 20000, 50000, 100000];
 
-        foreach (var E in testEs)
+        foreach (var e in testEs)
         {
-            RunBenchmarkForE(E);
+            RunBenchmarkForE(e);
         }
     }
 
-    static void RunBenchmarkForE(int E)
+    static void RunBenchmarkForE(int e)
     {
-        Console.WriteLine($"\n[ Benchmarking for E = {E} ]");
+        Console.WriteLine($"\n[ Benchmarking for E = {e} ]");
 
-        var X = BigInteger.One << E;
-        var N = (BigInteger.One << (2 * E + 1)) - X + 11;
+        var x = BigInteger.One << e;
+        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
         BigInteger a = 2;
-        var exponent = N - 1;
-        var totalDigits = ((2 * E + 1) * Math.Log10(2)) * E;
+        var exponent = n - 1;
+        var totalDigits = ((2 * e + 1) * Math.Log10(2)) * e;
 
-        var hybridPass = E <= 10000 ? TestHybridReduction(E, N) : false;
+        var hybridPass = e <= 10000 && TestHybridReduction(e, n);
 
-        var std = RunTest(() => BigInteger.ModPow(a, exponent, N), totalDigits);
+        var std = RunTest(() => BigInteger.ModPow(a, exponent, n), totalDigits);
         var v5 = RunTest(() =>
         {
-            try { return ModularReductionGpu.FermatPRPTest(E, N); }
+            try { return ModularReductionGpu.FermatPrpTest(e, n); }
             catch (Exception ex) { Console.WriteLine($"[V5 Error] {ex.Message}"); return BigInteger.Zero; }
         }, totalDigits);
 
-        var hybridMs = MeasureHybridV3(E, X);
+        var hybridMs = MeasureHybridV3(e, x);
 
         Console.WriteLine($"  - Standard BigInteger : {std.Ms,5} ms | {std.MDps,6:F2} M-Digit/s (Baseline)");
         Console.WriteLine($"  - Hybrid CPU V3 (Reduc): {hybridMs,6:F3} ms/iter (Extremely Fast Parallel Chunking)");
         Console.WriteLine($"  - ZERO Overhead VRAM V5: {v5.Ms,5} ms | {v5.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v5.Ms):F2}x vs Std)");
 
-        var pass = (std.Result == v5.Result) && (E > 10000 || hybridPass);
+        var pass = (std.Result == v5.Result) && (e > 10000 || hybridPass);
         if (!pass)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -91,42 +91,42 @@ class Program
         return (result, sw.ElapsedMilliseconds, mdps);
     }
 
-    static double MeasureHybridV3(int E, BigInteger X)
+    static double MeasureHybridV3(int e, BigInteger x)
     {
-        var numWords = (2 * E + 1 + 31) / 32;
-        var T = BigInteger.Pow(X, 2) + 123456789;
-        var tBytes = T.ToByteArray();
+        var numWords = (2 * e + 1 + 31) / 32;
+        var t = BigInteger.Pow(x, 2) + 123456789;
+        var tBytes = t.ToByteArray();
         var data = new uint[numWords * 4];
         Buffer.BlockCopy(tBytes, 0, data, 0, tBytes.Length);
 
         var sw = Stopwatch.StartNew();
-        var iters = (E <= 1000) ? 10000 : 100;
+        var iters = (e <= 1000) ? 10000 : 100;
         for (var i = 0; i < iters; i++)
         {
-            HybridReduction.ReduceInPlace(data, E, numWords);
+            HybridReduction.ReduceInPlace(data, e, numWords);
         }
 
         sw.Stop();
         return (double)sw.ElapsedMilliseconds / iters;
     }
 
-    static bool TestHybridReduction(int E, BigInteger N)
+    static bool TestHybridReduction(int e, BigInteger n)
     {
-        var T = BigInteger.Pow(BigInteger.One << (2 * E), 2) + 123456789;
-        var expected = T % N;
+        var t = BigInteger.Pow(BigInteger.One << (2 * e), 2) + 123456789;
+        var expected = t % n;
         if (expected < 0)
         {
-            expected += N;
+            expected += n;
         }
 
-        var numWords = (2 * E + 1 + 31) / 32;
-        var tBytes = T.ToByteArray();
+        var numWords = (2 * e + 1 + 31) / 32;
+        var tBytes = t.ToByteArray();
         var data = new uint[numWords * 4];
         Buffer.BlockCopy(tBytes, 0, data, 0, tBytes.Length);
 
-        HybridReduction.ReduceInPlace(data, E, numWords);
+        HybridReduction.ReduceInPlace(data, e, numWords);
 
-        var highestWord = data[data.Length - 1];
+        var highestWord = data[^1];
         var resBytes = new byte[data.Length * 4 + 1];
         Buffer.BlockCopy(data, 0, resBytes, 0, data.Length * 4);
 
@@ -134,22 +134,22 @@ class Program
         resBytes[data.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
 
         var actual = new BigInteger(resBytes);
-        actual %= N;
+        actual %= n;
         if (actual < 0)
         {
-            actual += N;
+            actual += n;
         }
 
         if (expected == actual)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"  [PASS] HybridReduction output matches for E={E}");
+            Console.WriteLine($"  [PASS] HybridReduction output matches for E={e}");
             Console.ResetColor();
             return true;
         }
 
         Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"  [WARN] HybridReduction output MISMATCH for E={E}");
+        Console.WriteLine($"  [WARN] HybridReduction output MISMATCH for E={e}");
         Console.WriteLine($"         Expected: {expected}");
         Console.WriteLine($"         Actual  : {actual}");
         Console.ResetColor();

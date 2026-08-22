@@ -2,6 +2,9 @@ using System.Runtime.InteropServices;
 
 namespace Henicos;
 
+#pragma warning disable IDE0051 // Remove unused private members
+// ReSharper disable UnusedMember.Global
+
 public static class CudaInterop
 {
     private const string DllName = "Kassyi.Math.GpuBigInt.Cuda.dll";
@@ -10,29 +13,29 @@ public static class CudaInterop
     public static extern bool InitializeGPU(int maxWords);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool GpuBigInt_DynamicFermatLoop(int E, uint[] out_data, JitLaunchCallback jitLaunch);
+    public static extern bool GpuBigInt_DynamicFermatLoop(int e, uint[] outData, JitLaunchCallback jitLaunch);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool GpuBigInt_FermatPRPTest(int E, uint[] resultData);
+    public static extern bool GpuBigInt_FermatPRPTest(int e, uint[] resultData);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool GpuBigInt_StaticFermatLoop(int E, uint[] resultData);
+    public static extern bool GpuBigInt_StaticFermatLoop(int e, uint[] resultData);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool GpuBigInt_ExecuteIL(int E, string ilScript, uint[] resultData);
+    public static extern bool GpuBigInt_ExecuteIL(int e, string ilScript, uint[] resultData);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void JitLaunchCallback(
-        IntPtr T, IntPtr Q, IntPtr R, IntPtr MaskR, IntPtr T_tmp,
-        int numWords, int E_val, IntPtr carryBuffer,
-        int M, IntPtr ntt_buf1, IntPtr ntt_buf2, IntPtr ntt_tmp,
-        IntPtr twiddle1_fwd, IntPtr twiddle2_fwd,
-        IntPtr twiddle1_inv, IntPtr twiddle2_inv,
+        IntPtr t, IntPtr q, IntPtr r, IntPtr maskR, IntPtr tmp,
+        int numWords, int eVal, IntPtr carryBuffer,
+        int m, IntPtr nttBuf1, IntPtr nttBuf2, IntPtr nttTmp,
+        IntPtr twiddle1Fwd, IntPtr twiddle2Fwd,
+        IntPtr twiddle1Inv, IntPtr twiddle2Inv,
         int gridDim, int blockDim
     );
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool GpuBigInt_RunJitFermatLoop(int E, uint[] resultData, JitLaunchCallback callback);
+    public static extern bool GpuBigInt_RunJitFermatLoop(int e, uint[] resultData, JitLaunchCallback callback);
 
     [DllImport(DllName, EntryPoint = "GpuBigInt_Cleanup", CallingConvention = CallingConvention.Cdecl)]
     public static extern void CleanupGPU();
@@ -44,7 +47,7 @@ public static class CudaInterop
         {
             var cudaBinX64 = Path.Combine(cudaPath, "bin", "x64");
             var pathEnv = Environment.GetEnvironmentVariable("PATH");
-            if (!pathEnv.Contains(cudaBinX64))
+            if (pathEnv != null && !pathEnv.Contains(cudaBinX64))
             {
                 Environment.SetEnvironmentVariable("PATH", pathEnv + ";" + cudaBinX64);
             }

@@ -1,21 +1,14 @@
-using System;
-using System.IO;
 using BenchmarkDotNet.Attributes;
 using Kassyi.GSharp;
 using Kassyi.GSharp.Transpiler;
-using Henicos;
 using System.Runtime.InteropServices;
-using Kassyi.Math.GpuBigInt;
 
 namespace Henicos;
 
 public class DummyKernelDef
 {
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    public static uint HelperScale(uint x, uint scale)
-    {
-        return x * scale;
-    }
+    public static uint HelperScale(uint x, uint scale) => x * scale;
 
     [GpuKernel]
     public static void VectorScale(uint[] T, int length)
@@ -30,7 +23,7 @@ public class DummyKernelDef
 public class GpuBenchmark
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void VectorScaleCallback(IntPtr d_T, int length);
+    public delegate void VectorScaleCallback(IntPtr dT, int length);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate IntPtr AllocMemCallback(int bytes);
@@ -38,19 +31,19 @@ public class GpuBenchmark
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void FreeMemCallback(IntPtr ptr);
 
-    private VectorScaleCallback _gsharpKernel;
-    private VectorScaleCallback _rawCudaKernel;
-    private JitCompiledKernel<VectorScaleCallback> _gsharpModule;
-    private JitCompiledKernel<VectorScaleCallback> _rawCudaModule;
+    private VectorScaleCallback? _gsharpKernel;
+    private VectorScaleCallback? _rawCudaKernel;
+    private JitCompiledKernel<VectorScaleCallback>? _gsharpModule;
+    private JitCompiledKernel<VectorScaleCallback>? _rawCudaModule;
     
-    private AllocMemCallback _allocMem;
-    private FreeMemCallback _freeMem;
-    private JitCompiledKernel<AllocMemCallback> _memModule;
+    private AllocMemCallback? _allocMem;
+    private FreeMemCallback? _freeMem;
+    private JitCompiledKernel<AllocMemCallback>? _memModule;
 
     [Params(1024, 1048576)] // 1K and 1M elements
     public int N { get; set; }
 
-    private IntPtr _d_T;
+    private IntPtr _dT;
 
     [GlobalSetup]
     public void Setup()
@@ -80,7 +73,7 @@ extern ""C"" __declspec(dllexport) void FreeGpuMem(void* ptr) {
         var freeMemHandle = NativeLibrary.GetExport(_memModule.NativeHandle, "FreeGpuMem");
         _freeMem = Marshal.GetDelegateForFunctionPointer<FreeMemCallback>(freeMemHandle);
 
-        _d_T = _allocMem(N * 4); // Allocate uint array
+        _dT = _allocMem(N * 4); // Allocate uint array
 
         // 1. Generate G# AST code
         var gsharpAstCode = TranspilerRunner.GenerateKernelCode(typeof(DummyKernelDef).Assembly.Location, nameof(DummyKernelDef.VectorScale));
@@ -124,10 +117,10 @@ extern ""C"" __declspec(dllexport) void RunRaw(uint32_t* d_T, int length) {
     [GlobalCleanup]
     public void Cleanup()
     {
-        if (_d_T != IntPtr.Zero)
+        if (_dT != IntPtr.Zero)
         {
-            _freeMem(_d_T);
-            _d_T = IntPtr.Zero;
+            _freeMem?.Invoke(_dT);
+            _dT = IntPtr.Zero;
         }
         _gsharpModule?.Dispose();
         _rawCudaModule?.Dispose();
@@ -135,14 +128,8 @@ extern ""C"" __declspec(dllexport) void RunRaw(uint32_t* d_T, int length) {
     }
 
     [Benchmark(Baseline = true)]
-    public void RunRawCudaSequential()
-    {
-        _rawCudaKernel(_d_T, N);
-    }
+    public void RunRawCudaSequential() => _rawCudaKernel!(_dT, N);
 
     [Benchmark]
-    public void RunGSharpSequential()
-    {
-        _gsharpKernel(_d_T, N);
-    }
+    public void RunGSharpSequential() => _gsharpKernel!(_dT, N);
 }

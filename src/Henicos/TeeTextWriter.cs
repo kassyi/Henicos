@@ -2,37 +2,30 @@ using System.Text;
 
 namespace Henicos;
 
-public class TeeTextWriter : TextWriter
+public class TeeTextWriter(TextWriter originalOut, string filePath) : TextWriter
 {
-    private TextWriter _originalOut;
-    private StreamWriter _fileOut;
-
-    public TeeTextWriter(TextWriter originalOut, string filePath)
+    private StreamWriter _fileOut = new(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read))
     {
-        _originalOut = originalOut;
-        _fileOut = new StreamWriter(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read))
-        {
-            AutoFlush = true
-        };
-    }
+        AutoFlush = true
+    };
 
-    public override Encoding Encoding => _originalOut.Encoding;
+    public override Encoding Encoding => originalOut.Encoding;
 
     public override void Write(char value)
     {
-        _originalOut.Write(value);
+        originalOut.Write(value);
         _fileOut.Write(value);
     }
 
     public override void Write(string? value)
     {
-        _originalOut.Write(value);
+        originalOut.Write(value);
         _fileOut.Write(value);
     }
 
     public override void WriteLine(string? value)
     {
-        _originalOut.WriteLine(value);
+        originalOut.WriteLine(value);
         _fileOut.WriteLine(value);
     }
 
