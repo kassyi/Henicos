@@ -7,8 +7,16 @@ public class CudaGenerator : IAstVisitor
 {
     private readonly CodeWriter _writer = new();
 
-    public string Generate(BlockNode root)
+    public string Generate(BlockNode root, Mono.Collections.Generic.Collection<Mono.Cecil.Cil.VariableDefinition> variables)
     {
+        if (variables != null)
+        {
+            foreach (var v in variables)
+            {
+                // Simple mapping for demo. In reality, map type.
+                _writer.WriteLine($"int loc_{v.Index};");
+            }
+        }
         Visit(root);
         return _writer.ToString();
     }
