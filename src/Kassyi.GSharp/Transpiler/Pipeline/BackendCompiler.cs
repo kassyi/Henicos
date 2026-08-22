@@ -206,6 +206,89 @@ public static class NvccCompiler
 
         Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
     }
+
+    public static void CompileToFatbin(string cuFile, string fatbinFile, string? includePath, string tempDir)
+    {
+        var vcvars = GetVcvarsPath();
+        var nvcc = GetNvccPath();
+
+        // Generate an options file to prevent OS command injection
+        var optsFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".txt");
+        var opts = new List<string>
+        {
+            "--fatbin",
+            "-o", fatbinFile,
+            cuFile,
+            "-O3",
+            "-arch=sm_86",
+            "-std=c++17"
+        };
+        if (!string.IsNullOrEmpty(includePath))
+        {
+            opts.Add($"-I{includePath}");
+        }
+
+        FileSystem.File.WriteAllLines(optsFile, opts, new UTF8Encoding(false));
+
+        var batFile = FileSystem.Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".bat");
+        var sb = new StringBuilder();
+        sb.AppendLine("@echo off");
+        sb.AppendLine($"call \"{vcvars}\"");
+        sb.AppendLine($"\"{nvcc}\" --options-file \"{optsFile}\" > \"{tempDir}\\out_fatbin.log\" 2>&1");
+        FileSystem.File.WriteAllText(batFile, sb.ToString(), new UTF8Encoding(false));
+
+        var psi = new ProcessStartInfo("cmd.exe", $"/c \"{batFile}\"")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = tempDir
+        };
+
+        Console.WriteLine("[JIT] Compiling dynamically generated CUDA code to FATBIN...");
+        var sw = Stopwatch.StartNew();
+
+        try
+        {
+            ProcessRunner(psi); // Injectable process execution
+        }
+        catch (Exception)
+        {
+            var log = FileSystem.File.Exists($"{tempDir}\\out_fatbin.log")
+                ? FileSystem.File.ReadAllText($"{tempDir}\\out_fatbin.log")
+                : "No log found.";
+            throw new Exception($"NVCC FATBIN Compilation Failed:\n{log}");
+        }
+        finally
+        {
+            // Cleanup intermediate files
+            try
+            {
+                FileSystem.File.Delete(optsFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete opts file: {ex.Message}");
+            }
+
+            try
+            {
+                FileSystem.File.Delete(batFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete bat file: {ex.Message}");
+            }
+        }
+
+        sw.Stop();
+
+        if (!FileSystem.File.Exists(fatbinFile))
+        {
+            throw new Exception($"JIT FATBIN Compilation failed! Expected {fatbinFile} to be created.");
+        }
+
+        Console.WriteLine($"[JIT] FATBIN Compilation successful in {sw.ElapsedMilliseconds} ms.");
+    }
 }
 
 public static class JitLoader
