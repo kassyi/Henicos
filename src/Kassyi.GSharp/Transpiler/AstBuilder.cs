@@ -18,7 +18,8 @@ namespace Kassyi.GSharp.Transpiler
             Register(new[] { Code.Ldarg_0, Code.Ldarg_1, Code.Ldarg_2, Code.Ldarg_3, Code.Ldarg_S, Code.Ldarg }, 
                 (ins, stack, stmts, method) => stack.Push(new VariableNode(GetArgName(ins, method))));
 
-            Register(new[] { Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3, Code.Ldc_I4_4, Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1 }, 
+            Register(new[] { Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3,
+                 Code.Ldc_I4_4, Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1 }, 
                 (ins, stack, stmts, method) => stack.Push(new LiteralNode(GetLdcI4Value(ins))));
 
             RegisterBinaryOp(Code.Add, BinaryOperator.Add);
@@ -40,9 +41,37 @@ namespace Kassyi.GSharp.Transpiler
             Register(new[] { Code.Ldloc_0, Code.Ldloc_1, Code.Ldloc_2, Code.Ldloc_3, Code.Ldloc_S, Code.Ldloc }, 
                 (ins, stack, stmts, method) => stack.Push(new VariableNode("loc_" + GetLocIndex(ins))));
 
+            // Array support
+            Register(new[] { Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_Ref }, 
+                (ins, stack, stmts, method) => {
+                    var index = stack.Pop();
+                    var arrayRef = stack.Pop();
+                    string arrayName = (arrayRef as VariableNode)?.Name ?? "unknown_array";
+                    stack.Push(new ArrayAccessNode(arrayName, index));
+                });
+            
+            Register(new[] { Code.Stelem_I4, Code.Stelem_Ref }, 
+                (ins, stack, stmts, method) => {
+                    var value = stack.Pop();
+                    var index = stack.Pop();
+                    var arrayRef = stack.Pop();
+                    string arrayName = (arrayRef as VariableNode)?.Name ?? "unknown_array";
+                    stmts.Add(new ArrayAssignNode(arrayName, index, value));
+                });
+
             Register(Code.Call, (ins, stack, stmts, method) => 
             {
                 var methodRef = (MethodReference)ins.Operand;
+                
+                // Only allow calls to methods with [GpuKernel] attribute (Whitelist approach)
+                var resolvedMethod = methodRef.Resolve();
+                bool isSupported = resolvedMethod?.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute") == true;
+                
+                if (!isSupported)
+                {
+                    throw new NotSupportedException($"Unsupported method call: {methodRef.FullName}. Only [GpuKernel] methods are allowed in G#.");
+                }
+
                 var args = new IAstNode[methodRef.Parameters.Count];
                 for (int i = args.Length - 1; i >= 0; i--)
                 {
@@ -68,7 +97,9 @@ namespace Kassyi.GSharp.Transpiler
                 Code.Br, Code.Br_S, Code.Blt, Code.Blt_S, Code.Brtrue, Code.Brtrue_S, 
                 Code.Brfalse, Code.Brfalse_S, Code.Beq, Code.Beq_S, Code.Ble, Code.Ble_S, 
                 Code.Bgt, Code.Bgt_S, Code.Bge, Code.Bge_S, Code.Bne_Un, Code.Bne_Un_S 
-            }, (ins, stack, stmts, method) => { /* TODO: CFG Support */ });
+            }, (ins, stack, stmts, method) => {
+                throw new NotSupportedException($"Control Flow (Branching) is not yet supported in this phase. OpCode: {ins.OpCode}");
+            });
         }
 
         private void Register(Code code, Action<Instruction, Stack<IAstNode>, List<IAstNode>, MethodDefinition> handler)
