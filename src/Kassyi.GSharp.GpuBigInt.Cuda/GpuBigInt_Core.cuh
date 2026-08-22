@@ -8,19 +8,21 @@
 // -------------------------------------------------------------------------
 // Global State & Context
 // -------------------------------------------------------------------------
-extern uint32_t* d_twiddle1_fwd;
-extern uint32_t* d_twiddle1_inv;
-extern uint32_t* d_twiddle2_fwd;
-extern uint32_t* d_twiddle2_inv;
-extern unsigned int* d_data;
-extern uint32_t* d_ntt_buf1;
-extern uint32_t* d_ntt_buf2;
-extern uint32_t* d_ntt_tmp;
+struct GpuWorkspace {
+    uint32_t* d_twiddle1_fwd;
+    uint32_t* d_twiddle1_inv;
+    uint32_t* d_twiddle2_fwd;
+    uint32_t* d_twiddle2_inv;
+    unsigned int* d_data;
+    uint32_t* d_ntt_buf1;
+    uint32_t* d_ntt_buf2;
+    uint32_t* d_ntt_tmp;
 
-extern int g_M;          // NTT Size (must be a power of 2 for optimal performance)
+    int g_M;          // NTT Size (must be a power of 2 for optimal performance)
 
-extern long long* d_genericCarryBuffer;
-extern int g_genericMaxChunks;
+    long long* d_genericCarryBuffer;
+    int g_genericMaxChunks;
+};
 
 // -------------------------------------------------------------------------
 // Utility Functions

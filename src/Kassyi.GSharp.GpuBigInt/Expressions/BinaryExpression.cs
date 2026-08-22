@@ -27,20 +27,24 @@ internal abstract class BinaryExpression : IGpuBigIntExpression
 
         var finalResult = targetResult ?? context.RentTemp(NumWords);
 
-        Execute(leftResult, rightResult, finalResult);
-
-        // Return temporaries back to pool if they were rented
-        if (leftResult.IsTemp)
+        try
         {
-            context.ReturnTemp(leftResult);
+            Execute(leftResult, rightResult, finalResult);
+            return finalResult;
         }
-
-        if (rightResult.IsTemp)
+        finally
         {
-            context.ReturnTemp(rightResult);
-        }
+            // Return temporaries back to pool if they were rented
+            if (leftResult.IsTemp)
+            {
+                context.ReturnTemp(leftResult);
+            }
 
-        return finalResult;
+            if (rightResult.IsTemp)
+            {
+                context.ReturnTemp(rightResult);
+            }
+        }
     }
 
     protected abstract void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
@@ -76,14 +80,18 @@ internal abstract class ShiftExpression(IGpuBigIntExpression target, int shiftBi
         var targetEval = Target.Evaluate(context);
         var finalResult = targetResult ?? context.RentTemp(NumWords);
 
-        Execute(targetEval, finalResult);
-
-        if (targetEval.IsTemp)
+        try
         {
-            context.ReturnTemp(targetEval);
+            Execute(targetEval, finalResult);
+            return finalResult;
         }
-
-        return finalResult;
+        finally
+        {
+            if (targetEval.IsTemp)
+            {
+                context.ReturnTemp(targetEval);
+            }
+        }
     }
 
     protected abstract void Execute(GpuBigInteger target, GpuBigInteger result);

@@ -16,89 +16,20 @@
 // Phase 9: Static Device-Side Launcher
 // -------------------------------------------------------------------------
 
-extern "C" {
-    EXPORT_API bool GpuBigInt_DynamicFermatLoop(int E, unsigned int* out_data, void(*jitLaunch)(unsigned int*, unsigned int*, unsigned int*, unsigned int*, unsigned int*, int, int, long long*, int, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, int, int)) {
-        int numWords = (2 * E + 1 + 31) / 32;
-        int outNumWords = numWords * 2 + 16; 
+struct FermatSetup {
+    unsigned int *d_T, *d_Q, *d_R, *d_MaskR, *d_T_tmp;
+    int numWords, outNumWords, maxGrid, maxBlock, sharedSize;
+    
+    bool init(GpuWorkspace* ws, int E) {
+        numWords = (2 * E + 1 + 31) / 32;
+        outNumWords = numWords * 2 + 16; 
+        d_T = d_Q = d_R = d_MaskR = d_T_tmp = nullptr;
         
-        if (!InitializeGPU_Internal(E)) return false;
-
-        unsigned int *d_T, *d_Q, *d_R, *d_MaskR, *d_T_tmp;
-        cudaMalloc((void**)&d_T, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_Q, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_R, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_MaskR, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_T_tmp, sizeof(unsigned int) * outNumWords);
-        
-        cudaMemset(d_T, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_Q, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_R, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_MaskR, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_T_tmp, 0, sizeof(unsigned int) * outNumWords);
-        
-        unsigned int val2 = 2;
-        cudaMemcpy(d_T, &val2, sizeof(unsigned int), cudaMemcpyHostToDevice);
-        
-        int bit2E1 = 2 * E + 1;
-        int word2E1 = bit2E1 / 32;
-        int rem2E1 = bit2E1 % 32;
-        unsigned int* h_mask = new unsigned int[outNumWords]();
-        for (int i = 0; i < word2E1; i++) h_mask[i] = 0xFFFFFFFF;
-        if (rem2E1 > 0) h_mask[word2E1] = (1U << rem2E1) - 1;
-        cudaMemcpy(d_MaskR, h_mask, sizeof(unsigned int) * outNumWords, cudaMemcpyHostToDevice);
-        delete[] h_mask;
-        
-        // Calculate Grid and Block sizes
-        int maxGrid = 1;
-        int maxBlock = 256;
-        
-        if (g_M <= 512) {
-            maxBlock = g_M / 2;
-            int pointGrid = (g_M + 255) / 256;
-            maxGrid = max(maxGrid, pointGrid);
-        } else {
-            maxBlock = 256; 
-            int N2 = 1;
-            while (N2 * N2 < g_M) N2 *= 2;
-            int N1 = g_M / N2;
-            
-            maxGrid = max(maxGrid, N1);
-            maxGrid = max(maxGrid, N2);
-            
-            int pointGrid = (g_M + 255) / 256;
-            maxGrid = max(maxGrid, pointGrid);
-            
-            int gridT1 = ((N2 + 31) / 32) * ((N1 + 31) / 32);
-            int gridT2 = ((N1 + 31) / 32) * ((N2 + 31) / 32);
-            maxGrid = max(maxGrid, gridT1);
-            maxGrid = max(maxGrid, gridT2);
-        }
-        
-        int numChunks = (outNumWords + 255) / 256;
-        maxGrid = max(maxGrid, numChunks);
-        
-        printf("Launching DynamicFermatLoop: Grid=%d, Block=%d\n", maxGrid, maxBlock);
-        
-        jitLaunch(d_T, d_Q, d_R, d_MaskR, d_T_tmp, numWords, E, d_genericCarryBuffer, g_M, d_ntt_buf1, d_ntt_buf2, d_ntt_tmp, d_twiddle1_fwd, d_twiddle2_fwd, d_twiddle1_inv, d_twiddle2_inv, maxGrid, maxBlock);
-        
-        cudaMemcpy(out_data, d_T, sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToHost);
-        
-        cudaFree(d_T); cudaFree(d_Q); cudaFree(d_R); cudaFree(d_MaskR); cudaFree(d_T_tmp);
-        return true;
-    }
-
-    EXPORT_API bool GpuBigInt_StaticFermatLoop(int E, unsigned int* out_data) {
-        int numWords = (2 * E + 1 + 31) / 32;
-        int outNumWords = numWords * 2 + 16; 
-        
-        if (!InitializeGPU_Internal(E)) return false;
-
-        unsigned int *d_T, *d_Q, *d_R, *d_MaskR, *d_T_tmp;
-        cudaMalloc((void**)&d_T, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_Q, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_R, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_MaskR, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_T_tmp, sizeof(unsigned int) * outNumWords);
+        if (cudaMalloc((void**)&d_T, sizeof(unsigned int) * outNumWords) != cudaSuccess) return false;
+        if (cudaMalloc((void**)&d_Q, sizeof(unsigned int) * outNumWords) != cudaSuccess) return false;
+        if (cudaMalloc((void**)&d_R, sizeof(unsigned int) * outNumWords) != cudaSuccess) return false;
+        if (cudaMalloc((void**)&d_MaskR, sizeof(unsigned int) * outNumWords) != cudaSuccess) return false;
+        if (cudaMalloc((void**)&d_T_tmp, sizeof(unsigned int) * outNumWords) != cudaSuccess) return false;
         
         cudaMemset(d_T, 0, sizeof(unsigned int) * outNumWords);
         cudaMemset(d_Q, 0, sizeof(unsigned int) * outNumWords);
@@ -118,74 +49,115 @@ extern "C" {
         cudaMemcpy(d_MaskR, h_mask, sizeof(unsigned int) * outNumWords, cudaMemcpyHostToDevice);
         delete[] h_mask;
         
-        // Calculate Grid and Block sizes
-        int maxGrid = 1;
-        int maxBlock = 256;
-        
-        if (g_M <= 512) {
-            maxBlock = g_M / 2;
-            int pointGrid = (g_M + 255) / 256;
+        maxGrid = 1;
+        maxBlock = 256;
+        if (ws->g_M <= 512) {
+            maxBlock = ws->g_M / 2;
+            int pointGrid = (ws->g_M + 255) / 256;
             maxGrid = max(maxGrid, pointGrid);
         } else {
             maxBlock = 256; 
             int N2 = 1;
-            while (N2 * N2 < g_M) N2 *= 2;
-            int N1 = g_M / N2;
-            
+            while (N2 * N2 < ws->g_M) N2 *= 2;
+            int N1 = ws->g_M / N2;
             maxGrid = max(maxGrid, N1);
             maxGrid = max(maxGrid, N2);
-            
-            int pointGrid = (g_M + 255) / 256;
+            int pointGrid = (ws->g_M + 255) / 256;
             maxGrid = max(maxGrid, pointGrid);
-            
             int gridT1 = ((N2 + 31) / 32) * ((N1 + 31) / 32);
             int gridT2 = ((N1 + 31) / 32) * ((N2 + 31) / 32);
             maxGrid = max(maxGrid, gridT1);
             maxGrid = max(maxGrid, gridT2);
         }
-        
-        // Add/Sub/Shift limits
         int numChunks = (outNumWords + 255) / 256;
         maxGrid = max(maxGrid, numChunks);
         
-        // Calculate Shared Memory (max of Transpose tile and Row NTT buffer)
-        int sharedSize = 0;
-        if (g_M <= 512) {
-            sharedSize = g_M * sizeof(uint32_t);
+        sharedSize = 0;
+        if (ws->g_M <= 512) {
+            sharedSize = ws->g_M * sizeof(uint32_t);
         } else {
             int N2 = 1;
-            while (N2 * N2 < g_M) N2 *= 2;
-            int N1 = g_M / N2;
+            while (N2 * N2 < ws->g_M) N2 *= 2;
+            int N1 = ws->g_M / N2;
             int rowBuf = max(N1, N2) * sizeof(uint32_t);
             int tileBuf = 32 * 33 * sizeof(uint32_t);
             sharedSize = max(rowBuf, tileBuf);
         }
+        return true;
+    }
+    
+    void cleanup() {
+        if (d_T) cudaFree(d_T);
+        if (d_Q) cudaFree(d_Q);
+        if (d_R) cudaFree(d_R);
+        if (d_MaskR) cudaFree(d_MaskR);
+        if (d_T_tmp) cudaFree(d_T_tmp);
+    }
+};
+
+extern "C" {
+    EXPORT_API bool GpuBigInt_DynamicFermatLoop(void* workspace, int E, unsigned int* out_data, void(*jitLaunch)(unsigned int*, unsigned int*, unsigned int*, unsigned int*, unsigned int*, int, int, long long*, int, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, int, int)) {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
         
-        printf("Launching StaticFermatLoop: Grid=%d, Block=%d, Shared=%d\n", maxGrid, maxBlock, sharedSize);
+        FermatSetup s;
+        if (!s.init(ws, E)) {
+            s.cleanup();
+            return false;
+        }
+        
+        printf("Launching DynamicFermatLoop: Grid=%d, Block=%d\n", s.maxGrid, s.maxBlock);
+        
+        jitLaunch(s.d_T, s.d_Q, s.d_R, s.d_MaskR, s.d_T_tmp, s.numWords, E, ws->d_genericCarryBuffer, ws->g_M, ws->d_ntt_buf1, ws->d_ntt_buf2, ws->d_ntt_tmp, ws->d_twiddle1_fwd, ws->d_twiddle2_fwd, ws->d_twiddle1_inv, ws->d_twiddle2_inv, s.maxGrid, s.maxBlock);
+        
+        cudaError_t syncErr = cudaDeviceSynchronize();
+        bool success = (syncErr == cudaSuccess);
+        if (!success) {
+            printf("Kernel Execution Failed: %s\n", cudaGetErrorString(syncErr));
+        } else {
+            cudaMemcpy(out_data, s.d_T, sizeof(unsigned int) * s.outNumWords, cudaMemcpyDeviceToHost);
+        }
+        
+        s.cleanup();
+        return success;
+    }
+
+    EXPORT_API bool GpuBigInt_StaticFermatLoop(void* workspace, int E, unsigned int* out_data) {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+
+        FermatSetup s;
+        if (!s.init(ws, E)) {
+            s.cleanup();
+            return false;
+        }
+        
+        printf("Launching StaticFermatLoop: Grid=%d, Block=%d, Shared=%d\n", s.maxGrid, s.maxBlock, s.sharedSize);
         
         void* kernelArgs[] = {
-            (void*)&d_T,
-            (void*)&d_Q,
-            (void*)&d_R,
-            (void*)&d_MaskR,
-            (void*)&d_T_tmp,
-            (void*)&numWords,
+            (void*)&s.d_T,
+            (void*)&s.d_Q,
+            (void*)&s.d_R,
+            (void*)&s.d_MaskR,
+            (void*)&s.d_T_tmp,
+            (void*)&s.numWords,
             (void*)&E,
-            (void*)&d_genericCarryBuffer,
-            (void*)&g_M,
-            (void*)&d_ntt_buf1,
-            (void*)&d_ntt_buf2,
-            (void*)&d_ntt_tmp,
-            (void*)&d_twiddle1_fwd,
-            (void*)&d_twiddle2_fwd,
-            (void*)&d_twiddle1_inv,
-            (void*)&d_twiddle2_inv
+            (void*)&ws->d_genericCarryBuffer,
+            (void*)&ws->g_M,
+            (void*)&ws->d_ntt_buf1,
+            (void*)&ws->d_ntt_buf2,
+            (void*)&ws->d_ntt_tmp,
+            (void*)&ws->d_twiddle1_fwd,
+            (void*)&ws->d_twiddle2_fwd,
+            (void*)&ws->d_twiddle1_inv,
+            (void*)&ws->d_twiddle2_inv
         };
         
-        cudaError_t err = cudaLaunchCooperativeKernel((const void*)Kernel_StaticFermatLoop, maxGrid, maxBlock, kernelArgs, sharedSize, 0);
+        cudaError_t err = cudaLaunchCooperativeKernel((const void*)Kernel_StaticFermatLoop, s.maxGrid, s.maxBlock, kernelArgs, s.sharedSize, 0);
         if (err != cudaSuccess) {
             printf("Cooperative Kernel Launch Failed: %s\n", cudaGetErrorString(err));
             fflush(stdout);
+            s.cleanup();
             return false;
         }
         
@@ -193,12 +165,13 @@ extern "C" {
         if (syncErr != cudaSuccess) {
             printf("Kernel Execution Failed: %s\n", cudaGetErrorString(syncErr));
             fflush(stdout);
+            s.cleanup();
             return false;
         }
         
-        cudaMemcpy(out_data, d_T, sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToHost);
+        cudaMemcpy(out_data, s.d_T, sizeof(unsigned int) * s.outNumWords, cudaMemcpyDeviceToHost);
         
-        cudaFree(d_T); cudaFree(d_Q); cudaFree(d_R); cudaFree(d_MaskR); cudaFree(d_T_tmp);
+        s.cleanup();
         return true;
     }
 
@@ -212,116 +185,45 @@ extern "C" {
         int gridDim, int blockDim
     );
 
-    EXPORT_API bool GpuBigInt_RunJitFermatLoop(int E, unsigned int* out_data, JitLaunchCallback callback) {
-        int numWords = (2 * E + 1 + 31) / 32;
-        int outNumWords = numWords * 2 + 16; 
-        
-        if (!InitializeGPU_Internal(E)) return false;
+    EXPORT_API bool GpuBigInt_RunJitFermatLoop(void* workspace, int E, unsigned int* out_data, JitLaunchCallback callback) {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
 
-        unsigned int *d_T, *d_Q, *d_R, *d_MaskR, *d_T_tmp;
-        cudaMalloc((void**)&d_T, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_Q, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_R, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_MaskR, sizeof(unsigned int) * outNumWords);
-        cudaMalloc((void**)&d_T_tmp, sizeof(unsigned int) * outNumWords);
-        
-        cudaMemset(d_T, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_Q, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_R, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_MaskR, 0, sizeof(unsigned int) * outNumWords);
-        cudaMemset(d_T_tmp, 0, sizeof(unsigned int) * outNumWords);
-        
-        unsigned int val2 = 2;
-        cudaMemcpy(d_T, &val2, sizeof(unsigned int), cudaMemcpyHostToDevice);
-        
-        int bit2E1 = 2 * E + 1;
-        int word2E1 = bit2E1 / 32;
-        int rem2E1 = bit2E1 % 32;
-        unsigned int* h_mask = new unsigned int[outNumWords]();
-        for (int i = 0; i < word2E1; i++) h_mask[i] = 0xFFFFFFFF;
-        if (rem2E1 > 0) h_mask[word2E1] = (1U << rem2E1) - 1;
-        cudaMemcpy(d_MaskR, h_mask, sizeof(unsigned int) * outNumWords, cudaMemcpyHostToDevice);
-        delete[] h_mask;
-        
-        int maxGrid = 1;
-        int maxBlock = 256;
-        if (g_M <= 512) {
-            maxBlock = g_M / 2;
-            int pointGrid = (g_M + 255) / 256;
-            maxGrid = max(maxGrid, pointGrid);
-        } else {
-            maxBlock = 256; 
-            int N2 = 1;
-            while (N2 * N2 < g_M) N2 *= 2;
-            int N1 = g_M / N2;
-            maxGrid = max(maxGrid, N1);
-            maxGrid = max(maxGrid, N2);
-            int pointGrid = (g_M + 255) / 256;
-            maxGrid = max(maxGrid, pointGrid);
-            int gridT1 = ((N2 + 31) / 32) * ((N1 + 31) / 32);
-            int gridT2 = ((N1 + 31) / 32) * ((N2 + 31) / 32);
-            maxGrid = max(maxGrid, gridT1);
-            maxGrid = max(maxGrid, gridT2);
+        FermatSetup s;
+        if (!s.init(ws, E)) {
+            s.cleanup();
+            return false;
         }
-        int numChunks = (outNumWords + 255) / 256;
-        maxGrid = max(maxGrid, numChunks);
         
-        printf("Executing JIT Callback with Grid=%d, Block=%d\n", maxGrid, maxBlock);
+        printf("Executing JIT Callback with Grid=%d, Block=%d\n", s.maxGrid, s.maxBlock);
         
         // Invoke the JIT-compiled function via callback
         callback(
-            d_T, d_Q, d_R, d_MaskR, d_T_tmp, 
-            numWords, E, d_genericCarryBuffer, 
-            g_M, d_ntt_buf1, d_ntt_buf2, d_ntt_tmp,
-            d_twiddle1_fwd, d_twiddle2_fwd, d_twiddle1_inv, d_twiddle2_inv,
-            maxGrid, maxBlock
+            s.d_T, s.d_Q, s.d_R, s.d_MaskR, s.d_T_tmp, 
+            s.numWords, E, ws->d_genericCarryBuffer, 
+            ws->g_M, ws->d_ntt_buf1, ws->d_ntt_buf2, ws->d_ntt_tmp,
+            ws->d_twiddle1_fwd, ws->d_twiddle2_fwd, ws->d_twiddle1_inv, ws->d_twiddle2_inv,
+            s.maxGrid, s.maxBlock
         );
         
         cudaError_t syncErr = cudaDeviceSynchronize();
         if (syncErr != cudaSuccess) {
             printf("JIT Kernel Execution Failed: %s\n", cudaGetErrorString(syncErr));
+            s.cleanup();
+            return false;
         }
         
-        cudaMemcpy(out_data, d_T, sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToHost);
+        cudaMemcpy(out_data, s.d_T, sizeof(unsigned int) * s.outNumWords, cudaMemcpyDeviceToHost);
         
-        cudaFree(d_T); cudaFree(d_Q); cudaFree(d_R); cudaFree(d_MaskR); cudaFree(d_T_tmp);
+        s.cleanup();
         return true;
     }
 }
 
 
 // -------------------------------------------------------------------------
-// Global State Implementation
+// Helper Functions
 // -------------------------------------------------------------------------
-uint32_t* d_twiddle1_fwd = nullptr;
-uint32_t* d_twiddle1_inv = nullptr;
-uint32_t* d_twiddle2_fwd = nullptr;
-uint32_t* d_twiddle2_inv = nullptr;
-unsigned int* d_data = nullptr;
-uint32_t* d_ntt_buf1 = nullptr;
-uint32_t* d_ntt_buf2 = nullptr;
-uint32_t* d_ntt_tmp = nullptr;
-
-int g_M = 0;
-
-long long* d_genericCarryBuffer = nullptr;
-int g_genericMaxChunks = 0;
-
-// -------------------------------------------------------------------------
-// Core Memory Management
-// -------------------------------------------------------------------------
-void CleanupGPU_Internal() {
-    if (d_twiddle1_fwd) { cudaFree(d_twiddle1_fwd); d_twiddle1_fwd = nullptr; }
-    if (d_twiddle1_inv) { cudaFree(d_twiddle1_inv); d_twiddle1_inv = nullptr; }
-    if (d_twiddle2_fwd) { cudaFree(d_twiddle2_fwd); d_twiddle2_fwd = nullptr; }
-    if (d_twiddle2_inv) { cudaFree(d_twiddle2_inv); d_twiddle2_inv = nullptr; }
-    if (d_ntt_buf1) { cudaFree(d_ntt_buf1); d_ntt_buf1 = nullptr; }
-    if (d_ntt_buf2) { cudaFree(d_ntt_buf2); d_ntt_buf2 = nullptr; }
-    if (d_ntt_tmp) { cudaFree(d_ntt_tmp); d_ntt_tmp = nullptr; }
-    if (d_data) { cudaFree(d_data); d_data = nullptr; }
-    g_M = 0;
-}
-
 uint32_t CpuModPow(uint64_t base, uint64_t exp, uint32_t p) {
     uint64_t res = 1;
     base %= p;
@@ -333,84 +235,86 @@ uint32_t CpuModPow(uint64_t base, uint64_t exp, uint32_t p) {
     return (uint32_t)res;
 }
 
-bool InitializeGPU_Internal(int E) {
-    CleanupGPU_Internal();
-
-    int requiredElements = (4 * E + 2 + 15) / 16;
-    g_M = NextPowerOf2(requiredElements);
-    
-    printf("Initializing NTT: E=%d, Required Radix-16 Elements=%d, NTT Size=%d\n", E, requiredElements, g_M);
-    
-    cudaMalloc((void**)&d_twiddle1_fwd, sizeof(uint32_t) * g_M);
-    cudaMalloc((void**)&d_twiddle1_inv, sizeof(uint32_t) * g_M);
-    cudaMalloc((void**)&d_twiddle2_fwd, sizeof(uint32_t) * g_M);
-    cudaMalloc((void**)&d_twiddle2_inv, sizeof(uint32_t) * g_M);
-    
-    uint32_t* h_t1_fwd = new uint32_t[g_M];
-    uint32_t* h_t1_inv = new uint32_t[g_M];
-    uint32_t* h_t2_fwd = new uint32_t[g_M];
-    uint32_t* h_t2_inv = new uint32_t[g_M];
-    
-    // Calculate principal root of unity for length g_M
-    uint32_t p1 = 4253024257;
-    uint32_t p2 = 4246732801;
-    uint32_t w1 = CpuModPow(5, (p1 - 1) / g_M, p1);
-    uint32_t w2 = CpuModPow(2, (p2 - 1) / g_M, p2);
-    
-    uint32_t iw1 = CpuModPow(w1, p1 - 2, p1);
-    uint32_t iw2 = CpuModPow(w2, p2 - 2, p2);
-    
-    uint64_t curr_w1 = 1, curr_iw1 = 1;
-    uint64_t curr_w2 = 1, curr_iw2 = 1;
-    
-    for (int i = 0; i < g_M; i++) {
-        h_t1_fwd[i] = (uint32_t)curr_w1;
-        h_t1_inv[i] = (uint32_t)curr_iw1;
-        h_t2_fwd[i] = (uint32_t)curr_w2;
-        h_t2_inv[i] = (uint32_t)curr_iw2;
-        
-        curr_w1 = (curr_w1 * w1) % p1;
-        curr_iw1 = (curr_iw1 * iw1) % p1;
-        curr_w2 = (curr_w2 * w2) % p2;
-        curr_iw2 = (curr_iw2 * iw2) % p2;
-    }
-    
-    cudaMemcpy(d_twiddle1_fwd, h_t1_fwd, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_twiddle1_inv, h_t1_inv, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_twiddle2_fwd, h_t2_fwd, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_twiddle2_inv, h_t2_inv, sizeof(uint32_t) * g_M, cudaMemcpyHostToDevice);
-    
-    delete[] h_t1_fwd; delete[] h_t1_inv;
-    delete[] h_t2_fwd; delete[] h_t2_inv;
-
-    cudaMalloc((void**)&d_ntt_buf1, sizeof(uint32_t) * g_M);
-    cudaMalloc((void**)&d_ntt_buf2, sizeof(uint32_t) * g_M);
-    cudaMalloc((void**)&d_ntt_tmp, sizeof(uint32_t) * g_M);
-
-    int maxUintWords = (g_M * 16 + 31) / 32;
-    cudaMalloc((void**)&d_data, sizeof(unsigned int) * maxUintWords);
-    
-    return true;
-}
-
 // -------------------------------------------------------------------------
 // Exported Initialization API
 // -------------------------------------------------------------------------
 extern "C" {
-    EXPORT_API bool GpuBigInt_Init(int maxWords) {
+    EXPORT_API void* GpuBigInt_Init(int maxWords) {
         int simulatedE = (maxWords * 32) / 2; 
-        bool res = InitializeGPU_Internal(simulatedE);
+        int E = simulatedE;
+        GpuWorkspace* ws = new GpuWorkspace();
+        
+        int requiredElements = (4 * E + 2 + 15) / 16;
+        ws->g_M = NextPowerOf2(requiredElements);
+        
+        cudaMalloc((void**)&ws->d_twiddle1_fwd, sizeof(uint32_t) * ws->g_M);
+        cudaMalloc((void**)&ws->d_twiddle1_inv, sizeof(uint32_t) * ws->g_M);
+        cudaMalloc((void**)&ws->d_twiddle2_fwd, sizeof(uint32_t) * ws->g_M);
+        cudaMalloc((void**)&ws->d_twiddle2_inv, sizeof(uint32_t) * ws->g_M);
+        
+        uint32_t* h_t1_fwd = new uint32_t[ws->g_M];
+        uint32_t* h_t1_inv = new uint32_t[ws->g_M];
+        uint32_t* h_t2_fwd = new uint32_t[ws->g_M];
+        uint32_t* h_t2_inv = new uint32_t[ws->g_M];
+        
+        uint32_t p1 = 4253024257;
+        uint32_t p2 = 4246732801;
+        uint32_t w1 = CpuModPow(5, (p1 - 1) / ws->g_M, p1);
+        uint32_t w2 = CpuModPow(2, (p2 - 1) / ws->g_M, p2);
+        
+        uint32_t iw1 = CpuModPow(w1, p1 - 2, p1);
+        uint32_t iw2 = CpuModPow(w2, p2 - 2, p2);
+        
+        uint64_t curr_w1 = 1, curr_iw1 = 1;
+        uint64_t curr_w2 = 1, curr_iw2 = 1;
+        
+        for (int i = 0; i < ws->g_M; i++) {
+            h_t1_fwd[i] = (uint32_t)curr_w1;
+            h_t1_inv[i] = (uint32_t)curr_iw1;
+            h_t2_fwd[i] = (uint32_t)curr_w2;
+            h_t2_inv[i] = (uint32_t)curr_iw2;
+            
+            curr_w1 = (curr_w1 * w1) % p1;
+            curr_iw1 = (curr_iw1 * iw1) % p1;
+            curr_w2 = (curr_w2 * w2) % p2;
+            curr_iw2 = (curr_iw2 * iw2) % p2;
+        }
+        
+        cudaMemcpy(ws->d_twiddle1_fwd, h_t1_fwd, sizeof(uint32_t) * ws->g_M, cudaMemcpyHostToDevice);
+        cudaMemcpy(ws->d_twiddle1_inv, h_t1_inv, sizeof(uint32_t) * ws->g_M, cudaMemcpyHostToDevice);
+        cudaMemcpy(ws->d_twiddle2_fwd, h_t2_fwd, sizeof(uint32_t) * ws->g_M, cudaMemcpyHostToDevice);
+        cudaMemcpy(ws->d_twiddle2_inv, h_t2_inv, sizeof(uint32_t) * ws->g_M, cudaMemcpyHostToDevice);
+        
+        delete[] h_t1_fwd; delete[] h_t1_inv;
+        delete[] h_t2_fwd; delete[] h_t2_inv;
+
+        cudaMalloc((void**)&ws->d_ntt_buf1, sizeof(uint32_t) * ws->g_M);
+        cudaMalloc((void**)&ws->d_ntt_buf2, sizeof(uint32_t) * ws->g_M);
+        cudaMalloc((void**)&ws->d_ntt_tmp, sizeof(uint32_t) * ws->g_M);
+
+        int maxUintWords = (ws->g_M * 16 + 31) / 32;
+        cudaMalloc((void**)&ws->d_data, sizeof(unsigned int) * maxUintWords);
         
         int chunkSize = 256;
-        g_genericMaxChunks = (maxWords + chunkSize - 1) / chunkSize;
-        cudaMalloc((void**)&d_genericCarryBuffer, sizeof(long long) * (g_genericMaxChunks + 1));
+        ws->g_genericMaxChunks = (maxWords + chunkSize - 1) / chunkSize;
+        cudaMalloc((void**)&ws->d_genericCarryBuffer, sizeof(long long) * (ws->g_genericMaxChunks + 1));
         
-        return res;
+        return (void*)ws;
     }
     
-    EXPORT_API void GpuBigInt_Cleanup() { 
-        CleanupGPU_Internal(); 
-        if (d_genericCarryBuffer) { cudaFree(d_genericCarryBuffer); d_genericCarryBuffer = nullptr; }
+    EXPORT_API void GpuBigInt_Cleanup(void* workspace) { 
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return;
+        if (ws->d_twiddle1_fwd) cudaFree(ws->d_twiddle1_fwd);
+        if (ws->d_twiddle1_inv) cudaFree(ws->d_twiddle1_inv);
+        if (ws->d_twiddle2_fwd) cudaFree(ws->d_twiddle2_fwd);
+        if (ws->d_twiddle2_inv) cudaFree(ws->d_twiddle2_inv);
+        if (ws->d_ntt_buf1) cudaFree(ws->d_ntt_buf1);
+        if (ws->d_ntt_buf2) cudaFree(ws->d_ntt_buf2);
+        if (ws->d_ntt_tmp) cudaFree(ws->d_ntt_tmp);
+        if (ws->d_data) cudaFree(ws->d_data);
+        if (ws->d_genericCarryBuffer) cudaFree(ws->d_genericCarryBuffer);
+        delete ws;
     }
     
     EXPORT_API unsigned int* GpuBigInt_Alloc(int numWords) {
@@ -438,11 +342,12 @@ extern "C" {
 // -------------------------------------------------------------------------
 // IL Executor Engine
 // -------------------------------------------------------------------------
-    EXPORT_API bool GpuBigInt_ExecuteIL(int E, const char* ilScript, unsigned int* out_data) {
+    EXPORT_API bool GpuBigInt_ExecuteIL(void* workspace, int E, const char* ilScript, unsigned int* out_data) {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+        
         int numWords = (2 * E + 1 + 31) / 32;
         int outNumWords = numWords * 2 + 16; 
-        
-        if (!InitializeGPU_Internal(E)) return false;
 
         std::unordered_map<std::string, unsigned int*> vars;
         
@@ -523,27 +428,27 @@ extern "C" {
                     if (dest != src) {
                         cudaMemcpyAsync(vars[dest], vars[src], sizeof(unsigned int) * outNumWords, cudaMemcpyDeviceToDevice, stream);
                     }
-                    GpuBigInt_Square(vars[dest], numWords + 1, stream);
+                    GpuBigInt_Square(workspace, vars[dest], numWords + 1, stream);
                 }
                 else if (op == "SHR") {
                     std::string dest, src; int bits; iss >> dest >> src >> bits;
-                    GpuBigInt_ShiftRight(vars[src], bits, vars[dest], outNumWords, stream);
+                    GpuBigInt_ShiftRight(workspace, vars[src], bits, vars[dest], outNumWords, stream);
                 }
                 else if (op == "SHL") {
                     std::string dest, src; int bits; iss >> dest >> src >> bits;
-                    GpuBigInt_ShiftLeft(vars[src], bits, vars[dest], outNumWords, stream);
+                    GpuBigInt_ShiftLeft(workspace, vars[src], bits, vars[dest], outNumWords, stream);
                 }
                 else if (op == "AND") {
                     std::string dest, src, mask; iss >> dest >> src >> mask;
-                    GpuBigInt_BitwiseAnd(vars[src], vars[mask], vars[dest], outNumWords, stream);
+                    GpuBigInt_BitwiseAnd(workspace, vars[src], vars[mask], vars[dest], outNumWords, stream);
                 }
                 else if (op == "ADD") {
                     std::string dest, a, b; iss >> dest >> a >> b;
-                    GpuBigInt_Add(vars[a], vars[b], vars[dest], outNumWords, stream);
+                    GpuBigInt_Add(workspace, vars[a], vars[b], vars[dest], outNumWords, stream);
                 }
                 else if (op == "SUB") {
                     std::string dest, a, b; iss >> dest >> a >> b;
-                    GpuBigInt_Sub(vars[a], vars[b], vars[dest], outNumWords, stream);
+                    GpuBigInt_Sub(workspace, vars[a], vars[b], vars[dest], outNumWords, stream);
                 }
                 else if (op == "COPY") {
                     std::string dest, src; iss >> dest >> src;

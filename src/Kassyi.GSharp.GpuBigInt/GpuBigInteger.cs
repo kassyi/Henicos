@@ -95,7 +95,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_BitwiseAnd(a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
+        NativeMethods.GpuBigInt_BitwiseAnd(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
     }
 
     public static void Add(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result)
@@ -106,7 +106,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_Add(a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
+        NativeMethods.GpuBigInt_Add(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
     }
 
     public static void Sub(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result)
@@ -117,7 +117,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_Sub(a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
+        NativeMethods.GpuBigInt_Sub(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
     }
 
     public static void ShiftLeft(GpuBigInteger a, int shiftBits, GpuBigInteger result)
@@ -128,7 +128,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_ShiftLeft(a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
+        NativeMethods.GpuBigInt_ShiftLeft(a.Context.WorkspacePointer, a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
     }
 
     public static void ShiftRight(GpuBigInteger a, int shiftBits, GpuBigInteger result)
@@ -139,10 +139,10 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_ShiftRight(a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
+        NativeMethods.GpuBigInt_ShiftRight(a.Context.WorkspacePointer, a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
     }
 
-    public bool Square(int logicalWords) => NativeMethods.GpuBigInt_Square(DevicePointer, logicalWords);
+    public bool Square(int logicalWords) => NativeMethods.GpuBigInt_Square(Context.WorkspacePointer, DevicePointer, logicalWords);
 
     internal void DisposeCore()
     {

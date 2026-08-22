@@ -9,8 +9,8 @@
 
 extern "C" {
     // Context Management
-    EXPORT_API bool GpuBigInt_Init(int maxWords);
-    EXPORT_API void GpuBigInt_Cleanup();
+    EXPORT_API void* GpuBigInt_Init(int maxWords);
+    EXPORT_API void GpuBigInt_Cleanup(void* workspace);
     
     // Memory Management
     EXPORT_API unsigned int* GpuBigInt_Alloc(int numWords);
@@ -21,20 +21,20 @@ extern "C" {
 
     // Core FFT
     // Dynamic Fermat Loop using JIT
-    EXPORT_API bool GpuBigInt_DynamicFermatLoop(int E, unsigned int* out_data, void(*jitLaunch)(unsigned int*, unsigned int*, unsigned int*, unsigned int*, unsigned int*, int, int, long long*, int, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, int, int));
+    EXPORT_API bool GpuBigInt_DynamicFermatLoop(void* workspace, int E, unsigned int* out_data, void(*jitLaunch)(unsigned int*, unsigned int*, unsigned int*, unsigned int*, unsigned int*, int, int, long long*, int, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, uint32_t*, int, int));
 
     // Fermat PRP specific Loop
-    EXPORT_API bool GpuBigInt_StaticFermatLoop(int E, unsigned int* out_data);
+    EXPORT_API bool GpuBigInt_StaticFermatLoop(void* workspace, int E, unsigned int* out_data);
     
     // Basic arithmetic and bitwise operations
-    EXPORT_API bool GpuBigInt_Square(unsigned int* data, int numWords, cudaStream_t stream = 0);
-    EXPORT_API bool GpuBigInt_Add(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
-    EXPORT_API bool GpuBigInt_Sub(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
-    EXPORT_API bool GpuBigInt_ShiftLeft(const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
-    EXPORT_API bool GpuBigInt_ShiftRight(const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
-    EXPORT_API bool GpuBigInt_BitwiseAnd(const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigInt_Square(void* workspace, unsigned int* data, int numWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigInt_Add(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigInt_Sub(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigInt_ShiftLeft(void* workspace, const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigInt_ShiftRight(void* workspace, const unsigned int* d_a, int shiftBits, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigInt_BitwiseAnd(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
     // Phase C: Intermediate Language / CUDA Graph execution
-    EXPORT_API bool GpuBigInt_ExecuteIL(int E, const char* ilScript, unsigned int* out_data);
+    EXPORT_API bool GpuBigInt_ExecuteIL(void* workspace, int E, const char* ilScript, unsigned int* out_data);
 }
 
 #endif

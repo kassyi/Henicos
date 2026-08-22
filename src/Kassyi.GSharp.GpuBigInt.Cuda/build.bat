@@ -38,8 +38,8 @@ if defined CUDA_PATH (
 
 pushd "%~dp0"
 
-echo Building Kassyi.Math.GpuBigInt.Cuda.dll...
-"%NVCC_CMD%" -shared -o "%~dp0Kassyi.Math.GpuBigInt.Cuda.dll" GpuBigInt.cu -lcufft -O3 -arch=sm_86 -std=c++17 -Xcompiler "/wd 4819"
+echo Building Kassyi.GSharp.GpuBigInt.Cuda.dll...
+"%NVCC_CMD%" -shared -o "%~dp0Kassyi.GSharp.GpuBigInt.Cuda.dll" GpuBigInt.cu -lcufft -O3 -arch=sm_86 -std=c++17 -Xcompiler "/wd 4819"
 
 if %errorlevel% neq 0 (
     echo Build Failed!
@@ -47,6 +47,6 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-echo Build Succeeded: %~dp0Kassyi.Math.GpuBigInt.Cuda.dll
+echo Build Succeeded: %~dp0Kassyi.GSharp.GpuBigInt.Cuda.dll
 popd
 endlocal

@@ -387,6 +387,21 @@ __device__ void Device_Copy(const unsigned int* d_src, unsigned int* d_dst, int 
     grid.sync();
 }
 
+__device__ __forceinline__ void Device_FermatReduceStep(
+    unsigned int* T, unsigned int* Q, unsigned int* R, unsigned int* MaskR,
+    unsigned int* T_tmp, int numWordsExtended, int E, int bit2E1, long long* carryBuffer, cg::grid_group& grid)
+{
+    Device_ShiftRight(T, bit2E1, Q, numWordsExtended, grid);
+    Device_BitwiseAnd(T, MaskR, R, numWordsExtended, grid);
+    Device_ShiftLeft(Q, E, T_tmp, numWordsExtended, grid);
+    Device_Add(R, T_tmp, R, numWordsExtended, carryBuffer, grid);
+    Device_ShiftLeft(Q, 1, T_tmp, numWordsExtended, grid);
+    Device_Sub(R, Q, R, numWordsExtended, carryBuffer, grid);
+    Device_Sub(R, T_tmp, R, numWordsExtended, carryBuffer, grid);
+    Device_ShiftLeft(Q, 3, T_tmp, numWordsExtended, grid);
+    Device_Sub(R, T_tmp, T, numWordsExtended, carryBuffer, grid);
+}
+
 __global__ void Kernel_StaticFermatLoop(
     unsigned int* T, unsigned int* Q, unsigned int* R, unsigned int* MaskR,
     unsigned int* T_tmp,
@@ -407,15 +422,7 @@ __global__ void Kernel_StaticFermatLoop(
         Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
         
         for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
         
         // --- MultiplyBy2AndReduce(T) ---
@@ -423,15 +430,7 @@ __global__ void Kernel_StaticFermatLoop(
         Device_Copy(T_tmp, T, numWords * 2 + 16, grid);
         
         for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     
@@ -440,15 +439,7 @@ __global__ void Kernel_StaticFermatLoop(
         Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
         
         for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     
@@ -457,144 +448,64 @@ __global__ void Kernel_StaticFermatLoop(
     // 1 (bit 3)
     Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
     for (int j = 0; j < 3; j++) {
-        for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+        for (int k = 0; k < 3; k++) {
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     Device_ShiftLeft(T, 1, T_tmp, numWords * 2 + 16, grid);
     Device_Copy(T_tmp, T, numWords * 2 + 16, grid);
-    Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-    Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-    Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-    Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-    Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-    Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+    Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
     
     // 0 (bit 2)
     Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
     for (int j = 0; j < 3; j++) {
-        for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+        for (int k = 0; k < 3; k++) {
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     for (int iter = 0; iter < E - 4; iter++) {
         // --- SquareAndReduce(T) ---
         Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
         for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     
     // bit 3 (1)
     Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
     for (int j = 0; j < 3; j++) {
-        for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+        for (int k = 0; k < 3; k++) {
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     Device_ShiftLeft(T, 1, T_tmp, numWords * 2 + 16, grid);
     Device_Copy(T_tmp, T, numWords * 2 + 16, grid);
-    Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-    Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-    Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-    Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-    Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-    Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+    Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
 
     // bit 2 (0)
     Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
     for (int j = 0; j < 3; j++) {
-        for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+        for (int k = 0; k < 3; k++) {
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
 
     // bit 1 (1)
     Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
     for (int j = 0; j < 3; j++) {
-        for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+        for (int k = 0; k < 3; k++) {
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
     Device_ShiftLeft(T, 1, T_tmp, numWords * 2 + 16, grid);
     Device_Copy(T_tmp, T, numWords * 2 + 16, grid);
-    Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-    Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-    Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-    Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-    Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-    Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-    Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+    Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
 
     // bit 0 (0)
     Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
     for (int j = 0; j < 3; j++) {
-        for (int j = 0; j < 3; j++) {
-            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);
-            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);
-            Device_ShiftLeft(Q, E, T_tmp, numWords * 2 + 16, grid);
-            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);
-            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);
-            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);
+        for (int k = 0; k < 3; k++) {
+            Device_FermatReduceStep(T, Q, R, MaskR, T_tmp, numWords * 2 + 16, E, bit2E1, carryBuffer, grid);
         }
     }
 }

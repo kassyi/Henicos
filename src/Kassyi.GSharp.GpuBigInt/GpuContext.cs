@@ -3,6 +3,7 @@ namespace Kassyi.GSharp.GpuBigInt;
 public class GpuContext : IDisposable
 {
     public int MaxWords { get; }
+    public IntPtr WorkspacePointer { get; }
     private bool _disposed;
 
     // Memory pooling for Lazy Evaluation
@@ -11,7 +12,8 @@ public class GpuContext : IDisposable
     public GpuContext(int maxWords)
     {
         MaxWords = maxWords;
-        if (!NativeMethods.GpuBigInt_Init(maxWords))
+        WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
+        if (WorkspacePointer == IntPtr.Zero)
         {
             throw new InvalidOperationException("Failed to initialize GPU context.");
         }
@@ -35,7 +37,10 @@ public class GpuContext : IDisposable
 
             _tempPool.Clear();
 
-            NativeMethods.GpuBigInt_Cleanup();
+            if (WorkspacePointer != IntPtr.Zero)
+            {
+                NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
+            }
             _disposed = true;
         }
 
