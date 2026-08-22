@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Henicos/Henicos.csproj" />
+    <Project Path="src/Kassyi.Generators.GSharp/Kassyi.Generators.GSharp.csproj" />
     <Project Path="src/Kassyi.GSharp/Kassyi.GSharp.csproj" />
     <Project Path="src/Kassyi.Math.GpuBigInt/Kassyi.Math.GpuBigInt.csproj" />
   </Folder>

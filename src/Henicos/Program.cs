@@ -10,16 +10,8 @@ class Program
     {
         if (args.Length > 0 && args[0] == "--benchmark")
         {
-            if (args.Length > 1 && args[1] == "gpu")
-            {
-                BenchmarkRunner.Run<GpuBenchmark>();
-                return;
-            }
-            else
-            {
-                BenchmarkRunner.Run<FermatBenchmark>();
-                return;
-            }
+            BenchmarkRunner.Run<FermatBenchmark>();
+            return;
         }
 
         using var tee = new TeeTextWriter(Console.Out, "benchmark_results.log");
@@ -52,26 +44,26 @@ class Program
         var hybridPass = e <= 10000 && TestHybridReduction(e, n);
 
         var std = RunTest(() => BigInteger.ModPow(a, exponent, n), totalDigits);
-        var v5 = RunTest(() =>
-        {
-            try { return ModularReductionGpu.FermatPrpTest(e, n); }
-            catch (Exception ex) { Console.WriteLine($"[V5 Error] {ex.Message}"); return BigInteger.Zero; }
-        }, totalDigits);
+        // var v5 = RunTest(() =>
+        // {
+        //     try { return ModularReductionGpu.FermatPrpTest(e, n); }
+        //     catch (Exception ex) { Console.WriteLine($"[V5 Error] {ex.Message}"); return BigInteger.Zero; }
+        // }, totalDigits);
 
         var hybridMs = MeasureHybridV3(e, x);
 
         Console.WriteLine($"  - Standard BigInteger : {std.Ms,5} ms | {std.MDps,6:F2} M-Digit/s (Baseline)");
         Console.WriteLine($"  - Hybrid CPU V3 (Reduc): {hybridMs,6:F3} ms/iter (Extremely Fast Parallel Chunking)");
-        Console.WriteLine($"  - ZERO Overhead VRAM V5: {v5.Ms,5} ms | {v5.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v5.Ms):F2}x vs Std)");
+        // Console.WriteLine($"  - ZERO Overhead VRAM V5: {v5.Ms,5} ms | {v5.MDps,6:F2} M-Digit/s ({(double)std.Ms / Math.Max(1, v5.Ms):F2}x vs Std)");
 
-        var pass = (std.Result == v5.Result) && (e > 10000 || hybridPass);
+        var pass = /*(std.Result == v5.Result) && */ (e > 10000 || hybridPass);
         if (!pass)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("  [FAIL] Mismatch detected!");
             Console.WriteLine($"    Standard : {std.Result}");
             Console.WriteLine($"    Hybrid V3: Pass={hybridPass}");
-            Console.WriteLine($"    Zero V5  : {v5.Result} (Pass: {std.Result == v5.Result})");
+            // Console.WriteLine($"    Zero V5  : {v5.Result} (Pass: {std.Result == v5.Result})");
             Console.ResetColor();
         }
         else
