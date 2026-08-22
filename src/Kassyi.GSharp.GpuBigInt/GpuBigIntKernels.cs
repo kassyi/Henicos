@@ -3,6 +3,8 @@ using Kassyi.GSharp.Runtime;
 
 namespace Kassyi.GSharp.GpuBigInt;
 
+// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Global
 public static class GpuBigIntKernels
 {
     [GpuKernel]

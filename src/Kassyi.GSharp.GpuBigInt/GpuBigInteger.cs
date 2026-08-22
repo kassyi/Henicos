@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.GpuBigInt.Expressions;
 
 namespace Kassyi.GSharp.GpuBigInt;
@@ -19,7 +21,18 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         Context = context ?? throw new ArgumentNullException(nameof(context));
         NumWords = numWords;
-        DevicePointer = NativeMethods.GpuBigInt_Alloc(numWords);
+
+        if (Context.Engine == GpuExecutionEngine.GSharpJit)
+        {
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuMemAlloc_v2(out var dPtr, numWords * 4));
+            DevicePointer = dPtr;
+        }
+        else
+        {
+            DevicePointer = NativeMethods.GpuBigInt_Alloc(numWords);
+        }
+
         if (DevicePointer == IntPtr.Zero)
         {
             throw new OutOfMemoryException(
@@ -29,10 +42,27 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 
     public GpuBigInteger(GpuContext context, uint[] hostData) : this(context, hostData.Length)
     {
-        if (!NativeMethods.GpuBigInt_CopyHostToDevice(DevicePointer, hostData, NumWords))
+        if (Context.Engine == GpuExecutionEngine.GSharpJit)
         {
-            throw new InvalidOperationException(
-                $"Failed to copy host data ({hostData.Length} words) to GPU device pointer 0x{DevicePointer:X} (expected {NumWords} words).");
+            var handle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
+            try
+            {
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuMemcpyHtoD_v2(DevicePointer, handle.AddrOfPinnedObject(),
+                        hostData.Length * 4));
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+        else
+        {
+            if (!NativeMethods.GpuBigInt_CopyHostToDevice(DevicePointer, hostData, NumWords))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy host data ({hostData.Length} words) to GPU device pointer 0x{DevicePointer:X} (expected {NumWords} words).");
+            }
         }
     }
 
@@ -56,16 +86,37 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     public static GpuBigIntExpr operator +(GpuBigInteger a, GpuBigInteger b) => new(new AddExpression(a, b));
     public static GpuBigIntExpr operator -(GpuBigInteger a, GpuBigInteger b) => new(new SubExpression(a, b));
     public static GpuBigIntExpr operator &(GpuBigInteger a, GpuBigInteger b) => new(new BitwiseAndExpression(a, b));
-    public static GpuBigIntExpr operator <<(GpuBigInteger a, int shiftBits) => new(new ShiftLeftExpression(a, shiftBits));
-    public static GpuBigIntExpr operator >>(GpuBigInteger a, int shiftBits) => new(new ShiftRightExpression(a, shiftBits));
+
+    public static GpuBigIntExpr operator <<(GpuBigInteger a, int shiftBits) =>
+        new(new ShiftLeftExpression(a, shiftBits));
+
+    public static GpuBigIntExpr operator >> (GpuBigInteger a, int shiftBits) =>
+        new(new ShiftRightExpression(a, shiftBits));
 
     public uint[] ToHostArray()
     {
         var hostData = new uint[NumWords];
-        if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, DevicePointer, NumWords))
+        if (Context.Engine == GpuExecutionEngine.GSharpJit)
         {
-            throw new InvalidOperationException(
-                $"Failed to copy {NumWords} words from GPU device pointer 0x{DevicePointer:X} to host.");
+            var handle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
+            try
+            {
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), DevicePointer,
+                        NumWords * 4));
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+        else
+        {
+            if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, DevicePointer, NumWords))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy {NumWords} words from GPU device pointer 0x{DevicePointer:X} to host.");
+            }
         }
 
         return hostData;
@@ -80,10 +131,18 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 nameof(source));
         }
 
-        if (!NativeMethods.GpuBigInt_CopyDeviceToDevice(DevicePointer, source.DevicePointer, NumWords))
+        if (Context.Engine == GpuExecutionEngine.GSharpJit)
         {
-            throw new InvalidOperationException(
-                $"Failed to copy {NumWords} words on GPU from 0x{source.DevicePointer:X} to 0x{DevicePointer:X}.");
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuMemcpyDtoD_v2(DevicePointer, source.DevicePointer, NumWords * 4));
+        }
+        else
+        {
+            if (!NativeMethods.GpuBigInt_CopyDeviceToDevice(DevicePointer, source.DevicePointer, NumWords))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy {NumWords} words on GPU from 0x{source.DevicePointer:X} to 0x{DevicePointer:X}.");
+            }
         }
     }
 
@@ -95,7 +154,24 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_BitwiseAnd(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
+        if (a.Context.Engine == GpuExecutionEngine.GSharpJit)
+        {
+            const uint BlockSize = 256;
+            var gridSize = (a.NumWords + BlockSize - 1) / BlockSize;
+            if (gridSize == 0)
+            {
+                gridSize = 1;
+            }
+
+            GpuBigIntKernelsWrapper.Launch_BitwiseAndKernel_Device(
+                a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords,
+                gridDimX: (uint)gridSize, blockDimX: BlockSize);
+        }
+        else
+        {
+            NativeMethods.GpuBigInt_BitwiseAnd(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer,
+                result.DevicePointer, a.NumWords);
+        }
     }
 
     public static void Add(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result)
@@ -106,7 +182,51 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_Add(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
+        if (a.Context.Engine == GpuExecutionEngine.GSharpJit)
+        {
+            var chunkSize = 256;
+            var numChunks = (a.NumWords + chunkSize - 1) / chunkSize;
+            uint blockSize = 256;
+            var gridSize = (numChunks + blockSize - 1) / blockSize;
+            if (gridSize == 0)
+            {
+                gridSize = 1;
+            }
+
+            var carryBufferSize = (numChunks + 1) * sizeof(long);
+            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var carryBuffer, carryBufferSize));
+            try
+            {
+                var zeros = new long[numChunks + 1];
+                var handle = GCHandle.Alloc(zeros, GCHandleType.Pinned);
+                try
+                {
+                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(carryBuffer, handle.AddrOfPinnedObject(),
+                        carryBufferSize));
+                }
+                finally
+                {
+                    handle.Free();
+                }
+
+                GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
+                    a.DevicePointer, b.DevicePointer, result.DevicePointer, carryBuffer, a.NumWords, chunkSize,
+                    gridDimX: (uint)gridSize, blockDimX: blockSize);
+
+                GpuBigIntKernelsWrapper.Launch_ApplyAddCarryKernel_Device(
+                    result.DevicePointer, carryBuffer, numChunks, a.NumWords, chunkSize);
+            }
+            finally
+            {
+                CudaDriverApi.cuMemFree_v2(carryBuffer);
+            }
+        }
+        else
+        {
+            NativeMethods.GpuBigInt_Add(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer,
+                result.DevicePointer,
+                a.NumWords);
+        }
     }
 
     public static void Sub(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result)
@@ -117,7 +237,51 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"All buffers must have the same size. a: {a.NumWords}, b: {b.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_Sub(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords);
+        if (a.Context.Engine == GpuExecutionEngine.GSharpJit)
+        {
+            var chunkSize = 256;
+            var numChunks = (a.NumWords + chunkSize - 1) / chunkSize;
+            uint blockSize = 256;
+            var gridSize = (numChunks + blockSize - 1) / blockSize;
+            if (gridSize == 0)
+            {
+                gridSize = 1;
+            }
+
+            var carryBufferSize = (numChunks + 1) * sizeof(long);
+            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var carryBuffer, carryBufferSize));
+            try
+            {
+                var zeros = new long[numChunks + 1];
+                var handle = GCHandle.Alloc(zeros, GCHandleType.Pinned);
+                try
+                {
+                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(carryBuffer, handle.AddrOfPinnedObject(),
+                        carryBufferSize));
+                }
+                finally
+                {
+                    handle.Free();
+                }
+
+                GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(
+                    a.DevicePointer, b.DevicePointer, result.DevicePointer, carryBuffer, a.NumWords, chunkSize,
+                    gridDimX: (uint)gridSize, blockDimX: blockSize);
+
+                GpuBigIntKernelsWrapper.Launch_ApplySubBorrowKernel_Device(
+                    result.DevicePointer, carryBuffer, numChunks, a.NumWords, chunkSize);
+            }
+            finally
+            {
+                CudaDriverApi.cuMemFree_v2(carryBuffer);
+            }
+        }
+        else
+        {
+            NativeMethods.GpuBigInt_Sub(a.Context.WorkspacePointer, a.DevicePointer, b.DevicePointer,
+                result.DevicePointer,
+                a.NumWords);
+        }
     }
 
     public static void ShiftLeft(GpuBigInteger a, int shiftBits, GpuBigInteger result)
@@ -128,7 +292,27 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_ShiftLeft(a.Context.WorkspacePointer, a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
+        if (a.Context.Engine == GpuExecutionEngine.GSharpJit)
+        {
+            var wordShift = shiftBits / 32;
+            var bitShift = shiftBits % 32;
+            uint blockSize = 256;
+            var gridSize = (a.NumWords + blockSize - 1) / blockSize;
+            if (gridSize == 0)
+            {
+                gridSize = 1;
+            }
+
+            GpuBigIntKernelsWrapper.Launch_ShiftLeftKernel_Device(
+                a.DevicePointer, wordShift, bitShift, result.DevicePointer, a.NumWords,
+                gridDimX: (uint)gridSize, blockDimX: blockSize);
+        }
+        else
+        {
+            NativeMethods.GpuBigInt_ShiftLeft(a.Context.WorkspacePointer, a.DevicePointer, shiftBits,
+                result.DevicePointer,
+                a.NumWords);
+        }
     }
 
     public static void ShiftRight(GpuBigInteger a, int shiftBits, GpuBigInteger result)
@@ -139,10 +323,31 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 $"Result buffer must have the same size as input buffer. a: {a.NumWords}, result: {result.NumWords} words.");
         }
 
-        NativeMethods.GpuBigInt_ShiftRight(a.Context.WorkspacePointer, a.DevicePointer, shiftBits, result.DevicePointer, a.NumWords);
+        if (a.Context.Engine == GpuExecutionEngine.GSharpJit)
+        {
+            var wordShift = shiftBits / 32;
+            var bitShift = shiftBits % 32;
+            uint blockSize = 256;
+            var gridSize = (a.NumWords + blockSize - 1) / blockSize;
+            if (gridSize == 0)
+            {
+                gridSize = 1;
+            }
+
+            GpuBigIntKernelsWrapper.Launch_ShiftRightKernel_Device(
+                a.DevicePointer, wordShift, bitShift, result.DevicePointer, a.NumWords,
+                gridDimX: (uint)gridSize, blockDimX: blockSize);
+        }
+        else
+        {
+            NativeMethods.GpuBigInt_ShiftRight(a.Context.WorkspacePointer, a.DevicePointer, shiftBits,
+                result.DevicePointer,
+                a.NumWords);
+        }
     }
 
-    public bool Square(int logicalWords) => NativeMethods.GpuBigInt_Square(Context.WorkspacePointer, DevicePointer, logicalWords);
+    public bool Square(int logicalWords) =>
+        NativeMethods.GpuBigInt_Square(Context.WorkspacePointer, DevicePointer, logicalWords);
 
     internal void DisposeCore()
     {
@@ -150,7 +355,15 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         {
             if (DevicePointer != IntPtr.Zero)
             {
-                NativeMethods.GpuBigInt_Free(DevicePointer);
+                if (Context.Engine == GpuExecutionEngine.GSharpJit)
+                {
+                    CudaDriverApi.cuMemFree_v2(DevicePointer);
+                }
+                else
+                {
+                    NativeMethods.GpuBigInt_Free(DevicePointer);
+                }
+
                 DevicePointer = IntPtr.Zero;
             }
 

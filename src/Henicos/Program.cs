@@ -13,6 +13,11 @@ class Program
             BenchmarkRunner.Run<FermatBenchmark>();
             return;
         }
+        else if (args.Length > 0 && args[0] == "--benchmark-gpu")
+        {
+            BenchmarkRunner.Run<GpuBigIntBenchmark>();
+            return;
+        }
 
         using var tee = new TeeTextWriter(Console.Out, "benchmark_results.log");
         Console.SetOut(tee);

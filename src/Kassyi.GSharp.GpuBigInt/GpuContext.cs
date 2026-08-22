@@ -1,21 +1,42 @@
 namespace Kassyi.GSharp.GpuBigInt;
 
+public enum GpuExecutionEngine
+{
+    LegacyNative,
+    GSharpJit
+}
+
 public class GpuContext : IDisposable
 {
     public int MaxWords { get; }
     public IntPtr WorkspacePointer { get; }
+    public IntPtr CarryBuffer { get; }
+    public GpuExecutionEngine Engine { get; set; }
     private bool _disposed;
 
     // Memory pooling for Lazy Evaluation
     private readonly Dictionary<int, Stack<GpuBigInteger>> _tempPool = new();
 
-    public GpuContext(int maxWords)
+    public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpJit)
     {
         MaxWords = maxWords;
-        WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
-        if (WorkspacePointer == IntPtr.Zero)
+        Engine = engine;
+        if (Engine == GpuExecutionEngine.GSharpJit)
         {
-            throw new InvalidOperationException("Failed to initialize GPU context.");
+            // Allocate a carry buffer large enough for MaxWords
+            var chunkSize = 4;
+            var numChunks = (maxWords + chunkSize - 1) / chunkSize;
+            Core.CudaException.ThrowIfError(
+                Core.CudaDriverApi.cuMemAlloc_v2(out var carryBuf, (numChunks + 1) * 8));
+            CarryBuffer = carryBuf;
+        }
+        else
+        {
+            WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
+            if (WorkspacePointer == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to initialize GPU context.");
+            }
         }
     }
 
@@ -37,10 +58,21 @@ public class GpuContext : IDisposable
 
             _tempPool.Clear();
 
-            if (WorkspacePointer != IntPtr.Zero)
+            if (Engine == GpuExecutionEngine.GSharpJit)
             {
-                NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
+                if (CarryBuffer != IntPtr.Zero)
+                {
+                    Core.CudaDriverApi.cuMemFree_v2(CarryBuffer);
+                }
             }
+            else
+            {
+                if (WorkspacePointer != IntPtr.Zero)
+                {
+                    NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
+                }
+            }
+
             _disposed = true;
         }
 
