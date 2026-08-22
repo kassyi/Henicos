@@ -18,15 +18,13 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     [Fact]
     public void TestGeneratedWrapper()
     {
-        // 1. Check if the constant exists
         string expectedSource = SourceGeneratorTestsWrapper.MyTestKernel_CudaSource;
         _output.WriteLine("Generated C++ Source: ");
         _output.WriteLine(expectedSource);
 
         Assert.Contains("extern \"C\" __global__ void MyTestKernel", expectedSource);
-        Assert.Contains("c[0] = (a[0] + b[0]);", expectedSource);
+        Assert.Contains("c[0]=(a[0]+b[0]);", expectedSource);
 
-        // 2. Launch it and verify it calculates correctly!
         int[] aArray = [10];
         int[] bArray = [20];
         int[] cArray = [0];
@@ -141,6 +139,140 @@ public class SourceGeneratorTests(ITestOutputHelper output)
 
         Assert.Equal(3.0f, dataArray[0].X);
         Assert.Equal(3.0f, dataArray[0].Y);
+    }
+
+    [GpuKernel]
+    public static void ControlFlowKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+
+        // 1. switch
+        switch (tid)
+        {
+            case 0:
+                data[tid] = 10;
+                break;
+            case 1:
+            case 2:
+                data[tid] = 20;
+                break;
+            default:
+                data[tid] = 30;
+                break;
+        }
+
+        // 2. do-while
+        int count = 0;
+        do
+        {
+            count = count + 1;
+        } while (count < 3);
+
+        data[tid] = data[tid] + count;
+
+        // 3. && and ||
+        if (tid == 0 && count == 3)
+        {
+            data[tid] = data[tid] + 100;
+        }
+
+        if (tid == 1 || tid == 2)
+        {
+            data[tid] = data[tid] + 200;
+        }
+    }
+
+    [Fact]
+    public void TestControlFlowKernel()
+    {
+        string expectedSource = SourceGeneratorTestsWrapper.ControlFlowKernel_CudaSource;
+        _output.WriteLine("Control Flow C++ Source:");
+        _output.WriteLine(expectedSource);
+
+        int[] dataArray = new int[4];
+
+        SourceGeneratorTestsWrapper.Launch_ControlFlowKernel(dataArray, blockDimX: 4);
+
+        // tid 0: 10 + 3 + 100 = 113
+        Assert.Equal(113, dataArray[0]);
+        // tid 1: 20 + 3 + 200 = 223
+        Assert.Equal(223, dataArray[1]);
+        // tid 2: 20 + 3 + 200 = 223
+        Assert.Equal(223, dataArray[2]);
+        // tid 3: 30 + 3 = 33
+        Assert.Equal(33, dataArray[3]);
+    }
+
+    [GpuDevice]
+    public static int MyCustomAdd(int a, int b)
+    {
+        return a + b;
+    }
+
+    [GpuKernel]
+    public static void DeviceMethodKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        data[tid] = MyCustomAdd(data[tid], 100);
+    }
+
+    [Fact]
+    public void TestDeviceMethodKernel()
+    {
+        string expectedSource = SourceGeneratorTestsWrapper.DeviceMethodKernel_CudaSource;
+        _output.WriteLine("Device Method C++ Source:");
+        _output.WriteLine(expectedSource);
+
+        Assert.Contains("__device__ int MyCustomAdd", expectedSource);
+
+        int[] dataArray = [5, 10];
+        SourceGeneratorTestsWrapper.Launch_DeviceMethodKernel(dataArray, blockDimX: 2);
+
+        Assert.Equal(105, dataArray[0]);
+        Assert.Equal(110, dataArray[1]);
+    }
+
+    [GpuKernel]
+    public static void SharedMemoryKernel(int[] data, int dynSize)
+    {
+        int tid = ThreadIndex.X;
+
+        // Static Shared Memory
+        SharedMemory<int> sStatic = new SharedMemory<int>(256);
+
+        // Dynamic Shared Memory
+        SharedMemory<int> sDyn1 = new SharedMemory<int>(dynSize);
+        SharedMemory<float> sDyn2 = new SharedMemory<float>(dynSize);
+
+        sStatic[tid] = data[tid];
+        sDyn1[tid] = data[tid] * 2;
+        sDyn2[tid] = 3.14f;
+
+        Gpu.SyncThreads();
+
+        data[tid] = sStatic[tid] + sDyn1[tid];
+    }
+
+    [Fact]
+    public void TestSharedMemoryKernel()
+    {
+        string expectedSource = SourceGeneratorTestsWrapper.SharedMemoryKernel_CudaSource;
+        _output.WriteLine("Shared Memory C++ Source:");
+        _output.WriteLine(expectedSource);
+
+        Assert.Contains("__shared__ int sStatic[256];", expectedSource);
+        Assert.Contains("extern __shared__ char __gsharp_dynamic_smem[];", expectedSource);
+
+        int[] dataArray = new int[4] { 1, 2, 3, 4 };
+
+        // sDyn1 (int) + sDyn2 (float) -> 4 * 4 + 4 * 4 = 32 bytes
+        SourceGeneratorTestsWrapper.Launch_SharedMemoryKernel(dataArray, 4, blockDimX: 4, sharedMemBytes: 32);
+
+        // data[tid] + data[tid] * 2 = 3 * data[tid]
+        Assert.Equal(3, dataArray[0]);
+        Assert.Equal(6, dataArray[1]);
+        Assert.Equal(9, dataArray[2]);
+        Assert.Equal(12, dataArray[3]);
     }
 
     [Fact]
