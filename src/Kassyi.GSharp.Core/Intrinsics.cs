@@ -1,6 +1,6 @@
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedType.Global
-#pragma warning disable IDE0051 // Remove unused private members
+
 #pragma warning disable CA1822 // Mark members as static
 
 namespace Kassyi.GSharp.Core;

@@ -1,6 +1,6 @@
 namespace Kassyi.Math.GpuBigInt;
 
-#pragma warning disable IDE0051 // Remove unused private members
+
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedType.Global
 

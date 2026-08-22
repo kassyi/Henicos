@@ -1,5 +1,5 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable IDE0051 // Remove unused private members
+
 
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;

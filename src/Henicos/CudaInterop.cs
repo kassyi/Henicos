@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Henicos;
 
-#pragma warning disable IDE0051 // Remove unused private members
+
 // ReSharper disable UnusedMember.Global
 
 public static class CudaInterop

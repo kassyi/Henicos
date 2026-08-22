@@ -1,9 +1,9 @@
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedType.Global
-// ReSharper disable UnusedMember.Local
-// ReSharper disable UnusedType.Local
-#pragma warning disable IDE0051 // Remove unused private members
-#pragma warning disable IDE0052 // Remove unread private members
+
+
+
+
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
