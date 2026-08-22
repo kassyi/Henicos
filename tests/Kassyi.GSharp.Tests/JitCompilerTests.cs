@@ -4,13 +4,14 @@ using System.IO.Abstractions.TestingHelpers;
 using Xunit;
 using Kassyi.GSharp;
 using System.Runtime.InteropServices;
+using Kassyi.GSharp.Transpiler.Pipeline;
 
 namespace Kassyi.GSharp.Tests
 {
     public class JitCompilerTests
     {
         [Fact]
-        public void CompileAndLoad_ShouldCleanUpFiles_OnSuccess()
+        public void CompileAndLoad_ShouldCleanUpFiles_ExceptCachedDll_OnSuccess()
         {
             var mockFs = new MockFileSystem();
             mockFs.AddDirectory(mockFs.Path.GetTempPath());
@@ -21,8 +22,8 @@ namespace Kassyi.GSharp.Tests
             mockFs.AddFile(@"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin\nvcc.exe", new MockFileData(""));
 
             NvccCompiler.FileSystem = mockFs;
-            NativeModuleLoader.FileSystem = mockFs;
-            JitCompiler.FileSystem = mockFs;
+            JitLoader.FileSystem = mockFs;
+            BackendCompiler.FileSystem = mockFs;
             
             Environment.SetEnvironmentVariable("ProgramFiles(x86)", @"C:\Program Files (x86)");
             
@@ -39,7 +40,7 @@ namespace Kassyi.GSharp.Tests
                 else if (psi.FileName == "cmd.exe")
                 {
                     // Mock nvcc compilation: just create the dll file
-                    var files = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit"));
+                    var files = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit", "Cache"));
                     foreach(var f in files)
                     {
                         if (f.EndsWith(".txt"))
@@ -55,17 +56,24 @@ namespace Kassyi.GSharp.Tests
                 }
             };
             
-            // Mock NativeModuleLoader
-            NativeModuleLoader.LoadLibraryFunc = path => new IntPtr(1234);
-            NativeModuleLoader.GetExportFunc = (h, name) => new IntPtr(5678);
-            NativeModuleLoader.FreeLibraryFunc = h => { };
+            // Mock JitLoader
+            JitLoader.LoadLibraryFunc = path => new IntPtr(1234);
+            JitLoader.GetExportFunc = (h, name) => new IntPtr(5678);
+            JitLoader.FreeLibraryFunc = h => { };
 
-            using (var kernel = JitCompiler.CompileAndLoad<Action>("__global__ void test() {}", "test_func"))
+            var source = new TranspiledSource(
+                Metadata: new GpuKernelMetadata(null!, "", "", "test_func"),
+                CudaCode: "__global__ void test() {}",
+                SourceHash: "dummyhash123"
+            );
+
+            var binary = BackendCompiler.Compile(source);
+            using (var kernel = JitLoader.Load<Action>(binary))
             {
                 Assert.NotNull(kernel);
                 
                 // .cu file should be deleted even on success
-                var files = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit"));
+                var files = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit", "Cache"));
                 Assert.DoesNotContain(files, f => f.EndsWith(".cu"));
                 
                 // options .txt and .bat should be deleted
@@ -76,9 +84,9 @@ namespace Kassyi.GSharp.Tests
                 Assert.Contains(files, f => f.EndsWith(".dll"));
             }
             
-            // After dispose, dll should be deleted
-            var afterFiles = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit"));
-            Assert.DoesNotContain(afterFiles, f => f.EndsWith(".dll"));
+            // After dispose, DLL should STILL be cached!
+            var afterFiles = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit", "Cache"));
+            Assert.Contains(afterFiles, f => f.EndsWith(".dll"));
         }
 
         [Fact]
@@ -92,8 +100,8 @@ namespace Kassyi.GSharp.Tests
             mockFs.AddFile(@"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin\nvcc.exe", new MockFileData(""));
 
             NvccCompiler.FileSystem = mockFs;
-            NativeModuleLoader.FileSystem = mockFs;
-            JitCompiler.FileSystem = mockFs;
+            JitLoader.FileSystem = mockFs;
+            BackendCompiler.FileSystem = mockFs;
             
             Environment.SetEnvironmentVariable("ProgramFiles(x86)", @"C:\Program Files (x86)");
             
@@ -109,12 +117,18 @@ namespace Kassyi.GSharp.Tests
                 }
             };
             
-            Assert.Throws<Exception>(() => 
-                JitCompiler.CompileAndLoad<Action>("__global__ void test() {}", "test_func")
+            var source = new TranspiledSource(
+                Metadata: new GpuKernelMetadata(null!, "", "", "test_func"),
+                CudaCode: "__global__ void test() {}",
+                SourceHash: "dummyhash123"
             );
+
+            Assert.Throws<Exception>((Action)(() => 
+                BackendCompiler.Compile(source)
+            ));
             
             // Verify cleanup on failure
-            var files = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit"));
+            var files = mockFs.Directory.GetFiles(mockFs.Path.Combine(mockFs.Path.GetTempPath(), "KassyiGSharpJit", "Cache"));
             Assert.DoesNotContain(files, f => f.EndsWith(".cu"));
             Assert.DoesNotContain(files, f => f.EndsWith(".txt"));
             Assert.DoesNotContain(files, f => f.EndsWith(".bat"));

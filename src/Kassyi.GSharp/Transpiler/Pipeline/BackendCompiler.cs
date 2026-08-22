@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp;
+namespace Kassyi.GSharp.Transpiler.Pipeline;
 
 public class JitCompiledKernel<TDelegate>(
     IntPtr hModule,
@@ -10,10 +10,7 @@ public class JitCompiledKernel<TDelegate>(
 {
     private IntPtr _hModule = hModule;
 
-    public TDelegate Kernel
-    {
-        get;
-    } = kernel;
+    public TDelegate Kernel { get; } = kernel;
 
     public IntPtr NativeHandle => _hModule;
 
@@ -32,23 +29,18 @@ public class JitCompiledKernel<TDelegate>(
 public static class NvccCompiler
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
-    public static Action<ProcessStartInfo> ProcessRunner
-    {
-        get; set;
-    } = psi =>
+
+    public static Action<ProcessStartInfo> ProcessRunner { get; set; } = psi =>
     {
         using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start process");
         process.WaitForExit();
         if (process.ExitCode != 0)
         {
             throw new Exception("Process failed");
-        } 
+        }
     };
 
-    public static Func<string> GetVswhereOutputFunc
-    {
-        get; set;
-    } = () =>
+    public static Func<string> GetVswhereOutputFunc { get; set; } = () =>
     {
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var vswhere = FileSystem.Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
@@ -58,14 +50,16 @@ public static class NvccCompiler
             throw new Exception("vswhere.exe not found.");
         }
 
-        var psi = new ProcessStartInfo(vswhere, "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath")
+        var psi = new ProcessStartInfo(vswhere,
+            "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath")
         {
             RedirectStandardOutput = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start vswhere process");
+        using var process =
+            Process.Start(psi) ?? throw new InvalidOperationException("Failed to start vswhere process");
         var output = process.StandardOutput.ReadToEnd().Trim();
         process.WaitForExit();
         return output;
@@ -158,47 +152,86 @@ public static class NvccCompiler
         }
         catch (Exception)
         {
-            var log = FileSystem.File.Exists($"{tempDir}\\out.log") ? FileSystem.File.ReadAllText($"{tempDir}\\out.log") : "No log found.";
+            var log = FileSystem.File.Exists($"{tempDir}\\out.log")
+                ? FileSystem.File.ReadAllText($"{tempDir}\\out.log")
+                : "No log found.";
             throw new Exception($"NVCC Compilation Failed:\n{log}");
         }
         finally
         {
             // Cleanup intermediate files
-            try { FileSystem.File.Delete(optsFile); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete opts file: {ex.Message}"); }
-            try { FileSystem.File.Delete(batFile); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete bat file: {ex.Message}"); }
-            try { FileSystem.File.Delete(FileSystem.Path.ChangeExtension(dllFile, ".lib")); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete lib file: {ex.Message}"); }
-            try { FileSystem.File.Delete(FileSystem.Path.ChangeExtension(dllFile, ".exp")); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete exp file: {ex.Message}"); }
+            try
+            {
+                FileSystem.File.Delete(optsFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete opts file: {ex.Message}");
+            }
+
+            try
+            {
+                FileSystem.File.Delete(batFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete bat file: {ex.Message}");
+            }
+
+            try
+            {
+                FileSystem.File.Delete(FileSystem.Path.ChangeExtension(dllFile, ".lib"));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete lib file: {ex.Message}");
+            }
+
+            try
+            {
+                FileSystem.File.Delete(FileSystem.Path.ChangeExtension(dllFile, ".exp"));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[JIT Warning] Failed to delete exp file: {ex.Message}");
+            }
         }
+
         sw.Stop();
 
         if (!FileSystem.File.Exists(dllFile))
         {
             throw new Exception($"JIT Compilation failed! Expected {dllFile} to be created.");
         }
+
         Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
     }
 }
 
-public static class NativeModuleLoader
+public static class JitLoader
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
     public static Func<string, IntPtr> LoadLibraryFunc { get; set; } = NativeLibrary.Load;
     public static Func<IntPtr, string, IntPtr> GetExportFunc { get; set; } = NativeLibrary.GetExport;
     public static Action<IntPtr> FreeLibraryFunc { get; set; } = NativeLibrary.Free;
 
-    public static JitCompiledKernel<TDelegate> Load<TDelegate>(string dllFile, string functionName) where TDelegate : Delegate
+    /// <summary>
+    /// Pipeline Step 5: Loads the compiled DLL and binds the delegate.
+    /// </summary>
+    public static JitCompiledKernel<TDelegate> Load<TDelegate>(CompiledBinary binary) where TDelegate : Delegate
     {
-        var hModule = LoadLibraryFunc(dllFile);
+        var hModule = LoadLibraryFunc(binary.DllPath);
         if (hModule == IntPtr.Zero)
         {
             throw new Exception("Failed to load compiled JIT DLL.");
         }
 
-        var pFunc = GetExportFunc(hModule, functionName);
+        var pFunc = GetExportFunc(hModule, binary.Source.Metadata.MethodName);
         if (pFunc == IntPtr.Zero)
         {
             FreeLibraryFunc(hModule);
-            throw new Exception($"Failed to find exported function '{functionName}'. Make sure it has extern \"C\" __declspec(dllexport).");
+            throw new Exception(
+                $"Failed to find exported function '{binary.Source.Metadata.MethodName}'. Make sure it has extern \"C\" __declspec(dllexport).");
         }
 
         var del = Marshal.GetDelegateForFunctionPointer<TDelegate>(pFunc);
@@ -207,56 +240,70 @@ public static class NativeModuleLoader
 
         void deleteAction()
         {
-            if (!FileSystem.File.Exists(dllFile))
-            {
-                return;
-            }
-
-            try
-            {
-                FileSystem.File.Delete(dllFile);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[JIT Warning] Failed to delete dll file: {ex.Message}");
-            }
+            // By design (Pipeline architecture caching strategy), we DO NOT delete the cached DLL upon dispose.
+            // This allows subsequent runs (or other processes) to instantly load the DLL without invoking NVCC.
+            // The temp directory can be cleared by the OS or manually when needed.
         }
     }
 }
 
-public class JitCompiler
+public class BackendCompiler
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
 
-    public static JitCompiledKernel<TDelegate> CompileAndLoad<TDelegate>(string cuCode, string functionName, string? includePath = null) where TDelegate : Delegate
+    /// <summary>
+    /// Pipeline Step 4: Invokes NVCC to compile the TranspiledSource into a native DLL, utilizing SHA256 caching.
+    /// </summary>
+    public static CompiledBinary Compile(TranspiledSource source, string? includePath = null)
     {
-        var tempDir = FileSystem.Path.Combine(FileSystem.Path.GetTempPath(), "KassyiGSharpJit");
+        var tempDir = FileSystem.Path.Combine(FileSystem.Path.GetTempPath(), "KassyiGSharpJit", "Cache");
         FileSystem.Directory.CreateDirectory(tempDir);
 
-        var id = Guid.NewGuid().ToString("N");
-        var cuFile = FileSystem.Path.Combine(tempDir, $"{id}.cu");
-        var dllFile = FileSystem.Path.Combine(tempDir, $"{id}.dll");
+        var cuFile = FileSystem.Path.Combine(tempDir, $"{source.SourceHash}.cu");
+        var dllFile = FileSystem.Path.Combine(tempDir, $"{source.SourceHash}.dll");
+
+        if (FileSystem.File.Exists(dllFile))
+        {
+            Console.WriteLine(
+                $"[JIT Cache Hit] Found compiled kernel for {source.Metadata.MethodName} ({source.SourceHash}). Skipping NVCC.");
+            return new CompiledBinary(source, dllFile);
+        }
 
         try
         {
-            FileSystem.File.WriteAllText(cuFile, cuCode, new UTF8Encoding(false));
+            FileSystem.File.WriteAllText(cuFile, source.CudaCode, new UTF8Encoding(false));
             NvccCompiler.Compile(cuFile, dllFile, includePath, tempDir);
-            return NativeModuleLoader.Load<TDelegate>(dllFile, functionName);
+            return new CompiledBinary(source, dllFile);
         }
         catch
         {
             if (FileSystem.File.Exists(dllFile))
             {
-                try { FileSystem.File.Delete(dllFile); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete dll file: {ex.Message}"); }
+                try
+                {
+                    FileSystem.File.Delete(dllFile);
+                }
+                catch
+                {
+                    /* Ignore */
+                }
             }
+
             throw;
         }
         finally
         {
-            // Clean up .cu file always
+            // We can delete the .cu file as the .dll is the only artifact needed for the cache
             if (FileSystem.File.Exists(cuFile))
             {
-                try { FileSystem.File.Delete(cuFile); } catch (Exception ex) { Console.WriteLine($"[JIT Warning] Failed to delete cu file: {ex.Message}"); }
+                try
+                {
+                    FileSystem.File.Delete(cuFile);
+                }
+                catch
+                {
+                    /* Ignore */
+                }
             }
         }
     }
