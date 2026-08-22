@@ -10,8 +10,16 @@ class Program
     {
         if (args.Length > 0 && args[0] == "--benchmark")
         {
-            var summary = BenchmarkRunner.Run<FermatBenchmark>();
-            return;
+            if (args.Length > 1 && args[1] == "gpu")
+            {
+                var summary = BenchmarkRunner.Run<GpuBenchmark>();
+                return;
+            }
+            else
+            {
+                var summary = BenchmarkRunner.Run<FermatBenchmark>();
+                return;
+            }
         }
 
         using var tee = new TeeTextWriter(Console.Out, "benchmark_results.log");
