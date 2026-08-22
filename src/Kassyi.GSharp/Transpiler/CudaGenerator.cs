@@ -1,13 +1,10 @@
-using System.Collections.Frozen;
-using Kassyi.GSharp.Transpiler.Ast;
-
 namespace Kassyi.GSharp.Transpiler;
 
 public class CudaGenerator : IAstVisitor
 {
     private readonly CodeWriter _writer = new();
 
-    public string Generate(BlockNode root, System.Collections.Generic.HashSet<string> variables)
+    public string Generate(BlockNode root, HashSet<string>? variables)
     {
         if (variables != null)
         {
@@ -27,7 +24,7 @@ public class CudaGenerator : IAstVisitor
             stmt.Accept(this);
 
             if (stmt is not (AssignNode or ArrayAssignNode or ForLoopNode or WhileNode or IfNode or BlockNode
-                or LabelNode or GotoNode or IfGotoNode))
+                or LabelNode or GotoNode or IfGotoNode or ReturnNode))
             {
                 _writer.WriteLine(";");
             }
@@ -79,10 +76,13 @@ public class CudaGenerator : IAstVisitor
             Visit(node.TrueBlock);
         }
 
-        _writer.Write("else");
-        using (_writer.Block())
+        if (node.FalseBlock != null)
         {
-            Visit(node.FalseBlock);
+            _writer.Write("else");
+            using (_writer.Block())
+            {
+                Visit(node.FalseBlock);
+            }
         }
     }
 

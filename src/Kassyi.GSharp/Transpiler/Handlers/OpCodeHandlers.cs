@@ -1,7 +1,3 @@
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Kassyi.GSharp.Transpiler.Ast;
-
 namespace Kassyi.GSharp.Transpiler.Handlers;
 
 public interface IOpCodeHandler
@@ -42,7 +38,8 @@ public static class OpCodeHelper
 
 public class LoadArgumentHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Ldarg_0, Code.Ldarg_1, Code.Ldarg_2, Code.Ldarg_3, Code.Ldarg_S, Code.Ldarg };
+    private static readonly Code[] s_codes = [Code.Ldarg_0, Code.Ldarg_1, Code.Ldarg_2, Code.Ldarg_3, Code.Ldarg_S, Code.Ldarg
+    ];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
         => stack.Push(new VariableNode(OpCodeHelper.GetArgName(ins, method)));
@@ -50,7 +47,8 @@ public class LoadArgumentHandler : IOpCodeHandler
 
 public class LoadConstantHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3, Code.Ldc_I4_4, Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1 };
+    private static readonly Code[] s_codes = [Code.Ldc_I4, Code.Ldc_I4_S, Code.Ldc_I4_0, Code.Ldc_I4_1, Code.Ldc_I4_2, Code.Ldc_I4_3, Code.Ldc_I4_4, Code.Ldc_I4_5, Code.Ldc_I4_6, Code.Ldc_I4_7, Code.Ldc_I4_8, Code.Ldc_I4_M1
+    ];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
@@ -74,7 +72,8 @@ public class LoadConstantHandler : IOpCodeHandler
 
 public class BinaryOpHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Add, Code.Sub, Code.Mul, Code.Div, Code.Rem, Code.Ceq, Code.Cgt, Code.Clt };
+    private static readonly Code[] s_codes = [Code.Add, Code.Sub, Code.Mul, Code.Div, Code.Rem, Code.And, Code.Or, Code.Xor, Code.Shl, Code.Shr, Code.Shr_Un, Code.Ceq, Code.Cgt, Code.Clt
+    ];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
@@ -85,6 +84,11 @@ public class BinaryOpHandler : IOpCodeHandler
             Code.Mul => BinaryOperator.Mul,
             Code.Div => BinaryOperator.Div,
             Code.Rem => BinaryOperator.Mod,
+            Code.And => BinaryOperator.BitAnd,
+            Code.Or => BinaryOperator.BitOr,
+            Code.Xor => BinaryOperator.BitXor,
+            Code.Shl => BinaryOperator.ShiftLeft,
+            Code.Shr or Code.Shr_Un => BinaryOperator.ShiftRight,
             Code.Ceq => BinaryOperator.Eq,
             Code.Cgt => BinaryOperator.Gt,
             Code.Clt => BinaryOperator.Lt,
@@ -98,7 +102,7 @@ public class BinaryOpHandler : IOpCodeHandler
 
 public class StoreArgumentHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Starg, Code.Starg_S };
+    private static readonly Code[] s_codes = [Code.Starg, Code.Starg_S];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
         => stmts.Add(new AssignNode(OpCodeHelper.GetArgName(ins, method), stack.Pop()));
@@ -106,7 +110,8 @@ public class StoreArgumentHandler : IOpCodeHandler
 
 public class LocalVariableHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Stloc_0, Code.Stloc_1, Code.Stloc_2, Code.Stloc_3, Code.Stloc_S, Code.Stloc, Code.Ldloc_0, Code.Ldloc_1, Code.Ldloc_2, Code.Ldloc_3, Code.Ldloc_S, Code.Ldloc };
+    private static readonly Code[] s_codes = [Code.Stloc_0, Code.Stloc_1, Code.Stloc_2, Code.Stloc_3, Code.Stloc_S, Code.Stloc, Code.Ldloc_0, Code.Ldloc_1, Code.Ldloc_2, Code.Ldloc_3, Code.Ldloc_S, Code.Ldloc
+    ];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
@@ -124,7 +129,8 @@ public class LocalVariableHandler : IOpCodeHandler
 
 public class ArrayHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_Ref, Code.Stelem_I4, Code.Stelem_Ref };
+    private static readonly Code[] s_codes = [Code.Ldelem_U4, Code.Ldelem_I4, Code.Ldelem_Ref, Code.Stelem_I4, Code.Stelem_Ref
+    ];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {
@@ -146,13 +152,10 @@ public class ArrayHandler : IOpCodeHandler
 
 public class MethodCallHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Call };
+    private static readonly Code[] s_codes = [Code.Call];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
 
-    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod)
-    {
-        throw new NotSupportedException("Use the overload with AstContext");
-    }
+    public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod) => throw new NotSupportedException("Use the overload with AstContext");
 
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition callerMethod, AstContext ctx)
     {
@@ -164,10 +167,10 @@ public class MethodCallHandler : IOpCodeHandler
         bool isInline = false;
         if (resolvedMethod != null)
         {
-            isInline = (resolvedMethod.ImplAttributes & MethodImplAttributes.AggressiveInlining) != 0;
+            isInline = (resolvedMethod.ImplAttributes & Mono.Cecil.MethodImplAttributes.AggressiveInlining) != 0;
         }
 
-        if (isInline && resolvedMethod != null && resolvedMethod.HasBody)
+        if (isInline && resolvedMethod is { HasBody: true })
         {
             // Perform inlining
             var args = new IAstNode[methodRef.Parameters.Count];
@@ -178,7 +181,7 @@ public class MethodCallHandler : IOpCodeHandler
 
             string prefix = ctx.GetNextInlinePrefix();
             string endLabel = prefix + "end";
-            string returnVar = null;
+            string? returnVar = null;
 
             if (methodRef.ReturnType.FullName != "System.Void")
             {
@@ -234,7 +237,8 @@ public class MethodCallHandler : IOpCodeHandler
 
 public class BranchHandler : IOpCodeHandler
 {
-    private static readonly Code[] s_codes = { Code.Br, Code.Br_S, Code.Leave, Code.Leave_S, Code.Blt, Code.Blt_S, Code.Blt_Un, Code.Blt_Un_S, Code.Brtrue, Code.Brtrue_S, Code.Brfalse, Code.Brfalse_S, Code.Beq, Code.Beq_S, Code.Ble, Code.Ble_S, Code.Ble_Un, Code.Ble_Un_S, Code.Bgt, Code.Bgt_S, Code.Bgt_Un, Code.Bgt_Un_S, Code.Bge, Code.Bge_S, Code.Bge_Un, Code.Bge_Un_S, Code.Bne_Un, Code.Bne_Un_S };
+    private static readonly Code[] s_codes = [Code.Br, Code.Br_S, Code.Leave, Code.Leave_S, Code.Blt, Code.Blt_S, Code.Blt_Un, Code.Blt_Un_S, Code.Brtrue, Code.Brtrue_S, Code.Brfalse, Code.Brfalse_S, Code.Beq, Code.Beq_S, Code.Ble, Code.Ble_S, Code.Ble_Un, Code.Ble_Un_S, Code.Bgt, Code.Bgt_S, Code.Bgt_Un, Code.Bgt_Un_S, Code.Bge, Code.Bge_S, Code.Bge_Un, Code.Bge_Un_S, Code.Bne_Un, Code.Bne_Un_S
+    ];
     public IEnumerable<Code> SupportedOpCodes => s_codes;
     public void Handle(Instruction ins, Stack<IAstNode> stack, List<IAstNode> stmts, MethodDefinition method)
     {

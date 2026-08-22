@@ -1,15 +1,12 @@
-using System.Text;
-
 namespace Kassyi.GSharp.Transpiler;
 
-public class CodeWriter
-{
-    private readonly StringBuilder _sb;
+#pragma warning disable IDE0051 // Remove unused private members
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
 
-    public CodeWriter(int capacity = 4096)
-    {
-        _sb = new StringBuilder(capacity);
-    }
+public class CodeWriter(int capacity = 4096)
+{
+    private readonly StringBuilder _sb = new(capacity);
 
     public CodeWriter Write(string text)
     {
@@ -35,7 +32,7 @@ public class CodeWriter
         return this;
     }
 
-    public Scope Block(string header = "")
+    public Scope Block(string header)
     {
         if (!string.IsNullOrEmpty(header))
         {
@@ -65,39 +62,18 @@ public class CodeWriter
 
     public override string ToString() => _sb.ToString();
 
-    public readonly ref struct Scope
+    public readonly ref struct Scope(CodeWriter writer)
     {
-        private readonly CodeWriter _writer;
-
-        public Scope(CodeWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public void Dispose() => _writer.WriteLine("}");
+        public void Dispose() => writer.WriteLine("}");
     }
 
-    public readonly ref struct ParensScope
+    public readonly ref struct ParensScope(CodeWriter writer)
     {
-        private readonly CodeWriter _writer;
-
-        public ParensScope(CodeWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public void Dispose() => _writer.Write(")");
+        public void Dispose() => writer.Write(")");
     }
 
-    public readonly ref struct BracketsScope
+    public readonly ref struct BracketsScope(CodeWriter writer)
     {
-        private readonly CodeWriter _writer;
-
-        public BracketsScope(CodeWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public void Dispose() => _writer.Write("]");
+        public void Dispose() => writer.Write("]");
     }
 }

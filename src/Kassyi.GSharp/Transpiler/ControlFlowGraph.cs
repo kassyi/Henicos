@@ -1,14 +1,17 @@
-using Mono.Cecil.Cil;
-
 namespace Kassyi.GSharp.Transpiler;
 
-public class BasicBlock
+#pragma warning disable IDE0051 // Remove unused private members
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedType.Global
+
+public class BasicBlock(int id)
 {
     public int Id
     {
         get;
-    }
-    public List<Instruction> Instructions { get; } = new();
+    } = id;
+
+    public List<Instruction> Instructions { get; } = [];
     public BasicBlock? Fallthrough
     {
         get; set;
@@ -17,32 +20,22 @@ public class BasicBlock
     {
         get; set;
     }
-    public HashSet<BasicBlock> Predecessors { get; } = new();
-
-    public BasicBlock(int id)
-    {
-        Id = id;
-    }
+    public HashSet<BasicBlock> Predecessors { get; } = [];
 
     public override string ToString() => $"Block_{Id} (Instrs: {Instructions.Count})";
 }
 
-public class ControlFlowGraph
+public class ControlFlowGraph(BasicBlock entryBlock, IReadOnlyList<BasicBlock> allBlocks)
 {
     public BasicBlock EntryBlock
     {
         get;
-    }
+    } = entryBlock;
+
     public IReadOnlyList<BasicBlock> Blocks
     {
         get;
-    }
-
-    public ControlFlowGraph(BasicBlock entryBlock, IReadOnlyList<BasicBlock> allBlocks)
-    {
-        EntryBlock = entryBlock;
-        Blocks = allBlocks;
-    }
+    } = allBlocks;
 
     public static ControlFlowGraph Build(IEnumerable<Instruction> instructions)
     {
@@ -113,39 +106,42 @@ public class ControlFlowGraph
         {
             var block = allBlocks[i];
             var lastIns = block.Instructions.Last();
+            var code = lastIns.OpCode.Code;
 
-            if (IsBranch(lastIns.OpCode.Code))
+            // 1. Connect branch targets
+            foreach (var targetBlock in GetTargetBlocks(lastIns, blocksByLeader))
             {
-                if (lastIns.Operand is Instruction targetInst && blocksByLeader.TryGetValue(targetInst, out var targetBlock))
+                block.Target = targetBlock;
+                targetBlock.Predecessors.Add(block);
+            }
+
+            // 2. Connect fallthrough if control flows to the next sequential block
+            var canFallthrough = IsBranch(code) ? !IsUnconditionalBranch(code) : code != Code.Ret && code != Code.Throw;
+            if (canFallthrough && i + 1 < allBlocks.Count)
+            {
+                var nextBlock = allBlocks[i + 1];
+                block.Fallthrough = nextBlock;
+                nextBlock.Predecessors.Add(block);
+            }
+        }
+    }
+
+    private static IEnumerable<BasicBlock> GetTargetBlocks(Instruction ins, Dictionary<Instruction, BasicBlock> blocksByLeader)
+    {
+        switch (ins.Operand)
+        {
+            case Instruction singleTarget when blocksByLeader.TryGetValue(singleTarget, out var target):
+                yield return target;
+                break;
+            case Instruction[] multiTargets:
+                foreach (var t in multiTargets)
                 {
-                    block.Target = targetBlock;
-                    targetBlock.Predecessors.Add(block);
-                }
-                else if (lastIns.Operand is Instruction[] targets)
-                {
-                    foreach (var t in targets)
+                    if (blocksByLeader.TryGetValue(t, out var target))
                     {
-                        if (blocksByLeader.TryGetValue(t, out var swTarget))
-                        {
-                            block.Target = swTarget;
-                            swTarget.Predecessors.Add(block);
-                        }
+                        yield return target;
                     }
                 }
-
-                if (lastIns.OpCode.Code != Code.Br && lastIns.OpCode.Code != Code.Br_S &&
-                    lastIns.OpCode.Code != Code.Leave && lastIns.OpCode.Code != Code.Leave_S &&
-                    i + 1 < allBlocks.Count)
-                {
-                    block.Fallthrough = allBlocks[i + 1];
-                    allBlocks[i + 1].Predecessors.Add(block);
-                }
-            }
-            else if (lastIns.OpCode.Code != Code.Ret && i + 1 < allBlocks.Count)
-            {
-                block.Fallthrough = allBlocks[i + 1];
-                allBlocks[i + 1].Predecessors.Add(block);
-            }
+                break;
         }
     }
 

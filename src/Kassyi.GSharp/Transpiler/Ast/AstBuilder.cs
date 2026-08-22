@@ -1,10 +1,4 @@
-using System.Collections.Frozen;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Kassyi.GSharp.Transpiler.Ast;
-using Kassyi.GSharp.Transpiler.Handlers;
-
-namespace Kassyi.GSharp.Transpiler;
+namespace Kassyi.GSharp.Transpiler.Ast;
 
 public class AstBuilder
 {
@@ -35,7 +29,7 @@ public class AstBuilder
         s_handlers = dict.ToFrozenDictionary();
     }
 
-    public BlockNode ParseMethod(MethodDefinition method, AstContext context = null)
+    public BlockNode ParseMethod(MethodDefinition method, AstContext? context = null)
     {
         var statements = new List<IAstNode>();
 
@@ -59,23 +53,30 @@ public class AstBuilder
         var branchTargets = new HashSet<int>();
         foreach (var ins in instructions)
         {
-            if (ins.Operand is Instruction target)
+            switch (ins.Operand)
             {
-                branchTargets.Add(target.Offset);
-            }
-            else if (ins.Operand is Instruction[] targets)
-            {
-                foreach (var t in targets)
+                case Instruction target:
+
+                    branchTargets.Add(target.Offset);
+                    break;
+                case Instruction[] targets:
                 {
-                    branchTargets.Add(t.Offset);
+                    foreach (var t in targets)
+
+                    {
+
+                        branchTargets.Add(t.Offset);
+
+                    }
+
+                    break;
                 }
+
             }
         }
 
-        for (var i = 0; i < instructions.Count; i++)
+        foreach (var ins in instructions)
         {
-            var ins = instructions[i];
-
             if (branchTargets.Contains(ins.Offset))
             {
                 statements.Add(new LabelNode($"IL_{ins.Offset:x4}"));
@@ -88,14 +89,9 @@ public class AstBuilder
 
             if (ins.OpCode.Code == Code.Ret)
             {
-                if (method.ReturnType.FullName != "System.Void")
-                {
-                    statements.Add(new ReturnNode(stack.Pop()));
-                }
-                else
-                {
-                    statements.Add(new ReturnNode(null));
-                }
+                statements.Add(method.ReturnType.FullName != "System.Void"
+                    ? new ReturnNode(stack.Pop())
+                    : new ReturnNode(null));
                 continue;
             }
 
@@ -114,6 +110,7 @@ public class AstBuilder
             {
                 throw new NotSupportedException($"Unsupported IL OpCode: {ins.OpCode}");
             }
+
         }
 
         return new BlockNode(statements);

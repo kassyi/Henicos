@@ -39,7 +39,7 @@ public record WhileNode(IAstNode Condition, BlockNode Body) : IAstNode
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }
 
-public record IfNode(IAstNode Condition, BlockNode TrueBlock, BlockNode FalseBlock) : IAstNode
+public record IfNode(IAstNode Condition, BlockNode TrueBlock, BlockNode? FalseBlock) : IAstNode
 {
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }
@@ -101,7 +101,7 @@ public record IfGotoNode(IAstNode Condition, string TrueTargetName) : IAstNode
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }
 
-public record ReturnNode(IAstNode Value) : IAstNode
+public record ReturnNode(IAstNode? Value) : IAstNode
 {
     public void Accept(IAstVisitor visitor) => visitor.Visit(this);
 }
