@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp;
+namespace Kassyi.GSharp.Runtime;
 
 /// <summary>
 /// Provides CUDA intrinsic functions and variables.

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Transpiler.Pipeline;
+using Kassyi.GSharp.Runtime.Core;
+using Kassyi.GSharp.Runtime.Transpiler.Pipeline;
 using Xunit;
 using Xunit.Abstractions;
 using System.Text;

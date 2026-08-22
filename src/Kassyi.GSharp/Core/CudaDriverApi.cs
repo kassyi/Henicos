@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Kassyi.GSharp.Core;
 
 public enum CUresult

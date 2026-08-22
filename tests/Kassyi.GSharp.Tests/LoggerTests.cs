@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.IO;
-using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Core;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -17,7 +17,7 @@ public class LoggerTests
     public async Task Log_ShouldFormatAndWriteMessagesAsync()
     {
         var logger = new TestLogger();
-        Logger.ActiveLogLevel = Kassyi.GSharp.Core.LogLevel.Trace;
+        Logger.ActiveLogLevel = Kassyi.GSharp.Runtime.Core.LogLevel.Trace;
         Logger.Clear();
 
         logger.LogInformation("Test Info Message");
@@ -42,10 +42,10 @@ public class LoggerTests
     [Fact]
     public async Task MeasureScope_ShouldLogDuration()
     {
-        Logger.ActiveLogLevel = Kassyi.GSharp.Core.LogLevel.Trace;
+        Logger.ActiveLogLevel = Kassyi.GSharp.Runtime.Core.LogLevel.Trace;
         Logger.Clear();
 
-        using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", Kassyi.GSharp.Core.LogLevel.Info))
+        using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", Kassyi.GSharp.Runtime.Core.LogLevel.Info))
         {
             await Task.Delay(10);
         }
