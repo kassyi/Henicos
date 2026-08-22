@@ -54,5 +54,6 @@ tmp/
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
 
-.agents/
+.agents/*
+!.agents/rules/
 TestResults/
