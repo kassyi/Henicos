@@ -15,6 +15,8 @@ public class JitCompiledKernel<TDelegate> : IDisposable where TDelegate : Delega
         get;
     }
 
+    public IntPtr NativeHandle => _hModule;
+
     public JitCompiledKernel(IntPtr hModule, TDelegate kernel, Action<IntPtr> freeFunc, Action deleteFileFunc)
     {
         _hModule = hModule;
@@ -47,7 +49,9 @@ public static class NvccCompiler
         process.WaitForExit();
         if (process.ExitCode != 0)
         {
-            throw new Exception("Process failed"); } };
+            throw new Exception("Process failed");
+        } 
+    };
 
     public static Func<string> GetVswhereOutputFunc
     {
@@ -130,8 +134,7 @@ public static class NvccCompiler
             "-O3",
             "-arch=sm_86",
             "-std=c++17",
-            "-rdc=true",
-            "-Xcompiler", "/wd 4819"
+            "-rdc=true"
         };
         if (!string.IsNullOrEmpty(includePath))
         {
@@ -144,13 +147,11 @@ public static class NvccCompiler
         var sb = new StringBuilder();
         sb.AppendLine("@echo off");
         sb.AppendLine($"call \"{vcvars}\"");
-        sb.AppendLine($"\"{nvcc}\" @\"{optsFile}\"");
+        sb.AppendLine($"\"{nvcc}\" --options-file \"{optsFile}\" > \"{tempDir}\\out.log\" 2>&1");
         FileSystem.File.WriteAllText(batFile, sb.ToString(), new UTF8Encoding(false));
 
         var psi = new ProcessStartInfo("cmd.exe", $"/c \"{batFile}\"")
         {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
             WorkingDirectory = tempDir
@@ -162,6 +163,11 @@ public static class NvccCompiler
         try
         {
             ProcessRunner(psi); // Injectable process execution
+        }
+        catch (Exception)
+        {
+            var log = FileSystem.File.Exists($"{tempDir}\\out.log") ? FileSystem.File.ReadAllText($"{tempDir}\\out.log") : "No log found.";
+            throw new Exception($"NVCC Compilation Failed:\n{log}");
         }
         finally
         {
