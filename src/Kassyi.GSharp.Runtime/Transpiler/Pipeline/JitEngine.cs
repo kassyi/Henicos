@@ -1,4 +1,6 @@
 // ReSharper disable UnusedMember.Global
+
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using Kassyi.GSharp.Core;
 
@@ -8,6 +10,7 @@ public static class JitEngine
 {
     private static bool s_isGlobalInit;
     private static IntPtr s_globalContext;
+    private static string s_smVersion = "sm_52"; // default fallback
     private static readonly Lock s_initLock = new();
 
     [ThreadStatic]
@@ -35,6 +38,13 @@ public static class JitEngine
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var major,
+                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var minor,
+                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
+                s_smVersion = $"sm_{major}{minor}";
+
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
                 s_isGlobalInit = true;
             }
@@ -48,7 +58,7 @@ public static class JitEngine
     /// <summary>
     /// Unloads all cached modules and clears the cache to prevent device memory leaks.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
+    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
     public static void Shutdown()
     {
         foreach (var kvp in s_functionCache)
@@ -76,7 +86,7 @@ public static class JitEngine
         EnsureInitialized();
 
         var sourceHash = ComputeHash(cppSource);
-        var cacheKey = $"{sourceHash}_{kernelName}";
+        var cacheKey = $"{sourceHash}_{s_smVersion}_{kernelName}";
 
         if (s_functionCache.TryGetValue(cacheKey, out var cachedModule))
         {
@@ -88,15 +98,14 @@ public static class JitEngine
         Directory.CreateDirectory(tempDir);
 
         var cuFile = Path.Combine(tempDir, $"{sourceHash}.cu");
-        var fatbinFile = Path.Combine(tempDir, $"{sourceHash}.fatbin");
+        var fatbinFile = Path.Combine(tempDir, $"{sourceHash}_{s_smVersion}.fatbin");
 
         if (!File.Exists(fatbinFile))
         {
             File.WriteAllText(cuFile, cppSource, new UTF8Encoding(false));
 
-            // Invoke the existing compiler backend. 
-            // In the future, dynamic constants (like SM arch) can be passed here.
-            NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir);
+            // Invoke the compiler backend with SM version
+            NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, s_smVersion);
         }
 
         var ptxBytes = File.ReadAllBytes(fatbinFile);

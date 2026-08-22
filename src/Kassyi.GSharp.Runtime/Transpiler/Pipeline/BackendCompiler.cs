@@ -93,13 +93,13 @@ public static class NvccCompiler
         ], "out.log");
     }
 
-    public static void CompileToFatbin(string cuFile, string fatbinFile, string? includePath, string tempDir)
+    public static void CompileToFatbin(string cuFile, string fatbinFile, string? includePath, string tempDir, string smVersion = "sm_52")
     {
         RunNvccInternal(cuFile, fatbinFile, includePath, tempDir, [
             "--fatbin",
             "-o", fatbinFile,
             "-O3",
-            "-arch=sm_86",
+            $"-arch={smVersion}",
             "-std=c++17"
         ], "out_fatbin.log");
     }

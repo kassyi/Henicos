@@ -1,5 +1,5 @@
 // ReSharper disable UnusedMember.Global
-#pragma warning disable IDE0051 // Remove unused private members
+
 
 using System.Runtime.InteropServices;
 
@@ -60,6 +60,15 @@ public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
 public static class CudaDriverApi
 {
     private const string DllName = "nvcuda.dll";
+
+    public enum CuDeviceAttribute
+    {
+        ComputeCapabilityMajor = 75,
+        ComputeCapabilityMinor = 76
+    }
+
+    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+    public static extern CUresult cuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
     public static extern CUresult cuInit(uint flags);

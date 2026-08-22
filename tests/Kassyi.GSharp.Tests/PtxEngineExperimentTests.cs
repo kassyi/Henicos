@@ -14,17 +14,16 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [Fact]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "KassyiPtxExp");
+        var tempDir = Path.Combine(Path.GetTempPath(), $"KassyiPtxExp_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
         var fatbinFile = Path.Combine(tempDir, "exp.fatbin");
 
         try
         {
-            var ptxBytes = CompileTestKernel(tempDir, fatbinFile);
-            
-            var context = InitializeCuda();
+            var (context, smVersion) = InitializeCuda();
             try
             {
+                var ptxBytes = CompileTestKernel(tempDir, fatbinFile, smVersion);
                 RunKernelAndVerify(ptxBytes, 12, 34, 46);
             }
             finally
@@ -36,12 +35,23 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         {
             if (Directory.Exists(tempDir))
             {
-                Directory.Delete(tempDir, true);
+                try
+                {
+                    Directory.Delete(tempDir, true);
+                }
+                catch (IOException)
+                {
+                    // Ignore cleanup errors on best-effort basis (NVCC subprocesses might hold a lock temporarily)
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Ignore cleanup errors on best-effort basis
+                }
             }
         }
     }
 
-    private byte[] CompileTestKernel(string tempDir, string fatbinFile)
+    private byte[] CompileTestKernel(string tempDir, string fatbinFile, string smVersion)
     {
         var kernelCode = """
             extern "C" __global__ void add_kernel(int* a, int* b, int* c) {
@@ -51,20 +61,22 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         var cuFile = Path.Combine(tempDir, "exp.cu");
         File.WriteAllText(cuFile, kernelCode, new UTF8Encoding(false));
 
-        _output.WriteLine("Compiling CU to FATBIN...");
-        NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir);
+        _output.WriteLine($"Compiling CU to FATBIN (Architecture: {smVersion})...");
+        NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, smVersion);
 
         Assert.True(File.Exists(fatbinFile));
         return File.ReadAllBytes(fatbinFile);
     }
 
-    private IntPtr InitializeCuda()
+    private (IntPtr context, string smVersion) InitializeCuda()
     {
         _output.WriteLine("Initializing CUDA Driver API...");
         CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
         CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out int device, 0));
+        CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var major, CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
+        CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var minor, CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
         CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out IntPtr context, 0, device));
-        return context;
+        return (context, $"sm_{major}{minor}");
     }
 
     private void RunKernelAndVerify(byte[] ptxBytes, int a, int b, int expected)
