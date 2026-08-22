@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 
 namespace Henicos;
@@ -40,11 +39,11 @@ public static class CudaInterop
 
     static CudaInterop()
     {
-        string cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
         if (!string.IsNullOrEmpty(cudaPath))
         {
-            string cudaBinX64 = System.IO.Path.Combine(cudaPath, "bin", "x64");
-            string pathEnv = Environment.GetEnvironmentVariable("PATH");
+            var cudaBinX64 = Path.Combine(cudaPath, "bin", "x64");
+            var pathEnv = Environment.GetEnvironmentVariable("PATH");
             if (!pathEnv.Contains(cudaBinX64))
             {
                 Environment.SetEnvironmentVariable("PATH", pathEnv + ";" + cudaBinX64);
@@ -55,8 +54,8 @@ public static class CudaInterop
         {
             if (libraryName == DllName)
             {
-                string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, libraryName);
-                if (System.IO.File.Exists(path))
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, libraryName);
+                if (File.Exists(path))
                 {
                     return NativeLibrary.Load(path, assembly, searchPath);
                 }

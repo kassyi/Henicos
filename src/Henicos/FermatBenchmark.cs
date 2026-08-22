@@ -1,4 +1,3 @@
-using System;
 using System.Numerics;
 using BenchmarkDotNet.Attributes;
 
@@ -8,7 +7,10 @@ namespace Henicos;
 public class FermatBenchmark
 {
     [Params(10, 50, 100, 500, 1000, 2000, 5000, 10000)]
-    public int E { get; set; }
+    public int E
+    {
+        get; set;
+    }
 
     private BigInteger X;
     private BigInteger N;
@@ -25,10 +27,5 @@ public class FermatBenchmark
     }
 
     [Benchmark(Baseline = true)]
-    public BigInteger StandardBigInteger()
-    {
-        return BigInteger.ModPow(a, exponent, N);
-    }
-
-
+    public BigInteger StandardBigInteger() => BigInteger.ModPow(a, exponent, N);
 }

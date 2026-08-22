@@ -1,4 +1,3 @@
-using System.IO;
 using System.Text;
 
 namespace Henicos;
@@ -11,8 +10,10 @@ public class TeeTextWriter : TextWriter
     public TeeTextWriter(TextWriter originalOut, string filePath)
     {
         _originalOut = originalOut;
-        _fileOut = new StreamWriter(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read));
-        _fileOut.AutoFlush = true;
+        _fileOut = new StreamWriter(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+        {
+            AutoFlush = true
+        };
     }
 
     public override Encoding Encoding => _originalOut.Encoding;
