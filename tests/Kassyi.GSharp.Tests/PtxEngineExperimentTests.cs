@@ -15,11 +15,11 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
         // 1. Prepare simple CUDA C++ kernel
-        var kernelCode = @"
-extern ""C"" __global__ void add_kernel(int* a, int* b, int* c) {
-    *c = *a + *b;
-}
-";
+        var kernelCode = """
+            extern "C" __global__ void add_kernel(int* a, int* b, int* c) {
+                *c = *a + *b;
+            }
+            """;
         var tempDir = Path.Combine(Path.GetTempPath(), "KassyiPtxExp");
         Directory.CreateDirectory(tempDir);
         var cuFile = Path.Combine(tempDir, "exp.cu");
@@ -60,11 +60,11 @@ extern ""C"" __global__ void add_kernel(int* a, int* b, int* c) {
             // 7. Copy Host to Device
             int a = 12;
             int b = 34;
-            
+
             IntPtr pA = Marshal.AllocHGlobal(4);
             IntPtr pB = Marshal.AllocHGlobal(4);
             IntPtr pC = Marshal.AllocHGlobal(4);
-            
+
             Marshal.WriteInt32(pA, a);
             Marshal.WriteInt32(pB, b);
 
@@ -73,13 +73,13 @@ extern ""C"" __global__ void add_kernel(int* a, int* b, int* c) {
 
             // 8. Launch Kernel
             _output.WriteLine("Launching kernel...");
-            
+
             // Set up kernel parameters: an array of pointers to the arguments
             // We need pointers to dA, dB, dC itself, so we allocate unmanaged memory for those pointers.
             IntPtr pArgA = Marshal.AllocHGlobal(IntPtr.Size);
             IntPtr pArgB = Marshal.AllocHGlobal(IntPtr.Size);
             IntPtr pArgC = Marshal.AllocHGlobal(IntPtr.Size);
-            
+
             Marshal.WriteIntPtr(pArgA, dA);
             Marshal.WriteIntPtr(pArgB, dB);
             Marshal.WriteIntPtr(pArgC, dC);
