@@ -1,10 +1,12 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Kassyi.Generators.GSharp.Diagnostics;
 
 namespace Kassyi.Generators.GSharp.Transpiler;
 
-public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalker
+public class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null)
+    : CSharpSyntaxWalker
 {
     private SourceWriter _writer = new();
     private int _indentLevel;
@@ -46,6 +48,13 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
         }
         else
         {
+            var returnType = semanticModel.GetDeclaredSymbol(method)?.ReturnType;
+            if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+            {
+                reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
+                    method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
+            }
+
             _writer.AppendKeyword("extern \"C\" __global__ void");
         }
 
@@ -119,9 +128,22 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
             }
 
             // If it's a ref or out parameter, it's a pointer.
+            var isPointer = false;
             if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword)))
             {
                 cppType += "*";
+                isPointer = true;
+            }
+
+            if (!isPointer && typeSymbol is { TypeKind: TypeKind.Struct } &&
+                typeSymbol.ContainingNamespace.ToDisplayString() != "System")
+            {
+                var size = GetApproximateSize(typeSymbol);
+                if (size >= 32)
+                {
+                    reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.LargeStructByValueWarning,
+                        p.GetLocation(), p.Identifier.Text, size));
+                }
             }
 
             _writer.Append(cppType);
@@ -132,6 +154,41 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
                 _writer.AppendComma();
             }
         }
+    }
+
+    private int GetApproximateSize(ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.SpecialType != SpecialType.None)
+        {
+            return typeSymbol.SpecialType switch
+            {
+                SpecialType.System_Boolean => 1,
+                SpecialType.System_Byte => 1,
+                SpecialType.System_SByte => 1,
+                SpecialType.System_Int16 => 2,
+                SpecialType.System_UInt16 => 2,
+                SpecialType.System_Int32 => 4,
+                SpecialType.System_UInt32 => 4,
+                SpecialType.System_Single => 4,
+                SpecialType.System_Int64 => 8,
+                SpecialType.System_UInt64 => 8,
+                SpecialType.System_Double => 8,
+                _ => 4
+            };
+        }
+
+        if (typeSymbol is not INamedTypeSymbol named || named.TypeKind != TypeKind.Struct)
+        {
+            return 8; // arrays/pointers
+        }
+
+        var size = 0;
+        foreach (var field in named.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+        {
+            size += GetApproximateSize(field.Type);
+        }
+
+        return size == 0 ? 1 : size;
     }
 
     private void WriteStructDefinition(INamedTypeSymbol structSym)
@@ -434,84 +491,106 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
         if (typeSymbol?.Name == "SharedMemory" &&
             typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
         {
-            var typeArg = ((INamedTypeSymbol)typeSymbol).TypeArguments[0];
-            var cppElementType = MapType(typeArg);
-
-            for (var i = 0; i < node.Declaration.Variables.Count; i++)
-            {
-                var v = node.Declaration.Variables[i];
-                var sizeArg = (v.Initializer?.Value as ObjectCreationExpressionSyntax)?.ArgumentList?.Arguments
-                    .FirstOrDefault()?.Expression;
-                if (sizeArg == null && v.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
-                {
-                    sizeArg = implCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-                }
-
-                if (sizeArg != null)
-                {
-                    var constantValue = semanticModel.GetConstantValue(sizeArg);
-                    if (constantValue.HasValue)
-                    {
-                        // Static
-                        _writer.AppendKeyword("__shared__");
-                        _writer.AppendSpace();
-                        _writer.Append(cppElementType);
-                        _writer.AppendSpace();
-                        _writer.Append(v.Identifier.Text);
-                        using (_writer.Brackets())
-                        {
-                            _writer.Append(constantValue.Value?.ToString() ?? "");
-                        }
-
-                        _writer.Append(";");
-                        if (i < node.Declaration.Variables.Count - 1)
-                        {
-                            _writer.AppendLine();
-                            AppendIndent();
-                        }
-                    }
-                    else
-                    {
-                        // Dynamic
-                        if (!_hasEmittedDynamicSmemBase)
-                        {
-                            _writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
-                            AppendIndent();
-                            _writer.AppendLine("size_t __smem_offset = 0;");
-                            AppendIndent();
-                            _hasEmittedDynamicSmemBase = true;
-                        }
-
-                        _writer.Append(
-                            $"__smem_offset = (__smem_offset + alignof({cppElementType}) - 1) & ~(alignof({cppElementType}) - 1);");
-                        _writer.AppendLine();
-                        AppendIndent();
-                        _writer.Append(
-                            $"{cppElementType}* {v.Identifier.Text} = ({cppElementType}*)(__gsharp_dynamic_smem + __smem_offset);");
-                        _writer.AppendLine();
-                        AppendIndent();
-                        _writer.Append("__smem_offset += ");
-                        using (_writer.Parentheses())
-                        {
-                            Visit(sizeArg);
-                        }
-
-                        _writer.Append($" * sizeof({cppElementType});");
-
-                        if (i < node.Declaration.Variables.Count - 1)
-                        {
-                            _writer.AppendLine();
-                            AppendIndent();
-                        }
-                    }
-                }
-            }
-
+            ProcessSharedMemoryDeclaration(node, (INamedTypeSymbol)typeSymbol);
             return;
         }
 
         VisitVariableDeclaration(node.Declaration);
         _writer.AppendSemiColon();
+    }
+
+    private void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node, INamedTypeSymbol typeSymbol)
+    {
+        var typeArg = typeSymbol.TypeArguments[0];
+        var cppElementType = MapType(typeArg);
+
+        for (var i = 0; i < node.Declaration.Variables.Count; i++)
+        {
+            var v = node.Declaration.Variables[i];
+            var sizeArg = (v.Initializer?.Value as ObjectCreationExpressionSyntax)?.ArgumentList?.Arguments
+                .FirstOrDefault()?.Expression;
+            if (sizeArg == null && v.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
+            {
+                sizeArg = implCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+            }
+
+            if (sizeArg == null)
+            {
+                continue;
+            }
+
+            var constantValue = semanticModel.GetConstantValue(sizeArg);
+            if (constantValue.HasValue)
+            {
+                WriteStaticSharedMemory(v, sizeArg, constantValue.Value!, cppElementType, typeArg, node, i);
+            }
+            else
+            {
+                WriteDynamicSharedMemory(v, sizeArg, cppElementType, node, i);
+            }
+        }
+    }
+
+    private void WriteStaticSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, object constantValue, string cppElementType, ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i)
+    {
+        var elemSize = GetApproximateSize(typeArg);
+        var byteSize = (int)constantValue * elemSize;
+        if (byteSize > 32768)
+        {
+            reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning,
+                sizeArg.GetLocation(), byteSize, 32768));
+        }
+
+        _writer.AppendKeyword("__shared__");
+        _writer.AppendSpace();
+        _writer.Append(cppElementType);
+        _writer.AppendSpace();
+        _writer.Append(v.Identifier.Text);
+        using (_writer.Brackets())
+        {
+            _writer.Append(constantValue.ToString());
+        }
+
+        _writer.Append(";");
+        if (i < node.Declaration.Variables.Count - 1)
+        {
+            _writer.AppendLine();
+            AppendIndent();
+        }
+    }
+
+    private void WriteDynamicSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, string cppElementType, LocalDeclarationStatementSyntax node, int i)
+    {
+        if (!_hasEmittedDynamicSmemBase)
+        {
+            _writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
+            AppendIndent();
+            _writer.AppendLine("size_t __smem_offset = 0;");
+            AppendIndent();
+            _hasEmittedDynamicSmemBase = true;
+        }
+
+        _writer.Append(
+            $"__smem_offset = (__smem_offset + alignof({cppElementType}) - 1) & ~(alignof({cppElementType}) - 1);");
+        _writer.AppendLine();
+        AppendIndent();
+        _writer.Append(
+            $"{cppElementType}* {v.Identifier.Text} = ({cppElementType}*)(__gsharp_dynamic_smem + __smem_offset);");
+        _writer.AppendLine();
+        AppendIndent();
+        _writer.Append("__smem_offset += ");
+        using (_writer.Parentheses())
+        {
+            Visit(sizeArg);
+        }
+
+        _writer.Append($" * sizeof({cppElementType});");
+
+        if (i < node.Declaration.Variables.Count - 1)
+        {
+            _writer.AppendLine();
+            AppendIndent();
+        }
     }
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
@@ -617,5 +696,43 @@ public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalk
         }
 
         Visit(node.Expression);
+    }
+
+    public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
+    {
+        var typeSymbol = semanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol is { Name: "SharedMemory" } &&
+            typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
+        {
+            base.VisitObjectCreationExpression(node);
+            return;
+        }
+
+        reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported, node.GetLocation()));
+        base.VisitObjectCreationExpression(node);
+    }
+
+    public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
+    {
+        var typeSymbol = semanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol is { Name: "SharedMemory" } &&
+            typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
+        {
+            base.VisitImplicitObjectCreationExpression(node);
+            return;
+        }
+
+        reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported, node.GetLocation()));
+        base.VisitImplicitObjectCreationExpression(node);
+    }
+
+    public override void VisitPredefinedType(PredefinedTypeSyntax node)
+    {
+        if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
+        {
+            reportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.GetLocation()));
+        }
+
+        base.VisitPredefinedType(node);
     }
 }
