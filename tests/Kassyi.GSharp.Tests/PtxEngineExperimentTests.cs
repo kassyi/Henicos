@@ -51,13 +51,15 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         }
     }
 
+    [GpuKernel]
+    public static void AddKernel(int[] a, int[] b, int[] c)
+    {
+        c[0] = a[0] + b[0];
+    }
+
     private byte[] CompileTestKernel(string tempDir, string fatbinFile, string smVersion)
     {
-        var kernelCode = """
-            extern "C" __global__ void add_kernel(int* a, int* b, int* c) {
-                *c = *a + *b;
-            }
-            """;
+        var kernelCode = PtxEngineExperimentTestsWrapper.AddKernel_CudaSource;
         var cuFile = Path.Combine(tempDir, "exp.cu");
         File.WriteAllText(cuFile, kernelCode, new UTF8Encoding(false));
 
@@ -91,7 +93,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out IntPtr module, ptxBytes, 0, null, null));
 
             _output.WriteLine("Getting function handle...");
-            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out IntPtr hfunc, module, "add_kernel"));
+            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out IntPtr hfunc, module, "AddKernel"));
 
             _output.WriteLine("Allocating memory on GPU...");
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out dA, 4));

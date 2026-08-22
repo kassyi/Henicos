@@ -44,6 +44,18 @@ public static partial class ComprehensiveSpecKernel
         return value > 0;
     }
 
+    [System.Runtime.CompilerServices.InlineArray(8)]
+    public struct Vector8
+    {
+        private uint _element0;
+    }
+
+    public unsafe struct PhysicsState
+    {
+        public fixed uint Buffer[16];
+        public ulong Flags;
+    }
+
     [GpuKernel]
     public static void ProcessPhysics(
         PhysicsVector[] particles,
@@ -142,7 +154,30 @@ public static partial class ComprehensiveSpecKernel
                 successFlag = true;
             }
 
-            // 11. Early return
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+            inlineVec[0] = 123;
+            inlineVec[1] = 456;
+            
+            unsafe
+            {
+                PhysicsState state = new PhysicsState();
+                state.Buffer[0] = inlineVec[0];
+                state.Buffer[1] = inlineVec[1];
+                
+                ulong carry = 0;
+                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
+                
+                long borrow = 0;
+                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
+
+                if (sum > diff)
+                {
+                    state.Flags = 1;
+                }
+            }
+
+            // 12. Early return
             if (ty > 0)
             {
                 return;

@@ -85,7 +85,7 @@ public class SourceGeneratorTests(ITestOutputHelper output)
         if (tid == 0)
         {
             // Just testing math function
-            data[1] = Math.Max(data[0], 100);
+            data[1] = System.Math.Max(data[0], 100);
         }
     }
 

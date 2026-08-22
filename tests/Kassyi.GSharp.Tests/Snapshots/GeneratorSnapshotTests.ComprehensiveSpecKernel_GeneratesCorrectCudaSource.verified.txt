@@ -1,0 +1,215 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+        out bool successFlag,
+        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+        int particleCount,
+*/
+ : (63,8)-(63,32),
+      Message: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: GSH1002,
+        Title: Large struct passed by value,
+        MessageFormat: The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        // 2. Shared Memory (Static & Dynamic)
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
+                                                              ^^^^^
+        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
+*/
+ : (89,62)-(89,67),
+      Message: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: GSH1001,
+        Title: Excessive static shared memory usage,
+        MessageFormat: The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            // 3.5 Record struct and var keyword support
+            var origin = new Point(0, 0);
+                         ^^^^^^^^^^^^^^^
+            var distance = origin.X + p.X;
+*/
+ : (99,25)-(99,40),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            // 3.5 Record struct and var keyword support
+            var origin = new Point(0, 0);
+                         ^^^^^^^^^^^^^^^
+            var distance = origin.X + p.X;
+*/
+ : (99,25)-(99,40),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            // 3.5 Record struct and var keyword support
+            var origin = new Point(0, 0);
+                                  ^^^^^^
+            var distance = origin.X + p.X;
+*/
+ : (99,34)-(99,40),
+      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+                                ^^^^^^^^^^^^^
+            inlineVec[0] = 123;
+*/
+ : (157,32)-(157,45),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+                                ^^^^^^^^^^^^^
+            inlineVec[0] = 123;
+*/
+ : (157,32)-(157,45),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+                                           ^^
+            inlineVec[0] = 123;
+*/
+ : (157,43)-(157,45),
+      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            {
+                PhysicsState state = new PhysicsState();
+                                     ^^^^^^^^^^^^^^^^^^
+                state.Buffer[0] = inlineVec[0];
+*/
+ : (163,37)-(163,55),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            {
+                PhysicsState state = new PhysicsState();
+                                     ^^^^^^^^^^^^^^^^^^
+                state.Buffer[0] = inlineVec[0];
+*/
+ : (163,37)-(163,55),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            {
+                PhysicsState state = new PhysicsState();
+                                                     ^^
+                state.Buffer[0] = inlineVec[0];
+*/
+ : (163,53)-(163,55),
+      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

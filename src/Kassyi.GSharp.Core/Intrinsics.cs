@@ -49,5 +49,10 @@ public static class Gpu
     public static void SyncThreads() => GpuOnlyException.Throw();
 
     public static int AtomicAdd(ref int address, int val) => GpuOnlyException.Throw<int>();
+    public static uint AtomicAdd(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
+    public static ulong AtomicAdd(ref ulong address, ulong val) => GpuOnlyException.Throw<ulong>();
     public static float AtomicAdd(ref float address, float val) => GpuOnlyException.Throw<float>();
+
+    public static uint AddWithCarry(uint a, uint b, ref ulong carry) => GpuOnlyException.Throw<uint>();
+    public static uint SubWithBorrow(uint a, uint b, ref long borrow) => GpuOnlyException.Throw<uint>();
 }
