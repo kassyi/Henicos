@@ -2,9 +2,6 @@
 // ReSharper disable UnusedType.Global
 
 
-
-
-
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Channels;
@@ -42,14 +39,14 @@ public abstract class Logger : ILogger
 
     private static readonly Channel<string> s_logChannel = Channel.CreateBounded<string>(s_channelOptions);
 
-    private static readonly CancellationTokenSource s_cts = new();
+    private static readonly Task s_loggingTask;
 
     private static readonly ConcurrentDictionary<string, long> s_accumulatedTimes = new();
 
     static Logger()
     {
         // バックグラウンドでログ書き込みタスクを開始
-        Task.Run(ProcessLogQueueAsync);
+        s_loggingTask = Task.Run(ProcessLogQueueAsync);
     }
 
     public static LogLevel ActiveLogLevel { get; set; } =
@@ -88,44 +85,50 @@ public abstract class Logger : ILogger
 
     private static async Task ProcessLogQueueAsync()
     {
-        try
+        // リアロケーションの O(N) を排除するため、Channelの最大容量で初期化
+        var buffer = new List<string>(10000);
+
+        while (await s_logChannel.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
-            var buffer = new List<string>(100);
-
-            await foreach (var logMessage in s_logChannel.Reader.ReadAllAsync(s_cts.Token))
+            try
             {
-                buffer.Add(logMessage);
-
+                // I/O回数のオーダーを O(N/100) -> O(1) に削減するため全量を吸い上げる
                 while (s_logChannel.Reader.TryRead(out var msg))
                 {
-                    buffer.Add(msg);
-                    if (buffer.Count >= 100)
+                    if (msg == "__CLEAR__")
                     {
-                        break;
+                        if (File.Exists(s_logPath))
+                        {
+                            File.Delete(s_logPath);
+                        }
+
+                        buffer.Clear();
+                        continue;
                     }
+
+                    buffer.Add(msg);
                 }
 
+                if (buffer.Count == 0) continue;
+
                 var retryCount = 0;
-                var written = false;
-                while (!written && retryCount < MaxRetries)
+                while (retryCount < MaxRetries)
                 {
                     try
                     {
-                        await File.AppendAllLinesAsync(s_logPath, buffer);
-                        written = true;
+                        await File.AppendAllLinesAsync(s_logPath, buffer).ConfigureAwait(false);
+                        break;
                     }
                     catch (Exception ex)
                     {
                         retryCount++;
                         if (retryCount >= MaxRetries)
                         {
-                            foreach (var line in buffer)
-                            {
-                                var errLine =
-                                    $"[LOGGER_FALLBACK_ERROR] Failed to write log: {line} (Reason: {ex.Message})";
-                                await Console.Error.WriteLineAsync(errLine);
-                                Debug.WriteLine(errLine);
-                            }
+                            // 非同期awaitの O(N) 回のコンテキストスイッチを排除し、O(1) 回で出力
+                            var errBody = string.Join(Environment.NewLine, buffer);
+                            var errLine = $"[LOGGER_FALLBACK_ERROR] Failed to write logs (Reason: {ex.Message}){Environment.NewLine}{errBody}";
+                            await Console.Error.WriteLineAsync(errLine).ConfigureAwait(false);
+                            Debug.WriteLine(errLine);
                         }
                         else
                         {
@@ -133,24 +136,29 @@ public abstract class Logger : ILogger
                         }
                     }
                 }
-
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[LOGGER_FATAL] Background logging task iteration failed: {ex}");
+            }
+            finally
+            {
                 buffer.Clear();
             }
-        }
-        catch (OperationCanceledException)
-        {
-            // Shutdown
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[LOGGER_FATAL] Background logging task failed: {ex}");
         }
     }
 
     public static void Shutdown()
     {
         s_logChannel.Writer.Complete();
-        s_cts.Cancel();
+        try
+        {
+            s_loggingTask.Wait(TimeSpan.FromSeconds(5));
+        }
+        catch
+        {
+            // Ignore timeout or task cancellation errors on shutdown
+        }
     }
 
     protected static void Log(LogLevel level, string tag, string? message)
@@ -179,10 +187,7 @@ public abstract class Logger : ILogger
 
     public static void Clear()
     {
-        if (File.Exists(s_logPath))
-        {
-            File.Delete(s_logPath);
-        }
+        s_logChannel.Writer.TryWrite("__CLEAR__");
     }
 
     protected static void AddInterval(string key, long elapsedMilliseconds) =>
