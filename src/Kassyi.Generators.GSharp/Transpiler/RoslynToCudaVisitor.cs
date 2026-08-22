@@ -4,18 +4,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.Generators.GSharp.Transpiler;
 
-public class RoslynToCudaVisitor : CSharpSyntaxWalker
+public class RoslynToCudaVisitor(SemanticModel semanticModel) : CSharpSyntaxWalker
 {
-    private readonly SemanticModel _semanticModel;
-    private SourceWriter _writer;
-    private int _indentLevel = 0;
+    private SourceWriter _writer = new();
+    private int _indentLevel;
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
 
-    public RoslynToCudaVisitor(SemanticModel semanticModel)
+    private static readonly Dictionary<string, Func<string, string>> s_apiMappings = new()
     {
-        _semanticModel = semanticModel;
-        _writer = new SourceWriter();
-    }
+        { "Math", name => name.ToLowerInvariant() },
+        { "ThreadIdx", name => $"threadIdx.{name.ToLowerInvariant()}" },
+        { "BlockIdx", name => $"blockIdx.{name.ToLowerInvariant()}" },
+        { "BlockDim", name => $"blockDim.{name.ToLowerInvariant()}" },
+        { "GridDim", name => $"gridDim.{name.ToLowerInvariant()}" },
+        { "Gpu", name => name == "SyncThreads" ? "__syncthreads" : (name == "AtomicAdd" ? "atomicAdd" : name) }
+    };
 
     public string GenerateCudaSource(MethodDeclarationSyntax method)
     {
@@ -25,48 +28,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
 
         _indentLevel = 0;
 
-        _writer.Append("extern \"C\" __global__ void ");
+        _writer.AppendKeyword("extern \"C\" __global__ void");
+        _writer.AppendSpace();
         _writer.Append(method.Identifier.Text);
-        _writer.Append("(");
-
-        var parameters = method.ParameterList.Parameters;
-        for (var i = 0; i < parameters.Count; i++)
+        using (_writer.Parentheses())
         {
-            var p = parameters[i];
-            var typeSymbol = _semanticModel.GetTypeInfo(p.Type!).Type;
-
-            // Check if it's a custom struct
-            var structType = typeSymbol;
-            if (structType is IArrayTypeSymbol arrayType)
-                structType = arrayType.ElementType;
-            if (structType != null && structType.TypeKind == TypeKind.Struct &&
-                structType.ContainingNamespace.ToDisplayString() != "System")
-            {
-                _usedStructs.Add((INamedTypeSymbol)structType);
-            }
-
-            var cppType = MapType(typeSymbol);
-
-            // In Cuda, arrays are pointers.
-            if (typeSymbol != null && typeSymbol.TypeKind == TypeKind.Array)
-            {
-                cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "*";
-            }
-
-            // If it's a ref or out parameter, it's a pointer.
-            if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword)))
-            {
-                cppType += "*";
-            }
-
-            _writer.Append($"{cppType} {p.Identifier.Text}");
-            if (i < parameters.Count - 1)
-            {
-                _writer.Append(", ");
-            }
+            WriteParameters(method.ParameterList.Parameters);
         }
 
-        _writer.AppendLine(") {");
+        _writer.AppendLine(" {");
         _indentLevel++;
 
         if (method.Body != null)
@@ -97,6 +67,50 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
         _writer.Dispose();
         bodyWriter.Dispose();
         return result;
+    }
+
+    private void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters)
+    {
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            var p = parameters[i];
+            var typeSymbol = semanticModel.GetTypeInfo(p.Type!).Type;
+
+            // Check if it's a custom struct
+            var structType = typeSymbol;
+            if (structType is IArrayTypeSymbol arrayType)
+            {
+                structType = arrayType.ElementType;
+            }
+
+            if (structType is { TypeKind: TypeKind.Struct } &&
+                structType.ContainingNamespace.ToDisplayString() != "System")
+            {
+                _usedStructs.Add((INamedTypeSymbol)structType);
+            }
+
+            var cppType = MapType(typeSymbol);
+
+            // In Cuda, arrays are pointers.
+            if (typeSymbol is { TypeKind: TypeKind.Array })
+            {
+                cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "*";
+            }
+
+            // If it's a ref or out parameter, it's a pointer.
+            if (p.Modifiers.Any(m => m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword)))
+            {
+                cppType += "*";
+            }
+
+            _writer.Append(cppType);
+            _writer.AppendSpace();
+            _writer.Append(p.Identifier.Text);
+            if (i < parameters.Count - 1)
+            {
+                _writer.AppendComma();
+            }
+        }
     }
 
     private void WriteStructDefinition(INamedTypeSymbol structSym)
@@ -160,17 +174,18 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
     {
         Visit(node.Left);
-        _writer.Append($" {node.OperatorToken.Text} ");
+        _writer.AppendOperator(node.OperatorToken.Text);
         Visit(node.Right);
     }
 
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
     {
-        _writer.Append("(");
-        Visit(node.Left);
-        _writer.Append($" {node.OperatorToken.Text} ");
-        Visit(node.Right);
-        _writer.Append(")");
+        using (_writer.Parentheses())
+        {
+            Visit(node.Left);
+            _writer.AppendOperator(node.OperatorToken.Text);
+            Visit(node.Right);
+        }
     }
 
     public override void VisitIdentifierName(IdentifierNameSyntax node) => _writer.Append(node.Identifier.Text);
@@ -180,13 +195,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
     {
         Visit(node.Expression);
-        _writer.Append("[");
-        foreach (var arg in node.ArgumentList.Arguments)
+        using (_writer.Brackets())
         {
-            Visit(arg.Expression);
+            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            {
+                Visit(node.ArgumentList.Arguments[i].Expression);
+                if (i < node.ArgumentList.Arguments.Count - 1)
+                {
+                    _writer.AppendComma();
+                }
+            }
         }
-
-        _writer.Append("]");
     }
 
     public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
@@ -212,89 +231,101 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
 
     public override void VisitIfStatement(IfStatementSyntax node)
     {
-        _writer.Append("if (");
-        Visit(node.Condition);
-        _writer.AppendLine(")");
+        _writer.AppendKeyword("if");
+        using (_writer.Parentheses())
+        {
+            Visit(node.Condition);
+        }
+
+        _writer.AppendLine();
 
         VisitStatementOrBlock(node.Statement);
 
         if (node.Else != null)
         {
             AppendIndent();
-            _writer.AppendLine("else");
+            _writer.AppendKeyword("else");
+            _writer.AppendLine();
             VisitStatementOrBlock(node.Else.Statement);
         }
     }
 
     public override void VisitForStatement(ForStatementSyntax node)
     {
-        _writer.Append("for (");
-        if (node.Declaration != null)
+        _writer.AppendKeyword("for");
+        using (_writer.Parentheses())
         {
-            // E.g., int i = 0
-            var type = MapType(_semanticModel.GetTypeInfo(node.Declaration.Type).Type);
-            _writer.Append(type + " ");
-            for (var i = 0; i < node.Declaration.Variables.Count; i++)
+            if (node.Declaration != null)
             {
-                var v = node.Declaration.Variables[i];
-                _writer.Append(v.Identifier.Text);
-                if (v.Initializer != null)
+                var type = MapType(semanticModel.GetTypeInfo(node.Declaration.Type).Type);
+                _writer.Append(type);
+                _writer.AppendSpace();
+                for (var i = 0; i < node.Declaration.Variables.Count; i++)
                 {
-                    _writer.Append(" = ");
-                    Visit(v.Initializer.Value);
-                }
+                    var v = node.Declaration.Variables[i];
+                    _writer.Append(v.Identifier.Text);
+                    if (v.Initializer != null)
+                    {
+                        _writer.AppendOperator("=");
+                        Visit(v.Initializer.Value);
+                    }
 
-                if (i < node.Declaration.Variables.Count - 1)
+                    if (i < node.Declaration.Variables.Count - 1)
+                    {
+                        _writer.AppendComma();
+                    }
+                }
+            }
+            else
+            {
+                foreach (var init in node.Initializers)
                 {
-                    _writer.Append(", ");
+                    Visit(init);
+                    _writer.AppendComma(); // Simplistic, might need trailing comma trim
+                }
+            }
+
+            _writer.Append(";");
+
+            if (node.Condition != null)
+            {
+                Visit(node.Condition);
+            }
+
+            _writer.Append(";");
+
+            for (var i = 0; i < node.Incrementors.Count; i++)
+            {
+                Visit(node.Incrementors[i]);
+                if (i < node.Incrementors.Count - 1)
+                {
+                    _writer.AppendComma();
                 }
             }
         }
-        else
-        {
-            foreach (var init in node.Initializers)
-            {
-                Visit(init);
-                _writer.Append(", "); // Simplistic, might need trailing comma trim
-            }
-        }
 
-        _writer.Append("; ");
-
-        if (node.Condition != null)
-        {
-            Visit(node.Condition);
-        }
-
-        _writer.Append("; ");
-
-        for (var i = 0; i < node.Incrementors.Count; i++)
-        {
-            Visit(node.Incrementors[i]);
-            if (i < node.Incrementors.Count - 1)
-            {
-                _writer.Append(", ");
-            }
-        }
-
-        _writer.AppendLine(")");
+        _writer.AppendLine();
         VisitStatementOrBlock(node.Statement);
     }
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
     {
-        _writer.Append("while (");
-        Visit(node.Condition);
-        _writer.AppendLine(")");
+        _writer.AppendKeyword("while");
+        using (_writer.Parentheses())
+        {
+            Visit(node.Condition);
+        }
+
+        _writer.AppendLine();
         VisitStatementOrBlock(node.Statement);
     }
 
     public override void VisitReturnStatement(ReturnStatementSyntax node)
     {
-        _writer.Append("return");
+        _writer.AppendKeyword("return");
         if (node.Expression != null)
         {
-            _writer.Append(" ");
+            _writer.AppendSpace();
             Visit(node.Expression);
         }
 
@@ -309,8 +340,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
     {
-        var typeSymbol = _semanticModel.GetTypeInfo(node.Type).Type;
-        if (typeSymbol != null && typeSymbol.TypeKind == TypeKind.Struct &&
+        var typeSymbol = semanticModel.GetTypeInfo(node.Type).Type;
+        if (typeSymbol is { TypeKind: TypeKind.Struct } &&
             typeSymbol.ContainingNamespace.ToDisplayString() != "System")
         {
             _usedStructs.Add((INamedTypeSymbol)typeSymbol);
@@ -322,17 +353,19 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
         {
             var v = node.Variables[i];
 
-            _writer.Append($"{cppType} {v.Identifier.Text}");
+            _writer.Append(cppType);
+            _writer.AppendSpace();
+            _writer.Append(v.Identifier.Text);
 
             if (v.Initializer != null)
             {
-                _writer.Append(" = ");
+                _writer.AppendOperator("=");
                 Visit(v.Initializer.Value);
             }
 
             if (i < node.Variables.Count - 1)
             {
-                _writer.Append(", ");
+                _writer.AppendComma();
             }
         }
     }
@@ -368,57 +401,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
 
     public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {
-        var symbol = _semanticModel.GetSymbolInfo(node).Symbol;
-        if (symbol != null && symbol.ContainingType != null)
+        var symbol = semanticModel.GetSymbolInfo(node).Symbol;
+        if (symbol is { ContainingType: not null })
         {
             var typeName = symbol.ContainingType.Name;
-
-            // Map Math
-            if (typeName == "Math")
+            if (s_apiMappings.TryGetValue(typeName, out var mapper))
             {
-                _writer.Append(node.Name.Identifier.Text.ToLowerInvariant());
+                _writer.Append(mapper(node.Name.Identifier.Text));
                 return;
-            }
-
-            // Map CUDA Intrinsics
-            if (typeName == "ThreadIdx")
-            {
-                _writer.Append($"threadIdx.{node.Name.Identifier.Text.ToLowerInvariant()}");
-                return;
-            }
-
-            if (typeName == "BlockIdx")
-            {
-                _writer.Append($"blockIdx.{node.Name.Identifier.Text.ToLowerInvariant()}");
-                return;
-            }
-
-            if (typeName == "BlockDim")
-            {
-                _writer.Append($"blockDim.{node.Name.Identifier.Text.ToLowerInvariant()}");
-                return;
-            }
-
-            if (typeName == "GridDim")
-            {
-                _writer.Append($"gridDim.{node.Name.Identifier.Text.ToLowerInvariant()}");
-                return;
-            }
-
-            // Map Gpu Intrinsics
-            if (typeName == "Gpu")
-            {
-                if (node.Name.Identifier.Text == "SyncThreads")
-                {
-                    _writer.Append("__syncthreads");
-                    return;
-                }
-
-                if (node.Name.Identifier.Text == "AtomicAdd")
-                {
-                    _writer.Append("atomicAdd");
-                    return;
-                }
             }
         }
 
@@ -430,15 +420,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
     {
         Visit(node.Expression);
-        _writer.Append("(");
-        for (int i = 0; i < node.ArgumentList.Arguments.Count; i++)
+        using (_writer.Parentheses())
         {
-            Visit(node.ArgumentList.Arguments[i]);
-            if (i < node.ArgumentList.Arguments.Count - 1)
-                _writer.Append(", ");
+            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            {
+                Visit(node.ArgumentList.Arguments[i]);
+                if (i < node.ArgumentList.Arguments.Count - 1)
+                {
+                    _writer.AppendComma();
+                }
+            }
         }
-
-        _writer.Append(")");
     }
 
     public override void VisitArgument(ArgumentSyntax node)

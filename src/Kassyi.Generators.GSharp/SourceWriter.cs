@@ -58,6 +58,11 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void Append(char value) => Builder.Append(value);
 
+    public void AppendComma() => Builder.Append(',');
+    public void AppendSpace() => Builder.Append(' ');
+    public void AppendOperator(string op) => Builder.Append(op);
+    public void AppendKeyword(string keyword) => Builder.Append(keyword);
+
 #pragma warning disable CA1822 // Mark members as static
     public void Append([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler)
     {
@@ -132,6 +137,9 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public override int GetHashCode() => _myDepth;
 
     public SourceWriterScope Scope(string openingText = "{", string closingText = "}") => new(this, openingText, closingText);
+    public SourceWriterInlineScope InlineScope(string openingText, string closingText) => new(this, openingText, closingText);
+    public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
+    public SourceWriterInlineScope Brackets() => new(this, "[", "]");
 
     public static bool operator ==(SourceWriter left, SourceWriter right) => left.Equals(right);
 
@@ -169,6 +177,25 @@ public readonly ref struct SourceWriterScope
         {
             _writer.AppendLine(_closingText);
         }
+    }
+}
+
+/// <summary>A zero-allocation inline scope that appends an opening string on creation and a closing string on disposal without adding new lines.</summary>
+public readonly ref struct SourceWriterInlineScope
+{
+    private readonly SourceWriter _writer;
+    private readonly string _closingText;
+
+    public SourceWriterInlineScope(SourceWriter writer, string openingText, string closingText)
+    {
+        _writer = writer;
+        _closingText = closingText;
+        _writer.Append(openingText);
+    }
+
+    public void Dispose()
+    {
+        _writer.Append(_closingText);
     }
 }
 
