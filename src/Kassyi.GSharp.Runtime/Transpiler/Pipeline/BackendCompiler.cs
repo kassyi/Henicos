@@ -13,20 +13,44 @@ public static class NvccCompiler
     {
         using var process = new Process { StartInfo = psi };
         var outputBuilder = new StringBuilder();
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) lock (outputBuilder) outputBuilder.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (outputBuilder) outputBuilder.AppendLine(e.Data); };
-        
-        if (!process.Start()) throw new InvalidOperationException("Failed to start process");
-        
+        process.OutputDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+            {
+                lock (outputBuilder)
+                {
+                    outputBuilder.AppendLine(e.Data);
+                }
+            }
+        };
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data == null)
+            {
+                return;
+            }
+
+            lock (outputBuilder)
+            {
+                outputBuilder.AppendLine(e.Data);
+            }
+        };
+
+        if (!process.Start())
+        {
+            throw new InvalidOperationException("Failed to start process");
+        }
+
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         process.WaitForExit();
-        
+
         var output = outputBuilder.ToString();
         if (process.ExitCode != 0)
         {
             throw new ProcessFailedException($"Process failed with exit code {process.ExitCode}", output);
         }
+
         return output;
     };
 
@@ -92,27 +116,29 @@ public static class NvccCompiler
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
         RunNvccInternal(cuFile, dllFile, includePath, tempDir, [
-            "-shared",
-            "-o", dllFile,
-            "-lcufft",
-            "-O3",
-            "-arch=sm_86",
-            "-std=c++17",
-            "-rdc=true"
-        ], $"out_{Guid.CreateVersion7():N}.log");
+                "-shared",
+                "-o", dllFile,
+                "-lcufft",
+                "-O3",
+                "-arch=sm_86",
+                "-std=c++17",
+                "-rdc=true",
+                "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
+            ], $"out_{Guid.CreateVersion7():N}.log");
     }
 
     public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
         string tempDir, string smVersion = "sm_52")
     {
         return RunNvccInternal(cuFile, fatbinFile, includePath, tempDir, [
-            "--fatbin",
-            "-o", fatbinFile,
-            "-O3",
-            $"-arch={smVersion}",
-            "-std=c++17",
-            "--ptxas-options=-v"
-        ], $"out_fatbin_{Guid.CreateVersion7():N}.log");
+                "--fatbin",
+                "-o", fatbinFile,
+                "-O3",
+                $"-arch={smVersion}",
+                "-std=c++17",
+                "--ptxas-options=-v",
+                "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
+            ], $"out_fatbin_{Guid.CreateVersion7():N}.log");
     }
 
     private static CompilationResult RunNvccInternal(string cuFile, string outFile, string? includePath, string tempDir,
@@ -177,42 +203,22 @@ public static class NvccCompiler
         finally
         {
             // Clean up temporary files on best-effort basis; ignore errors if files are locked or already deleted.
-            try
-            {
-                FileSystem.File.Delete(optsFile);
-            }
-            catch
-            {
-                // Ignore cleanup errors
-            }
-
-            try
-            {
-                FileSystem.File.Delete(logFile);
-            }
-            catch
-            {
-                // Ignore cleanup errors
-            }
-
+            var filesToClean = new List<string> { optsFile, logFile };
             if (specificOpts.Contains("-shared"))
             {
-                try
-                {
-                    FileSystem.File.Delete(FileSystem.Path.ChangeExtension(outFile, ".lib"));
-                }
-                catch
-                {
-                    // Ignore cleanup errors
-                }
+                filesToClean.Add(FileSystem.Path.ChangeExtension(outFile, ".lib"));
+                filesToClean.Add(FileSystem.Path.ChangeExtension(outFile, ".exp"));
+            }
 
+            foreach (var file in filesToClean)
+            {
                 try
                 {
-                    FileSystem.File.Delete(FileSystem.Path.ChangeExtension(outFile, ".exp"));
+                    FileSystem.File.Delete(file);
                 }
                 catch
                 {
-                    // Ignore cleanup errors
+                    // Ignore cleanup errors on best-effort basis
                 }
             }
         }

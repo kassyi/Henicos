@@ -111,6 +111,9 @@ public static class CudaDriverApi
     public static extern CUresult cuMemcpyDtoH_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+    public static extern CUresult cuMemcpyDtoD_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
     public static extern CUresult cuLaunchKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
@@ -119,4 +122,13 @@ public static class CudaDriverApi
         IntPtr hStream,
         IntPtr[] kernelParams,
         IntPtr extra);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+    public static extern CUresult cuLaunchCooperativeKernel(
+        IntPtr f,
+        uint gridDimX, uint gridDimY, uint gridDimZ,
+        uint blockDimX, uint blockDimY, uint blockDimZ,
+        uint sharedMemBytes,
+        IntPtr hStream,
+        IntPtr[] kernelParams);
 }

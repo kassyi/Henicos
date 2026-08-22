@@ -6,11 +6,21 @@ namespace Kassyi.Generators.GSharp.Transpiler;
 
 internal static class CudaTypeMapper
 {
-    public static string MapType(ITypeSymbol? typeSymbol)
+        public static string MapType(ITypeSymbol? typeSymbol)
     {
         if (typeSymbol == null)
         {
             return "void";
+        }
+
+        if (typeSymbol is IArrayTypeSymbol arrayType)
+        {
+            return MapType(arrayType.ElementType) + "*";
+        }
+
+        if (typeSymbol is IPointerTypeSymbol pointerType)
+        {
+            return MapType(pointerType.PointedAtType) + "*";
         }
 
         return typeSymbol.SpecialType switch
@@ -89,3 +99,4 @@ internal static class CudaTypeMapper
         return (cppType, isPointer);
     }
 }
+

@@ -92,13 +92,61 @@ internal static class ExpressionTranspilers
             }
         }
 
+        if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
+        {
+            context.Writer.Append(field.ConstantValue!.ToString());
+            switch (field.Type.SpecialType)
+            {
+                case SpecialType.System_UInt64:
+
+                    context.Writer.Append("ULL");
+                    break;
+                case SpecialType.System_UInt32:
+
+                    context.Writer.Append("U");
+                    break;
+                case SpecialType.System_Int64:
+
+                    context.Writer.Append("LL");
+                    break;
+            }
+
+            return;
+        }
+
+        var exprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (exprSymbol is ITypeSymbol typeSym)
+        {
+            if (typeSym.TypeKind == TypeKind.Enum)
+            {
+                context.Visit(node.Expression);
+                context.Writer.Append("::");
+                context.Writer.Append(node.Name.Identifier.Text);
+                return;
+            }
+
+            // Skip class name for global static methods
+            context.Writer.Append(node.Name.Identifier.Text);
+            return;
+        }
+
         context.Visit(node.Expression);
         context.Writer.Append(".");
         context.Writer.Append(node.Name.Identifier.Text);
     }
 
+
     public static void TranspileInvocationExpression(InvocationExpressionSyntax node, RoslynToCudaVisitor context)
     {
+        if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol
+            {
+                ContainingType.Name: "Gpu", Name: "InlinePtx"
+            })
+        {
+            TranspileInlinePtx(node, context);
+            return;
+        }
+
         context.Visit(node.Expression);
         using (context.Writer.Parentheses())
         {
@@ -113,6 +161,51 @@ internal static class ExpressionTranspilers
         }
     }
 
+    private static void TranspileInlinePtx(InvocationExpressionSyntax node, RoslynToCudaVisitor context)
+    {
+        if (node.ArgumentList.Arguments.Count != 1)
+        {
+            return;
+        }
+
+        switch (node.ArgumentList.Arguments[0].Expression)
+        {
+            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
+                context.Writer.Append(literal.Token.ValueText);
+                context.Writer.AppendLine();
+                break;
+
+            case InterpolatedStringExpressionSyntax interpolated:
+                TranspileInterpolatedInlinePtx(interpolated, context);
+                break;
+
+            default:
+                context.ReportDiagnostic?.Invoke(
+                    Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
+                break;
+        }
+    }
+
+
+    private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,
+        RoslynToCudaVisitor context)
+    {
+        foreach (var content in interpolated.Contents)
+        {
+            switch (content)
+            {
+                case InterpolatedStringTextSyntax text:
+                    context.Writer.Append(text.TextToken.ValueText);
+                    break;
+                case InterpolationSyntax interpolation:
+                    context.Visit(interpolation.Expression);
+                    break;
+            }
+        }
+
+        context.Writer.AppendLine();
+    }
+
     public static void TranspileArgument(ArgumentSyntax node, RoslynToCudaVisitor context)
     {
         if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) || node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
@@ -123,7 +216,8 @@ internal static class ExpressionTranspilers
         context.Visit(node.Expression);
     }
 
-    public static void TranspileObjectCreationExpression(ObjectCreationExpressionSyntax node, RoslynToCudaVisitor context)
+            public static void TranspileObjectCreationExpression(ObjectCreationExpressionSyntax node,
+        RoslynToCudaVisitor context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
         if (typeSymbol is { Name: "SharedMemory" } &&
@@ -133,11 +227,53 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported, node.GetLocation()));
+        if (typeSymbol is { TypeKind: TypeKind.Struct })
+        {
+            var cppType = CudaTypeMapper.MapType(typeSymbol);
+            if (node.Initializer != null)
+            {
+                context.Writer.Append("([&]() { ");
+                context.Writer.Append($"{cppType} _tmp; ");
+                foreach (var expr in node.Initializer.Expressions)
+                {
+                    if (expr is AssignmentExpressionSyntax assignment)
+                    {
+                        context.Writer.Append("_tmp.");
+                        context.Visit(assignment.Left);
+                        context.Writer.Append(" = ");
+                        context.Visit(assignment.Right);
+                        context.Writer.Append("; ");
+                    }
+                }
+                context.Writer.Append("return _tmp; }())");
+                return;
+            }
+
+            if (node.ArgumentList != null)
+            {
+                context.Writer.Append($"{cppType}{{");
+                var first = true;
+                foreach (var arg in node.ArgumentList.Arguments)
+                {
+                    if (!first) context.Writer.Append(", ");
+                    context.Visit(arg.Expression);
+                    first = false;
+                }
+                context.Writer.Append("}");
+                return;
+            }
+
+            context.Writer.Append($"{cppType}{{}}");
+            return;
+        }
+
+        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
+            node.GetLocation()));
         context.DefaultVisit(node);
     }
 
-    public static void TranspileImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node,
+        RoslynToCudaVisitor context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
         if (typeSymbol is { Name: "SharedMemory" } &&
@@ -147,7 +283,50 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported, node.GetLocation()));
+        if (typeSymbol is { TypeKind: TypeKind.Struct })
+        {
+            var cppType = CudaTypeMapper.MapType(typeSymbol);
+            if (node.Initializer != null)
+            {
+                context.Writer.Append("([&]() { ");
+                context.Writer.Append($"{cppType} _tmp; ");
+                foreach (var expr in node.Initializer.Expressions)
+                {
+                    if (expr is AssignmentExpressionSyntax assignment)
+                    {
+                        context.Writer.Append("_tmp.");
+                        context.Visit(assignment.Left);
+                        context.Writer.Append(" = ");
+                        context.Visit(assignment.Right);
+                        context.Writer.Append("; ");
+                    }
+                }
+                context.Writer.Append("return _tmp; }())");
+                return;
+            }
+
+            if (node.ArgumentList != null)
+            {
+                context.Writer.Append($"{cppType}{{");
+                var first = true;
+                foreach (var arg in node.ArgumentList.Arguments)
+                {
+                    if (!first) context.Writer.Append(", ");
+                    context.Visit(arg.Expression);
+                    first = false;
+                }
+                context.Writer.Append("}");
+                return;
+            }
+
+            context.Writer.Append($"{cppType}{{}}");
+            return;
+        }
+
+        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
+            node.GetLocation()));
         context.DefaultVisit(node);
     }
 }
+
+

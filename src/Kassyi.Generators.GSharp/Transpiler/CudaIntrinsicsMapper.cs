@@ -11,6 +11,7 @@ internal static class CudaIntrinsicsMapper
         { "GridDimension", name => $"gridDim.{name.ToLowerInvariant()}" },
         { "Gpu", name => name switch {
             "SyncThreads" => "__syncthreads",
+            "SyncGrid" => "cg::this_grid().sync",
             "AtomicAdd" => "atomicAdd",
             "AddWithCarry" => "__gsharp_add_cc",
             "SubWithBorrow" => "__gsharp_sub_cc",

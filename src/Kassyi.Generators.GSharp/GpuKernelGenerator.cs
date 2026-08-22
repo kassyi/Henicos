@@ -71,6 +71,30 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var deviceSourceBuilder = new StringBuilder();
+
+        // Pass 1: Forward declarations
+        foreach (var method in deviceMethods.OfType<IMethodSymbol>()
+                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        {
+            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+            if (syntaxRef == null)
+            {
+                continue;
+            }
+
+            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
+            if (syntaxNode == null)
+            {
+                continue;
+            }
+
+            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
+            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
+            var signatureCode = visitor.GenerateCudaSignature(syntaxNode, isDevice: true);
+            deviceSourceBuilder.AppendLine(signatureCode);
+        }
+
+        // Pass 2: Method bodies
         foreach (var method in deviceMethods.OfType<IMethodSymbol>()
                      .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
         {
@@ -115,15 +139,37 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var finalSource = """
                 // GSharp Prelude
+                #include <cooperative_groups.h>
+                namespace cg = cooperative_groups;
+
                 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
-                    unsigned long long sum = (unsigned long long)a + b + *carry;
-                    *carry = sum >> 32;
-                    return (unsigned int)sum;
+                    unsigned int res;
+                    unsigned int c_in = (unsigned int)*carry;
+                    unsigned int c_out;
+                    asm volatile(
+                        "add.cc.u32 %0, %2, -1;\n\t"
+                        "addc.cc.u32 %0, %3, %4;\n\t"
+                        "addc.u32 %1, 0, 0;"
+                        : "=&r"(res), "=r"(c_out)
+                        : "r"(c_in), "r"(a), "r"(b)
+                    );
+                    *carry = c_out;
+                    return res;
                 }
                 __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
-                    long long diff = (long long)a - b - *borrow;
-                    *borrow = diff < 0 ? 1 : 0;
-                    return (unsigned int)diff;
+                    unsigned int res;
+                    unsigned int dummy;
+                    unsigned int b_in = (unsigned int)*borrow;
+                    unsigned int b_out;
+                    asm volatile(
+                        "sub.cc.u32 %1, 0, %3;\n\t"
+                        "subc.cc.u32 %0, %4, %5;\n\t"
+                        "subc.u32 %2, 0, 0;"
+                        : "=&r"(res), "=&r"(dummy), "=r"(b_out)
+                        : "r"(b_in), "r"(a), "r"(b)
+                    );
+                    *borrow = b_out & 1;
+                    return res;
                 }
 
                 """ + commonDeviceSource + cppSource;
@@ -161,7 +207,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (writer.Scope())
             {
                 WriteKernelSource(writer, method, cppSource);
-                WriteLaunchMethod(writer, method);
+                WriteLaunchMethod(writer, method, false);
+                WriteLaunchMethod(writer, method, true);
             }
         }
 
@@ -175,32 +222,41 @@ public class GpuKernelGenerator : IIncrementalGenerator
         writer.AppendLine();
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method)
+    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        WriteLaunchMethodSignature(writer, method);
+        WriteLaunchMethodSignature(writer, method, isDevicePtr);
         using (writer.Scope())
         {
-            writer.AppendLine("using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();");
+            writer.AppendLine(
+                "using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();");
             WriteKernelCompilationCall(writer, method);
-            WriteVariablesInitialization(writer, method);
+            WriteVariablesInitialization(writer, method, isDevicePtr);
 
             writer.AppendLine("try");
             using (writer.Scope())
             {
-                WriteMarshalAndLaunchKernel(writer, method);
+                WriteMarshalAndLaunchKernel(writer, method, isDevicePtr);
             }
 
             writer.AppendLine("finally");
             using (writer.Scope())
             {
-                WriteCleanup(writer, method);
+                WriteCleanup(writer, method, isDevicePtr);
             }
         }
     }
 
-    private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method)
+    private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        var paramList = string.Join(", ", method.Parameters.Select(p => $"{p.Type.ToDisplayString()} {p.Name}"));
+        var paramList = string.Join(", ", method.Parameters.Select(p =>
+        {
+            if (isDevicePtr && p.Type is IArrayTypeSymbol)
+            {
+                return $"IntPtr {p.Name}";
+            }
+
+            return $"{p.Type.ToDisplayString()} {p.Name}";
+        }));
         if (!string.IsNullOrEmpty(paramList))
         {
             paramList += ", ";
@@ -209,7 +265,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         paramList +=
             "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0";
 
-        writer.AppendLine($"public static void Launch_{method.Name}({paramList})");
+        var methodName = isDevicePtr ? $"Launch_{method.Name}_Device" : $"Launch_{method.Name}";
+        writer.AppendLine($"public static void {methodName}({paramList})");
     }
 
     private static bool IsJitConstant(IParameterSymbol p) => p.GetAttributes().Any(a =>
@@ -239,11 +296,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         writer.AppendLine();
     }
 
-    private static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method)
+    private static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
-            if (p.Type is IArrayTypeSymbol || p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out)
+            if (!isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out))
             {
                 writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
             }
@@ -252,66 +309,77 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method)
+    private static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         var kernelParamsArray = new List<string>();
 
         foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
-            WriteParameterMarshal(writer, p, kernelParamsArray);
+            WriteParameterMarshal(writer, p, kernelParamsArray, isDevicePtr);
         }
 
         writer.AppendLine();
         writer.AppendLine($"IntPtr[] kernelParams = [{string.Join(", ", kernelParamsArray)}];");
         writer.AppendLine();
 
-        WriteLaunchKernelCall(writer);
+        WriteLaunchKernelCall(writer, method);
 
         foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
-            WriteParameterUnmarshal(writer, p);
+            WriteParameterUnmarshal(writer, p, isDevicePtr);
         }
     }
 
-    private static void WriteCleanup(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCleanup(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         foreach (var p in method.Parameters.Where(p => !IsJitConstant(p)))
         {
-            WriteParameterFree(writer, p);
+            WriteParameterFree(writer, p, isDevicePtr);
         }
     }
 
     private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p,
-        List<string> kernelParamsArray)
+        List<string> kernelParamsArray, bool isDevicePtr)
     {
         if (p.Type is IArrayTypeSymbol arrayType)
         {
-            writer.AppendLine($"""
-                // Marshal array: {p.Name}
-                int {p.Name}_size = {p.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));
-                CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));
-
-                System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
-                try
-                """);
-            using (writer.Scope())
+            if (isDevicePtr)
             {
                 writer.AppendLine($"""
-                    IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();
-                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));
+                    // Marshal device array: {p.Name}
+                    pArg_{p.Name} = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+                    System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_{p.Name}, {p.Name});
                     """);
             }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
+            else
             {
-                writer.AppendLine($"handle_{p.Name}.Free();");
-            }
+                writer.AppendLine($"""
+                    // Marshal array: {p.Name}
+                    int {p.Name}_size = {p.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));
+                    CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));
 
-            writer.AppendLine($"""
-                pArg_{p.Name} = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-                System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_{p.Name}, d_{p.Name});
-                """);
+                    System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
+                    try
+                    """);
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"""
+                        IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();
+                        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));
+                        """);
+                }
+
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"handle_{p.Name}.Free();");
+                }
+
+                writer.AppendLine($"""
+                    pArg_{p.Name} = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+                    System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_{p.Name}, d_{p.Name});
+                    """);
+            }
 
             kernelParamsArray.Add($"pArg_{p.Name}");
         }
@@ -337,6 +405,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}_temp, {p.Name}_size));
                         """);
                 }
+
                 writer.AppendLine("finally");
                 using (writer.Scope())
                 {
@@ -364,9 +433,37 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static void WriteLaunchKernelCall(SourceWriter writer)
+    private static void WriteLaunchKernelCall(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine("""
+        var isCooperative = false;
+        foreach (var attr in method.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name != "GpuKernelAttribute" && attr.AttributeClass?.Name != "GpuKernel")
+            {
+                continue;
+            }
+
+            var namedArg = attr.NamedArguments.FirstOrDefault(na => na.Key == "Cooperative");
+            if (namedArg.Value.Value is true)
+            {
+                isCooperative = true;
+            }
+
+            break;
+        }
+
+        writer.AppendLine(isCooperative
+            ? """
+            CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
+                hfunc,
+                gridDimX, gridDimY, gridDimZ, // Grid dim
+                blockDimX, blockDimY, blockDimZ, // Block dim
+                sharedMemBytes, // Shared mem
+                IntPtr.Zero, // Stream
+                kernelParams
+            ));
+            """
+            : """
             CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
                 hfunc,
                 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -380,27 +477,30 @@ public class GpuKernelGenerator : IIncrementalGenerator
         writer.AppendLine();
     }
 
-    private static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p)
+    private static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
         if (p.Type is IArrayTypeSymbol)
         {
-            writer.AppendLine($"""
-                // Copy back array: {p.Name}
-                System.Runtime.InteropServices.GCHandle handleBack_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
-                try
-                """);
-            using (writer.Scope())
+            if (!isDevicePtr)
             {
                 writer.AppendLine($"""
-                    IntPtr p_{p.Name} = handleBack_{p.Name}.AddrOfPinnedObject();
-                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}, d_{p.Name}, {p.Name}_size));
+                    // Copy back array: {p.Name}
+                    System.Runtime.InteropServices.GCHandle handleBack_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
+                    try
                     """);
-            }
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"""
+                        IntPtr p_{p.Name} = handleBack_{p.Name}.AddrOfPinnedObject();
+                        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}, d_{p.Name}, {p.Name}_size));
+                        """);
+                }
 
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"handleBack_{p.Name}.Free();");
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"handleBack_{p.Name}.Free();");
+                }
             }
         }
         else if (p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out)
@@ -418,6 +518,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     {p.Name} = ({typeString})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp, typeof({typeString}));
                     """);
             }
+
             writer.AppendLine("finally");
             using (writer.Scope())
             {
@@ -426,14 +527,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static void WriteParameterFree(SourceWriter writer, IParameterSymbol p)
+    private static void WriteParameterFree(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (p.Type is IArrayTypeSymbol || p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out)
+        if (p.Type is IArrayTypeSymbol)
+        {
+            if (!isDevicePtr)
+            {
+                writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
+            }
+
+            writer.AppendLine(
+                $"if (pArg_{p.Name} != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_{p.Name});");
+        }
+        else if (p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out)
         {
             writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
+            writer.AppendLine(
+                $"if (pArg_{p.Name} != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_{p.Name});");
         }
-
-        writer.AppendLine(
-            $"if (pArg_{p.Name} != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_{p.Name});");
+        else
+        {
+            writer.AppendLine(
+                $"if (pArg_{p.Name} != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_{p.Name});");
+        }
     }
 }

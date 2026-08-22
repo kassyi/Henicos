@@ -64,4 +64,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InlinePtxArgumentMustBeStringLiteral = new(
+        id: "GSH0006",
+        title: "InlinePtx argument must be a string literal",
+        messageFormat: "The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

@@ -17,7 +17,30 @@ public partial class RoslynToCudaVisitor
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
         => ExpressionTranspilers.TranspileBinaryExpression(node, this);
 
-    public override void VisitIdentifierName(IdentifierNameSyntax node) => Writer.Append(node.Identifier.Text);
+    public override void VisitIdentifierName(IdentifierNameSyntax node)
+    {
+        var symbol = SemanticModel.GetSymbolInfo(node).Symbol;
+        if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
+        {
+            Writer.Append(field.ConstantValue!.ToString());
+            switch (field.Type.SpecialType)
+            {
+                case SpecialType.System_UInt64:
+                    Writer.Append("ULL");
+                    break;
+                case SpecialType.System_UInt32:
+                    Writer.Append("U");
+                    break;
+                case SpecialType.System_Int64:
+                    Writer.Append("LL");
+                    break;
+            }
+
+            return;
+        }
+
+        Writer.Append(node.Identifier.Text);
+    }
 
     public override void VisitLiteralExpression(LiteralExpressionSyntax node) => Writer.Append(node.Token.Text);
 

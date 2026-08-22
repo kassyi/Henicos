@@ -47,6 +47,7 @@ public static class GridDimension
 public static class Gpu
 {
     public static void SyncThreads() => GpuOnlyException.Throw();
+    public static void SyncGrid() => GpuOnlyException.Throw();
 
     public static int AtomicAdd(ref int address, int val) => GpuOnlyException.Throw<int>();
     public static uint AtomicAdd(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
@@ -55,4 +56,10 @@ public static class Gpu
 
     public static uint AddWithCarry(uint a, uint b, ref ulong carry) => GpuOnlyException.Throw<uint>();
     public static uint SubWithBorrow(uint a, uint b, ref long borrow) => GpuOnlyException.Throw<uint>();
+
+    /// <summary>
+    /// Injects raw PTX or CUDA C++ code directly into the generated output.
+    /// Use string interpolation ($"") to reference C# variables safely.
+    /// </summary>
+    public static void InlinePtx(string ptx) => GpuOnlyException.Throw();
 }

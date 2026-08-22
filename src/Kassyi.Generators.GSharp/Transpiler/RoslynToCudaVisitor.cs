@@ -29,7 +29,8 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
         Writer = mainWriter;
 
         // Write struct definitions
-        foreach (var structSym in UsedStructs)
+        var sortedStructs = GetTopologicallySortedStructs();
+        foreach (var structSym in sortedStructs)
         {
             WriteStructDefinition(structSym);
         }
@@ -37,6 +38,22 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
         var result = Writer + bodyWriter.ToString();
         Writer.Dispose();
         bodyWriter.Dispose();
+        return result;
+    }
+
+    public string GenerateCudaSignature(MethodDeclarationSyntax method, bool isDevice = false)
+    {
+        var mainWriter = Writer;
+        Writer = new SourceWriter();
+
+        UsedStructs.Clear();
+        WriteMethodSignature(method, isDevice);
+        Writer.Append(";");
+        Writer.AppendLine();
+
+        var result = Writer.ToString();
+        Writer.Dispose();
+        Writer = mainWriter;
         return result;
     }
 
@@ -194,11 +211,56 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
     private void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol)
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
-        if (structType is { TypeKind: TypeKind.Struct } &&
-            structType.ContainingNamespace.ToDisplayString() != "System")
+        if (structType is INamedTypeSymbol namedStruct &&
+            namedStruct.TypeKind == TypeKind.Struct &&
+            namedStruct.ContainingNamespace.ToDisplayString() != "System")
         {
-            UsedStructs.Add((INamedTypeSymbol)structType);
+            if (UsedStructs.Add(namedStruct))
+            {
+                foreach (var member in namedStruct.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+                {
+                    RegisterUsedStructIfApplicable(member.Type);
+                }
+            }
         }
+    }
+
+    private IEnumerable<INamedTypeSymbol> GetTopologicallySortedStructs()
+    {
+        var result = new List<INamedTypeSymbol>();
+        var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+
+        void Visit(INamedTypeSymbol s)
+        {
+            if (visited.Contains(s)) return;
+            if (!visiting.Add(s)) return;
+
+            foreach (var member in s.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+            {
+                var fieldType = member.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : member.Type;
+                if (fieldType is INamedTypeSymbol namedStruct &&
+                    namedStruct.TypeKind == TypeKind.Struct &&
+                    namedStruct.ContainingNamespace.ToDisplayString() != "System")
+                {
+                    if (UsedStructs.Contains(namedStruct))
+                    {
+                        Visit(namedStruct);
+                    }
+                }
+            }
+
+            visiting.Remove(s);
+            visited.Add(s);
+            result.Add(s);
+        }
+
+        foreach (var s in UsedStructs)
+        {
+            Visit(s);
+        }
+
+        return result;
     }
 
     private void CheckLargeStructByValue(ParameterSyntax p, ITypeSymbol? typeSymbol, bool isPointer)
