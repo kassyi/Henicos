@@ -53,3 +53,5 @@ tmp/
 
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
+
+.agents/
