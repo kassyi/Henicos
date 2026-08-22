@@ -13,7 +13,7 @@ public class DummyKernelDef
     [GpuKernel]
     public static void VectorScale(uint[] T, int length)
     {
-        for (int i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
         {
             T[i] = HelperScale(T[i], 2);
         }
@@ -35,7 +35,7 @@ public class GpuBenchmark
     private VectorScaleCallback? _rawCudaKernel;
     private JitCompiledKernel<VectorScaleCallback>? _gsharpModule;
     private JitCompiledKernel<VectorScaleCallback>? _rawCudaModule;
-    
+
     private AllocMemCallback? _allocMem;
     private FreeMemCallback? _freeMem;
     private JitCompiledKernel<AllocMemCallback>? _memModule;
@@ -53,7 +53,8 @@ public class GpuBenchmark
             throw new Exception("GPU Initialization failed.");
         }
 
-        string includePath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\src\Kassyi.Math.GpuBigInt.Cuda"));
+        var includePath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+            @"..\..\..\..\..\src\Kassyi.Math.GpuBigInt.Cuda"));
 
         // Helper module for memory management
         var memCode = @"
@@ -76,8 +77,9 @@ extern ""C"" __declspec(dllexport) void FreeGpuMem(void* ptr) {
         _dT = _allocMem(N * 4); // Allocate uint array
 
         // 1. Generate G# AST code
-        var gsharpAstCode = TranspilerRunner.GenerateKernelCode(typeof(DummyKernelDef).Assembly.Location, nameof(DummyKernelDef.VectorScale));
-        
+        var gsharpAstCode = TranspilerRunner.GenerateKernelCode(typeof(DummyKernelDef).Assembly.Location,
+            nameof(DummyKernelDef.VectorScale));
+
         var gsharpCuCode = $@"
 #include <cuda_runtime.h>
 #include <stdint.h>
@@ -122,6 +124,7 @@ extern ""C"" __declspec(dllexport) void RunRaw(uint32_t* d_T, int length) {
             _freeMem?.Invoke(_dT);
             _dT = IntPtr.Zero;
         }
+
         _gsharpModule?.Dispose();
         _rawCudaModule?.Dispose();
         _memModule?.Dispose();
