@@ -21,13 +21,18 @@ public static class ModularReductionGpu
         try
         {
             uint[] resultData = new uint[outNumWords];
-            string ilScript = FermatILGenerator.Generate(E);
             
-            // Call the C++ native orchestrator directly
-            bool success = CudaInterop.GpuBigInt_ExecuteIL(E, ilScript, resultData);
+            // Build and JIT compile the dynamic kernel
+            string includePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\src\Kassyi.Math.GpuBigInt.Cuda"));
+            string cuCode = Kassyi.GSharp.FermatJitBuilder.BuildKernel(E);
+            var jitCallback = Kassyi.GSharp.JitCompiler.CompileAndLoad<CudaInterop.JitLaunchCallback>(cuCode, "Launch_JitFermatLoop", includePath);
+
+            // Execute via C++ host which sets up memory and invokes our JIT callback
+            Console.WriteLine("[G# JIT] Executing DYNAMIC JIT kernel...");
+            bool success = CudaInterop.GpuBigInt_DynamicFermatLoop(E, resultData, jitCallback);
             if (!success)
             {
-                throw new Exception("Native GPU FermatPRPTest failed.");
+                throw new Exception("Native GPU StaticFermatLoop failed.");
             }
 
             // Convert to BigInteger for the final exact modulo N

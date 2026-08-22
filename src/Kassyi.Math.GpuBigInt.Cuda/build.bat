@@ -39,7 +39,7 @@ if defined CUDA_PATH (
 pushd "%~dp0"
 
 echo Building Kassyi.Math.GpuBigInt.Cuda.dll...
-"%NVCC_CMD%" -shared -o "%~dp0Kassyi.Math.GpuBigInt.Cuda.dll" GpuBigInt.cu -lcufft -O3 -arch=sm_86 -Xcompiler "/wd 4819"
+"%NVCC_CMD%" -shared -o "%~dp0Kassyi.Math.GpuBigInt.Cuda.dll" GpuBigInt.cu -lcufft -O3 -arch=sm_86 -std=c++17 -Xcompiler "/wd 4819"
 
 if %errorlevel% neq 0 (
     echo Build Failed!

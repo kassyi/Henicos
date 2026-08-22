@@ -11,10 +11,29 @@ public static class CudaInterop
     public static extern bool InitializeGPU(int maxWords);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool GpuBigInt_DynamicFermatLoop(int E, uint[] out_data, JitLaunchCallback jitLaunch);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern bool GpuBigInt_FermatPRPTest(int E, uint[] resultData);
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool GpuBigInt_StaticFermatLoop(int E, uint[] resultData);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern bool GpuBigInt_ExecuteIL(int E, string ilScript, uint[] resultData);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void JitLaunchCallback(
+        IntPtr T, IntPtr Q, IntPtr R, IntPtr MaskR, IntPtr T_tmp,
+        int numWords, int E_val, IntPtr carryBuffer,
+        int M, IntPtr ntt_buf1, IntPtr ntt_buf2, IntPtr ntt_tmp,
+        IntPtr twiddle1_fwd, IntPtr twiddle2_fwd,
+        IntPtr twiddle1_inv, IntPtr twiddle2_inv,
+        int gridDim, int blockDim
+    );
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern bool GpuBigInt_RunJitFermatLoop(int E, uint[] resultData, JitLaunchCallback callback);
 
     [DllImport(DllName, EntryPoint = "GpuBigInt_Cleanup", CallingConvention = CallingConvention.Cdecl)]
     public static extern void CleanupGPU();

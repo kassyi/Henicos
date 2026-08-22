@@ -4,16 +4,16 @@
 
 // NTT Primes and primitive roots
 // We use two 32-bit primes for CRT to support convolution values up to 2^55
-constexpr uint32_t NTT_P1 = 2013265921; // 15 * 2^27 + 1
-constexpr uint32_t NTT_G1 = 31;
+constexpr uint32_t NTT_P1 = 4253024257; 
+constexpr uint32_t NTT_G1 = 5;
 
-constexpr uint32_t NTT_P2 = 2113929217; // 63 * 2^25 + 1
-constexpr uint32_t NTT_G2 = 5;
+constexpr uint32_t NTT_P2 = 4246732801; 
+constexpr uint32_t NTT_G2 = 2;
 
 // Barrett Reduction Constants
 // m = floor(2^64 / P)
-constexpr uint64_t NTT_M1 = 9162596893ULL; // for P1
-constexpr uint64_t NTT_M2 = 8726282755ULL; // for P2
+constexpr uint64_t NTT_M1 = 4337323974ULL; // for P1
+constexpr uint64_t NTT_M2 = 4343749639ULL; // for P2
 
 // Device function for 32-bit modular addition
 __device__ __forceinline__ uint32_t ModAdd(uint32_t a, uint32_t b, uint32_t p) {
