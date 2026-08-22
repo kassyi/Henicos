@@ -25,7 +25,8 @@ public static class ModularReductionGpu
             // Build and JIT compile the dynamic kernel
             string includePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\src\Kassyi.Math.GpuBigInt.Cuda"));
             string cuCode = Kassyi.GSharp.FermatJitBuilder.BuildKernel(E);
-            var jitCallback = Kassyi.GSharp.JitCompiler.CompileAndLoad<CudaInterop.JitLaunchCallback>(cuCode, "Launch_JitFermatLoop", includePath);
+            using var jitModule = Kassyi.GSharp.JitCompiler.CompileAndLoad<CudaInterop.JitLaunchCallback>(cuCode, "Launch_JitFermatLoop", includePath);
+            var jitCallback = jitModule.Kernel;
 
             // Execute via C++ host which sets up memory and invokes our JIT callback
             Console.WriteLine("[G# JIT] Executing DYNAMIC JIT kernel...");

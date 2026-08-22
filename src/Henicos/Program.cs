@@ -9,7 +9,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        Kassyi.GSharp.Transpiler.TranspilerRunner.Run();
+        Kassyi.GSharp.Transpiler.TranspilerRunner.Run(typeof(Program).Assembly);
         return;
 
         if (args.Length > 0 && args[0] == "--benchmark")

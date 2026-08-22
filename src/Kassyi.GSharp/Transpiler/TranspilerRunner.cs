@@ -1,40 +1,38 @@
 using System;
 using System.Reflection;
 using System.IO;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Kassyi.GSharp.Transpiler
 {
     public class TranspilerRunner
     {
-        public static void Run()
+        public static void Run(Assembly targetAssembly)
         {
             Console.WriteLine("=== JIT Transpiler E2E Test ===");
             
-            // Read the current assembly using Mono.Cecil
-            string assemblyPath = Assembly.GetExecutingAssembly().Location;
+            // Read the specified assembly using Mono.Cecil
+            string assemblyPath = targetAssembly.Location;
             var md = ModuleDefinition.ReadModule(assemblyPath);
             
-            var type = md.GetType("Kassyi.GSharp.DummyMath");
-            if (type == null) {
-                Console.WriteLine("Type not found.");
-                return;
-            }
-            
-            MethodDefinition targetMethod = null;
-            foreach (var m in type.Methods)
+            var targetMethods = new System.Collections.Generic.List<MethodDefinition>();
+            foreach (var type in md.Types)
             {
-                if (m.Name == "SimpleLoop")
+                foreach (var m in type.Methods)
                 {
-                    targetMethod = m;
-                    break;
+                    if (m.CustomAttributes.Any(a => a.AttributeType.Name == "GpuKernelAttribute"))
+                    {
+                        targetMethods.Add(m);
+                    }
                 }
             }
             
-            if (targetMethod == null) {
-                Console.WriteLine("Method not found.");
-                return;
+            if (targetMethods.Count == 0) {
+                throw new InvalidOperationException("No methods marked with [GpuKernel] found.");
             }
+            
+            var targetMethod = targetMethods[0];
             
             Console.WriteLine($"Found method: {targetMethod.FullName}");
             

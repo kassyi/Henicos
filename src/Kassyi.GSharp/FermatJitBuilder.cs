@@ -31,33 +31,13 @@ namespace Kassyi.GSharp
             
             sb.AppendLine(@"    auto square_and_reduce = [&]() {");
             sb.AppendLine(@"        Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);");
-            sb.AppendLine(@"        for (int j = 0; j < 3; j++) {");
-            sb.AppendLine(@"            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);");
-            sb.AppendLine($@"            Device_ShiftLeft(Q, {E}, T_tmp, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"        }");
+            AppendReductionLogic(sb, E);
             sb.AppendLine(@"    };");
 
             sb.AppendLine(@"    auto multiply_by_2_and_reduce = [&]() {");
             sb.AppendLine(@"        Device_ShiftLeft(T, 1, T_tmp, numWords * 2 + 16, grid);");
             sb.AppendLine(@"        Device_Copy(T_tmp, T, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"        for (int j = 0; j < 3; j++) {");
-            sb.AppendLine(@"            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);");
-            sb.AppendLine($@"            Device_ShiftLeft(Q, {E}, T_tmp, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);");
-            sb.AppendLine(@"            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);");
-            sb.AppendLine(@"        }");
+            AppendReductionLogic(sb, E);
             sb.AppendLine(@"    };");
 
             // Loop E times. Note that compiling static bounds could be even faster, 
@@ -99,6 +79,21 @@ namespace Kassyi.GSharp
             sb.AppendLine(@"}");
 
             return sb.ToString();
+        }
+
+        private static void AppendReductionLogic(StringBuilder sb, int E)
+        {
+            sb.AppendLine(@"        for (int j = 0; j < 3; j++) {");
+            sb.AppendLine(@"            Device_ShiftRight(T, bit2E1, Q, numWords * 2 + 16, grid);");
+            sb.AppendLine(@"            Device_BitwiseAnd(T, MaskR, R, numWords * 2 + 16, grid);");
+            sb.AppendLine($@"            Device_ShiftLeft(Q, {E}, T_tmp, numWords * 2 + 16, grid);");
+            sb.AppendLine(@"            Device_Add(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);");
+            sb.AppendLine(@"            Device_ShiftLeft(Q, 1, T_tmp, numWords * 2 + 16, grid);");
+            sb.AppendLine(@"            Device_Sub(R, Q, R, numWords * 2 + 16, carryBuffer, grid);");
+            sb.AppendLine(@"            Device_Sub(R, T_tmp, R, numWords * 2 + 16, carryBuffer, grid);");
+            sb.AppendLine(@"            Device_ShiftLeft(Q, 3, T_tmp, numWords * 2 + 16, grid);");
+            sb.AppendLine(@"            Device_Sub(R, T_tmp, T, numWords * 2 + 16, carryBuffer, grid);");
+            sb.AppendLine(@"        }");
         }
     }
 }

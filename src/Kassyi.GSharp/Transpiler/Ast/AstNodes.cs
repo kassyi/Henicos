@@ -18,28 +18,18 @@ namespace Kassyi.GSharp.Transpiler.Ast
         void Visit(MethodCallNode node);
     }
 
-    public class BlockNode : IAstNode
+    public record BlockNode(IReadOnlyList<IAstNode> Statements) : IAstNode
     {
-        public List<IAstNode> Statements { get; set; } = new List<IAstNode>();
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
-    public class ForLoopNode : IAstNode
+    public record ForLoopNode(string IteratorName, IAstNode Start, IAstNode End, BlockNode Body) : IAstNode
     {
-        public string IteratorName { get; set; }
-        public IAstNode Start { get; set; }
-        public IAstNode End { get; set; }
-        public BlockNode Body { get; set; }
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
-    public class AssignNode : IAstNode
+    public record AssignNode(string TargetName, IAstNode Value) : IAstNode
     {
-        public string TargetName { get; set; }
-        public IAstNode Value { get; set; }
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
@@ -50,34 +40,23 @@ namespace Kassyi.GSharp.Transpiler.Ast
         Eq, Neq, Lt, Lte, Gt, Gte
     }
 
-    public class BinaryOpNode : IAstNode
+    public record BinaryOpNode(BinaryOperator Op, IAstNode Left, IAstNode Right) : IAstNode
     {
-        public BinaryOperator Op { get; set; }
-        public IAstNode Left { get; set; }
-        public IAstNode Right { get; set; }
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
-    public class LiteralNode : IAstNode
+    public record LiteralNode(object Value) : IAstNode
     {
-        public object Value { get; set; } // int, long, etc.
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
-    public class VariableNode : IAstNode
+    public record VariableNode(string Name) : IAstNode
     {
-        public string Name { get; set; }
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 
-    public class MethodCallNode : IAstNode
+    public record MethodCallNode(string MethodName, IReadOnlyList<IAstNode> Arguments) : IAstNode
     {
-        public string MethodName { get; set; }
-        public List<IAstNode> Arguments { get; set; } = new List<IAstNode>();
-
         public void Accept(IAstVisitor visitor) => visitor.Visit(this);
     }
 }

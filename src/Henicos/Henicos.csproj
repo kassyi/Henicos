@@ -10,10 +10,12 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <PackageReference Include="System.IO.Abstractions" Version="22.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kassyi.Math.GpuBigInt\Kassyi.Math.GpuBigInt.csproj" />
+    <ProjectReference Include="..\Kassyi.GSharp\Kassyi.GSharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
