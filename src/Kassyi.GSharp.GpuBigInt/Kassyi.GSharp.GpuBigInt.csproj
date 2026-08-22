@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\Kassyi.Math.GpuBigInt.Cuda\Kassyi.Math.GpuBigInt.Cuda.dll">
+    <Content Include="..\Kassyi.GSharp.GpuBigInt.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

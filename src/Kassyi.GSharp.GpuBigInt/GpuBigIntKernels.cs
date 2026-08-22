@@ -1,7 +1,7 @@
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 
-namespace Kassyi.Math.GpuBigInt;
+namespace Kassyi.GSharp.GpuBigInt;
 
 public static class GpuBigIntKernels
 {
@@ -25,9 +25,7 @@ public static class GpuBigIntKernels
         ulong localCarry = 0;
         for (var i = start; i < end; i++)
         {
-            var current = (ulong)dA[i] + (ulong)dB[i] + localCarry;
-            dResult[i] = (uint)(current & 0xFFFFFFFF);
-            localCarry = current >> 32;
+            dResult[i] = Gpu.AddWithCarry(dA[i], dB[i], ref localCarry);
         }
 
         carryBuffer[chunkIdx + 1] = (long)localCarry;
@@ -60,9 +58,7 @@ public static class GpuBigIntKernels
 
             for (var i = start; i < end; i++)
             {
-                var current = (ulong)dResult[i] + rippleCarry;
-                dResult[i] = (uint)(current & 0xFFFFFFFF);
-                rippleCarry = current >> 32;
+                dResult[i] = Gpu.AddWithCarry(dResult[i], 0, ref rippleCarry);
                 if (rippleCarry == 0)
                 {
                     break;
@@ -91,18 +87,7 @@ public static class GpuBigIntKernels
         long localBorrow = 0;
         for (var i = start; i < end; i++)
         {
-            var current = (long)dA[i] - (long)dB[i] - localBorrow;
-            if (current < 0)
-            {
-                current += 0x100000000L;
-                localBorrow = 1;
-            }
-            else
-            {
-                localBorrow = 0;
-            }
-
-            dResult[i] = (uint)(current & 0xFFFFFFFF);
+            dResult[i] = Gpu.SubWithBorrow(dA[i], dB[i], ref localBorrow);
         }
 
         carryBuffer[chunkIdx + 1] = localBorrow;
@@ -132,18 +117,7 @@ public static class GpuBigIntKernels
 
                 for (var i = start; i < end; i++)
                 {
-                    var current = (long)dResult[i] - rippleBorrow;
-                    if (current < 0)
-                    {
-                        current += 0x100000000L;
-                        rippleBorrow = 1;
-                    }
-                    else
-                    {
-                        rippleBorrow = 0;
-                    }
-
-                    dResult[i] = (uint)(current & 0xFFFFFFFF);
+                    dResult[i] = Gpu.SubWithBorrow(dResult[i], 0, ref rippleBorrow);
                     if (rippleBorrow == 0)
                     {
                         break;

@@ -4,10 +4,10 @@
     <Project Path="src/Kassyi.Generators.GSharp/Kassyi.Generators.GSharp.csproj" />
     <Project Path="src/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />
     <Project Path="src/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />
-    <Project Path="src/Kassyi.Math.GpuBigInt/Kassyi.Math.GpuBigInt.csproj" />
+    <Project Path="src/Kassyi.GSharp.GpuBigInt/Kassyi.GSharp.GpuBigInt.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kassyi.GSharp.Tests/Kassyi.GSharp.Tests.csproj" />
-    <Project Path="tests/Kassyi.Math.GpuBigInt.Tests/Kassyi.Math.GpuBigInt.Tests.csproj" />
+    <Project Path="tests/Kassyi.GSharp.GpuBigInt.Tests/Kassyi.GSharp.GpuBigInt.Tests.csproj" />
   </Folder>
 </Solution>

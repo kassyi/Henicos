@@ -30,7 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
     <ProjectReference Include="..\..\src\Kassyi.Generators.GSharp\Kassyi.Generators.GSharp.csproj" OutputItemType="Analyzer" />
-    <ProjectReference Include="..\..\src\Kassyi.Math.GpuBigInt\Kassyi.Math.GpuBigInt.csproj" />
+    <ProjectReference Include="..\..\src\Kassyi.GSharp.GpuBigInt\Kassyi.GSharp.GpuBigInt.csproj" />
   </ItemGroup>
 
 </Project>

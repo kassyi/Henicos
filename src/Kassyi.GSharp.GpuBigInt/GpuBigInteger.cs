@@ -1,10 +1,13 @@
-namespace Kassyi.Math.GpuBigInt;
+using System;
+using Kassyi.GSharp.GpuBigInt.Expressions;
+
+namespace Kassyi.GSharp.GpuBigInt;
 
 
 // ReSharper disable UnusedMember.Global
 // ReSharper disable UnusedType.Global
 
-public class GpuBigInteger : IDisposable
+public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 {
     public IntPtr DevicePointer
     {
@@ -14,10 +17,16 @@ public class GpuBigInteger : IDisposable
     {
         get;
     }
+    
+    public GpuContext Context { get; }
+    
+    internal bool IsTemp { get; set; }
+
     private bool _disposed;
 
-    public GpuBigInteger(int numWords)
+    public GpuBigInteger(GpuContext context, int numWords)
     {
+        Context = context ?? throw new ArgumentNullException(nameof(context));
         NumWords = numWords;
         DevicePointer = NativeMethods.GpuBigInt_Alloc(numWords);
         if (DevicePointer == IntPtr.Zero)
@@ -26,13 +35,35 @@ public class GpuBigInteger : IDisposable
         }
     }
 
-    public GpuBigInteger(uint[] hostData) : this(hostData.Length)
+    public GpuBigInteger(GpuContext context, uint[] hostData) : this(context, hostData.Length)
     {
         if (!NativeMethods.GpuBigInt_CopyHostToDevice(DevicePointer, hostData, NumWords))
         {
             throw new InvalidOperationException($"Failed to copy host data ({hostData.Length} words) to GPU device pointer 0x{DevicePointer:X} (expected {NumWords} words).");
         }
     }
+
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
+    {
+        if (targetResult != null && targetResult != this)
+        {
+            targetResult.CopyFrom(this);
+            return targetResult;
+        }
+        return this;
+    }
+
+    public GpuBigIntExpr Value
+    {
+        get => new GpuBigIntExpr(this);
+        set => value.Node.Evaluate(this.Context, this);
+    }
+
+    public static GpuBigIntExpr operator +(GpuBigInteger a, GpuBigInteger b) => new GpuBigIntExpr(new AddExpression(a, b));
+    public static GpuBigIntExpr operator -(GpuBigInteger a, GpuBigInteger b) => new GpuBigIntExpr(new SubExpression(a, b));
+    public static GpuBigIntExpr operator &(GpuBigInteger a, GpuBigInteger b) => new GpuBigIntExpr(new BitwiseAndExpression(a, b));
+    public static GpuBigIntExpr operator <<(GpuBigInteger a, int shiftBits) => new GpuBigIntExpr(new ShiftLeftExpression(a, shiftBits));
+    public static GpuBigIntExpr operator >>(GpuBigInteger a, int shiftBits) => new GpuBigIntExpr(new ShiftRightExpression(a, shiftBits));
 
     public uint[] ToHostArray()
     {
@@ -108,7 +139,7 @@ public class GpuBigInteger : IDisposable
 
     public bool Square(int logicalWords) => NativeMethods.GpuBigInt_Square(DevicePointer, logicalWords);
 
-    public void Dispose()
+    internal void DisposeCore()
     {
         if (!_disposed)
         {
@@ -120,6 +151,16 @@ public class GpuBigInteger : IDisposable
             _disposed = true;
         }
         GC.SuppressFinalize(this);
+    }
+
+    public void Dispose()
+    {
+        if (IsTemp)
+        {
+            Context?.ReturnTemp(this);
+            return;
+        }
+        DisposeCore();
     }
 
     ~GpuBigInteger()

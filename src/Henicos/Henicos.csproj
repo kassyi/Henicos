@@ -14,12 +14,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kassyi.Math.GpuBigInt\Kassyi.Math.GpuBigInt.csproj" />
+    <ProjectReference Include="..\Kassyi.GSharp.GpuBigInt\Kassyi.GSharp.GpuBigInt.csproj" />
     <ProjectReference Include="..\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Kassyi.Math.GpuBigInt.Cuda\Kassyi.Math.GpuBigInt.Cuda.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Kassyi.GSharp.GpuBigInt.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

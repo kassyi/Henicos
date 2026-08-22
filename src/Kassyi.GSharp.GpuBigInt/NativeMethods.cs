@@ -3,11 +3,11 @@ using System.Runtime.InteropServices;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.SafeDirectories)]
 
-namespace Kassyi.Math.GpuBigInt;
+namespace Kassyi.GSharp.GpuBigInt;
 
 internal static partial class NativeMethods
 {
-    private const string DllName = "Kassyi.Math.GpuBigInt.Cuda";
+    private const string DllName = "Kassyi.GSharp.GpuBigInt.Cuda";
 
     static NativeMethods()
     {

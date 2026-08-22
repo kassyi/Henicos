@@ -3,7 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Xunit;
 
-namespace Kassyi.Math.GpuBigInt.Tests
+namespace Kassyi.GSharp.GpuBigInt.Tests
 {
     public class GpuBigIntTests : IDisposable
     {
@@ -60,9 +60,9 @@ namespace Kassyi.Math.GpuBigInt.Tests
             var bigB = ToBigInteger(arrB);
             var expectedBig = bigA + bigB;
 
-            using var gpuA = new GpuBigInteger(arrA);
-            using var gpuB = new GpuBigInteger(arrB);
-            using var gpuResult = new GpuBigInteger(TestSizeWords);
+            using var gpuA = new GpuBigInteger(_context, arrA);
+            using var gpuB = new GpuBigInteger(_context, arrB);
+            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
 
             GpuBigInteger.Add(gpuA, gpuB, gpuResult);
 
@@ -93,9 +93,9 @@ namespace Kassyi.Math.GpuBigInt.Tests
             var bigB = ToBigInteger(arrB);
             var expectedBig = bigA - bigB;
 
-            using var gpuA = new GpuBigInteger(arrA);
-            using var gpuB = new GpuBigInteger(arrB);
-            using var gpuResult = new GpuBigInteger(TestSizeWords);
+            using var gpuA = new GpuBigInteger(_context, arrA);
+            using var gpuB = new GpuBigInteger(_context, arrB);
+            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
 
             GpuBigInteger.Sub(gpuA, gpuB, gpuResult);
 
@@ -114,8 +114,8 @@ namespace Kassyi.Math.GpuBigInt.Tests
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA << shiftBits;
 
-            using var gpuA = new GpuBigInteger(arrA);
-            using var gpuResult = new GpuBigInteger(TestSizeWords);
+            using var gpuA = new GpuBigInteger(_context, arrA);
+            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
 
             GpuBigInteger.ShiftLeft(gpuA, shiftBits, gpuResult);
 
@@ -137,13 +137,48 @@ namespace Kassyi.Math.GpuBigInt.Tests
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA >> shiftBits;
 
-            using var gpuA = new GpuBigInteger(arrA);
-            using var gpuResult = new GpuBigInteger(TestSizeWords);
+            using var gpuA = new GpuBigInteger(_context, arrA);
+            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
 
             GpuBigInteger.ShiftRight(gpuA, shiftBits, gpuResult);
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);
+
+            Assert.Equal(expectedBig, actualBig);
+        }
+        [Fact]
+        public void Test_ExpressionTree_Correctness()
+        {
+            var arrA = GenerateRandomArray(TestSizeWords, 7);
+            var arrB = GenerateRandomArray(TestSizeWords, 8);
+            var arrC = GenerateRandomArray(TestSizeWords, 9);
+            
+            // Ensure A > B and B > C to avoid negative wraparound
+            arrA[TestSizeWords - 1] |= 0x60000000;
+            arrB[TestSizeWords - 1] = (arrB[TestSizeWords - 1] & 0x1FFFFFFF) | 0x20000000;
+            arrC[TestSizeWords - 1] &= 0x0FFFFFFF;
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            var bigC = ToBigInteger(arrC);
+            
+            int shiftBits = 128;
+
+            // Mathematical equivalent: (((A + B) << 128) - C) & A
+            var expectedBig = (((bigA + bigB) << shiftBits) - bigC) & bigA;
+            var mask = (BigInteger.One << (TestSizeWords * 32)) - 1;
+            expectedBig &= mask;
+
+            using var gpuA = new GpuBigInteger(_context, arrA);
+            using var gpuB = new GpuBigInteger(_context, arrB);
+            using var gpuC = new GpuBigInteger(_context, arrC);
+            using var gpuResult = new GpuBigInteger(_context, TestSizeWords);
+
+            // Magic Expression Tree evaluation
+            gpuResult.Value = (((gpuA + gpuB) << shiftBits) - gpuC) & gpuA;
+
+            var actualBig = ToBigInteger(gpuResult.ToHostArray());
 
             Assert.Equal(expectedBig, actualBig);
         }
