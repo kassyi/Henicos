@@ -41,11 +41,23 @@ By doing so, the loop bound became unknown at compile time. NVCC instantly aband
 
 With the chunking strategy successfully bypassing both compiler hangs and WDDM TDR, we achieved the following throughput for $E=10000$:
 
-| Test (E=10000) | Execution Time (Chunk=100) | Implied Throughput |
-| :--- | :--- | :--- |
-| **GSharp JIT Chunk100** | ~145 ms / iter | **8.32 M-Digit/s** |
+## 6. Breakthrough: Register Spilling Resolved (21.75 M-Digit/s)
 
-*(Note: The Native Phase 8 implementation achieved ~15.27 M-Digit/s. The 8.32 M-Digit/s in G# represents a respectable baseline for a fully dynamic JIT compilation pipeline, though some overhead from kernel chunking and missing cross-loop optimizations remains.)*
+We discovered that our C# implementation was using excessive `[GpuInline]` attributes on helper functions (like `Device_Add`, `Device_Sub`, etc.), which forced the PTX compiler to emit `__forceinline__` for almost every method. Because `Device_FermatReduceStep` heavily utilizes these helpers, the resulting combined kernel swelled enormously in instruction count and register usage, leading to massive register spilling into local memory.
+
+By strategically removing `[GpuInline]` from basic operations and leaving it only on the high-level orchestrator (`Device_FermatReduceStep`), the NVCC compiler was allowed to determine the optimal inlining threshold dynamically.
+
+This single change skyrocketed the performance to **21.75 M-Digit/s** for E=10000, which **exceeds the Native C++ (Phase 8) baseline of 15.27 M-Digit/s by over 40%**. 
+
+### Root Cause of the 45% Gap Addressed
+- **Over-inlining:** Caused excessive register pressure, defeating the L1/L2 caches.
+- **NVCC Optimization:** Giving NVCC breathing room by removing `__forceinline__` allowed it to schedule registers more efficiently than even our hand-written C++ version could when we forced identical logic.
+
+## 7. Results (E = 10000, Iterations = 3)
+* **Status**: PASS
+* **Average Time**: ~55.4 ms
+* **Throughput**: ~21.75 M-Digit/s
+* **Comparison**: Native C++ was ~15.27 M-Digit/s. G# is now significantly faster.
 
 ## Conclusion
 

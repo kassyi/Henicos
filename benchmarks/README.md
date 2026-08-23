@@ -3,6 +3,7 @@
 This document tracks the performance optimizations for the Henicos (Fermat PRP test) pipeline, using a unified metric of **M-Digit/s (Mega-Digits processed per second)** to allow linear prediction of computation times.
 
 ## Phase Evolution Index
+
 For a deep dive into the specific bottlenecks, discoveries, and performance gains of each architectural iteration, refer to the following phase reports:
 
 - [Phase 1.5: Custom Reduction vs StdLib](phase/phase1.5_cpu.md)
@@ -22,6 +23,7 @@ For a deep dive into the specific bottlenecks, discoveries, and performance gain
 ## Overall Progress Summary
 
 We track performance across two completely different dimensions:
+
 1. **Pipeline Throughput (Algorithm Optimization)**: Measured in M-Digit/s for the entire Fermat PRP loop.
 2. **Framework Dispatch Overhead (G# Engine Optimization)**: Measured in microseconds ($\mu s$) per kernel launch to evaluate the efficiency of the G# C#-to-CUDA runtime against raw C++.
 
@@ -29,27 +31,27 @@ We track performance across two completely different dimensions:
 
 We have successfully implemented and benchmarked various versions of the reduction and squaring algorithms up to $E=10000$ and $E=20000$.
 
-| Implementation | $E=1000$ (3K digits) | $E=5000$ (15K digits) | $E=10000$ (30K digits) | $E=20000$ (60K digits) | Throughput |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Standard BigInteger** | 16 ms | 1031 ms | 6404 ms | 38519 ms | ~9.40 M-Digit/s |
-| **V1: Custom ModPow** | 22 ms | 710 ms | 4115 ms | N/A | 14.63 M-Digit/s |
-| **V2: Ultra Optimized** | 10 ms | 224 ms | 1280 ms | N/A | 47.04 M-Digit/s |
-| **V3: CPU Parallel Chunking** | 0.023 ms/iter | 0.020 ms/iter | 0.020 ms/iter | N/A | (Reduction Only) |
-| **V4: FULL Hybrid CPU/GPU** | 109 ms | 751 ms | 2315 ms | N/A | 26.01 M-Digit/s |
-| **V5-V7: Cooley-Tukey (Grid Bound)** | 537 ms | 4770 ms | 15924 ms | N/A | 3.78 M-Digit/s |
-| **Phase 8: Six-Step FFT (Current)** | 565 ms | 3281 ms | 6883 ms | **15767 ms** | **~15.27 M-Digit/s** |
-| **Phase 12: G# Full Impl (No GpuInline)** | 708 ms | N/A | N/A | N/A | **1.70 M-Digit/s** |
-| **Phase 12.1: G# Full Impl (Opt + Inline)** | 545 ms | N/A | N/A | N/A | **2.21 M-Digit/s** |
-| **Phase 13: JIT Constant Folding (Static)** | 576 ms | *NVRTC Timeout* | *8.32 M-Digit/s (Chunk)* | N/A | **8.32 M-Digit/s** |
+| Implementation                               | $E=1000$ (3K digits) | $E=5000$ (15K digits) | $E=10000$ (30K digits)    | $E=20000$ (60K digits) | Throughput                          |
+| :------------------------------------------- | :------------------- | :-------------------- | :------------------------ | :--------------------- | :---------------------------------- | ----- |
+| **Standard BigInteger**                      | 16 ms                | 1031 ms               | 6404 ms                   | 38519 ms               | ~9.40 M-Digit/s                     |
+| **V1: Custom ModPow**                        | 22 ms                | 710 ms                | 4115 ms                   | N/A                    | 14.63 M-Digit/s                     |
+| **V2: Ultra Optimized**                      | 10 ms                | 224 ms                | 1280 ms                   | N/A                    | 47.04 M-Digit/s                     | (CPU) |
+| **V3: CPU Parallel Chunking**                | 0.023 ms/iter        | 0.020 ms/iter         | 0.020 ms/iter             | N/A                    | (Reduction Only)                    |
+| **V4: FULL Hybrid CPU/GPU**                  | 109 ms               | 751 ms                | 2315 ms                   | N/A                    | 26.01 M-Digit/s                     |
+| **V5-V7: Cooley-Tukey (Grid Bound)**         | 537 ms               | 4770 ms               | 15924 ms                  | N/A                    | 3.78 M-Digit/s                      |
+| **Phase 8: Six-Step FFT (Current)**          | 565 ms               | 3281 ms               | 6883 ms                   | **15767 ms**           | **~15.27 M-Digit/s**                |
+| **Phase 12: G# Full Impl (No GpuInline)**    | 708 ms               | N/A                   | N/A                       | N/A                    | **1.70 M-Digit/s**                  |
+| **Phase 12.1: G# Full Impl (Opt + Inline)**  | 545 ms               | N/A                   | N/A                       | N/A                    | **2.21 M-Digit/s**                  |
+| **Phase 13: JIT Constant Folding (Dynamic)** | 576 ms               | _NVRTC Timeout_       | _21.75 M-Digit/s (Chunk)_ | N/A                    | **21.75 M-Digit/s (Beats Native!)** |
 
 ### 2. Framework Dispatch Overhead (G# vs Native CUDA)
 
 In Phases 9-11, we focused on completely eliminating the C# `P/Invoke` and JIT overhead when dispatching raw GPU kernels, targeting a 1.00x performance ratio compared to hand-written C++ CUDA Native.
 
-| Phase | Description | 1K Words | 4K Words | 16K Words |
-| :--- | :--- | :--- | :--- | :--- |
-| **Phase 9** | Initial G# JIT Engine | 2.17x slower | 1.77x slower | 1.39x slower |
-| **Phase 10** | Unsafe / Stackalloc | 1.66x slower | 1.36x slower | N/A |
+| Phase        | Description                    | 1K Words           | 4K Words           | 16K Words          |
+| :----------- | :----------------------------- | :----------------- | :----------------- | :----------------- |
+| **Phase 9**  | Initial G# JIT Engine          | 2.17x slower       | 1.77x slower       | 1.39x slower       |
+| **Phase 10** | Unsafe / Stackalloc            | 1.66x slower       | 1.36x slower       | N/A                |
 | **Phase 11** | Zero-Alloc Context CarryBuffer | **1.01x (Parity)** | **0.99x (Parity)** | **0.92x (Faster)** |
 
 ### Insights
