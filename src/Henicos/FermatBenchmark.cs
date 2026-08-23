@@ -39,4 +39,10 @@ public class FermatBenchmark
         var (result, _) = _runner.RunFermatPrp();
         return result;
     }
+
+    [Benchmark]
+    public void GSharpJitChunk100()
+    {
+        _runner.RunBenchmarkChunk(100);
+    }
 }
