@@ -59,7 +59,7 @@ public static class GpuBigIntFermatKernels
         var xIndex = bx * 32 + tx;
         var yIndex = by * 32 + ty;
 
-        for (var i = 0; i < 32; i += 8)
+        for (int i = 0; i < 32; i += 8)
         {
             if (xIndex < width && yIndex + i < height)
             {
@@ -72,7 +72,7 @@ public static class GpuBigIntFermatKernels
         xIndex = by * 32 + tx;
         yIndex = bx * 32 + ty;
 
-        for (var i = 0; i < 32; i += 8)
+        for (int i = 0; i < 32; i += 8)
         {
             if (xIndex >= height || yIndex + i >= width)
             {
@@ -114,15 +114,15 @@ public static class GpuBigIntFermatKernels
         var tid = ThreadIndex.X;
         var offset = row * l;
 
-        var log2L = 0;
+        int log2L = 0;
         while ((1 << log2L) < l)
         {
             log2L++;
         }
 
-        var revTid1 = 0;
-        var revTid2 = 0;
-        for (var i = 0; i < log2L; i++)
+        int revTid1 = 0;
+        int revTid2 = 0;
+        for (int i = 0; i < log2L; i++)
         {
             revTid1 = (revTid1 << 1) | ((tid >> i) & 1);
             revTid2 = (revTid2 << 1) | (((tid + l / 2) >> i) & 1);
@@ -146,7 +146,7 @@ public static class GpuBigIntFermatKernels
         Gpu.InlinePtx($"s_row[{revTid2}] = {val2};");
         Gpu.SyncThreads();
 
-        for (var s = 0; s < log2L; s++)
+        for (int s = 0; s < log2L; s++)
         {
             var len = 2 << s;
             var halfLen = len / 2;
@@ -382,7 +382,7 @@ public static class GpuBigIntFermatKernels
             ctx.Dimensions.NumberOfWords);
         Gpu.SyncGrid();
 
-        var n2 = 1;
+        int n2 = 1;
         while (n2 * n2 < ctx.Ntt.TransformLength)
         {
             n2 *= 2;
@@ -459,7 +459,7 @@ public static class GpuBigIntFermatKernels
 
         Gpu.SyncGrid();
 
-        var chunkSize = 256;
+        int chunkSize = 256;
         var chunkIdx = BlockIndex.X;
         var start = chunkIdx * chunkSize;
 
@@ -509,7 +509,7 @@ public static class GpuBigIntFermatKernels
         {
             var numChunks = (numWords + chunkSize - 1) / chunkSize;
             ulong rippleCarry = 0;
-            for (var cIdx = 0; cIdx < numChunks; cIdx++)
+            for (int cIdx = 0; cIdx < numChunks; cIdx++)
             {
                 var s = cIdx * chunkSize;
                 var e = s + chunkSize;
@@ -695,7 +695,7 @@ public static class GpuBigIntFermatKernels
     public static void Device_MultiplySquareAndReduce(int reduceCount, ref FermatContext ctx)
     {
         Device_MultiplySquare(ref ctx);
-        for (var j = 0; j < reduceCount; j++)
+        for (int j = 0; j < reduceCount; j++)
         {
             Device_FermatReduceStep(ref ctx);
         }
@@ -719,7 +719,7 @@ public static class GpuBigIntFermatKernels
         mathCtx.Operands.ResultBuffer = ctx.Buffers.ValueT;
         Device_Copy(ref mathCtx);
         
-        for (var j = 0; j < reduceCount; j++)
+        for (int j = 0; j < reduceCount; j++)
         {
             Device_FermatReduceStep(ref ctx);
         }
@@ -728,13 +728,13 @@ public static class GpuBigIntFermatKernels
     [GpuKernel(Cooperative = true)]
     public static void Kernel_StaticFermatLoop(ref FermatContext ctx, [JitConstant] string GSHARP_EXPONENT, [JitConstant] string GSHARP_EXPONENT_MINUS_4)
     {
-        for (var iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT); iter++)
+        for (int iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT); iter++)
         {
             Device_MultiplySquareAndReduce(3, ref ctx);
             Device_ShiftLeftAndReduce(3, ref ctx);
         }
 
-        for (var iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT_MINUS_4); iter++)
+        for (int iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT_MINUS_4); iter++)
         {
             Device_MultiplySquareAndReduce(3, ref ctx);
         }
@@ -746,7 +746,7 @@ public static class GpuBigIntFermatKernels
         // bit 2 (0)
         Device_MultiplySquareAndReduce(9, ref ctx);
 
-        for (var iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT_MINUS_4); iter++)
+        for (int iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT_MINUS_4); iter++)
         {
             Device_MultiplySquareAndReduce(3, ref ctx);
         }

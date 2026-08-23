@@ -65,7 +65,7 @@ public static class GpuBigIntKernels
         }
 
         ulong rippleCarry = 0;
-        for (var chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
+        for (int chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
         {
             var start = chunkIdx * chunkSize;
             var end = start + chunkSize;
@@ -142,7 +142,7 @@ public static class GpuBigIntKernels
         if (ThreadIndex.X == 0 && BlockIndex.X == 0)
         {
             long rippleBorrow = 0;
-            for (var chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
+            for (int chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
             {
                 var start = chunkIdx * chunkSize;
                 var end = start + chunkSize;
