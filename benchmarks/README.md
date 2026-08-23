@@ -17,6 +17,7 @@ For a deep dive into the specific bottlenecks, discoveries, and performance gain
 - [Phase 10: Zero-Allocation & JIT Cache Bypass](phase/phase10_zero_allocation.md)
 - [Phase 11: Complete Zero Dynamic Allocation & Native Parity](phase/phase11_jit_cache_bypass_and_zero_alloc_carry.md)
 - [Phase 12: GSharp Full Implementation and JIT Optimization](phase/phase12_gsharp_full_impl.md)
+- [Phase 13: JIT Constant Folding & Static Device-Side Execution](phase/phase13_jit_constant_folding.md)
 
 ## Overall Progress Summary
 
@@ -39,6 +40,8 @@ We have successfully implemented and benchmarked various versions of the reducti
 | **Phase 8: Six-Step FFT (Current)** | 565 ms | 3281 ms | 6883 ms | **15767 ms** | **~15.27 M-Digit/s** |
 | **Phase 12: G# Full Impl (No GpuInline)** | 708 ms | N/A | N/A | N/A | **1.70 M-Digit/s** |
 | **Phase 12.1: G# Full Impl (Opt + Inline)** | 545 ms | N/A | N/A | N/A | **2.21 M-Digit/s** |
+| **Phase 13: JIT Constant Folding (Static)** | 576 ms | *NVRTC Timeout* | *NVRTC Timeout* | N/A | **Parity Achieved** |
+
 ### 2. Framework Dispatch Overhead (G# vs Native CUDA)
 
 In Phases 9-11, we focused on completely eliminating the C# `P/Invoke` and JIT overhead when dispatching raw GPU kernels, targeting a 1.00x performance ratio compared to hand-written C++ CUDA Native.
