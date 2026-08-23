@@ -25,10 +25,13 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 
 ## 2.2 Custom Structs (User-Defined Types)
 
-G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel.
+G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel. 
+
+To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler strictly applies **Fully Qualified Name Mangling** (e.g., a C# struct `Math.Vector2` becomes `Math_Vector2` in C++).
 
 ### 2.2.1 Struct Constraints
-* **Unmanaged Only**: Structs must contain only primitive types or other unmanaged structs. Reference types (`class`, `string`) are strictly prohibited.
+* **Unmanaged Types & Arrays**: Structs should primarily contain primitive types or other structs. While standard reference types (`class`, `string`) are strictly prohibited, **C# managed arrays (`T[]`) are explicitly permitted** as struct fields. The generator transparently applies "Deep Struct Marshaling" to automatically transpose these host arrays into valid device pointers (`T*`) during execution.
+* **Nested Structs**: Structs can contain fields of other custom struct types. The AOT transpiler automatically resolves the dependency graph and emits the corresponding C++ struct definitions in topological order (dependencies first).
 * **Methods and Properties**: Instance methods and properties within a struct are currently unsupported by the AST transpiler. Structs should be treated strictly as Plain Old Data (POD) containers (`public int X; public int Y;`).
 * **Pass-by-Value Limits**: Passing large structs by value to a kernel consumes constant memory and register space. The transpiler emits a warning (`GSharpDiagnostics.LargeStructByValueWarning`) if a struct larger than 32 bytes is passed by value. Passing via `ref` or as an array pointer is recommended for large types.
 
@@ -36,6 +39,18 @@ G# supports custom user-defined C# `struct` types. When a kernel or device metho
 G# supports stack-allocated, fixed-size arrays within structs for fast, unmanaged local memory access.
 * **`[InlineArray]`**: C# 13 `[System.Runtime.CompilerServices.InlineArray(length)]` attribute is supported. The transpiler converts this to a standard C++ array field and automatically emits `operator[]` overloads for seamless device-side indexing.
 * **`unsafe fixed`**: C# `unsafe fixed` buffers (e.g., `public fixed uint Buffer[16];`) are mapped to C++ fixed-size arrays (`unsigned int Buffer[16];`). Pointer arithmetic and indexing on these buffers are natively supported in CUDA C++.
+
+### 2.2.3 Struct Instantiation
+While heap-allocated objects (`class`) remain strictly forbidden on the GPU, stack-allocated structs can be instantiated natively within kernels. 
+The AOT transpiler supports classic initialization (`new MyStruct()`), C# 9.0 **Target-typed `new` expressions** (`new()`), and C# 10 **`record struct` / Primary Constructors** (`new Point(0, 0)`).
+
+```csharp
+// All expressions are perfectly valid inside a [GpuKernel]
+Vector8 vec1 = new Vector8 { X = 1, Y = 2 };
+Vector8 vec2 = new() { X = 1, Y = 2 };
+Point p = new Point(0, 0); // record struct / Primary Constructor
+```
+*Note: The transpiler automatically converts these into equivalent C++ stack allocations (e.g., C++ brace initialization `Point{0, 0}` or initializer lists).*
 
 ## 2.3 Memory Model and Pointers
 
@@ -47,19 +62,32 @@ C# arrays provided as kernel parameters are exclusively passed as flat pointers 
 * Multidimensional arrays (`int[,]`) are unsupported. Developers must manually compute offsets on flattened 1D arrays (e.g., `y * width + x`).
 * **Implicit Marshaling**: When invoking the generated `Launch_X` stub, the host C# array is automatically pinned via `GCHandle`, allocated on the GPU (`cuMemAlloc`), copied to device memory (`cuMemcpyHtoD`), and copied back after execution (`cuMemcpyDtoH`).
 
-### 2.2.2 Modifiers (`ref` and `out`)
+### 2.3.2 Modifiers (`ref` and `out`)
 C# parameter modifiers denote specific pointer behaviors:
 * `ref T` transpiles to `T*` (A pointer to a mutable variable, typically in Global or Shared Memory).
 * `out T` transpiles to `T*` (Functions identical to `ref` in C++, but enforced by C# compiler rules to guarantee initialization).
+* **Automatic Pointer Resolution (Cascading)**: When passing a `ref` or `out` variable to another device function, the Semantic Model correctly identifies that the variable is already a pointer. The transpiler safely cascades the reference without generating double-address operators (`&`), preventing `T**` compilation errors.
+* **Member Access Transformation**: When accessing fields of a struct passed by `ref` or `out` (or any expression resolved as a pointer type by the semantic model), the AOT AST transpiler automatically converts the C# member access operator (`.`) to the C++ pointer access operator (`->`).
 
-### 2.2.3 Pointer Mathematics
-Unsafe pointer arithmetic is permitted within G# kernels (e.g., `int* ptr = data + offset;`). However, pointer access is restricted to primitive types mapped in section 2.1.
+### 2.3.3 Pointer Mathematics and `unsafe` Native Pointers
+The `CudaTypeMapper` intrinsically supports `IPointerTypeSymbol`. This means developers can explicitly declare pointer variables (`int* ptr`) within `unsafe` blocks.
+Unsafe pointer arithmetic is fully permitted and transpiles 1:1 to C++ (e.g., `int* ptr = data + offset;`). Pointer access is restricted to primitive types and unmanaged structs.
+
+## 2.4 Implicit Typing (`var`)
+
+G# fully supports implicitly typed local variables (`var`). Because the AST transpiler relies on Roslyn's Semantic Model during the evaluation pass, the exact underlying type of any `var` declaration is perfectly resolved at compile time.
+
+```csharp
+var origin = new Point(0, 0); // Safely transpiled to `Point origin = Point{0, 0};`
+var distance = origin.X;      // Safely transpiled to `float distance = origin.X;`
+```
+This enables developers to write highly readable, modern C# code without compromising the strict, static type safety required by the CUDA C++ compiler.
 
 ## 2.3 Prohibited Allocations
 
 The following C# memory operations are strictly prohibited within a G# kernel:
 
-1. **Heap Allocation**: The `new` keyword cannot be used to instantiate classes or reference types. (e.g., `new int[10]` or `new List<int>()` are invalid). The only exception is object creation for value type structs (e.g., `new Vector8()`) or `SharedMemory<T>`.
+1. **Heap Allocation**: The `new` keyword cannot be used to instantiate classes or reference types. (e.g., `new int[10]` or `new List<int>()` are invalid). The only exceptions are stack-allocated object creations for value type structs (e.g., `new Vector8()`, target-typed `new()`, or `record struct` instantiation) and both static and dynamic `SharedMemory<T>` declarations.
 2. **String Manipulation**: `string` is a managed reference type. Strings cannot be passed to, instantiated, or concatenated within a kernel.
 3. **Box/Unbox**: Casting value types to `object` or interfaces is prohibited.
 
