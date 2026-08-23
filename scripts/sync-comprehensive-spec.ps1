@@ -1,5 +1,5 @@
 param (
-    [string]$SpecFilePath = $(Join-Path $PSScriptRoot "..\docs\spec\en\08_comprehensive_example.md"),
+    [string]$SpecFilePath = $(Join-Path $PSScriptRoot "..\docs\spec\en\09_comprehensive_example.md"),
     [string]$SourceFile = $(Join-Path $PSScriptRoot "..\tests\Kassyi.GSharp.Tests\TestCases\ComprehensiveSpecKernel.cs"),
     [string]$GeneratedFile = $(Join-Path $PSScriptRoot "..\tests\Kassyi.GSharp.Tests\Snapshots\GeneratorSnapshotTests.ComprehensiveSpecKernel_GeneratesCorrectCudaSource#ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs")
 )
