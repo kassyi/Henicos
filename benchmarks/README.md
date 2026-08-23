@@ -5,17 +5,18 @@ This document tracks the performance optimizations for the Henicos (Fermat PRP t
 ## Phase Evolution Index
 For a deep dive into the specific bottlenecks, discoveries, and performance gains of each architectural iteration, refer to the following phase reports:
 
-- [Phase 1.5: Custom Reduction vs StdLib](phase1.5_cpu.md)
-- [Phase 2: Ultra Optimized CPU Logic](phase2_cuda_naive.md)
-- [Phase 3: Ultra Optimized CPU Chunking (Hybrid CPU Reduction)](phase3_hybrid_cpu_reduc.md)
-- [Phase 4: Hybrid GPU/CPU Reduction Pipeline](phase4_hybrid_cpu_gpu.md)
-- [Phase 5: Zero-Overhead VRAM Single-Threaded Reduction](phase5_zero_overhead_vram.md)
-- [Phase 6: VRAM Reduction Parallelization (Grid/Block)](phase6_vram_parallel.md)
-- [Phase 7: GPU Saturation & Parallel Normalization](phase7_gpu_saturation.md)
-- [Phase 8: Six-Step FFT Architecture (Grid Sync Elimination)](phase8_six_step_fft.md)
-- [Phase 9: G# Transpiler vs Raw CUDA Benchmark](phase9_gsharp_vs_cuda.md)
-- [Phase 10: Zero-Allocation & JIT Cache Bypass](phase10_zero_allocation.md)
-- [Phase 11: Complete Zero Dynamic Allocation & Native Parity](phase11_jit_cache_bypass_and_zero_alloc_carry.md)
+- [Phase 1.5: Custom Reduction vs StdLib](phase/phase1.5_cpu.md)
+- [Phase 2: Ultra Optimized CPU Logic](phase/phase2_cuda_naive.md)
+- [Phase 3: Ultra Optimized CPU Chunking (Hybrid CPU Reduction)](phase/phase3_hybrid_cpu_reduc.md)
+- [Phase 4: Hybrid GPU/CPU Reduction Pipeline](phase/phase4_hybrid_cpu_gpu.md)
+- [Phase 5: Zero-Overhead VRAM Single-Threaded Reduction](phase/phase5_zero_overhead_vram.md)
+- [Phase 6: VRAM Reduction Parallelization (Grid/Block)](phase/phase6_vram_parallel.md)
+- [Phase 7: GPU Saturation & Parallel Normalization](phase/phase7_gpu_saturation.md)
+- [Phase 8: Six-Step FFT Architecture (Grid Sync Elimination)](phase/phase8_six_step_fft.md)
+- [Phase 9: G# Transpiler vs Raw CUDA Benchmark](phase/phase9_gsharp_vs_cuda.md)
+- [Phase 10: Zero-Allocation & JIT Cache Bypass](phase/phase10_zero_allocation.md)
+- [Phase 11: Complete Zero Dynamic Allocation & Native Parity](phase/phase11_jit_cache_bypass_and_zero_alloc_carry.md)
+- [Phase 12: GSharp Full Implementation and JIT Optimization](phase/phase12_gsharp_full_impl.md)
 
 ## Overall Progress Summary
 
