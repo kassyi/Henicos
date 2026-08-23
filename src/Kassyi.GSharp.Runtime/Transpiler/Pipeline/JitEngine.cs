@@ -139,15 +139,8 @@ public static class JitEngine
 
     private static string ComputeHash(string input)
     {
-        using var sha256 = SHA256.Create();
         var bytes = Encoding.UTF8.GetBytes(input);
-        var hashBytes = sha256.ComputeHash(bytes);
-        var sb = new StringBuilder(hashBytes.Length * 2);
-        foreach (var b in hashBytes)
-        {
-            sb.Append(b.ToString("x2"));
-        }
-
-        return sb.ToString();
+        var hashBytes = SHA256.HashData(bytes);
+        return Convert.ToHexStringLower(hashBytes);
     }
 }
