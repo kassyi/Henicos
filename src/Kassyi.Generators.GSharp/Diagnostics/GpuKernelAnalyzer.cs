@@ -1,0 +1,118 @@
+using System.Collections.Immutable;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+
+namespace Kassyi.Generators.GSharp.Diagnostics;
+
+[DiagnosticAnalyzer(LanguageNames.CSharp)]
+public class GpuKernelAnalyzer : DiagnosticAnalyzer
+{
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        GSharpDiagnostics.ForeachNotSupported,
+        GSharpDiagnostics.LinqNotSupported,
+        GSharpDiagnostics.ImplicitVarNeedsSuffix,
+        GSharpDiagnostics.PotentialLocalMemorySpill);
+
+    public override void Initialize(AnalysisContext context)
+    {
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        context.EnableConcurrentExecution();
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+    }
+
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    {
+        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
+        // Check if the method is a GPU kernel or device method
+        var isGpuKernel = methodSymbol.GetAttributes().Any(a =>
+            KnownAttributes.IsGpuKernel(a.AttributeClass?.Name) ||
+            KnownAttributes.IsGpuDevice(a.AttributeClass?.Name));
+
+        if (!isGpuKernel)
+        {
+            return;
+        }
+
+        // Single-pass traversal of the AST to minimize time complexity
+        foreach (var node in methodDeclaration.DescendantNodes())
+        {
+            switch (node)
+            {
+                case ForEachStatementSyntax foreachStmt:
+                {
+                    var diagnostic = Diagnostic.Create(GSharpDiagnostics.ForeachNotSupported, foreachStmt.GetLocation(),
+                        methodSymbol.Name);
+                    context.ReportDiagnostic(diagnostic);
+                    break;
+                }
+                case QueryExpressionSyntax queryExpr:
+                {
+                    var diagnostic = Diagnostic.Create(GSharpDiagnostics.LinqNotSupported, queryExpr.GetLocation(),
+                        methodSymbol.Name);
+                    context.ReportDiagnostic(diagnostic);
+                    break;
+                }
+                case VariableDeclaratorSyntax variable when
+                    (variable.Parent is VariableDeclarationSyntax varDecl &&
+                     varDecl.Type.IsVar &&
+                     variable.Initializer?.Value is LiteralExpressionSyntax literal &&
+                     literal.IsKind(SyntaxKind.NumericLiteralExpression)):
+                {
+                    var text = literal.Token.Text;
+                    if (text.Contains('.') || text.Contains('e') || text.Contains('E'))
+                    {
+                        continue;
+                    }
+
+                    var upper = text.ToUpperInvariant();
+                    if (upper.Contains("U") || upper.Contains("L"))
+                    {
+                        continue;
+                    }
+
+                    var diagnostic = Diagnostic.Create(GSharpDiagnostics.ImplicitVarNeedsSuffix, variable.GetLocation(),
+                        variable.Identifier.Text);
+                    context.ReportDiagnostic(diagnostic);
+                    break;
+                }
+                case ElementAccessExpressionSyntax elementAccess:
+                {
+                    // Check if index is dynamic (not a literal)
+                    bool hasDynamicIndex = false;
+                    foreach (var arg in elementAccess.ArgumentList.Arguments)
+                    {
+                        if (!(arg.Expression is LiteralExpressionSyntax))
+                        {
+                            hasDynamicIndex = true;
+                            break;
+                        }
+                    }
+
+                    if (!hasDynamicIndex) break;
+
+                    // Check if target is a local array/buffer
+                    var symbol = context.SemanticModel.GetSymbolInfo(elementAccess.Expression).Symbol;
+                    if (symbol is ILocalSymbol localSymbol)
+                    {
+                        // Check if it's an array or pointer/buffer type
+                        if (localSymbol.Type is IArrayTypeSymbol || localSymbol.Type is IPointerTypeSymbol)
+                        {
+                            var diagnostic = Diagnostic.Create(GSharpDiagnostics.PotentialLocalMemorySpill, elementAccess.GetLocation(), localSymbol.Name);
+                            context.ReportDiagnostic(diagnostic);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
