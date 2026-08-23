@@ -621,15 +621,15 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuKernel(Cooperative = true)]
-    public static void Kernel_StaticFermatLoop(ref FermatContext ctx)
+    public static void Kernel_StaticFermatLoop(ref FermatContext ctx, [JitConstant] string GSHARP_EXPONENT, [JitConstant] string GSHARP_EXPONENT_MINUS_4)
     {
-        for (var iter = 0; iter < ctx.Dimensions.Exponent; iter++)
+        for (var iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT); iter++)
         {
             Device_MultiplySquareAndReduce(3, ref ctx);
             Device_ShiftLeftAndReduce(3, ref ctx);
         }
 
-        for (var iter = 0; iter < ctx.Dimensions.Exponent - 4; iter++)
+        for (var iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT_MINUS_4); iter++)
         {
             Device_MultiplySquareAndReduce(3, ref ctx);
         }
@@ -641,7 +641,7 @@ public static class GpuBigIntFermatKernels
         // bit 2 (0)
         Device_MultiplySquareAndReduce(9, ref ctx);
 
-        for (var iter = 0; iter < ctx.Dimensions.Exponent - 4; iter++)
+        for (var iter = 0; iter < Gpu.JitConstant(GSHARP_EXPONENT_MINUS_4); iter++)
         {
             Device_MultiplySquareAndReduce(3, ref ctx);
         }

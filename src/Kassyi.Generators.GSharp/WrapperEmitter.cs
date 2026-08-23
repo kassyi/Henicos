@@ -103,7 +103,7 @@ internal static class WrapperEmitter
         }
 
         paramList +=
-            "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0";
+            "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null";
 
         var methodName = isDevicePtr ? $"Launch_{method.Name}_Device" : $"Launch_{method.Name}";
         writer.Append($"public static unsafe void {methodName}");
@@ -156,27 +156,37 @@ internal static class WrapperEmitter
                 "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
             using (writer.Parentheses())
             {
-                writer.Append($"__gsharp_dynamic_src, \"{method.Name}\"");
+                writer.Append($"__gsharp_dynamic_src, \"{method.Name}\", macros");
             }
 
             writer.AppendLine(";");
         }
         else
         {
-            writer.AppendLine($"if (s_hfunc_{method.Name} == IntPtr.Zero)");
+            writer.AppendLine("IntPtr hfunc;");
+            writer.AppendLine($"if (macros != null || s_hfunc_{method.Name} == IntPtr.Zero)");
             using (writer.Scope())
             {
                 writer.Append(
-                    $"s_hfunc_{method.Name} = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
+                    $"IntPtr dynamic_hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{method.Name}_CudaSource, \"{method.Name}\"");
+                    writer.Append($"{method.Name}_CudaSource, \"{method.Name}\", macros");
                 }
-
                 writer.AppendLine(";");
+                
+                writer.AppendLine("if (macros == null)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"s_hfunc_{method.Name} = dynamic_hfunc;");
+                }
+                writer.AppendLine("hfunc = dynamic_hfunc;");
             }
-
-            writer.AppendLine($"IntPtr hfunc = s_hfunc_{method.Name};");
+            writer.AppendLine("else");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"hfunc = s_hfunc_{method.Name};");
+            }
         }
 
         writer.AppendLine();

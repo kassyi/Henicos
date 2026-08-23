@@ -105,8 +105,18 @@ public static class JitEngine
     /// and returns the handle to the specified kernel function.
     /// Results are cached based on the hash of the source code.
     /// </summary>
-    public static IntPtr GetOrCompileKernel(string cppSource, string kernelName)
+    public static IntPtr GetOrCompileKernel(string cppSource, string kernelName, Dictionary<string, string>? macros = null)
     {
+        if (macros != null && macros.Count > 0)
+        {
+            var sb = new StringBuilder();
+            foreach (var kvp in macros)
+            {
+                sb.AppendLine($"#define {kvp.Key} {kvp.Value}");
+            }
+            cppSource = sb.ToString() + cppSource;
+        }
+
         var sourceHash = ComputeHash(cppSource);
         var cacheKey = $"{sourceHash}_{s_smVersion}_{kernelName}";
 

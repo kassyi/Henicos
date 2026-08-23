@@ -180,19 +180,13 @@ public class FermatRunner
 
     public (uint[] Result, long EllapsedMs) RunFermatPrp()
     {
-        // Warmup JIT Compilation
-        GpuBigIntFermatKernelsWrapper.Launch_Kernel_StaticFermatLoop(
-            _context,
-            gridDimX: 1,
-            blockDimX: 1,
-            sharedMemBytes: 0
-        );
-
         var sw = Stopwatch.StartNew();
         
         // Dispatch to GSharp JIT
         GpuBigIntFermatKernelsWrapper.Launch_Kernel_StaticFermatLoop(
             _context,
+            E.ToString(),
+            (E - 4).ToString(),
             gridDimX: (uint)_maxGrid,
             blockDimX: (uint)_maxBlock,
             sharedMemBytes: (uint)_sharedSize

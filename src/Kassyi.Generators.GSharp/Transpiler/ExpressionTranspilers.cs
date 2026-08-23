@@ -145,12 +145,28 @@ internal static class ExpressionTranspilers
 
     public static void TranspileInvocationExpression(InvocationExpressionSyntax node, RoslynToCudaVisitor context)
     {
-        if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol
-            {
-                ContainingType.Name: "Gpu", Name: "InlinePtx"
-            })
+        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+
+        if (symbol is { ContainingType.Name: "Gpu", Name: "InlinePtx" })
         {
             TranspileInlinePtx(node, context);
+            return;
+        }
+
+        if (symbol is { ContainingType.Name: "Gpu", Name: "JitConstant" })
+        {
+            if (node.ArgumentList.Arguments.Count == 1)
+            {
+                var expr = node.ArgumentList.Arguments[0].Expression;
+                if (expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
+                {
+                    context.Writer.Append(literal.Token.ValueText);
+                }
+                else if (expr is IdentifierNameSyntax identifier)
+                {
+                    context.Writer.Append(identifier.Identifier.ValueText);
+                }
+            }
             return;
         }
 

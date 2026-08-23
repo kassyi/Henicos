@@ -49,6 +49,12 @@ public static class Gpu
     public static void SyncThreads() => GpuOnlyException.Throw();
     public static void SyncGrid() => GpuOnlyException.Throw();
 
+    /// <summary>
+    /// A marker method used for JIT Constant Folding.
+    /// The GSharp Transpiler will replace calls to this method with the raw macro string in the generated C++ code.
+    /// </summary>
+    public static int JitConstant(string macroName) => GpuOnlyException.Throw<int>();
+
     public static int AtomicAdd(ref int address, int val) => GpuOnlyException.Throw<int>();
     public static uint AtomicAdd(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
     public static ulong AtomicAdd(ref ulong address, ulong val) => GpuOnlyException.Throw<ulong>();

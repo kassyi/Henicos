@@ -139,6 +139,7 @@ public static class NvccCompiler
                 $"-arch={smVersion}",
                 "-std=c++17",
                 "--ptxas-options=-v",
+                "-maxrregcount=64",
                 "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
             ], $"out_fatbin_{Guid.CreateVersion7():N}.log");
     }
@@ -171,6 +172,17 @@ public static class NvccCompiler
         };
 
         Console.WriteLine($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
+        Console.WriteLine("====== CUDA SOURCE ======");
+        var cuSrc = FileSystem.File.ReadAllText(cuFile);
+        Console.WriteLine(cuSrc.Substring(0, Math.Min(cuSrc.Length, 2000))); // Print first 2000 chars
+        Console.WriteLine("...");
+        if (cuSrc.Contains("Kernel_StaticFermatLoop"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(cuSrc, @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
+            if (match.Success) Console.WriteLine(match.Value);
+        }
+        Console.WriteLine("=========================");
+
         var sw = Stopwatch.StartNew();
 
         try
