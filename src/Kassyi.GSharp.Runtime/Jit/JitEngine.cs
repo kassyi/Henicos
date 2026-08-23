@@ -19,7 +19,7 @@ public static class JitEngine
     public readonly struct CudaContextScope : IDisposable
     {
         private readonly IntPtr _prevContext;
-        
+
         public CudaContextScope()
         {
             EnsureInitialized();
@@ -81,7 +81,7 @@ public static class JitEngine
     public static void Shutdown()
     {
         using var scope = new CudaContextScope();
-        
+
         foreach (var kvp in s_functionCache)
         {
             if (kvp.Value.IsValueCreated)
@@ -105,7 +105,8 @@ public static class JitEngine
     /// and returns the handle to the specified kernel function.
     /// Results are cached based on the hash of the source code.
     /// </summary>
-    public static IntPtr GetOrCompileKernel(string cppSource, string kernelName, Dictionary<string, string>? macros = null)
+    public static IntPtr GetOrCompileKernel(string cppSource, string kernelName,
+        Dictionary<string, string>? macros = null)
     {
         if (macros != null && macros.Count > 0)
         {
@@ -114,7 +115,8 @@ public static class JitEngine
             {
                 sb.AppendLine($"#define {kvp.Key} {kvp.Value}");
             }
-            cppSource = sb.ToString() + cppSource;
+
+            cppSource = sb + cppSource;
         }
 
         var sourceHash = ComputeHash(cppSource);
