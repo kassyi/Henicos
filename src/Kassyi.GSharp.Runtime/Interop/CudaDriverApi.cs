@@ -105,6 +105,9 @@ public static class CudaDriverApi
     public static extern CUresult cuMemFree_v2(IntPtr dptr);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
+    public static extern CUresult cuMemsetD8_v2(IntPtr dptr, byte uc, IntPtr N);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
     public static extern CUresult cuMemcpyHtoD_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount);
 
     [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]

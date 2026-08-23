@@ -195,32 +195,15 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
             }
 
             var carryBufferSize = (numChunks + 1) * sizeof(long);
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var carryBuffer, carryBufferSize));
-            try
-            {
-                var zeros = new long[numChunks + 1];
-                var handle = GCHandle.Alloc(zeros, GCHandleType.Pinned);
-                try
-                {
-                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(carryBuffer, handle.AddrOfPinnedObject(),
-                        carryBufferSize));
-                }
-                finally
-                {
-                    handle.Free();
-                }
+            var carryBuffer = a.Context.CarryBuffer;
+            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, (IntPtr)carryBufferSize));
 
-                GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
-                    a.DevicePointer, b.DevicePointer, result.DevicePointer, carryBuffer, a.NumWords, chunkSize,
-                    gridDimX: (uint)gridSize, blockDimX: blockSize);
+            GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
+                a.DevicePointer, b.DevicePointer, result.DevicePointer, carryBuffer, a.NumWords, chunkSize,
+                gridDimX: (uint)gridSize, blockDimX: blockSize);
 
-                GpuBigIntKernelsWrapper.Launch_ApplyAddCarryKernel_Device(
-                    result.DevicePointer, carryBuffer, numChunks, a.NumWords, chunkSize);
-            }
-            finally
-            {
-                CudaDriverApi.cuMemFree_v2(carryBuffer);
-            }
+            GpuBigIntKernelsWrapper.Launch_ApplyAddCarryKernel_Device(
+                result.DevicePointer, carryBuffer, numChunks, a.NumWords, chunkSize);
         }
         else
         {
@@ -250,32 +233,15 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
             }
 
             var carryBufferSize = (numChunks + 1) * sizeof(long);
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var carryBuffer, carryBufferSize));
-            try
-            {
-                var zeros = new long[numChunks + 1];
-                var handle = GCHandle.Alloc(zeros, GCHandleType.Pinned);
-                try
-                {
-                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(carryBuffer, handle.AddrOfPinnedObject(),
-                        carryBufferSize));
-                }
-                finally
-                {
-                    handle.Free();
-                }
+            var carryBuffer = a.Context.CarryBuffer;
+            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, (IntPtr)carryBufferSize));
 
-                GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(
-                    a.DevicePointer, b.DevicePointer, result.DevicePointer, carryBuffer, a.NumWords, chunkSize,
-                    gridDimX: (uint)gridSize, blockDimX: blockSize);
+            GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(
+                a.DevicePointer, b.DevicePointer, result.DevicePointer, carryBuffer, a.NumWords, chunkSize,
+                gridDimX: (uint)gridSize, blockDimX: blockSize);
 
-                GpuBigIntKernelsWrapper.Launch_ApplySubBorrowKernel_Device(
-                    result.DevicePointer, carryBuffer, numChunks, a.NumWords, chunkSize);
-            }
-            finally
-            {
-                CudaDriverApi.cuMemFree_v2(carryBuffer);
-            }
+            GpuBigIntKernelsWrapper.Launch_ApplySubBorrowKernel_Device(
+                result.DevicePointer, carryBuffer, numChunks, a.NumWords, chunkSize);
         }
         else
         {
