@@ -189,6 +189,13 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             var (cppType, isPointer) = CudaTypeMapper.GetParameterCppType(p, typeSymbol);
             CheckLargeStructByValue(p, typeSymbol, isPointer);
 
+            var paramSymbol = SemanticModel.GetDeclaredSymbol(p);
+            if (paramSymbol != null && paramSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "GpuConstAttribute"))
+            {
+                Writer.AppendKeyword("const");
+                Writer.AppendSpace();
+            }
+
             Writer.Append(cppType);
             Writer.AppendSpace();
             Writer.Append(p.Identifier.Text);
