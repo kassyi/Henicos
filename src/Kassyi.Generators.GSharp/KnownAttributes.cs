@@ -1,5 +1,6 @@
 namespace Kassyi.Generators.GSharp;
 
+// ReSharper disable UnusedMember.Global
 public static class KnownAttributes
 {
     public const string GpuKernel = "GpuKernel";
@@ -19,7 +20,7 @@ public static class KnownAttributes
 
     public const string JitConstant = "JitConstant";
     public const string JitConstantAttribute = "JitConstantAttribute";
-    
+
     // Check helper
     public static bool IsGpuKernel(string? name) => name == GpuKernel || name == GpuKernelAttribute;
     public static bool IsGpuDevice(string? name) => name == GpuDevice || name == GpuDeviceAttribute;

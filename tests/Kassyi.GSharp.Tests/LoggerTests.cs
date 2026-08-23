@@ -8,16 +8,18 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests;
 
-public class LoggerFixture : IDisposable
+public class LoggerFixture : IAsyncLifetime
 {
     public LoggerFixture()
     {
         Logger.Clear();
     }
 
-    public void Dispose()
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync()
     {
-        Logger.Shutdown();
+        await Logger.ShutdownAsync();
     }
 }
 

@@ -9,7 +9,10 @@ public static class NvccCompiler
         public string Output { get; } = output;
     }
 
-    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner
+    {
+        get; set;
+    } = psi =>
     {
         using var process = new Process { StartInfo = psi };
         var outputBuilder = new StringBuilder();
@@ -43,7 +46,20 @@ public static class NvccCompiler
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        process.WaitForExit();
+
+        if (!process.WaitForExit(60000))
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch
+            {
+                // Ignore kill errors on best-effort basis
+            }
+            throw new TimeoutException($"Process timed out after 60 seconds. Partial output:\n{outputBuilder}");
+        }
+        process.WaitForExit(); // Ensure async event handlers finish
 
         var output = outputBuilder.ToString();
         if (process.ExitCode != 0)
@@ -74,8 +90,12 @@ public static class NvccCompiler
 
         using var process =
             Process.Start(psi) ?? throw new InvalidOperationException("Failed to start vswhere process");
+        if (!process.WaitForExit(10000))
+        {
+            try { process.Kill(); } catch { /* Ignore cleanup errors on best-effort basis */ }
+            throw new TimeoutException("vswhere.exe timed out.");
+        }
         var output = process.StandardOutput.ReadToEnd().Trim();
-        process.WaitForExit();
         return output;
     });
 
@@ -179,7 +199,10 @@ public static class NvccCompiler
         if (cuSrc.Contains("Kernel_StaticFermatLoop"))
         {
             var match = System.Text.RegularExpressions.Regex.Match(cuSrc, @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
-            if (match.Success) Console.WriteLine(match.Value);
+            if (match.Success)
+            {
+                Console.WriteLine(match.Value);
+            }
         }
         Console.WriteLine("=========================");
 

@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
+using Kassyi.Generators.GSharp.Transpiler;
 
 namespace Kassyi.Generators.GSharp;
 
@@ -70,6 +71,41 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
+        var commonDeviceSource = GenerateCommonDeviceSource(compilation, deviceMethods, context);
+        var preludeSource = GetPreludeSource();
+
+        foreach (var method in kernelMethods.OfType<IMethodSymbol>()
+                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        {
+            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+            if (syntaxRef == null)
+            {
+                continue;
+            }
+
+            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
+            if (syntaxNode == null)
+            {
+                continue;
+            }
+
+            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
+            var visitor = new RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
+            var cppSource = visitor.GenerateCudaSource(syntaxNode, isDevice: false);
+
+            var finalSource = preludeSource + commonDeviceSource + cppSource;
+
+            // Generate the C# Wrapper Class
+            var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, finalSource);
+
+            context.AddSource($"{method.ContainingType.Name}_{method.Name}_Wrapper.g.cs",
+                SourceText.From(wrapperSource, Encoding.UTF8));
+        }
+    }
+
+    private static string GenerateCommonDeviceSource(Compilation compilation,
+        ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context)
+    {
         var deviceSourceBuilder = new StringBuilder();
 
         // Pass 1: Forward declarations
@@ -89,7 +125,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
+            var visitor = new RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
             var signatureCode = visitor.GenerateCudaSignature(syntaxNode, isDevice: true);
             deviceSourceBuilder.AppendLine(signatureCode);
         }
@@ -111,74 +147,25 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
+            var visitor = new RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
             var deviceCode = visitor.GenerateCudaSource(syntaxNode, isDevice: true);
             deviceSourceBuilder.AppendLine(deviceCode);
         }
 
-        var commonDeviceSource = deviceSourceBuilder.ToString();
+        return deviceSourceBuilder.ToString();
+    }
 
-        foreach (var method in kernelMethods.OfType<IMethodSymbol>()
-                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+    private static string GetPreludeSource()
+    {
+        var assembly = typeof(GpuKernelGenerator).Assembly;
+        var resourceName = "Kassyi.Generators.GSharp.Resources.Prelude.cu";
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
         {
-            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null)
-            {
-                continue;
-            }
-
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null)
-            {
-                continue;
-            }
-
-            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new Transpiler.RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
-            var cppSource = visitor.GenerateCudaSource(syntaxNode, isDevice: false);
-
-            var finalSource = """
-                // GSharp Prelude
-                #include <cooperative_groups.h>
-                namespace cg=cooperative_groups;
-
-                __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
-                unsigned int res;
-                unsigned int c_in=(unsigned int)*carry;
-                unsigned int c_out;
-                asm volatile(
-                "add.cc.u32 %0, %2, -1;\n\t"
-                "addc.cc.u32 %0, %3, %4;\n\t"
-                "addc.u32 %1, 0, 0;"
-                :"=&r"(res),"=r"(c_out)
-                :"r"(c_in),"r"(a),"r"(b)
-                );
-                *carry=c_out;
-                return res;
-                }
-                __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
-                unsigned int res;
-                unsigned int dummy;
-                unsigned int b_in=(unsigned int)*borrow;
-                unsigned int b_out;
-                asm volatile(
-                "sub.cc.u32 %1, 0, %3;\n\t"
-                "subc.cc.u32 %0, %4, %5;\n\t"
-                "subc.u32 %2, 0, 0;"
-                :"=&r"(res),"=&r"(dummy),"=r"(b_out)
-                :"r"(b_in),"r"(a),"r"(b)
-                );
-                *borrow=b_out&1;
-                return res;
-                }
-
-                """ + commonDeviceSource + cppSource;
-
-            // Generate the C# Wrapper Class
-            var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, finalSource);
-
-            context.AddSource($"{method.ContainingType.Name}_{method.Name}_Wrapper.g.cs",
-                SourceText.From(wrapperSource, Encoding.UTF8));
+            return "// Prelude not found\n";
         }
+
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd() + "\n";
     }
 }

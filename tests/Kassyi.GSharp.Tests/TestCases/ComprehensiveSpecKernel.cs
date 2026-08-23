@@ -241,8 +241,8 @@ public static partial class ComprehensiveSpecKernel
         using var result = new GpuBigInteger(context, 1024);
 
         // AST Construction: evaluated lazily and dispatched to GPU
-        GpuBigInteger.Add(a, b, result);
-        GpuBigInteger.Sub(result, a, b);
+        result.Value = a + b;
+        b.Value = result - a;
     }
 
     [GpuKernel(Cooperative = true)]

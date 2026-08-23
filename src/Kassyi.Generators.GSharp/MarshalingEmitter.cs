@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Kassyi.Generators.GSharp;
@@ -9,8 +6,7 @@ internal static class MarshalingEmitter
 {
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
-        return type is INamedTypeSymbol named &&
-               named.TypeKind == TypeKind.Struct &&
+        return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
                named.ContainingNamespace.Name != "System";
     }
 
@@ -435,7 +431,7 @@ internal static class MarshalingEmitter
             {
                 writer.AppendLine($"""
                     CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}_temp_out, d_{p.Name}, {p.Name}_size));
-                    native_{p.Name} = (__Native_{pTypeName})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp_out, typeof(__Native_{pTypeName}));
+                    native_{p.Name} = (__Native_{pTypeName})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp_out, typeof(__Native_{pTypeName}))!;
                     """);
             }
 
@@ -487,7 +483,7 @@ internal static class MarshalingEmitter
         {
             writer.AppendLine($"""
                 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}_temp, d_{p.Name}, {p.Name}_size));
-                {p.Name} = ({typeString})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp, typeof({typeString}));
+                {p.Name} = ({typeString})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp, typeof({typeString}))!;
                 """);
         }
 

@@ -84,7 +84,7 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor LinqNotSupported = new(
         id: "GSH0008",
         title: "LINQ is not allowed in GPU kernels",
-        messageFormat: "The GPU method '{0}' uses LINQ query expressions, which are not supported on the GPU.",
+        messageFormat: "The GPU method '{0}' uses LINQ query expressions, which are not supported on the GPU",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

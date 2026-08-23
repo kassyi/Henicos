@@ -13,6 +13,7 @@ internal static class CudaIntrinsicsMapper
             "SyncThreads" => "__syncthreads",
             "SyncGrid" => "cg::this_grid().sync",
             "AtomicAdd" => "atomicAdd",
+            "AtomicSub" => "atomicSub",
             "AddWithCarry" => "__gsharp_add_cc",
             "SubWithBorrow" => "__gsharp_sub_cc",
             _ => name

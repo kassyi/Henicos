@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -47,42 +46,39 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             switch (node)
             {
                 case ForEachStatementSyntax foreachStmt:
-                {
-                    var diagnostic = Diagnostic.Create(GSharpDiagnostics.ForeachNotSupported, foreachStmt.GetLocation(),
-                        methodSymbol.Name);
-                    context.ReportDiagnostic(diagnostic);
-                    break;
-                }
+                    {
+                        var diagnostic = Diagnostic.Create(GSharpDiagnostics.ForeachNotSupported, foreachStmt.GetLocation(),
+                            methodSymbol.Name);
+                        context.ReportDiagnostic(diagnostic);
+                        break;
+                    }
                 case QueryExpressionSyntax queryExpr:
-                {
-                    var diagnostic = Diagnostic.Create(GSharpDiagnostics.LinqNotSupported, queryExpr.GetLocation(),
-                        methodSymbol.Name);
-                    context.ReportDiagnostic(diagnostic);
-                    break;
-                }
-                case VariableDeclaratorSyntax variable when
-                    (variable.Parent is VariableDeclarationSyntax varDecl &&
-                     varDecl.Type.IsVar &&
-                     variable.Initializer?.Value is LiteralExpressionSyntax literal &&
-                     literal.IsKind(SyntaxKind.NumericLiteralExpression)):
-                {
-                    var text = literal.Token.Text;
-                    if (text.Contains('.') || text.Contains('e') || text.Contains('E'))
                     {
-                        continue;
+                        var diagnostic = Diagnostic.Create(GSharpDiagnostics.LinqNotSupported, queryExpr.GetLocation(),
+                            methodSymbol.Name);
+                        context.ReportDiagnostic(diagnostic);
+                        break;
                     }
-
-                    var upper = text.ToUpperInvariant();
-                    if (upper.Contains("U") || upper.Contains("L"))
+                case VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Type.IsVar: true }, Initializer: { Value: LiteralExpressionSyntax literal } } variable
+                    when literal.IsKind(SyntaxKind.NumericLiteralExpression):
                     {
-                        continue;
-                    }
+                        var text = literal.Token.Text;
+                        if (text.Contains('.') || text.Contains('e') || text.Contains('E'))
+                        {
+                            continue;
+                        }
 
-                    var diagnostic = Diagnostic.Create(GSharpDiagnostics.ImplicitVarNeedsSuffix, variable.GetLocation(),
-                        variable.Identifier.Text);
-                    context.ReportDiagnostic(diagnostic);
-                    break;
-                }
+                        var upper = text.ToUpperInvariant();
+                        if (upper.Contains("U") || upper.Contains("L"))
+                        {
+                            continue;
+                        }
+
+                        var diagnostic = Diagnostic.Create(GSharpDiagnostics.ImplicitVarNeedsSuffix, variable.GetLocation(),
+                            variable.Identifier.Text);
+                        context.ReportDiagnostic(diagnostic);
+                        break;
+                    }
             }
         }
     }

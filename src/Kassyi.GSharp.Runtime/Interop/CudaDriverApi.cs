@@ -1,7 +1,6 @@
 // ReSharper disable UnusedMember.Global
 
-
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -57,7 +56,7 @@ public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
     }
 }
 
-public static class CudaDriverApi
+public static partial class CudaDriverApi
 {
     private const string DllName = "nvcuda.dll";
 
@@ -67,60 +66,78 @@ public static class CudaDriverApi
         ComputeCapabilityMinor = 76
     }
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuInit(uint flags);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuInit(uint flags);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuDeviceGet(out int device, int ordinal);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuDeviceGet(out int device, int ordinal);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuCtxCreate_v2(out IntPtr pctx, uint flags, int dev);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxCreate_v2(out IntPtr pctx, uint flags, int dev);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuCtxDestroy_v2(IntPtr ctx);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxDestroy_v2(IntPtr ctx);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuCtxSetCurrent(IntPtr ctx);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxSetCurrent(IntPtr ctx);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuCtxGetCurrent(out IntPtr pctx);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxGetCurrent(out IntPtr pctx);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuCtxSynchronize();
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxSynchronize();
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-    public static extern CUresult cuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
+    [LibraryImport(DllName, StringMarshalling = StringMarshalling.Utf8)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuModuleUnload(IntPtr hmod);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuModuleUnload(IntPtr hmod);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemAlloc_v2(out IntPtr dptr, IntPtr bytesize);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemAlloc_v2(out IntPtr dptr, IntPtr bytesize);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemFree_v2(IntPtr dptr);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemFree_v2(IntPtr dptr);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemsetD8_v2(IntPtr dptr, byte uc, IntPtr N);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemsetD8_v2(IntPtr dptr, byte uc, IntPtr N);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemcpyHtoD_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyHtoD_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemcpyDtoH_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyDtoH_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static extern CUresult cuMemcpyDtoD_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount);
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyDtoD_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static unsafe extern CUresult cuLaunchKernel(
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static unsafe partial CUresult cuLaunchKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
         uint blockDimX, uint blockDimY, uint blockDimZ,
@@ -129,8 +146,9 @@ public static class CudaDriverApi
         void** kernelParams,
         IntPtr extra);
 
-    [DllImport(DllName, CallingConvention = CallingConvention.StdCall)]
-    public static unsafe extern CUresult cuLaunchCooperativeKernel(
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static unsafe partial CUresult cuLaunchCooperativeKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
         uint blockDimX, uint blockDimY, uint blockDimZ,
@@ -138,3 +156,4 @@ public static class CudaDriverApi
         IntPtr hStream,
         void** kernelParams);
 }
+

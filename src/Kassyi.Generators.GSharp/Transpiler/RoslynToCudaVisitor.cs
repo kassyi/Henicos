@@ -10,7 +10,10 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
 {
     public SourceWriter Writer { get; private set; } = new();
     public HashSet<INamedTypeSymbol> UsedStructs { get; } = new(SymbolEqualityComparer.Default);
-    public bool HasEmittedDynamicSmemBase { get; set; }
+    public bool HasEmittedDynamicSmemBase
+    {
+        get; set;
+    }
     public SemanticModel SemanticModel => semanticModel;
     public Action<Diagnostic>? ReportDiagnostic => reportDiagnostic;
 
@@ -335,7 +338,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                 Writer.AppendLine(";");
 
                 Writer.Append($"__device__ inline {cppElementType}& operator");
-                using (Writer.Brackets()) {}
+                using (Writer.Brackets()) { }
                 using (Writer.Parentheses()) { Writer.Append("int index"); }
                 using (Writer.Scope())
                 {
@@ -345,7 +348,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                 }
 
                 Writer.Append($"__device__ inline const {cppElementType}& operator");
-                using (Writer.Brackets()) {}
+                using (Writer.Brackets()) { }
                 using (Writer.Parentheses()) { Writer.Append("int index"); }
                 Writer.AppendLine(" const");
                 using (Writer.Scope())
@@ -375,39 +378,39 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                 switch (member)
                 {
                     case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
-                    {
-                        var syntax =
-                            field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-                        var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-                        if (sizeExp != null)
                         {
-                            Writer.Append($"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}");
-                            using (Writer.Brackets())
+                            var syntax =
+                                field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+                            var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+                            if (sizeExp != null)
                             {
-                                Visit(sizeExp);
+                                Writer.Append($"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}");
+                                using (Writer.Brackets())
+                                {
+                                    Visit(sizeExp);
+                                }
+                                Writer.AppendLine(";");
                             }
-                            Writer.AppendLine(";");
-                        }
-                        else
-                        {
-                            Writer.AppendLine(
-                                $"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}; // ERROR: fixed size not found");
-                        }
+                            else
+                            {
+                                Writer.AppendLine(
+                                    $"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}; // ERROR: fixed size not found");
+                            }
 
-                        break;
-                    }
+                            break;
+                        }
                     case IFieldSymbol field:
-                    {
-                        var fieldConst = field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
-                        Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
-                        break;
-                    }
+                        {
+                            var fieldConst = field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
+                            Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
+                            break;
+                        }
                     case IPropertySymbol prop:
-                    {
-                        var propConst = prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
-                        Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
-                        break;
-                    }
+                        {
+                            var propConst = prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
+                            Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
+                            break;
+                        }
                 }
             }
         }

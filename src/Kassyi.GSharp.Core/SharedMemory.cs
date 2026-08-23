@@ -1,5 +1,3 @@
-using System;
-
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
@@ -8,7 +6,9 @@ namespace Kassyi.GSharp.Core;
 /// </summary>
 public readonly ref struct SharedMemory<T> where T : unmanaged
 {
-    public SharedMemory(int size) { }
+    public SharedMemory(int size)
+    {
+    }
 
     public T this[int index]
     {

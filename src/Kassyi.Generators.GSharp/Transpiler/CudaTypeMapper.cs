@@ -6,7 +6,7 @@ namespace Kassyi.Generators.GSharp.Transpiler;
 
 internal static class CudaTypeMapper
 {
-        public static string MapType(ITypeSymbol? typeSymbol)
+    public static string MapType(ITypeSymbol? typeSymbol)
     {
         if (typeSymbol == null)
         {

@@ -1,10 +1,7 @@
 // ReSharper disable UnusedMember.Global
 
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
-using System.Text;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;
@@ -48,20 +45,22 @@ public static class JitEngine
 
         lock (s_initLock)
         {
-            if (!s_isGlobalInit)
+            if (s_isGlobalInit)
             {
-                CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
-
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var major,
-                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
-                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var minor,
-                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
-                s_smVersion = $"sm_{major}{minor}";
-
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
-                s_isGlobalInit = true;
+                return;
             }
+
+            CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
+            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+
+            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var major,
+                CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
+            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var minor,
+                CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
+            s_smVersion = $"sm_{major}{minor}";
+
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+            s_isGlobalInit = true;
         }
     }
 
@@ -84,16 +83,18 @@ public static class JitEngine
 
         foreach (var kvp in s_functionCache)
         {
-            if (kvp.Value.IsValueCreated)
+            if (!kvp.Value.IsValueCreated)
             {
-                try
-                {
-                    CudaDriverApi.cuModuleUnload(kvp.Value.Value.Module);
-                }
-                catch
-                {
-                    // Ignore unload errors during shutdown to ensure we attempt to unload all modules.
-                }
+                continue;
+            }
+
+            try
+            {
+                CudaDriverApi.cuModuleUnload(kvp.Value.Value.Module);
+            }
+            catch
+            {
+                // Ignore unload errors during shutdown to ensure we attempt to unload all modules.
             }
         }
 
@@ -105,51 +106,96 @@ public static class JitEngine
     /// and returns the handle to the specified kernel function.
     /// Results are cached based on the hash of the source code.
     /// </summary>
-    public static IntPtr GetOrCompileKernel(string cppSource, string kernelName,
-        Dictionary<string, string>? macros = null)
+    public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
+        Dictionary<string, string>? jitConstants = null, Dictionary<string, string>? macros = null)
     {
-        if (macros != null && macros.Count > 0)
+        var sb = new StringBuilder(kernelName);
+        if (jitConstants != null)
         {
-            var sb = new StringBuilder();
-            foreach (var kvp in macros)
+            foreach (var kvp in jitConstants.OrderBy(x => x.Key))
             {
-                sb.AppendLine($"#define {kvp.Key} {kvp.Value}");
+                sb.Append($"|{kvp.Key}={kvp.Value}");
             }
-
-            cppSource = sb + cppSource;
         }
-
-        var sourceHash = ComputeHash(cppSource);
-        var cacheKey = $"{sourceHash}_{s_smVersion}_{kernelName}";
+        if (macros != null)
+        {
+            foreach (var kvp in macros.OrderBy(x => x.Key))
+            {
+                sb.Append($"|{kvp.Key}={kvp.Value}");
+            }
+        }
+        var cacheKey = sb.ToString();
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
         {
-            using var scope = new CudaContextScope();
-
-            // Compilation path
-            var tempDir = Path.Combine(Path.GetTempPath(), "Kassyi.GSharp.Runtime.JitCache");
-            Directory.CreateDirectory(tempDir);
-
-            var cuFile = Path.Combine(tempDir, $"{sourceHash}.cu");
-            var fatbinFile = Path.Combine(tempDir, $"{sourceHash}_{s_smVersion}.fatbin");
-
-            if (!File.Exists(fatbinFile))
+            var combinedMacros = new Dictionary<string, string>();
+            if (jitConstants != null)
             {
-                File.WriteAllText(cuFile, cppSource, new UTF8Encoding(false));
-
-                // Invoke the compiler backend with SM version
-                NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, s_smVersion);
+                foreach (var kvp in jitConstants)
+                {
+                    combinedMacros[kvp.Key] = kvp.Value;
+                }
+            }
+            if (macros != null)
+            {
+                foreach (var kvp in macros)
+                {
+                    combinedMacros[kvp.Key] = kvp.Value;
+                }
             }
 
-            var ptxBytes = File.ReadAllBytes(fatbinFile);
+            var cppSource = PreprocessSource(baseSource, combinedMacros);
+            var sourceHash = ComputeHash(cppSource);
 
-            CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, 0, null, null));
-            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
-
-            return new GpuModule(module, hfunc);
+            using var scope = new CudaContextScope();
+            var fatbinFile = CompileToFatbin(sourceHash, cppSource);
+            return LoadKernelFunction(fatbinFile, kernelName);
         }));
 
         return lazyModule.Value.Function;
+    }
+
+    private static string PreprocessSource(string cppSource, Dictionary<string, string>? macros)
+    {
+        if (macros is not { Count: > 0 })
+        {
+            return cppSource;
+        }
+
+        var sb = new StringBuilder();
+        foreach (var kvp in macros)
+        {
+            sb.AppendLine($"#define {kvp.Key} {kvp.Value}");
+        }
+
+        return sb + cppSource;
+    }
+
+    private static string CompileToFatbin(string sourceHash, string cppSource)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "Kassyi.GSharp.Runtime.JitCache");
+        Directory.CreateDirectory(tempDir);
+
+        var cuFile = Path.Combine(tempDir, $"{sourceHash}.cu");
+        var fatbinFile = Path.Combine(tempDir, $"{sourceHash}_{s_smVersion}.fatbin");
+
+        if (File.Exists(fatbinFile))
+        {
+            return fatbinFile;
+        }
+
+        File.WriteAllText(cuFile, cppSource, new UTF8Encoding(false));
+        NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, s_smVersion);
+
+        return fatbinFile;
+    }
+
+    private static GpuModule LoadKernelFunction(string fatbinFile, string kernelName)
+    {
+        var ptxBytes = File.ReadAllBytes(fatbinFile);
+        CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, 0, null, null));
+        CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
+        return new GpuModule(module, hfunc);
     }
 
     private static string ComputeHash(string input)

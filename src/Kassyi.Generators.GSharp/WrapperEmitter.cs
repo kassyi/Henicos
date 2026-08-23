@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 
 namespace Kassyi.Generators.GSharp;
@@ -31,7 +29,6 @@ internal static class WrapperEmitter
             using (writer.Scope())
             {
                 WriteKernelSource(writer, method, cppSource);
-                WriteKernelHandleFields(writer, method);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
                 WriteLaunchMethod(writer, method, false);
                 WriteLaunchMethod(writer, method, true);
@@ -48,15 +45,6 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteKernelHandleFields(SourceWriter writer, IMethodSymbol method)
-    {
-        var jitConstants = method.Parameters.Where(IsJitConstant).ToList();
-        if (!jitConstants.Any())
-        {
-            writer.AppendLine($"private static IntPtr s_hfunc_{method.Name} = IntPtr.Zero;");
-            writer.AppendLine();
-        }
-    }
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
@@ -127,70 +115,36 @@ internal static class WrapperEmitter
         var jitConstants = method.Parameters.Where(IsJitConstant).ToList();
         if (jitConstants.Any())
         {
-            writer.AppendLine("var __gsharp_dynamic_src = string.Join");
-            using (writer.Parentheses())
+            writer.AppendLine("var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
+            foreach (var jc in jitConstants)
             {
-                writer.Append("System.Environment.NewLine, new string");
-                using (writer.Brackets())
+                writer.Append($"__gsharp_jit_constants.Add(\"{jc.Name}\", ");
+                using (writer.Parentheses())
                 {
+                    writer.Append(jc.Name);
                 }
-
-                writer.AppendLine();
-                using (writer.Scope())
-                {
-                    foreach (var jc in jitConstants)
-                    {
-                        writer.Append($"\"#define {jc.Name} \" + ");
-                        using (writer.Parentheses())
-                        {
-                            writer.Append(jc.Name);
-                        }
-
-                        writer.Append(".ToString()");
-                        writer.AppendLine(",");
-                    }
-
-                    writer.AppendLine($"{method.Name}_CudaSource");
-                }
+                writer.AppendLine(".ToString());");
             }
-
-            writer.AppendLine(";");
 
             writer.Append(
                 "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
             using (writer.Parentheses())
             {
-                writer.Append($"__gsharp_dynamic_src, \"{method.Name}\", macros");
+                writer.Append($"\"{method.Name}\", {method.Name}_CudaSource, __gsharp_jit_constants, macros");
             }
 
             writer.AppendLine(";");
         }
         else
         {
-            writer.AppendLine("IntPtr hfunc;");
-            writer.AppendLine($"if (macros != null || s_hfunc_{method.Name} == IntPtr.Zero)");
-            using (writer.Scope())
+            // We no longer need s_hfunc caching in the wrapper because JitEngine handles the caching natively!
+            writer.Append(
+                "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
+            using (writer.Parentheses())
             {
-                writer.Append(
-                    $"IntPtr dynamic_hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{method.Name}_CudaSource, \"{method.Name}\", macros");
-                }
-                writer.AppendLine(";");
-                
-                writer.AppendLine("if (macros == null)");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"s_hfunc_{method.Name} = dynamic_hfunc;");
-                }
-                writer.AppendLine("hfunc = dynamic_hfunc;");
+                writer.Append($"\"{method.Name}\", {method.Name}_CudaSource, null, macros");
             }
-            writer.AppendLine("else");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"hfunc = s_hfunc_{method.Name};");
-            }
+            writer.AppendLine(";");
         }
 
         writer.AppendLine();

@@ -26,13 +26,16 @@ public enum LogLevel
 public abstract class Logger : ILogger
 {
     private const int MaxRetries = 3;
+    private const int BufferCapacity = 10000;
+    private const int RetryDelayMs = 50;
+    private const string ClearCommand = "__CLEAR__";
 
     private static readonly string s_logPath = Path.Combine(
         AppDomain.CurrentDomain.BaseDirectory,
         "gsharp_diagnostics.log"
     );
 
-    private static readonly BoundedChannelOptions s_channelOptions = new(10000)
+    private static readonly BoundedChannelOptions s_channelOptions = new(BufferCapacity)
     {
         FullMode = BoundedChannelFullMode.DropOldest
     };
@@ -49,7 +52,10 @@ public abstract class Logger : ILogger
         s_loggingTask = Task.Run(ProcessLogQueueAsync);
     }
 
-    public static LogLevel ActiveLogLevel { get; set; } =
+    public static LogLevel ActiveLogLevel
+    {
+        get; set;
+    } =
         LogLevel.Trace; // Trace by default to output everything during debugging
 
     public void Log<TState>(
@@ -86,7 +92,7 @@ public abstract class Logger : ILogger
     private static async Task ProcessLogQueueAsync()
     {
         // リアロケーションの O(N) を排除するため、Channelの最大容量で初期化
-        var buffer = new List<string>(10000);
+        var buffer = new List<string>(BufferCapacity);
 
         while (await s_logChannel.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
@@ -95,7 +101,7 @@ public abstract class Logger : ILogger
                 // I/O回数のオーダーを O(N/100) -> O(1) に削減するため全量を吸い上げる
                 while (s_logChannel.Reader.TryRead(out var msg))
                 {
-                    if (msg == "__CLEAR__")
+                    if (msg == ClearCommand)
                     {
                         if (File.Exists(s_logPath))
                         {
@@ -136,7 +142,7 @@ public abstract class Logger : ILogger
                         }
                         else
                         {
-                            await Task.Delay(50 * retryCount).ConfigureAwait(false);
+                            await Task.Delay(RetryDelayMs * retryCount).ConfigureAwait(false);
                         }
                     }
                 }
@@ -152,12 +158,12 @@ public abstract class Logger : ILogger
         }
     }
 
-    public static void Shutdown()
+    public static async Task ShutdownAsync()
     {
         s_logChannel.Writer.Complete();
         try
         {
-            s_loggingTask.Wait(TimeSpan.FromSeconds(5));
+            await s_loggingTask.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
         }
         catch
         {
@@ -189,7 +195,7 @@ public abstract class Logger : ILogger
         s_logChannel.Writer.TryWrite(logLine);
     }
 
-    public static void Clear() => s_logChannel.Writer.TryWrite("__CLEAR__");
+    public static void Clear() => s_logChannel.Writer.TryWrite(ClearCommand);
 
     protected static void AddInterval(string key, long elapsedMilliseconds) =>
         s_accumulatedTimes.AddOrUpdate(key, elapsedMilliseconds, (_, current) => current + elapsedMilliseconds);

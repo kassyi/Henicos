@@ -87,7 +87,7 @@ internal static class DeclarationTranspilers
         if (!context.HasEmittedDynamicSmemBase)
         {
             context.Writer.Append("extern __shared__ char __gsharp_dynamic_smem");
-            using (context.Writer.Brackets()) {}
+            using (context.Writer.Brackets()) { }
             context.Writer.AppendLine(";");
             context.Writer.AppendLine("size_t __smem_offset = 0;");
             context.HasEmittedDynamicSmemBase = true;
@@ -109,7 +109,7 @@ internal static class DeclarationTranspilers
         }
         context.Writer.Append(";");
         context.Writer.AppendLine();
-        
+
         context.Writer.Append($"{cppElementType}* {v.Identifier.Text} = ");
         using (context.Writer.Parentheses()) { context.Writer.Append($"{cppElementType}*"); }
         using (context.Writer.Parentheses()) { context.Writer.Append("__gsharp_dynamic_smem + __smem_offset"); }
