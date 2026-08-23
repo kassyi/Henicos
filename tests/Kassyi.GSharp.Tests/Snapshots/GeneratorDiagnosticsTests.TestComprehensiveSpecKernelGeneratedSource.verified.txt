@@ -9,36 +9,36 @@ public static partial class ComprehensiveSpecKernelWrapper
 {
 public const string ProcessPhysics_CudaSource = @"// GSharp Prelude
 #include <cooperative_groups.h>
-namespace cg = cooperative_groups;
+namespace cg=cooperative_groups;
 
-__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
-    unsigned int res;
-    unsigned int c_in = (unsigned int)*carry;
-    unsigned int c_out;
-    asm volatile(
-        ""add.cc.u32 %0, %2, -1;\n\t""
-        ""addc.cc.u32 %0, %3, %4;\n\t""
-        ""addc.u32 %1, 0, 0;""
-        : ""=&r""(res), ""=r""(c_out)
-        : ""r""(c_in), ""r""(a), ""r""(b)
-    );
-    *carry = c_out;
-    return res;
+__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
+unsigned int res;
+unsigned int c_in=(unsigned int)*carry;
+unsigned int c_out;
+asm volatile(
+""add.cc.u32 %0, %2, -1;\n\t""
+""addc.cc.u32 %0, %3, %4;\n\t""
+""addc.u32 %1, 0, 0;""
+:""=&r""(res),""=r""(c_out)
+:""r""(c_in),""r""(a),""r""(b)
+);
+*carry=c_out;
+return res;
 }
-__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
-    unsigned int res;
-    unsigned int dummy;
-    unsigned int b_in = (unsigned int)*borrow;
-    unsigned int b_out;
-    asm volatile(
-        ""sub.cc.u32 %1, 0, %3;\n\t""
-        ""subc.cc.u32 %0, %4, %5;\n\t""
-        ""subc.u32 %2, 0, 0;""
-        : ""=&r""(res), ""=&r""(dummy), ""=r""(b_out)
-        : ""r""(b_in), ""r""(a), ""r""(b)
-    );
-    *borrow = b_out & 1;
-    return res;
+__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
+unsigned int res;
+unsigned int dummy;
+unsigned int b_in=(unsigned int)*borrow;
+unsigned int b_out;
+asm volatile(
+""sub.cc.u32 %1, 0, %3;\n\t""
+""subc.cc.u32 %0, %4, %5;\n\t""
+""subc.u32 %2, 0, 0;""
+:""=&r""(res),""=&r""(dummy),""=r""(b_out)
+:""r""(b_in),""r""(a),""r""(b)
+);
+*borrow=b_out&1;
+return res;
 }
 struct DebugReduc_PhysicsVector;
 __forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
@@ -156,6 +156,7 @@ size_t __smem_offset = 0;
 __smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
 float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (particleCount) * sizeof(float);
+__shared__ int targetTypedCache[256];
 if((tid<particleCount))
 {
 DebugReduc_PhysicsVector p=particles[tid];
@@ -213,16 +214,31 @@ inlineVec[0]=123;
 inlineVec[1]=456;
 {
 DebugReduc_ComprehensiveSpecKernel_PhysicsState state=DebugReduc_ComprehensiveSpecKernel_PhysicsState;
-state.Buffer[0]=inlineVec[0];
-state.Buffer[1]=inlineVec[1];
+DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState=&state;
+int stateSize=PhysicsState;
+pState.Buffer[0]=inlineVec[0];
+(*pState).Buffer[1]=inlineVec[1];
 unsigned long long carry=0;
-unsigned int sum=__gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
+unsigned int sum=__gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
 long long borrow=0;
-unsigned int diff=__gsharp_sub_cc(sum,state.Buffer[1],&borrow);
+unsigned int diff=__gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
 if((sum>diff))
 {
-state.Flags=1;
+pState.Flags=1;
 }
+}
+bool condition1=(tx>0);
+bool condition2=(ty==0);
+if((condition1&&condition2))
+{
+int bitwise=(((tx<<2))|(((ty>>1))^0xFF));
+bitwise&=~1;
+mag=((bitwise>0))(mag*2.0f)(mag/2.0f);
+}
+else
+if((condition1||!condition2))
+{
+mag+=1.5f;
 }
 Intrinsics.InlinePtx(""/* test ptx inline */"");
 if((ty>0))
@@ -509,36 +525,36 @@ public static partial class ComprehensiveSpecKernelWrapper
 {
 public const string CooperativePhysicsProcess_CudaSource = @"// GSharp Prelude
 #include <cooperative_groups.h>
-namespace cg = cooperative_groups;
+namespace cg=cooperative_groups;
 
-__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
-    unsigned int res;
-    unsigned int c_in = (unsigned int)*carry;
-    unsigned int c_out;
-    asm volatile(
-        ""add.cc.u32 %0, %2, -1;\n\t""
-        ""addc.cc.u32 %0, %3, %4;\n\t""
-        ""addc.u32 %1, 0, 0;""
-        : ""=&r""(res), ""=r""(c_out)
-        : ""r""(c_in), ""r""(a), ""r""(b)
-    );
-    *carry = c_out;
-    return res;
+__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
+unsigned int res;
+unsigned int c_in=(unsigned int)*carry;
+unsigned int c_out;
+asm volatile(
+""add.cc.u32 %0, %2, -1;\n\t""
+""addc.cc.u32 %0, %3, %4;\n\t""
+""addc.u32 %1, 0, 0;""
+:""=&r""(res),""=r""(c_out)
+:""r""(c_in),""r""(a),""r""(b)
+);
+*carry=c_out;
+return res;
 }
-__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
-    unsigned int res;
-    unsigned int dummy;
-    unsigned int b_in = (unsigned int)*borrow;
-    unsigned int b_out;
-    asm volatile(
-        ""sub.cc.u32 %1, 0, %3;\n\t""
-        ""subc.cc.u32 %0, %4, %5;\n\t""
-        ""subc.u32 %2, 0, 0;""
-        : ""=&r""(res), ""=&r""(dummy), ""=r""(b_out)
-        : ""r""(b_in), ""r""(a), ""r""(b)
-    );
-    *borrow = b_out & 1;
-    return res;
+__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
+unsigned int res;
+unsigned int dummy;
+unsigned int b_in=(unsigned int)*borrow;
+unsigned int b_out;
+asm volatile(
+""sub.cc.u32 %1, 0, %3;\n\t""
+""subc.cc.u32 %0, %4, %5;\n\t""
+""subc.u32 %2, 0, 0;""
+:""=&r""(res),""=&r""(dummy),""=r""(b_out)
+:""r""(b_in),""r""(a),""r""(b)
+);
+*borrow=b_out&1;
+return res;
 }
 struct DebugReduc_PhysicsVector;
 __forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);

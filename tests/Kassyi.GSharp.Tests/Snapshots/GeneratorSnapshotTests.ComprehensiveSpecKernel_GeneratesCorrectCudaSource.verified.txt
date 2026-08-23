@@ -39,6 +39,44 @@
         DefaultSeverity: Warning,
         IsEnabledByDefault: true
       }
+    },
+    {
+      Location: /*
+                PhysicsState* pState = &state;
+                int stateSize = sizeof(PhysicsState);
+                                ^^^^^^^^^^^^^^^^^^^^
+                
+*/
+ : (187,32)-(187,52),
+      Message: The syntax 'SizeOfExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+                
+                mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            }
+*/
+ : (212,22)-(212,61),
+      Message: The syntax 'ConditionalExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
     }
   ]
 }
