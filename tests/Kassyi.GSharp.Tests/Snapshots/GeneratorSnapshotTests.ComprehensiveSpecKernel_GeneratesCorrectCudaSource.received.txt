@@ -1,0 +1,82 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+        out bool successFlag,
+        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+        int particleCount,
+*/
+ : (72,8)-(72,32),
+      Message: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: GSH1002,
+        Title: Large struct passed by value,
+        MessageFormat: The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        // 2. Shared Memory (Static & Dynamic)
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
+                                                              ^^^^^
+        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
+*/
+ : (100,62)-(100,67),
+      Message: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: GSH1001,
+        Title: Excessive static shared memory usage,
+        MessageFormat: The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+                PhysicsState* pState = &state;
+                int stateSize = sizeof(PhysicsState);
+                                ^^^^^^^^^^^^^^^^^^^^
+                
+*/
+ : (187,32)-(187,52),
+      Message: The syntax 'SizeOfExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+                
+                mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            }
+*/
+ : (212,22)-(212,61),
+      Message: The syntax 'ConditionalExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

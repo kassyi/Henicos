@@ -7,7 +7,7 @@
         ^^^^^^^^^^^^^^^^^^^^^^^^
         int particleCount,
 */
- : (65,8)-(65,32),
+ : (72,8)-(72,32),
       Message: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
       Severity: Warning,
       WarningLevel: 1,
@@ -27,7 +27,7 @@
                                                               ^^^^^
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
 */
- : (93,62)-(93,67),
+ : (100,62)-(100,67),
       Message: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.,
       Severity: Warning,
       WarningLevel: 1,
@@ -37,177 +37,6 @@
         MessageFormat: The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.,
         Category: GSharpTranspiler,
         DefaultSeverity: Warning,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            // 3.5 Record struct and var keyword support
-            var origin = new Point(0, 0);
-                         ^^^^^^^^^^^^^^^
-            var distance = origin.X + p.X;
-*/
- : (103,25)-(103,40),
-      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0001,
-        Title: Object creation not supported in GPU kernels,
-        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            // 3.5 Record struct and var keyword support
-            var origin = new Point(0, 0);
-                         ^^^^^^^^^^^^^^^
-            var distance = origin.X + p.X;
-*/
- : (103,25)-(103,40),
-      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            // 3.5 Record struct and var keyword support
-            var origin = new Point(0, 0);
-                                  ^^^^^^
-            var distance = origin.X + p.X;
-*/
- : (103,34)-(103,40),
-      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
-            Vector8 inlineVec = new Vector8();
-                                ^^^^^^^^^^^^^
-            inlineVec[0] = 123;
-*/
- : (161,32)-(161,45),
-      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0001,
-        Title: Object creation not supported in GPU kernels,
-        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
-            Vector8 inlineVec = new Vector8();
-                                ^^^^^^^^^^^^^
-            inlineVec[0] = 123;
-*/
- : (161,32)-(161,45),
-      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
-            Vector8 inlineVec = new Vector8();
-                                           ^^
-            inlineVec[0] = 123;
-*/
- : (161,43)-(161,45),
-      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            {
-                PhysicsState state = new PhysicsState();
-                                     ^^^^^^^^^^^^^^^^^^
-                state.Buffer[0] = inlineVec[0];
-*/
- : (167,37)-(167,55),
-      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0001,
-        Title: Object creation not supported in GPU kernels,
-        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            {
-                PhysicsState state = new PhysicsState();
-                                     ^^^^^^^^^^^^^^^^^^
-                state.Buffer[0] = inlineVec[0];
-*/
- : (167,37)-(167,55),
-      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
-            {
-                PhysicsState state = new PhysicsState();
-                                                     ^^
-                state.Buffer[0] = inlineVec[0];
-*/
- : (167,53)-(167,55),
-      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
         IsEnabledByDefault: true
       }
     }

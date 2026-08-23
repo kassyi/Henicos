@@ -40,18 +40,22 @@ __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned
     *borrow = b_out & 1;
     return res;
 }
-__forceinline__ __device__ float ComputeMagnitude(PhysicsVector v);
+struct DebugReduc_PhysicsVector;
+__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
 
 __noinline__ __device__ bool IsPositive(float value);
 
-struct PhysicsVector
+#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
+#define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
+struct DebugReduc_PhysicsVector
 {
 float X;
 float Y;
 float Z;
 }
 ;
-__forceinline__ __device__ float ComputeMagnitude(PhysicsVector v){
+#endif
+__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v){
 return (float)sqrt((((v.X*v.X)+(v.Y*v.Y))+(v.Z*v.Z)));
 }
 
@@ -59,14 +63,19 @@ __noinline__ __device__ bool IsPositive(float value){
 return (value>0);
 }
 
-struct PhysicsVector
+#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
+#define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
+struct DebugReduc_PhysicsVector
 {
 float X;
 float Y;
 float Z;
 }
 ;
-struct SpecTypes
+#endif
+#ifndef __GSHARP_STRUCT_DebugReduc_SpecTypes__
+#define __GSHARP_STRUCT_DebugReduc_SpecTypes__
+struct DebugReduc_SpecTypes
 {
 bool BooleanValue;
 unsigned char ByteValue;
@@ -81,26 +90,51 @@ float FloatValue;
 double DoubleValue;
 }
 ;
-struct Point
+#endif
+#ifndef __GSHARP_STRUCT_DebugReduc_Point__
+#define __GSHARP_STRUCT_DebugReduc_Point__
+struct DebugReduc_Point
 {
 float X;
 float Y;
 }
 ;
-struct Vector8
+#endif
+#ifndef __GSHARP_STRUCT_DebugReduc_NestedPhysicsState__
+#define __GSHARP_STRUCT_DebugReduc_NestedPhysicsState__
+struct DebugReduc_NestedPhysicsState
 {
-unsigned int _element0[8];
-__device__ inline unsigned int& operator[](int index) { return _element0[index]; }
-__device__ inline const unsigned int& operator[](int index) const { return _element0[index]; }
+DebugReduc_PhysicsVector Position;
+DebugReduc_PhysicsVector Velocity;
+unsigned long long StatusFlag;
 }
 ;
-struct PhysicsState
+#endif
+#ifndef __GSHARP_STRUCT_DebugReduc_ComprehensiveSpecKernel_Vector8__
+#define __GSHARP_STRUCT_DebugReduc_ComprehensiveSpecKernel_Vector8__
+struct DebugReduc_ComprehensiveSpecKernel_Vector8
+{
+unsigned int _element0[8];
+__device__ inline unsigned int& operator[](int index){
+return _element0[index];
+}
+__device__ inline const unsigned int& operator[](int index) const
+{
+return _element0[index];
+}
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_DebugReduc_ComprehensiveSpecKernel_PhysicsState__
+#define __GSHARP_STRUCT_DebugReduc_ComprehensiveSpecKernel_PhysicsState__
+struct DebugReduc_ComprehensiveSpecKernel_PhysicsState
 {
 unsigned int Buffer[16];
 unsigned long long Flags;
 }
 ;
-extern ""C"" __global__ void ProcessPhysics(PhysicsVector* particles,float* totalMagnitude,bool* successFlag,SpecTypes largeStructVal,int particleCount){
+#endif
+extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* particles,float* totalMagnitude,bool* successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
 successFlag=false;
 float Gravity=9.8f;
 int tx=threadIdx.x;
@@ -122,12 +156,18 @@ size_t __smem_offset = 0;
 __smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
 float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (particleCount) * sizeof(float);
+__shared__ int targetTypedCache[256];
 if((tid<particleCount))
 {
-PhysicsVector p=particles[tid];
-SpecTypes types=largeStructVal;
-Point origin=Point00;
+DebugReduc_PhysicsVector p=particles[tid];
+DebugReduc_SpecTypes types=largeStructVal;
+DebugReduc_Point origin=DebugReduc_Point{
+0, 0}
+;
 float distance=(origin.X+p.X);
+DebugReduc_NestedPhysicsState nested=([&]() {
+DebugReduc_NestedPhysicsState _tmp; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
+());
 float mag=ComputeMagnitude(p);
 mag=(float)abs(mag);
 #pragma unroll
@@ -166,25 +206,41 @@ dynamicCache[tx]=mag;
 __syncthreads();
 if((tx==0))
 {
-atomicAdd(&totalMagnitude,dynamicCache[0]);
+atomicAdd(totalMagnitude,dynamicCache[0]);
 successFlag=true;
 }
-Vector8 inlineVec=Vector8;
+DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec=DebugReduc_ComprehensiveSpecKernel_Vector8;
 inlineVec[0]=123;
 inlineVec[1]=456;
 {
-PhysicsState state=PhysicsState;
-state.Buffer[0]=inlineVec[0];
-state.Buffer[1]=inlineVec[1];
+DebugReduc_ComprehensiveSpecKernel_PhysicsState state=DebugReduc_ComprehensiveSpecKernel_PhysicsState;
+DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState=&state;
+int stateSize=PhysicsState;
+pState.Buffer[0]=inlineVec[0];
+(*pState).Buffer[1]=inlineVec[1];
 unsigned long long carry=0;
-unsigned int sum=__gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
+unsigned int sum=__gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
 long long borrow=0;
-unsigned int diff=__gsharp_sub_cc(sum,state.Buffer[1],&borrow);
+unsigned int diff=__gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
 if((sum>diff))
 {
-state.Flags=1;
+pState.Flags=1;
 }
 }
+bool condition1=(tx>0);
+bool condition2=(ty==0);
+if((condition1&&condition2))
+{
+int bitwise=(((tx<<2))|(((ty>>1))^0xFF));
+bitwise&=~1;
+mag=((bitwise>0))(mag*2.0f)(mag/2.0f);
+}
+else
+if((condition1||!condition2))
+{
+mag+=1.5f;
+}
+Intrinsics.InlinePtx(""/* test ptx inline */"");
 if((ty>0))
 {
 return;
@@ -192,13 +248,61 @@ return;
 }
 }
 ";
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_DebugReduc_SpecTypes
+{
+public bool BooleanValue;
+public byte ByteValue;
+public sbyte SByteValue;
+public short ShortValue;
+public ushort UShortValue;
+public int IntValue;
+public uint UIntValue;
+public long LongValue;
+public ulong ULongValue;
+public float FloatValue;
+public double DoubleValue;
+}
+public static __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_DebugReduc_SpecTypes();
+native.BooleanValue = host.BooleanValue;
+native.ByteValue = host.ByteValue;
+native.SByteValue = host.SByteValue;
+native.ShortValue = host.ShortValue;
+native.UShortValue = host.UShortValue;
+native.IntValue = host.IntValue;
+native.UIntValue = host.UIntValue;
+native.LongValue = host.LongValue;
+native.ULongValue = host.ULongValue;
+native.FloatValue = host.FloatValue;
+native.DoubleValue = host.DoubleValue;
+return native;
+}
+public static void Unmarshal_DebugReduc_SpecTypes(ref DebugReduc.SpecTypes host, ref __Native_DebugReduc_SpecTypes native, bool isDevicePtr)
+{
+host.BooleanValue = native.BooleanValue;
+host.ByteValue = native.ByteValue;
+host.SByteValue = native.SByteValue;
+host.ShortValue = native.ShortValue;
+host.UShortValue = native.UShortValue;
+host.IntValue = native.IntValue;
+host.UIntValue = native.UIntValue;
+host.LongValue = native.LongValue;
+host.ULongValue = native.ULongValue;
+host.FloatValue = native.FloatValue;
+host.DoubleValue = native.DoubleValue;
+}
 public static void Launch_ProcessPhysics(DebugReduc.PhysicsVector[] particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-var __gsharp_dynamic_src = string.Join(System.Environment.NewLine, new string[] {
-    $"#define unrollFactor {unrollFactor}",
-    ProcessPhysics_CudaSource
-});
+var __gsharp_dynamic_src = string.Join
+(System.Environment.NewLine, new string[]
+{
+"#define unrollFactor " + (unrollFactor).ToString(),
+ProcessPhysics_CudaSource
+}
+);
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics");
 IntPtr d_particles = IntPtr.Zero;
 IntPtr pArg_particles = IntPtr.Zero;
@@ -206,6 +310,7 @@ IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr pArg_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
 IntPtr pArg_successFlag = IntPtr.Zero;
+System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr pArg_largeStructVal = IntPtr.Zero;
 IntPtr pArg_particleCount = IntPtr.Zero;
 try
@@ -246,21 +351,22 @@ int successFlag_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(bool
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
 pArg_successFlag = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
 System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_successFlag, d_successFlag);
-// Marshal scalar: largeStructVal
-pArg_largeStructVal = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(DebugReduc.SpecTypes)));
-System.Runtime.InteropServices.Marshal.StructureToPtr(largeStructVal, pArg_largeStructVal, false);
+var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, false, largeStructVal_allocatedPtrs);
+// Marshal scalar struct: largeStructVal
+pArg_largeStructVal = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(__Native_SpecTypes)));
+System.Runtime.InteropServices.Marshal.StructureToPtr(native_largeStructVal, pArg_largeStructVal, false);
 // Marshal scalar: particleCount
 pArg_particleCount = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
 System.Runtime.InteropServices.Marshal.StructureToPtr(particleCount, pArg_particleCount, false);
 IntPtr[] kernelParams = [pArg_particles, pArg_totalMagnitude, pArg_successFlag, pArg_largeStructVal, pArg_particleCount];
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-    hfunc,
-    gridDimX, gridDimY, gridDimZ, // Grid dim
-    blockDimX, blockDimY, blockDimZ, // Block dim
-    sharedMemBytes, // Shared mem
-    IntPtr.Zero, // Stream
-    kernelParams,
-    IntPtr.Zero // Extra
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+IntPtr.Zero, // Stream
+kernelParams,
+IntPtr.Zero // Extra
 ));
 // Copy back array: particles
 System.Runtime.InteropServices.GCHandle handleBack_particles = System.Runtime.InteropServices.GCHandle.Alloc(particles, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -295,6 +401,7 @@ finally
 {
 System.Runtime.InteropServices.Marshal.FreeHGlobal(p_successFlag_temp);
 }
+Unmarshal_DebugReduc_SpecTypes(ref largeStructVal, ref native_largeStructVal, false);
 }
 finally
 {
@@ -304,6 +411,7 @@ if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_totalMagnitude
 if (pArg_totalMagnitude != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_totalMagnitude);
 if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_successFlag);
 if (pArg_successFlag != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_successFlag);
+foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (pArg_largeStructVal != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_largeStructVal);
 if (pArg_particleCount != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_particleCount);
 }
@@ -311,14 +419,18 @@ if (pArg_particleCount != IntPtr.Zero) System.Runtime.InteropServices.Marshal.Fr
 public static void Launch_ProcessPhysics_Device(IntPtr particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-var __gsharp_dynamic_src = string.Join(System.Environment.NewLine, new string[] {
-    $"#define unrollFactor {unrollFactor}",
-    ProcessPhysics_CudaSource
-});
+var __gsharp_dynamic_src = string.Join
+(System.Environment.NewLine, new string[]
+{
+"#define unrollFactor " + (unrollFactor).ToString(),
+ProcessPhysics_CudaSource
+}
+);
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics");
 IntPtr pArg_particles = IntPtr.Zero;
 IntPtr pArg_totalMagnitude = IntPtr.Zero;
 IntPtr pArg_successFlag = IntPtr.Zero;
+System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr pArg_largeStructVal = IntPtr.Zero;
 IntPtr pArg_particleCount = IntPtr.Zero;
 try
@@ -346,21 +458,22 @@ int successFlag_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(bool
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
 pArg_successFlag = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
 System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_successFlag, d_successFlag);
-// Marshal scalar: largeStructVal
-pArg_largeStructVal = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(DebugReduc.SpecTypes)));
-System.Runtime.InteropServices.Marshal.StructureToPtr(largeStructVal, pArg_largeStructVal, false);
+var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, true, largeStructVal_allocatedPtrs);
+// Marshal scalar struct: largeStructVal
+pArg_largeStructVal = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(__Native_SpecTypes)));
+System.Runtime.InteropServices.Marshal.StructureToPtr(native_largeStructVal, pArg_largeStructVal, false);
 // Marshal scalar: particleCount
 pArg_particleCount = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
 System.Runtime.InteropServices.Marshal.StructureToPtr(particleCount, pArg_particleCount, false);
 IntPtr[] kernelParams = [pArg_particles, pArg_totalMagnitude, pArg_successFlag, pArg_largeStructVal, pArg_particleCount];
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-    hfunc,
-    gridDimX, gridDimY, gridDimZ, // Grid dim
-    blockDimX, blockDimY, blockDimZ, // Block dim
-    sharedMemBytes, // Shared mem
-    IntPtr.Zero, // Stream
-    kernelParams,
-    IntPtr.Zero // Extra
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+IntPtr.Zero, // Stream
+kernelParams,
+IntPtr.Zero // Extra
 ));
 // Unmarshal ref/out scalar: totalMagnitude
 IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(totalMagnitude_size);
@@ -384,6 +497,7 @@ finally
 {
 System.Runtime.InteropServices.Marshal.FreeHGlobal(p_successFlag_temp);
 }
+Unmarshal_DebugReduc_SpecTypes(ref largeStructVal, ref native_largeStructVal, true);
 }
 finally
 {
@@ -392,6 +506,7 @@ if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_totalMagnitude
 if (pArg_totalMagnitude != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_totalMagnitude);
 if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_successFlag);
 if (pArg_successFlag != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_successFlag);
+foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (pArg_largeStructVal != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_largeStructVal);
 if (pArg_particleCount != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_particleCount);
 }

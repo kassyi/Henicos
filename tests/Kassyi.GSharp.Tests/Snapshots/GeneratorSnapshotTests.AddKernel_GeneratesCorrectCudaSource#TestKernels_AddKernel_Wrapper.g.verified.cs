@@ -106,13 +106,13 @@ pArg_c = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
 System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_c, d_c);
 IntPtr[] kernelParams = [pArg_a, pArg_b, pArg_c];
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-    hfunc,
-    gridDimX, gridDimY, gridDimZ, // Grid dim
-    blockDimX, blockDimY, blockDimZ, // Block dim
-    sharedMemBytes, // Shared mem
-    IntPtr.Zero, // Stream
-    kernelParams,
-    IntPtr.Zero // Extra
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+IntPtr.Zero, // Stream
+kernelParams,
+IntPtr.Zero // Extra
 ));
 // Copy back array: a
 System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -178,13 +178,13 @@ pArg_c = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
 System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_c, c);
 IntPtr[] kernelParams = [pArg_a, pArg_b, pArg_c];
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-    hfunc,
-    gridDimX, gridDimY, gridDimZ, // Grid dim
-    blockDimX, blockDimY, blockDimZ, // Block dim
-    sharedMemBytes, // Shared mem
-    IntPtr.Zero, // Stream
-    kernelParams,
-    IntPtr.Zero // Extra
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+IntPtr.Zero, // Stream
+kernelParams,
+IntPtr.Zero // Extra
 ));
 }
 finally

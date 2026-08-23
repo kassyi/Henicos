@@ -28,6 +28,13 @@ public struct PhysicsVector
 
 public record struct Point(float X, float Y);
 
+public struct NestedPhysicsState
+{
+    public PhysicsVector Position;
+    public PhysicsVector Velocity;
+    public ulong StatusFlag;
+}
+
 public static partial class ComprehensiveSpecKernel
 {
     [GpuDevice]
@@ -93,6 +100,7 @@ public static partial class ComprehensiveSpecKernel
         // 2. Shared Memory (Static & Dynamic)
         SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
+        SharedMemory<int> targetTypedCache = new(256); // Target-typed new support
 
         if (tid < particleCount)
         {
@@ -103,6 +111,14 @@ public static partial class ComprehensiveSpecKernel
             // 3.5 Record struct and var keyword support
             var origin = new Point(0, 0);
             var distance = origin.X + p.X;
+
+            // 3.6 Nested Structs
+            var nested = new NestedPhysicsState
+            {
+                Position = p,
+                Velocity = p,
+                StatusFlag = 1
+            };
 
             // 4. All Math Mappings and Device Method invocation
             float mag = ComputeMagnitude(p);
@@ -166,20 +182,43 @@ public static partial class ComprehensiveSpecKernel
             unsafe
             {
                 PhysicsState state = new PhysicsState();
-                state.Buffer[0] = inlineVec[0];
-                state.Buffer[1] = inlineVec[1];
+                
+                // Pointer operators and sizeof
+                PhysicsState* pState = &state;
+                int stateSize = sizeof(PhysicsState);
+                
+                pState->Buffer[0] = inlineVec[0];
+                (*pState).Buffer[1] = inlineVec[1];
 
                 ulong carry = 0;
-                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
+                uint sum = Gpu.AddWithCarry(pState->Buffer[0], pState->Buffer[1], ref carry);
 
                 long borrow = 0;
-                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
+                uint diff = Gpu.SubWithBorrow(sum, pState->Buffer[1], ref borrow);
 
                 if (sum > diff)
                 {
-                    state.Flags = 1;
+                    pState->Flags = 1;
                 }
             }
+
+            // 11.6 Operators (Ternary, Bitwise, Logical, else if)
+            bool condition1 = tx > 0;
+            bool condition2 = ty == 0;
+            if (condition1 && condition2) // Logical short-circuit
+            {
+                int bitwise = (tx << 2) | (ty >> 1) ^ 0xFF;
+                bitwise &= ~1; // Bitwise assignment and NOT
+                
+                mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional
+            }
+            else if (condition1 || !condition2)
+            {
+                mag += 1.5f;
+            }
+
+            // 11.5 Inline PTX
+            Intrinsics.InlinePtx("/* test ptx inline */");
 
             // 12. Early return
             if (ty > 0)
@@ -204,5 +243,13 @@ public static partial class ComprehensiveSpecKernel
         // AST Construction: evaluated lazily and dispatched to GPU
         GpuBigInteger.Add(a, b, result);
         GpuBigInteger.Sub(result, a, b);
+    }
+
+    [GpuKernel(Cooperative = true)]
+    public static void CooperativePhysicsProcess(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        data[tid] = tid;
+        Gpu.SyncGrid();
     }
 }
