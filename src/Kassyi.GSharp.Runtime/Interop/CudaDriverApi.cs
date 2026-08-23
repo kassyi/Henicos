@@ -3,7 +3,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Kassyi.GSharp.Core;
+namespace Kassyi.GSharp.Runtime.Interop;
 
 public enum CUresult
 {

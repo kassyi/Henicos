@@ -1,10 +1,13 @@
 // ReSharper disable UnusedMember.Global
 
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
+using System.Text;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Interop;
 
-namespace Kassyi.GSharp.Runtime.Transpiler.Pipeline;
+namespace Kassyi.GSharp.Runtime.Jit;
 
 public static class JitEngine
 {

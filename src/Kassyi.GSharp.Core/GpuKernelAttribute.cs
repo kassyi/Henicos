@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Runtime;
+namespace Kassyi.GSharp.Core;
 
 // ReSharper disable UnusedType.Global
 [AttributeUsage(AttributeTargets.Method)]

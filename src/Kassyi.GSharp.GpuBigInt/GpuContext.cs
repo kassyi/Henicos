@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime.Interop;
+
 namespace Kassyi.GSharp.GpuBigInt;
 
 public enum GpuExecutionEngine
@@ -26,8 +28,8 @@ public class GpuContext : IDisposable
             // Allocate a carry buffer large enough for MaxWords
             var chunkSize = 4;
             var numChunks = (maxWords + chunkSize - 1) / chunkSize;
-            Core.CudaException.ThrowIfError(
-                Core.CudaDriverApi.cuMemAlloc_v2(out var carryBuf, (numChunks + 1) * 8));
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuMemAlloc_v2(out var carryBuf, (numChunks + 1) * 8));
             CarryBuffer = carryBuf;
         }
         else
@@ -62,7 +64,7 @@ public class GpuContext : IDisposable
             {
                 if (CarryBuffer != IntPtr.Zero)
                 {
-                    Core.CudaDriverApi.cuMemFree_v2(CarryBuffer);
+                    CudaDriverApi.cuMemFree_v2(CarryBuffer);
                 }
             }
             else

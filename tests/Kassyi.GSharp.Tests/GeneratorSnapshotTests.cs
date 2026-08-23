@@ -19,7 +19,7 @@ public class GeneratorSnapshotTests
         var references = new[]
         {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Runtime.GpuKernelAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.GpuKernelAttribute).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.ThreadIndex).Assembly.Location)
         };
 

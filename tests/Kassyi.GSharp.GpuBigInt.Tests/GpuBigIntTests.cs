@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
-using Kassyi.GSharp.Runtime.Transpiler.Pipeline;
+using Kassyi.GSharp.Runtime.Jit;
 using Xunit;
 
 namespace Kassyi.GSharp.GpuBigInt.Tests

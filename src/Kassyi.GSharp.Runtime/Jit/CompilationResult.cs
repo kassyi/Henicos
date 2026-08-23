@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Runtime.Transpiler.Pipeline;
+namespace Kassyi.GSharp.Runtime.Jit;
 
 /// <summary>
 /// Represents the result of a JIT compilation pass, including parsed static analysis data from NVCC.

@@ -281,7 +281,7 @@ public class SourceGeneratorTests(ITestOutputHelper output)
         var invalidCode = "extern \"C\" __global__ void bad_kernel(int* x) { this is invalid c++ code }";
 
         var ex = Assert.Throws<Exception>(() =>
-            Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(invalidCode, "bad_kernel")
+            Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(invalidCode, "bad_kernel")
         );
 
         Assert.Contains("NVCC Compilation Failed", ex.Message);

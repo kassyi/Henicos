@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Kassyi.GSharp.Runtime.Transpiler.Pipeline;
+using Kassyi.GSharp.Runtime.Jit;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Runtime.Transpiler.Pipeline;
+namespace Kassyi.GSharp.Runtime.Jit;
 
 public static class NvccCompiler
 {

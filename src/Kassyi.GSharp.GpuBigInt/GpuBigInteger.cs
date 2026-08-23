@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.GpuBigInt.Expressions;
 
 namespace Kassyi.GSharp.GpuBigInt;

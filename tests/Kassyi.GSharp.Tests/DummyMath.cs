@@ -1,3 +1,7 @@
+using System.Runtime.InteropServices;
+using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Tests;
 
 public class DummyMath
