@@ -27,7 +27,6 @@ internal static class StatementTranspilers
 
     public static void TranspileForStatement(ForStatementSyntax node, RoslynToCudaVisitor context)
     {
-        context.Writer.AppendLine("#pragma unroll");
         context.Writer.AppendKeyword("for");
         using (context.Writer.Parentheses())
         {
