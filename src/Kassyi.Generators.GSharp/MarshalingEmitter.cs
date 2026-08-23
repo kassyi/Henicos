@@ -213,7 +213,7 @@ internal static class MarshalingEmitter
         var parameters = method.Parameters.Where(p => !WrapperEmitter.IsJitConstant(p)).ToList();
         writer.AppendLine($"void** kernelParams = stackalloc void*[{parameters.Count}];");
 
-        for (int i = 0; i < parameters.Count; i++)
+        for (var i = 0; i < parameters.Count; i++)
         {
             WriteParameterMarshal(writer, parameters[i], i, isDevicePtr);
         }
