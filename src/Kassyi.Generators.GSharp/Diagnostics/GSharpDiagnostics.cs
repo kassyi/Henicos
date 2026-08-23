@@ -96,12 +96,4 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor PotentialLocalMemorySpill = new(
-        id: "GSH1003",
-        title: "Potential Local Memory Spill",
-        messageFormat: "The local array or buffer '{0}' is accessed with a non-constant index. This will likely cause the array to spill to slow local memory. Consider using SharedMemory<T>, registers, or unrolling the loop.",
-        category: "Performance",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
 }

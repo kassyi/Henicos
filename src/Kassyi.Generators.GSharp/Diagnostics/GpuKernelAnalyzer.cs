@@ -13,8 +13,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         GSharpDiagnostics.ForeachNotSupported,
         GSharpDiagnostics.LinqNotSupported,
-        GSharpDiagnostics.ImplicitVarNeedsSuffix,
-        GSharpDiagnostics.PotentialLocalMemorySpill);
+        GSharpDiagnostics.ImplicitVarNeedsSuffix);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -82,34 +81,6 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
                     var diagnostic = Diagnostic.Create(GSharpDiagnostics.ImplicitVarNeedsSuffix, variable.GetLocation(),
                         variable.Identifier.Text);
                     context.ReportDiagnostic(diagnostic);
-                    break;
-                }
-                case ElementAccessExpressionSyntax elementAccess:
-                {
-                    // Check if index is dynamic (not a literal)
-                    bool hasDynamicIndex = false;
-                    foreach (var arg in elementAccess.ArgumentList.Arguments)
-                    {
-                        if (!(arg.Expression is LiteralExpressionSyntax))
-                        {
-                            hasDynamicIndex = true;
-                            break;
-                        }
-                    }
-
-                    if (!hasDynamicIndex) break;
-
-                    // Check if target is a local array/buffer
-                    var symbol = context.SemanticModel.GetSymbolInfo(elementAccess.Expression).Symbol;
-                    if (symbol is ILocalSymbol localSymbol)
-                    {
-                        // Check if it's an array or pointer/buffer type
-                        if (localSymbol.Type is IArrayTypeSymbol || localSymbol.Type is IPointerTypeSymbol)
-                        {
-                            var diagnostic = Diagnostic.Create(GSharpDiagnostics.PotentialLocalMemorySpill, elementAccess.GetLocation(), localSymbol.Name);
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
                     break;
                 }
             }
