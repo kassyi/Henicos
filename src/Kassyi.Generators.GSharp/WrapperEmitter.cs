@@ -19,6 +19,7 @@ internal static class WrapperEmitter
             using System;
             using System.Runtime.InteropServices;
             using global::Kassyi.GSharp.Core;
+            using global::Kassyi.GSharp.Runtime.Interop;
             """);
 
         writer.AppendLine();
@@ -62,7 +63,7 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.Append(
-                "using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope");
+                "using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope");
             using (writer.Parentheses())
             {
             }
@@ -152,7 +153,7 @@ internal static class WrapperEmitter
             writer.AppendLine(";");
 
             writer.Append(
-                "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel");
+                "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
             using (writer.Parentheses())
             {
                 writer.Append($"__gsharp_dynamic_src, \"{method.Name}\"");
@@ -166,7 +167,7 @@ internal static class WrapperEmitter
             using (writer.Scope())
             {
                 writer.Append(
-                    $"s_hfunc_{method.Name} = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel");
+                    $"s_hfunc_{method.Name} = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
                 using (writer.Parentheses())
                 {
                     writer.Append($"{method.Name}_CudaSource, \"{method.Name}\"");
