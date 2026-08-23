@@ -99,11 +99,11 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             {
                 switch (attr.AttributeClass?.Name)
                 {
-                    case "GpuInlineAttribute":
+                    case KnownAttributes.GpuInlineAttribute:
 
                         hasAggressiveInlining = true;
                         break;
-                    case "GpuNoInlineAttribute":
+                    case KnownAttributes.GpuNoInlineAttribute:
 
                         hasNoInlining = true;
                         break;
@@ -190,7 +190,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             CheckLargeStructByValue(p, typeSymbol, isPointer);
 
             var paramSymbol = SemanticModel.GetDeclaredSymbol(p);
-            if (paramSymbol != null && paramSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "GpuConstAttribute"))
+            if (paramSymbol != null && paramSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
             {
                 Writer.AppendKeyword("const");
                 Writer.AppendSpace();
@@ -216,7 +216,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
 
         foreach (var attr in paramSymbol.GetAttributes())
         {
-            if (attr.AttributeClass?.Name == "JitConstantAttribute")
+            if (KnownAttributes.IsJitConstant(attr.AttributeClass?.Name))
             {
                 return true;
             }
@@ -398,13 +398,13 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                     }
                     case IFieldSymbol field:
                     {
-                        var fieldConst = field.GetAttributes().Any(a => a.AttributeClass?.Name == "GpuConstAttribute") ? "const " : "";
+                        var fieldConst = field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
                         Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
                         break;
                     }
                     case IPropertySymbol prop:
                     {
-                        var propConst = prop.GetAttributes().Any(a => a.AttributeClass?.Name == "GpuConstAttribute") ? "const " : "";
+                        var propConst = prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
                         Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
                         break;
                     }

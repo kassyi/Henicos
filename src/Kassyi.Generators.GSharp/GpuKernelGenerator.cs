@@ -13,14 +13,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var kernelMethods = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, "GpuKernel"),
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, "GpuKernel"))
+                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuKernel),
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, KnownAttributes.GpuKernel))
             .Where(static m => m is not null);
 
         var deviceMethods = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, "GpuDevice"),
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, "GpuDevice"))
+                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuDevice),
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, KnownAttributes.GpuDevice))
             .Where(static m => m is not null);
 
         var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());

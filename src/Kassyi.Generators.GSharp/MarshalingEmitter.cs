@@ -360,7 +360,7 @@ internal static class MarshalingEmitter
         var isCooperative = false;
         foreach (var attr in method.GetAttributes())
         {
-            if (attr.AttributeClass?.Name != "GpuKernelAttribute" && attr.AttributeClass?.Name != "GpuKernel")
+            if (!KnownAttributes.IsGpuKernel(attr.AttributeClass?.Name))
             {
                 continue;
             }

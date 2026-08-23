@@ -115,8 +115,11 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    internal static bool IsJitConstant(IParameterSymbol p) => p.GetAttributes().Any(a =>
-        a.AttributeClass?.Name == "JitConstantAttribute" || a.AttributeClass?.Name == "JitConstant");
+    internal static bool IsJitConstant(IParameterSymbol param)
+    {
+        var jitConstAttr = param.GetAttributes().FirstOrDefault(a => KnownAttributes.IsJitConstant(a.AttributeClass?.Name));
+        return jitConstAttr != null;
+    }
 
     private static void WriteKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
