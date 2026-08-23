@@ -180,6 +180,14 @@ public class FermatRunner
 
     public (uint[] Result, long EllapsedMs) RunFermatPrp()
     {
+        // Warmup JIT Compilation
+        GpuBigIntFermatKernelsWrapper.Launch_Kernel_StaticFermatLoop(
+            _context,
+            gridDimX: 1,
+            blockDimX: 1,
+            sharedMemBytes: 0
+        );
+
         var sw = Stopwatch.StartNew();
         
         // Dispatch to GSharp JIT

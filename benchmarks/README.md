@@ -37,6 +37,7 @@ We have successfully implemented and benchmarked various versions of the reducti
 | **V5-V7: Cooley-Tukey (Grid Bound)** | 537 ms | 4770 ms | 15924 ms | N/A | 3.78 M-Digit/s |
 | **Phase 8: Six-Step FFT (Current)** | 565 ms | 3281 ms | 6883 ms | **15767 ms** | **~15.27 M-Digit/s** |
 | **Phase 12: G# Full Impl (No GpuInline)** | 708 ms | N/A | N/A | N/A | **1.70 M-Digit/s** |
+| **Phase 12.1: G# Full Impl (Opt + Inline)** | 545 ms | N/A | N/A | N/A | **2.21 M-Digit/s** |
 ### 2. Framework Dispatch Overhead (G# vs Native CUDA)
 
 In Phases 9-11, we focused on completely eliminating the C# `P/Invoke` and JIT overhead when dispatching raw GPU kernels, targeting a 1.00x performance ratio compared to hand-written C++ CUDA Native.

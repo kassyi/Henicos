@@ -27,7 +27,7 @@ namespace TestApp {
             // Console.WriteLine($"Actual  : {actual}"); // Omit huge number
             Console.WriteLine($"Match?  : {2 == actual}");
             
-            double elapsedSec = sw.Elapsed.TotalSeconds;
+            double elapsedSec = res.Item2 / 1000.0;
             // e = 1000 means roughly p = 2^2000 (about 602 digits)
             // But wait, the standard M-Digit/s formula:
             // M-Digit/s = (Number of digits * iterations) / (time in seconds * 10^6)
@@ -35,7 +35,7 @@ namespace TestApp {
             double digits = e * 2 * Math.Log10(2);
             double mDigitsPerSec = (digits * (e * 2)) / (elapsedSec * 1000000.0);
             
-            Console.WriteLine($"Elapsed : {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Elapsed : {res.Item2} ms");
             Console.WriteLine($"Perf    : {mDigitsPerSec:F2} M-Digit/s");
         }
     }
