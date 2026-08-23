@@ -199,4 +199,15 @@ public class FermatRunner
         
         return (resultData, sw.ElapsedMilliseconds);
     }
+
+    public void RunBenchmarkChunk(int chunkSize = 100)
+    {
+        GpuBigIntBenchmarkKernelsWrapper.Launch_Kernel_BenchmarkSquareChunk(
+            _context,
+            chunkSize,
+            gridDimX: (uint)_maxGrid,
+            blockDimX: (uint)_maxBlock,
+            sharedMemBytes: (uint)_sharedSize
+        );
+    }
 }

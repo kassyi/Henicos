@@ -156,4 +156,10 @@ public static class JitEngine
         var hashBytes = SHA256.HashData(bytes);
         return Convert.ToHexStringLower(hashBytes);
     }
+
+    public static void SynchronizeDevice()
+    {
+        using var scope = new CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+    }
 }
