@@ -1,7 +1,10 @@
-using System;
 using System.Diagnostics;
+using Kassyi.GSharp.Runtime.Jit;
 
 namespace Kassyi.GSharp.GpuBigInt;
+using Kassyi.GSharp.GpuBigInt.Kernels;
+using Kassyi.GSharp.GpuBigInt.Contexts;
+using Kassyi.GSharp.GpuBigInt.Interop;
 
 public class FermatRunner
 {
@@ -11,7 +14,7 @@ public class FermatRunner
     private int _gM;
 
     private FermatContext _context;
-    
+
     private int _maxGrid;
     private int _maxBlock;
     private int _sharedSize;
@@ -26,12 +29,12 @@ public class FermatRunner
     {
         _numWords = (2 * E + 1 + 31) / 32;
         _outNumWords = _numWords * 2 + 16;
-        
-        int requiredElements = (4 * E + 2 + 15) / 16;
+
+        var requiredElements = (4 * E + 2 + 15) / 16;
         _gM = NextPowerOf2(requiredElements);
 
         _context = new FermatContext();
-        
+
         // Dimensions
         _context.Dimensions.NumberOfWords = _numWords;
         _context.Dimensions.NumberOfWordsExtended = _outNumWords;
@@ -44,21 +47,22 @@ public class FermatRunner
         _context.Buffers.Remainder = new uint[_outNumWords];
         _context.Buffers.RemainderMask = new uint[_outNumWords];
         _context.Buffers.TemporaryBuffer = new uint[_outNumWords];
-        
-        int maxChunks = (_outNumWords + 255) / 256;
+
+        var maxChunks = (_outNumWords + 255) / 256;
         _context.Buffers.CarryBuffer = new long[maxChunks + 1];
 
         // Init ValueT = 2
         _context.Buffers.ValueT[0] = 2;
 
         // Init MaskR
-        int bit2E1 = 2 * E + 1;
-        int word2E1 = bit2E1 / 32;
-        int rem2E1 = bit2E1 % 32;
-        for (int i = 0; i < word2E1; i++)
+        var bit2E1 = 2 * E + 1;
+        var word2E1 = bit2E1 / 32;
+        var rem2E1 = bit2E1 % 32;
+        for (var i = 0; i < word2E1; i++)
         {
             _context.Buffers.RemainderMask[i] = 0xFFFFFFFF;
         }
+
         if (rem2E1 > 0)
         {
             _context.Buffers.RemainderMask[word2E1] = (1U << rem2E1) - 1;
@@ -98,37 +102,42 @@ public class FermatRunner
         baseVal %= p;
         while (exp > 0)
         {
-            if ((exp & 1) != 0) res = (res * baseVal) % p;
+            if ((exp & 1) != 0)
+            {
+                res = (res * baseVal) % p;
+            }
+
             baseVal = (baseVal * baseVal) % p;
             exp >>= 1;
         }
+
         return (uint)res;
     }
 
     private void ComputeTwiddleFactors()
     {
-        uint p1 = 4253024257;
-        uint p2 = 4246732801;
-        uint w1 = CpuModPow(5, (p1 - 1) / (uint)_gM, p1);
-        uint w2 = CpuModPow(2, (p2 - 1) / (uint)_gM, p2);
-        
-        uint iw1 = CpuModPow(w1, p1 - 2, p1);
-        uint iw2 = CpuModPow(w2, p2 - 2, p2);
-        
-        ulong curr_w1 = 1, curr_iw1 = 1;
-        ulong curr_w2 = 1, curr_iw2 = 1;
-        
-        for (int i = 0; i < _gM; i++)
+        var p1 = 4253024257;
+        var p2 = 4246732801;
+        var w1 = CpuModPow(5, (p1 - 1) / (uint)_gM, p1);
+        var w2 = CpuModPow(2, (p2 - 1) / (uint)_gM, p2);
+
+        var iw1 = CpuModPow(w1, p1 - 2, p1);
+        var iw2 = CpuModPow(w2, p2 - 2, p2);
+
+        ulong currentWeight1 = 1, currentInverseWeight1 = 1;
+        ulong currentWeight2 = 1, currentInverseWeight2 = 1;
+
+        for (var i = 0; i < _gM; i++)
         {
-            _context.Ntt.TwiddleFactors.Forward1[i] = (uint)curr_w1;
-            _context.Ntt.TwiddleFactors.Inverse1[i] = (uint)curr_iw1;
-            _context.Ntt.TwiddleFactors.Forward2[i] = (uint)curr_w2;
-            _context.Ntt.TwiddleFactors.Inverse2[i] = (uint)curr_iw2;
-            
-            curr_w1 = (curr_w1 * w1) % p1;
-            curr_iw1 = (curr_iw1 * iw1) % p1;
-            curr_w2 = (curr_w2 * w2) % p2;
-            curr_iw2 = (curr_iw2 * iw2) % p2;
+            _context.Ntt.TwiddleFactors.Forward1[i] = (uint)currentWeight1;
+            _context.Ntt.TwiddleFactors.Inverse1[i] = (uint)currentInverseWeight1;
+            _context.Ntt.TwiddleFactors.Forward2[i] = (uint)currentWeight2;
+            _context.Ntt.TwiddleFactors.Inverse2[i] = (uint)currentInverseWeight2;
+
+            currentWeight1 = (currentWeight1 * w1) % p1;
+            currentInverseWeight1 = (currentInverseWeight1 * iw1) % p1;
+            currentWeight2 = (currentWeight2 * w2) % p2;
+            currentInverseWeight2 = (currentInverseWeight2 * iw2) % p2;
         }
     }
 
@@ -136,32 +145,36 @@ public class FermatRunner
     {
         _maxGrid = 1;
         _maxBlock = 256;
-        
+
         if (_gM <= 512)
         {
             _maxBlock = _gM / 2;
-            int pointGrid = (_gM + 255) / 256;
+            var pointGrid = (_gM + 255) / 256;
             _maxGrid = Math.Max(_maxGrid, pointGrid);
         }
         else
         {
-            _maxBlock = 256; 
-            int N2 = 1;
-            while (N2 * N2 < _gM) N2 *= 2;
-            int N1 = _gM / N2;
-            _maxGrid = Math.Max(_maxGrid, N1);
-            _maxGrid = Math.Max(_maxGrid, N2);
-            int pointGrid = (_gM + 255) / 256;
+            _maxBlock = 256;
+            var dimensionN2 = 1;
+            while (dimensionN2 * dimensionN2 < _gM)
+            {
+                dimensionN2 *= 2;
+            }
+
+            var dimensionN1 = _gM / dimensionN2;
+            _maxGrid = Math.Max(_maxGrid, dimensionN1);
+            _maxGrid = Math.Max(_maxGrid, dimensionN2);
+            var pointGrid = (_gM + 255) / 256;
             _maxGrid = Math.Max(_maxGrid, pointGrid);
-            int gridT1 = ((N2 + 31) / 32) * ((N1 + 31) / 32);
-            int gridT2 = ((N1 + 31) / 32) * ((N2 + 31) / 32);
+            var gridT1 = ((dimensionN2 + 31) / 32) * ((dimensionN1 + 31) / 32);
+            var gridT2 = ((dimensionN1 + 31) / 32) * ((dimensionN2 + 31) / 32);
             _maxGrid = Math.Max(_maxGrid, gridT1);
             _maxGrid = Math.Max(_maxGrid, gridT2);
         }
-        
-        int numChunks = (_outNumWords + 255) / 256;
+
+        var numChunks = (_outNumWords + 255) / 256;
         _maxGrid = Math.Max(_maxGrid, numChunks);
-        
+
         _sharedSize = 0;
         if (_gM <= 512)
         {
@@ -169,11 +182,15 @@ public class FermatRunner
         }
         else
         {
-            int N2 = 1;
-            while (N2 * N2 < _gM) N2 *= 2;
-            int N1 = _gM / N2;
-            int rowBuf = Math.Max(N1, N2) * sizeof(uint);
-            int tileBuf = 32 * 33 * sizeof(uint);
+            var dimensionN2 = 1;
+            while (dimensionN2 * dimensionN2 < _gM)
+            {
+                dimensionN2 *= 2;
+            }
+
+            var dimensionN1 = _gM / dimensionN2;
+            var rowBuf = Math.Max(dimensionN1, dimensionN2) * sizeof(uint);
+            var tileBuf = 32 * 33 * sizeof(uint);
             _sharedSize = Math.Max(rowBuf, tileBuf);
         }
     }
@@ -181,7 +198,7 @@ public class FermatRunner
     public (uint[] Result, long EllapsedMs) RunFermatPrp()
     {
         var sw = Stopwatch.StartNew();
-        
+
         // Dispatch to GSharp JIT
         GpuBigIntFermatKernelsWrapper.Launch_Kernel_StaticFermatLoop(
             _context,
@@ -191,12 +208,15 @@ public class FermatRunner
             blockDimX: (uint)_maxBlock,
             sharedMemBytes: (uint)_sharedSize
         );
-        
+
+        // Ensure GPU finishes execution before stopping the stopwatch and copying results
+        JitEngine.SynchronizeDevice();
+
         sw.Stop();
-        
+
         var resultData = new uint[_outNumWords];
         Array.Copy(_context.Buffers.ValueT, resultData, _outNumWords);
-        
+
         return (resultData, sw.ElapsedMilliseconds);
     }
 
@@ -209,5 +229,9 @@ public class FermatRunner
             blockDimX: (uint)_maxBlock,
             sharedMemBytes: (uint)_sharedSize
         );
+
+        // Ensure GPU finishes execution before returning to BenchmarkDotNet
+        JitEngine.SynchronizeDevice();
     }
 }
+

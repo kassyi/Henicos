@@ -1,12 +1,24 @@
 
 namespace Kassyi.GSharp.GpuBigInt.Expressions;
+using Kassyi.GSharp.GpuBigInt.Kernels;
+using Kassyi.GSharp.GpuBigInt.Contexts;
+using Kassyi.GSharp.GpuBigInt.Interop;
 
 internal abstract class BinaryExpression : IGpuBigIntExpression
 {
-    protected IGpuBigIntExpression Left { get; }
-    protected IGpuBigIntExpression Right { get; }
+    protected IGpuBigIntExpression Left
+    {
+        get;
+    }
+    protected IGpuBigIntExpression Right
+    {
+        get;
+    }
 
-    public int NumWords { get; }
+    public int NumWords
+    {
+        get;
+    }
 
     protected BinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     {
@@ -62,6 +74,12 @@ internal class SubExpression(IGpuBigIntExpression left, IGpuBigIntExpression rig
         GpuBigInteger.Sub(a, b, result);
 }
 
+internal class MulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+{
+    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+        GpuBigInteger.Mul(a, b, result);
+}
+
 internal class BitwiseAndExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : BinaryExpression(left, right)
 {
@@ -108,3 +126,4 @@ internal class ShiftRightExpression(IGpuBigIntExpression target, int shiftBits) 
     protected override void Execute(GpuBigInteger target, GpuBigInteger result) =>
         GpuBigInteger.ShiftRight(target, ShiftBits, result);
 }
+

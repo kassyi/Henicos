@@ -1,6 +1,7 @@
-using Kassyi.GSharp.Runtime.Interop;
-
 namespace Kassyi.GSharp.GpuBigInt;
+using Kassyi.GSharp.GpuBigInt.Kernels;
+using Kassyi.GSharp.GpuBigInt.Contexts;
+using Kassyi.GSharp.GpuBigInt.Interop;
 
 public enum GpuExecutionEngine
 {
@@ -12,12 +13,18 @@ public class GpuContext : IDisposable
 {
     public int MaxWords { get; }
     public IntPtr WorkspacePointer { get; }
-    public IntPtr CarryBuffer { get; }
     public GpuExecutionEngine Engine { get; set; }
+
+    public Providers.IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
+        ? Providers.GSharpJitProvider.Instance
+        : Providers.NativeProvider.Instance;
+
     private bool _disposed;
 
     // Memory pooling for Lazy Evaluation
-    private readonly Dictionary<int, Stack<GpuBigInteger>> _tempPool = new();
+    private readonly
+        System.Collections.Concurrent.ConcurrentDictionary<int,
+            System.Collections.Concurrent.ConcurrentBag<GpuBigInteger>> _tempPool = new();
 
     public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpJit)
     {
@@ -25,12 +32,7 @@ public class GpuContext : IDisposable
         Engine = engine;
         if (Engine == GpuExecutionEngine.GSharpJit)
         {
-            // Allocate a carry buffer large enough for MaxWords
-            var chunkSize = 4;
-            var numChunks = (maxWords + chunkSize - 1) / chunkSize;
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuMemAlloc_v2(out var carryBuf, (numChunks + 1) * 8));
-            CarryBuffer = carryBuf;
+            // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
         }
         else
         {
@@ -47,11 +49,10 @@ public class GpuContext : IDisposable
         if (!_disposed)
         {
             // Dispose all pooled temporary buffers
-            foreach (var stack in _tempPool.Values)
+            foreach (var bag in _tempPool.Values)
             {
-                while (stack.Count > 0)
+                while (bag.TryTake(out var temp))
                 {
-                    var temp = stack.Pop();
                     // Avoid circular calls since temp.Dispose() calls back into context or disposes native
                     // Normally GpuBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
                     temp.DisposeCore();
@@ -62,10 +63,7 @@ public class GpuContext : IDisposable
 
             if (Engine == GpuExecutionEngine.GSharpJit)
             {
-                if (CarryBuffer != IntPtr.Zero)
-                {
-                    CudaDriverApi.cuMemFree_v2(CarryBuffer);
-                }
+                // JIT-specific cleanup (if any)
             }
             else
             {
@@ -88,16 +86,17 @@ public class GpuContext : IDisposable
 
     internal GpuBigInteger RentTemp(int numWords)
     {
-        if (_tempPool.TryGetValue(numWords, out var stack) && stack.Count > 0)
+        if (_tempPool.TryGetValue(numWords, out var bag) && bag.TryTake(out var temp))
         {
-            var temp = stack.Pop();
             temp.IsTemp = true; // ensure it's marked as temp again if needed
             return temp;
         }
 
         // Allocate a new one if pool is empty
-        var newTemp = new GpuBigInteger(this, numWords);
-        newTemp.IsTemp = true;
+        var newTemp = new GpuBigInteger(this, numWords)
+        {
+            IsTemp = true
+        };
         return newTemp;
     }
 
@@ -108,12 +107,8 @@ public class GpuContext : IDisposable
             return;
         }
 
-        if (!_tempPool.TryGetValue(temp.NumWords, out var stack))
-        {
-            stack = new Stack<GpuBigInteger>();
-            _tempPool[temp.NumWords] = stack;
-        }
-
-        stack.Push(temp);
+        var bag = _tempPool.GetOrAdd(temp.NumWords, _ => []);
+        bag.Add(temp);
     }
 }
+
