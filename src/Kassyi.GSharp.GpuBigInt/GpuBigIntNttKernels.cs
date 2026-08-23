@@ -49,7 +49,7 @@ public static class GpuBigIntNttKernels
     }
     // ReSharper disable UselessBinaryOperation
     // ReSharper disable ConditionIsAlwaysTrueOrFalse
-    [GpuDevice, GpuInline]
+    [GpuDevice]
     public static uint ModMulBarrett(uint a, uint b, uint p, ulong m)
     {
         ulong prod = 0;
