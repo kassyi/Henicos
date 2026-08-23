@@ -54,8 +54,6 @@ public static class NvccCompiler
         return output;
     };
 
-    public static Func<string> GetVswhereOutputFunc { get; set; } = () => s_vswhereCache.Value;
-
     private static readonly Lazy<string> s_vswhereCache = new(() =>
     {
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
@@ -80,6 +78,10 @@ public static class NvccCompiler
         process.WaitForExit();
         return output;
     });
+
+    public static Func<string> GetVswhereOutputFunc { get; set; } = () => s_vswhereCache.Value;
+
+
 
     public static string GetVcvarsPath()
     {

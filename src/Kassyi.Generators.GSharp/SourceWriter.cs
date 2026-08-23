@@ -257,6 +257,20 @@ public readonly ref struct SourceWriterInterpolatedStringHandler
 
     public void AppendFormatted<T>(T t) => _builder?.Append(t);
 
+    public void AppendFormatted(int t) => _builder?.Append(t);
+    public void AppendFormatted(uint t) => _builder?.Append(t);
+    public void AppendFormatted(long t) => _builder?.Append(t);
+    public void AppendFormatted(ulong t) => _builder?.Append(t);
+    public void AppendFormatted(short t) => _builder?.Append(t);
+    public void AppendFormatted(ushort t) => _builder?.Append(t);
+    public void AppendFormatted(byte t) => _builder?.Append(t);
+    public void AppendFormatted(sbyte t) => _builder?.Append(t);
+    public void AppendFormatted(float t) => _builder?.Append(t);
+    public void AppendFormatted(double t) => _builder?.Append(t);
+    public void AppendFormatted(decimal t) => _builder?.Append(t);
+    public void AppendFormatted(bool t) => _builder?.Append(t);
+    public void AppendFormatted(char t) => _builder?.Append(t);
+
     public void AppendFormatted<T>(T? t, string format) where T : IFormattable =>
         _builder?.Append(t?.ToString(format, null));
 }

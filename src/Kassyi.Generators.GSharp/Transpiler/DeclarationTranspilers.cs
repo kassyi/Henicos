@@ -10,8 +10,8 @@ internal static class DeclarationTranspilers
     public static void TranspileLocalDeclarationStatement(LocalDeclarationStatementSyntax node, RoslynToCudaVisitor context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-        if (typeSymbol?.Name == "SharedMemory" &&
-            typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
+        if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
+            typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace)
         {
             ProcessSharedMemoryDeclaration(node, (INamedTypeSymbol)typeSymbol, context);
             return;
@@ -71,7 +71,7 @@ internal static class DeclarationTranspilers
         context.Writer.Append(v.Identifier.Text);
         using (context.Writer.Brackets())
         {
-            context.Writer.Append(constantValue.ToString());
+            context.Visit(sizeArg);
         }
 
         context.Writer.Append(";");
@@ -86,16 +86,34 @@ internal static class DeclarationTranspilers
     {
         if (!context.HasEmittedDynamicSmemBase)
         {
-            context.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
+            context.Writer.Append("extern __shared__ char __gsharp_dynamic_smem");
+            using (context.Writer.Brackets()) {}
+            context.Writer.AppendLine(";");
             context.Writer.AppendLine("size_t __smem_offset = 0;");
             context.HasEmittedDynamicSmemBase = true;
         }
 
-        context.Writer.Append(
-            $"__smem_offset = (__smem_offset + alignof({cppElementType}) - 1) & ~(alignof({cppElementType}) - 1);");
+        context.Writer.Append("__smem_offset = ");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append("__smem_offset + alignof");
+            using (context.Writer.Parentheses()) { context.Writer.Append(cppElementType); }
+            context.Writer.Append(" - 1");
+        }
+        context.Writer.Append(" & ~");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append("alignof");
+            using (context.Writer.Parentheses()) { context.Writer.Append(cppElementType); }
+            context.Writer.Append(" - 1");
+        }
+        context.Writer.Append(";");
         context.Writer.AppendLine();
-        context.Writer.Append(
-            $"{cppElementType}* {v.Identifier.Text} = ({cppElementType}*)(__gsharp_dynamic_smem + __smem_offset);");
+        
+        context.Writer.Append($"{cppElementType}* {v.Identifier.Text} = ");
+        using (context.Writer.Parentheses()) { context.Writer.Append($"{cppElementType}*"); }
+        using (context.Writer.Parentheses()) { context.Writer.Append("__gsharp_dynamic_smem + __smem_offset"); }
+        context.Writer.Append(";");
         context.Writer.AppendLine();
         context.Writer.Append("__smem_offset += ");
         using (context.Writer.Parentheses())
@@ -120,7 +138,7 @@ internal static class DeclarationTranspilers
         }
 
         if (typeSymbol is { TypeKind: TypeKind.Struct } &&
-            typeSymbol.ContainingNamespace.ToDisplayString() != "System")
+            typeSymbol.ContainingNamespace.ToDisplayString() != TypeConstants.SystemNamespace)
         {
             context.UsedStructs.Add((INamedTypeSymbol)typeSymbol);
         }

@@ -44,15 +44,25 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
     public string GenerateCudaSignature(MethodDeclarationSyntax method, bool isDevice = false)
     {
         var mainWriter = Writer;
-        Writer = new SourceWriter();
+        var sigWriter = new SourceWriter();
+        Writer = sigWriter;
 
         UsedStructs.Clear();
         WriteMethodSignature(method, isDevice);
         Writer.Append(";");
         Writer.AppendLine();
 
+        Writer = new SourceWriter();
+        foreach (var structSym in GetTopologicallySortedStructs())
+        {
+            var structName = CudaTypeMapper.GetFullyQualifiedCppName(structSym);
+            Writer.AppendLine($"struct {structName};");
+        }
+        Writer.Append(sigWriter.ToString());
+
         var result = Writer.ToString();
         Writer.Dispose();
+        sigWriter.Dispose();
         Writer = mainWriter;
         return result;
     }
@@ -211,17 +221,20 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
     private void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol)
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
-        if (structType is INamedTypeSymbol namedStruct &&
-            namedStruct.TypeKind == TypeKind.Struct &&
-            namedStruct.ContainingNamespace.ToDisplayString() != "System")
+        if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
+            namedStruct.ContainingNamespace.ToDisplayString() == "System")
         {
-            if (UsedStructs.Add(namedStruct))
-            {
-                foreach (var member in namedStruct.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
-                {
-                    RegisterUsedStructIfApplicable(member.Type);
-                }
-            }
+            return;
+        }
+
+        if (!UsedStructs.Add(namedStruct))
+        {
+            return;
+        }
+
+        foreach (var member in namedStruct.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+        {
+            RegisterUsedStructIfApplicable(member.Type);
         }
     }
 
@@ -231,22 +244,37 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
 
-        void Visit(INamedTypeSymbol s)
+        foreach (var s in UsedStructs)
         {
-            if (visited.Contains(s)) return;
-            if (!visiting.Add(s)) return;
+            visit(s);
+        }
+
+        return result;
+
+        void visit(INamedTypeSymbol s)
+        {
+            if (visited.Contains(s))
+            {
+                return;
+            }
+
+            if (!visiting.Add(s))
+            {
+                return;
+            }
 
             foreach (var member in s.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
             {
                 var fieldType = member.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : member.Type;
-                if (fieldType is INamedTypeSymbol namedStruct &&
-                    namedStruct.TypeKind == TypeKind.Struct &&
-                    namedStruct.ContainingNamespace.ToDisplayString() != "System")
+                if (fieldType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
+                    namedStruct.ContainingNamespace.ToDisplayString() == "System")
                 {
-                    if (UsedStructs.Contains(namedStruct))
-                    {
-                        Visit(namedStruct);
-                    }
+                    continue;
+                }
+
+                if (UsedStructs.Contains(namedStruct))
+                {
+                    visit(namedStruct);
                 }
             }
 
@@ -254,19 +282,12 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             visited.Add(s);
             result.Add(s);
         }
-
-        foreach (var s in UsedStructs)
-        {
-            Visit(s);
-        }
-
-        return result;
     }
 
     private void CheckLargeStructByValue(ParameterSyntax p, ITypeSymbol? typeSymbol, bool isPointer)
     {
         if (isPointer || typeSymbol is not { TypeKind: TypeKind.Struct } ||
-            typeSymbol.ContainingNamespace.ToDisplayString() == "System")
+            typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.SystemNamespace)
         {
             return;
         }
@@ -281,6 +302,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
 
     private void WriteStructDefinition(INamedTypeSymbol structSym)
     {
+        var structName = CudaTypeMapper.GetFullyQualifiedCppName(structSym);
         var inlineArrayAttr = structSym.GetAttributes()
             .FirstOrDefault(a => a.AttributeClass?.Name == "InlineArrayAttribute");
         if (inlineArrayAttr != null)
@@ -293,23 +315,51 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             }
 
             var cppElementType = CudaTypeMapper.MapType(firstField.Type);
-            Writer.AppendLine($"struct {structSym.Name}");
+            Writer.AppendLine($"#ifndef __GSHARP_STRUCT_{structName}__");
+            Writer.AppendLine($"#define __GSHARP_STRUCT_{structName}__");
+            Writer.AppendLine($"struct {structName}");
             using (Writer.Scope())
             {
-                Writer.AppendLine($"{cppElementType} {firstField.Name}[{length}];");
-                Writer.AppendLine(
-                    $"__device__ inline {cppElementType}& operator[](int index) {{ return {firstField.Name}[index]; }}");
-                Writer.AppendLine(
-                    $"__device__ inline const {cppElementType}& operator[](int index) const {{ return {firstField.Name}[index]; }}");
+                Writer.Append($"{cppElementType} {firstField.Name}");
+                using (Writer.Brackets())
+                {
+                    Writer.Append($"{length}");
+                }
+                Writer.AppendLine(";");
+
+                Writer.Append($"__device__ inline {cppElementType}& operator");
+                using (Writer.Brackets()) {}
+                using (Writer.Parentheses()) { Writer.Append("int index"); }
+                using (Writer.Scope())
+                {
+                    Writer.Append($"return {firstField.Name}");
+                    using (Writer.Brackets()) { Writer.Append("index"); }
+                    Writer.AppendLine(";");
+                }
+
+                Writer.Append($"__device__ inline const {cppElementType}& operator");
+                using (Writer.Brackets()) {}
+                using (Writer.Parentheses()) { Writer.Append("int index"); }
+                Writer.AppendLine(" const");
+                using (Writer.Scope())
+                {
+                    Writer.Append($"return {firstField.Name}");
+                    using (Writer.Brackets()) { Writer.Append("index"); }
+                    Writer.AppendLine(";");
+                }
             }
 
             Writer.AppendSemiColon();
+            Writer.AppendLine();
+            Writer.AppendLine("#endif");
             Writer.AppendLine();
 
             return;
         }
 
-        Writer.AppendLine($"struct {structSym.Name}");
+        Writer.AppendLine($"#ifndef __GSHARP_STRUCT_{structName}__");
+        Writer.AppendLine($"#define __GSHARP_STRUCT_{structName}__");
+        Writer.AppendLine($"struct {structName}");
         using (Writer.Scope())
         {
             var members = structSym.GetMembers().Where(m => !m.IsStatic && !m.IsImplicitlyDeclared);
@@ -324,8 +374,12 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                         var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
                         if (sizeExp != null)
                         {
-                            Writer.AppendLine(
-                                $"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}[{sizeExp.ToString()}];");
+                            Writer.Append($"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}");
+                            using (Writer.Brackets())
+                            {
+                                Visit(sizeExp);
+                            }
+                            Writer.AppendLine(";");
                         }
                         else
                         {
@@ -346,6 +400,8 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
         }
 
         Writer.AppendSemiColon();
+        Writer.AppendLine();
+        Writer.AppendLine("#endif");
         Writer.AppendLine();
     }
 

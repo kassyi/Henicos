@@ -37,8 +37,18 @@ internal static class CudaTypeMapper
             SpecialType.System_UInt64 => "unsigned long long",
             SpecialType.System_Single => "float",
             SpecialType.System_Double => "double",
-            _ => typeSymbol.Name
+            _ => GetFullyQualifiedCppName(typeSymbol)
         };
+    }
+
+    public static string GetFullyQualifiedCppName(ISymbol symbol)
+    {
+        // Avoid string.Replace in hot paths by building the name directly
+        if (symbol.ContainingSymbol != null && !(symbol.ContainingSymbol is INamespaceSymbol ns && ns.IsGlobalNamespace))
+        {
+            return GetFullyQualifiedCppName(symbol.ContainingSymbol!) + "_" + symbol.Name;
+        }
+        return symbol.Name;
     }
 
     public static int GetApproximateSize(ITypeSymbol typeSymbol)

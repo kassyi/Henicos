@@ -131,7 +131,14 @@ internal static class ExpressionTranspilers
         }
 
         context.Visit(node.Expression);
-        context.Writer.Append(".");
+
+        var isPointer = false;
+        if (exprSymbol is IParameterSymbol pSym && (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out))
+        {
+            isPointer = true;
+        }
+
+        context.Writer.Append(isPointer ? "->" : ".");
         context.Writer.Append(node.Name.Identifier.Text);
     }
 
@@ -210,18 +217,25 @@ internal static class ExpressionTranspilers
     {
         if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) || node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
         {
-            context.Writer.Append("&");
+            var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+            var isAlreadyPointer = symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } ||
+                                   symbol is ILocalSymbol { IsRef: true };
+
+            if (!isAlreadyPointer)
+            {
+                context.Writer.Append("&");
+            }
         }
 
         context.Visit(node.Expression);
     }
 
-            public static void TranspileObjectCreationExpression(ObjectCreationExpressionSyntax node,
+    public static void TranspileObjectCreationExpression(ObjectCreationExpressionSyntax node,
         RoslynToCudaVisitor context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
-        if (typeSymbol is { Name: "SharedMemory" } &&
-            typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
+        if (typeSymbol is { Name: TypeConstants.SharedMemoryType } &&
+            typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace)
         {
             context.DefaultVisit(node);
             return;
@@ -229,41 +243,7 @@ internal static class ExpressionTranspilers
 
         if (typeSymbol is { TypeKind: TypeKind.Struct })
         {
-            var cppType = CudaTypeMapper.MapType(typeSymbol);
-            if (node.Initializer != null)
-            {
-                context.Writer.Append("([&]() { ");
-                context.Writer.Append($"{cppType} _tmp; ");
-                foreach (var expr in node.Initializer.Expressions)
-                {
-                    if (expr is AssignmentExpressionSyntax assignment)
-                    {
-                        context.Writer.Append("_tmp.");
-                        context.Visit(assignment.Left);
-                        context.Writer.Append(" = ");
-                        context.Visit(assignment.Right);
-                        context.Writer.Append("; ");
-                    }
-                }
-                context.Writer.Append("return _tmp; }())");
-                return;
-            }
-
-            if (node.ArgumentList != null)
-            {
-                context.Writer.Append($"{cppType}{{");
-                var first = true;
-                foreach (var arg in node.ArgumentList.Arguments)
-                {
-                    if (!first) context.Writer.Append(", ");
-                    context.Visit(arg.Expression);
-                    first = false;
-                }
-                context.Writer.Append("}");
-                return;
-            }
-
-            context.Writer.Append($"{cppType}{{}}");
+            TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, context);
             return;
         }
 
@@ -276,56 +256,91 @@ internal static class ExpressionTranspilers
         RoslynToCudaVisitor context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
-        if (typeSymbol is { Name: "SharedMemory" } &&
-            typeSymbol.ContainingNamespace.ToDisplayString() == "Kassyi.GSharp.Core")
+        switch (typeSymbol)
         {
-            context.DefaultVisit(node);
+            case { Name: TypeConstants.SharedMemoryType } when
+                typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace:
+                context.DefaultVisit(node);
+
+                return;
+            case { TypeKind: TypeKind.Struct }:
+
+                TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, context);
+                return;
+            default:
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
+                    node.GetLocation()));
+                context.DefaultVisit(node);
+                break;
+        }
+    }
+
+    private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, InitializerExpressionSyntax? initializer,
+        ArgumentListSyntax? argumentList, RoslynToCudaVisitor context)
+    {
+        var cppType = CudaTypeMapper.MapType(typeSymbol);
+        if (initializer != null)
+        {
+            using (context.Writer.Parentheses())
+            {
+                using (context.Writer.Brackets())
+                {
+                    context.Writer.Append("&");
+                }
+
+                using (context.Writer.Parentheses())
+                {
+                }
+
+                context.Writer.AppendSpace();
+                using (context.Writer.Scope())
+                {
+                    context.Writer.Append($"{cppType} _tmp; ");
+                    foreach (var expr in initializer.Expressions)
+                    {
+                        if (expr is AssignmentExpressionSyntax assignment)
+                        {
+                            context.Writer.Append("_tmp.");
+                            context.Visit(assignment.Left);
+                            context.Writer.Append(" = ");
+                            context.Visit(assignment.Right);
+                            context.Writer.Append("; ");
+                        }
+                    }
+
+                    context.Writer.Append("return _tmp; ");
+                }
+
+                using (context.Writer.Parentheses())
+                {
+                }
+            }
+
             return;
         }
 
-        if (typeSymbol is { TypeKind: TypeKind.Struct })
+        if (argumentList != null && argumentList.Arguments.Count > 0)
         {
-            var cppType = CudaTypeMapper.MapType(typeSymbol);
-            if (node.Initializer != null)
+            context.Writer.Append(cppType);
+            using (context.Writer.Scope())
             {
-                context.Writer.Append("([&]() { ");
-                context.Writer.Append($"{cppType} _tmp; ");
-                foreach (var expr in node.Initializer.Expressions)
-                {
-                    if (expr is AssignmentExpressionSyntax assignment)
-                    {
-                        context.Writer.Append("_tmp.");
-                        context.Visit(assignment.Left);
-                        context.Writer.Append(" = ");
-                        context.Visit(assignment.Right);
-                        context.Writer.Append("; ");
-                    }
-                }
-                context.Writer.Append("return _tmp; }())");
-                return;
-            }
-
-            if (node.ArgumentList != null)
-            {
-                context.Writer.Append($"{cppType}{{");
                 var first = true;
-                foreach (var arg in node.ArgumentList.Arguments)
+                foreach (var arg in argumentList.Arguments)
                 {
-                    if (!first) context.Writer.Append(", ");
+                    if (!first)
+                    {
+                        context.Writer.Append(", ");
+                    }
+
                     context.Visit(arg.Expression);
                     first = false;
                 }
-                context.Writer.Append("}");
-                return;
             }
 
-            context.Writer.Append($"{cppType}{{}}");
             return;
         }
 
-        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
-            node.GetLocation()));
-        context.DefaultVisit(node);
+        context.Writer.Append(cppType);
     }
 }
 
