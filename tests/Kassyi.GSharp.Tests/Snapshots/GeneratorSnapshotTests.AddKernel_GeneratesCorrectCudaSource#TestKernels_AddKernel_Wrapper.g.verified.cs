@@ -3,6 +3,7 @@
 using System;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
+using global::Kassyi.GSharp.Runtime.Interop;
 namespace TestNamespace
 {
 public static partial class TestKernelsWrapper
@@ -44,18 +45,21 @@ extern ""C"" __global__ void AddKernel(int* a,int* b,int* c){
 c[0]=(a[0]+b[0]);
 }
 ";
-public static void Launch_AddKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+private static IntPtr s_hfunc_AddKernel = IntPtr.Zero;
+public static unsafe void Launch_AddKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(AddKernel_CudaSource, "AddKernel");
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+if (s_hfunc_AddKernel == IntPtr.Zero)
+{
+s_hfunc_AddKernel = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(AddKernel_CudaSource, "AddKernel");
+}
+IntPtr hfunc = s_hfunc_AddKernel;
 IntPtr d_a = IntPtr.Zero;
-IntPtr pArg_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
-IntPtr pArg_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
-IntPtr pArg_c = IntPtr.Zero;
 try
 {
+void** kernelParams = stackalloc void*[3];
 // Marshal array: a
 int a_size = a.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
@@ -70,8 +74,7 @@ finally
 {
 handle_a.Free();
 }
-pArg_a = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_a, d_a);
+kernelParams[0] = &d_a;
 // Marshal array: b
 int b_size = b.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
@@ -86,8 +89,7 @@ finally
 {
 handle_b.Free();
 }
-pArg_b = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_b, d_b);
+kernelParams[1] = &d_b;
 // Marshal array: c
 int c_size = c.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, c_size));
@@ -102,9 +104,7 @@ finally
 {
 handle_c.Free();
 }
-pArg_c = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_c, d_c);
-IntPtr[] kernelParams = [pArg_a, pArg_b, pArg_c];
+kernelParams[2] = &d_c;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -151,32 +151,27 @@ handleBack_c.Free();
 finally
 {
 if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_a);
-if (pArg_a != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_a);
 if (d_b != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_b);
-if (pArg_b != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_b);
 if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
-if (pArg_c != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_c);
 }
 }
-public static void Launch_AddKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+public static unsafe void Launch_AddKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(AddKernel_CudaSource, "AddKernel");
-IntPtr pArg_a = IntPtr.Zero;
-IntPtr pArg_b = IntPtr.Zero;
-IntPtr pArg_c = IntPtr.Zero;
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+if (s_hfunc_AddKernel == IntPtr.Zero)
+{
+s_hfunc_AddKernel = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(AddKernel_CudaSource, "AddKernel");
+}
+IntPtr hfunc = s_hfunc_AddKernel;
 try
 {
+void** kernelParams = stackalloc void*[3];
 // Marshal device array: a
-pArg_a = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_a, a);
+kernelParams[0] = &a;
 // Marshal device array: b
-pArg_b = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_b, b);
+kernelParams[1] = &b;
 // Marshal device array: c
-pArg_c = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_c, c);
-IntPtr[] kernelParams = [pArg_a, pArg_b, pArg_c];
+kernelParams[2] = &c;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -189,9 +184,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-if (pArg_a != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_a);
-if (pArg_b != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_b);
-if (pArg_c != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_c);
 }
 }
 }

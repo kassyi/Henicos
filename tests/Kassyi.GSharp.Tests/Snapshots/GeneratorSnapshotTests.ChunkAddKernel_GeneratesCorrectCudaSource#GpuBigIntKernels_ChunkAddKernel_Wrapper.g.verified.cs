@@ -3,6 +3,7 @@
 using System;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
+using global::Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.GpuBigInt
 {
 public static partial class GpuBigIntKernelsWrapper
@@ -59,22 +60,22 @@ localCarry=(current>>32);
 carryBuffer[(chunkIdx+1)]=(long long)localCarry;
 }
 ";
-public static void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+private static IntPtr s_hfunc_ChunkAddKernel = IntPtr.Zero;
+public static unsafe void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(ChunkAddKernel_CudaSource, "ChunkAddKernel");
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+if (s_hfunc_ChunkAddKernel == IntPtr.Zero)
+{
+s_hfunc_ChunkAddKernel = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(ChunkAddKernel_CudaSource, "ChunkAddKernel");
+}
+IntPtr hfunc = s_hfunc_ChunkAddKernel;
 IntPtr d_dA = IntPtr.Zero;
-IntPtr pArg_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
-IntPtr pArg_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
-IntPtr pArg_dResult = IntPtr.Zero;
 IntPtr d_carryBuffer = IntPtr.Zero;
-IntPtr pArg_carryBuffer = IntPtr.Zero;
-IntPtr pArg_numWords = IntPtr.Zero;
-IntPtr pArg_chunkSize = IntPtr.Zero;
 try
 {
+void** kernelParams = stackalloc void*[6];
 // Marshal array: dA
 int dA_size = dA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dA, dA_size));
@@ -89,8 +90,7 @@ finally
 {
 handle_dA.Free();
 }
-pArg_dA = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_dA, d_dA);
+kernelParams[0] = &d_dA;
 // Marshal array: dB
 int dB_size = dB.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dB, dB_size));
@@ -105,8 +105,7 @@ finally
 {
 handle_dB.Free();
 }
-pArg_dB = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_dB, d_dB);
+kernelParams[1] = &d_dB;
 // Marshal array: dResult
 int dResult_size = dResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));
@@ -121,8 +120,7 @@ finally
 {
 handle_dResult.Free();
 }
-pArg_dResult = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_dResult, d_dResult);
+kernelParams[2] = &d_dResult;
 // Marshal array: carryBuffer
 int carryBuffer_size = carryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_carryBuffer, carryBuffer_size));
@@ -137,15 +135,11 @@ finally
 {
 handle_carryBuffer.Free();
 }
-pArg_carryBuffer = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_carryBuffer, d_carryBuffer);
+kernelParams[3] = &d_carryBuffer;
 // Marshal scalar: numWords
-pArg_numWords = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
-System.Runtime.InteropServices.Marshal.StructureToPtr(numWords, pArg_numWords, false);
+kernelParams[4] = &numWords;
 // Marshal scalar: chunkSize
-pArg_chunkSize = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
-System.Runtime.InteropServices.Marshal.StructureToPtr(chunkSize, pArg_chunkSize, false);
-IntPtr[] kernelParams = [pArg_dA, pArg_dB, pArg_dResult, pArg_carryBuffer, pArg_numWords, pArg_chunkSize];
+kernelParams[5] = &chunkSize;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -203,48 +197,34 @@ handleBack_carryBuffer.Free();
 finally
 {
 if (d_dA != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dA);
-if (pArg_dA != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_dA);
 if (d_dB != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dB);
-if (pArg_dB != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_dB);
 if (d_dResult != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dResult);
-if (pArg_dResult != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_dResult);
 if (d_carryBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_carryBuffer);
-if (pArg_carryBuffer != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_carryBuffer);
-if (pArg_numWords != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_numWords);
-if (pArg_chunkSize != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_chunkSize);
 }
 }
-public static void Launch_ChunkAddKernel_Device(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+public static unsafe void Launch_ChunkAddKernel_Device(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(ChunkAddKernel_CudaSource, "ChunkAddKernel");
-IntPtr pArg_dA = IntPtr.Zero;
-IntPtr pArg_dB = IntPtr.Zero;
-IntPtr pArg_dResult = IntPtr.Zero;
-IntPtr pArg_carryBuffer = IntPtr.Zero;
-IntPtr pArg_numWords = IntPtr.Zero;
-IntPtr pArg_chunkSize = IntPtr.Zero;
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+if (s_hfunc_ChunkAddKernel == IntPtr.Zero)
+{
+s_hfunc_ChunkAddKernel = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(ChunkAddKernel_CudaSource, "ChunkAddKernel");
+}
+IntPtr hfunc = s_hfunc_ChunkAddKernel;
 try
 {
+void** kernelParams = stackalloc void*[6];
 // Marshal device array: dA
-pArg_dA = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_dA, dA);
+kernelParams[0] = &dA;
 // Marshal device array: dB
-pArg_dB = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_dB, dB);
+kernelParams[1] = &dB;
 // Marshal device array: dResult
-pArg_dResult = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_dResult, dResult);
+kernelParams[2] = &dResult;
 // Marshal device array: carryBuffer
-pArg_carryBuffer = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_carryBuffer, carryBuffer);
+kernelParams[3] = &carryBuffer;
 // Marshal scalar: numWords
-pArg_numWords = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
-System.Runtime.InteropServices.Marshal.StructureToPtr(numWords, pArg_numWords, false);
+kernelParams[4] = &numWords;
 // Marshal scalar: chunkSize
-pArg_chunkSize = System.Runtime.InteropServices.Marshal.AllocHGlobal(System.Runtime.InteropServices.Marshal.SizeOf(typeof(int)));
-System.Runtime.InteropServices.Marshal.StructureToPtr(chunkSize, pArg_chunkSize, false);
-IntPtr[] kernelParams = [pArg_dA, pArg_dB, pArg_dResult, pArg_carryBuffer, pArg_numWords, pArg_chunkSize];
+kernelParams[5] = &chunkSize;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -257,12 +237,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-if (pArg_dA != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_dA);
-if (pArg_dB != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_dB);
-if (pArg_dResult != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_dResult);
-if (pArg_carryBuffer != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_carryBuffer);
-if (pArg_numWords != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_numWords);
-if (pArg_chunkSize != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_chunkSize);
 }
 }
 }

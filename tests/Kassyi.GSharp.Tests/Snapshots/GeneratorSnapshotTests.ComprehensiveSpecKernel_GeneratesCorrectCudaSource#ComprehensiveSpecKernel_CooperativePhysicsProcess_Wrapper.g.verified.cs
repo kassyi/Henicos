@@ -3,6 +3,7 @@
 using System;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
+using global::Kassyi.GSharp.Runtime.Interop;
 namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
@@ -69,14 +70,19 @@ data[tid]=tid;
 cg::this_grid().sync();
 }
 ";
-public static void Launch_CooperativePhysicsProcess(int[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+private static IntPtr s_hfunc_CooperativePhysicsProcess = IntPtr.Zero;
+public static unsafe void Launch_CooperativePhysicsProcess(int[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(CooperativePhysicsProcess_CudaSource, "CooperativePhysicsProcess");
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+if (s_hfunc_CooperativePhysicsProcess == IntPtr.Zero)
+{
+s_hfunc_CooperativePhysicsProcess = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(CooperativePhysicsProcess_CudaSource, "CooperativePhysicsProcess");
+}
+IntPtr hfunc = s_hfunc_CooperativePhysicsProcess;
 IntPtr d_data = IntPtr.Zero;
-IntPtr pArg_data = IntPtr.Zero;
 try
 {
+void** kernelParams = stackalloc void*[1];
 // Marshal array: data
 int data_size = data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
@@ -91,9 +97,7 @@ finally
 {
 handle_data.Free();
 }
-pArg_data = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_data, d_data);
-IntPtr[] kernelParams = [pArg_data];
+kernelParams[0] = &d_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -118,20 +122,21 @@ handleBack_data.Free();
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
-if (pArg_data != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_data);
 }
 }
-public static void Launch_CooperativePhysicsProcess_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
+public static unsafe void Launch_CooperativePhysicsProcess_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.CudaContextScope();
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Transpiler.Pipeline.JitEngine.GetOrCompileKernel(CooperativePhysicsProcess_CudaSource, "CooperativePhysicsProcess");
-IntPtr pArg_data = IntPtr.Zero;
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+if (s_hfunc_CooperativePhysicsProcess == IntPtr.Zero)
+{
+s_hfunc_CooperativePhysicsProcess = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(CooperativePhysicsProcess_CudaSource, "CooperativePhysicsProcess");
+}
+IntPtr hfunc = s_hfunc_CooperativePhysicsProcess;
 try
 {
+void** kernelParams = stackalloc void*[1];
 // Marshal device array: data
-pArg_data = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
-System.Runtime.InteropServices.Marshal.WriteIntPtr(pArg_data, data);
-IntPtr[] kernelParams = [pArg_data];
+kernelParams[0] = &data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -144,7 +149,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-if (pArg_data != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(pArg_data);
 }
 }
 }

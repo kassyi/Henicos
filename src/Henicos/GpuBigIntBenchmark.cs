@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using Kassyi.GSharp.GpuBigInt;
-using Kassyi.GSharp.Runtime.Transpiler.Pipeline;
+using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos;
 
