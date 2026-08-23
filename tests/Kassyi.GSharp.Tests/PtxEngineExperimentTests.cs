@@ -81,7 +81,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         return (context, $"sm_{major}{minor}");
     }
 
-    private void RunKernelAndVerify(byte[] ptxBytes, int a, int b, int expected)
+    private unsafe void RunKernelAndVerify(byte[] ptxBytes, int a, int b, int expected)
     {
         IntPtr dA = IntPtr.Zero, dB = IntPtr.Zero, dC = IntPtr.Zero;
         IntPtr pA = IntPtr.Zero, pB = IntPtr.Zero, pC = IntPtr.Zero;
@@ -119,7 +119,10 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             Marshal.WriteIntPtr(pArgB, dB);
             Marshal.WriteIntPtr(pArgC, dC);
 
-            IntPtr[] kernelParams = [pArgA, pArgB, pArgC];
+            void** kernelParams = stackalloc void*[3];
+            kernelParams[0] = (void*)pArgA;
+            kernelParams[1] = (void*)pArgB;
+            kernelParams[2] = (void*)pArgC;
 
             CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
                 hfunc, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, kernelParams, IntPtr.Zero));
