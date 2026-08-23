@@ -14,8 +14,16 @@ For a deep dive into the specific bottlenecks, discoveries, and performance gain
 - [Phase 7: GPU Saturation & Parallel Normalization](phase7_gpu_saturation.md)
 - [Phase 8: Six-Step FFT Architecture (Grid Sync Elimination)](phase8_six_step_fft.md)
 - [Phase 9: G# Transpiler vs Raw CUDA Benchmark](phase9_gsharp_vs_cuda.md)
+- [Phase 10: Zero-Allocation & JIT Cache Bypass](phase10_zero_allocation.md)
+- [Phase 11: Complete Zero Dynamic Allocation & Native Parity](phase11_jit_cache_bypass_and_zero_alloc_carry.md)
 
 ## Overall Progress Summary
+
+We track performance across two completely different dimensions:
+1. **Pipeline Throughput (Algorithm Optimization)**: Measured in M-Digit/s for the entire Fermat PRP loop.
+2. **Framework Dispatch Overhead (G# Engine Optimization)**: Measured in microseconds ($\mu s$) per kernel launch to evaluate the efficiency of the G# C#-to-CUDA runtime against raw C++.
+
+### 1. Pipeline Throughput (Algorithm Evolution)
 
 We have successfully implemented and benchmarked various versions of the reduction and squaring algorithms up to $E=10000$ and $E=20000$.
 
@@ -28,6 +36,16 @@ We have successfully implemented and benchmarked various versions of the reducti
 | **V4: FULL Hybrid CPU/GPU** | 109 ms | 751 ms | 2315 ms | N/A | 26.01 M-Digit/s |
 | **V5-V7: Cooley-Tukey (Grid Bound)** | 537 ms | 4770 ms | 15924 ms | N/A | 3.78 M-Digit/s |
 | **Phase 8: Six-Step FFT (Current)** | 565 ms | 3281 ms | 6883 ms | **15767 ms** | **~15.27 M-Digit/s** |
+
+### 2. Framework Dispatch Overhead (G# vs Native CUDA)
+
+In Phases 9-11, we focused on completely eliminating the C# `P/Invoke` and JIT overhead when dispatching raw GPU kernels, targeting a 1.00x performance ratio compared to hand-written C++ CUDA Native.
+
+| Phase | Description | 1K Words | 4K Words | 16K Words |
+| :--- | :--- | :--- | :--- | :--- |
+| **Phase 9** | Initial G# JIT Engine | 2.17x slower | 1.77x slower | 1.39x slower |
+| **Phase 10** | Unsafe / Stackalloc | 1.66x slower | 1.36x slower | N/A |
+| **Phase 11** | Zero-Alloc Context CarryBuffer | **1.01x (Parity)** | **0.99x (Parity)** | **0.92x (Faster)** |
 
 ### Insights
 
