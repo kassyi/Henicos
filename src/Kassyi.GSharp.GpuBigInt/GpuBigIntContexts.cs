@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.GpuBigInt;
 
 /// <summary>
@@ -18,10 +20,10 @@ public struct NttContext
 
     public struct TwiddleFactorsContext
     {
-        public uint[] Forward1;
-        public uint[] Forward2;
-        public uint[] Inverse1;
-        public uint[] Inverse2;
+        [GpuConst] public uint[] Forward1;
+        [GpuConst] public uint[] Forward2;
+        [GpuConst] public uint[] Inverse1;
+        [GpuConst] public uint[] Inverse2;
     }
 }
 
@@ -63,9 +65,29 @@ public struct BigIntKernelContext
 
     public struct OperandsContext
     {
-        public uint[] LeftOperand;
-        public uint[] RightOperand;
+        [GpuConst] public uint[] LeftOperand;
+        [GpuConst] public uint[] RightOperand;
         public uint[] ResultBuffer;
         public long[] CarryBuffer;
     }
+}
+
+/// <summary>
+/// Execution arguments for NTT-related kernels.
+/// </summary>
+public struct NttKernelArgs
+{
+    public uint[] Buffer;
+    public uint[] TemporaryBuffer;
+    [GpuConst] public uint[] Twiddle;
+    public int M;
+    public int N1;
+    public int N2;
+    public uint P;
+    public ulong Pm;
+    public bool IsInverse;
+    public bool ApplyTwiddleBefore;
+    public bool ApplyTwiddleAfter;
+    public int MaxBlocks;
+    public int CurrentL;
 }
