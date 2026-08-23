@@ -2,25 +2,72 @@ using System.Diagnostics;
 using System.Numerics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Cocona;
 using Kassyi.GSharp.GpuBigInt;
 
 namespace Henicos;
 
 internal class Program
 {
-    private    static void Main(string[] args)
+    private static void Main(string[] args)
     {
-        Console.WriteLine("Validating Fermat logic for E=1000...");
-        int e = 1000;
+        CoconaApp.Run<Program>(args);
+    }
+
+    [Command("run", Description = "Run Fermat PRP test for a given Exponent (E)")]
+    public void Run([Option('e', Description = "Fermat Exponent (E)")] int e = 1000)
+    {
+        Console.WriteLine($"Starting Fermat PRP test for E={e}...");
         var x = BigInteger.One << e;
         var n = (BigInteger.One << (2 * e + 1)) - x + 11;
         BigInteger a = 2;
         var exponent = n - 1;
+        
+        Console.WriteLine("Calculating expected result via CPU BigInteger...");
         var expected = BigInteger.ModPow(a, exponent, n);
 
+        Console.WriteLine("Executing GPU GSharp Runner...");
         var runner = new FermatRunner(e);
         var (resultArray, _) = runner.RunFermatPrp();
         
+        var actual = GetBigIntegerFromResult(resultArray, n);
+
+        Console.WriteLine($"Expected: {expected}");
+        Console.WriteLine($"Actual  : {actual}");
+        Console.WriteLine($"Match?  : {expected == actual}");
+    }
+
+    [Command("profile", Description = "Profile the GSharp GPU execution and output M-Digit/s throughput")]
+    public void Profile([Option('e', Description = "Fermat Exponent (E)")] int e = 10000, 
+                        [Option('i', Description = "Number of warmup/profile iterations")] int iterations = 2)
+    {
+        Console.WriteLine($"Profiling GSharp FermatRunner for E={e} (Iterations: {iterations})...");
+        var runner = new FermatRunner(e);
+
+        var numBits = (2 * e + 1);
+        var numDigits = numBits * Math.Log10(2);
+        var mDigitsPerLoop = (numDigits * 2) / 1_000_000.0;
+
+        for (var i = 0; i < iterations; i++)
+        {
+            var sw = Stopwatch.StartNew();
+            runner.RunFermatPrp();
+            sw.Stop();
+            
+            var throughput = mDigitsPerLoop * e / (sw.Elapsed.TotalSeconds);
+            Console.WriteLine($"Iter {i}: Elapsed {sw.ElapsedMilliseconds} ms, Throughput: {throughput:F2} M-Digit/s");
+        }
+    }
+
+    [Command("bench", Description = "Run BenchmarkDotNet metrics for the Fermat Pipeline")]
+    public void Bench()
+    {
+        Console.WriteLine("Starting BenchmarkDotNet...");
+        BenchmarkRunner.Run<FermatBenchmarks>();
+    }
+
+    private static BigInteger GetBigIntegerFromResult(uint[] resultArray, BigInteger n)
+    {
         var highestWord = resultArray[^1];
         var resBytes = new byte[resultArray.Length * 4 + 1];
         Buffer.BlockCopy(resultArray, 0, resBytes, 0, resultArray.Length * 4);
@@ -30,18 +77,7 @@ internal class Program
         var actual = new BigInteger(resBytes);
         actual %= n;
         if (actual < 0) actual += n;
-
-        Console.WriteLine($"Expected: {expected}");
-        Console.WriteLine($"Actual  : {actual}");
-        Console.WriteLine($"Match?  : {expected == actual}");
-
-        if (expected == actual)
-        {
-            Console.WriteLine("Validation passed! Starting Benchmark...");
-            if (args.Length > 0 && args[0] == "--run-benchmark") {
-                BenchmarkRunner.Run<FermatBenchmarks>();
-            }
-        }
+        return actual;
     }
 }
 
@@ -55,12 +91,7 @@ public class FermatBenchmarks
     private BigInteger _n;
     private BigInteger _a;
     private BigInteger _exponent;
-
     private FermatRunner _gsharpRunner = null!;
-
-    // For Hybrid CPU
-    private uint[] _hybridData = null!;
-    private int _hybridNumWords;
 
     [GlobalSetup]
     public void Setup()
@@ -69,16 +100,7 @@ public class FermatBenchmarks
         _n = (BigInteger.One << (2 * E + 1)) - x + 11;
         _a = 2;
         _exponent = _n - 1;
-
-        // Initialize GSharp JIT Runner (This avoids compilation overhead during benchmarking)
         _gsharpRunner = new FermatRunner(E);
-
-        // Setup Hybrid Data
-        _hybridNumWords = (2 * E + 1 + 31) / 32;
-        var t = BigInteger.Pow(x, 2) + 123456789;
-        var tBytes = t.ToByteArray();
-        _hybridData = new uint[_hybridNumWords * 4];
-        Buffer.BlockCopy(tBytes, 0, _hybridData, 0, tBytes.Length);
     }
 
     [Benchmark(Baseline = true)]
@@ -105,7 +127,4 @@ public class FermatBenchmarks
 
         return actual;
     }
-
-    [Benchmark]
-    public void HybridCpuV3_ReduceOnly() => HybridReduction.ReduceInPlace(_hybridData, E, _hybridNumWords);
 }
