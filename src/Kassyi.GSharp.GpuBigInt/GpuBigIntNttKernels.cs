@@ -58,13 +58,13 @@ public static class GpuBigIntNttKernels
         ulong q = 0;
         Gpu.InlinePtx($"asm volatile(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"({q}) : \"l\"({prod}), \"l\"({m}));");
 
-        var res = prod - q * p;
-        if (res >= p)
+        var r = (uint)prod - (uint)q * p;
+        if (r >= p)
         {
-            res -= p;
+            r -= p;
         }
 
-        return (uint)res;
+        return r;
     }
     // ReSharper restore ConditionIsAlwaysTrueOrFalse
     // ReSharper restore UselessBinaryOperation
