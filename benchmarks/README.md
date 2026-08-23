@@ -40,7 +40,7 @@ We have successfully implemented and benchmarked various versions of the reducti
 | **Phase 8: Six-Step FFT (Current)** | 565 ms | 3281 ms | 6883 ms | **15767 ms** | **~15.27 M-Digit/s** |
 | **Phase 12: G# Full Impl (No GpuInline)** | 708 ms | N/A | N/A | N/A | **1.70 M-Digit/s** |
 | **Phase 12.1: G# Full Impl (Opt + Inline)** | 545 ms | N/A | N/A | N/A | **2.21 M-Digit/s** |
-| **Phase 13: JIT Constant Folding (Static)** | 576 ms | *NVRTC Timeout* | *NVRTC Timeout* | N/A | **Parity Achieved** |
+| **Phase 13: JIT Constant Folding (Static)** | 576 ms | *NVRTC Timeout* | *8.32 M-Digit/s (Chunk)* | N/A | **8.32 M-Digit/s** |
 
 ### 2. Framework Dispatch Overhead (G# vs Native CUDA)
 

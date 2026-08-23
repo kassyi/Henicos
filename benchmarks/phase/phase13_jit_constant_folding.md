@@ -23,10 +23,29 @@ At **E=1000**, the GSharp JIT pipeline successfully completed execution in **576
 However, a critical limitation was discovered at **E=5000 and above**:
 
 **NVRTC (CUDA Runtime Compiler) Timeout / WDDM TDR Hang**
-By passing massive constants (e.g., `E=5000`) into a statically generated `#pragma unroll` or compile-time known loop, the NVRTC PTX optimizer attempts to fully unroll and inline the entire modular multiplication sequence. 
+By passing massive constants (e.g., `E=5000`) into a statically generated `#pragma unroll` or compile-time known loop, the NVRTC/NVCC PTX optimizer attempts to fully unroll and inline the entire modular multiplication sequence. 
 This causes a combinatorial explosion in the PTX optimization graph:
-- Compilation times stretch to infinity (or freeze completely).
-- If compiled, the resulting kernel takes significantly longer than the 2-second Windows WDDM TDR (Timeout Detection and Recovery) limit, causing the GPU driver to forcefully kill the process.
+1. **NVRTC / NVCC Optimizer Hangs**: The JIT compilation process hangs indefinitely (often triggering timeouts if not manually aborted).
+2. **WDDM TDR Timeouts**: If a massively unrolled kernel does somehow compile, its execution time easily exceeds the Windows 2-second limit (TDR), causing the GPU driver to forcefully kill the process.
+
+Initially, we attempted to measure performance by executing smaller "Chunks" (e.g., 100 iterations per kernel launch). We used `[JitConstant] string GSHARP_CHUNK_SIZE` to pass the loop count. 
+However, **the compiler still hung**.
+
+#### Root Cause: Aggressive Unrolling of "Fixed" Loops
+The G# Transpiler passes `[JitConstant]` values to the PTX compiler as `#define` macros. For a chunk of size 100, the kernel essentially contained `for (int iter = 0; iter < 100; iter++)`. 
+Because the upper bound was a known constant at compile-time, the NVCC optimizer aggressively attempted to unroll or deeply analyze the 100 iterations of our massive `MultiplySquareAndReduce` logic. The sheer size of the resulting AST/CFG caused the optimizer to explode, leading to infinite compilation times.
+
+### The Solution: Dynamic Parameterization for Benchmarking
+To circumvent the compiler hang while still avoiding WDDM TDR, we changed the `chunkSize` from a `[JitConstant]` macro to a **standard runtime parameter** (`int chunkSize`).
+By doing so, the loop bound became unknown at compile time. NVCC instantly abandoned any attempt to unroll the loop, reducing the PTX compilation time to a mere ~3.8 seconds even for $E=10000$.
+
+With the chunking strategy successfully bypassing both compiler hangs and WDDM TDR, we achieved the following throughput for $E=10000$:
+
+| Test (E=10000) | Execution Time (Chunk=100) | Implied Throughput |
+| :--- | :--- | :--- |
+| **GSharp JIT Chunk100** | ~145 ms / iter | **8.32 M-Digit/s** |
+
+*(Note: The Native Phase 8 implementation achieved ~15.27 M-Digit/s. The 8.32 M-Digit/s in G# represents a respectable baseline for a fully dynamic JIT compilation pipeline, though some overhead from kernel chunking and missing cross-loop optimizations remains.)*
 
 ## Conclusion
 
