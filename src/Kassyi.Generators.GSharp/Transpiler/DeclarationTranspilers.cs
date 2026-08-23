@@ -143,7 +143,7 @@ internal static class DeclarationTranspilers
             context.UsedStructs.Add((INamedTypeSymbol)typeSymbol);
         }
 
-        var cppType = CudaTypeMapper.MapType(typeSymbol);
+        var cppType = node.Type.IsVar ? "auto" : CudaTypeMapper.MapType(typeSymbol);
 
         for (var i = 0; i < node.Variables.Count; i++)
         {

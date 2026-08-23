@@ -397,11 +397,17 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                         break;
                     }
                     case IFieldSymbol field:
-                        Writer.AppendLine($"{CudaTypeMapper.MapType(field.Type)} {field.Name};");
+                    {
+                        var fieldConst = field.GetAttributes().Any(a => a.AttributeClass?.Name == "GpuConstAttribute") ? "const " : "";
+                        Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
                         break;
+                    }
                     case IPropertySymbol prop:
-                        Writer.AppendLine($"{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
+                    {
+                        var propConst = prop.GetAttributes().Any(a => a.AttributeClass?.Name == "GpuConstAttribute") ? "const " : "";
+                        Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
                         break;
+                    }
                 }
             }
         }
