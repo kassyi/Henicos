@@ -8,7 +8,10 @@ namespace Henicos;
 public class GpuBigIntBenchmark : IDisposable
 {
     [Params(1024, 4096, 16384)]
-    public int NumWords { get; set; }
+    public int NumWords
+    {
+        get; set;
+    }
 
     private GpuContext _contextJit = null!;
     private GpuContext _contextLegacy = null!;
@@ -72,13 +75,13 @@ public class GpuBigIntBenchmark : IDisposable
     [Benchmark(Baseline = true)]
     public void Sub_LegacyNative()
     {
-        GpuBigInteger.Sub(_gpuALegacy, _gpuBLegacy, _gpuResultLegacy);
+        _gpuResultLegacy.Value = _gpuALegacy - _gpuBLegacy;
         // Synchronize implicitly or explicitly depending on how benchmarking is done.
         // For accurate GPU benchmarking, we should sync, but NativeMethods currently sync internally via cudaDeviceSynchronize.
     }
 
     [Benchmark]
-    public void Sub_GSharpJit() => GpuBigInteger.Sub(_gpuAJit, _gpuBJit, _gpuResultJit);
+    public void Sub_GSharpJit() => _gpuResultJit.Value = _gpuAJit - _gpuBJit;
 
     public void Dispose() => Cleanup();
 }

@@ -1,5 +1,6 @@
 using System.Numerics;
 using BenchmarkDotNet.Attributes;
+using Kassyi.GSharp.GpuBigInt;
 
 namespace Henicos;
 
@@ -12,26 +13,26 @@ public class FermatBenchmark
         get; set;
     }
 
-    private Kassyi.GSharp.GpuBigInt.FermatRunner _runner;
+    private FermatRunner _runner = null!;
 
-    private BigInteger X;
-    private BigInteger N;
-    private BigInteger a;
-    private BigInteger exponent;
+    private BigInteger _baseValueX;
+    private BigInteger _modulusN;
+    private BigInteger _baseA;
+    private BigInteger _exponentValue;
 
     [GlobalSetup]
     public void Setup()
     {
-        X = BigInteger.One << E;
-        N = (BigInteger.One << (2 * E + 1)) - X + 11;
-        a = 2;
-        exponent = N - 1;
+        _baseValueX = BigInteger.One << E;
+        _modulusN = (BigInteger.One << (2 * E + 1)) - _baseValueX + 11;
+        _baseA = 2;
+        _exponentValue = _modulusN - 1;
 
-        _runner = new Kassyi.GSharp.GpuBigInt.FermatRunner(E);
+        _runner = new FermatRunner(E);
     }
 
     [Benchmark(Baseline = true)]
-    public BigInteger StandardBigInteger() => BigInteger.ModPow(a, exponent, N);
+    public BigInteger StandardBigInteger() => BigInteger.ModPow(_baseA, _exponentValue, _modulusN);
 
     [Benchmark]
     public uint[] GpuBigIntJit()
@@ -41,8 +42,5 @@ public class FermatBenchmark
     }
 
     [Benchmark]
-    public void GSharpJitChunk100()
-    {
-        _runner.RunBenchmarkChunk(100);
-    }
+    public void GSharpJitChunk100() => _runner.RunBenchmarkChunk();
 }

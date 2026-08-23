@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Henicos.PiBenchmark/Henicos.PiBenchmark.csproj" />
     <Project Path="src/Henicos/Henicos.csproj" />
     <Project Path="src/Kassyi.Generators.GSharp/Kassyi.Generators.GSharp.csproj" />
     <Project Path="src/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />

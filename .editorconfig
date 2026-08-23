@@ -57,6 +57,9 @@ csharp_style_expression_bodied_accessors = true:suggestion
 # ------------------------------------------------------------------------------
 # 新しい構文のスペース・改行制御 (ReSharper / Roslyn フォーマッタ用)
 # ------------------------------------------------------------------------------
+# アロー演算子 (=>) が長くて改行される場合、=> の前で改行する (Wrap before =>)
+resharper_csharp_wrap_before_arrow = true
+
 # 波括弧（ブレース）は常に新しい行から開始 (Allman Style)
 csharp_new_line_before_open_brace = all
 

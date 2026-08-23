@@ -52,86 +52,86 @@ public static class HybridReduction
             try
             {
 
-            // R starts as the lower 2E+1 bits of data.
-            // We can just copy R into nextData.
-            var rCopyWords = Math.Min(data.Length, word2E1 + 1);
-            Array.Copy(data, nextData, rCopyWords);
-            if (rem2E1 != 0 && rCopyWords > 0)
-            {
-                nextData[word2E1] &= rMask;
-            }
-
-            // We must iterate over all words where Q might contribute.
-            // (Q << E) shifts bits up. If Q is max 2E+1 bits, Q<<E is 3E+1 bits.
-            // To be safe, we just process all available words up to data.Length.
-            var targetWords = data.Length;
-            var chunkSize = Math.Max(1024, targetWords / Math.Max(1, Environment.ProcessorCount));
-            var numChunks = (targetWords + chunkSize - 1) / chunkSize;
-
-            var carryBuffer = new long[numChunks + 1];
-
-            Parallel.For(0, numChunks, chunkIdx =>
-            {
-                var start = chunkIdx * chunkSize;
-                var end = Math.Min(start + chunkSize, targetWords);
-
-                long localCarry = 0;
-
-                for (var i = start; i < end; i++)
+                // R starts as the lower 2E+1 bits of data.
+                // We can just copy R into nextData.
+                var rCopyWords = Math.Min(data.Length, word2E1 + 1);
+                Array.Copy(data, nextData, rCopyWords);
+                if (rem2E1 != 0 && rCopyWords > 0)
                 {
-                    var current = nextData[i] + localCarry;
-
-                    // Add (Q << E)
-                    // (Q << E) has its i-th word coming from Q's (i - wordE) shifted.
-                    var qShiftE = GetShiftedQWord(data, word2E1, rem2E1, i, wordE, remE, data.Length);
-                    current += qShiftE;
-
-                    // Subtract (Q * 11)
-                    // Q * 11 = (Q << 3) + (Q << 1) + Q
-                    // We need the i-th word of (Q * 11).
-                    // This is simply: (i-th word of Q<<3) + (i-th word of Q<<1) + (i-th word of Q)
-                    var qWord = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 0, data.Length);
-                    var qShift1 = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 1, data.Length);
-                    var qShift3 = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 3, data.Length);
-
-                    current -= qWord;
-                    current -= qShift1;
-                    current -= qShift3;
-
-                    nextData[i] = (uint)(current & 0xFFFFFFFF);
-                    localCarry = current >> 32;
-                }
-                carryBuffer[chunkIdx + 1] = localCarry;
-            });
-
-            long rippleCarry = 0;
-            for (var chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
-            {
-                var start = chunkIdx * chunkSize;
-                var end = Math.Min(start + chunkSize, targetWords);
-
-                rippleCarry += carryBuffer[chunkIdx];
-                if (rippleCarry == 0)
-                {
-                    continue;
+                    nextData[word2E1] &= rMask;
                 }
 
-                for (var i = start; i < end; i++)
+                // We must iterate over all words where Q might contribute.
+                // (Q << E) shifts bits up. If Q is max 2E+1 bits, Q<<E is 3E+1 bits.
+                // To be safe, we just process all available words up to data.Length.
+                var targetWords = data.Length;
+                var chunkSize = Math.Max(1024, targetWords / Math.Max(1, Environment.ProcessorCount));
+                var numChunks = (targetWords + chunkSize - 1) / chunkSize;
+
+                var carryBuffer = new long[numChunks + 1];
+
+                Parallel.For(0, numChunks, chunkIdx =>
                 {
-                    var current = nextData[i] + rippleCarry;
-                    nextData[i] = (uint)(current & 0xFFFFFFFF);
-                    rippleCarry = current >> 32;
+                    var start = chunkIdx * chunkSize;
+                    var end = Math.Min(start + chunkSize, targetWords);
+
+                    long localCarry = 0;
+
+                    for (var i = start; i < end; i++)
+                    {
+                        var current = nextData[i] + localCarry;
+
+                        // Add (Q << E)
+                        // (Q << E) has its i-th word coming from Q's (i - wordE) shifted.
+                        var qShiftE = GetShiftedQWord(data, word2E1, rem2E1, i, wordE, remE, data.Length);
+                        current += qShiftE;
+
+                        // Subtract (Q * 11)
+                        // Q * 11 = (Q << 3) + (Q << 1) + Q
+                        // We need the i-th word of (Q * 11).
+                        // This is simply: (i-th word of Q<<3) + (i-th word of Q<<1) + (i-th word of Q)
+                        var qWord = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 0, data.Length);
+                        var qShift1 = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 1, data.Length);
+                        var qShift3 = GetShiftedQWord(data, word2E1, rem2E1, i, 0, 3, data.Length);
+
+                        current -= qWord;
+                        current -= qShift1;
+                        current -= qShift3;
+
+                        nextData[i] = (uint)(current & 0xFFFFFFFF);
+                        localCarry = current >> 32;
+                    }
+                    carryBuffer[chunkIdx + 1] = localCarry;
+                });
+
+                long rippleCarry = 0;
+                for (var chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
+                {
+                    var start = chunkIdx * chunkSize;
+                    var end = Math.Min(start + chunkSize, targetWords);
+
+                    rippleCarry += carryBuffer[chunkIdx];
                     if (rippleCarry == 0)
                     {
-                        break;
+                        continue;
+                    }
+
+                    for (var i = start; i < end; i++)
+                    {
+                        var current = nextData[i] + rippleCarry;
+                        nextData[i] = (uint)(current & 0xFFFFFFFF);
+                        rippleCarry = current >> 32;
+                        if (rippleCarry == 0)
+                        {
+                            break;
+                        }
                     }
                 }
-            }
-            // Apply nextData back to data
-            Array.Copy(nextData, data, data.Length);
+                // Apply nextData back to data
+                Array.Copy(nextData, data, data.Length);
 
-            // The entire array `data` now holds the correctly reduced value T'' in 2's complement.
-            // No further manual overwrites are needed.
+                // The entire array `data` now holds the correctly reduced value T'' in 2's complement.
+                // No further manual overwrites are needed.
             }
             finally
             {

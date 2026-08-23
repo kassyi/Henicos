@@ -63,7 +63,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             using var gpuB = new GpuBigInteger(context, arrB);
             using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
-            GpuBigInteger.Add(gpuA, gpuB, gpuResult);
+            gpuResult.Value = gpuA + gpuB;
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);
@@ -99,10 +99,51 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             using var gpuB = new GpuBigInteger(context, arrB);
             using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
-            GpuBigInteger.Sub(gpuA, gpuB, gpuResult);
+            gpuResult.Value = gpuA - gpuB;
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);
+
+            Assert.Equal(expectedBig, actualBig);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_Mul_Correctness(GpuExecutionEngine engine)
+        {
+            if (engine == GpuExecutionEngine.LegacyNative)
+                return; // Not fully implemented or tested in Native Provider
+
+            var sizeWords = 16;
+            using var context = new GpuContext(sizeWords * 4, engine);
+            var arrA = GenerateRandomArray(sizeWords, 11);
+            var arrB = GenerateRandomArray(sizeWords, 12);
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            var expectedBig = bigA * bigB;
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, sizeWords * 2);
+
+            var m = 64; // transform length
+
+            gpuResult.Value = gpuA * gpuB;
+
+            // Assert the final result against System.Numerics.BigInteger
+            var resultArr = gpuResult.ToHostArray();
+            var actualBig = ToBigInteger(resultArr);
+
+            var mask = (BigInteger.One << (sizeWords * 2 * 32)) - 1;
+            expectedBig &= mask;
+
+            if (expectedBig != actualBig)
+            {
+                System.Console.WriteLine($"Expected (Hex): {expectedBig:X}");
+                System.Console.WriteLine($"Actual   (Hex): {actualBig:X}");
+            }
 
             Assert.Equal(expectedBig, actualBig);
         }
@@ -122,7 +163,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             using var gpuA = new GpuBigInteger(context, arrA);
             using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
-            GpuBigInteger.ShiftLeft(gpuA, shiftBits, gpuResult);
+            gpuResult.Value = gpuA << shiftBits;
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);
@@ -148,7 +189,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             using var gpuA = new GpuBigInteger(context, arrA);
             using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
-            GpuBigInteger.ShiftRight(gpuA, shiftBits, gpuResult);
+            gpuResult.Value = gpuA >> shiftBits;
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);

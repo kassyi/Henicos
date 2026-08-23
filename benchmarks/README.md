@@ -43,6 +43,8 @@ We have successfully implemented and benchmarked various versions of the reducti
 | **Phase 12: G# Full Impl (No GpuInline)**    | 708 ms               | N/A                   | N/A                       | N/A                    | **1.70 M-Digit/s**                  |
 | **Phase 12.1: G# Full Impl (Opt + Inline)**  | 545 ms               | N/A                   | N/A                       | N/A                    | **2.21 M-Digit/s**                  |
 | **Phase 13: JIT Constant Folding (Dynamic)** | 576 ms               | _NVRTC Timeout_       | _21.75 M-Digit/s (Chunk)_ | N/A                    | **21.75 M-Digit/s (Beats Native!)** |
+| **Phase 14: Synchronized GSharpJitPhase12**  | 558 ms               | _Skipped (TDR Risk)_  | _Skipped (TDR Risk)_      | N/A                    | **2.15 M-Digit/s**                  |
+| **Phase 14.1: Synchronized GSharpJitChunk100**| 15.1 ms              | _Skipped (TDR Risk)_  | _Skipped (TDR Risk)_      | N/A                    | **~79.4 M-Digit/s (Fastest!)**      |
 
 ### 2. Framework Dispatch Overhead (G# vs Native CUDA)
 
