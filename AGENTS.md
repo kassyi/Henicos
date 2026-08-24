@@ -45,6 +45,10 @@ For all C# coding style conventions (Naming, Syntax, Zero-Allocation preferences
 
 - **See:** [`.agents/rules/coding-style.md`](.agents/rules/coding-style.md)
 
+### 2.1. GPU Kernel Naming Convention (.cu.cs)
+
+Any C# file that contains G# GPU kernel implementations (e.g., methods annotated with `[GpuKernel]`) **MUST** use the `.cu.cs` extension (e.g., `GpuBigIntMulKernels.cu.cs`). This convention signals to the system and developers that the file contains transpilation targets for CUDA C++.
+
 ---
 
 ## 3. Source Generation & Transpilation Best Practices (GSharp)
