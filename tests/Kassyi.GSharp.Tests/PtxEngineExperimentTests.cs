@@ -90,13 +90,8 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
         try
         {
-            _output.WriteLine("Loading FATBIN module...");
             CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out IntPtr module, ptxBytes, 0, null, null));
-
-            _output.WriteLine("Getting function handle...");
             CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out IntPtr hfunc, module, "AddKernel"));
-
-            _output.WriteLine("Allocating memory on GPU...");
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out dA, 4));
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out dB, 4));
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out dC, 4));
@@ -110,8 +105,6 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(dA, pA, 4));
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(dB, pB, 4));
-
-            _output.WriteLine("Launching kernel...");
             pArgA = Marshal.AllocHGlobal(IntPtr.Size);
             pArgB = Marshal.AllocHGlobal(IntPtr.Size);
             pArgC = Marshal.AllocHGlobal(IntPtr.Size);
@@ -127,12 +120,9 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
             CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
                 hfunc, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, kernelParams, IntPtr.Zero));
-
-            _output.WriteLine("Copying result to host...");
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(pC, dC, 4));
 
             int c = Marshal.ReadInt32(pC);
-            _output.WriteLine($"Result: {a} + {b} = {c}");
             Assert.Equal(expected, c);
         }
         finally

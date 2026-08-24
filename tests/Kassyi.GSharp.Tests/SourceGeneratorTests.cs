@@ -21,8 +21,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestGeneratedWrapper()
     {
         string expectedSource = SourceGeneratorTestsWrapper.MyTestKernel_CudaSource;
-        _output.WriteLine("Generated C++ Source: ");
-        _output.WriteLine(expectedSource);
 
         Assert.Contains("extern \"C\" __global__ void MyTestKernel", expectedSource);
         Assert.Contains("c[0]=(a[0]+b[0]);", expectedSource);
@@ -57,8 +55,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestComplexLogicKernel()
     {
         string expectedSource = SourceGeneratorTestsWrapper.ComplexLogicKernel_CudaSource;
-        _output.WriteLine("Complex Logic C++ Source:");
-        _output.WriteLine(expectedSource);
 
         int[] aArray = [5]; // Less than 10, should take else branch (b[0]) 5 times
         int[] bArray = [2];
@@ -98,8 +94,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestIntrinsicsKernel()
     {
         string expectedSource = SourceGeneratorTestsWrapper.IntrinsicsKernel_CudaSource;
-        _output.WriteLine("Intrinsics C++ Source:");
-        _output.WriteLine(expectedSource);
 
         int[] dataArray = new int[2];
         dataArray[0] = 0; // atomic sum
@@ -135,8 +129,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestStructKernel()
     {
         string expectedSource = SourceGeneratorTestsWrapper.StructKernel_CudaSource;
-        _output.WriteLine("Struct C++ Source:");
-        _output.WriteLine(expectedSource);
 
         Vector2[] dataArray = new Vector2[1];
         dataArray[0] = new Vector2 { X = 1.5f, Y = 2.0f };
@@ -193,8 +185,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestControlFlowKernel()
     {
         string expectedSource = SourceGeneratorTestsWrapper.ControlFlowKernel_CudaSource;
-        _output.WriteLine("Control Flow C++ Source:");
-        _output.WriteLine(expectedSource);
 
         int[] dataArray = new int[4];
 
@@ -228,8 +218,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestDeviceMethodKernel()
     {
         string expectedSource = SourceGeneratorTestsWrapper.DeviceMethodKernel_CudaSource;
-        _output.WriteLine("Device Method C++ Source:");
-        _output.WriteLine(expectedSource);
 
         Assert.Contains("__device__ int MyCustomAdd", expectedSource);
 
@@ -266,8 +254,6 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     public void TestSharedMemoryKernel()
     {
         string expectedSource = SourceGeneratorTestsWrapper.SharedMemoryKernel_CudaSource;
-        _output.WriteLine("Shared Memory C++ Source:");
-        _output.WriteLine(expectedSource);
 
         Assert.Contains("__shared__ int sStatic[256];", expectedSource);
         Assert.Contains("extern __shared__ char __gsharp_dynamic_smem[];", expectedSource);
