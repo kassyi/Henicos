@@ -31,3 +31,30 @@ asm volatile(
 *borrow=b_out&1;
 return res;
 }
+
+__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    return __funnelshift_l(value, value, offset);
+}
+__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    return __funnelshift_r(value, value, offset);
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value << offset) | (value >> (64 - offset)) : value;
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value >> offset) | (value << (64 - offset)) : value;
+}
+__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
+    return value ? __ffs(value) - 1 : 32;
+}
+__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
+    return value ? __ffsll(value) - 1 : 64;
+}
+__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
+    return value ? 31 - __clz(value) : 0;
+}
+__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
+    return value ? 63 - __clzll(value) : 0;
+}

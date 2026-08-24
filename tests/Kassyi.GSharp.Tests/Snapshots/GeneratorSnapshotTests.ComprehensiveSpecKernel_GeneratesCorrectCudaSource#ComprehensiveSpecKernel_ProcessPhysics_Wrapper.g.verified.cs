@@ -43,6 +43,33 @@ asm volatile(
 return res;
 }
 
+__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    return __funnelshift_l(value, value, offset);
+}
+__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    return __funnelshift_r(value, value, offset);
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value << offset) | (value >> (64 - offset)) : value;
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value >> offset) | (value << (64 - offset)) : value;
+}
+__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
+    return value ? __ffs(value) - 1 : 32;
+}
+__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
+    return value ? __ffsll(value) - 1 : 64;
+}
+__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
+    return value ? 31 - __clz(value) : 0;
+}
+__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
+    return value ? 63 - __clzll(value) : 0;
+}
+
 struct DebugReduc_PhysicsVector;
 __forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
 
@@ -176,7 +203,9 @@ mag=(float)abs(mag);
 for(int i=0;(i<unrollFactor);i++)
 {
 if((i==1))
+{
 continue;
+}
 mag=(float)max(mag,((p.X*i)+Gravity));
 }
 if(!IsPositive(mag))
@@ -238,9 +267,11 @@ bitwise&=~1;
 mag=((bitwise>0))(mag*2.0f)(mag/2.0f);
 }
 else
+{
 if((condition1||!condition2))
 {
 mag+=1.5f;
+}
 }
 Intrinsics.InlinePtx(""/* test ptx inline */"");
 if((ty>0))
@@ -298,14 +329,9 @@ host.DoubleValue = native.DoubleValue;
 public static unsafe void Launch_ProcessPhysics(DebugReduc.PhysicsVector[] particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
-var __gsharp_dynamic_src = string.Join
-(System.Environment.NewLine, new string[]
-{
-"#define unrollFactor " + (unrollFactor).ToString(),
-ProcessPhysics_CudaSource
-}
-);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics", macros);
+var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
+__gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -371,7 +397,7 @@ IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlob
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_totalMagnitude_temp, d_totalMagnitude, totalMagnitude_size));
-totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float));
+totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float))!;
 }
 finally
 {
@@ -382,7 +408,7 @@ IntPtr p_successFlag_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_successFlag_temp, d_successFlag, successFlag_size));
-successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool));
+successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool))!;
 }
 finally
 {
@@ -401,14 +427,9 @@ foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr
 public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
-var __gsharp_dynamic_src = string.Join
-(System.Environment.NewLine, new string[]
-{
-"#define unrollFactor " + (unrollFactor).ToString(),
-ProcessPhysics_CudaSource
-}
-);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics", macros);
+var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
+__gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
 System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
@@ -447,7 +468,7 @@ IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlob
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_totalMagnitude_temp, d_totalMagnitude, totalMagnitude_size));
-totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float));
+totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float))!;
 }
 finally
 {
@@ -458,7 +479,7 @@ IntPtr p_successFlag_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_successFlag_temp, d_successFlag, successFlag_size));
-successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool));
+successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool))!;
 }
 finally
 {

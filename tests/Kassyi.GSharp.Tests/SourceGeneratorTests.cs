@@ -286,5 +286,67 @@ public class SourceGeneratorTests(ITestOutputHelper output)
 
         Assert.Contains("NVCC Compilation Failed", ex.Message);
         Assert.NotNull(ex.InnerException); // Assert inner exception is preserved
+}
+
+    [GpuKernel]
+    public static void BitOperationsTestKernel(uint[] u32Data, ulong[] u64Data)
+    {
+        uint u32Val = u32Data[0];
+        u32Data[1] = (uint)System.Numerics.BitOperations.LeadingZeroCount(u32Val);
+        u32Data[2] = (uint)System.Numerics.BitOperations.PopCount(u32Val);
+        u32Data[3] = (uint)System.Numerics.BitOperations.TrailingZeroCount(u32Val);
+        u32Data[4] = (uint)System.Numerics.BitOperations.Log2(u32Val);
+        u32Data[5] = System.Numerics.BitOperations.RotateLeft(u32Val, 5);
+        u32Data[6] = System.Numerics.BitOperations.RotateRight(u32Val, 3);
+
+        ulong u64Val = u64Data[0];
+        u64Data[1] = (ulong)System.Numerics.BitOperations.LeadingZeroCount(u64Val);
+        u64Data[2] = (ulong)System.Numerics.BitOperations.PopCount(u64Val);
+        u64Data[3] = (ulong)System.Numerics.BitOperations.TrailingZeroCount(u64Val);
+        u64Data[4] = (ulong)System.Numerics.BitOperations.Log2(u64Val);
+        u64Data[5] = System.Numerics.BitOperations.RotateLeft(u64Val, 10);
+        u64Data[6] = System.Numerics.BitOperations.RotateRight(u64Val, 7);
+    }
+
+    [Fact]
+    public void TestBitOperationsKernel()
+    {
+        uint[] u32Data = new uint[7];
+        u32Data[0] = 0b00000000_10101010_11110000_00001000;
+        
+        ulong[] u64Data = new ulong[7];
+        u64Data[0] = 0b00000000_00000000_10101010_11110000_00001000_00000000_00000000_00001000;
+
+        SourceGeneratorTestsWrapper.Launch_BitOperationsTestKernel(u32Data, u64Data);
+
+        uint u32Val = u32Data[0];
+        Assert.Equal((uint)System.Numerics.BitOperations.LeadingZeroCount(u32Val), u32Data[1]);
+        Assert.Equal((uint)System.Numerics.BitOperations.PopCount(u32Val), u32Data[2]);
+        Assert.Equal((uint)System.Numerics.BitOperations.TrailingZeroCount(u32Val), u32Data[3]);
+        Assert.Equal((uint)System.Numerics.BitOperations.Log2(u32Val), u32Data[4]);
+        Assert.Equal(System.Numerics.BitOperations.RotateLeft(u32Val, 5), u32Data[5]);
+        Assert.Equal(System.Numerics.BitOperations.RotateRight(u32Val, 3), u32Data[6]);
+
+        ulong u64Val = u64Data[0];
+        Assert.Equal((ulong)System.Numerics.BitOperations.LeadingZeroCount(u64Val), u64Data[1]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.PopCount(u64Val), u64Data[2]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.TrailingZeroCount(u64Val), u64Data[3]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.Log2(u64Val), u64Data[4]);
+        Assert.Equal(System.Numerics.BitOperations.RotateLeft(u64Val, 10), u64Data[5]);
+        Assert.Equal(System.Numerics.BitOperations.RotateRight(u64Val, 7), u64Data[6]);
+        
+        // Test with 0
+        u32Data[0] = 0;
+        u64Data[0] = 0;
+        SourceGeneratorTestsWrapper.Launch_BitOperationsTestKernel(u32Data, u64Data);
+        Assert.Equal((uint)System.Numerics.BitOperations.LeadingZeroCount(0u), u32Data[1]);
+        Assert.Equal((uint)System.Numerics.BitOperations.PopCount(0u), u32Data[2]);
+        Assert.Equal((uint)System.Numerics.BitOperations.TrailingZeroCount(0u), u32Data[3]);
+        Assert.Equal((uint)System.Numerics.BitOperations.Log2(0u), u32Data[4]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.LeadingZeroCount(0ul), u64Data[1]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.PopCount(0ul), u64Data[2]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.TrailingZeroCount(0ul), u64Data[3]);
+        Assert.Equal((ulong)System.Numerics.BitOperations.Log2(0ul), u64Data[4]);
     }
 }
+

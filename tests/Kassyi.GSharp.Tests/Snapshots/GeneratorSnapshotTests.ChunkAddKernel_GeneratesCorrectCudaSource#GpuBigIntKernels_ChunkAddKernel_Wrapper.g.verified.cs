@@ -43,14 +43,45 @@ asm volatile(
 return res;
 }
 
+__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    return __funnelshift_l(value, value, offset);
+}
+__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    return __funnelshift_r(value, value, offset);
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value << offset) | (value >> (64 - offset)) : value;
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value >> offset) | (value << (64 - offset)) : value;
+}
+__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
+    return value ? __ffs(value) - 1 : 32;
+}
+__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
+    return value ? __ffsll(value) - 1 : 64;
+}
+__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
+    return value ? 31 - __clz(value) : 0;
+}
+__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
+    return value ? 63 - __clzll(value) : 0;
+}
+
 extern ""C"" __global__ void ChunkAddKernel(unsigned int* dA,unsigned int* dB,unsigned int* dResult,long long* carryBuffer,int numWords,int chunkSize){
 int chunkIdx=((blockIdx.x*blockDim.x)+threadIdx.x);
 int start=(chunkIdx*chunkSize);
 if((start>=numWords))
+{
 return;
+}
 int end=(start+chunkSize);
 if((end>numWords))
+{
 end=numWords;
+}
 unsigned long long localCarry=0;
 for(int i=start;(i<end);i++)
 {
@@ -61,24 +92,10 @@ localCarry=(current>>32);
 carryBuffer[(chunkIdx+1)]=(long long)localCarry;
 }
 ";
-private static IntPtr s_hfunc_ChunkAddKernel = IntPtr.Zero;
 public static unsafe void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
-IntPtr hfunc;
-if (macros != null || s_hfunc_ChunkAddKernel == IntPtr.Zero)
-{
-IntPtr dynamic_hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(ChunkAddKernel_CudaSource, "ChunkAddKernel", macros);
-if (macros == null)
-{
-s_hfunc_ChunkAddKernel = dynamic_hfunc;
-}
-hfunc = dynamic_hfunc;
-}
-else
-{
-hfunc = s_hfunc_ChunkAddKernel;
-}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", ChunkAddKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -215,20 +232,7 @@ if (d_carryBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_carryBuffer);
 public static unsafe void Launch_ChunkAddKernel_Device(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
-IntPtr hfunc;
-if (macros != null || s_hfunc_ChunkAddKernel == IntPtr.Zero)
-{
-IntPtr dynamic_hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(ChunkAddKernel_CudaSource, "ChunkAddKernel", macros);
-if (macros == null)
-{
-s_hfunc_ChunkAddKernel = dynamic_hfunc;
-}
-hfunc = dynamic_hfunc;
-}
-else
-{
-hfunc = s_hfunc_ChunkAddKernel;
-}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", ChunkAddKernel_CudaSource, null, macros);
 try
 {
 void** kernelParams = stackalloc void*[6];

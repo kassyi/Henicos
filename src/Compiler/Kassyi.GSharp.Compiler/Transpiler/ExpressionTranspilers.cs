@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler.Diagnostics;
@@ -177,6 +177,13 @@ internal static class ExpressionTranspilers
             return;
         }
 
+        if (symbol is { ContainingType.Name: "BitOperations" } &&
+            symbol.ContainingType.ToString() == "System.Numerics.BitOperations")
+        {
+            TranspileBitOperationsInvocation(node, context, symbol);
+            return;
+        }
+
         if (symbol is { ContainingType.Name: "Gpu", Name: "JitConstant" })
         {
             if (node.ArgumentList.Arguments.Count == 1)
@@ -195,6 +202,37 @@ internal static class ExpressionTranspilers
         }
 
         context.Visit(node.Expression);
+        using (context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            {
+                context.Visit(node.ArgumentList.Arguments[i]);
+                if (i < node.ArgumentList.Arguments.Count - 1)
+                {
+                    context.Writer.AppendComma();
+                }
+            }
+        }
+    }
+
+    private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, RoslynToCudaVisitor context, IMethodSymbol symbol)
+    {
+        var is64Bit = symbol.Parameters.Length > 0 &&
+                      (symbol.Parameters[0].Type.SpecialType == SpecialType.System_UInt64 ||
+                       symbol.Parameters[0].Type.SpecialType == SpecialType.System_Int64);
+
+        string functionName = symbol.Name switch
+        {
+            "LeadingZeroCount" => is64Bit ? "__clzll" : "__clz",
+            "PopCount" => is64Bit ? "__popcll" : "__popc",
+            "TrailingZeroCount" => is64Bit ? "__gsharp_tzc_64" : "__gsharp_tzc_32",
+            "Log2" => is64Bit ? "__gsharp_log2_64" : "__gsharp_log2_32",
+            "RotateLeft" => is64Bit ? "__gsharp_rotl64" : "__gsharp_rotl32",
+            "RotateRight" => is64Bit ? "__gsharp_rotr64" : "__gsharp_rotr32",
+            _ => throw new InvalidOperationException($"Unsupported BitOperations method: {symbol.Name}")
+        };
+
+        context.Writer.Append(functionName);
         using (context.Writer.Parentheses())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
