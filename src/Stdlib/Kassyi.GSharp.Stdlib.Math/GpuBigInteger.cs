@@ -597,6 +597,9 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     public bool IsZero() => Context.Provider.IsZero(Context, this);
     public bool IsOne() => Context.Provider.IsOne(Context, this);
 
+    public int GetBitLength() => Context.Provider.GetBitLength(Context, this);
+    public int GetByteCount() => (GetBitLength() + 7) / 8;
+
     public bool IsEven
     {
         get

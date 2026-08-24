@@ -21,6 +21,7 @@ internal static class ExpressionTranspilers
                     context.Writer.AppendSemiColon();
                     context.Writer.AppendLine();
                 }
+
                 for (int i = 0; i < leftTuple.Arguments.Count; i++)
                 {
                     context.Visit(leftTuple.Arguments[i].Expression);
@@ -29,6 +30,7 @@ internal static class ExpressionTranspilers
                     context.Writer.AppendLine();
                 }
             }
+
             context.Writer.Append("()");
             return;
         }
@@ -198,6 +200,7 @@ internal static class ExpressionTranspilers
                     context.Writer.Append(identifier.Identifier.ValueText);
                 }
             }
+
             return;
         }
 
@@ -215,7 +218,8 @@ internal static class ExpressionTranspilers
         }
     }
 
-    private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, RoslynToCudaVisitor context, IMethodSymbol symbol)
+    private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, RoslynToCudaVisitor context,
+        IMethodSymbol symbol)
     {
         var is64Bit = symbol.Parameters.Length > 0 &&
                       (symbol.Parameters[0].Type.SpecialType == SpecialType.System_UInt64 ||
@@ -397,7 +401,7 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        if (argumentList != null && argumentList.Arguments.Count > 0)
+        if (argumentList is { Arguments.Count: > 0 })
         {
             context.Writer.Append(cppType);
             using (context.Writer.Scope())

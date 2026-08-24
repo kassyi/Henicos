@@ -621,6 +621,114 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Equal(expectedBig, actualBig);
         }
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [Trait("RoadmapId", "GBI-OpMod")]
+        public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 3, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 62);
+            var arrB = GenerateRandomArray(TestSizeWords, 63);
+            arrB[TestSizeWords - 1] &= 0x7FFFFFFF;
+            if (arrB[0] == 0) arrB[0] = 1;
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+
+            gpuResult.Value = gpuA % gpuB;
+            var actual = ToBigInteger(gpuResult.ToHostArray());
+            var expected = bigA % bigB;
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [Trait("RoadmapId", "GBI-OpEq")]
+        [Trait("RoadmapId", "GBI-OpNeq")]
+        [Trait("RoadmapId", "GBI-OpLt")]
+        [Trait("RoadmapId", "GBI-OpGt")]
+        [Trait("RoadmapId", "GBI-OpLte")]
+        [Trait("RoadmapId", "GBI-OpGte")]
+        public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 70);
+            var arrB = GenerateRandomArray(TestSizeWords, 70); // Same for equal tests
+            var arrC = GenerateRandomArray(TestSizeWords, 71);
+            arrA[TestSizeWords - 1] |= 0x40000000;
+            arrB[TestSizeWords - 1] |= 0x40000000; // arrB must equal arrA
+            arrC[TestSizeWords - 1] &= 0x3FFFFFFF; // Force A > C
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuC = new GpuBigInteger(context, arrC);
+
+            // Equal / NotEqual
+            Assert.True(gpuA == gpuB);
+            Assert.False(gpuA != gpuB);
+            Assert.False(gpuA == gpuC);
+            Assert.True(gpuA != gpuC);
+
+            // Greater / Less
+            Assert.True(gpuA > gpuC);
+            Assert.False(gpuC > gpuA);
+            Assert.True(gpuC < gpuA);
+            Assert.False(gpuA < gpuC);
+
+            // GreaterEqual / LessEqual
+            Assert.True(gpuA >= gpuB);
+            Assert.True(gpuA <= gpuB);
+            Assert.True(gpuA >= gpuC);
+            Assert.True(gpuC <= gpuA);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [Trait("RoadmapId", "GBI-FuncLen")]
+        public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 80);
+            
+            // To make testing exact sizes easier, set specific top bit
+            arrA[TestSizeWords - 1] = 0;
+            arrA[TestSizeWords - 2] = 0x80000000; // Exact length
+            var bigA = ToBigInteger(arrA);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+
+            long expectedBits = bigA.GetBitLength();
+            long expectedBytes = bigA.GetByteCount(isUnsigned: true);
+
+            Assert.Equal(expectedBits, gpuA.GetBitLength());
+            Assert.Equal(expectedBytes, gpuA.GetByteCount());
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [Trait("RoadmapId", "GBI-FuncSquare")]
+        public void Test_Square_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 4, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 90);
+            var bigA = ToBigInteger(arrA);
+
+            using var gpuA = new GpuBigInteger(context, TestSizeWords * 4);
+            gpuA.CopyFrom(new GpuBigInteger(context, arrA));
+            gpuA.Square(TestSizeWords);
+            var actual = ToBigInteger(gpuA.ToHostArray().Take(TestSizeWords * 2).ToArray());
+            var expected = bigA * bigA;
+
+            var mask = (BigInteger.One << (TestSizeWords * 2 * 32)) - 1;
+            expected &= mask;
+
+            Assert.Equal(expected, actual);
+        }
     }
 }
 

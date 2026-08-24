@@ -436,5 +436,15 @@ public static class GpuBigIntNttKernels
         args.IsInverse = true;
         Device_NTT_Internal(ref args);
     }
+
+    [GpuKernel]
+    public static void DummyTranspilationKernel(uint[] data)
+    {
+        // This kernel exists solely to ensure that the G# source generator transpiles 
+        // the [GpuDevice] methods in this file for snapshot testing.
+        NttKernelArgs args = default;
+        args.Buffer = data;
+        Device_ForwardNTT(ref args);
+    }
 }
 

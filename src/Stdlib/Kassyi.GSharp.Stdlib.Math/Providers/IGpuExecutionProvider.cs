@@ -26,6 +26,7 @@ public interface IGpuExecutionProvider
 
     bool IsZero(GpuContext context, GpuBigInteger leftOperand);
     bool IsOne(GpuContext context, GpuBigInteger leftOperand);
+    int GetBitLength(GpuContext context, GpuBigInteger leftOperand);
     int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand);
 }
 

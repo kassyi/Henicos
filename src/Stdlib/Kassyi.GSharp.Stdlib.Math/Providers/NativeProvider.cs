@@ -109,8 +109,9 @@ public class NativeProvider : IGpuExecutionProvider
     public bool IsZero(GpuContext context, GpuBigInteger leftOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    public bool IsOne(GpuContext context, GpuBigInteger leftOperand) =>
-        throw new NotImplementedException(ErrorNotImplemented);
+    public bool IsOne(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
+    
+    public int GetBitLength(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
 
     public int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);

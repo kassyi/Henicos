@@ -532,10 +532,10 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords)
     {
         using var tempA = new GpuBigInteger(context, logicalWords);
-        context.Provider.CopyDeviceToDevice(devicePointer, tempA.DevicePointer, logicalWords);
+        context.Provider.CopyDeviceToDevice(tempA.DevicePointer, devicePointer, logicalWords);
         using var tempResult = new GpuBigInteger(context, logicalWords * 2);
         GpuBigInteger.Mul(tempA, tempA, tempResult);
-        context.Provider.CopyDeviceToDevice(tempResult.DevicePointer, devicePointer, logicalWords);
+        context.Provider.CopyDeviceToDevice(devicePointer, tempResult.DevicePointer, logicalWords * 2);
         return true;
     }
 }
