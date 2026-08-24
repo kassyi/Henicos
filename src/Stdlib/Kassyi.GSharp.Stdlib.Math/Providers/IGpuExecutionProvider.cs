@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.Providers;
 
 public interface IGpuExecutionProvider
 {

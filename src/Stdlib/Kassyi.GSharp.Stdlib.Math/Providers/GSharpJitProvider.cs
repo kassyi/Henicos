@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Runtime.Jit;

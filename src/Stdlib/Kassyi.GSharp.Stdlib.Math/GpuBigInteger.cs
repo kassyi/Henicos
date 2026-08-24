@@ -1,4 +1,4 @@
-﻿
+
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math.Expressions;
 

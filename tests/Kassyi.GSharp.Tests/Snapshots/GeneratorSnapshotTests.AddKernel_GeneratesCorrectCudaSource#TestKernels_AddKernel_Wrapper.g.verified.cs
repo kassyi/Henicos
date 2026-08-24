@@ -44,9 +44,11 @@ return res;
 }
 
 __device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    offset &= 31;
     return __funnelshift_l(value, value, offset);
 }
 __device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    offset &= 31;
     return __funnelshift_r(value, value, offset);
 }
 __device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
@@ -68,6 +70,12 @@ __device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
 }
 __device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
     return value ? 63 - __clzll(value) : 0;
+}
+__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
+    return value ? __clz(value) : 32;
+}
+__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
+    return value ? __clzll(value) : 64;
 }
 
 extern ""C"" __global__ void AddKernel(int* a,int* b,int* c){

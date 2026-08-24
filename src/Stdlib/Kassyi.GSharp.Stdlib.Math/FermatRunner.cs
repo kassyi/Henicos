@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.Kernels;
 using Kassyi.GSharp.Stdlib.Math.Contexts;

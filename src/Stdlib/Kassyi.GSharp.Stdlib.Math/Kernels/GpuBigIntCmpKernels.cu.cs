@@ -1,4 +1,4 @@
-﻿// ReSharper disable NotAccessedVariable
+// ReSharper disable NotAccessedVariable
 // ReSharper disable RedundantAssignment
 #pragma warning disable IDE0051, IDE0052, IDE0059, CS0219
 using Kassyi.GSharp.Stdlib.Math.Contexts;

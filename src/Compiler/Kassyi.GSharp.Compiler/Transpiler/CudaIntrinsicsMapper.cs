@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal static class CudaIntrinsicsMapper
 {

@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Compiler;
+namespace Kassyi.GSharp.Compiler;
 
 internal static class TypeConstants
 {

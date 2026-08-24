@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -158,11 +158,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
     private static string GetPreludeSource()
     {
         var assembly = typeof(GpuKernelGenerator).Assembly;
-        var resourceName = "Kassyi.GSharp.Compiler.Resources.Prelude.cu";
-        using var stream = assembly.GetManifestResourceStream(resourceName);
+        var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("Prelude.cu"));
+        using var stream = resourceName != null ? assembly.GetManifestResourceStream(resourceName) : null;
         if (stream == null)
         {
-            return "// Prelude not found\n";
+            throw new InvalidOperationException($"Could not find embedded resource ending with 'Prelude.cu' in {assembly.FullName}");
         }
 
         using var reader = new StreamReader(stream);

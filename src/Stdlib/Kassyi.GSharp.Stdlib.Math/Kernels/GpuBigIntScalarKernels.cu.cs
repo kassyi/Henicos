@@ -1,4 +1,4 @@
-﻿#pragma warning disable IDE0051, IDE0022
+#pragma warning disable IDE0051, IDE0022
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;

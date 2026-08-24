@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Stdlib.Math.Expressions;
 
 public readonly struct GpuBigIntExpr

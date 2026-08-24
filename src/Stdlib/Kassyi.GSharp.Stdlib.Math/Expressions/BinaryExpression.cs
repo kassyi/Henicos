@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Stdlib.Math.Expressions;
 
 internal abstract class BinaryExpression : IGpuBigIntExpression

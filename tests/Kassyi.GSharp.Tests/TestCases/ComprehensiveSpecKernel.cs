@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 

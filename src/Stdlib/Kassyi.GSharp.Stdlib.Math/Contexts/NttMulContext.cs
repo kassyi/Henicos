@@ -1,4 +1,4 @@
-﻿#pragma warning disable IDE0051, IDE0044, CS0169
+#pragma warning disable IDE0051, IDE0044, CS0169
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Contexts;

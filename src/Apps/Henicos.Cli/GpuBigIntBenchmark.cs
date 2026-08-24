@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Runtime.Jit;
 

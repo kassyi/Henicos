@@ -9,6 +9,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kassyi.GSharp.Tests/Kassyi.GSharp.Tests.csproj" />
-    <Project Path="tests/Kassyi.GSharp.GpuBigInt.Tests/Kassyi.GSharp.GpuBigInt.Tests.csproj" />
+    <Project Path="tests/Kassyi.GSharp.Stdlib.Math.Tests/Kassyi.GSharp.Stdlib.Math.Tests.csproj" />
   </Folder>
 </Solution>

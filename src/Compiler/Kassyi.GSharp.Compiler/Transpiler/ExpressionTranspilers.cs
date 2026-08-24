@@ -223,7 +223,7 @@ internal static class ExpressionTranspilers
 
         string functionName = symbol.Name switch
         {
-            "LeadingZeroCount" => is64Bit ? "__clzll" : "__clz",
+            "LeadingZeroCount" => is64Bit ? "__gsharp_lzc_64" : "__gsharp_lzc_32",
             "PopCount" => is64Bit ? "__popcll" : "__popc",
             "TrailingZeroCount" => is64Bit ? "__gsharp_tzc_64" : "__gsharp_tzc_32",
             "Log2" => is64Bit ? "__gsharp_log2_64" : "__gsharp_log2_32",

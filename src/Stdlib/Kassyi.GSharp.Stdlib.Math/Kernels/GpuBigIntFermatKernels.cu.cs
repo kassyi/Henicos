@@ -1,4 +1,4 @@
-﻿using Kassyi.GSharp.Stdlib.Math.Contexts;
+using Kassyi.GSharp.Stdlib.Math.Contexts;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;

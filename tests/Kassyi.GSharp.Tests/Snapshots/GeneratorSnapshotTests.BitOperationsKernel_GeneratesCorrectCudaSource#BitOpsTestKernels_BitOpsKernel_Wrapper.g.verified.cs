@@ -44,9 +44,11 @@ return res;
 }
 
 __device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    offset &= 31;
     return __funnelshift_l(value, value, offset);
 }
 __device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    offset &= 31;
     return __funnelshift_r(value, value, offset);
 }
 __device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
@@ -69,17 +71,23 @@ __device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
 __device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
     return value ? 63 - __clzll(value) : 0;
 }
+__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
+    return value ? __clz(value) : 32;
+}
+__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
+    return value ? __clzll(value) : 64;
+}
 
 extern ""C"" __global__ void BitOpsKernel(unsigned int* u32Data,unsigned long long* u64Data){
 unsigned int u32Val=u32Data[0];
-u32Data[1]=(unsigned int)__clz(u32Val);
+u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
 u32Data[2]=(unsigned int)__popc(u32Val);
 u32Data[3]=(unsigned int)__gsharp_tzc_32(u32Val);
 u32Data[4]=(unsigned int)__gsharp_log2_32(u32Val);
 u32Data[5]=__gsharp_rotl32(u32Val,5);
 u32Data[6]=__gsharp_rotr32(u32Val,3);
 unsigned long long u64Val=u64Data[0];
-u64Data[1]=(unsigned long long)__clzll(u64Val);
+u64Data[1]=(unsigned long long)__gsharp_lzc_64(u64Val);
 u64Data[2]=(unsigned long long)__popcll(u64Val);
 u64Data[3]=(unsigned long long)__gsharp_tzc_64(u64Val);
 u64Data[4]=(unsigned long long)__gsharp_log2_64(u64Val);

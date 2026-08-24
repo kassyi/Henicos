@@ -1,4 +1,4 @@
-﻿using Kassyi.GSharp.Stdlib.Math.Interop;
+using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math;
 

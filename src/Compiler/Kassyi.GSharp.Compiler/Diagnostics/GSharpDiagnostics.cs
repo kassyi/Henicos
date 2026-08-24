@@ -1,4 +1,4 @@
-﻿// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedMember.Global
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
 using Microsoft.CodeAnalysis;

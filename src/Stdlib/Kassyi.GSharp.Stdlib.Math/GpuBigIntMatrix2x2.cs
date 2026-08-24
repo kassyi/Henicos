@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math;
+namespace Kassyi.GSharp.Stdlib.Math;
 
 public class GpuBigIntMatrix2x2 : IDisposable
 {

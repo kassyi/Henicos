@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Compiler;
+namespace Kassyi.GSharp.Compiler;
 
 // ReSharper disable UnusedMember.Global
 public static class KnownAttributes
