@@ -11,10 +11,12 @@ GpuBigInt supports a comprehensive set of multi-precision arithmetic operations,
 - **Multiplication (Mul)**: Highly optimized multiplication using NTT/FFT techniques for massive sizes.
 - **Division (Div)**: Approximate division using Newton-Raphson iteration for reciprocals. **Note:** Due to iterative kernel dispatch overhead, GPU division is relatively slow for small numbers. It is recommended primarily for massive integers exceeding 1,024 words (32,768 bits). For smaller numbers, CPU-based division is generally faster.
 - **Square Root (Sqrt)**: Integer square root computation using Heron's method.
-- **Bitwise AND (BitwiseAnd)**: Word-by-word bitwise AND.
+- **Bitwise Operations (BitwiseAnd, BitwiseOr, BitwiseXor, BitwiseNot)**: Word-by-word bitwise AND, OR, XOR, NOT operations. Supported in expression trees via `&`, `|`, `^`, `~`.
+- **Greatest Common Divisor (Gcd)**: Multi-precision Greatest Common Divisor computation using GPU Lehmer's GCD algorithm.
+- **Modular Exponentiation (ModPow)**: Binary exponentiation $a^b \pmod m$ on GPU.
 - **Bit Shifts (ShiftLeft, ShiftRight)**: Arbitrary bit shifts across the entire multi-precision array. Both `<<` and `>>` are supported via expression trees.
 - **Square (Square)**: Highly optimized squaring using Number Theoretic Transform (NTT) / Fast Fourier Transform (FFT) techniques to handle massive sizes efficiently.
-- **Fermat PRP Loop (DynamicFermatLoop, StaticFermatLoop)**: Dedicated loops for computing ${i+1} = (S_i^2 - 2) \mod (2^p - 1)$ directly on the GPU.
+- **Fermat PRP Loop (DynamicFermatLoop, StaticFermatLoop)**: Dedicated loops for computing $S_{i+1} = (S_i^2 - 2) \mod (2^p - 1)$ directly on the GPU.
 
 ### Example Usage
 

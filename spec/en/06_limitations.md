@@ -6,7 +6,7 @@ This document outlines the strict limitations imposed on C# code executed within
 
 The CUDA execution environment lacks a garbage collector, a robust runtime type information (RTTI) system, and standard .NET libraries. Consequently, the following C# features are explicitly prohibited inside `[GpuKernel]` methods:
 
-| Feature | Reason for Prohibition |
+| Feature | Reason for Prohibition / Status |
 | :--- | :--- |
 | **Object Instantiation (`new`)** | Lack of a managed heap and garbage collector on the GPU. (Note: Stack-allocated `struct` instantiation and `SharedMemory<T>` are exceptions and fully supported). |
 | **Strings (`string`)** | Strings are managed reference types. Fixed-size character arrays must be used instead, though not natively supported yet. |
@@ -16,9 +16,9 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Recursion** | Heavily restricted due to the highly limited thread stack size (typically a few kilobytes per thread) on GPUs. |
 | **Reflection** | The .NET reflection metadata is entirely absent on the GPU. |
 | **Generics (Partial)** | True runtime generics are unsupported. The AOT transpiler must be capable of generating a concrete C++ template instantiation if generics are used. |
-| **Expression-Bodied Members (`=>`)** | Using `=>` for methods instead of block bodies `{ return ...; }` can result in transpiler failures (e.g. `missing return statement` errors from NVCC). Always use standard C-like method blocks. |
-| **Ternary Operator (`? :`)** | The ternary conditional operator is not correctly parsed in all complex expressions by the transpiler. Use explicit `if-else` blocks instead. |
-| **Braceless `if` Statements** | Using `if` without braces `{ }` for single-line statements can cause the transpiler to drop subsequent statements or mangle the AST. Always explicitly include braces for all control flow blocks. |
+| **Expression-Bodied Members (`=>`)** | **Supported.** Transpiler automatically handles `void` and value-returning methods (injects `return` keyword). |
+| **Ternary Operator (`? :`)** | Standard conditional ternary operators are supported. |
+| **Braceless `if` Statements** | **Supported.** Transpiler automatically injects `{ }` block scoping into the C++ source for single-statement control flow branches. |
 
 ## 4.2 Standard Diagnostics and Warnings
 
