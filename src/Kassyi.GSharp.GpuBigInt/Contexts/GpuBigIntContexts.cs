@@ -15,6 +15,7 @@ public struct NttContext
     {
         public uint[] Buffer1;
         public uint[] Buffer2;
+        public uint[] Buffer3;
         public uint[] TemporaryBuffer;
     }
 
@@ -22,8 +23,10 @@ public struct NttContext
     {
         [GpuConst] public uint[] Forward1;
         [GpuConst] public uint[] Forward2;
+        [GpuConst] public uint[] Forward3;
         [GpuConst] public uint[] Inverse1;
         [GpuConst] public uint[] Inverse2;
+        [GpuConst] public uint[] Inverse3;
     }
 }
 
