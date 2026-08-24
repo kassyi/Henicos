@@ -37,4 +37,4 @@ jobs:
       run: dotnet test tests/Kassyi.GSharp.Tests --filter ArchitectureAndOptimizationTests --no-build -c Release
 
     - name: Run Execution Tests (Requires physical GPU matching compiled architecture)
-      run: dotnet test tests/Kassyi.GSharp.Tests --filter PtxEngineExperimentTests --no-build -c Release
+      run: dotnet test tests/Kassyi.GSharp.Tests --filter "PtxEngineExperimentTests|SourceGeneratorTests" --no-build -c Release
