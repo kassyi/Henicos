@@ -1,15 +1,9 @@
 
 namespace Kassyi.GSharp.GpuBigInt.Expressions;
-using Kassyi.GSharp.GpuBigInt.Kernels;
-using Kassyi.GSharp.GpuBigInt.Contexts;
-using Kassyi.GSharp.GpuBigInt.Interop;
 
 public interface IGpuBigIntExpression
 {
-    int NumWords
-    {
-        get;
-    }
+    int NumWords { get; }
 
     // Evaluates the AST node. 
     // If targetResult is provided, it tries to write directly to it.

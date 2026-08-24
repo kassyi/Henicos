@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Jit;
+using Kassyi.GSharp.GpuBigInt.Expressions;
 using Xunit;
 
 namespace Kassyi.GSharp.GpuBigInt.Tests
@@ -128,8 +129,6 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             using var gpuB = new GpuBigInteger(context, arrB);
             using var gpuResult = new GpuBigInteger(context, sizeWords * 2);
 
-            var m = 64; // transform length
-
             gpuResult.Value = gpuA * gpuB;
 
             // Assert the final result against System.Numerics.BigInteger
@@ -146,6 +145,89 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             }
 
             Assert.Equal(expectedBig, actualBig);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_Div_Correctness(GpuExecutionEngine engine)
+        {
+            var sizeWords = 16;
+            using var context = new GpuContext(sizeWords * 8, engine);
+            
+            // Randomly generated arrays
+            var arrA = GenerateRandomArray(sizeWords * 2, 111);
+            var arrB = GenerateRandomArray(sizeWords, 112);
+            // Ensure B is normalized (top bit is 1)
+            arrB[sizeWords - 1] |= 0x80000000;
+            
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            
+            // A / B
+            var expectedBig = bigA / bigB;
+
+            // In our Div implementation, we expect A and B to have the same size as result.
+            // Wait, our Div requires a, b, result to be same size, but above a is 2*sizeWords.
+            // Let's modify Div test to have A and B the same size for now.
+            var arrA_sameSize = GenerateRandomArray(sizeWords, 111);
+            var bigA_sameSize = ToBigInteger(arrA_sameSize);
+            var expectedBig_sameSize = bigA_sameSize / bigB;
+
+            using var gpuA = new GpuBigInteger(context, arrA_sameSize);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, sizeWords);
+
+            gpuResult.Value = gpuA / gpuB;
+
+            var resultArr = gpuResult.ToHostArray();
+            var actualBig = ToBigInteger(resultArr);
+
+            Assert.Equal(expectedBig_sameSize, actualBig);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
+        {
+            var sizeWords = 16;
+            using var context = new GpuContext(sizeWords * 8, engine);
+            
+            var arrA = GenerateRandomArray(sizeWords, 123);
+            // Ensure A is fairly large so we can test convergence well
+            arrA[sizeWords - 1] |= 0x40000000;
+            
+            var bigA = ToBigInteger(arrA);
+            
+            // Expected Sqrt (using BigInteger.Log approx or similar)
+            // System.Numerics does not have BigInteger.Sqrt natively in net10.0 (it does in .NET 9+ actually as BigInteger.IsPowerOfTwo/etc but BigInteger.Sqrt is not always available depending on TFM).
+            // Let's compute expected Sqrt manually with Heron's method.
+            BigInteger expectedSqrt = 1;
+            int bytes = bigA.GetByteCount(isUnsigned: true);
+            int bits = (bytes - 1) * 8;
+            BigInteger temp = bigA >> bits;
+            while (temp > 0) { bits++; temp >>= 1; }
+            expectedSqrt = BigInteger.One << (bits / 2);
+            for (int i = 0; i < 20; i++)
+            {
+                BigInteger next = (expectedSqrt + bigA / expectedSqrt) >> 1;
+                if (next == expectedSqrt || next > expectedSqrt && next - expectedSqrt == 1 || expectedSqrt > next && expectedSqrt - next <= 1)
+                {
+                    expectedSqrt = BigInteger.Min(expectedSqrt, next);
+                    if (expectedSqrt * expectedSqrt > bigA) expectedSqrt--;
+                    break;
+                }
+                expectedSqrt = next;
+            }
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuResult = new GpuBigInteger(context, sizeWords);
+
+            gpuResult.Value = GpuBigIntExpr.Sqrt(gpuA);
+
+            var resultArr = gpuResult.ToHostArray();
+            var actualBig = ToBigInteger(resultArr);
+
+            Assert.Equal(expectedSqrt, actualBig);
         }
 
         [Theory]

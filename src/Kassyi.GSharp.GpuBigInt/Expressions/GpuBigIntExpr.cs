@@ -1,8 +1,5 @@
 
 namespace Kassyi.GSharp.GpuBigInt.Expressions;
-using Kassyi.GSharp.GpuBigInt.Kernels;
-using Kassyi.GSharp.GpuBigInt.Contexts;
-using Kassyi.GSharp.GpuBigInt.Interop;
 
 public readonly struct GpuBigIntExpr
 {
@@ -29,6 +26,12 @@ public readonly struct GpuBigIntExpr
 
     public static GpuBigIntExpr operator *(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new MulExpression(left.Node, right.Node));
+
+    public static GpuBigIntExpr operator /(GpuBigIntExpr left, GpuBigIntExpr right)
+        => new(new DivExpression(left.Node, right.Node));
+
+    public static GpuBigIntExpr Sqrt(GpuBigIntExpr expr)
+        => new(new SqrtExpression(expr.Node));
 
     public static GpuBigIntExpr operator &(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new BitwiseAndExpression(left.Node, right.Node));

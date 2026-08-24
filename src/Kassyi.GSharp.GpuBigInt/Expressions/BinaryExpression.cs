@@ -1,8 +1,5 @@
 
 namespace Kassyi.GSharp.GpuBigInt.Expressions;
-using Kassyi.GSharp.GpuBigInt.Kernels;
-using Kassyi.GSharp.GpuBigInt.Contexts;
-using Kassyi.GSharp.GpuBigInt.Interop;
 
 internal abstract class BinaryExpression : IGpuBigIntExpression
 {
@@ -80,6 +77,12 @@ internal class MulExpression(IGpuBigIntExpression left, IGpuBigIntExpression rig
         GpuBigInteger.Mul(a, b, result);
 }
 
+internal class DivExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+{
+    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+        GpuBigInteger.Div(a, b, result);
+}
+
 internal class BitwiseAndExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : BinaryExpression(left, right)
 {
@@ -125,5 +128,30 @@ internal class ShiftRightExpression(IGpuBigIntExpression target, int shiftBits) 
 {
     protected override void Execute(GpuBigInteger target, GpuBigInteger result) =>
         GpuBigInteger.ShiftRight(target, ShiftBits, result);
+}
+
+internal class SqrtExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
+{
+    protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
+    public int NumWords => Target.NumWords;
+
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
+    {
+        var targetEval = Target.Evaluate(context);
+        var finalResult = targetResult ?? context.RentTemp(NumWords);
+
+        try
+        {
+            GpuBigInteger.Sqrt(targetEval, finalResult);
+            return finalResult;
+        }
+        finally
+        {
+            if (targetEval.IsTemp)
+            {
+                context.ReturnTemp(targetEval);
+            }
+        }
+    }
 }
 
