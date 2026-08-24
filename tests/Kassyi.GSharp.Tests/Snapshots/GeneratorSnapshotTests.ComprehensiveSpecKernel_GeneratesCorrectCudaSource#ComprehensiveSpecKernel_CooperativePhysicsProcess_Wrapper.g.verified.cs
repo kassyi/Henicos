@@ -130,14 +130,13 @@ finally
 handle_data.Free();
 }
 kernelParams[0] = &d_data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
 // Copy back array: data
 System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -165,14 +164,13 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal device array: data
 kernelParams[0] = &data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
 }
 finally

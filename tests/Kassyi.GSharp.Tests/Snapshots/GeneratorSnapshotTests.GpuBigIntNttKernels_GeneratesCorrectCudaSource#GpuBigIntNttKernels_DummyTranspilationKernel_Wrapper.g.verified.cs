@@ -94,7 +94,8 @@ inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIdx,unsi
 
 inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIdx,unsigned int val,int maxWords);
 
-inline __device__ void Device_NTT_Shared_Row(NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
+inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
 
 inline __device__ void Device_NTT_PointwiseSquare(unsigned int* dData1,unsigned int* dData2,int n);
 
@@ -102,11 +103,14 @@ inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* dData1A,unsign
 
 inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* dRes1,const unsigned int* dRes2,unsigned int* outUint,int n,int outNumWords);
 
-inline __device__ void Device_NTT_Internal(NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
+inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
 
-inline __device__ void Device_ForwardNTT(NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
+inline __device__ void Device_ForwardNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
 
-inline __device__ void Device_InverseNTT(NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
+inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
 
 inline __device__ unsigned int ModAdd(unsigned int a,unsigned int b,unsigned int p){
 auto res=(a+b);
@@ -200,7 +204,27 @@ break;
 }
 }
 
-inline __device__ void Device_NTT_Shared_Row(NttKernelArgs* args){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
+inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
 auto dData=args->Buffer;
 auto dTwiddle=args->Twiddle;
 auto n=args->M;
@@ -387,7 +411,27 @@ AtomicAddWithCarry(outUint,(wordIdx+2),high32,outNumWords);
 }
 }
 
-inline __device__ void Device_NTT_Internal(NttKernelArgs* args){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
+inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
 auto buf=args->Buffer;
 auto tmp=args->TemporaryBuffer;
 auto m=args->M;
@@ -413,7 +457,7 @@ args->ApplyTwiddleAfter=true;
 args->MaxBlocks=n1;
 Device_NTT_Shared_Row(args);
 cg::this_grid().sync();
-GpuBigIntFermatKernels.Device_Transpose_32x32(buf,tmp,n2,n1);
+Device_Transpose_32x32(buf,tmp,n2,n1);
 cg::this_grid().sync();
 args->Buffer=tmp;
 args->CurrentL=n1;
@@ -423,12 +467,12 @@ args->MaxBlocks=n2;
 Device_NTT_Shared_Row(args);
 args->Buffer=buf;
 cg::this_grid().sync();
-GpuBigIntFermatKernels.Device_Transpose_32x32(tmp,buf,n1,n2);
+Device_Transpose_32x32(tmp,buf,n1,n2);
 cg::this_grid().sync();
 }
 else
 {
-GpuBigIntFermatKernels.Device_Transpose_32x32(buf,tmp,n2,n1);
+Device_Transpose_32x32(buf,tmp,n2,n1);
 cg::this_grid().sync();
 args->Buffer=tmp;
 args->CurrentL=n1;
@@ -438,7 +482,7 @@ args->MaxBlocks=n2;
 Device_NTT_Shared_Row(args);
 args->Buffer=buf;
 cg::this_grid().sync();
-GpuBigIntFermatKernels.Device_Transpose_32x32(tmp,buf,n1,n2);
+Device_Transpose_32x32(tmp,buf,n1,n2);
 cg::this_grid().sync();
 args->CurrentL=n2;
 args->ApplyTwiddleBefore=false;
@@ -450,18 +494,78 @@ cg::this_grid().sync();
 }
 }
 
-inline __device__ void Device_ForwardNTT(NttKernelArgs* args){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
+inline __device__ void Device_ForwardNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
 args->IsInverse=false;
 Device_NTT_Internal(args);
 }
 
-inline __device__ void Device_InverseNTT(NttKernelArgs* args){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
+inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
 args->IsInverse=true;
 Device_NTT_Internal(args);
 }
 
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
 extern ""C"" __global__ void DummyTranspilationKernel(unsigned int* data){
-NttKernelArgs args=default;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs args=default;
 args.Buffer=data;
 Device_ForwardNTT(&args);
 }

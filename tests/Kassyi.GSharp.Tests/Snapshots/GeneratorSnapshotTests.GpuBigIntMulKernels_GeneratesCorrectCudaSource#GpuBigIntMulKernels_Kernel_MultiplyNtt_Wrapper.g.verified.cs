@@ -78,14 +78,34 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
 extern ""C"" __global__ void Kernel_MultiplyNtt(unsigned int* opA,unsigned int* opB,unsigned int* opResult,unsigned int* nttBuf1A,unsigned int* nttBuf2A,unsigned int* nttBuf1B,unsigned int* nttBuf2B,unsigned int* nttTmpBuf,unsigned int* twiddleForward1,unsigned int* twiddleForward2,unsigned int* twiddleInverse1,unsigned int* twiddleInverse2,int numWordsA,int numWordsB,int outNumWords,int transformLength){
 auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
 for(int i=tid;(i<outNumWords);i+=(gridDim.x*blockDim.x))
 {
 opResult[i]=0;
 }
-GpuBigIntFermatKernels.Device_Unpack16(opA,nttBuf1A,nttBuf2A,transformLength,numWordsA);
-GpuBigIntFermatKernels.Device_Unpack16(opB,nttBuf1B,nttBuf2B,transformLength,numWordsB);
+Device_Unpack16(opA,nttBuf1A,nttBuf2A,transformLength,numWordsA);
+Device_Unpack16(opB,nttBuf1B,nttBuf2B,transformLength,numWordsB);
 cg::this_grid().sync();
 int n2=1;
 while(((n2*n2)<transformLength))
@@ -93,27 +113,39 @@ while(((n2*n2)<transformLength))
 n2*=2;
 }
 auto n1=(transformLength/n2);
-auto nttArgs1A=NttKernelArgsBuffer=nttBuf1ATemporaryBuffer=nttTmpBufTwiddle=twiddleForward1M=transformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP1Pm=GpuBigIntNttKernels.NttM1;
-GpuBigIntNttKernels.Device_ForwardNTT(&nttArgs1A);
+auto nttArgs1A=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf1A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+());
+Device_ForwardNTT(&nttArgs1A);
 cg::this_grid().sync();
-auto nttArgs2A=NttKernelArgsBuffer=nttBuf2ATemporaryBuffer=nttTmpBufTwiddle=twiddleForward2M=transformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP2Pm=GpuBigIntNttKernels.NttM2;
-GpuBigIntNttKernels.Device_ForwardNTT(&nttArgs2A);
+auto nttArgs2A=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf2A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
+());
+Device_ForwardNTT(&nttArgs2A);
 cg::this_grid().sync();
-auto nttArgs1B=NttKernelArgsBuffer=nttBuf1BTemporaryBuffer=nttTmpBufTwiddle=twiddleForward1M=transformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP1Pm=GpuBigIntNttKernels.NttM1;
-GpuBigIntNttKernels.Device_ForwardNTT(&nttArgs1B);
+auto nttArgs1B=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf1B; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+());
+Device_ForwardNTT(&nttArgs1B);
 cg::this_grid().sync();
-auto nttArgs2B=NttKernelArgsBuffer=nttBuf2BTemporaryBuffer=nttTmpBufTwiddle=twiddleForward2M=transformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP2Pm=GpuBigIntNttKernels.NttM2;
-GpuBigIntNttKernels.Device_ForwardNTT(&nttArgs2B);
+auto nttArgs2B=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf2B; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
+());
+Device_ForwardNTT(&nttArgs2B);
 cg::this_grid().sync();
-GpuBigIntNttKernels.Device_NTT_PointwiseMultiply(nttBuf1A,nttBuf2A,nttBuf1B,nttBuf2B,transformLength);
+Device_NTT_PointwiseMultiply(nttBuf1A,nttBuf2A,nttBuf1B,nttBuf2B,transformLength);
 cg::this_grid().sync();
-auto invArgs1=NttKernelArgsBuffer=nttBuf1ATemporaryBuffer=nttTmpBufTwiddle=twiddleInverse1M=transformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP1Pm=GpuBigIntNttKernels.NttM1;
-GpuBigIntNttKernels.Device_InverseNTT(&invArgs1);
+auto invArgs1=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf1A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleInverse1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+());
+Device_InverseNTT(&invArgs1);
 cg::this_grid().sync();
-auto invArgs2=NttKernelArgsBuffer=nttBuf2ATemporaryBuffer=nttTmpBufTwiddle=twiddleInverse2M=transformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP2Pm=GpuBigIntNttKernels.NttM2;
-GpuBigIntNttKernels.Device_InverseNTT(&invArgs2);
+auto invArgs2=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf2A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleInverse2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
+());
+Device_InverseNTT(&invArgs2);
 cg::this_grid().sync();
-GpuBigIntNttKernels.Device_CRT_ParallelAtomic(nttBuf1A,nttBuf2A,opResult,transformLength,outNumWords);
+Device_CRT_ParallelAtomic(nttBuf1A,nttBuf2A,opResult,transformLength,outNumWords);
 }
 ";
 public static unsafe void Launch_Kernel_MultiplyNtt(uint[] opA, uint[] opB, uint[] opResult, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] nttTmpBuf, uint[] twiddleForward1, uint[] twiddleForward2, uint[] twiddleInverse1, uint[] twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
@@ -323,14 +355,13 @@ kernelParams[13] = &numWordsB;
 kernelParams[14] = &outNumWords;
 // Marshal scalar: transformLength
 kernelParams[15] = &transformLength;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
 // Copy back array: opA
 System.Runtime.InteropServices.GCHandle handleBack_opA = System.Runtime.InteropServices.GCHandle.Alloc(opA, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -520,14 +551,13 @@ kernelParams[13] = &numWordsB;
 kernelParams[14] = &outNumWords;
 // Marshal scalar: transformLength
 kernelParams[15] = &transformLength;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
 }
 finally

@@ -1,6 +1,7 @@
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Stdlib.Math;
 
 namespace DebugReduc;
 
@@ -17,6 +18,13 @@ public struct SpecTypes
     public ulong ULongValue;
     public float FloatValue;
     public double DoubleValue;
+}
+
+public static class Intrinsics
+{
+    public static void InlinePtx(string ptx)
+    {
+    }
 }
 
 public struct PhysicsVector
@@ -182,11 +190,11 @@ public static partial class ComprehensiveSpecKernel
             unsafe
             {
                 PhysicsState state = new PhysicsState();
-                
+
                 // Pointer operators and sizeof
                 PhysicsState* pState = &state;
-                int stateSize = sizeof(PhysicsState);
-                
+                // int stateSize = sizeof(PhysicsState); // GSH0003
+
                 pState->Buffer[0] = inlineVec[0];
                 (*pState).Buffer[1] = inlineVec[1];
 
@@ -209,8 +217,8 @@ public static partial class ComprehensiveSpecKernel
             {
                 int bitwise = (tx << 2) | (ty >> 1) ^ 0xFF;
                 bitwise &= ~1; // Bitwise assignment and NOT
-                
-                mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional
+
+                // mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional - GSH0003
             }
             else if (condition1 || !condition2)
             {

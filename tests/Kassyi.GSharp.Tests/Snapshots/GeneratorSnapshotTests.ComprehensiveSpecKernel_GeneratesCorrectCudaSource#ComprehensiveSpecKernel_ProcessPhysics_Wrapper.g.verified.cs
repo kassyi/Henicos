@@ -254,7 +254,6 @@ inlineVec[1]=456;
 {
 DebugReduc_ComprehensiveSpecKernel_PhysicsState state=DebugReduc_ComprehensiveSpecKernel_PhysicsState;
 DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState=&state;
-int stateSize=PhysicsState;
 pState.Buffer[0]=inlineVec[0];
 (*pState).Buffer[1]=inlineVec[1];
 unsigned long long carry=0;
@@ -272,7 +271,6 @@ if((condition1&&condition2))
 {
 int bitwise=(((tx<<2))|(((ty>>1))^0xFF));
 bitwise&=~1;
-mag=((bitwise>0))(mag*2.0f)(mag/2.0f);
 }
 else
 {
@@ -281,7 +279,7 @@ if((condition1||!condition2))
 mag+=1.5f;
 }
 }
-Intrinsics.InlinePtx(""/* test ptx inline */"");
+InlinePtx(""/* test ptx inline */"");
 if((ty>0))
 {
 return;

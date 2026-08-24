@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using VerifyXunit;
 using Kassyi.GSharp.Compiler;
 using Xunit;
@@ -14,6 +16,39 @@ namespace Kassyi.GSharp.Tests;
 
 public class GeneratorSnapshotTests
 {
+    private class GpuAttributeRemover : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitAttributeList(AttributeListSyntax node)
+        {
+            var newAttributes = SyntaxFactory.SeparatedList<AttributeSyntax>();
+            bool changed = false;
+
+            foreach (var attr in node.Attributes)
+            {
+                var name = attr.Name.ToString();
+                if (name == "GpuKernel" || name == "GpuKernelAttribute" || 
+                    name == "GpuDevice" || name == "GpuDeviceAttribute")
+                {
+                    changed = true;
+                }
+                else
+                {
+                    newAttributes = newAttributes.Add(attr);
+                }
+            }
+
+            if (changed)
+            {
+                if (newAttributes.Count == 0)
+                {
+                    return null;
+                }
+                return node.WithAttributes(newAttributes);
+            }
+
+            return base.VisitAttributeList(node);
+        }
+    }
     private static string GetTestCasesDirectory([CallerFilePath] string callerFilePath = "")
     {
         var dir = Path.GetDirectoryName(callerFilePath);
@@ -65,27 +100,128 @@ public class GeneratorSnapshotTests
         return kernelsDir;
     }
 
-    private static async Task VerifyGeneratorAsync(string source, string testName)
+    private static MetadataReference[] _cachedReferencesWithStdlib;
+    private static MetadataReference[] _cachedReferencesWithoutStdlib;
+    private static readonly object _refsLock = new object();
+
+    private static MetadataReference[] GetReferences(bool includeStdlib)
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(source);
-
-        var references = new[]
+        lock (_refsLock)
         {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.GpuKernelAttribute).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.ThreadIndex).Assembly.Location)
-        };
+            if (includeStdlib && _cachedReferencesWithStdlib != null) return _cachedReferencesWithStdlib;
+            if (!includeStdlib && _cachedReferencesWithoutStdlib != null) return _cachedReferencesWithoutStdlib;
 
+            var refs = new List<MetadataReference>();
+            var coreDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            void SafeAddReference(string path)
+            {
+                if (!File.Exists(path)) return;
+                try
+                {
+                    System.Reflection.AssemblyName.GetAssemblyName(path);
+                    refs.Add(MetadataReference.CreateFromFile(path));
+                }
+                catch (BadImageFormatException)
+                {
+                    // Ignore native or invalid DLLs
+                }
+                catch (Exception)
+                {
+                    // Ignore locks or other IO errors
+                }
+            }
+
+            // Core system libraries
+            foreach (var dll in Directory.GetFiles(coreDir, "System*.dll"))
+            {
+                SafeAddReference(dll);
+            }
+            SafeAddReference(Path.Combine(coreDir, "mscorlib.dll"));
+            SafeAddReference(Path.Combine(coreDir, "netstandard.dll"));
+
+            // App dependencies
+            foreach (var dll in Directory.GetFiles(appDir, "*.dll"))
+            {
+                if (!includeStdlib && Path.GetFileName(dll).Equals("Kassyi.GSharp.Stdlib.Math.dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                SafeAddReference(dll);
+            }
+
+            var result = refs.ToArray();
+            if (includeStdlib) _cachedReferencesWithStdlib = result;
+            else _cachedReferencesWithoutStdlib = result;
+
+            return result;
+        }
+    }
+
+    private static async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
+    {
+        var syntaxTrees = new List<SyntaxTree>();
+        syntaxTrees.Add(CSharpSyntaxTree.ParseText(source, path: $"{testName}.cs"));
+
+        bool isStdlibKernel = sourceDir.IndexOf("Kernels", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        if (isStdlibKernel)
+        {
+            var stdlibDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
+            var contextsDir = Path.Combine(stdlibDir, "Contexts");
+            if (Directory.Exists(contextsDir))
+            {
+                foreach (var f in Directory.GetFiles(contextsDir, "*.cs"))
+                {
+                    syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(f), path: f));
+                }
+            }
+            if (Directory.Exists(sourceDir))
+            {
+                foreach (var f in Directory.GetFiles(sourceDir, "*.cu.cs"))
+                {
+                    var name = Path.GetFileNameWithoutExtension(f).Replace(".cu", "");
+                    if (!name.Equals(testName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var text = await File.ReadAllTextAsync(f);
+                        var tree = CSharpSyntaxTree.ParseText(text, path: f);
+                        var root = tree.GetRoot();
+                        var rewriter = new GpuAttributeRemover();
+                        var newRoot = rewriter.Visit(root);
+                        syntaxTrees.Add(tree.WithRootAndOptions(newRoot, tree.Options));
+                    }
+                }
+            }
+        }
+
+        var refs = GetReferences(!isStdlibKernel);
         var compilation = CSharpCompilation.Create(
             "TestCompilation",
-            new[] { syntaxTree },
-            references,
+            syntaxTrees,
+            refs,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true));
+
+        var compileDiagnostics = compilation.GetDiagnostics();
+        var errors = compileDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+        if (errors.Any())
+        {
+            var errorMessages = string.Join(Environment.NewLine, errors.Select(e => e.ToString()));
+            var loadedRefs = string.Join(Environment.NewLine, refs.Select(r => r.Display));
+            Assert.Fail($"Compilation failed with errors:\n{errorMessages}\n\nLoaded References:\n{loadedRefs}");
+        }
 
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
 
-        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
+
+        var genErrors = generatorDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
+        if (genErrors.Any())
+        {
+            var errorMessages = string.Join(Environment.NewLine, genErrors.Select(e => e.ToString()));
+            Assert.Fail($"Generator failed with errors:\n{errorMessages}");
+        }
 
         await Verifier.Verify(driver)
             .UseDirectory("Snapshots")
@@ -114,15 +250,17 @@ public class GeneratorSnapshotTests
         var kernelsDir = GetStdlibKernelsDirectory();
         
         var sourcePath = Path.Combine(testCasesDir, fileName);
+        var sourceDir = testCasesDir;
         if (!File.Exists(sourcePath))
         {
             sourcePath = Path.Combine(kernelsDir, fileName);
+            sourceDir = kernelsDir;
         }
 
         var source = await File.ReadAllTextAsync(sourcePath);
         var testName = Path.GetFileNameWithoutExtension(fileName).Replace(".cu", "");
 
-        await VerifyGeneratorAsync(source, testName);
+        await VerifyGeneratorAsync(source, testName, sourceDir);
     }
 
     [Fact]

@@ -82,27 +82,65 @@ inline __device__ void Device_Unpack16(const unsigned int* dSrc,unsigned int* dD
 
 inline __device__ void Device_Transpose_32x32(const unsigned int* idata,unsigned int* odata,int width,int height);
 
-inline __device__ void Device_MultiplySquare(FermatContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext;
+inline __device__ void Device_MultiplySquare(Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx);
 
-inline __device__ void Device_AddSub(BigIntKernelContext* ctx,bool isSubtract);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_AddSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,bool isSubtract);
 
-inline __device__ void Device_Add(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_Add(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_Sub(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_Sub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_ShiftLeftRight(BigIntKernelContext* ctx,int shiftBits,bool isRight);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ShiftLeftRight(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int shiftBits,bool isRight);
 
-inline __device__ void Device_ShiftLeft(BigIntKernelContext* ctx,int shiftBits);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ShiftLeft(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int shiftBits);
 
-inline __device__ void Device_ShiftRight(BigIntKernelContext* ctx,int shiftBits);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ShiftRight(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int shiftBits);
 
-inline __device__ void Device_Copy(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_Copy(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-__forceinline__ __device__ void Device_FermatReduceStep(FermatContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext;
+__forceinline__ __device__ void Device_FermatReduceStep(Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx);
 
-__forceinline__ __device__ void Device_MultiplySquareAndReduce(int reduceCount,FermatContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext;
+__forceinline__ __device__ void Device_MultiplySquareAndReduce(int reduceCount,Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx);
 
-__forceinline__ __device__ void Device_ShiftLeftAndReduce(int reduceCount,FermatContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext;
+__forceinline__ __device__ void Device_ShiftLeftAndReduce(int reduceCount,Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx);
 
 inline __device__ void Device_Unpack16(const unsigned int* dSrc,unsigned int* dDst1,unsigned int* dDst2,int n,int numWords){
 auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
@@ -170,7 +208,95 @@ odata[((((yIndex+i))*height)+xIndex)]=val;
 }
 }
 
-inline __device__ void Device_MultiplySquare(FermatContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext
+{
+unsigned int* ValueT;
+unsigned int* Quotient;
+unsigned int* Remainder;
+unsigned int* RemainderMask;
+unsigned int* TemporaryBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext
+{
+int NumberOfWords;
+int NumberOfWordsExtended;
+int Exponent;
+int BitOffset2E1;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext
+{
+unsigned int* Buffer1;
+unsigned int* Buffer2;
+unsigned int* Buffer3;
+unsigned int* TemporaryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+{
+const unsigned int* Forward1;
+const unsigned int* Forward2;
+const unsigned int* Forward3;
+const unsigned int* Inverse1;
+const unsigned int* Inverse2;
+const unsigned int* Inverse3;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+{
+int TransformLength;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext TwiddleFactors;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Dimensions;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+{
+unsigned int* Buffer;
+unsigned int* TemporaryBuffer;
+const unsigned int* Twiddle;
+int M;
+int N1;
+int N2;
+unsigned int P;
+unsigned long long Pm;
+bool IsInverse;
+bool ApplyTwiddleBefore;
+bool ApplyTwiddleAfter;
+int MaxBlocks;
+int CurrentL;
+}
+;
+#endif
+inline __device__ void Device_MultiplySquare(Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx){
 Device_Unpack16(ctx->Buffers.ValueT,ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Ntt.TransformLength,ctx->Dimensions.NumberOfWords);
 cg::this_grid().sync();
 int n2=1;
@@ -179,25 +305,27 @@ while(((n2*n2)<ctx->Ntt.TransformLength))
 n2*=2;
 }
 auto n1=(ctx->Ntt.TransformLength/n2);
-auto nttArgs=NttKernelArgsBuffer=ctx->Ntt.Buffers.Buffer1TemporaryBuffer=ctx->Ntt.Buffers.TemporaryBufferTwiddle=ctx->Ntt.TwiddleFactors.Forward1M=ctx->Ntt.TransformLengthN1=n1N2=n2P=GpuBigIntNttKernels.NttP1Pm=GpuBigIntNttKernels.NttM1;
-GpuBigIntNttKernels.Device_ForwardNTT(&nttArgs);
+auto nttArgs=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = ctx->Ntt.Buffers.Buffer1; _tmp.TemporaryBuffer = ctx->Ntt.Buffers.TemporaryBuffer; _tmp.Twiddle = ctx->Ntt.TwiddleFactors.Forward1; _tmp.M = ctx->Ntt.TransformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+());
+Device_ForwardNTT(&nttArgs);
 nttArgs.Buffer=ctx->Ntt.Buffers.Buffer2;
 nttArgs.Twiddle=ctx->Ntt.TwiddleFactors.Forward2;
-nttArgs.P=GpuBigIntNttKernels.NttP2;
-nttArgs.Pm=GpuBigIntNttKernels.NttM2;
-GpuBigIntNttKernels.Device_ForwardNTT(&nttArgs);
-GpuBigIntNttKernels.Device_NTT_PointwiseSquare(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Ntt.TransformLength);
+nttArgs.P=4293918721U;
+nttArgs.Pm=4296016127ULL;
+Device_ForwardNTT(&nttArgs);
+Device_NTT_PointwiseSquare(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Ntt.TransformLength);
 cg::this_grid().sync();
 nttArgs.Buffer=ctx->Ntt.Buffers.Buffer1;
 nttArgs.Twiddle=ctx->Ntt.TwiddleFactors.Inverse1;
-nttArgs.P=GpuBigIntNttKernels.NttP1;
-nttArgs.Pm=GpuBigIntNttKernels.NttM1;
-GpuBigIntNttKernels.Device_InverseNTT(&nttArgs);
+nttArgs.P=4253024257U;
+nttArgs.Pm=4337323974ULL;
+Device_InverseNTT(&nttArgs);
 nttArgs.Buffer=ctx->Ntt.Buffers.Buffer2;
 nttArgs.Twiddle=ctx->Ntt.TwiddleFactors.Inverse2;
-nttArgs.P=GpuBigIntNttKernels.NttP2;
-nttArgs.Pm=GpuBigIntNttKernels.NttM2;
-GpuBigIntNttKernels.Device_InverseNTT(&nttArgs);
+nttArgs.P=4293918721U;
+nttArgs.Pm=4296016127ULL;
+Device_InverseNTT(&nttArgs);
 cg::this_grid().sync();
 auto actualOutNumWords=((ctx->Dimensions.NumberOfWords*2)+16);
 auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
@@ -206,11 +334,31 @@ for(int i=tid;(i<actualOutNumWords);i+=(gridDim.x*blockDim.x))
 ctx->Buffers.ValueT[i]=0;
 }
 cg::this_grid().sync();
-GpuBigIntNttKernels.Device_CRT_ParallelAtomic(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Buffers.ValueT,ctx->Ntt.TransformLength,(ctx->Dimensions.NumberOfWords*2));
+Device_CRT_ParallelAtomic(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Buffers.ValueT,ctx->Ntt.TransformLength,(ctx->Dimensions.NumberOfWords*2));
 cg::this_grid().sync();
 }
 
-inline __device__ void Device_AddSub(BigIntKernelContext* ctx,bool isSubtract){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_AddSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,bool isSubtract){
 auto dA=ctx->Operands.LeftOperand;
 auto dB=ctx->Operands.RightOperand;
 auto dResult=ctx->Operands.ResultBuffer;
@@ -292,15 +440,75 @@ break;
 cg::this_grid().sync();
 }
 
-inline __device__ void Device_Add(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_Add(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 Device_AddSub(ctx,false);
 }
 
-inline __device__ void Device_Sub(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_Sub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 Device_AddSub(ctx,true);
 }
 
-inline __device__ void Device_ShiftLeftRight(BigIntKernelContext* ctx,int shiftBits,bool isRight){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ShiftLeftRight(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int shiftBits,bool isRight){
 auto dA=ctx->Operands.LeftOperand;
 auto dResult=ctx->Operands.ResultBuffer;
 auto numWords=ctx->NumberOfWords;
@@ -356,15 +564,75 @@ dResult[i]=(((w0<<bitShift))|((w1>>((32-bitShift)))));
 cg::this_grid().sync();
 }
 
-inline __device__ void Device_ShiftLeft(BigIntKernelContext* ctx,int shiftBits){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ShiftLeft(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int shiftBits){
 Device_ShiftLeftRight(ctx,shiftBits,false);
 }
 
-inline __device__ void Device_ShiftRight(BigIntKernelContext* ctx,int shiftBits){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ShiftRight(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int shiftBits){
 Device_ShiftLeftRight(ctx,shiftBits,true);
 }
 
-inline __device__ void Device_Copy(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_Copy(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto dSrc=ctx->Operands.LeftOperand;
 auto dDst=ctx->Operands.ResultBuffer;
 auto numWords=ctx->NumberOfWords;
@@ -376,13 +644,94 @@ dDst[tid]=dSrc[tid];
 cg::this_grid().sync();
 }
 
-__forceinline__ __device__ void Device_FermatReduceStep(FermatContext* ctx){
-auto mathCtx=BigIntKernelContextOperands=BigIntKernelContextOperandsContextLeftOperand=ctx->Buffers.ValueTResultBuffer=ctx->Buffers.QuotientCarryBuffer=ctx->Buffers.CarryBufferNumberOfWords=ctx->Dimensions.NumberOfWordsExtended;
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext
+{
+unsigned int* ValueT;
+unsigned int* Quotient;
+unsigned int* Remainder;
+unsigned int* RemainderMask;
+unsigned int* TemporaryBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext
+{
+int NumberOfWords;
+int NumberOfWordsExtended;
+int Exponent;
+int BitOffset2E1;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext
+{
+unsigned int* Buffer1;
+unsigned int* Buffer2;
+unsigned int* Buffer3;
+unsigned int* TemporaryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+{
+const unsigned int* Forward1;
+const unsigned int* Forward2;
+const unsigned int* Forward3;
+const unsigned int* Inverse1;
+const unsigned int* Inverse2;
+const unsigned int* Inverse3;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+{
+int TransformLength;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext TwiddleFactors;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Dimensions;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+__forceinline__ __device__ void Device_FermatReduceStep(Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx){
+auto mathCtx=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _tmp; _tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext _tmp; _tmp.LeftOperand = ctx->Buffers.ValueT; _tmp.ResultBuffer = ctx->Buffers.Quotient; _tmp.CarryBuffer = ctx->Buffers.CarryBuffer; return _tmp; }
+()); _tmp.NumberOfWords = ctx->Dimensions.NumberOfWordsExtended; return _tmp; }
+());
 Device_ShiftRight(&mathCtx,ctx->Dimensions.BitOffset2E1);
 mathCtx.Operands.LeftOperand=ctx->Buffers.ValueT;
 mathCtx.Operands.RightOperand=ctx->Buffers.RemainderMask;
 mathCtx.Operands.ResultBuffer=ctx->Buffers.Remainder;
-GpuBigIntKernels.Device_BitwiseAnd(&mathCtx);
+Device_BitwiseAnd(&mathCtx);
 mathCtx.Operands.LeftOperand=ctx->Buffers.Quotient;
 mathCtx.Operands.ResultBuffer=ctx->Buffers.TemporaryBuffer;
 Device_ShiftLeft(&mathCtx,ctx->Dimensions.Exponent);
@@ -408,7 +757,75 @@ mathCtx.Operands.ResultBuffer=ctx->Buffers.ValueT;
 Device_Sub(&mathCtx);
 }
 
-__forceinline__ __device__ void Device_MultiplySquareAndReduce(int reduceCount,FermatContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext
+{
+unsigned int* ValueT;
+unsigned int* Quotient;
+unsigned int* Remainder;
+unsigned int* RemainderMask;
+unsigned int* TemporaryBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext
+{
+int NumberOfWords;
+int NumberOfWordsExtended;
+int Exponent;
+int BitOffset2E1;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext
+{
+unsigned int* Buffer1;
+unsigned int* Buffer2;
+unsigned int* Buffer3;
+unsigned int* TemporaryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+{
+const unsigned int* Forward1;
+const unsigned int* Forward2;
+const unsigned int* Forward3;
+const unsigned int* Inverse1;
+const unsigned int* Inverse2;
+const unsigned int* Inverse3;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+{
+int TransformLength;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext TwiddleFactors;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Dimensions;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
+}
+;
+#endif
+__forceinline__ __device__ void Device_MultiplySquareAndReduce(int reduceCount,Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx){
 Device_MultiplySquare(ctx);
 for(int j=0;(j<reduceCount);j++)
 {
@@ -416,8 +833,89 @@ Device_FermatReduceStep(ctx);
 }
 }
 
-__forceinline__ __device__ void Device_ShiftLeftAndReduce(int reduceCount,FermatContext* ctx){
-auto mathCtx=BigIntKernelContextOperands=BigIntKernelContextOperandsContextLeftOperand=ctx->Buffers.ValueTResultBuffer=ctx->Buffers.TemporaryBufferNumberOfWords=ctx->Dimensions.NumberOfWordsExtended;
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext
+{
+unsigned int* ValueT;
+unsigned int* Quotient;
+unsigned int* Remainder;
+unsigned int* RemainderMask;
+unsigned int* TemporaryBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext
+{
+int NumberOfWords;
+int NumberOfWordsExtended;
+int Exponent;
+int BitOffset2E1;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext
+{
+unsigned int* Buffer1;
+unsigned int* Buffer2;
+unsigned int* Buffer3;
+unsigned int* TemporaryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+{
+const unsigned int* Forward1;
+const unsigned int* Forward2;
+const unsigned int* Forward3;
+const unsigned int* Inverse1;
+const unsigned int* Inverse2;
+const unsigned int* Inverse3;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+{
+int TransformLength;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext TwiddleFactors;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Dimensions;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+__forceinline__ __device__ void Device_ShiftLeftAndReduce(int reduceCount,Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx){
+auto mathCtx=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _tmp; _tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext _tmp; _tmp.LeftOperand = ctx->Buffers.ValueT; _tmp.ResultBuffer = ctx->Buffers.TemporaryBuffer; return _tmp; }
+()); _tmp.NumberOfWords = ctx->Dimensions.NumberOfWordsExtended; return _tmp; }
+());
 Device_ShiftLeft(&mathCtx,1);
 mathCtx.Operands.LeftOperand=ctx->Buffers.TemporaryBuffer;
 mathCtx.Operands.ResultBuffer=ctx->Buffers.ValueT;
@@ -428,7 +926,75 @@ Device_FermatReduceStep(ctx);
 }
 }
 
-extern ""C"" __global__ void Kernel_StaticFermatLoop(FermatContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext
+{
+unsigned int* ValueT;
+unsigned int* Quotient;
+unsigned int* Remainder;
+unsigned int* RemainderMask;
+unsigned int* TemporaryBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext
+{
+int NumberOfWords;
+int NumberOfWordsExtended;
+int Exponent;
+int BitOffset2E1;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext
+{
+unsigned int* Buffer1;
+unsigned int* Buffer2;
+unsigned int* Buffer3;
+unsigned int* TemporaryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+{
+const unsigned int* Forward1;
+const unsigned int* Forward2;
+const unsigned int* Forward3;
+const unsigned int* Inverse1;
+const unsigned int* Inverse2;
+const unsigned int* Inverse3;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+{
+int TransformLength;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext TwiddleFactors;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Buffers;
+Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Dimensions;
+Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
+}
+;
+#endif
+extern ""C"" __global__ void Kernel_StaticFermatLoop(Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext* ctx){
 for(int iter=0;(iter<gsharpExponent);iter++)
 {
 Device_MultiplySquareAndReduce(3,ctx);
@@ -453,94 +1019,677 @@ Device_ShiftLeftAndReduce(1,ctx);
 Device_MultiplySquareAndReduce(9,ctx);
 }
 ";
-public static unsafe void Launch_Kernel_StaticFermatLoop(FermatContext ctx, string gsharpExponent, string gsharpExponentMinus4, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext
+{
+public __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Buffers;
+public __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Dimensions;
+public __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
+}
+public static __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext();
+native.Buffers = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext(ref host.Buffers, isDevicePtr, allocatedPtrs);
+native.Dimensions = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext(ref host.Dimensions, isDevicePtr, allocatedPtrs);
+native.Ntt = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext(ref host.Ntt, isDevicePtr, allocatedPtrs);
+return native;
+}
+public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext native, bool isDevicePtr)
+{
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext(ref host.Buffers, ref native.Buffers, isDevicePtr);
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext(ref host.Dimensions, ref native.Dimensions, isDevicePtr);
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext(ref host.Ntt, ref native.Ntt, isDevicePtr);
+}
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext
+{
+public IntPtr ValueT;
+public IntPtr Quotient;
+public IntPtr Remainder;
+public IntPtr RemainderMask;
+public IntPtr TemporaryBuffer;
+public IntPtr CarryBuffer;
+}
+public static __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext.BuffersContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext();
+if (host.ValueT != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.ValueT.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.ValueT, size));
+allocatedPtrs.Add(native.ValueT);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.ValueT, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Quotient != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Quotient.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Quotient, size));
+allocatedPtrs.Add(native.Quotient);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Quotient, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Remainder != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Remainder.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Remainder, size));
+allocatedPtrs.Add(native.Remainder);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Remainder, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.RemainderMask != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.RemainderMask.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.RemainderMask, size));
+allocatedPtrs.Add(native.RemainderMask);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.RemainderMask, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.TemporaryBuffer != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.TemporaryBuffer, size));
+allocatedPtrs.Add(native.TemporaryBuffer);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.TemporaryBuffer, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.CarryBuffer != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.CarryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.CarryBuffer, size));
+allocatedPtrs.Add(native.CarryBuffer);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.CarryBuffer, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+return native;
+}
+public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext.BuffersContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext native, bool isDevicePtr)
+{
+if (host.ValueT != null && !isDevicePtr && native.ValueT != IntPtr.Zero)
+{
+int size = host.ValueT.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.ValueT, size));
+}
+finally { handle.Free(); }
+}
+if (host.Quotient != null && !isDevicePtr && native.Quotient != IntPtr.Zero)
+{
+int size = host.Quotient.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Quotient, size));
+}
+finally { handle.Free(); }
+}
+if (host.Remainder != null && !isDevicePtr && native.Remainder != IntPtr.Zero)
+{
+int size = host.Remainder.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Remainder, size));
+}
+finally { handle.Free(); }
+}
+if (host.RemainderMask != null && !isDevicePtr && native.RemainderMask != IntPtr.Zero)
+{
+int size = host.RemainderMask.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.RemainderMask, size));
+}
+finally { handle.Free(); }
+}
+if (host.TemporaryBuffer != null && !isDevicePtr && native.TemporaryBuffer != IntPtr.Zero)
+{
+int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.TemporaryBuffer, size));
+}
+finally { handle.Free(); }
+}
+if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer != IntPtr.Zero)
+{
+int size = host.CarryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.CarryBuffer, size));
+}
+finally { handle.Free(); }
+}
+}
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext
+{
+public int NumberOfWords;
+public int NumberOfWordsExtended;
+public int Exponent;
+public int BitOffset2E1;
+}
+public static __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext.DimensionsContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext();
+native.NumberOfWords = host.NumberOfWords;
+native.NumberOfWordsExtended = host.NumberOfWordsExtended;
+native.Exponent = host.Exponent;
+native.BitOffset2E1 = host.BitOffset2E1;
+return native;
+}
+public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext.DimensionsContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_DimensionsContext native, bool isDevicePtr)
+{
+host.NumberOfWords = native.NumberOfWords;
+host.NumberOfWordsExtended = native.NumberOfWordsExtended;
+host.Exponent = native.Exponent;
+host.BitOffset2E1 = native.BitOffset2E1;
+}
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+{
+public int TransformLength;
+public __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Buffers;
+public __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext TwiddleFactors;
+}
+public static __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext();
+native.TransformLength = host.TransformLength;
+native.Buffers = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext(ref host.Buffers, isDevicePtr, allocatedPtrs);
+native.TwiddleFactors = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext(ref host.TwiddleFactors, isDevicePtr, allocatedPtrs);
+return native;
+}
+public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext native, bool isDevicePtr)
+{
+host.TransformLength = native.TransformLength;
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext(ref host.Buffers, ref native.Buffers, isDevicePtr);
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr);
+}
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext
+{
+public IntPtr Buffer1;
+public IntPtr Buffer2;
+public IntPtr Buffer3;
+public IntPtr TemporaryBuffer;
+}
+public static __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext.BuffersContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext();
+if (host.Buffer1 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Buffer1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Buffer1, size));
+allocatedPtrs.Add(native.Buffer1);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Buffer1, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Buffer2 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Buffer2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Buffer2, size));
+allocatedPtrs.Add(native.Buffer2);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Buffer2, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Buffer3 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Buffer3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Buffer3, size));
+allocatedPtrs.Add(native.Buffer3);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Buffer3, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.TemporaryBuffer != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.TemporaryBuffer, size));
+allocatedPtrs.Add(native.TemporaryBuffer);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.TemporaryBuffer, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+return native;
+}
+public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext.BuffersContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext native, bool isDevicePtr)
+{
+if (host.Buffer1 != null && !isDevicePtr && native.Buffer1 != IntPtr.Zero)
+{
+int size = host.Buffer1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Buffer1, size));
+}
+finally { handle.Free(); }
+}
+if (host.Buffer2 != null && !isDevicePtr && native.Buffer2 != IntPtr.Zero)
+{
+int size = host.Buffer2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Buffer2, size));
+}
+finally { handle.Free(); }
+}
+if (host.Buffer3 != null && !isDevicePtr && native.Buffer3 != IntPtr.Zero)
+{
+int size = host.Buffer3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Buffer3, size));
+}
+finally { handle.Free(); }
+}
+if (host.TemporaryBuffer != null && !isDevicePtr && native.TemporaryBuffer != IntPtr.Zero)
+{
+int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.TemporaryBuffer, size));
+}
+finally { handle.Free(); }
+}
+}
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+public struct __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+{
+public IntPtr Forward1;
+public IntPtr Forward2;
+public IntPtr Forward3;
+public IntPtr Inverse1;
+public IntPtr Inverse2;
+public IntPtr Inverse3;
+}
+public static __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext.TwiddleFactorsContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+{
+var native = new __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext();
+if (host.Forward1 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Forward1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Forward1, size));
+allocatedPtrs.Add(native.Forward1);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Forward1, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Forward2 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Forward2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Forward2, size));
+allocatedPtrs.Add(native.Forward2);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Forward2, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Forward3 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Forward3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Forward3, size));
+allocatedPtrs.Add(native.Forward3);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Forward3, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Inverse1 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Inverse1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Inverse1, size));
+allocatedPtrs.Add(native.Inverse1);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Inverse1, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Inverse2 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Inverse2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Inverse2, size));
+allocatedPtrs.Add(native.Inverse2);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Inverse2, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+if (host.Inverse3 != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.Inverse3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Inverse3, size));
+allocatedPtrs.Add(native.Inverse3);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Inverse3, handle.AddrOfPinnedObject(), size));
+}
+finally { handle.Free(); }
+}
+}
+return native;
+}
+public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext.TwiddleFactorsContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext native, bool isDevicePtr)
+{
+if (host.Forward1 != null && !isDevicePtr && native.Forward1 != IntPtr.Zero)
+{
+int size = host.Forward1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Forward1, size));
+}
+finally { handle.Free(); }
+}
+if (host.Forward2 != null && !isDevicePtr && native.Forward2 != IntPtr.Zero)
+{
+int size = host.Forward2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Forward2, size));
+}
+finally { handle.Free(); }
+}
+if (host.Forward3 != null && !isDevicePtr && native.Forward3 != IntPtr.Zero)
+{
+int size = host.Forward3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Forward3, size));
+}
+finally { handle.Free(); }
+}
+if (host.Inverse1 != null && !isDevicePtr && native.Inverse1 != IntPtr.Zero)
+{
+int size = host.Inverse1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Inverse1, size));
+}
+finally { handle.Free(); }
+}
+if (host.Inverse2 != null && !isDevicePtr && native.Inverse2 != IntPtr.Zero)
+{
+int size = host.Inverse2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Inverse2, size));
+}
+finally { handle.Free(); }
+}
+if (host.Inverse3 != null && !isDevicePtr && native.Inverse3 != IntPtr.Zero)
+{
+int size = host.Inverse3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Inverse3, size));
+}
+finally { handle.Free(); }
+}
+}
+public static unsafe void Launch_Kernel_StaticFermatLoop(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, string gsharpExponent, string gsharpExponentMinus4, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("gsharpExponent", (gsharpExponent).ToString());
 __gsharp_jit_constants.Add("gsharpExponentMinus4", (gsharpExponentMinus4).ToString());
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_StaticFermatLoop", Kernel_StaticFermatLoop_CudaSource, __gsharp_jit_constants, macros);
+System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_ctx = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
-// Marshal ref/out scalar: ctx
-int ctx_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(FermatContext));
+var native_ctx = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, false, ctx_allocatedPtrs);
+// Marshal ref/out struct: ctx
+int ctx_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ctx, ctx_size));
 // Fast zero-allocation copy to device
-fixed (FermatContext* p_ctx_temp = &ctx)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ctx, (IntPtr)p_ctx_temp, ctx_size));
-}
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ctx, (IntPtr)(&native_ctx), ctx_size));
 kernelParams[0] = &d_ctx;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
-// Unmarshal ref/out scalar: ctx
-IntPtr p_ctx_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
+// Unmarshal ref/out struct: ctx
+IntPtr p_ctx_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp, d_ctx, ctx_size));
-ctx = (FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp, typeof(FermatContext))!;
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp_out, d_ctx, ctx_size));
+native_ctx = (__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp_out, typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext))!;
 }
 finally
 {
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp);
+System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp_out);
 }
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, ref native_ctx, false);
 }
 finally
 {
+foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (d_ctx != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ctx);
 }
 }
-public static unsafe void Launch_Kernel_StaticFermatLoop_Device(FermatContext ctx, string gsharpExponent, string gsharpExponentMinus4, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_Kernel_StaticFermatLoop_Device(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, string gsharpExponent, string gsharpExponentMinus4, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("gsharpExponent", (gsharpExponent).ToString());
 __gsharp_jit_constants.Add("gsharpExponentMinus4", (gsharpExponentMinus4).ToString());
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_StaticFermatLoop", Kernel_StaticFermatLoop_CudaSource, __gsharp_jit_constants, macros);
+System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+IntPtr d_ctx = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
-// Marshal ref/out scalar: ctx
-int ctx_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(FermatContext));
+var native_ctx = Marshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, true, ctx_allocatedPtrs);
+// Marshal ref/out struct: ctx
+int ctx_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext));
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ctx, ctx_size));
 // Fast zero-allocation copy to device
-fixed (FermatContext* p_ctx_temp = &ctx)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ctx, (IntPtr)p_ctx_temp, ctx_size));
-}
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ctx, (IntPtr)(&native_ctx), ctx_size));
 kernelParams[0] = &d_ctx;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
-// Unmarshal ref/out scalar: ctx
-IntPtr p_ctx_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
+// Unmarshal ref/out struct: ctx
+IntPtr p_ctx_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp, d_ctx, ctx_size));
-ctx = (FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp, typeof(FermatContext))!;
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp_out, d_ctx, ctx_size));
+native_ctx = (__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp_out, typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext))!;
 }
 finally
 {
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp);
+System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp_out);
 }
+Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, ref native_ctx, true);
 }
 finally
 {
+foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (d_ctx != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ctx);
 }
 }

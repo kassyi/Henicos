@@ -78,27 +78,67 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
-inline __device__ void Device_ChunkAdd(BigIntKernelContext* ctx,int chunkSize);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ChunkAdd(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int chunkSize);
 
-inline __device__ void Device_ApplyAddCarry(BigIntKernelContext* ctx,int numChunks,int chunkSize);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ApplyAddCarry(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int numChunks,int chunkSize);
 
-inline __device__ void Device_ChunkSub(BigIntKernelContext* ctx,int chunkSize);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ChunkSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int chunkSize);
 
-inline __device__ void Device_ApplySubBorrow(BigIntKernelContext* ctx,int numChunks,int chunkSize);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ApplySubBorrow(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int numChunks,int chunkSize);
 
-inline __device__ void Device_ShiftLeft(BigIntKernelContext* ctx,int wordShift,int bitShift);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ShiftLeft(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int wordShift,int bitShift);
 
-inline __device__ void Device_ShiftRight(BigIntKernelContext* ctx,int wordShift,int bitShift);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_ShiftRight(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int wordShift,int bitShift);
 
-inline __device__ void Device_BitwiseAnd(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_BitwiseAnd(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_BitwiseOr(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_BitwiseOr(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_BitwiseXor(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_BitwiseXor(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_BitwiseNot(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_BitwiseNot(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_ChunkAdd(BigIntKernelContext* ctx,int chunkSize){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ChunkAdd(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int chunkSize){
 auto chunkIdx=((blockIdx.x*blockDim.x)+threadIdx.x);
 auto start=(chunkIdx*chunkSize);
 if((start>=ctx->NumberOfWords))
@@ -113,12 +153,32 @@ end=ctx->NumberOfWords;
 unsigned long long localCarry=0;
 for(int i=start;(i<end);i++)
 {
-ctx->Operands.ResultBuffer[i]=AddWithCarry(ctx->Operands.LeftOperand[i],ctx->Operands.RightOperand[i],&localCarry);
+ctx->Operands.ResultBuffer[i]=__gsharp_add_cc(ctx->Operands.LeftOperand[i],ctx->Operands.RightOperand[i],&localCarry);
 }
 ctx->Operands.CarryBuffer[(chunkIdx+1)]=(long long)localCarry;
 }
 
-inline __device__ void Device_ApplyAddCarry(BigIntKernelContext* ctx,int numChunks,int chunkSize){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ApplyAddCarry(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int numChunks,int chunkSize){
 auto cIdx=((blockIdx.x*blockDim.x)+threadIdx.x);
 if(((cIdx<=0)||(cIdx>numChunks)))
 {
@@ -127,11 +187,31 @@ return;
 auto carry=ctx->Operands.CarryBuffer[cIdx];
 if((carry>0))
 {
-GpuBigIntNttKernels.AtomicAddWithCarry(ctx->Operands.ResultBuffer,(cIdx*chunkSize),(unsigned int)carry,ctx->NumberOfWords);
+AtomicAddWithCarry(ctx->Operands.ResultBuffer,(cIdx*chunkSize),(unsigned int)carry,ctx->NumberOfWords);
 }
 }
 
-inline __device__ void Device_ChunkSub(BigIntKernelContext* ctx,int chunkSize){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ChunkSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int chunkSize){
 auto chunkIdx=((blockIdx.x*blockDim.x)+threadIdx.x);
 auto start=(chunkIdx*chunkSize);
 if((start>=ctx->NumberOfWords))
@@ -146,12 +226,32 @@ end=ctx->NumberOfWords;
 long long localBorrow=0;
 for(int i=start;(i<end);i++)
 {
-ctx->Operands.ResultBuffer[i]=SubWithBorrow(ctx->Operands.LeftOperand[i],ctx->Operands.RightOperand[i],&localBorrow);
+ctx->Operands.ResultBuffer[i]=__gsharp_sub_cc(ctx->Operands.LeftOperand[i],ctx->Operands.RightOperand[i],&localBorrow);
 }
 ctx->Operands.CarryBuffer[(chunkIdx+1)]=localBorrow;
 }
 
-inline __device__ void Device_ApplySubBorrow(BigIntKernelContext* ctx,int numChunks,int chunkSize){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ApplySubBorrow(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int numChunks,int chunkSize){
 auto cIdx=((blockIdx.x*blockDim.x)+threadIdx.x);
 if(((cIdx<=0)||(cIdx>numChunks)))
 {
@@ -160,11 +260,31 @@ return;
 auto borrow=ctx->Operands.CarryBuffer[cIdx];
 if((borrow>0))
 {
-GpuBigIntNttKernels.AtomicSubWithBorrow(ctx->Operands.ResultBuffer,(cIdx*chunkSize),(unsigned int)borrow,ctx->NumberOfWords);
+AtomicSubWithBorrow(ctx->Operands.ResultBuffer,(cIdx*chunkSize),(unsigned int)borrow,ctx->NumberOfWords);
 }
 }
 
-inline __device__ void Device_ShiftLeft(BigIntKernelContext* ctx,int wordShift,int bitShift){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ShiftLeft(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int wordShift,int bitShift){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i<ctx->NumberOfWords))
 {
@@ -191,7 +311,27 @@ ctx->Operands.ResultBuffer[i]=(((w0<<bitShift))|((w1>>((32-bitShift)))));
 }
 }
 
-inline __device__ void Device_ShiftRight(BigIntKernelContext* ctx,int wordShift,int bitShift){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_ShiftRight(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int wordShift,int bitShift){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i>=ctx->NumberOfWords))
 {
@@ -219,7 +359,27 @@ ctx->Operands.ResultBuffer[i]=(((w0>>bitShift))|((w1<<((32-bitShift)))));
 }
 }
 
-inline __device__ void Device_BitwiseAnd(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_BitwiseAnd(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i<ctx->NumberOfWords))
 {
@@ -227,7 +387,27 @@ ctx->Operands.ResultBuffer[i]=(ctx->Operands.LeftOperand[i]&ctx->Operands.RightO
 }
 }
 
-inline __device__ void Device_BitwiseOr(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_BitwiseOr(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i<ctx->NumberOfWords))
 {
@@ -235,7 +415,27 @@ ctx->Operands.ResultBuffer[i]=(ctx->Operands.LeftOperand[i]|ctx->Operands.RightO
 }
 }
 
-inline __device__ void Device_BitwiseXor(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_BitwiseXor(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i<ctx->NumberOfWords))
 {
@@ -243,7 +443,27 @@ ctx->Operands.ResultBuffer[i]=(ctx->Operands.LeftOperand[i]^ctx->Operands.RightO
 }
 }
 
-inline __device__ void Device_BitwiseNot(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_BitwiseNot(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i<ctx->NumberOfWords))
 {
@@ -251,8 +471,21 @@ ctx->Operands.ResultBuffer[i]=~ctx->Operands.LeftOperand[i];
 }
 }
 
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
 extern ""C"" __global__ void ShiftRightKernel(unsigned int* dA,int wordShift,int bitShift,unsigned int* dResult,int numWords){
-auto ctx=BigIntKernelContextOperands=BigIntKernelContextOperandsContextLeftOperand=dAResultBuffer=dResultNumberOfWords=numWords;
+auto ctx=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _tmp; _tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext _tmp; _tmp.LeftOperand = dA; _tmp.ResultBuffer = dResult; return _tmp; }
+()); _tmp.NumberOfWords = numWords; return _tmp; }
+());
 Device_ShiftRight(&ctx,wordShift,bitShift);
 }
 ";

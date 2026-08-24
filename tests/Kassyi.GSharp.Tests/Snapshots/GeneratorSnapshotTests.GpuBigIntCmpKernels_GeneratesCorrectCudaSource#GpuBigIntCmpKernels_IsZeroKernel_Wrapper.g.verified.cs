@@ -78,13 +78,39 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
-inline __device__ void Device_IsZero(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_IsZero(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_IsOne(BigIntKernelContext* ctx);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_IsOne(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx);
 
-inline __device__ void Device_CompareTo(BigIntKernelContext* ctx,unsigned long long* dResult);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
+inline __device__ void Device_CompareTo(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,unsigned long long* dResult);
 
-inline __device__ void Device_IsZero(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_IsZero(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i>=ctx->NumberOfWords))
 {
@@ -96,7 +122,27 @@ ctx->Operands.ResultBuffer[0]=1;
 }
 }
 
-inline __device__ void Device_IsOne(BigIntKernelContext* ctx){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_IsOne(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i>=ctx->NumberOfWords))
 {
@@ -118,7 +164,27 @@ ctx->Operands.ResultBuffer[0]=1;
 }
 }
 
-inline __device__ void Device_CompareTo(BigIntKernelContext* ctx,unsigned long long* dResult){
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
+{
+const unsigned int* LeftOperand;
+const unsigned int* RightOperand;
+unsigned int* ResultBuffer;
+long long* CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
+inline __device__ void Device_CompareTo(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,unsigned long long* dResult){
 auto i=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((i>=ctx->NumberOfWords))
 {
@@ -143,8 +209,21 @@ atomicMax((unsigned long long*)dResult, val);
 ;
 }
 
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext
+{
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext Operands;
+int NumberOfWords;
+}
+;
+#endif
 extern ""C"" __global__ void IsZeroKernel(unsigned int* dA,unsigned int* dResult,int numWords){
-auto ctx=BigIntKernelContextOperands=BigIntKernelContextOperandsContextLeftOperand=dAResultBuffer=dResultNumberOfWords=numWords;
+auto ctx=([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _tmp; _tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext _tmp; _tmp.LeftOperand = dA; _tmp.ResultBuffer = dResult; return _tmp; }
+()); _tmp.NumberOfWords = numWords; return _tmp; }
+());
 Device_IsZero(&ctx);
 }
 ";
