@@ -1,11 +1,11 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Henicos.PiBenchmark/Henicos.PiBenchmark.csproj" />
-    <Project Path="src/Henicos/Henicos.csproj" />
-    <Project Path="src/Kassyi.Generators.GSharp/Kassyi.Generators.GSharp.csproj" />
-    <Project Path="src/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />
-    <Project Path="src/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />
-    <Project Path="src/Kassyi.GSharp.GpuBigInt/Kassyi.GSharp.GpuBigInt.csproj" />
+    <Project Path="src/Apps/Henicos.PiBenchmark/Henicos.PiBenchmark.csproj" />
+    <Project Path="src/Apps/Henicos.Cli/Henicos.Cli.csproj" />
+    <Project Path="src/Compiler/Kassyi.GSharp.Compiler/Kassyi.GSharp.Compiler.csproj" />
+    <Project Path="src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />
+    <Project Path="src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />
+    <Project Path="src/Stdlib/Kassyi.GSharp.Stdlib.Math/Kassyi.GSharp.Stdlib.Math.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kassyi.GSharp.Tests/Kassyi.GSharp.Tests.csproj" />
