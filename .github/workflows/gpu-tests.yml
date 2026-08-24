@@ -16,10 +16,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+    # .NET SDK is already installed on the self-hosted runner, avoiding actions/setup-dotnet
+    # to prevent UAC write permission issues to C:\Program Files\dotnet.
 
     # Ensure CUDA Toolkit is available (usually pre-installed on the self-hosted runner)
     - name: Verify CUDA Installation
