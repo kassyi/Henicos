@@ -245,5 +245,67 @@ public static class GpuBigIntKernels
             ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] & ctx.Operands.RightOperand[i];
         }
     }
-}
 
+    [GpuKernel]
+    public static void BitwiseOrKernel(uint[] dA, uint[] dB, uint[] dResult, int numWords)
+    {
+        var ctx = new BigIntKernelContext
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+            NumberOfWords = numWords
+        };
+        Device_BitwiseOr(ref ctx);
+    }
+
+    [GpuDevice]
+    public static void Device_BitwiseOr(ref BigIntKernelContext ctx)
+    {
+        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (i < ctx.NumberOfWords)
+        {
+            ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] | ctx.Operands.RightOperand[i];
+        }
+    }
+
+    [GpuKernel]
+    public static void BitwiseXorKernel(uint[] dA, uint[] dB, uint[] dResult, int numWords)
+    {
+        var ctx = new BigIntKernelContext
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+            NumberOfWords = numWords
+        };
+        Device_BitwiseXor(ref ctx);
+    }
+
+    [GpuDevice]
+    public static void Device_BitwiseXor(ref BigIntKernelContext ctx)
+    {
+        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (i < ctx.NumberOfWords)
+        {
+            ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] ^ ctx.Operands.RightOperand[i];
+        }
+    }
+
+    [GpuKernel]
+    public static void BitwiseNotKernel(uint[] dA, uint[] dResult, int numWords)
+    {
+        var ctx = new BigIntKernelContext
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+            NumberOfWords = numWords
+        };
+        Device_BitwiseNot(ref ctx);
+    }
+
+    [GpuDevice]
+    public static void Device_BitwiseNot(ref BigIntKernelContext ctx)
+    {
+        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (i < ctx.NumberOfWords)
+        {
+            ctx.Operands.ResultBuffer[i] = ~ctx.Operands.LeftOperand[i];
+        }
+    }
+}

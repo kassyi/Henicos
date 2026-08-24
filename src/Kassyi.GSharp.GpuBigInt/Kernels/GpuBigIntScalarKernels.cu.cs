@@ -15,18 +15,12 @@ public static class GpuBigIntScalarKernels
     public static void Device_ScalarAdd(uint[] left, uint s, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < numWords)
-        {
-            result[i] = left[i];
-        }
-
         if (i == 0)
         {
             ulong carry = s;
-            for (int j = 0; j < numWords && carry > 0; j++)
+            for (int j = 0; j < numWords; j++)
             {
-                uint val = result[j];
-                ulong sum = (ulong)val + carry;
+                ulong sum = (ulong)left[j] + carry;
                 result[j] = (uint)sum;
                 carry = sum >> 32;
             }
@@ -46,10 +40,9 @@ public static class GpuBigIntScalarKernels
         if (i == 0)
         {
             long borrow = s;
-            for (int j = 0; j < numWords && borrow > 0; j++)
+            for (int j = 0; j < numWords; j++)
             {
-                uint val = result[j];
-                long diff = (long)val - borrow;
+                long diff = (long)left[j] - borrow;
                 if (diff < 0)
                 {
                     diff += 0x100000000L;

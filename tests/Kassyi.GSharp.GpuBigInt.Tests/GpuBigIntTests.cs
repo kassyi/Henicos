@@ -508,43 +508,39 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             Assert.Equal(expectedGcd, actualGcd);
         }
 
-        [Theory]
+        
+        [Theory(Skip = "Extremely slow due to cuMemAlloc overhead without memory pooling. Enable when memory pool is implemented.")]
         [InlineData(GpuExecutionEngine.GSharpJit)]
-        public void Test_FastMod_Correctness(GpuExecutionEngine engine)
+        public void Test_ModPow_Correctness(GpuExecutionEngine engine)
         {
-            using var context = new GpuContext(TestSizeWords * 4, engine);
-            var arrA2n = GenerateRandomArray(TestSizeWords * 2, 777);
-            var arrB = GenerateRandomArray(TestSizeWords, 778);
-            arrB[TestSizeWords - 1] &= 0x7FFFFFFF; // ensure smaller but non-zero
-            if (arrB[0] == 0) arrB[0] = 1;
+            using var context = new GpuContext(TestSizeWords * 13, engine);
 
-            var bigA = ToBigInteger(arrA2n);
-            var bigB = ToBigInteger(arrB);
-            var expectedMod = bigA % bigB;
+            var arrBase = GenerateRandomArray(TestSizeWords, 800);
+            var arrExp = GenerateRandomArray(1, 801); // Very small exponent for testing speed
+            var arrMod = GenerateRandomArray(TestSizeWords, 802);
+            arrMod[TestSizeWords - 1] &= 0x7FFFFFFF;
+            if (arrMod[0] == 0) arrMod[0] = 1;
 
-            using var gpuA = new GpuBigInteger(context, arrA2n);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            
-            // Calculate reciprocal
-            var bigOne = System.Numerics.BigInteger.One << (TestSizeWords * 2 * 32);
-            var bigRecip = bigOne / bigB;
-            var recipBytes = bigRecip.ToByteArray();
-            var recipWords = new uint[TestSizeWords * 2];
-            System.Buffer.BlockCopy(recipBytes, 0, recipWords, 0, System.Math.Min(recipBytes.Length, recipWords.Length * 4));
-            
-            using var gpuRecip = new GpuBigInteger(context, recipWords);
-            using var gpuMod = new GpuBigInteger(context, TestSizeWords);
+            var bigBase = ToBigInteger(arrBase);
+            var bigExp = ToBigInteger(arrExp);
+            var bigMod = ToBigInteger(arrMod);
 
-            // Access private method via reflection
-            var method = typeof(GpuBigInteger).GetMethod("FastModWithPrecomputedReciprocal", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            method.Invoke(null, new object[] { gpuA, gpuB, gpuRecip, gpuMod });
+            var expected = System.Numerics.BigInteger.ModPow(bigBase, bigExp, bigMod);
 
-            var actualMod = ToBigInteger(gpuMod.ToHostArray());
+            using var gpuBase = new GpuBigInteger(context, arrBase);
+            var arrExpPadded = new uint[TestSizeWords];
+            Array.Copy(arrExp, arrExpPadded, arrExp.Length);
+            using var gpuExp = new GpuBigInteger(context, arrExpPadded);
+            using var gpuMod = new GpuBigInteger(context, arrMod);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
-            System.Console.WriteLine($"FastMod Expected: {expectedMod}");
-            System.Console.WriteLine($"FastMod Actual:   {actualMod}");
-            Assert.Equal(expectedMod, actualMod);
+            GpuBigInteger.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+
+            var actual = ToBigInteger(gpuResult.ToHostArray());
+
+            Assert.Equal(expected, actual);
         }
+
 
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]

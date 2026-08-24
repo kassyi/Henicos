@@ -430,7 +430,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         leftOperand.Context.Provider.BitwiseNot(leftOperand.Context, leftOperand, resultBuffer);
     }
 
-    public static void DivRem(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger quotientBuffer, GpuBigInteger remainderBuffer)
+    public static void DivRem(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger quotientBuffer,
+        GpuBigInteger remainderBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, quotientBuffer);
         ThrowIfSizeMismatch(leftOperand, remainderBuffer);
@@ -474,6 +475,89 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     }
 
     public bool Square(int logicalWords) => Context.Provider.Square(Context, DevicePointer, logicalWords);
+
+    public static void ModPow(GpuBigInteger baseVal, GpuBigInteger exp, GpuBigInteger mod, GpuBigInteger resultBuffer)
+    {
+        ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
+
+        var n = baseVal.NumWords;
+        var expWords = exp.NumWords;
+
+        using var mod2n = new GpuBigInteger(baseVal.Context, 2 * n);
+        mod2n.CopyFrom(mod, numWords: n);
+
+        using var tempResult = new GpuBigInteger(baseVal.Context, 2 * n);
+        var oneData = new uint[2 * n];
+        oneData[0] = 1;
+        tempResult.CopyFrom(new GpuBigInteger(baseVal.Context, oneData));
+
+        using var tempBase = new GpuBigInteger(baseVal.Context, 2 * n);
+        tempBase.CopyFrom(baseVal, numWords: n);
+
+        // Initial reduction of base
+        using var tempBaseQ = new GpuBigInteger(baseVal.Context, 2 * n);
+        using var tempBaseR = new GpuBigInteger(baseVal.Context, 2 * n);
+        DivRem(tempBase, mod2n, tempBaseQ, tempBaseR);
+        tempBase.CopyFrom(tempBaseR);
+
+        using var tempMul = new GpuBigInteger(baseVal.Context, 4 * n);
+        using var tempQ = new GpuBigInteger(baseVal.Context, 4 * n);
+        using var tempR = new GpuBigInteger(baseVal.Context, 4 * n);
+
+        using var mod4n = new GpuBigInteger(baseVal.Context, 4 * n);
+        mod4n.CopyFrom(mod, numWords: n);
+
+        var hostExp = exp.ToHostArray();
+
+        for (int i = 0; i < expWords; i++)
+        {
+            uint e = hostExp[i];
+
+            // Optimization: if remaining bits are 0, we can break
+            if (e == 0)
+            {
+                bool allZero = true;
+                for (int j = i; j < expWords; j++)
+                {
+                    if (hostExp[j] != 0)
+                    {
+                        allZero = false;
+                        break;
+                    }
+                }
+
+                if (allZero)
+                {
+                    break;
+                }
+            }
+
+            for (int bit = 0; bit < 32; bit++)
+            {
+                if ((e & 1) == 1)
+                {
+                    Mul(tempResult, tempBase, tempMul);
+                    DivRem(tempMul, mod4n, tempQ, tempR);
+                    tempResult.CopyFrom(tempR, numWords: 2 * n);
+                }
+
+                Mul(tempBase, tempBase, tempMul);
+                DivRem(tempMul, mod4n, tempQ, tempR);
+                tempBase.CopyFrom(tempR, numWords: 2 * n);
+
+                e >>= 1;
+
+                // If e becomes 0 and there are no more words, we can break bit loop
+                if (e == 0 && i == expWords - 1)
+                {
+                    break;
+                }
+            }
+        }
+
+        resultBuffer.CopyFrom(tempResult, numWords: n);
+    }
+
 
     internal void DisposeCore()
     {
@@ -544,6 +628,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
             {
                 word[0] &= 0x7FFFFFFF;
             }
+
             Context.Provider.CopyHostToDevice(ptr, word, 1);
         }
     }

@@ -149,32 +149,30 @@ public static class GpuBigIntNttKernels
         var applyTwiddleAfter = args.ApplyTwiddleAfter;
         var maxBlocks = args.MaxBlocks;
         var threadsNeeded = l / 2;
-        var isActive = ThreadIndex.X < threadsNeeded && BlockIndex.X < maxBlocks;
+
+        int maxLog2L = 0;
+        while ((1 << maxLog2L) < l)
+        {
+            maxLog2L++;
+        }
 
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
 
-        if (isActive)
+        for (var row = BlockIndex.X; row < maxBlocks; row += GridDimension.X)
         {
-            var row = BlockIndex.X;
-            var tid = ThreadIndex.X;
-            var offset = row * l;
-
-            int log2L = 0;
-            while ((1 << log2L) < l)
+            var isActive = ThreadIndex.X < threadsNeeded;
+            if (isActive)
             {
-                log2L++;
-            }
+                var tid = ThreadIndex.X;
+                var offset = row * l;
 
-            int revTid1 = 0;
-            int revTid2 = 0;
-            for (int i = 0; i < log2L; i++)
-            {
-                revTid1 = (revTid1 << 1) | ((tid >> i) & 1);
-                revTid2 = (revTid2 << 1) | (((tid + l / 2) >> i) & 1);
-            }
+            uint val1 = dData[offset + tid];
+            uint val2 = dData[offset + tid + l / 2];
 
-            var val1 = dData[offset + tid];
-            var val2 = dData[offset + tid + l / 2];
+            uint revTid1 = 0;
+            uint revTid2 = 0;
+            Gpu.InlinePtx($"{revTid1} = __brev({tid}) >> (32 - {maxLog2L});");
+            Gpu.InlinePtx($"{revTid2} = __brev({tid + l / 2}) >> (32 - {maxLog2L});");
 
             if (applyTwiddleBefore)
             {
@@ -191,12 +189,6 @@ public static class GpuBigIntNttKernels
             Gpu.InlinePtx($"s_row[{revTid2}] = {val2};");
         }
         Gpu.SyncThreads();
-
-        int maxLog2L = 0;
-        while ((1 << maxLog2L) < l)
-        {
-            maxLog2L++;
-        }
 
         for (int s = 0; s < maxLog2L; s++)
         {
@@ -230,7 +222,6 @@ public static class GpuBigIntNttKernels
 
         if (isActive)
         {
-            var row = BlockIndex.X;
             var tid = ThreadIndex.X;
             var offset = row * l;
 
@@ -258,6 +249,8 @@ public static class GpuBigIntNttKernels
 
             dData[offset + tid] = out1;
             dData[offset + tid + l / 2] = out2;
+            }
+            Gpu.SyncThreads();
         }
     }
 

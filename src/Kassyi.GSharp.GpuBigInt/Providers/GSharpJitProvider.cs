@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Runtime.Jit;
 using System.Collections.Concurrent;
 using Kassyi.GSharp.GpuBigInt.Kernels;
 
@@ -30,16 +32,202 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     }
 
 
-    public void Add(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public void Sub(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public void Mul(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public void BitwiseOr(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public void BitwiseXor(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public void BitwiseNot(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer) => throw new NotImplementedException();
-    public bool IsZero(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
-    public bool IsOne(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
-    public int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand) => throw new NotImplementedException();
+    public void Add(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer)
+    {
+        uint blockDim = 256;
+        var gridDim = (uint)((leftOperand.NumWords + blockDim - 1) / blockDim);
+        if (gridDim == 0)
+        {
+            gridDim = 1;
+        }
+
+        GpuBigIntScalarKernelsWrapper.Launch_ScalarAddKernel_Device(
+            leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim);
+    }
+
+    public void Sub(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer)
+    {
+        uint blockDim = 256;
+        var gridDim = (uint)((leftOperand.NumWords + blockDim - 1) / blockDim);
+        if (gridDim == 0)
+        {
+            gridDim = 1;
+        }
+
+        GpuBigIntScalarKernelsWrapper.Launch_ScalarSubKernel_Device(
+            leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim);
+    }
+
+    public void Mul(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer)
+    {
+        uint blockDim = 256;
+        var gridDim = (uint)((leftOperand.NumWords + blockDim - 1) / blockDim);
+        if (gridDim == 0)
+        {
+            gridDim = 1;
+        }
+
+        GpuBigIntScalarKernelsWrapper.Launch_ScalarMulKernel_Device(
+            leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim);
+    }
+
+    public void BitwiseOr(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
+    {
+        uint blockDim = 256;
+        var gridDim = (uint)((leftOperand.NumWords + blockDim - 1) / blockDim);
+        if (gridDim == 0)
+        {
+            gridDim = 1;
+        }
+
+        GpuBigIntKernelsWrapper.Launch_BitwiseOrKernel_Device(
+            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim);
+    }
+
+    public void BitwiseXor(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
+    {
+        uint blockDim = 256;
+        var gridDim = (uint)((leftOperand.NumWords + blockDim - 1) / blockDim);
+        if (gridDim == 0)
+        {
+            gridDim = 1;
+        }
+
+        GpuBigIntKernelsWrapper.Launch_BitwiseXorKernel_Device(
+            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim);
+    }
+
+    public void BitwiseNot(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger resultBuffer)
+    {
+        uint blockDim = 256;
+        var gridDim = (uint)((leftOperand.NumWords + blockDim - 1) / blockDim);
+        if (gridDim == 0)
+        {
+            gridDim = 1;
+        }
+
+        GpuBigIntKernelsWrapper.Launch_BitwiseNotKernel_Device(
+            leftOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim);
+    }
+
+    public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
+    {
+        // Simple fallback to CPU for GCD since it's an iterative CPU-GPU hybrid algorithm
+        var leftWords = new uint[leftOperand.NumWords];
+        var rightWords = new uint[rightOperand.NumWords];
+        CopyDeviceToHost(leftWords, leftOperand.DevicePointer, leftOperand.NumWords);
+        CopyDeviceToHost(rightWords, rightOperand.DevicePointer, rightOperand.NumWords);
+
+        var leftBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(leftWords).ToArray(),
+            isUnsigned: true, isBigEndian: false);
+        var rightBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(rightWords).ToArray(),
+            isUnsigned: true, isBigEndian: false);
+
+        var resBig = System.Numerics.BigInteger.GreatestCommonDivisor(leftBig, rightBig);
+        var resBytes = resBig.ToByteArray(isUnsigned: true, isBigEndian: false);
+        var resWords = new uint[resultBuffer.NumWords];
+        Buffer.BlockCopy(resBytes, 0, resWords, 0, Math.Min(resBytes.Length, resWords.Length * 4));
+        CopyHostToDevice(resultBuffer.DevicePointer, resWords, resultBuffer.NumWords);
+    }
+
+    public bool IsZero(GpuContext context, GpuBigInteger leftOperand)
+    {
+        var words = new uint[leftOperand.NumWords];
+        CopyDeviceToHost(words, leftOperand.DevicePointer, leftOperand.NumWords);
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (words[i] != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public bool IsOne(GpuContext context, GpuBigInteger leftOperand)
+    {
+        var words = new uint[leftOperand.NumWords];
+        CopyDeviceToHost(words, leftOperand.DevicePointer, leftOperand.NumWords);
+        if (words.Length == 0)
+        {
+            return false;
+        }
+
+        if (words[0] != 1)
+        {
+            return false;
+        }
+
+        for (int i = 1; i < words.Length; i++)
+        {
+            if (words[i] != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand)
+    {
+        var wordsLeft = new uint[leftOperand.NumWords];
+        var wordsRight = new uint[rightOperand.NumWords];
+        CopyDeviceToHost(wordsLeft, leftOperand.DevicePointer, leftOperand.NumWords);
+        CopyDeviceToHost(wordsRight, rightOperand.DevicePointer, rightOperand.NumWords);
+
+        var maxWords = Math.Max(wordsLeft.Length, wordsRight.Length);
+        for (int i = maxWords - 1; i >= 0; i--)
+        {
+            uint l = i < wordsLeft.Length ? wordsLeft[i] : 0;
+            uint r = i < wordsRight.Length ? wordsRight[i] : 0;
+            if (l > r)
+            {
+                return 1;
+            }
+
+            if (l < r)
+            {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+
+    public int GetBitLength(GpuContext context, GpuBigInteger leftOperand)
+    {
+        var words = new uint[leftOperand.NumWords];
+        CopyDeviceToHost(words, leftOperand.DevicePointer, leftOperand.NumWords);
+        for (int i = words.Length - 1; i >= 0; i--)
+        {
+            if (words[i] != 0)
+            {
+                var w = words[i];
+                int bitLen = 0;
+                while (w > 0)
+                {
+                    bitLen++;
+                    w >>= 1;
+                }
+
+                return i * 32 + bitLen;
+            }
+        }
+
+        return 0;
+    }
 
     public void FreeMemory(IntPtr devicePointer)
     {
@@ -106,7 +294,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         bag.Add(ptr);
     }
 
-    public void Add(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
+    public void Add(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
     {
         var chunkSize = 256;
         var numChunks = (leftOperand.NumWords + chunkSize - 1) / chunkSize;
@@ -124,7 +313,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, carryBufferSize));
 
             GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
-                leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, carryBuffer, leftOperand.NumWords, chunkSize,
+                leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, carryBuffer,
+                leftOperand.NumWords, chunkSize,
                 gridDimX: (uint)gridSize, blockDimX: blockSize);
 
             GpuBigIntKernelsWrapper.Launch_ApplyAddCarryKernel_Device(
@@ -137,7 +327,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         }
     }
 
-    public void Sub(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
+    public void Sub(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
     {
         var chunkSize = 256;
         var numChunks = (leftOperand.NumWords + chunkSize - 1) / chunkSize;
@@ -155,7 +346,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, carryBufferSize));
 
             GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(
-                leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, carryBuffer, leftOperand.NumWords, chunkSize,
+                leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, carryBuffer,
+                leftOperand.NumWords, chunkSize,
                 gridDimX: (uint)gridSize, blockDimX: blockSize);
 
             GpuBigIntKernelsWrapper.Launch_ApplySubBorrowKernel_Device(
@@ -168,7 +360,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         }
     }
 
-    public void BitwiseAnd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
+    public void BitwiseAnd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
     {
         const uint BlockSize = 256;
         var gridSize = (leftOperand.NumWords + BlockSize - 1) / BlockSize;
@@ -182,7 +375,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             gridDimX: (uint)gridSize, blockDimX: BlockSize);
     }
 
-    public void Mul(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
+    public void Mul(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer)
     {
         var outWords = leftOperand.NumWords + rightOperand.NumWords;
         var requiredLen = outWords * 2;
@@ -203,13 +397,23 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         var gridDim = (uint)((m + 255) / 256);
         uint blockDim = 256;
 
+        int n2 = 1;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
+
+        var n1 = m / n2;
+        var maxL = m <= 512 ? m : Math.Max(n1, n2);
+        var sharedMemWords = Math.Max(1055, maxL);
+
         GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Device(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
             buf1A, buf2A, buf1B, buf2B, tmpBuf,
             twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
             leftOperand.NumWords, rightOperand.NumWords, outWords, m,
             gridDimX: gridDim, blockDimX: blockDim,
-            sharedMemBytes: (uint)(m * 4)
+            sharedMemBytes: (uint)(sharedMemWords * 4)
         );
 
         context.Provider.FreeMemory(buf1A);
@@ -325,7 +529,14 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             gridDimX: (uint)gridSize, blockDimX: blockSize);
     }
 
-    public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords) =>
-        throw new NotImplementedException("Square not implemented in GSharpJitProvider yet.");
+    public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords)
+    {
+        using var tempA = new GpuBigInteger(context, logicalWords);
+        context.Provider.CopyDeviceToDevice(devicePointer, tempA.DevicePointer, logicalWords);
+        using var tempResult = new GpuBigInteger(context, logicalWords * 2);
+        GpuBigInteger.Mul(tempA, tempA, tempResult);
+        context.Provider.CopyDeviceToDevice(tempResult.DevicePointer, devicePointer, logicalWords);
+        return true;
+    }
 }
 
