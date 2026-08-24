@@ -26,6 +26,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
+    # Build Native CUDA DLL required by Kassyi.GSharp.Stdlib.Math
+    - name: Build Native CUDA Library
+      run: .\src\Native\Kassyi.GSharp.Stdlib.Math.Cuda\build.bat
+
     - name: Build project
       run: dotnet build --no-restore -c Release
 
