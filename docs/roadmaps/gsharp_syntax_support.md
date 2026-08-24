@@ -15,11 +15,11 @@ C# 開発者が無意識に書いてしまいがちな構文シュガー・現�
 | **SYN-02** | **パターンマッチング (`is` / 結合 / リレーショナル)** | - [ ] | - [ ] | `if (val is >= 0 and < 1024)`<br>`if (state is State.Idle or State.Done)` | `BinaryExpression` 以外はパースエラー。 | 単純な論理式 `(val >= 0 && val < 1024)` へ展開。型パターンは C++ `auto` 束縛へ。 | **Tier 2** (35) |
 | **SYN-03** | **インライン `out var` 変数宣言** | - [ ] | - [ ] | `Gpu.AddWithCarry(a, b, out var carry);` | `DeclarationExpressionSyntax` 未対応。 | C++ スコープ先頭に事前宣言を変数リフト（Variable Lifting）して渡す。 | **Tier 1** (39) |
 | **SYN-04** | **Null合体 / 複合代入 (`??`, `??=`)** | - [ ] | - [ ] | `ptr = ptr ?? defaultPtr;`<br>`count ??= 0;` | 演算子未解決エラー。 | ポインタ/値の三項演算子 `(ptr != nullptr ? ptr : defaultPtr)` へ展開。 | **Tier 1** (38) |
-| **SYN-05** | **三項演算子 (`? :`) の型変換・ネスト** | - [x] | - [ ] | `var x = cond1 ? (cond2 ? 10u : 20u) : 30u;` | ネストや型昇格時に C++ 型不一致エラー。 | 括弧の完全保証と型キャストの明示的付与。 | **Tier 1** (36) |
+| **SYN-05** | **三項演算子 (`? :`) の型変換・ネスト** | - [ ] | - [ ] | `var x = cond1 ? (cond2 ? 10u : 20u) : 30u;` | ネストや型昇格時に C++ 型不一致エラー。 | 括弧の完全保証と型キャストの明示的付与。 | **Tier 1** (36) |
 | **SYN-06** | **`ref` 条件式 (`ref` ternary)** | - [ ] | - [ ] | `ref var x = ref (cond ? ref a : ref b);` | `RefExpressionSyntax` 未対応。 | C++ 参照束縛 `auto& x = (cond ? a : b);` へ展開。 | **Tier 3** (21) |
 | **SYN-07** | **ローカル関数 (`local functions`)** | - [ ] | - [ ] | `void Add(int v) { sum += v; }` | 構文未対応（AST でスキップまたは構文エラー）。 | C++ キャプチャ付きラムダ（`auto Add = [&](int v) { sum += v; };`）へ展開。 | **Tier 1** (37) |
 | **SYN-08** | **ラムダ式・無名関数 (Lambdas / Anonymous Functions)** | - [ ] | - [ ] | `Transform(buf, x => x * 2);` | デリゲート・ラムダ構文未対応。 | C++ ジェネリックラムダ (`[&](auto x) { return x * 2; }`) または関数オブジェクトへ展開。 | **Tier 1** (36) |
-| **SYN-09** | **デフォルトリテラル (`default`, `default(T)`)** | - [x] | - [x] | `uint val = default;`<br>`MyStruct s = default;` | `LiteralExpression(DefaultLiteral)` の型推論欠落。 | C++ ゼロ初期化 `{}` または `MyStruct{}` へマッピング。 | **Tier 1** (41) |
+| **SYN-09** | **デフォルトリテラル (`default`, `default(T)`)** | - [ ] | - [ ] | `uint val = default;`<br>`MyStruct s = default;` | `LiteralExpression(DefaultLiteral)` の型推論欠落。 | C++ ゼロ初期化 `{}` または `MyStruct{}` へマッピング。 | **Tier 1** (41) |
 
 ---
 
@@ -46,7 +46,7 @@ C# 開発者が無意識に書いてしまいがちな構文シュガー・現�
 | **SYN-20** | **`record struct` と `with` 式** | - [ ] | - [ ] | `var next = current with { Index = i + 1 };` | `WithExpressionSyntax` 未対応。 | コピー生成＋メンバー上書き `auto next = current; next.Index = i + 1;` へ展開。 | **Tier 3** (27) |
 | **SYN-21** | **構造体内インデクサ (`this[int index]`)** | - [ ] | - [ ] | `public uint this[int i] => Buffer[i];` | `IndexerDeclarationSyntax` 未対応。 | C++ `operator[](int i)` への変換。 | **Tier 3** (27) |
 | **SYN-22** | **構造体内演算子オーバーロード** | - [ ] | - [ ] | `public static Point operator +(Point a, Point b)` | ユーザー定義演算子が C++ 演算子へ未マッピング。 | C++ `Point operator+(const Point& a, const Point& b)` へ展開。 | **Tier 2** (33) |
-| **SYN-23** | **`readonly struct` / `readonly` メソッド** | - [x] | - [x] | `readonly struct Vector3 { public readonly float Length() => ...; }` | 修飾子が C++ `const` へ完全反映されていない。 | C++ `struct` メンバ関数の `const` 修飾子付与。 | **Tier 2** (29) |
+| **SYN-23** | **`readonly struct` / `readonly` メソッド** | - [ ] | - [ ] | `readonly struct Vector3 { public readonly float Length() => ...; }` | 修飾子が C++ `const` へ完全反映されていない。 | C++ `struct` メンバ関数の `const` 修飾子付与。 | **Tier 2** (29) |
 | **SYN-24** | **`enum` の基底型指定とビットフラグ (`[Flags]`)** | - [ ] | - [ ] | `enum State : byte { None = 0, Active = 1 << 0 }` | 基底型やビット演算時の明示キャスト問題。 | C++ `enum class State : uint8_t` またはスコープ付き enum への展開。 | **Tier 2** (32) |
 
 ---
@@ -127,7 +127,7 @@ C# 開発者が無意識に書いてしまいがちな構文シュガー・現�
 | **SYN-65** | **ネイティブ整数 (`nint`, `nuint`)** | - [ ] | - [ ] | `nuint wordOffset = (nuint)i * 4;` | プラットフォーム依存整数未対応。 | CUDA `size_t` / `uintptr_t` へマッピング。 | **Tier 2** (30) |
 | **SYN-66** | **128ビット整数 (`UInt128`, `Int128`)** | - [ ] | - [ ] | `UInt128 wide = (UInt128)a * b;` | .NET 7 `UInt128` 未マッピング。 | CUDA `unsigned __int128` (NVCC/GCC 拡張) へ展開。 | **Tier 3** (21) |
 | **SYN-67** | **BFloat16 / FP8 型 (`BFloat16`, `fp8`)** | - [ ] | - [ ] | `BFloat16 bf = (BFloat16)1.0f;` | .NET 8 BFloat16 未マッピング。 | CUDA `__nv_bfloat16`, `__nv_fp8_e4m3` へ置換。 | **Tier 4** (12) |
-| **SYN-68** | **`Math` / `MathF` / `Math.Clamp` 関数群** | - [x] | - [x] | `var clamped = Math.Clamp(v, min, max);`<br>`var fma = MathF.FusedMultiplyAdd(a, b, c);` | BCL 呼び出し未解決。 | CUDA 組込関数 (`__fmaf_rn`, `fminf`, `fmaxf`, `__sinf`, `__expf`) へ完全置換。 | **Tier 1** (41) |
+| **SYN-68** | **`Math` / `MathF` / `Math.Clamp` 関数群** | - [ ] | - [ ] | `var clamped = Math.Clamp(v, min, max);`<br>`var fma = MathF.FusedMultiplyAdd(a, b, c);` | BCL 呼び出し未解決。 | CUDA 組込関数 (`__fmaf_rn`, `fminf`, `fmaxf`, `__sinf`, `__expf`) へ完全置換。 | **Tier 1** (41) |
 | **SYN-69** | **64ビット飽和 / キャリー演算** | - [ ] | - [ ] | `Gpu.AddWithCarry64(a, b, out var carry);` | 64ビット版キャリー Intrinsics 不足。 | PTX `add.cc.u64`, `addc.cc.u64` インラインアセンブリへマッピング。 | **Tier 3** (27) |
 
 ---

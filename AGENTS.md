@@ -92,6 +92,13 @@ This prevents mismatched scopes and eliminates the risk of missing closing chara
 
 When generating C# code or ultimately `.cu` C++ code, **do not insert spaces around operators or symbols** (e.g., `=`, `,`, `+`). To prevent spacing errors, let the AI output dense code without manual visual formatting. Rely exclusively on `SourceWriter` helpers (`AppendComma()`, `AppendOperator()`, `AppendKeyword()`, etc.) instead of hardcoding spaces in string literals.
 
+### 3.3. Mandatory Snapshot Testing for New Features
+
+Whenever you implement support for a new C# syntax, operator, or Transpiler feature in G#, you **MUST** create a corresponding snapshot test to verify the generated CUDA C++ output.
+1. Create a new `.cs` test case file inside `tests/Kassyi.GSharp.Tests/TestCases/`.
+2. Add the corresponding `[InlineData("YourTestCase.cs")]` to the `GeneratorSnapshots` method in `GeneratorSnapshotTests.cs`.
+3. Run `dotnet test` to generate and verify the `.cu` source code snapshot.
+
 ---
 
 ## 4. TASK TRACKING & ROADMAP OBLIGATIONS
