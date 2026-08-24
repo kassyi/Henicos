@@ -27,7 +27,11 @@ These rules are absolute. Any violation will directly induce runtime failures, G
 
 ### 1.1. Absolute Ban on Unauthorized Git Commits / Pushes
 
-- **DO NOT execute `git commit` or `git push` automatically.** You must always wait for the explicit `/commit` command or approval from the user before finalizing a state.
+- **DO NOT execute `git commit` or `git push` automatically under any circumstances.** AI agents are prone to executing commits autonomously to "complete" a task, but this is strictly forbidden.
+- When you finish modifying code, **STOP**. Do not commit. Instead, notify the user that modifications are complete and prompt them to invoke one of the commit workflows:
+    - **For prototyping/WIP:** Suggest `/commit.ja.prompt` (to propose commits with Japanese messages).
+    - **For publishing/PR creation:** Suggest `/commit.en.prompt` (to propose commits with English conventional messages).
+- Only execute commits when running the explicitly invoked `/commit.*.prompt` workflow AND after the user replies with "yes" to your proposed commit plan.
 
 ### 1.2. Source Generator Constraints
 
@@ -95,6 +99,7 @@ When generating C# code or ultimately `.cu` C++ code, **do not insert spaces aro
 ### 3.3. Mandatory Snapshot Testing for New Features
 
 Whenever you implement support for a new C# syntax, operator, or Transpiler feature in G#, you **MUST** create a corresponding snapshot test to verify the generated CUDA C++ output.
+
 1. Create a new `.cs` test case file inside `tests/Kassyi.GSharp.Tests/TestCases/`.
 2. Add the corresponding `[InlineData("YourTestCase.cs")]` to the `GeneratorSnapshots` method in `GeneratorSnapshotTests.cs`.
 3. Run `dotnet test` to generate and verify the `.cu` source code snapshot.
@@ -106,11 +111,14 @@ Whenever you implement support for a new C# syntax, operator, or Transpiler feat
 When working on G# (GSharp) or GpuBigInt (GBI) implementation tasks, you **MUST** strictly adhere to the project's roadmap and progress tracking system.
 
 ### 4.1. Mandatory Progress Tracking
+
 All development tasks are tracked in the Markdown files located at `docs/roadmaps/` (e.g., `gbi_roadmap.md`, `gsharp_transpiler_issues.md`, `csharp_syntax_support.md`).
+
 - **Update Checkboxes:** Whenever you successfully implement, test, and verify a feature or fix a bug related to a task, you **MUST** update the corresponding checkbox from `- [ ]` to `- [x]` in the roadmap file.
 - **Update Status Details:** You **MUST** also update the status, impact, and notes columns in the table with your current findings, next actions, or reasoning. **All table updates and notes MUST be written in Japanese**, as the roadmap is maintained in Japanese.
 
 ### 4.2. Reporting New Tasks
+
 If you discover a new technical debt, missing syntax support, or an optimization opportunity, **DO NOT ignore it**. You must append it as a new task with a new ID to the appropriate roadmap file, and ideally recalculate priorities using `node scripts/calculate_priorities.js --update-docs`.
 
 ---
