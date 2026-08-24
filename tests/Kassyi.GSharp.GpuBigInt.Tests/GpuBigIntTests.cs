@@ -9,6 +9,34 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
 {
     public class GpuBigIntTests
     {
+        [Fact]
+        public void Test_NttReference_Correctness()
+        {
+            var rand = new Random(42);
+            int testSize = 256; // 8192 bits
+            var aWords = new uint[testSize];
+            var bWords = new uint[testSize];
+            for (int i = 0; i < testSize; i++)
+            {
+                aWords[i] = (uint)rand.Next() | ((uint)rand.Next() << 16);
+                bWords[i] = (uint)rand.Next() | ((uint)rand.Next() << 16);
+            }
+
+            var aBig = ToBigInteger(aWords);
+            var bBig = ToBigInteger(bWords);
+
+            var expected = BigInteger.Multiply(aBig, bBig);
+            var expectedBytes = expected.ToByteArray();
+            var expectedWords = new uint[testSize * 2];
+            Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0, Math.Min(expectedBytes.Length, expectedWords.Length * 4));
+
+            var actualWords = Kassyi.GSharp.GpuBigInt.Algorithms.NttCpuReference.Multiply(aWords, bWords);
+
+            for (int i = 0; i < expectedWords.Length; i++)
+            {
+                Assert.Equal(expectedWords[i], actualWords[i]);
+            }
+        }
         private const int TestSizeWords = 1024; // 32768 bits
 
         public GpuBigIntTests()
@@ -116,7 +144,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             if (engine == GpuExecutionEngine.LegacyNative)
                 return; // Not fully implemented or tested in Native Provider
 
-            var sizeWords = 16;
+            var sizeWords = TestSizeWords;
             using var context = new GpuContext(sizeWords * 4, engine);
             var arrA = GenerateRandomArray(sizeWords, 11);
             var arrB = GenerateRandomArray(sizeWords, 12);
@@ -281,6 +309,286 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
 
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_State_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+            var zeroArr = new uint[TestSizeWords];
+            var oneArr = new uint[TestSizeWords];
+            oneArr[0] = 1;
+            var evenArr = new uint[TestSizeWords];
+            evenArr[0] = 2; // Even
+            var negativeArr = new uint[TestSizeWords];
+            negativeArr[TestSizeWords - 1] = 0x80000000; // Negative flag
+
+            using var gpuZero = new GpuBigInteger(context, zeroArr);
+            using var gpuOne = new GpuBigInteger(context, oneArr);
+            using var gpuEven = new GpuBigInteger(context, evenArr);
+            using var gpuNegative = new GpuBigInteger(context, negativeArr);
+
+            Assert.True(gpuZero.IsZero());
+            Assert.False(gpuOne.IsZero());
+
+            Assert.True(gpuOne.IsOne());
+            Assert.False(gpuZero.IsOne());
+
+            Assert.True(gpuZero.IsEven);
+            Assert.False(gpuOne.IsEven);
+            Assert.True(gpuEven.IsEven);
+
+            Assert.True(gpuNegative.IsNegative);
+            Assert.False(gpuZero.IsNegative);
+            
+            // Test setter
+            gpuZero.IsNegative = true;
+            Assert.True(gpuZero.IsNegative);
+            gpuZero.IsNegative = false;
+            Assert.False(gpuZero.IsNegative);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 20);
+            var arrB = GenerateRandomArray(TestSizeWords, 20); // Same array
+            
+            var arrC = GenerateRandomArray(TestSizeWords, 21);
+            // Force A > C
+            arrA[TestSizeWords - 1] |= 0x40000000;
+            arrC[TestSizeWords - 1] &= 0x3FFFFFFF;
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuC = new GpuBigInteger(context, arrC);
+
+            Assert.Equal(0, gpuA.CompareTo(gpuB));
+            Assert.Equal(1, gpuA.CompareTo(gpuC));
+            Assert.Equal(-1, gpuC.CompareTo(gpuA));
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 22);
+            var arrB = GenerateRandomArray(TestSizeWords, 23);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+
+            // Test OR
+            gpuResult.Value = gpuA | gpuB;
+            var actualOr = gpuResult.ToHostArray();
+            for (int i = 0; i < TestSizeWords; i++)
+            {
+                Assert.Equal(arrA[i] | arrB[i], actualOr[i]);
+            }
+
+            // Test XOR
+            gpuResult.Value = gpuA ^ gpuB;
+            var actualXor = gpuResult.ToHostArray();
+            for (int i = 0; i < TestSizeWords; i++)
+            {
+                Assert.Equal(arrA[i] ^ arrB[i], actualXor[i]);
+            }
+
+            // Test NOT
+            gpuResult.Value = ~gpuA;
+            var actualNot = gpuResult.ToHostArray();
+            for (int i = 0; i < TestSizeWords; i++)
+            {
+                Assert.Equal(~arrA[i], actualNot[i]);
+            }
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_Scalar_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+            var arrA = GenerateRandomArray(TestSizeWords, 40);
+            
+            // To test carry propagation in Add, we can force the first word to be 0xFFFFFFFF
+            arrA[0] = 0xFFFFFFFF;
+            arrA[1] = 0xFFFFFFFF; // and the second to check multi-word propagation
+
+            // To test borrow in Sub, we can force the first word to be 0
+            var arrB = GenerateRandomArray(TestSizeWords, 41);
+            arrB[0] = 0;
+            arrB[1] = 0;
+            // Prevent overall underflow
+            arrB[TestSizeWords - 1] |= 0x40000000;
+
+            uint scalarAdd = 10;
+            uint scalarSub = 5;
+            uint scalarMul = 12345;
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+
+            // Scalar Add
+            GpuBigInteger.Add(gpuA, scalarAdd, gpuResult);
+            var actualAdd = ToBigInteger(gpuResult.ToHostArray());
+            var expectedAdd = (bigA + scalarAdd) & ((BigInteger.One << (TestSizeWords * 32)) - 1);
+            Assert.Equal(expectedAdd, actualAdd);
+
+            // Scalar Sub
+            GpuBigInteger.Sub(gpuB, scalarSub, gpuResult);
+            var actualSub = ToBigInteger(gpuResult.ToHostArray());
+            var expectedSub = (bigB - scalarSub) & ((BigInteger.One << (TestSizeWords * 32)) - 1);
+            Assert.Equal(expectedSub, actualSub);
+
+            // Scalar Mul
+            GpuBigInteger.Mul(gpuA, scalarMul, gpuResult);
+            var actualMul = ToBigInteger(gpuResult.ToHostArray());
+            var expectedMul = (bigA * scalarMul) & ((BigInteger.One << (TestSizeWords * 32)) - 1);
+            Assert.Equal(expectedMul, actualMul);
+        }
+
+        [Fact]
+        public void Test_HalfGcdReference_Correctness()
+        {
+            var rand = new Random(42);
+            for (int i = 0; i < 20; i++)
+            {
+                var bytesA = new byte[256];
+                var bytesB = new byte[256];
+                rand.NextBytes(bytesA);
+                rand.NextBytes(bytesB);
+                bytesA[255] = (byte)(bytesA[255] | 0x80); // Ensure large
+                
+                var a = new BigInteger(bytesA, isUnsigned: true, isBigEndian: true);
+                var b = new BigInteger(bytesB, isUnsigned: true, isBigEndian: true);
+                
+                if (a < b)
+                {
+                    var tmp = a;
+                    a = b;
+                    b = tmp;
+                }
+
+                var expectedGcd = BigInteger.GreatestCommonDivisor(a, b);
+                var actualGcd = Kassyi.GSharp.GpuBigInt.Algorithms.HalfGcdCpuReference.Gcd(a, b);
+
+                Assert.Equal(expectedGcd, actualGcd);
+            }
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_Gcd_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+
+            // Generate two random big integers
+            var arrA = GenerateRandomArray(TestSizeWords, 50);
+            var arrB = GenerateRandomArray(TestSizeWords, 51);
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+
+            // Calculate expected GCD using System.Numerics.BigInteger
+            var expectedGcd = BigInteger.GreatestCommonDivisor(bigA, bigB);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+
+            GpuBigInteger.Gcd(gpuA, gpuB, gpuResult);
+
+            var actualGcd = ToBigInteger(gpuResult.ToHostArray());
+
+            Assert.Equal(expectedGcd, actualGcd);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_FastMod_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 4, engine);
+            var arrA2n = GenerateRandomArray(TestSizeWords * 2, 777);
+            var arrB = GenerateRandomArray(TestSizeWords, 778);
+            arrB[TestSizeWords - 1] &= 0x7FFFFFFF; // ensure smaller but non-zero
+            if (arrB[0] == 0) arrB[0] = 1;
+
+            var bigA = ToBigInteger(arrA2n);
+            var bigB = ToBigInteger(arrB);
+            var expectedMod = bigA % bigB;
+
+            using var gpuA = new GpuBigInteger(context, arrA2n);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            
+            // Calculate reciprocal
+            var bigOne = System.Numerics.BigInteger.One << (TestSizeWords * 2 * 32);
+            var bigRecip = bigOne / bigB;
+            var recipBytes = bigRecip.ToByteArray();
+            var recipWords = new uint[TestSizeWords * 2];
+            System.Buffer.BlockCopy(recipBytes, 0, recipWords, 0, System.Math.Min(recipBytes.Length, recipWords.Length * 4));
+            
+            using var gpuRecip = new GpuBigInteger(context, recipWords);
+            using var gpuMod = new GpuBigInteger(context, TestSizeWords);
+
+            // Access private method via reflection
+            var method = typeof(GpuBigInteger).GetMethod("FastModWithPrecomputedReciprocal", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            method.Invoke(null, new object[] { gpuA, gpuB, gpuRecip, gpuMod });
+
+            var actualMod = ToBigInteger(gpuMod.ToHostArray());
+
+            System.Console.WriteLine($"FastMod Expected: {expectedMod}");
+            System.Console.WriteLine($"FastMod Actual:   {actualMod}");
+            Assert.Equal(expectedMod, actualMod);
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(TestSizeWords * 3, engine);
+
+            var arrA = GenerateRandomArray(TestSizeWords, 60);
+            var arrB = GenerateRandomArray(TestSizeWords, 61);
+            
+            // ensure b is smaller but non-zero
+            arrB[TestSizeWords - 1] &= 0x7FFFFFFF;
+            if (arrB[0] == 0) arrB[0] = 1;
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            
+            using var gpuQ = new GpuBigInteger(context, TestSizeWords);
+            using var gpuR = new GpuBigInteger(context, TestSizeWords);
+
+            // DivRem
+            GpuBigInteger.DivRem(gpuA, gpuB, gpuQ, gpuR);
+            var actualQ = ToBigInteger(gpuQ.ToHostArray());
+            var actualR = ToBigInteger(gpuR.ToHostArray());
+
+            var expectedQ = bigA / bigB;
+            var expectedR = bigA % bigB;
+
+            Assert.Equal(expectedQ, actualQ);
+            Assert.Equal(expectedR, actualR);
+
+            // Mod
+            using var gpuMod = new GpuBigInteger(context, TestSizeWords);
+            GpuBigInteger.Mod(gpuA, gpuB, gpuMod);
+            var actualMod = ToBigInteger(gpuMod.ToHostArray());
+            Assert.Equal(expectedR, actualMod);
+
+                    }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_ExpressionTree_Correctness(GpuExecutionEngine engine)
         {
@@ -319,3 +627,5 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
         }
     }
 }
+
+
