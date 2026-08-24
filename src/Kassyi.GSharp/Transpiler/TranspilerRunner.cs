@@ -14,7 +14,6 @@ public class TranspilerRunner
 
     public static void Run(Assembly targetAssembly)
     {
-        Console.WriteLine("=== JIT Transpiler E2E Test ===");
         var method = targetAssembly.GetTypes()
             .SelectMany(t =>
                 t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static |
@@ -30,9 +29,5 @@ public class TranspilerRunner
             Pipeline.MethodExtractor.Extract(targetAssembly.Location, method.DeclaringType!.FullName!, method.Name);
         var astContext = AstBuilder.Build(metadata);
         var source = CudaGenerator.Generate(astContext);
-
-        Console.WriteLine("=== Generated CUDA Code ===");
-        Console.WriteLine(source.CudaCode);
-        Console.WriteLine("===========================");
     }
 }
