@@ -1,21 +1,74 @@
-using System.Diagnostics;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using VerifyXunit;
 using Kassyi.GSharp.Compiler;
-using System.Threading.Tasks;
 using Xunit;
-using System.Linq;
 
 namespace Kassyi.GSharp.Tests;
 
 public class GeneratorSnapshotTests
 {
-    private static async Task VerifyGeneratorAsync(string source)
+    private static string GetTestCasesDirectory([CallerFilePath] string callerFilePath = "")
+    {
+        var dir = Path.GetDirectoryName(callerFilePath);
+        if (string.IsNullOrEmpty(dir))
+        {
+            throw new DirectoryNotFoundException("Could not determine test project directory.");
+        }
+
+        var testCasesDir = Path.Combine(dir, "TestCases");
+        if (!Directory.Exists(testCasesDir))
+        {
+            throw new DirectoryNotFoundException($"TestCases directory not found at: {testCasesDir}");
+        }
+
+        return testCasesDir;
+    }
+
+    private static string GetSnapshotsDirectory([CallerFilePath] string callerFilePath = "")
+    {
+        var dir = Path.GetDirectoryName(callerFilePath);
+        if (string.IsNullOrEmpty(dir))
+        {
+            throw new DirectoryNotFoundException("Could not determine test project directory.");
+        }
+
+        var snapshotDir = Path.Combine(dir, "Snapshots");
+        if (!Directory.Exists(snapshotDir))
+        {
+            Directory.CreateDirectory(snapshotDir);
+        }
+
+        return snapshotDir;
+    }
+
+    private static string GetStdlibKernelsDirectory([CallerFilePath] string callerFilePath = "")
+    {
+        var dir = Path.GetDirectoryName(callerFilePath);
+        if (string.IsNullOrEmpty(dir))
+        {
+            throw new DirectoryNotFoundException("Could not determine test project directory.");
+        }
+
+        var kernelsDir = Path.GetFullPath(Path.Combine(dir, "..", "..", "src", "Stdlib", "Kassyi.GSharp.Stdlib.Math", "Kernels"));
+        if (!Directory.Exists(kernelsDir))
+        {
+            throw new DirectoryNotFoundException($"Kernels directory not found at: {kernelsDir}");
+        }
+
+        return kernelsDir;
+    }
+
+    private static async Task VerifyGeneratorAsync(string source, string testName)
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
 
-        // Find core references (we need basic ones for the compiler to run smoothly)
         var references = new[]
         {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
@@ -34,109 +87,93 @@ public class GeneratorSnapshotTests
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
 
-        await Verifier.Verify(driver).UseDirectory("Snapshots");
+        await Verifier.Verify(driver)
+            .UseDirectory("Snapshots")
+            .UseMethodName($"{testName}_GeneratesCorrectCudaSource");
     }
 
-    [Fact]
-    public async Task AddKernel_GeneratesCorrectCudaSource()
+    [Theory]
+    // TestCases/
+    [InlineData("AddKernel.cs")]
+    [InlineData("BitOpsTestKernels.cs")]
+    [InlineData("ChunkAddKernel.cs")]
+    [InlineData("ComprehensiveSpecKernel.cs")]
+    // src/Stdlib/.../Kernels/
+    [InlineData("GpuBigIntScalarKernels.cu.cs")]
+    [InlineData("GpuBigIntMulKernels.cu.cs")]
+    [InlineData("GpuBigIntKernels.cu.cs")]
+    [InlineData("GpuBigIntGcdKernels.cu.cs")]
+    [InlineData("GpuBigIntFermatKernels.cu.cs")]
+    [InlineData("GpuBigIntCmpKernels.cu.cs")]
+    [InlineData("GpuBigIntBitwiseKernels.cu.cs")]
+    [InlineData("GpuBigIntBenchmarkKernels.cu.cs")]
+    [InlineData("GpuBigIntNttKernels.cu.cs")]
+    public async Task GeneratorSnapshots(string fileName)
     {
-        var source = """
-            using Kassyi.GSharp.Core;
+        var testCasesDir = GetTestCasesDirectory();
+        var kernelsDir = GetStdlibKernelsDirectory();
+        
+        var sourcePath = Path.Combine(testCasesDir, fileName);
+        if (!File.Exists(sourcePath))
+        {
+            sourcePath = Path.Combine(kernelsDir, fileName);
+        }
 
-            namespace TestNamespace
-            {
-                public static class TestKernels
-                {
-                    [GpuKernel]
-                    public static void AddKernel(int[] a, int[] b, int[] c)
-                    {
-                        c[0] = a[0] + b[0];
-                    }
-                }
-            }
-            """;
-        await VerifyGeneratorAsync(source);
-    }
-
-    [Fact]
-    public async Task ChunkAddKernel_GeneratesCorrectCudaSource()
-    {
-        var source = """
-            using Kassyi.GSharp.Core;
-
-            namespace Kassyi.GSharp.Stdlib.Math
-            {
-                public static class GpuBigIntKernels
-                {
-                    [GpuKernel]
-                    public static void ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize)
-                    {
-                        int chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-                        int start = chunkIdx * chunkSize;
-                        if (start >= numWords) return;
-                        
-                        int end = start + chunkSize;
-                        if (end > numWords) end = numWords;
-                        
-                        ulong localCarry = 0;
-                        for (int i = start; i < end; i++)
-                        {
-                            ulong current = (ulong)dA[i] + (ulong)dB[i] + localCarry;
-                            dResult[i] = (uint)(current & 0xFFFFFFFF);
-                            localCarry = current >> 32;
-                        }
-                        carryBuffer[chunkIdx + 1] = (long)localCarry;
-                    }
-                    }
-                }
-            }
-            """;
-        await VerifyGeneratorAsync(source);
-    }
-
-    [Fact]
-    public async Task ComprehensiveSpecKernel_GeneratesCorrectCudaSource()
-    {
-        var thisFile = new StackTrace(true).GetFrame(0).GetFileName();
-        var dir = Path.GetDirectoryName(thisFile);
-        var sourcePath = Path.Combine(dir, "TestCases", "ComprehensiveSpecKernel.cs");
         var source = await File.ReadAllTextAsync(sourcePath);
-        await VerifyGeneratorAsync(source);
+        var testName = Path.GetFileNameWithoutExtension(fileName).Replace(".cu", "");
+
+        await VerifyGeneratorAsync(source, testName);
     }
 
     [Fact]
-    public async Task BitOperationsKernel_GeneratesCorrectCudaSource()
+    public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
-        var source = """
-            using Kassyi.GSharp.Core;
-            using System.Numerics;
+        var testCasesDir = GetTestCasesDirectory();
+        var kernelsDir = GetStdlibKernelsDirectory();
+        var snapshotDir = GetSnapshotsDirectory();
 
-            namespace Kassyi.GSharp.Tests
+        var testCaseNames = Directory.GetFiles(testCasesDir, "*.cs")
+            .Select(Path.GetFileNameWithoutExtension)
+            .ToList();
+
+        var kernelNames = Directory.GetFiles(kernelsDir, "*.cu.cs")
+            .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
+            .ToList();
+
+        var allNames = testCaseNames.Concat(kernelNames).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Assert.NotEmpty(allNames);
+
+        var snapshotPrefix = $"{nameof(GeneratorSnapshotTests)}.";
+        var snapshotFiles = Directory.GetFiles(snapshotDir, $"{snapshotPrefix}*")
+            .Select(Path.GetFileName)
+            .OfType<string>()
+            .ToList();
+
+        Assert.NotEmpty(snapshotFiles);
+        var missingTestCases = new List<string>();
+        foreach (var snapshot in snapshotFiles)
+        {
+            var trimmed = snapshot.Substring(snapshotPrefix.Length);
+            var testName = trimmed.Split(new[] { '_', '.', '#' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (!string.IsNullOrEmpty(testName) && !allNames.Contains(testName))
             {
-                public static class BitOpsTestKernels
-                {
-                    [GpuKernel]
-                    public static void BitOpsKernel(uint[] u32Data, ulong[] u64Data)
-                    {
-                        uint u32Val = u32Data[0];
-                        u32Data[1] = (uint)BitOperations.LeadingZeroCount(u32Val);
-                        u32Data[2] = (uint)BitOperations.PopCount(u32Val);
-                        u32Data[3] = (uint)BitOperations.TrailingZeroCount(u32Val);
-                        u32Data[4] = (uint)BitOperations.Log2(u32Val);
-                        u32Data[5] = BitOperations.RotateLeft(u32Val, 5);
-                        u32Data[6] = BitOperations.RotateRight(u32Val, 3);
-
-                        ulong u64Val = u64Data[0];
-                        u64Data[1] = (ulong)BitOperations.LeadingZeroCount(u64Val);
-                        u64Data[2] = (ulong)BitOperations.PopCount(u64Val);
-                        u64Data[3] = (ulong)BitOperations.TrailingZeroCount(u64Val);
-                        u64Data[4] = (ulong)BitOperations.Log2(u64Val);
-                        u64Data[5] = BitOperations.RotateLeft(u64Val, 10);
-                        u64Data[6] = BitOperations.RotateRight(u64Val, 7);
-                    }
-                }
+                missingTestCases.Add($"Snapshot '{snapshot}' references missing TestCase/Kernel '{testName}'");
             }
-            """;
-        await VerifyGeneratorAsync(source);
+        }
+
+        Assert.Empty(missingTestCases);
+        var missingSnapshots = new List<string>();
+        foreach (var testCase in allNames)
+        {
+            var expectedPrefix = $"{snapshotPrefix}{testCase}_GeneratesCorrectCudaSource";
+            bool hasSnapshot = snapshotFiles.Any(f => f.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase));
+            if (!hasSnapshot)
+            {
+                missingSnapshots.Add($"TestCase/Kernel '{testCase}' does not have a corresponding snapshot ({expectedPrefix}*)");
+            }
+        }
+
+        Assert.Empty(missingSnapshots);
     }
 }

@@ -1,0 +1,1554 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ChunkAdd(ref ctx, chunkSize);
+*/
+ : (13,18)-(17,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ChunkAdd(ref ctx, chunkSize);
+*/
+ : (13,18)-(17,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ChunkAdd(ref ctx, chunkSize);
+*/
+ : (14,8)-(17,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (15,23)-(15,153),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (15,23)-(15,153),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (15,27)-(15,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (15,63)-(15,153),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ApplyAddCarry(ref ctx, numChunks, chunkSize);
+*/
+ : (50,18)-(54,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ApplyAddCarry(ref ctx, numChunks, chunkSize);
+*/
+ : (50,18)-(54,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ApplyAddCarry(ref ctx, numChunks, chunkSize);
+*/
+ : (51,8)-(54,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (52,23)-(52,116),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (52,23)-(52,116),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (52,27)-(52,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (52,63)-(52,116),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ChunkSub(ref ctx, chunkSize);
+*/
+ : (78,18)-(82,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ChunkSub(ref ctx, chunkSize);
+*/
+ : (78,18)-(82,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ChunkSub(ref ctx, chunkSize);
+*/
+ : (79,8)-(82,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (80,23)-(80,153),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (80,23)-(80,153),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (80,27)-(80,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (80,63)-(80,153),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ApplySubBorrow(ref ctx, numChunks, chunkSize);
+*/
+ : (115,18)-(119,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ApplySubBorrow(ref ctx, numChunks, chunkSize);
+*/
+ : (115,18)-(119,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ApplySubBorrow(ref ctx, numChunks, chunkSize);
+*/
+ : (116,8)-(119,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (117,23)-(117,116),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (117,23)-(117,116),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (117,27)-(117,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (117,63)-(117,116),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ShiftLeft(ref ctx, wordShift, bitShift);
+*/
+ : (142,18)-(146,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ShiftLeft(ref ctx, wordShift, bitShift);
+*/
+ : (142,18)-(146,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ShiftLeft(ref ctx, wordShift, bitShift);
+*/
+ : (143,8)-(146,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (144,23)-(144,107),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (144,23)-(144,107),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (144,27)-(144,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (144,63)-(144,107),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ShiftRight(ref ctx, wordShift, bitShift);
+*/
+ : (185,18)-(189,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ShiftRight(ref ctx, wordShift, bitShift);
+*/
+ : (185,18)-(189,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_ShiftRight(ref ctx, wordShift, bitShift);
+*/
+ : (186,8)-(189,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (187,23)-(187,107),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (187,23)-(187,107),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (187,27)-(187,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (187,63)-(187,107),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseAnd(ref ctx);
+*/
+ : (230,18)-(234,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseAnd(ref ctx);
+*/
+ : (230,18)-(234,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseAnd(ref ctx);
+*/
+ : (231,8)-(234,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (232,23)-(232,126),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (232,23)-(232,126),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (232,27)-(232,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (232,63)-(232,126),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseOr(ref ctx);
+*/
+ : (251,18)-(255,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseOr(ref ctx);
+*/
+ : (251,18)-(255,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseOr(ref ctx);
+*/
+ : (252,8)-(255,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (253,23)-(253,126),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (253,23)-(253,126),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (253,27)-(253,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (253,63)-(253,126),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseXor(ref ctx);
+*/
+ : (272,18)-(276,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseXor(ref ctx);
+*/
+ : (272,18)-(276,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseXor(ref ctx);
+*/
+ : (273,8)-(276,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (274,23)-(274,126),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (274,23)-(274,126),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (274,27)-(274,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (274,63)-(274,126),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseNot(ref ctx);
+*/
+ : (293,18)-(297,9),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    {
+        var ctx = new BigIntKernelContext
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+        {
+^^^^^^^^^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseNot(ref ctx);
+*/
+ : (293,18)-(297,9),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        var ctx = new BigIntKernelContext
+        {
+        ^
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        };
+^^^^^^^^^
+        Device_BitwiseNot(ref ctx);
+*/
+ : (294,8)-(297,9),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (295,23)-(295,126),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (295,23)-(295,126),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (295,27)-(295,62),
+      Message: The syntax 'QualifiedName' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            NumberOfWords = numWords
+*/
+ : (295,63)-(295,126),
+      Message: The syntax 'ObjectInitializerExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}
