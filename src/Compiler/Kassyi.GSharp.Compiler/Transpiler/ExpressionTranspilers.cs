@@ -14,7 +14,7 @@ internal static class ExpressionTranspilers
             context.Writer.Append("[&]()");
             using (context.Writer.Scope())
             {
-                for (int i = 0; i < rightTuple.Arguments.Count; i++)
+                for (var i = 0; i < rightTuple.Arguments.Count; i++)
                 {
                     context.Writer.Append($"auto _t{i} = ");
                     context.Visit(rightTuple.Arguments[i].Expression);
@@ -22,7 +22,7 @@ internal static class ExpressionTranspilers
                     context.Writer.AppendLine();
                 }
 
-                for (int i = 0; i < leftTuple.Arguments.Count; i++)
+                for (var i = 0; i < leftTuple.Arguments.Count; i++)
                 {
                     context.Visit(leftTuple.Arguments[i].Expression);
                     context.Writer.Append($" = _t{i}");
@@ -221,11 +221,24 @@ internal static class ExpressionTranspilers
     private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, RoslynToCudaVisitor context,
         IMethodSymbol symbol)
     {
-        var is64Bit = symbol.Parameters.Length > 0 &&
-                      (symbol.Parameters[0].Type.SpecialType == SpecialType.System_UInt64 ||
-                       symbol.Parameters[0].Type.SpecialType == SpecialType.System_Int64);
+        var is64Bit = false;
+        if (symbol.Parameters.Length > 0)
+        {
+            var paramType = symbol.Parameters[0].Type;
+            if (paramType.TypeKind == TypeKind.Enum)
+            {
+                paramType = ((INamedTypeSymbol)paramType).EnumUnderlyingType ?? paramType;
+            }
 
-        string functionName = symbol.Name switch
+            is64Bit = paramType.SpecialType == SpecialType.System_UInt64 ||
+                      paramType.SpecialType == SpecialType.System_Int64 ||
+                      paramType.SpecialType == SpecialType.System_UIntPtr ||
+                      paramType.SpecialType == SpecialType.System_IntPtr ||
+                      paramType.Name == "nuint" ||
+                      paramType.Name == "nint";
+        }
+
+        var functionName = symbol.Name switch
         {
             "LeadingZeroCount" => is64Bit ? "__gsharp_lzc_64" : "__gsharp_lzc_32",
             "PopCount" => is64Bit ? "__popcll" : "__popc",
@@ -241,7 +254,18 @@ internal static class ExpressionTranspilers
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
             {
+                if (symbol.Name == "PopCount" && i == 0)
+                {
+                    context.Writer.Append(is64Bit ? "(unsigned long long)(" : "(unsigned int)(");
+                }
+
                 context.Visit(node.ArgumentList.Arguments[i]);
+
+                if (symbol.Name == "PopCount" && i == 0)
+                {
+                    context.Writer.Append(")");
+                }
+
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
                     context.Writer.AppendComma();

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -72,7 +73,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var commonDeviceSource = GenerateCommonDeviceSource(compilation, deviceMethods, context);
-        var preludeSource = GetPreludeSource();
+        var preludeSource = GetPreludeSource(context);
+        if (preludeSource == null) return;
 
         foreach (var method in kernelMethods.OfType<IMethodSymbol>()
                      .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
@@ -155,14 +157,33 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return deviceSourceBuilder.ToString();
     }
 
-    private static string GetPreludeSource()
+    private static string? GetPreludeSource(SourceProductionContext context)
     {
         var assembly = typeof(GpuKernelGenerator).Assembly;
-        var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("Prelude.cu"));
-        using var stream = resourceName != null ? assembly.GetManifestResourceStream(resourceName) : null;
+        var resources = assembly.GetManifestResourceNames().Where(n => n.EndsWith("Prelude.cu")).ToList();
+        
+        if (resources.Count != 1)
+        {
+            var diagnostic = Diagnostic.Create(
+                GSharpDiagnostics.PreludeMissing,
+                Location.None,
+                assembly.FullName,
+                resources.Count);
+            context.ReportDiagnostic(diagnostic);
+            return null;
+        }
+
+        var resourceName = resources.Single();
+        using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null)
         {
-            throw new InvalidOperationException($"Could not find embedded resource ending with 'Prelude.cu' in {assembly.FullName}");
+            var diagnostic = Diagnostic.Create(
+                GSharpDiagnostics.PreludeMissing,
+                Location.None,
+                assembly.FullName,
+                "0 (Stream null)");
+            context.ReportDiagnostic(diagnostic);
+            return null;
         }
 
         using var reader = new StreamReader(stream);

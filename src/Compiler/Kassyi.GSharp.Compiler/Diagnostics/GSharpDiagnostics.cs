@@ -96,4 +96,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor PreludeMissing = new(
+        id: "GSH0010",
+        title: "GSharp Prelude missing",
+        messageFormat: "Could not find exactly one embedded resource ending with 'Prelude.cu' in {0}. Found {1}.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
