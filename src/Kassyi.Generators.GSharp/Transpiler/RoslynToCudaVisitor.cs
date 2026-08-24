@@ -164,7 +164,12 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             }
             else if (method.ExpressionBody != null)
             {
-                // Assuming the expression body is something simple.
+                var methodSymbol = SemanticModel.GetDeclaredSymbol(method);
+                if (methodSymbol != null && !methodSymbol.ReturnsVoid)
+                {
+                    Writer.AppendKeyword("return");
+                    Writer.AppendSpace();
+                }
                 Visit(method.ExpressionBody.Expression);
                 Writer.AppendSemiColon();
                 Writer.AppendLine();
@@ -436,8 +441,15 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
         }
         else
         {
-            Visit(statement);
-            Writer.AppendLine();
+            // Auto-wrap single statements in braces to support C# bracket omission safely in C++
+            using (Writer.Scope())
+            {
+                Visit(statement);
+                if (!statement.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.Block))
+                {
+                    Writer.AppendLine();
+                }
+            }
         }
     }
 

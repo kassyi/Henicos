@@ -9,6 +9,30 @@ internal static class ExpressionTranspilers
 {
     public static void TranspileAssignmentExpression(AssignmentExpressionSyntax node, RoslynToCudaVisitor context)
     {
+        if (node.Left is TupleExpressionSyntax leftTuple && node.Right is TupleExpressionSyntax rightTuple)
+        {
+            context.Writer.Append("[&]()");
+            using (context.Writer.Scope())
+            {
+                for (int i = 0; i < rightTuple.Arguments.Count; i++)
+                {
+                    context.Writer.Append($"auto _t{i} = ");
+                    context.Visit(rightTuple.Arguments[i].Expression);
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+                for (int i = 0; i < leftTuple.Arguments.Count; i++)
+                {
+                    context.Visit(leftTuple.Arguments[i].Expression);
+                    context.Writer.Append($" = _t{i}");
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+            }
+            context.Writer.Append("()");
+            return;
+        }
+
         context.Visit(node.Left);
         context.Writer.AppendOperator(node.OperatorToken.Text);
         context.Visit(node.Right);
