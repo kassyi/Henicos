@@ -36,6 +36,15 @@ public readonly struct GpuBigIntExpr
     public static GpuBigIntExpr operator &(GpuBigIntExpr left, GpuBigIntExpr right)
         => new(new BitwiseAndExpression(left.Node, right.Node));
 
+    public static GpuBigIntExpr operator |(GpuBigIntExpr left, GpuBigIntExpr right)
+        => new(new BitwiseOrExpression(left.Node, right.Node));
+
+    public static GpuBigIntExpr operator ^(GpuBigIntExpr left, GpuBigIntExpr right)
+        => new(new BitwiseXorExpression(left.Node, right.Node));
+
+    public static GpuBigIntExpr operator ~(GpuBigIntExpr left)
+        => new(new BitwiseNotExpression(left.Node));
+
     public static GpuBigIntExpr operator <<(GpuBigIntExpr left, int shiftBits)
         => new(new ShiftLeftExpression(left.Node, shiftBits));
 

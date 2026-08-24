@@ -3,19 +3,10 @@ namespace Kassyi.GSharp.GpuBigInt.Expressions;
 
 internal abstract class BinaryExpression : IGpuBigIntExpression
 {
-    protected IGpuBigIntExpression Left
-    {
-        get;
-    }
-    protected IGpuBigIntExpression Right
-    {
-        get;
-    }
+    protected IGpuBigIntExpression Left { get; }
+    protected IGpuBigIntExpression Right { get; }
 
-    public int NumWords
-    {
-        get;
-    }
+    public int NumWords { get; }
 
     protected BinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     {
@@ -155,3 +146,47 @@ internal class SqrtExpression(IGpuBigIntExpression target) : IGpuBigIntExpressio
     }
 }
 
+internal class ModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+{
+    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+        GpuBigInteger.Mod(a, b, result);
+}
+
+internal class BitwiseOrExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : BinaryExpression(left, right)
+{
+    protected override void Execute(GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer) =>
+        GpuBigInteger.BitwiseOr(leftOperand, rightOperand, resultBuffer);
+}
+
+internal class BitwiseXorExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : BinaryExpression(left, right)
+{
+    protected override void Execute(GpuBigInteger leftOperand, GpuBigInteger rightOperand,
+        GpuBigInteger resultBuffer) =>
+        GpuBigInteger.BitwiseXor(leftOperand, rightOperand, resultBuffer);
+}
+
+internal class BitwiseNotExpression(IGpuBigIntExpression left) : IGpuBigIntExpression
+{
+    public int NumWords => left.NumWords;
+
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
+    {
+        var targetEval = targetResult ?? context.RentTemp(NumWords);
+        var leftEval = left.Evaluate(context, targetEval);
+        try
+        {
+            GpuBigInteger.BitwiseNot(leftEval, targetEval);
+            return targetEval;
+        }
+        finally
+        {
+            if (leftEval.IsTemp)
+            {
+                context.ReturnTemp(leftEval);
+            }
+        }
+    }
+}
