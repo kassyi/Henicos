@@ -14,8 +14,8 @@ The engine also dynamically queries the physical hardware's compute capability (
 
 To eliminate redundant compilation overhead across loops or repeated kernel invocations, G# implements a robust caching mechanism within `JitEngine`:
 
-1. **SHA256 Fingerprinting**: When the launcher stub calls `GetOrCompileKernel(string cppSource, string kernelName)`, the runtime computes a SHA256 hash of the complete C++ string.
-2. **Cache Key Construction**: The cache key combines the hash, the hardware compute capability, and the kernel name: `"{sourceHash}_{s_smVersion}_{kernelName}"`.
+1. **Dynamic Preprocessor Macros**: The runtime allows passing an optional `Dictionary<string, string> macros` to `GetOrCompileKernel`. These macros are passed to the compiler, enabling dynamic conditional compilation (`#ifdef`) of the same source string at runtime.
+2. **Cache Key Construction**: To ensure macro variants are cached independently, the engine constructs a unique cache key by concatenating the kernel name and all sorted macro key-value pairs (e.g., `KernelName|MACRO1=A|MACRO2=B`). The cache key intrinsically represents the unique permutation of the kernel source and its active preprocessor definitions.
 3. **Concurrent Dictionary**: A static `ConcurrentDictionary` stores the compiled `GpuModule` handles. If a cache hit occurs, the cached `IntPtr` to the kernel function is instantly returned.
 4. **Cache Directory**: Compiled `.cu` and `.fatbin` files are persisted in `%TEMP%\Kassyi.GSharp.Runtime.JitCache`.
 

@@ -45,12 +45,13 @@ While heap-allocated objects (`class`) remain strictly forbidden on the GPU, sta
 The AOT transpiler supports classic initialization (`new MyStruct()`), C# 9.0 **Target-typed `new` expressions** (`new()`), and C# 10 **`record struct` / Primary Constructors** (`new Point(0, 0)`).
 
 ```csharp
+// Context: G# Kernel (GPU)
 // All expressions are perfectly valid inside a [GpuKernel]
 Vector8 vec1 = new Vector8 { X = 1, Y = 2 };
 Vector8 vec2 = new() { X = 1, Y = 2 };
 Point p = new Point(0, 0); // record struct / Primary Constructor
 ```
-*Note: The transpiler automatically converts these into equivalent C++ stack allocations (e.g., C++ brace initialization `Point{0, 0}` or initializer lists).*
+*Note: The transpiler converts constructor arguments (like `new Point(0, 0)`) into C++ brace initialization (`Point{0, 0}`). For C# Object Initializers (e.g., `new() { X = 1 }`), the transpiler emits an Immediately Invoked Function Expression (IIFE) using a C++ lambda (e.g., `[&]() { Point _tmp; _tmp.X = 1; return _tmp; }()`) to safely execute arbitrary member assignments in C++ without requiring explicit constructors.*
 
 ## 2.3 Memory Model and Pointers
 
@@ -75,13 +76,23 @@ Unsafe pointer arithmetic is fully permitted and transpiles 1:1 to C++ (e.g., `i
 
 ## 2.4 Implicit Typing (`var`)
 
-G# fully supports implicitly typed local variables (`var`). Because the AST transpiler relies on Roslyn's Semantic Model during the evaluation pass, the exact underlying type of any `var` declaration is perfectly resolved at compile time.
+G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
 
 ```csharp
-var origin = new Point(0, 0); // Safely transpiled to `Point origin = Point{0, 0};`
-var distance = origin.X;      // Safely transpiled to `float distance = origin.X;`
+// Context: G# Kernel (GPU)
+var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
+var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
 ```
-This enables developers to write highly readable, modern C# code without compromising the strict, static type safety required by the CUDA C++ compiler.
+This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the JIT phase.
+
+> [!WARNING]
+> **Literal Initialization Constraints**: To prevent subtle type-casting bugs in CUDA C++ (where `auto` might mistakenly infer a signed `int` for `0` when an `unsigned int` was expected), G# prohibits initializing `var` with untyped bare literals. You must use explicit literal suffixes.
+> 
+> * ❌ `var count = 0;` (Unsupported / Compilation Error)
+> * ✨ `var count = 0u;` (Correct: explicitly typed as `uint`)
+> * ✨ `var magnitude = 1.0f;` (Correct: explicitly typed as `float`)
+>
+> This safety constraint is intentionally designed to be "user-friendly" by strictly preventing silent precision loss or signedness errors on the GPU.
 
 ## 2.3 Prohibited Allocations
 

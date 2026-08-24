@@ -13,6 +13,11 @@ G# is **not** a general-purpose programming language. It is a highly restricted 
 * **Deterministic Execution**: Kernel logic must be statically analyzable at compile time. Dynamic dispatch, reflection, and runtime type inference are unsupported.
 * **Native Performance**: G# aims to achieve parity with raw CUDA C++ performance through direct syntax mapping and aggressive Just-In-Time (JIT) optimization at the NVIDIA driver level.
 
+### 1.1.2 Context Terminology (Host C# vs G# Kernel)
+Because G# uses C# syntax to write GPU kernels, this specification uses the following distinct terms to clarify whether a concept applies to the CPU host or the GPU device:
+* **Host C# (CPU Context)**: Standard C# code running on the .NET Core CLR. This code orchestrates GPU execution, allocates memory, and dispatches kernels.
+* **G# Kernel (GPU Context)**: A strict, limited subset of C# syntax used inside methods decorated with `[GpuKernel]` or `[GpuDevice]`. This code is **not** executed by the .NET runtime; it is transpiled into CUDA C++ during the AOT phase and executed directly on the GPU.
+
 ## 1.2 Architecture: AOT + JIT Hybrid Model
 
 The G# framework operates on a hybrid pipeline combining Ahead-Of-Time (AOT) static generation and Just-In-Time (JIT) compilation.

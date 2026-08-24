@@ -14,6 +14,7 @@ G# kernels are executed by an array of threads. These threads are organized into
 To determine their unique identity and workload, threads access built-in index variables through the `ThreadIndex`, `BlockIndex`, `BlockDimension`, and `GridDimension` structs provided by `Kassyi.GSharp.Core`.
 
 ```csharp
+// Context: G# Kernel (GPU)
 // Example: Calculating a global 1D thread ID
 int globalThreadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
 ```

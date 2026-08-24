@@ -8,23 +8,25 @@ G# introduces specialized C# attributes that govern compilation, entry point sem
 
 ## 3.1 `[GpuKernel]`
 
-The `[GpuKernel]` attribute acts as the entry point marker for a G# transpilation process. 
+The `[GpuKernel]` attribute acts as the entry point marker for a G# transpilation process. It translates directly to the `__global__` specifier in CUDA C++.
 
 ### 3.1.1 Semantic Rules
 * **Target**: Methods only.
 * **Return Type**: Must be `void`. Kernels execute asynchronously on the device and cannot return a primitive value directly. Use pointer arguments (e.g., `int* result`) to output data.
 * **Accessibility**: Must be `public static` or `internal static`. Instance methods (requiring a `this` pointer) are strictly prohibited.
+* **Calling Constraints (CRITICAL)**: Because this attribute yields a `__global__` function, a `[GpuKernel]` method **CANNOT** be called by another `[GpuKernel]` method (as CUDA does not allow `__global__` to call `__global__` without Dynamic Parallelism). Doing so will result in an `identifier undefined` compilation error from NVCC during the JIT pipeline. Subroutines must be decorated with `[GpuDevice]` instead.
 * **Transpilation**: The source generator targets the decorated method and transpiles it into an `extern "C" __global__ void` CUDA kernel. 
 
 ## 3.2 `[GpuDevice]`
 
-The `[GpuDevice]` attribute marks a helper method intended for execution solely on the GPU device, callable only by `[GpuKernel]` methods or other `[GpuDevice]` methods.
+The `[GpuDevice]` attribute marks a helper method intended for execution solely on the GPU device, callable only by `[GpuKernel]` methods or other `[GpuDevice]` methods. It translates directly to the `__device__` specifier in CUDA C++.
 
 ### 3.2.1 Semantic Rules
 * **Target**: Methods only.
 * **Return Type**: Standard primitive types are permitted (unlike `[GpuKernel]`).
 * **Accessibility**: Must be `public static` or `internal static`.
 * **Transpilation**: The source generator transpiles the decorated method into an `inline __device__` CUDA C++ function by default.
+* **Proper Usage**: Always use `[GpuDevice]` for math utilities, internal helpers, and any logic meant to be reused within larger GPU functions. Mislabeling a helper method with `[GpuKernel]` will break the compilation linkage.
 
 ### 3.2.2 Inlining Control via `[MethodImpl]`
 The transpiler respects standard C# `[MethodImpl]` attributes to provide fine-grained control over the CUDA compiler's inlining behavior for `[GpuDevice]` methods. This is critical for managing GPU register pressure and instruction cache.
@@ -51,6 +53,7 @@ The G# transpiler unconditionally prepends `#pragma unroll` to every `for` loop 
 
 **Example C# Input:**
 ```csharp
+// Context: G# Kernel (GPU)
 [GpuKernel]
 public static unsafe void MultiplyKernel(int* data, [JitConstant] int iterations)
 {
@@ -127,6 +130,7 @@ The `SharedMemory<T>` struct is a C# `ref struct` that abstracts CUDA's `__share
 ### 7.4.1 Static Shared Memory
 If instantiated with a compile-time constant size, the transpiler emits a static shared memory declaration. The semantic model automatically evaluates constant arguments and mathematical expressions (AST evaluation), enabling the use of both explicit arrays, Target-typed `new` (`new()`), and formulas involving `const` variables or `[JitConstant]` parameters.
 ```csharp
+// Context: G# Kernel (GPU)
 SharedMemory<int> smem1 = new SharedMemory<int>(256);
 SharedMemory<int> smem2 = new(256); // Target-typed new is fully supported
 ```
@@ -139,6 +143,7 @@ __shared__ int smem[256];
 If instantiated with a dynamic variable (or a parameter not marked as `[JitConstant]`), the transpiler utilizes a highly sophisticated dynamic shared memory allocator. Because CUDA restricts a kernel to a single `extern __shared__` array, G# generates a single byte buffer (`__gsharp_dynamic_smem`) and automatically manages aligned pointer arithmetic (`__smem_offset`) to allow multiple dynamic `SharedMemory<T>` instantiations in the same kernel.
 
 ```csharp
+// Context: G# Kernel (GPU)
 SharedMemory<int> smem1 = new SharedMemory<int>(size1);
 SharedMemory<float> smem2 = new SharedMemory<float>(size2);
 ```
@@ -165,6 +170,7 @@ __smem_offset += (size2) * sizeof(float);
 To allow maximum hardware-level optimization, developers can inject raw PTX or CUDA C++ strings directly into the generated source code using `Intrinsics.InlinePtx(string)`.
 
 ```csharp
+// Context: G# Kernel (GPU)
 uint result = 0;
 Intrinsics.InlinePtx("asm volatile (\"mov.u32 %0, %1;\" : \"=r\"(result) : \"r\"(ThreadIndex.X));");
 ```
@@ -177,6 +183,7 @@ G# supports CUDA Cooperative Groups, allowing Grid-level synchronization across 
 To enable this feature, decorate the kernel with `[GpuKernel(Cooperative = true)]` and utilize `Gpu.SyncGrid()`:
 
 ```csharp
+// Context: G# Kernel (GPU)
 [GpuKernel(Cooperative = true)]
 public static void MyCooperativeKernel()
 {
