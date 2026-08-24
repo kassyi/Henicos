@@ -9,8 +9,6 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 {
     public static readonly GSharpJitProvider Instance = new();
 
-    private readonly ConcurrentDictionary<string, GpuContext> _tempPool = new();
-
     private class TwiddleCache
     {
         public IntPtr Forward1;
@@ -171,8 +169,6 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             a.DevicePointer, b.DevicePointer, result.DevicePointer, a.NumWords,
             gridDimX: (uint)gridSize, blockDimX: BlockSize);
     }
-
-    public Action<string, IntPtr, int> OnStepCompleted { get; set; }
 
     public void Mul(GpuContext context, GpuBigInteger a, GpuBigInteger b, GpuBigInteger result)
     {

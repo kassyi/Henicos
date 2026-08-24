@@ -1,7 +1,6 @@
-namespace Kassyi.GSharp.GpuBigInt;
-using Kassyi.GSharp.GpuBigInt.Kernels;
-using Kassyi.GSharp.GpuBigInt.Contexts;
 using Kassyi.GSharp.GpuBigInt.Interop;
+
+namespace Kassyi.GSharp.GpuBigInt;
 
 public enum GpuExecutionEngine
 {

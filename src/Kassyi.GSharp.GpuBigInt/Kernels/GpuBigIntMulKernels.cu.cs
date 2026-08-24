@@ -28,7 +28,11 @@ public static class GpuBigIntMulKernels
 
         // 3. Forward NTT
         int n2 = 1;
-        while (n2 * n2 < transformLength) n2 *= 2;
+        while (n2 * n2 < transformLength)
+        {
+            n2 *= 2;
+        }
+
         var n1 = transformLength / n2;
 
         var nttArgs1A = new NttKernelArgs
