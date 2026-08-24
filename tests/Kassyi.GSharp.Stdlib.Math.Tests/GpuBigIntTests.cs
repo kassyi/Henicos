@@ -9,6 +9,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
     public class GpuBigIntTests
     {
+        [Trait("RoadmapId", "GBI-11")]
         [Fact]
         public void Test_NttReference_Correctness()
         {
@@ -38,6 +39,45 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             }
         }
         private const int TestSizeWords = 1024; // 32768 bits
+
+        #region 1. GBI アーキテクチャ・最適化課題
+
+        [Fact(Skip = "未実装・課題: GBI-01 (GSharpJitProvider のメモリプール不在 / スラブアロケータ)")]
+        [Trait("RoadmapId", "GBI-01")]
+        [Trait("Category", "Memory")]
+        public void Test_GBI01_MemoryPoolAllocation()
+        {
+        }
+
+        [Fact(Skip = "未実装・課題: GBI-03 (CPU-Fallback メソッドの GPU 並列リダクション化)")]
+        [Trait("RoadmapId", "GBI-03")]
+        [Trait("Category", "Performance")]
+        public void Test_GBI03_GpuReductionCompareAndFlags()
+        {
+        }
+
+        [Fact(Skip = "未実装・課題: GBI-04 (Square 専用 JIT Pointwise カーネルの直接ディスパッチ)")]
+        [Trait("RoadmapId", "GBI-04")]
+        [Trait("Category", "Optimization")]
+        public void Test_GBI04_DirectSquarePointwiseKernel()
+        {
+        }
+
+        [Fact(Skip = "未実装・課題: GBI-05 (Lehmer's GCD の大桁並列化 / Half-GCD)")]
+        [Trait("RoadmapId", "GBI-05")]
+        [Trait("Category", "Algorithm")]
+        public void Test_GBI05_ParallelGcdLargeDigits()
+        {
+        }
+
+        [Fact(Skip = "未実装・課題: GBI-06 (式木 GpuBigIntExpr の動的 Kernel Fusion)")]
+        [Trait("RoadmapId", "GBI-06")]
+        [Trait("Category", "Runtime")]
+        public void Test_GBI06_ExpressionKernelFusion()
+        {
+        }
+
+        #endregion
 
         public GpuBigIntTests()
         {
@@ -75,6 +115,14 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             return words;
         }
 
+        [Fact(Skip = "未実装: GBI-16 (インクリメント/デクリメント演算子 ++, --)")]
+        [Trait("RoadmapId", "GBI-16")]
+        [Trait("Category", "Operator")]
+        public void Test_GBI_Operator_IncrementDecrement()
+        {
+        }
+
+        [Trait("RoadmapId", "GBI-10")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -106,6 +154,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-10")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -136,6 +185,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-11")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -175,6 +225,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-12")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_Div_Correctness(GpuExecutionEngine engine)
@@ -213,6 +264,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedBig_sameSize, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-25")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
@@ -258,6 +310,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedSqrt, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-14")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -284,6 +337,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-14")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -307,6 +361,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedBig, actualBig);
         }
 
+        [Trait("RoadmapId", "GBI-24")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_State_Correctness(GpuExecutionEngine engine)
@@ -345,6 +400,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.False(gpuZero.IsNegative);
         }
 
+        [Trait("RoadmapId", "GBI-22")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
@@ -367,6 +423,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(-1, gpuC.CompareTo(gpuA));
         }
 
+        [Trait("RoadmapId", "GBI-13")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
@@ -404,6 +461,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             }
         }
 
+        [Trait("RoadmapId", "GBI-10")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_Scalar_Correctness(GpuExecutionEngine engine)
@@ -452,6 +510,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedMul, actualMul);
         }
 
+        [Trait("RoadmapId", "GBI-20")]
         [Fact]
         public void Test_HalfGcdReference_Correctness()
         {
@@ -481,6 +540,14 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             }
         }
 
+        [Fact(Skip = "未実装: GBI-21 (GpuBigInteger.ModInverse モジュラ逆数)")]
+        [Trait("RoadmapId", "GBI-21")]
+        [Trait("Category", "Function")]
+        public void Test_GBI_Function_ModInverse()
+        {
+        }
+
+        [Trait("RoadmapId", "GBI-20")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_Gcd_Correctness(GpuExecutionEngine engine)
@@ -542,6 +609,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
 
+        [Trait("RoadmapId", "GBI-17")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
@@ -583,6 +651,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
                     }
 
+        [Trait("RoadmapId", "GBI-06")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
