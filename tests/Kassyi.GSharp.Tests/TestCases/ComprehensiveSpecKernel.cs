@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 
@@ -122,13 +122,13 @@ public static partial class ComprehensiveSpecKernel
 
             // 4. All Math Mappings and Device Method invocation
             float mag = ComputeMagnitude(p);
-            mag = (float)Math.Abs(mag);
+            mag = (float)System.Math.Abs(mag);
 
             // 5. Automatic Loop Unrolling via JitConstant (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
-                mag = (float)Math.Max(mag, p.X * i + Gravity);
+                mag = (float)System.Math.Max(mag, p.X * i + Gravity);
             }
 
             if (!IsPositive(mag))
@@ -140,7 +140,7 @@ public static partial class ComprehensiveSpecKernel
             int counter = 0;
             while (counter < 2)
             {
-                mag = (float)Math.Min(mag, mag + 1);
+                mag = (float)System.Math.Min(mag, mag + 1);
                 counter++;
             }
 

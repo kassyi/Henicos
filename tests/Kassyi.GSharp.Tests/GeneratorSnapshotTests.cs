@@ -1,8 +1,8 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using VerifyXunit;
-using Kassyi.Generators.GSharp;
+using Kassyi.GSharp.Compiler;
 using System.Threading.Tasks;
 using Xunit;
 using System.Linq;
@@ -64,7 +64,7 @@ public class GeneratorSnapshotTests
         var source = """
             using Kassyi.GSharp.Core;
 
-            namespace Kassyi.GSharp.GpuBigInt
+            namespace Kassyi.GSharp.Stdlib.Math
             {
                 public static class GpuBigIntKernels
                 {

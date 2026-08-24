@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Numerics;
 
-namespace Kassyi.GSharp.GpuBigInt.Tests
+namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
     public class ReferenceNTT
     {
@@ -66,7 +66,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
         public static uint[] NTT(uint[] input, uint[] twiddle, ulong p)
         {
             int n = input.Length;
-            int log2N = (int)Math.Log(n, 2);
+            int log2N = (int)System.Math.Log(n, 2);
             var output = new uint[n];
 
             // Bit-reverse copy

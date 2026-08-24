@@ -2,10 +2,10 @@ using System;
 using System.Linq;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Jit;
-using Kassyi.GSharp.GpuBigInt.Expressions;
+using Kassyi.GSharp.Stdlib.Math.Expressions;
 using Xunit;
 
-namespace Kassyi.GSharp.GpuBigInt.Tests
+namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
     public class GpuBigIntTests
     {
@@ -28,9 +28,9 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
             var expected = BigInteger.Multiply(aBig, bBig);
             var expectedBytes = expected.ToByteArray();
             var expectedWords = new uint[testSize * 2];
-            Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0, Math.Min(expectedBytes.Length, expectedWords.Length * 4));
+            Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0, System.Math.Min(expectedBytes.Length, expectedWords.Length * 4));
 
-            var actualWords = Kassyi.GSharp.GpuBigInt.Algorithms.NttCpuReference.Multiply(aWords, bWords);
+            var actualWords = Kassyi.GSharp.Stdlib.Math.Algorithms.NttCpuReference.Multiply(aWords, bWords);
 
             for (int i = 0; i < expectedWords.Length; i++)
             {
@@ -475,7 +475,7 @@ namespace Kassyi.GSharp.GpuBigInt.Tests
                 }
 
                 var expectedGcd = BigInteger.GreatestCommonDivisor(a, b);
-                var actualGcd = Kassyi.GSharp.GpuBigInt.Algorithms.HalfGcdCpuReference.Gcd(a, b);
+                var actualGcd = Kassyi.GSharp.Stdlib.Math.Algorithms.HalfGcdCpuReference.Gcd(a, b);
 
                 Assert.Equal(expectedGcd, actualGcd);
             }
