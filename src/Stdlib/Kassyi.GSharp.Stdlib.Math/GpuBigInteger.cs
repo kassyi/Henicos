@@ -474,7 +474,14 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         leftOperand.Context.Provider.Gcd(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
     }
 
-    public bool Square(int logicalWords) => Context.Provider.Square(Context, DevicePointer, logicalWords);
+    public bool Square(int logicalWords)
+    {
+        if (NumWords < logicalWords * 2)
+        {
+            throw new InvalidOperationException($"Square requires the destination buffer to have at least {logicalWords * 2} words, but only has {NumWords}.");
+        }
+        return Context.Provider.Square(Context, DevicePointer, logicalWords);
+    }
 
     public static void ModPow(GpuBigInteger baseVal, GpuBigInteger exp, GpuBigInteger mod, GpuBigInteger resultBuffer)
     {

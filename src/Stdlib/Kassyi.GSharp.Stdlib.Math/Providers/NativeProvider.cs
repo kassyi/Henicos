@@ -1,3 +1,4 @@
+using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.Providers;
@@ -110,8 +111,21 @@ public class NativeProvider : IGpuExecutionProvider
         throw new NotImplementedException(ErrorNotImplemented);
 
     public bool IsOne(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
-    
-    public int GetBitLength(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
+
+    public int GetBitLength(GpuContext context, GpuBigInteger leftOperand)
+    {
+        var words = new uint[leftOperand.NumWords];
+        CopyDeviceToHost(words, leftOperand.DevicePointer, leftOperand.NumWords);
+        for (var i = words.Length - 1; i >= 0; i--)
+        {
+            if (words[i] != 0)
+            {
+                return i * 32 + (32 - BitOperations.LeadingZeroCount(words[i]));
+            }
+        }
+
+        return 0;
+    }
 
     public int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
