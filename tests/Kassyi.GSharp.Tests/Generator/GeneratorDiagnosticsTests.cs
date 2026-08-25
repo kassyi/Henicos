@@ -56,6 +56,7 @@ public class GeneratorDiagnosticsTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-05")]
     public Task TestSadPathDiagnostics()
     {
         var source = """
@@ -80,6 +81,7 @@ public class GeneratorDiagnosticsTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-06")]
     public Task TestComprehensiveSpecKernelGeneratedSource()
     {
         var assembly = Assembly.GetExecutingAssembly();
@@ -122,6 +124,7 @@ public class GeneratorDiagnosticsTests
 
     [Fact]
     [Trait("Category", "Diagnostics")]
+    [Trait("FeatureId", "GEN-07")]
     public void Test_UnsupportedFeatures_ReportsDiagnostics()
     {
         var source = """

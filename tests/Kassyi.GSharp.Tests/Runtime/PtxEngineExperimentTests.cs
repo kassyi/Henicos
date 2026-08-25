@@ -13,6 +13,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     private readonly ITestOutputHelper _output = output;
 
     [Fact]
+    [Trait("FeatureId", "GEN-12")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
         var (context, smVersion) = InitializeCuda();

@@ -37,6 +37,7 @@ public class LoggerTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-03")]
     public async Task Log_ShouldFormatAndWriteMessagesAsync()
     {
         var logger = new TestLogger();
@@ -59,6 +60,7 @@ public class LoggerTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-04")]
     public async Task MeasureScope_ShouldLogDuration()
     {
         Logger.ActiveLogLevel = LogLevel.Trace;

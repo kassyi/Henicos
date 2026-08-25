@@ -17,6 +17,7 @@ public class ArchitectureAndOptimizationTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-10")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
     {
         var source = @"
@@ -33,6 +34,7 @@ extern ""C"" __global__ void TestKernel(int* data) {
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-11")]
     public void JitConstant_Unroll_AltersPtxOutput()
     {
         var srcDynamic = @"

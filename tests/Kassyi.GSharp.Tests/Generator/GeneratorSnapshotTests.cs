@@ -247,6 +247,7 @@ public class GeneratorSnapshotTests
     [InlineData("GpuBigIntBitwiseKernels.cu.cs")]
     [InlineData("GpuBigIntBenchmarkKernels.cu.cs")]
     [InlineData("GpuBigIntNttKernels.cu.cs")]
+    [Trait("FeatureId", "GEN-08")]
     public async Task GeneratorSnapshots(string fileName)
     {
         var testCasesDir = GetTestCasesDirectory();
@@ -267,6 +268,7 @@ public class GeneratorSnapshotTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-09")]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
         var testCasesDir = GetTestCasesDirectory();
