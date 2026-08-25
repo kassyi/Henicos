@@ -2,20 +2,8 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn57_93_ModernPatternsTests
+public class SYN_57_63_ModernPatternsTests
 {
-    [Fact]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-93")]
-    public void TestDeviceMethodKernel()
-    {
-        int[] dataArray = [5, 10];
-        Syn57_93_ModernPatternsKernelsWrapper.Launch_DeviceMethodKernel(dataArray, blockDimX: 2);
-
-        Assert.Equal(105, dataArray[0]);
-        Assert.Equal(110, dataArray[1]);
-    }
-
     [Fact(Skip = "未実装: SYN-57 (リストパターン [1, .., var last])")]
     [Trait("FeatureId", "SYN-57")]
     [Trait("Category", "Syntax")]
@@ -65,4 +53,3 @@ public class Syn57_93_ModernPatternsTests
     {
     }
 }
-
