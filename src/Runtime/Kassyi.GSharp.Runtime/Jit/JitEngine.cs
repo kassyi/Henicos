@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
 public static class JitEngine
 {
-    private static bool s_isGlobalInit;
+    private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
     private static string s_smVersion = "sm_52"; // default fallback
     private static readonly Lock s_initLock = new();
@@ -157,27 +157,46 @@ public static class JitEngine
 
             var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}_{nvrtcVersion}_{toolkitHash}.ptx";
             var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
-            byte[] ptxBytes;
+            byte[]? ptxBytes = null;
 
             if (File.Exists(cacheFilePath))
             {
-                ptxBytes = File.ReadAllBytes(cacheFilePath);
-            }
-            else
-            {
-                ptxBytes = CompileToPtx(cppSource, kernelName);
                 try
                 {
-                    Directory.CreateDirectory(s_cacheDirectory);
-                    File.WriteAllBytes(cacheFilePath, ptxBytes);
+                    var loadedBytes = File.ReadAllBytes(cacheFilePath);
+                    if (loadedBytes.Length > 0)
+                    {
+                        ptxBytes = loadedBytes;
+                    }
+                    else
+                    {
+                        TryDeleteFile(cacheFilePath);
+                    }
                 }
                 catch
                 {
-                    // Ignore cache write errors to avoid crashing execution
+                    // Ignore read errors and fallback to fresh compilation
+                    TryDeleteFile(cacheFilePath);
                 }
             }
 
             using var scope = new CudaContextScope();
+
+            if (ptxBytes != null)
+            {
+                try
+                {
+                    return LoadKernelFunction(ptxBytes, kernelName);
+                }
+                catch
+                {
+                    // Cached PTX is invalid or corrupt. Invalidate cache and fallback to recompile.
+                    TryDeleteFile(cacheFilePath);
+                }
+            }
+
+            ptxBytes = CompileToPtx(cppSource, kernelName);
+            WriteCacheFileAtomic(cacheFilePath, ptxBytes);
             return LoadKernelFunction(ptxBytes, kernelName);
         }));
 
@@ -209,7 +228,7 @@ public static class JitEngine
             "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
         };
 
-        void AddIncludePaths(string baseDir)
+        void addIncludePaths(string baseDir)
         {
             var includePath = Path.Combine(baseDir, "include");
             if (Directory.Exists(includePath))
@@ -233,7 +252,7 @@ public static class JitEngine
         var cudaPath = GetCudaToolkitPath();
         if (!string.IsNullOrEmpty(cudaPath))
         {
-            AddIncludePaths(cudaPath);
+            addIncludePaths(cudaPath);
         }
 
         return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
@@ -269,24 +288,24 @@ public static class JitEngine
 
         fixed (byte* pError = errorLogBuffer, pInfo = infoLogBuffer)
         {
-            var options = new IntPtr[]
-            {
-                (IntPtr)3, // CU_JIT_INFO_LOG_BUFFER
-                (IntPtr)4, // CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES
-                (IntPtr)5, // CU_JIT_ERROR_LOG_BUFFER
-                (IntPtr)6  // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
-            };
+            IntPtr[] options =
+            [
+                3, // CU_JIT_INFO_LOG_BUFFER
+                4, // CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES
+                5, // CU_JIT_ERROR_LOG_BUFFER
+                6  // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
+            ];
 
-            var optionValues = new IntPtr[]
-            {
+            IntPtr[] optionValues =
+            [
                 (IntPtr)pInfo,
-                (IntPtr)infoLogBuffer.Length,
+                infoLogBuffer.Length,
                 (IntPtr)pError,
-                (IntPtr)errorLogBuffer.Length
-            };
+                errorLogBuffer.Length
+            ];
 
             var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, (uint)options.Length, options, optionValues);
-            if (loadResult != Kassyi.GSharp.Runtime.Interop.CUresult.CudaSuccess)
+            if (loadResult != CUresult.CudaSuccess)
             {
                 var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
                 var infoLog = Encoding.UTF8.GetString(infoLogBuffer).TrimEnd('\0');
@@ -311,5 +330,48 @@ public static class JitEngine
     {
         using var scope = new CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+    }
+
+    private static void WriteCacheFileAtomic(string targetPath, byte[] content)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var tempFilePath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
+            File.WriteAllBytes(tempFilePath, content);
+            try
+            {
+                File.Move(tempFilePath, targetPath, overwrite: true);
+            }
+            catch
+            {
+                // Ignore rename collision / lock errors on best-effort basis
+                TryDeleteFile(tempFilePath);
+            }
+        }
+        catch
+        {
+            // Ignore cache write errors on best-effort basis to avoid crashing execution
+        }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Ignore cleanup errors on best-effort basis
+        }
     }
 }
