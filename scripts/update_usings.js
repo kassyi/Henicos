@@ -84,11 +84,9 @@ const USING_DIRECTIVE_REGEX =
 const GLOBAL_USING_DIRECTIVE_REGEX =
   /^\s*global\s+using\s+(?:static\s+)?([A-Za-z0-9_.]+(?:\s*=\s*[A-Za-z0-9_.<>, ]+)?)\s*;\s*$/m;
 
-/**
- * Parses all using directives in a C# file.
- */
 function parseFileUsings(content) {
   const usings = new Set();
+  const globalUsings = new Set();
   const lines = content.split(/\r?\n/);
 
   for (const line of lines) {
@@ -100,29 +98,30 @@ function parseFileUsings(content) {
 
     const gMatch = GLOBAL_USING_DIRECTIVE_REGEX.exec(line);
     if (gMatch) {
-      usings.add(gMatch[1].trim());
+      globalUsings.add(gMatch[1].trim());
     }
   }
 
-  return Array.from(usings);
+  return { usings: Array.from(usings), globalUsings: Array.from(globalUsings) };
 }
 
-/**
- * Scans all C# files in a project and calculates the occurrence count of each using directive.
- */
 function calculateProjectUsingFrequencies(csFiles) {
   const usingCounts = new Map();
+  const allGlobalUsings = new Set();
 
   for (const file of csFiles) {
     const content = readFileSync(file, "utf8");
-    const uniqueUsings = parseFileUsings(content);
+    const parsed = parseFileUsings(content);
 
-    for (const u of uniqueUsings) {
+    for (const u of parsed.usings) {
       usingCounts.set(u, (usingCounts.get(u) || 0) + 1);
+    }
+    for (const gu of parsed.globalUsings) {
+      allGlobalUsings.add(gu);
     }
   }
 
-  return usingCounts;
+  return { usingCounts, allGlobalUsings };
 }
 
 /**
@@ -198,19 +197,24 @@ function processProject(csprojPath, { threshold, dryRun }) {
 
   if (csFiles.length === 0) return;
 
-  const frequencies = calculateProjectUsingFrequencies(csFiles);
+  const { usingCounts, allGlobalUsings } = calculateProjectUsingFrequencies(csFiles);
   const usingsToPromote = new Set(
-    Array.from(frequencies.entries())
+    Array.from(usingCounts.entries())
       .filter(([_, count]) => count >= threshold)
       .map(([u]) => u)
   );
+
+  for (const gu of allGlobalUsings) {
+    usingsToPromote.add(gu);
+  }
 
   if (usingsToPromote.size === 0) return;
 
   console.log(`\n📦 [${projName}]`);
   console.log(`   Promoting (${usingsToPromote.size} items, threshold >= ${threshold}):`);
   for (const u of Array.from(usingsToPromote).sort()) {
-    console.log(`     + global using ${u}; (${frequencies.get(u)} files)`);
+    const freq = usingCounts.get(u) || 0;
+    console.log(`     + global using ${u}; (${freq} files)`);
   }
 
   let modifiedFilesCount = 0;

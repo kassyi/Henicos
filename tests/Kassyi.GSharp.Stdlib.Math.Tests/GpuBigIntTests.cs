@@ -68,7 +68,6 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
             Assert.Equal(expected, actual);
         }
-
         private const int TestSizeWords = 256; // 8192 bits
 
         #region 1. GBI アーキテクチャ・最適化課題
@@ -738,6 +737,20 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             gpuResult.Value = gpuFunc(gpuA, gpuB);
 
             AssertGpuResultEqualsCpu(expected, gpuResult, resultWords);
+        }
+
+        [Theory]
+        [InlineData(0u, 0u, 4253024257u, 0u)]
+        [InlineData(100u, 200u, 4253024257u, 300u)]
+        [InlineData(4253024256u, 1u, 4253024257u, 0u)]
+        [InlineData(4253024256u, 2u, 4253024257u, 1u)]
+        [InlineData(0x80000000u, 0x80000000u, 4253024257u, 41943039u)] // 2^32 % 4253024257 = 41943039
+        [InlineData(4293918720u, 4293918720u, 4293918721u, 4293918719u)] // Near uint.MaxValue prime
+        [InlineData(0xC0000000u, 0xC0000000u, 4293918721u, 2148532223u)] // 6442450944 - 4293918721 = 2148532223
+        public void Test_ModAdd_OverflowSafe(uint a, uint b, uint prime, uint expected)
+        {
+            var actual = GpuBigIntNttKernels.ModAdd(a, b, prime);
+            Assert.Equal(expected, actual);
         }
 
         #endregion
