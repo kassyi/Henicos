@@ -253,14 +253,29 @@ internal static class ExpressionTranspilers
             {
                 if (symbol.Name == "PopCount" && i == 0)
                 {
-                    context.Writer.Append(is64Bit ? "(unsigned long long)(" : "(unsigned int)(");
+                    using (context.Writer.Parentheses())
+                    {
+                        context.Writer.AppendKeyword("unsigned");
+                        context.Writer.AppendSpace();
+                        if (is64Bit)
+                        {
+                            context.Writer.AppendKeyword("long");
+                            context.Writer.AppendSpace();
+                            context.Writer.AppendKeyword("long");
+                        }
+                        else
+                        {
+                            context.Writer.AppendKeyword("int");
+                        }
+                    }
+                    using (context.Writer.Parentheses())
+                    {
+                        context.Visit(node.ArgumentList.Arguments[i]);
+                    }
                 }
-
-                context.Visit(node.ArgumentList.Arguments[i]);
-
-                if (symbol.Name == "PopCount" && i == 0)
+                else
                 {
-                    context.Writer.Append(")");
+                    context.Visit(node.ArgumentList.Arguments[i]);
                 }
 
                 if (i < node.ArgumentList.Arguments.Count - 1)
