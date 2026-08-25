@@ -11,6 +11,7 @@ jobs:
     name: Run Tests on Self-Hosted GPU Runner
     # Using 'self-hosted' and 'gpu' labels to target the user's home PC or dedicated GPU machine
     runs-on: [self-hosted, gpu, windows]
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
 
     steps:
     - name: Checkout code
@@ -18,6 +19,13 @@ jobs:
 
     # .NET SDK is already installed on the self-hosted runner, avoiding actions/setup-dotnet
     # to prevent UAC write permission issues to C:\Program Files\dotnet.
+    - name: Verify .NET SDK Version
+      run: |
+        $version = dotnet --version
+        if ($version -notmatch "^10\.0\.") {
+            Write-Error ".NET SDK 10.0.x is required, but found $version"
+            exit 1
+        }
 
     # Ensure CUDA Toolkit is available (usually pre-installed on the self-hosted runner)
     - name: Verify CUDA Installation
