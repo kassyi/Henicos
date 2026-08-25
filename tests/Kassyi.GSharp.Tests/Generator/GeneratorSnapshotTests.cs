@@ -233,10 +233,10 @@ public class GeneratorSnapshotTests
 
     [Theory]
     // TestCases/
-    [InlineData("AddKernel.cs")]
-    [InlineData("BitOpsTestKernels.cs")]
-    [InlineData("ChunkAddKernel.cs")]
-    [InlineData("ComprehensiveSpecKernel.cs")]
+    [InlineData("GEN-08_AddKernel.cu.cs")]
+    [InlineData("GEN-08_BitOpsTestKernels.cu.cs")]
+    [InlineData("GEN-08_ChunkAddKernel.cu.cs")]
+    [InlineData("GEN-06_ComprehensiveSpecKernel.cu.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]
@@ -276,7 +276,7 @@ public class GeneratorSnapshotTests
         var snapshotDir = GetSnapshotsDirectory();
 
         var testCaseNames = Directory.GetFiles(testCasesDir, "*.cs")
-            .Select(Path.GetFileNameWithoutExtension)
+            .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
             .ToList();
 
         var kernelNames = Directory.GetFiles(kernelsDir, "*.cu.cs")
@@ -298,10 +298,14 @@ public class GeneratorSnapshotTests
         foreach (var snapshot in snapshotFiles)
         {
             var trimmed = snapshot.Substring(snapshotPrefix.Length);
-            var testName = trimmed.Split(new[] { '_', '.', '#' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            if (!string.IsNullOrEmpty(testName) && !allNames.Contains(testName))
+            var suffixIndex = trimmed.IndexOf("_GeneratesCorrectCudaSource", StringComparison.OrdinalIgnoreCase);
+            if (suffixIndex > 0)
             {
-                missingTestCases.Add($"Snapshot '{snapshot}' references missing TestCase/Kernel '{testName}'");
+                var testName = trimmed.Substring(0, suffixIndex);
+                if (!allNames.Contains(testName))
+                {
+                    missingTestCases.Add($"Snapshot '{snapshot}' references missing TestCase/Kernel '{testName}'");
+                }
             }
         }
 
