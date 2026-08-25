@@ -233,9 +233,9 @@ public class GeneratorSnapshotTests
 
     [Theory]
     // TestCases/
-    [InlineData("AddKernel.cs")]
-    [InlineData("BitOpsTestKernels.cs")]
-    [InlineData("ChunkAddKernel.cs")]
+    [InlineData("AddKernel.cu.cs")]
+    [InlineData("BitOpsTestKernels.cu.cs")]
+    [InlineData("ChunkAddKernel.cu.cs")]
     [InlineData("ComprehensiveSpecKernel.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
@@ -276,7 +276,7 @@ public class GeneratorSnapshotTests
         var snapshotDir = GetSnapshotsDirectory();
 
         var testCaseNames = Directory.GetFiles(testCasesDir, "*.cs")
-            .Select(Path.GetFileNameWithoutExtension)
+            .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
             .ToList();
 
         var kernelNames = Directory.GetFiles(kernelsDir, "*.cu.cs")
