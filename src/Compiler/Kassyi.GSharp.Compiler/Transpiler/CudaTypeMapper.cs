@@ -1,7 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal static class CudaTypeMapper
@@ -44,10 +40,12 @@ internal static class CudaTypeMapper
     public static string GetFullyQualifiedCppName(ISymbol symbol)
     {
         // Avoid string.Replace in hot paths by building the name directly
-        if (symbol.ContainingSymbol != null && !(symbol.ContainingSymbol is INamespaceSymbol ns && ns.IsGlobalNamespace))
+        if (symbol.ContainingSymbol != null &&
+            !(symbol.ContainingSymbol is INamespaceSymbol { IsGlobalNamespace: true }))
         {
             return GetFullyQualifiedCppName(symbol.ContainingSymbol!) + "_" + symbol.Name;
         }
+
         return symbol.Name;
     }
 

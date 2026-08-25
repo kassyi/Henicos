@@ -1,10 +1,6 @@
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Text;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Compiler.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -45,20 +41,18 @@ public class GpuKernelGenerator : IIncrementalGenerator
     private static IMethodSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context, string attributeName)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration) as IMethodSymbol;
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
 
         if (methodSymbol == null)
         {
             return null;
         }
 
-        foreach (var attribute in methodSymbol.GetAttributes())
+        if (Enumerable.Any(methodSymbol.GetAttributes(), attribute =>
+                attribute.AttributeClass?.Name == $"{attributeName}Attribute" ||
+                attribute.AttributeClass?.Name == attributeName))
         {
-            if (attribute.AttributeClass?.Name == $"{attributeName}Attribute" ||
-                attribute.AttributeClass?.Name == attributeName)
-            {
-                return methodSymbol;
-            }
+            return methodSymbol;
         }
 
         return null;
@@ -184,7 +178,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 GSharpDiagnostics.PreludeMissing,
                 Location.None,
                 assembly.FullName,
-                "0 (Stream null)");
+                0);
             context.ReportDiagnostic(diagnostic);
             return null;
         }

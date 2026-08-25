@@ -1,15 +1,10 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Kassyi.GSharp.Compiler.Diagnostics;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal static class ExpressionTranspilers
 {
     public static void TranspileAssignmentExpression(AssignmentExpressionSyntax node, RoslynToCudaVisitor context)
     {
-        if (node.Left is TupleExpressionSyntax leftTuple && node.Right is TupleExpressionSyntax rightTuple)
+        if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
             context.Writer.Append("[&]()");
             using (context.Writer.Scope())
@@ -158,11 +153,8 @@ internal static class ExpressionTranspilers
 
         context.Visit(node.Expression);
 
-        var isPointer = false;
-        if (exprSymbol is IParameterSymbol pSym && (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out))
-        {
-            isPointer = true;
-        }
+        bool isPointer = exprSymbol is IParameterSymbol pSym &&
+                         (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out);
 
         context.Writer.Append(isPointer ? "->" : ".");
         context.Writer.Append(node.Name.Identifier.Text);
@@ -230,12 +222,17 @@ internal static class ExpressionTranspilers
                 paramType = ((INamedTypeSymbol)paramType).EnumUnderlyingType ?? paramType;
             }
 
+            var platform = context.SemanticModel.Compilation.Options.Platform;
+            var is64BitPointer = platform == Platform.X64 || platform == Platform.Arm64 ||
+                                 platform == Platform.Itanium || platform == Platform.AnyCpu;
+
             is64Bit = paramType.SpecialType == SpecialType.System_UInt64 ||
                       paramType.SpecialType == SpecialType.System_Int64 ||
-                      paramType.SpecialType == SpecialType.System_UIntPtr ||
-                      paramType.SpecialType == SpecialType.System_IntPtr ||
-                      paramType.Name == "nuint" ||
-                      paramType.Name == "nint";
+                      (is64BitPointer &&
+                       (paramType.SpecialType == SpecialType.System_UIntPtr ||
+                        paramType.SpecialType == SpecialType.System_IntPtr ||
+                        paramType.Name == "nuint" ||
+                        paramType.Name == "nint"));
         }
 
         var functionName = symbol.Name switch

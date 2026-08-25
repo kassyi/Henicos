@@ -1,8 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Kassyi.GSharp.Compiler.Diagnostics;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null)
@@ -61,6 +56,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             var structName = CudaTypeMapper.GetFullyQualifiedCppName(structSym);
             Writer.AppendLine($"struct {structName};");
         }
+
         Writer.Append(sigWriter.ToString());
 
         var result = Writer.ToString();
@@ -165,11 +161,12 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             else if (method.ExpressionBody != null)
             {
                 var methodSymbol = SemanticModel.GetDeclaredSymbol(method);
-                if (methodSymbol != null && !methodSymbol.ReturnsVoid)
+                if (methodSymbol is { ReturnsVoid: false })
                 {
                     Writer.AppendKeyword("return");
                     Writer.AppendSpace();
                 }
+
                 Visit(method.ExpressionBody.Expression);
                 Writer.AppendSemiColon();
                 Writer.AppendLine();
@@ -198,7 +195,8 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             CheckLargeStructByValue(p, typeSymbol, isPointer);
 
             var paramSymbol = SemanticModel.GetDeclaredSymbol(p);
-            if (paramSymbol != null && paramSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
+            if (paramSymbol != null &&
+                paramSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
             {
                 Writer.AppendKeyword("const");
                 Writer.AppendSpace();
@@ -340,26 +338,49 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                 {
                     Writer.Append($"{length}");
                 }
+
                 Writer.AppendLine(";");
 
                 Writer.Append($"__device__ inline {cppElementType}& operator");
-                using (Writer.Brackets()) { }
-                using (Writer.Parentheses()) { Writer.Append("int index"); }
+                using (Writer.Brackets())
+                {
+                }
+
+                using (Writer.Parentheses())
+                {
+                    Writer.Append("int index");
+                }
+
                 using (Writer.Scope())
                 {
                     Writer.Append($"return {firstField.Name}");
-                    using (Writer.Brackets()) { Writer.Append("index"); }
+                    using (Writer.Brackets())
+                    {
+                        Writer.Append("index");
+                    }
+
                     Writer.AppendLine(";");
                 }
 
                 Writer.Append($"__device__ inline const {cppElementType}& operator");
-                using (Writer.Brackets()) { }
-                using (Writer.Parentheses()) { Writer.Append("int index"); }
+                using (Writer.Brackets())
+                {
+                }
+
+                using (Writer.Parentheses())
+                {
+                    Writer.Append("int index");
+                }
+
                 Writer.AppendLine(" const");
                 using (Writer.Scope())
                 {
                     Writer.Append($"return {firstField.Name}");
-                    using (Writer.Brackets()) { Writer.Append("index"); }
+                    using (Writer.Brackets())
+                    {
+                        Writer.Append("index");
+                    }
+
                     Writer.AppendLine(";");
                 }
             }
@@ -394,6 +415,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                                 {
                                     Visit(sizeExp);
                                 }
+
                                 Writer.AppendLine(";");
                             }
                             else
@@ -406,13 +428,19 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                         }
                     case IFieldSymbol field:
                         {
-                            var fieldConst = field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
+                            var fieldConst =
+                                field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
+                                    ? "const "
+                                    : "";
                             Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
                             break;
                         }
                     case IPropertySymbol prop:
                         {
-                            var propConst = prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)) ? "const " : "";
+                            var propConst =
+                                prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
+                                    ? "const "
+                                    : "";
                             Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
                             break;
                         }
@@ -445,7 +473,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
             using (Writer.Scope())
             {
                 Visit(statement);
-                if (!statement.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.Block))
+                if (!statement.IsKind(SyntaxKind.Block))
                 {
                     Writer.AppendLine();
                 }
