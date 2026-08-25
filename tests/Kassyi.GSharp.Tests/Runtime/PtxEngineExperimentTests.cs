@@ -102,4 +102,54 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             if (dC != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dC);
         }
     }
+    [Fact]
+    [Trait("FeatureId", "GEN-12")]
+    public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
+    {
+        var (context, _) = InitializeCuda();
+        try
+        {
+            var invalidPtx = Encoding.UTF8.GetBytes("This is not a valid PTX string\0");
+            var exception = Assert.Throws<CudaException>(() =>
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out _, invalidPtx, 0, null, null));
+            });
+            Assert.Contains("CUDA Error", exception.Message);
+        }
+        finally
+        {
+            CudaDriverApi.cuCtxDestroy_v2(context);
+        }
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GEN-12")]
+    public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
+    {
+        var (context, smVersion) = InitializeCuda();
+        try
+        {
+            var ptxBytes = CompileTestKernel(smVersion);
+            
+            Parallel.For(0, 100, i =>
+            {
+                // Note: cuCtxSetCurrent would be needed in a real multithreaded CUDA app
+                // but cuLaunchKernel handles current context per thread if properly initialized or pushed.
+                // We will just verify that the context doesn't crash during concurrent reads if we push it.
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxSetCurrent(context));
+                try
+                {
+                    RunKernelAndVerify(ptxBytes, i, i * 2, i * 3);
+                }
+                finally
+                {
+                    CudaDriverApi.cuCtxSetCurrent(IntPtr.Zero);
+                }
+            });
+        }
+        finally
+        {
+            CudaDriverApi.cuCtxDestroy_v2(context);
+        }
+    }
 }

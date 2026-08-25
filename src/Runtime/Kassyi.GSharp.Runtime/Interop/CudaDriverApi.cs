@@ -90,6 +90,14 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxPushCurrent_v2(IntPtr ctx);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxPopCurrent_v2(out IntPtr pctx);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxSetCurrent(IntPtr ctx);
 
     [LibraryImport(DllName)]

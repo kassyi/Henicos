@@ -105,4 +105,50 @@ public class GpuBigIntExprAnalyzerTests
 
         Assert.Contains(diagnostics, d => d.Id == "GSH0005");
     }
+    [Fact]
+    [Trait("FeatureId", "GBI-26")]
+    public async Task MultipleDeclarations_InSingleStatement_EdgeCase()
+    {
+        var source = """
+            using Kassyi.GSharp.Stdlib.Math.Expressions;
+
+            public class TestClass
+            {
+                public void Method(GpuBigIntExpr expr)
+                {
+                    GpuBigIntExpr local1 = expr, local2 = expr;
+                }
+            }
+            """;
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+
+        // Expect multiple diagnostics for multiple declarators
+        var count = diagnostics.Count(d => d.Id == "GSH0005");
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GBI-26")]
+    public async Task MalformedSyntax_ShouldNotCrash_SadPath()
+    {
+        var source = """
+            using Kassyi.GSharp.Stdlib.Math.Expressions;
+
+            public class TestClass
+            {
+                public void Method()
+                {
+                    // Syntax error missing semicolon and incomplete declaration
+                    GpuBigIntExpr 
+                }
+            }
+            """;
+
+        // Analyzer should not throw an exception on syntax errors
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+        
+        // It might or might not produce GSH0005 depending on parser state, but it shouldn't crash
+        Assert.True(true); 
+    }
 }

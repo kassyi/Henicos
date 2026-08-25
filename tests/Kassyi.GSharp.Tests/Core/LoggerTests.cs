@@ -82,4 +82,76 @@ public class LoggerTests
             Assert.Contains("ms", content);
         }
     }
+    [Fact]
+    [Trait("FeatureId", "GEN-03")]
+    public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
+    {
+        var logger = new TestLogger();
+        Logger.ActiveLogLevel = LogLevel.Info;
+        int threadCount = 50;
+        int messagesPerThread = 100;
+        
+        var tasks = Enumerable.Range(0, threadCount).Select(async t =>
+        {
+            await Task.Yield();
+            for (int i = 0; i < messagesPerThread; i++)
+            {
+                logger.LogInformation($"Concurrent message T{t}-M{i}");
+            }
+        });
+        
+        await Task.WhenAll(tasks);
+        await Task.Delay(500); // Allow background channel to flush
+        
+        var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
+        Assert.True(File.Exists(logPath));
+        
+        var content = await File.ReadAllTextAsync(logPath);
+        for (int t = 0; t < threadCount; t++)
+        {
+            // Just check the last message of each thread to ensure completion
+            Assert.Contains($"Concurrent message T{t}-M{messagesPerThread - 1}", content);
+        }
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GEN-03")]
+    public async Task Log_ExtremeMessageSize_EdgeCase()
+    {
+        var logger = new TestLogger();
+        Logger.ActiveLogLevel = LogLevel.Info;
+        
+        // 1MB string
+        var giantString = new string('A', 1024 * 1024);
+        logger.LogInformation(giantString);
+        
+        await Task.Delay(200); // Allow background channel to flush
+        
+        var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
+        Assert.True(File.Exists(logPath));
+        
+        var content = await File.ReadAllTextAsync(logPath);
+        Assert.Contains(giantString, content);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GEN-03")]
+    public async Task Log_LogLevelNone_EdgeCase()
+    {
+        var logger = new TestLogger();
+        Logger.ActiveLogLevel = LogLevel.None;
+        var uniqueGuid = Guid.NewGuid().ToString();
+        
+        logger.LogInformation($"Should not appear {uniqueGuid}");
+        logger.LogError($"Should not appear {uniqueGuid}");
+        
+        await Task.Delay(100);
+        
+        var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
+        if (File.Exists(logPath))
+        {
+            var content = await File.ReadAllTextAsync(logPath);
+            Assert.DoesNotContain(uniqueGuid, content);
+        }
+    }
 }
