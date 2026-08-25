@@ -3,8 +3,10 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
-// ReSharper disable UnusedType.Global
-// ReSharper disable UnusedMember.Global
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public static class GpuBigIntFermatKernels
 {
     [GpuDevice]
@@ -101,7 +103,7 @@ public static class GpuBigIntFermatKernels
 
         var n1 = ctx.Ntt.TransformLength / n2;
 
-        var nttArgs = new NttKernelArgs
+        var nttArgs = new NumberTheoreticTransformKernelArgs
         {
             Buffer = ctx.Ntt.Buffers.Buffer1,
             TemporaryBuffer = ctx.Ntt.Buffers.TemporaryBuffer,
@@ -109,8 +111,8 @@ public static class GpuBigIntFermatKernels
             M = ctx.Ntt.TransformLength,
             N1 = n1,
             N2 = n2,
-            P = GpuBigIntNttKernels.NttP1,
-            Pm = GpuBigIntNttKernels.NttM1
+            P = GpuBigIntNttKernels.Prime1,
+            Pm = GpuBigIntNttKernels.BarrettMagic1
         };
 
         // Forward NTT 1
@@ -119,8 +121,8 @@ public static class GpuBigIntFermatKernels
         // Forward NTT 2
         nttArgs.Buffer = ctx.Ntt.Buffers.Buffer2;
         nttArgs.Twiddle = ctx.Ntt.TwiddleFactors.Forward2;
-        nttArgs.P = GpuBigIntNttKernels.NttP2;
-        nttArgs.Pm = GpuBigIntNttKernels.NttM2;
+        nttArgs.P = GpuBigIntNttKernels.Prime2;
+        nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic2;
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs);
 
         GpuBigIntNttKernels.Device_NTT_PointwiseSquare(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2, ctx.Ntt.TransformLength);
@@ -129,15 +131,15 @@ public static class GpuBigIntFermatKernels
         // Inverse NTT 1
         nttArgs.Buffer = ctx.Ntt.Buffers.Buffer1;
         nttArgs.Twiddle = ctx.Ntt.TwiddleFactors.Inverse1;
-        nttArgs.P = GpuBigIntNttKernels.NttP1;
-        nttArgs.Pm = GpuBigIntNttKernels.NttM1;
+        nttArgs.P = GpuBigIntNttKernels.Prime1;
+        nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic1;
         GpuBigIntNttKernels.Device_InverseNTT(ref nttArgs);
 
         // Inverse NTT 2
         nttArgs.Buffer = ctx.Ntt.Buffers.Buffer2;
         nttArgs.Twiddle = ctx.Ntt.TwiddleFactors.Inverse2;
-        nttArgs.P = GpuBigIntNttKernels.NttP2;
-        nttArgs.Pm = GpuBigIntNttKernels.NttM2;
+        nttArgs.P = GpuBigIntNttKernels.Prime2;
+        nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic2;
         GpuBigIntNttKernels.Device_InverseNTT(ref nttArgs);
         Gpu.SyncGrid();
 

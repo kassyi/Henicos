@@ -3,8 +3,10 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
-// ReSharper disable UnusedType.Global
-// ReSharper disable UnusedMember.Global
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public static class GpuBigIntMulKernels
 {
     [GpuKernel(Cooperative = true)]
@@ -35,34 +37,58 @@ public static class GpuBigIntMulKernels
 
         var n1 = transformLength / n2;
 
-        var nttArgs1A = new NttKernelArgs
+        var nttArgs1A = new NumberTheoreticTransformKernelArgs
         {
-            Buffer = nttBuf1A, TemporaryBuffer = nttTmpBuf, Twiddle = twiddleForward1,
-            M = transformLength, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.NttP1, Pm = GpuBigIntNttKernels.NttM1
+            Buffer = nttBuf1A,
+            TemporaryBuffer = nttTmpBuf,
+            Twiddle = twiddleForward1,
+            M = transformLength,
+            N1 = n1,
+            N2 = n2,
+            P = GpuBigIntNttKernels.Prime1,
+            Pm = GpuBigIntNttKernels.BarrettMagic1
         };
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs1A);
         Gpu.SyncGrid();
 
-        var nttArgs2A = new NttKernelArgs
+        var nttArgs2A = new NumberTheoreticTransformKernelArgs
         {
-            Buffer = nttBuf2A, TemporaryBuffer = nttTmpBuf, Twiddle = twiddleForward2,
-            M = transformLength, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.NttP2, Pm = GpuBigIntNttKernels.NttM2
+            Buffer = nttBuf2A,
+            TemporaryBuffer = nttTmpBuf,
+            Twiddle = twiddleForward2,
+            M = transformLength,
+            N1 = n1,
+            N2 = n2,
+            P = GpuBigIntNttKernels.Prime2,
+            Pm = GpuBigIntNttKernels.BarrettMagic2
         };
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs2A);
         Gpu.SyncGrid();
 
-        var nttArgs1B = new NttKernelArgs
+        var nttArgs1B = new NumberTheoreticTransformKernelArgs
         {
-            Buffer = nttBuf1B, TemporaryBuffer = nttTmpBuf, Twiddle = twiddleForward1,
-            M = transformLength, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.NttP1, Pm = GpuBigIntNttKernels.NttM1
+            Buffer = nttBuf1B,
+            TemporaryBuffer = nttTmpBuf,
+            Twiddle = twiddleForward1,
+            M = transformLength,
+            N1 = n1,
+            N2 = n2,
+            P = GpuBigIntNttKernels.Prime1,
+            Pm = GpuBigIntNttKernels.BarrettMagic1
         };
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs1B);
         Gpu.SyncGrid();
 
-        var nttArgs2B = new NttKernelArgs
+        var nttArgs2B = new NumberTheoreticTransformKernelArgs
         {
-            Buffer = nttBuf2B, TemporaryBuffer = nttTmpBuf, Twiddle = twiddleForward2,
-            M = transformLength, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.NttP2, Pm = GpuBigIntNttKernels.NttM2
+            Buffer = nttBuf2B,
+            TemporaryBuffer = nttTmpBuf,
+            Twiddle = twiddleForward2,
+            M = transformLength,
+            N1 = n1,
+            N2 = n2,
+            P = GpuBigIntNttKernels.Prime2,
+            Pm = GpuBigIntNttKernels.BarrettMagic2
         };
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs2B);
         Gpu.SyncGrid();
@@ -73,18 +99,30 @@ public static class GpuBigIntMulKernels
         Gpu.SyncGrid();
 
         // 5. Inverse NTT
-        var invArgs1 = new NttKernelArgs
+        var invArgs1 = new NumberTheoreticTransformKernelArgs
         {
-            Buffer = nttBuf1A, TemporaryBuffer = nttTmpBuf, Twiddle = twiddleInverse1,
-            M = transformLength, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.NttP1, Pm = GpuBigIntNttKernels.NttM1
+            Buffer = nttBuf1A,
+            TemporaryBuffer = nttTmpBuf,
+            Twiddle = twiddleInverse1,
+            M = transformLength,
+            N1 = n1,
+            N2 = n2,
+            P = GpuBigIntNttKernels.Prime1,
+            Pm = GpuBigIntNttKernels.BarrettMagic1
         };
         GpuBigIntNttKernels.Device_InverseNTT(ref invArgs1);
         Gpu.SyncGrid();
 
-        var invArgs2 = new NttKernelArgs
+        var invArgs2 = new NumberTheoreticTransformKernelArgs
         {
-            Buffer = nttBuf2A, TemporaryBuffer = nttTmpBuf, Twiddle = twiddleInverse2,
-            M = transformLength, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.NttP2, Pm = GpuBigIntNttKernels.NttM2
+            Buffer = nttBuf2A,
+            TemporaryBuffer = nttTmpBuf,
+            Twiddle = twiddleInverse2,
+            M = transformLength,
+            N1 = n1,
+            N2 = n2,
+            P = GpuBigIntNttKernels.Prime2,
+            Pm = GpuBigIntNttKernels.BarrettMagic2
         };
         GpuBigIntNttKernels.Device_InverseNTT(ref invArgs2);
         Gpu.SyncGrid();

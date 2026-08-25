@@ -78,7 +78,7 @@ public struct BigIntKernelContext
 /// <summary>
 /// Execution arguments for NTT-related kernels.
 /// </summary>
-public struct NttKernelArgs
+public struct NumberTheoreticTransformKernelArgs
 {
     public uint[] Buffer;
     public uint[] TemporaryBuffer;

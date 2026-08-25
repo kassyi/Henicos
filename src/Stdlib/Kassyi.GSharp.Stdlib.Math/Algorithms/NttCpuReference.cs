@@ -19,115 +19,115 @@ public static class NttCpuReference
 
     // ModPow for uint
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ModPow(uint b, uint e, uint m)
+    public static uint ModPow(uint baseValue, uint exponent, uint modulus)
     {
-        ulong res = 1;
-        ulong baseVal = b;
-        while (e > 0)
+        ulong result = 1;
+        ulong currentBase = baseValue;
+        while (exponent > 0)
         {
-            if ((e & 1) == 1)
+            if ((exponent & 1) == 1)
             {
-                res = (res * baseVal) % m;
+                result = (result * currentBase) % modulus;
             }
 
-            baseVal = (baseVal * baseVal) % m;
-            e >>= 1;
+            currentBase = (currentBase * currentBase) % modulus;
+            exponent >>= 1;
         }
 
-        return (uint)res;
+        return (uint)result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ModInverse(uint a, uint m) => ModPow(a, m - 2, m);
+    public static uint ModInverse(uint value, uint modulus) => ModPow(value, modulus - 2, modulus);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ModAdd(uint a, uint b, uint m)
+    public static uint ModAdd(uint operandA, uint operandB, uint modulus)
     {
-        var res = a + b;
-        if (res >= m)
+        var result = operandA + operandB;
+        if (result >= modulus)
         {
-            res -= m;
+            result -= modulus;
         }
 
-        return res;
+        return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ModSub(uint a, uint b, uint m)
+    public static uint ModSub(uint operandA, uint operandB, uint modulus)
     {
-        if (a < b)
+        if (operandA < operandB)
         {
-            return a + m - b;
+            return operandA + modulus - operandB;
         }
 
-        return a - b;
+        return operandA - operandB;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ModMul(uint a, uint b, uint m) => (uint)(((ulong)a * b) % m);
+    public static uint ModMul(uint operandA, uint operandB, uint modulus) => (uint)(((ulong)operandA * operandB) % modulus);
 
-    public static void Ntt(uint[] a, uint p, uint g, bool inverse)
+    public static void Ntt(uint[] values, uint modulus, uint primitiveRoot, bool isInverse)
     {
-        var n = a.Length;
-        var bits = 0;
-        while ((1 << bits) < n)
+        var length = values.Length;
+        var numberOfBits = 0;
+        while ((1 << numberOfBits) < length)
         {
-            bits++;
+            numberOfBits++;
         }
 
-        if ((1 << bits) != n)
+        if ((1 << numberOfBits) != length)
         {
             throw new ArgumentException("Length must be a power of 2");
         }
 
         // Bit reversal permutation
-        for (var i = 0; i < n; i++)
+        for (var index = 0; index < length; index++)
         {
-            var rev = 0;
-            for (var j = 0; j < bits; j++)
+            var reversedIndex = 0;
+            for (var bitIndex = 0; bitIndex < numberOfBits; bitIndex++)
             {
-                if ((i & (1 << j)) != 0)
+                if ((index & (1 << bitIndex)) != 0)
                 {
-                    rev |= (1 << (bits - 1 - j));
+                    reversedIndex |= (1 << (numberOfBits - 1 - bitIndex));
                 }
             }
 
-            if (i < rev)
+            if (index < reversedIndex)
             {
-                (a[i], a[rev]) = (a[rev], a[i]);
+                (values[index], values[reversedIndex]) = (values[reversedIndex], values[index]);
             }
         }
 
         // Roots of unity
-        for (var len = 2; len <= n; len <<= 1)
+        for (var currentLength = 2; currentLength <= length; currentLength <<= 1)
         {
-            var halfLen = len >> 1;
-            var root = ModPow(g, (p - 1) / (uint)len, p);
-            if (inverse)
+            var halfLength = currentLength >> 1;
+            var rootOfUnity = ModPow(primitiveRoot, (modulus - 1) / (uint)currentLength, modulus);
+            if (isInverse)
             {
-                root = ModInverse(root, p);
+                rootOfUnity = ModInverse(rootOfUnity, modulus);
             }
 
-            for (var i = 0; i < n; i += len)
+            for (var blockIndex = 0; blockIndex < length; blockIndex += currentLength)
             {
-                uint w = 1;
-                for (var j = 0; j < halfLen; j++)
+                uint twiddleFactor = 1;
+                for (var elementIndex = 0; elementIndex < halfLength; elementIndex++)
                 {
-                    var u = a[i + j];
-                    var v = ModMul(a[i + halfLen + j], w, p);
-                    a[i + j] = ModAdd(u, v, p);
-                    a[i + halfLen + j] = ModSub(u, v, p);
-                    w = ModMul(w, root, p);
+                    var leftTerm = values[blockIndex + elementIndex];
+                    var rightTerm = ModMul(values[blockIndex + halfLength + elementIndex], twiddleFactor, modulus);
+                    values[blockIndex + elementIndex] = ModAdd(leftTerm, rightTerm, modulus);
+                    values[blockIndex + halfLength + elementIndex] = ModSub(leftTerm, rightTerm, modulus);
+                    twiddleFactor = ModMul(twiddleFactor, rootOfUnity, modulus);
                 }
             }
         }
 
-        if (inverse)
+        if (isInverse)
         {
-            var nInv = ModInverse((uint)n, p);
-            for (var i = 0; i < n; i++)
+            var lengthInverse = ModInverse((uint)length, modulus);
+            for (var index = 0; index < length; index++)
             {
-                a[i] = ModMul(a[i], nInv, p);
+                values[index] = ModMul(values[index], lengthInverse, modulus);
             }
         }
     }
@@ -135,92 +135,92 @@ public static class NttCpuReference
     /// <summary>
     /// Multiplies two arrays of 32-bit unsigned integers using 3-Prime NTT and Garner's Algorithm.
     /// </summary>
-    public static uint[] Multiply(uint[] a, uint[] b)
+    public static uint[] Multiply(uint[] operandA, uint[] operandB)
     {
-        var len = a.Length + b.Length;
-        var n = 1;
-        while (n < len)
+        var combinedLength = operandA.Length + operandB.Length;
+        var transformLength = 1;
+        while (transformLength < combinedLength)
         {
-            n <<= 1;
+            transformLength <<= 1;
         }
 
-        var a1 = new uint[n];
-        var a2 = new uint[n];
-        var a3 = new uint[n];
-        var b1 = new uint[n];
-        var b2 = new uint[n];
-        var b3 = new uint[n];
+        var operandA1 = new uint[transformLength];
+        var operandA2 = new uint[transformLength];
+        var operandA3 = new uint[transformLength];
+        var operandB1 = new uint[transformLength];
+        var operandB2 = new uint[transformLength];
+        var operandB3 = new uint[transformLength];
 
-        for (var i = 0; i < a.Length; i++)
+        for (var index = 0; index < operandA.Length; index++)
         {
-            a1[i] = a[i] % P1;
-            a2[i] = a[i] % P2;
-            a3[i] = a[i] % P3;
+            operandA1[index] = operandA[index] % P1;
+            operandA2[index] = operandA[index] % P2;
+            operandA3[index] = operandA[index] % P3;
         }
 
-        for (var i = 0; i < b.Length; i++)
+        for (var index = 0; index < operandB.Length; index++)
         {
-            b1[i] = b[i] % P1;
-            b2[i] = b[i] % P2;
-            b3[i] = b[i] % P3;
+            operandB1[index] = operandB[index] % P1;
+            operandB2[index] = operandB[index] % P2;
+            operandB3[index] = operandB[index] % P3;
         }
 
-        Ntt(a1, P1, G1, false);
-        Ntt(a2, P2, G2, false);
-        Ntt(a3, P3, G3, false);
+        Ntt(operandA1, P1, G1, false);
+        Ntt(operandA2, P2, G2, false);
+        Ntt(operandA3, P3, G3, false);
 
-        Ntt(b1, P1, G1, false);
-        Ntt(b2, P2, G2, false);
-        Ntt(b3, P3, G3, false);
+        Ntt(operandB1, P1, G1, false);
+        Ntt(operandB2, P2, G2, false);
+        Ntt(operandB3, P3, G3, false);
 
-        var c1 = new uint[n];
-        var c2 = new uint[n];
-        var c3 = new uint[n];
+        var result1 = new uint[transformLength];
+        var result2 = new uint[transformLength];
+        var result3 = new uint[transformLength];
 
-        for (var i = 0; i < n; i++)
+        for (var index = 0; index < transformLength; index++)
         {
-            c1[i] = ModMul(a1[i], b1[i], P1);
-            c2[i] = ModMul(a2[i], b2[i], P2);
-            c3[i] = ModMul(a3[i], b3[i], P3);
+            result1[index] = ModMul(operandA1[index], operandB1[index], P1);
+            result2[index] = ModMul(operandA2[index], operandB2[index], P2);
+            result3[index] = ModMul(operandA3[index], operandB3[index], P3);
         }
 
-        Ntt(c1, P1, G1, true);
-        Ntt(c2, P2, G2, true);
-        Ntt(c3, P3, G3, true);
+        Ntt(result1, P1, G1, true);
+        Ntt(result2, P2, G2, true);
+        Ntt(result3, P3, G3, true);
 
         // Garner's Algorithm to reconstruct C
         // X = x1 + x2*P1 + x3*P1*P2
-        // X = c1 (mod P1) -> x1 = c1
-        // X = c2 (mod P2) -> x1 + x2*P1 = c2 (mod P2) -> x2 = (c2 - x1) * inv(P1, P2) (mod P2)
-        // X = c3 (mod P3) -> x1 + x2*P1 + x3*P1*P2 = c3 (mod P3) -> x3 = (c3 - x1 - x2*P1) * inv(P1*P2, P3) (mod P3)
+        // X = result1 (mod P1) -> x1 = result1
+        // X = result2 (mod P2) -> x1 + x2*P1 = result2 (mod P2) -> x2 = (result2 - x1) * inv(P1, P2) (mod P2)
+        // X = result3 (mod P3) -> x1 + x2*P1 + x3*P1*P2 = result3 (mod P3) -> x3 = (result3 - x1 - x2*P1) * inv(P1*P2, P3) (mod P3)
 
-        var invP1_P2 = ModInverse(P1, P2);
-        var invP1P2_P3 = ModInverse((uint)(((ulong)P1 * P2) % P3), P3);
+        var inverseP1ModP2 = ModInverse(P1, P2);
+        var inverseP1P2ModP3 = ModInverse((uint)(((ulong)P1 * P2) % P3), P3);
 
-        var result = new uint[n];
+        var finalResult = new uint[transformLength];
         ulong carry = 0;
 
-        for (var i = 0; i < n; i++)
+        for (var index = 0; index < transformLength; index++)
         {
-            ulong x1 = c1[i];
+            ulong x1 = result1[index];
 
-            var diff2 = c2[i] >= x1 % P2 ? c2[i] - x1 % P2 : c2[i] + P2 - x1 % P2;
-            var x2 = (diff2 * invP1_P2) % P2;
+            var diff2 = result2[index] >= x1 % P2 ? result2[index] - x1 % P2 : result2[index] + P2 - x1 % P2;
+            var x2 = (diff2 * inverseP1ModP2) % P2;
 
             var term12 = (x1 + x2 * P1) % P3;
-            var diff3 = c3[i] >= term12 ? c3[i] - term12 : c3[i] + P3 - term12;
-            var x3 = (diff3 * invP1P2_P3) % P3;
+            var diff3 = result3[index] >= term12 ? result3[index] - term12 : result3[index] + P3 - term12;
+            var x3 = (diff3 * inverseP1P2ModP3) % P3;
 
             ulong p1 = P1;
             ulong p2 = P2;
 
-            var X = (UInt128)x1 + (UInt128)x2 * p1 + (UInt128)x3 * p1 * p2;
-            var sum = X + carry;
-            result[i] = (uint)(sum & 0xFFFFFFFF);
+            var combinedValue = (UInt128)x1 + (UInt128)x2 * p1 + (UInt128)x3 * p1 * p2;
+            var sum = combinedValue + carry;
+            finalResult[index] = (uint)(sum & 0xFFFFFFFF);
             carry = (ulong)(sum >> 32);
         }
 
-        return result;
+        return finalResult;
     }
 }
 

@@ -10,104 +10,104 @@ public static class GpuBigIntNttKernels
     // NTT Primes and primitive roots
     // We use two 32-bit primes for CRT to support convolution values up to 2^55
     // P1 = 63 * 2^26 + 1 (Proth prime)
-    public const uint NttP1 = 4253024257; // 素数 (507 * 2^23 + 1, or something similar)
+    public const uint Prime1 = 4253024257; // 素数 (507 * 2^23 + 1, or something similar)
     public const uint NttG1 = 5; // 原始根
 
     // NTT素数 2
-    public const uint NttP2 = 4293918721; // 素数 (4095 * 2^20 + 1)
+    public const uint Prime2 = 4293918721; // 素数 (4095 * 2^20 + 1)
     public const uint NttG2 = 19; // 原始根
 
     // Barrett Reduction Constants
     // M = floor(2^64 / P)
     // M1 = floor(2^64 / 4253024257) = 4337323974
-    public const ulong NttM1 = 4337323974UL; // for P1
+    public const ulong BarrettMagic1 = 4337323974UL; // for P1
 
     // M2 = floor(2^64 / 4293918721) = 4296016127
-    public const ulong NttM2 = 4296016127UL; // for P2
+    public const ulong BarrettMagic2 = 4296016127UL; // for P2
 
     [GpuDevice]
-    public static uint ModAdd(uint a, uint b, uint p)
+    public static uint ModAdd(uint operandA, uint operandB, uint primeModulus)
     {
-        var res = a + b;
-        if (res >= p || res < a)
+        var result = operandA + operandB;
+        if (result >= primeModulus || result < operandA)
         {
-            res -= p;
+            result -= primeModulus;
         }
 
-        return res;
+        return result;
     }
 
     [GpuDevice]
-    public static uint ModSub(uint a, uint b, uint p)
+    public static uint ModSub(uint operandA, uint operandB, uint primeModulus)
     {
-        var res = a - b;
-        if (a < b)
+        var result = operandA - operandB;
+        if (operandA < operandB)
         {
-            res += p;
+            result += primeModulus;
         }
 
-        return res;
+        return result;
     }
 
-    // ReSharper disable UselessBinaryOperation
-    // ReSharper disable ConditionIsAlwaysTrueOrFalse
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalse", Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
     [GpuDevice]
-    public static uint ModMulBarrett(uint a, uint b, uint p, ulong m)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UselessBinaryOperation", Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
+    public static uint ModMulBarrett(uint operandA, uint operandB, uint primeModulus, ulong barrettMagic)
     {
-        ulong prod = 0;
-        Gpu.InlinePtx($"asm volatile(\"mul.wide.u32 %0, %1, %2;\" : \"=l\"({prod}) : \"r\"({a}), \"r\"({b}));");
+        ulong product = 0;
+        Gpu.InlinePtx($"asm volatile(\"mul.wide.u32 %0, %1, %2;\" : \"=l\"({product}) : \"r\"({operandA}), \"r\"({operandB}));");
 
-        ulong q = 0;
-        Gpu.InlinePtx($"asm volatile(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"({q}) : \"l\"({prod}), \"l\"({m}));");
+        ulong quotient = 0;
+        Gpu.InlinePtx($"asm volatile(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"({quotient}) : \"l\"({product}), \"l\"({barrettMagic}));");
 
-        ulong r = prod - q * p;
-        while (r >= p)
+        ulong remainder = product - quotient * primeModulus;
+        while (remainder >= primeModulus)
         {
-            r -= p;
+            remainder -= primeModulus;
         }
 
-        return (uint)r;
+        return (uint)remainder;
     }
     // ReSharper restore ConditionIsAlwaysTrueOrFalse
     // ReSharper restore UselessBinaryOperation
 
     [GpuDevice]
-    public static uint ModMul1(uint a, uint b) => ModMulBarrett(a, b, NttP1, NttM1);
+    public static uint ModMul1(uint operandA, uint operandB) => ModMulBarrett(operandA, operandB, Prime1, BarrettMagic1);
 
     [GpuDevice]
-    public static uint ModMul2(uint a, uint b) => ModMulBarrett(a, b, NttP2, NttM2);
+    public static uint ModMul2(uint operandA, uint operandB) => ModMulBarrett(operandA, operandB, Prime2, BarrettMagic2);
 
     [GpuDevice]
-    public static uint ModPow(uint baseVal, uint exp, uint p, ulong m)
+    public static uint ModPow(uint baseValue, uint exponent, uint primeModulus, ulong barrettMagic)
     {
-        uint res = 1;
-        baseVal = baseVal % p;
-        while (exp > 0)
+        uint result = 1;
+        baseValue = baseValue % primeModulus;
+        while (exponent > 0)
         {
-            if ((exp & 1) != 0)
+            if ((exponent & 1) != 0)
             {
-                res = ModMulBarrett(res, baseVal, p, m);
+                result = ModMulBarrett(result, baseValue, primeModulus, barrettMagic);
             }
 
-            baseVal = ModMulBarrett(baseVal, baseVal, p, m);
-            exp >>= 1;
+            baseValue = ModMulBarrett(baseValue, baseValue, primeModulus, barrettMagic);
+            exponent >>= 1;
         }
 
-        return res;
+        return result;
     }
 
     [GpuDevice]
-    public static void AtomicAddWithCarry(uint[] address, int wordIdx, uint val, int maxWords)
+    public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
     {
-        var carry = val;
-        var idx = wordIdx;
-        while (carry > 0 && idx < maxWords)
+        var carry = valueToAdd;
+        var index = wordIndex;
+        while (carry > 0 && index < maxWordCount)
         {
-            var old = Gpu.AtomicAdd(ref address[idx], carry);
-            if (old + carry < old)
+            var oldValue = Gpu.AtomicAdd(ref address[index], carry);
+            if (oldValue + carry < oldValue)
             {
                 carry = 1;
-                idx++;
+                index++;
             }
             else
             {
@@ -117,17 +117,17 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDevice]
-    public static void AtomicSubWithBorrow(uint[] address, int wordIdx, uint val, int maxWords)
+    public static void AtomicSubWithBorrow(uint[] address, int wordIndex, uint valueToSubtract, int maxWordCount)
     {
-        var borrow = val;
-        var idx = wordIdx;
-        while (borrow > 0 && idx < maxWords)
+        var borrow = valueToSubtract;
+        var index = wordIndex;
+        while (borrow > 0 && index < maxWordCount)
         {
-            var old = Gpu.AtomicSub(ref address[idx], borrow);
-            if (old < borrow)
+            var oldValue = Gpu.AtomicSub(ref address[index], borrow);
+            if (oldValue < borrow)
             {
                 borrow = 1;
-                idx++;
+                index++;
             }
             else
             {
@@ -137,187 +137,187 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDevice]
-    public static void Device_NTT_Shared_Row(ref NttKernelArgs args)
+    public static void Device_NTT_Shared_Row(ref NumberTheoreticTransformKernelArgs args)
     {
-        var dData = args.Buffer;
-        var dTwiddle = args.Twiddle;
-        var n = args.M;
-        var l = args.CurrentL;
-        var p = args.P;
-        var m = args.Pm;
+        var deviceData = args.Buffer;
+        var deviceTwiddle = args.Twiddle;
+        var transformLength = args.M;
+        var currentLength = args.CurrentL;
+        var primeModulus = args.P;
+        var barrettMagic = args.Pm;
         var applyTwiddleBefore = args.ApplyTwiddleBefore;
         var applyTwiddleAfter = args.ApplyTwiddleAfter;
         var maxBlocks = args.MaxBlocks;
-        var threadsNeeded = l / 2;
+        var threadsNeeded = currentLength / 2;
 
-        int maxLog2L = 0;
-        while ((1 << maxLog2L) < l)
+        int maxLog2Length = 0;
+        while ((1 << maxLog2Length) < currentLength)
         {
-            maxLog2L++;
+            maxLog2Length++;
         }
 
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
 
-        for (var row = BlockIndex.X; row < maxBlocks; row += GridDimension.X)
+        for (var rowIndex = BlockIndex.X; rowIndex < maxBlocks; rowIndex += GridDimension.X)
         {
             var isActive = ThreadIndex.X < threadsNeeded;
             if (isActive)
             {
-                var tid = ThreadIndex.X;
-                var offset = row * l;
+                var threadId = ThreadIndex.X;
+                var blockOffset = rowIndex * currentLength;
 
-            uint val1 = dData[offset + tid];
-            uint val2 = dData[offset + tid + l / 2];
+            uint value1 = deviceData[blockOffset + threadId];
+            uint value2 = deviceData[blockOffset + threadId + currentLength / 2];
 
-            uint revTid1 = 0;
-            uint revTid2 = 0;
-            Gpu.InlinePtx($"{revTid1} = __brev({tid}) >> (32 - {maxLog2L});");
-            Gpu.InlinePtx($"{revTid2} = __brev({tid + l / 2}) >> (32 - {maxLog2L});");
+            uint reversedThreadId1 = 0;
+            uint reversedThreadId2 = 0;
+            Gpu.InlinePtx($"{reversedThreadId1} = __brev({threadId}) >> (32 - {maxLog2Length});");
+            Gpu.InlinePtx($"{reversedThreadId2} = __brev({threadId + currentLength / 2}) >> (32 - {maxLog2Length});");
 
             if (applyTwiddleBefore)
             {
-                var k1 = (ulong)row * (ulong)tid;
-                k1 %= (ulong)n;
-                val1 = ModMulBarrett(val1, dTwiddle[k1], p, m);
+                var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
+                twiddleIndex1 %= (ulong)transformLength;
+                value1 = ModMulBarrett(value1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
 
-                var k2 = (ulong)row * (ulong)(tid + l / 2);
-                k2 %= (ulong)n;
-                val2 = ModMulBarrett(val2, dTwiddle[k2], p, m);
+                var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
+                twiddleIndex2 %= (ulong)transformLength;
+                value2 = ModMulBarrett(value2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
             }
 
-            Gpu.InlinePtx($"s_row[{revTid1}] = {val1};");
-            Gpu.InlinePtx($"s_row[{revTid2}] = {val2};");
+            Gpu.InlinePtx($"s_row[{reversedThreadId1}] = {value1};");
+            Gpu.InlinePtx($"s_row[{reversedThreadId2}] = {value2};");
         }
         Gpu.SyncThreads();
 
-        for (int s = 0; s < maxLog2L; s++)
+        for (int step = 0; step < maxLog2Length; step++)
         {
             if (isActive)
             {
-                var tid = ThreadIndex.X;
-                var len = 2 << s;
-                var halfLen = len / 2;
-                var blockIdx = tid / halfLen;
-                var idx = tid % halfLen;
-                var pos = blockIdx * len + idx;
+                var threadId = ThreadIndex.X;
+                var length = 2 << step;
+                var halfLength = length / 2;
+                var blockIndex = threadId / halfLength;
+                var elementIndex = threadId % halfLength;
+                var position = blockIndex * length + elementIndex;
 
-                var twiddleIdx = idx * (n / len);
-                var w = dTwiddle[twiddleIdx];
+                var twiddleFactorIndex = elementIndex * (transformLength / length);
+                var twiddleFactor = deviceTwiddle[twiddleFactorIndex];
 
-                uint u = 0;
-                Gpu.InlinePtx($"{u} = s_row[{pos}];");
+                uint leftTerm = 0;
+                Gpu.InlinePtx($"{leftTerm} = s_row[{position}];");
 
-                uint vSrc = 0;
-                Gpu.InlinePtx($"{vSrc} = s_row[{pos + halfLen}];");
-                var v = ModMulBarrett(vSrc, w, p, m);
+                uint rightTermSource = 0;
+                Gpu.InlinePtx($"{rightTermSource} = s_row[{position + halfLength}];");
+                var rightTerm = ModMulBarrett(rightTermSource, twiddleFactor, primeModulus, barrettMagic);
 
-                var addRes = ModAdd(u, v, p);
-                var subRes = ModSub(u, v, p);
+                var additionResult = ModAdd(leftTerm, rightTerm, primeModulus);
+                var subtractionResult = ModSub(leftTerm, rightTerm, primeModulus);
 
-                Gpu.InlinePtx($"s_row[{pos}] = {addRes};");
-                Gpu.InlinePtx($"s_row[{pos + halfLen}] = {subRes};");
+                Gpu.InlinePtx($"s_row[{position}] = {additionResult};");
+                Gpu.InlinePtx($"s_row[{position + halfLength}] = {subtractionResult};");
             }
             Gpu.SyncThreads();
         }
 
         if (isActive)
         {
-            var tid = ThreadIndex.X;
-            var offset = row * l;
+            var threadId = ThreadIndex.X;
+            var blockOffset = rowIndex * currentLength;
 
             if (applyTwiddleAfter)
             {
-                var k1 = (ulong)row * (ulong)tid;
-                k1 %= (ulong)n;
-                uint r1 = 0;
-                Gpu.InlinePtx($"{r1} = s_row[{tid}];");
-                r1 = ModMulBarrett(r1, dTwiddle[k1], p, m);
-                Gpu.InlinePtx($"s_row[{tid}] = {r1};");
+                var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
+                twiddleIndex1 %= (ulong)transformLength;
+                uint result1 = 0;
+                Gpu.InlinePtx($"{result1} = s_row[{threadId}];");
+                result1 = ModMulBarrett(result1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
+                Gpu.InlinePtx($"s_row[{threadId}] = {result1};");
 
-                var k2 = (ulong)row * (ulong)(tid + l / 2);
-                k2 %= (ulong)n;
-                uint r2 = 0;
-                Gpu.InlinePtx($"{r2} = s_row[{tid + l / 2}];");
-                r2 = ModMulBarrett(r2, dTwiddle[k2], p, m);
-                Gpu.InlinePtx($"s_row[{tid + l / 2}] = {r2};");
+                var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
+                twiddleIndex2 %= (ulong)transformLength;
+                uint result2 = 0;
+                Gpu.InlinePtx($"{result2} = s_row[{threadId + currentLength / 2}];");
+                result2 = ModMulBarrett(result2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
+                Gpu.InlinePtx($"s_row[{threadId + currentLength / 2}] = {result2};");
             }
 
-            uint out1 = 0;
-            uint out2 = 0;
-            Gpu.InlinePtx($"{out1} = s_row[{tid}];");
-            Gpu.InlinePtx($"{out2} = s_row[{tid + l / 2}];");
+            uint output1 = 0;
+            uint output2 = 0;
+            Gpu.InlinePtx($"{output1} = s_row[{threadId}];");
+            Gpu.InlinePtx($"{output2} = s_row[{threadId + currentLength / 2}];");
 
-            dData[offset + tid] = out1;
-            dData[offset + tid + l / 2] = out2;
+            deviceData[blockOffset + threadId] = output1;
+            deviceData[blockOffset + threadId + currentLength / 2] = output2;
             }
             Gpu.SyncThreads();
         }
     }
 
     [GpuDevice]
-    public static void Device_NTT_PointwiseSquare(uint[] dData1, uint[] dData2, int n)
+    public static void Device_NTT_PointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
     {
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var i = tid; i < n; i += GridDimension.X * BlockDimension.X)
+        var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        for (var index = threadId; index < transformLength; index += GridDimension.X * BlockDimension.X)
         {
-            dData1[i] = ModMulBarrett(dData1[i], dData1[i], NttP1, NttM1);
-            dData2[i] = ModMulBarrett(dData2[i], dData2[i], NttP2, NttM2);
+            deviceData1[index] = ModMulBarrett(deviceData1[index], deviceData1[index], Prime1, BarrettMagic1);
+            deviceData2[index] = ModMulBarrett(deviceData2[index], deviceData2[index], Prime2, BarrettMagic2);
         }
     }
 
     [GpuDevice]
-    public static void Device_NTT_PointwiseMultiply(uint[] dData1A, uint[] dData2A, uint[] dData1B, uint[] dData2B, int n)
+    public static void Device_NTT_PointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B, uint[] deviceData2B, int transformLength)
     {
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var i = tid; i < n; i += GridDimension.X * BlockDimension.X)
+        var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        for (var index = threadId; index < transformLength; index += GridDimension.X * BlockDimension.X)
         {
-            dData1A[i] = ModMulBarrett(dData1A[i], dData1B[i], NttP1, NttM1);
-            dData2A[i] = ModMulBarrett(dData2A[i], dData2B[i], NttP2, NttM2);
+            deviceData1A[index] = ModMulBarrett(deviceData1A[index], deviceData1B[index], Prime1, BarrettMagic1);
+            deviceData2A[index] = ModMulBarrett(deviceData2A[index], deviceData2B[index], Prime2, BarrettMagic2);
         }
     }
 
     [GpuDevice]
-    public static void Device_CRT_ParallelAtomic([GpuConst] uint[] dRes1, [GpuConst] uint[] dRes2, uint[] outUint,
-        int n, int outNumWords)
+    public static void Device_CRT_ParallelAtomic([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2, uint[] outputBuffer,
+        int transformLength, int maxWordCount)
     {
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
 
-        var invN1 = ModPow((uint)n, NttP1 - 2, NttP1, NttM1);
-        var invN2 = ModPow((uint)n, NttP2 - 2, NttP2, NttM2);
+        var inverseN1 = ModPow((uint)transformLength, Prime1 - 2, Prime1, BarrettMagic1);
+        var inverseN2 = ModPow((uint)transformLength, Prime2 - 2, Prime2, BarrettMagic2);
 
-        for (var k = tid; k < n; k += GridDimension.X * BlockDimension.X)
+        for (var index = threadId; index < transformLength; index += GridDimension.X * BlockDimension.X)
         {
-            const ulong P1 = NttP1;
-            const ulong P2 = NttP2;
+            const ulong Modulus1 = Prime1;
+            const ulong Modulus2 = Prime2;
 
-            ulong v1 = ModMulBarrett(dRes1[k], invN1, NttP1, NttM1);
-            ulong v2 = ModMulBarrett(dRes2[k], invN2, NttP2, NttM2);
+            ulong value1 = ModMulBarrett(deviceResult1[index], inverseN1, Prime1, BarrettMagic1);
+            ulong value2 = ModMulBarrett(deviceResult2[index], inverseN2, Prime2, BarrettMagic2);
 
-            ulong diff;
-            if (v2 >= v1)
+            ulong difference;
+            if (value2 >= value1)
             {
-                diff = v2 - v1;
+                difference = value2 - value1;
             }
             else
             {
-                diff = v2 + P2 - v1;
+                difference = value2 + Modulus2 - value1;
             }
 
             // CRT recombination
-            // x = v1 + P1 * [(v2 - v1) * (P1^-1 mod P2) mod P2]
-            // Prime1InverseModPrime2 = P1^-1 mod P2
-            // P1 = 4253024257, P2 = 4293918721
+            // x = value1 + Modulus1 * [(value2 - value1) * (Modulus1^-1 mod Modulus2) mod Modulus2]
+            // Prime1InverseModPrime2 = Modulus1^-1 mod Modulus2
+            // Modulus1 = 4253024257, Modulus2 = 4293918721
             const ulong Prime1InverseModPrime2 = 105UL;
-            var h = (diff * Prime1InverseModPrime2) % P2;
-            var val = v1 + P1 * h;
+            var crtCoefficient = (difference * Prime1InverseModPrime2) % Modulus2;
+            var recombinedValue = value1 + Modulus1 * crtCoefficient;
 
-            if (val <= 0)
+            if (recombinedValue <= 0)
             {
                 continue;
             }
 
-            var wordIdx = k / 2;
-            var bitOffset = (k % 2) * 16;
+            var wordIndex = index / 2;
+            var bitOffset = (index % 2) * 16;
 
             uint low32;
             uint mid32;
@@ -325,45 +325,45 @@ public static class GpuBigIntNttKernels
 
             if (bitOffset == 0)
             {
-                low32 = (uint)(val & 0xFFFFFFFF);
-                mid32 = (uint)(val >> 32);
+                low32 = (uint)(recombinedValue & 0xFFFFFFFF);
+                mid32 = (uint)(recombinedValue >> 32);
             }
             else
             {
-                low32 = (uint)((val << 16) & 0xFFFFFFFF);
-                mid32 = (uint)((val >> 16) & 0xFFFFFFFF);
-                high32 = (uint)(val >> 48);
+                low32 = (uint)((recombinedValue << 16) & 0xFFFFFFFF);
+                mid32 = (uint)((recombinedValue >> 16) & 0xFFFFFFFF);
+                high32 = (uint)(recombinedValue >> 48);
             }
 
             if (low32 != 0)
             {
-                AtomicAddWithCarry(outUint, wordIdx, low32, outNumWords);
+                AtomicAddWithCarry(outputBuffer, wordIndex, low32, maxWordCount);
             }
 
             if (mid32 != 0)
             {
-                AtomicAddWithCarry(outUint, wordIdx + 1, mid32, outNumWords);
+                AtomicAddWithCarry(outputBuffer, wordIndex + 1, mid32, maxWordCount);
             }
 
             if (high32 != 0)
             {
-                AtomicAddWithCarry(outUint, wordIdx + 2, high32, outNumWords);
+                AtomicAddWithCarry(outputBuffer, wordIndex + 2, high32, maxWordCount);
             }
         }
     }
 
     [GpuDevice]
-    public static void Device_NTT_Internal(ref NttKernelArgs args)
+    public static void Device_NTT_Internal(ref NumberTheoreticTransformKernelArgs args)
     {
-        var buf = args.Buffer;
-        var tmp = args.TemporaryBuffer;
-        var m = args.M;
-        var n1 = args.N1;
-        var n2 = args.N2;
+        var buffer = args.Buffer;
+        var temporaryBuffer = args.TemporaryBuffer;
+        var transformLength = args.M;
+        var length1 = args.N1;
+        var length2 = args.N2;
         var isInverse = args.IsInverse;
-        if (m <= 512)
+        if (transformLength <= 512)
         {
-            args.CurrentL = m;
+            args.CurrentL = transformLength;
             args.ApplyTwiddleBefore = false;
             args.ApplyTwiddleAfter = false;
             args.MaxBlocks = 1;
@@ -374,49 +374,49 @@ public static class GpuBigIntNttKernels
         {
             if (isInverse)
             {
-                args.CurrentL = n2;
+                args.CurrentL = length2;
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = true;
-                args.MaxBlocks = n1;
+                args.MaxBlocks = length1;
                 Device_NTT_Shared_Row(ref args);
                 Gpu.SyncGrid();
 
-                GpuBigIntFermatKernels.Device_Transpose_32x32(buf, tmp, n2, n1);
+                GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
                 Gpu.SyncGrid();
 
-                args.Buffer = tmp;
-                args.CurrentL = n1;
+                args.Buffer = temporaryBuffer;
+                args.CurrentL = length1;
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = false;
-                args.MaxBlocks = n2;
+                args.MaxBlocks = length2;
                 Device_NTT_Shared_Row(ref args);
-                args.Buffer = buf; // Restore buffer
+                args.Buffer = buffer; // Restore buffer
                 Gpu.SyncGrid();
 
-                GpuBigIntFermatKernels.Device_Transpose_32x32(tmp, buf, n1, n2);
+                GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
                 Gpu.SyncGrid();
             }
             else
             {
-                GpuBigIntFermatKernels.Device_Transpose_32x32(buf, tmp, n2, n1);
+                GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
                 Gpu.SyncGrid();
 
-                args.Buffer = tmp;
-                args.CurrentL = n1;
+                args.Buffer = temporaryBuffer;
+                args.CurrentL = length1;
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = true;
-                args.MaxBlocks = n2;
+                args.MaxBlocks = length2;
                 Device_NTT_Shared_Row(ref args);
-                args.Buffer = buf; // Restore buffer
+                args.Buffer = buffer; // Restore buffer
                 Gpu.SyncGrid();
 
-                GpuBigIntFermatKernels.Device_Transpose_32x32(tmp, buf, n1, n2);
+                GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
                 Gpu.SyncGrid();
 
-                args.CurrentL = n2;
+                args.CurrentL = length2;
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = false;
-                args.MaxBlocks = n1;
+                args.MaxBlocks = length1;
                 Device_NTT_Shared_Row(ref args);
                 Gpu.SyncGrid();
             }
@@ -424,14 +424,14 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDevice]
-    public static void Device_ForwardNTT(ref NttKernelArgs args)
+    public static void Device_ForwardNTT(ref NumberTheoreticTransformKernelArgs args)
     {
         args.IsInverse = false;
         Device_NTT_Internal(ref args);
     }
 
     [GpuDevice]
-    public static void Device_InverseNTT(ref NttKernelArgs args)
+    public static void Device_InverseNTT(ref NumberTheoreticTransformKernelArgs args)
     {
         args.IsInverse = true;
         Device_NTT_Internal(ref args);
@@ -442,7 +442,7 @@ public static class GpuBigIntNttKernels
     {
         // This kernel exists solely to ensure that the G# source generator transpiles 
         // the [GpuDevice] methods in this file for snapshot testing.
-        NttKernelArgs args = default;
+        NumberTheoreticTransformKernelArgs args = default;
         args.Buffer = data;
         Device_ForwardNTT(ref args);
     }

@@ -3,8 +3,10 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
-// ReSharper disable UnusedType.Global
-// ReSharper disable UnusedMember.Global
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public static class GpuBigIntKernels
 {
     [GpuKernel]

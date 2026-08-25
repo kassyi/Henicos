@@ -108,7 +108,7 @@ public static class GpuBigIntScalarKernels
             result[i] = (uint)(prod & 0xFFFFFFFFul);
             carry = prod >> 32;
         }
-        
+
         if (true)
         {
             carryBuf[chunkIdx + 1] = (long)carry;

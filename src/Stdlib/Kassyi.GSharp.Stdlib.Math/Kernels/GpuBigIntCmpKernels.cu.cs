@@ -1,11 +1,12 @@
-// ReSharper disable NotAccessedVariable
-// ReSharper disable RedundantAssignment
 #pragma warning disable IDE0051, IDE0052, IDE0059, CS0219
+using System.Diagnostics.CodeAnalysis;
 using Kassyi.GSharp.Stdlib.Math.Contexts;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
+[SuppressMessage("ReSharper", "NotAccessedVariable", Justification = "Variables are accessed within inline PTX assembly blocks")]
+[SuppressMessage("ReSharper", "RedundantAssignment", Justification = "Assignments are consumed by inline PTX assembly blocks")]
 public static class GpuBigIntCmpKernels
 {
     [GpuKernel]

@@ -2,12 +2,30 @@ namespace Kassyi.GSharp.Stdlib.Math;
 
 public class GpuBigIntMatrix2x2 : IDisposable
 {
-    public GpuBigInteger M00 { get; }
-    public GpuBigInteger M01 { get; }
-    public GpuBigInteger M10 { get; }
-    public GpuBigInteger M11 { get; }
-    public bool IsOddStep { get; }
-    public GpuContext Context { get; }
+    public GpuBigInteger M00
+    {
+        get;
+    }
+    public GpuBigInteger M01
+    {
+        get;
+    }
+    public GpuBigInteger M10
+    {
+        get;
+    }
+    public GpuBigInteger M11
+    {
+        get;
+    }
+    public bool IsOddStep
+    {
+        get;
+    }
+    public GpuContext Context
+    {
+        get;
+    }
 
     public GpuBigIntMatrix2x2(GpuContext context, int numWords, bool isOddStep)
     {
