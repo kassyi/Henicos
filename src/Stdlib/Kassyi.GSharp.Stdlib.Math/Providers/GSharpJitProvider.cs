@@ -125,12 +125,12 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         CopyDeviceToHost(leftWords, leftOperand.DevicePointer, leftOperand.NumWords);
         CopyDeviceToHost(rightWords, rightOperand.DevicePointer, rightOperand.NumWords);
 
-        var leftBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(leftWords),
+        var leftBig = new BigInteger(MemoryMarshal.Cast<uint, byte>(leftWords),
             isUnsigned: true, isBigEndian: false);
-        var rightBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(rightWords),
+        var rightBig = new BigInteger(MemoryMarshal.Cast<uint, byte>(rightWords),
             isUnsigned: true, isBigEndian: false);
 
-        var resultBig = System.Numerics.BigInteger.GreatestCommonDivisor(leftBig, rightBig);
+        var resultBig = BigInteger.GreatestCommonDivisor(leftBig, rightBig);
         var resultBytes = resultBig.ToByteArray(isUnsigned: true, isBigEndian: false);
         var resultWords = new uint[resultBuffer.NumWords];
         Buffer.BlockCopy(resultBytes, 0, resultWords, 0, System.Math.Min(resultBytes.Length, resultWords.Length * 4));

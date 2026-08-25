@@ -1,7 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
-
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
@@ -24,15 +20,26 @@ public static class CudaEnvironment
 
         if (OperatingSystem.IsWindows())
         {
-            var baseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
-            if (Directory.Exists(baseDir))
+            const string BaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+            if (!Directory.Exists(BaseDir))
             {
-                var subDirs = Directory.GetDirectories(baseDir, "v*");
-                if (subDirs.Length > 0)
-                {
-                    // "v13.3", "v12.4" などのバージョン文字列で降順ソートし、最新を取得
-                    return subDirs.OrderByDescending(d => d).First();
-                }
+                return null;
+            }
+
+            var subDirs = Directory.GetDirectories(BaseDir, "v*");
+            if (subDirs.Length > 0)
+            {
+                return subDirs
+                    .Select(d => new
+                    {
+                        Path = d,
+                        Version = Version.TryParse(Path.GetFileName(d).TrimStart('v'), out var v)
+                            ? v
+                            : new Version(0, 0)
+                    })
+                    .OrderByDescending(x => x.Version)
+                    .Select(x => x.Path)
+                    .FirstOrDefault();
             }
         }
         else if (OperatingSystem.IsLinux())
@@ -56,6 +63,15 @@ public static class CudaEnvironment
         if (cudaPath != null)
         {
             var binPath = Path.Combine(cudaPath, "bin");
+            if (OperatingSystem.IsWindows())
+            {
+                var binX64 = Path.Combine(binPath, "x64");
+                if (Directory.Exists(binX64))
+                {
+                    return binX64;
+                }
+            }
+
             if (Directory.Exists(binPath))
             {
                 return binPath;

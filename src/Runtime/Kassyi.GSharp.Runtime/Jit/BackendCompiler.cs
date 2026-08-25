@@ -11,7 +11,10 @@ public static class NvccCompiler
         public string Output { get; } = output;
     }
 
-    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner
+    {
+        get; set;
+    } = psi =>
     {
         using var process = new Process { StartInfo = psi };
         var outputBuilder = new StringBuilder();
