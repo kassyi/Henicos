@@ -47,6 +47,10 @@ const TASKS = [
     { Id: "GSH-06", Title: "PTX / C++ コンパイルエラーの行番号マッピング", B: 2, E: 3, G: 5 },
     { Id: "GSH-07", Title: "JIT ディスクキャッシュ機構", B: 1, E: 2, G: 5 },
 
+    // --- GEN (GSharp ソースジェネレータ / ランタイム基盤) 領域 ---
+    { Id: "GEN-01", Title: "C# ラッパーと CUDA 連携の基本機能（JITバインディング）", B: 5, E: 5, G: 5 },
+    { Id: "GEN-02", Title: "NVRTC コンパイルエラーの例外ラップ", B: 4, E: 5, G: 5 },
+
     // --- SYN (C# 構文・シンタックスシュガー) 領域 ---
     { Id: "SYN-01", Title: "Switch 式 (switch expression)", B: 4, E: 4, G: 4 },
     { Id: "SYN-02", Title: "パターンマッチング (is / 結合 / リレーショナル)", B: 4, E: 3, G: 5 },
@@ -127,7 +131,11 @@ const TASKS = [
     { Id: "SYN-84", Title: "タプル宣言分解の foreach ループ", B: 2, E: 3, G: 2 },
     { Id: "SYN-86", Title: "関数ポインタの呼出規約", B: 1, E: 4, G: 1 },
     { Id: "SYN-87", Title: "#line hidden / #line default", B: 1, E: 3, G: 1 },
-    { Id: "SYN-88", Title: "暗黙のスタック配列 (stackalloc[])", B: 2, E: 4, G: 2 }
+    { Id: "SYN-88", Title: "暗黙のスタック配列 (stackalloc[])", B: 2, E: 4, G: 2 },
+    { Id: "SYN-90", Title: "複雑な制御フロー（if-else ネストとループの複合）", B: 5, E: 5, G: 5 },
+    { Id: "SYN-91", Title: "基本制御構文（switch, do-while, 論理演算）", B: 5, E: 5, G: 5 },
+    { Id: "SYN-92", Title: "ユーザー定義構造体のカーネル引数および操作", B: 5, E: 5, G: 5 },
+    { Id: "SYN-93", Title: "デバイスメソッド ([GpuDevice]) の呼び出し・再利用", B: 5, E: 5, G: 5 }
 ];
 
 // =============================================================================
@@ -182,7 +190,8 @@ function countDomains(tierTasks) {
     return {
         SYN: tierTasks.filter(t => t.Id.startsWith("SYN")).length,
         GBI: tierTasks.filter(t => t.Id.startsWith("GBI")).length,
-        GSH: tierTasks.filter(t => t.Id.startsWith("GSH")).length
+        GSH: tierTasks.filter(t => t.Id.startsWith("GSH")).length,
+        GEN: tierTasks.filter(t => t.Id.startsWith("GEN")).length
     };
 }
 
@@ -195,6 +204,7 @@ function generateSubgraph(name, label, tierTasks) {
     let sub = `    subgraph ${name}["${label}"]\n        direction LR\n`;
 
     const nodes = [];
+    if (counts.GEN > 0) nodes.push(`        ${name}_GEN["GEN (ジェネレータ基盤): ${counts.GEN}件"]`);
     if (counts.SYN > 0) nodes.push(`        ${name}_SYN["SYN (構文): ${counts.SYN}件"]`);
     if (counts.GSH > 0) nodes.push(`        ${name}_GSH["GSH (トランスパイラ): ${counts.GSH}件"]`);
     if (counts.GBI > 0) nodes.push(`        ${name}_GBI["GBI (GPU基盤): ${counts.GBI}件"]`);
@@ -246,7 +256,7 @@ function generateMermaidAndMilestones(tiers) {
  * 各個別タスク管理 Markdown のテーブル行を更新
  */
 function updateIndividualMarkdownTables(docsDir, taskMap) {
-    const filesToUpdate = ['gbi_roadmap.md', 'gsharp_transpiler_issues.md', 'csharp_syntax_support.md'];
+    const filesToUpdate = ['gbi_roadmap.md', 'gsharp_transpiler_issues.md', 'gsharp_syntax_support.md', 'gsharp_generator_core.md'];
 
     for (const file of filesToUpdate) {
         const filePath = path.join(docsDir, file);
