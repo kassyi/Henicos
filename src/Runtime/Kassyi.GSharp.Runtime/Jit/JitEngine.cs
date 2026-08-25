@@ -157,7 +157,15 @@ public static class JitEngine
 
             if (File.Exists(cacheFilePath))
             {
-                ptxBytes = File.ReadAllBytes(cacheFilePath);
+                try
+                {
+                    ptxBytes = File.ReadAllBytes(cacheFilePath);
+                }
+                catch
+                {
+                    // If read fails (e.g. corruption or concurrent deletion), fallback to recompile
+                    ptxBytes = CompileToPtx(cppSource, kernelName);
+                }
             }
             else
             {
@@ -165,7 +173,10 @@ public static class JitEngine
                 try
                 {
                     Directory.CreateDirectory(s_cacheDirectory);
-                    File.WriteAllBytes(cacheFilePath, ptxBytes);
+                    var tempFilePath = cacheFilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                    File.WriteAllBytes(tempFilePath, ptxBytes);
+                    // Atomically move the file into place (File.Move with overwrite on newer runtimes, or just move)
+                    File.Move(tempFilePath, cacheFilePath, overwrite: true);
                 }
                 catch
                 {
