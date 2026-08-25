@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Runtime.Jit;
 
 public static class NvccCompiler
@@ -9,10 +11,7 @@ public static class NvccCompiler
         public string Output { get; } = output;
     }
 
-    public static Func<ProcessStartInfo, string> ProcessRunner
-    {
-        get; set;
-    } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
     {
         using var process = new Process { StartInfo = psi };
         var outputBuilder = new StringBuilder();
@@ -57,8 +56,10 @@ public static class NvccCompiler
             {
                 // Ignore kill errors on best-effort basis
             }
+
             throw new TimeoutException($"Process timed out after 60 seconds. Partial output:\n{outputBuilder}");
         }
+
         process.WaitForExit(); // Ensure async event handlers finish
 
         var output = outputBuilder.ToString();
@@ -92,15 +93,23 @@ public static class NvccCompiler
             Process.Start(psi) ?? throw new InvalidOperationException("Failed to start vswhere process");
         if (!process.WaitForExit(10000))
         {
-            try { process.Kill(); } catch { /* Ignore cleanup errors on best-effort basis */ }
+            try
+            {
+                process.Kill();
+            }
+            catch
+            {
+                /* Ignore cleanup errors on best-effort basis */
+            }
+
             throw new TimeoutException("vswhere.exe timed out.");
         }
+
         var output = process.StandardOutput.ReadToEnd().Trim();
         return output;
     });
 
     public static Func<string> GetVswhereOutputFunc { get; set; } = () => s_vswhereCache.Value;
-
 
 
     public static string GetVcvarsPath()
@@ -118,21 +127,21 @@ public static class NvccCompiler
 
     public static string GetNvccPath()
     {
-        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
-        if (!string.IsNullOrEmpty(cudaPath))
+        var binPath = CudaEnvironment.GetCudaBinPath();
+        if (!string.IsNullOrEmpty(binPath))
         {
-            var nvcc = FileSystem.Path.Combine(cudaPath, "bin", "nvcc.exe");
+            var nvcc = FileSystem.Path.Combine(binPath, OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc");
             if (FileSystem.File.Exists(nvcc))
             {
                 return nvcc;
             }
         }
 
-        const string Fallback = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\bin\nvcc.exe";
-        return FileSystem.File.Exists(Fallback) ? Fallback : "nvcc.exe";
+        return OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc";
     }
 
-    // ReSharper disable UnusedMember.Global
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UnusedMember.Global",
+        Justification = "Public API exposed for runtime consumers")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
         Justification = "Public API for library")]
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
@@ -198,12 +207,14 @@ public static class NvccCompiler
         Console.WriteLine("...");
         if (cuSrc.Contains("Kernel_StaticFermatLoop"))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(cuSrc, @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
+            var match = System.Text.RegularExpressions.Regex.Match(cuSrc,
+                @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
             if (match.Success)
             {
                 Console.WriteLine(match.Value);
             }
         }
+
         Console.WriteLine("=========================");
 
         var sw = Stopwatch.StartNew();

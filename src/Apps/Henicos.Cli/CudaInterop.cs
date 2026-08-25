@@ -1,10 +1,9 @@
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Henicos.Cli;
 
-
-// ReSharper disable UnusedMember.Global
-
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public interop methods")]
 public static class CudaInterop
 {
     private const string DllName = "Kassyi.GSharp.GpuBigInt.Cuda.dll";
@@ -47,14 +46,13 @@ public static class CudaInterop
 
     static CudaInterop()
     {
-        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
-        if (!string.IsNullOrEmpty(cudaPath))
+        var cudaBin = Kassyi.GSharp.Core.CudaEnvironment.GetCudaBinPath();
+        if (!string.IsNullOrEmpty(cudaBin))
         {
-            var cudaBinX64 = Path.Combine(cudaPath, "bin", "x64");
             var pathEnv = Environment.GetEnvironmentVariable("PATH");
-            if (pathEnv != null && !pathEnv.Contains(cudaBinX64))
+            if (pathEnv != null && !pathEnv.Contains(cudaBin))
             {
-                Environment.SetEnvironmentVariable("PATH", pathEnv + ";" + cudaBinX64);
+                Environment.SetEnvironmentVariable("PATH", pathEnv + Path.PathSeparator + cudaBin);
             }
         }
 

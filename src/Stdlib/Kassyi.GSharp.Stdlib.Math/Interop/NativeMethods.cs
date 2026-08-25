@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Kassyi.GSharp.Core;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 
@@ -11,9 +12,23 @@ internal static partial class NativeMethods
 
     static NativeMethods()
     {
+        var binPath = CudaEnvironment.GetCudaBinPath();
+        if (string.IsNullOrEmpty(binPath))
+        {
+            return;
+        }
+
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+        if (pathEnv != null && !pathEnv.Contains(binPath))
+        {
+            Environment.SetEnvironmentVariable("PATH", binPath + Path.PathSeparator + pathEnv);
+        }
+
+        _ = SetDllDirectory(binPath);
     }
 
-    [LibraryImport("kernel32.dll", EntryPoint = "SetDllDirectoryA", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [LibraryImport("kernel32.dll", EntryPoint = "SetDllDirectoryW", SetLastError = true,
+        StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetDllDirectory(string lpPathName);
 
@@ -24,37 +39,47 @@ internal static partial class NativeMethods
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_CopyDeviceToDevice")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_CopyDeviceToDevice(IntPtr d_dst, IntPtr d_src, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_CopyDeviceToDevice(IntPtr dDst, IntPtr dSrc, int numWords,
+        IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_Square")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_Square(IntPtr workspace, IntPtr data, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_Square(IntPtr workspace, IntPtr data, int numWords, IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_Add")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_Add(IntPtr workspace, IntPtr d_a, IntPtr d_b, IntPtr d_result, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_Add(IntPtr workspace, IntPtr deviceA, IntPtr deviceB, IntPtr deviceResult,
+        int numWords,
+        IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_Sub")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_Sub(IntPtr workspace, IntPtr d_a, IntPtr d_b, IntPtr d_result, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_Sub(IntPtr workspace, IntPtr deviceA, IntPtr deviceB, IntPtr deviceResult,
+        int numWords,
+        IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_ShiftLeft")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_ShiftLeft(IntPtr workspace, IntPtr d_a, int shiftBits, IntPtr d_result, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_ShiftLeft(IntPtr workspace, IntPtr deviceA, int shiftBits, IntPtr deviceResult,
+        int numWords, IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_ShiftRight")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_ShiftRight(IntPtr workspace, IntPtr d_a, int shiftBits, IntPtr d_result, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_ShiftRight(IntPtr workspace, IntPtr deviceA, int shiftBits,
+        IntPtr deviceResult,
+        int numWords, IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_BitwiseAnd")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_BitwiseAnd(IntPtr workspace, IntPtr d_a, IntPtr d_b, IntPtr d_result, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_BitwiseAnd(IntPtr workspace, IntPtr deviceA, IntPtr deviceB,
+        IntPtr deviceResult,
+        int numWords, IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_Alloc")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -71,11 +96,13 @@ internal static partial class NativeMethods
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_CopyHostToDevice")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_CopyHostToDevice(IntPtr d_dst, uint[] h_src, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_CopyHostToDevice(IntPtr deviceDestination, uint[] hostSource, int numWords,
+        IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = "GpuBigInt_CopyDeviceToHost")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_CopyDeviceToHost(uint[] h_dst, IntPtr d_src, int numWords, IntPtr stream = default);
+    public static partial bool GpuBigInt_CopyDeviceToHost(uint[] hostDestination, IntPtr deviceSource, int numWords,
+        IntPtr stream = 0);
 }
 

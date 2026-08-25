@@ -1,6 +1,7 @@
-// ReSharper disable UnusedMember.Global
-
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+
+[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -56,6 +57,7 @@ public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
     }
 }
 
+[SuppressMessage("ReSharper", "InconsistentNaming", Justification = "P/Invoke matches native CUDA API naming")]
 public static partial class CudaDriverApi
 {
     private const string DllName = "nvcuda.dll";
@@ -121,7 +123,7 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuMemsetD8_v2(IntPtr dptr, byte uc, IntPtr N);
+    public static partial CUresult cuMemsetD8_v2(IntPtr dptr, byte uc, IntPtr byteCount);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]

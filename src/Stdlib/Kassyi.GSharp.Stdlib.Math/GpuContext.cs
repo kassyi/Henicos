@@ -10,9 +10,18 @@ public enum GpuExecutionEngine
 
 public class GpuContext : IDisposable
 {
-    public int MaxWords { get; }
-    public IntPtr WorkspacePointer { get; }
-    public GpuExecutionEngine Engine { get; set; }
+    public int MaxWords
+    {
+        get;
+    }
+    public IntPtr WorkspacePointer
+    {
+        get;
+    }
+    public GpuExecutionEngine Engine
+    {
+        get; set;
+    }
 
     public Providers.IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
         ? Providers.GSharpJitProvider.Instance
@@ -35,10 +44,20 @@ public class GpuContext : IDisposable
         }
         else
         {
-            WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
-            if (WorkspacePointer == IntPtr.Zero)
+            try
             {
-                throw new InvalidOperationException("Failed to initialize GPU context.");
+                WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
+                if (WorkspacePointer == IntPtr.Zero)
+                {
+                    throw new InvalidOperationException("Failed to initialize GPU context.");
+                }
+            }
+            catch (DllNotFoundException ex)
+            {
+                throw new InvalidOperationException(
+                    "The native CUDA DLL 'Kassyi.GSharp.GpuBigInt.Cuda' or one of its dependencies could not be loaded. " +
+                    "Please ensure that the native project is built (run 'build.bat' in 'src/Native/Kassyi.GSharp.Stdlib.Math.Cuda') " +
+                    "and that the CUDA Toolkit bin directory is accessible via PATH.", ex);
             }
         }
     }
