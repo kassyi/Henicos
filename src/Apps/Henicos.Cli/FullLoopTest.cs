@@ -1,12 +1,10 @@
-using System.Numerics;
-
 namespace Henicos.Cli;
 
 public static class FullLoopTest
 {
     public static void Run()
     {
-        var exponent = 1000;
+        const int exponent = 1000;
         var baseOffset = BigInteger.One << exponent;
         var modulus = (BigInteger.One << (2 * exponent + 1)) - baseOffset + 11;
 
@@ -45,12 +43,12 @@ public static class FullLoopTest
         Console.WriteLine($"Match: {(resultBigInt % modulus) == expectedModPow}");
         return;
 
-        void multiplyBy2AndReduce()
+        void squareAndReduce()
         {
             var dataBytes = new byte[data.Length * 4 + 1];
             Buffer.BlockCopy(data, 0, dataBytes, 0, data.Length * 4);
             var tBig = new BigInteger(dataBytes);
-            tBig *= 2;
+            tBig *= tBig;
             var bytes = tBig.ToByteArray();
             Array.Clear(data, 0, data.Length);
             Buffer.BlockCopy(bytes, 0, data, 0, Math.Min(bytes.Length, data.Length * 4));
@@ -58,12 +56,12 @@ public static class FullLoopTest
             HybridReduction.ReduceInPlace(data, exponent, numWords);
         }
 
-        void squareAndReduce()
+        void multiplyBy2AndReduce()
         {
             var dataBytes = new byte[data.Length * 4 + 1];
             Buffer.BlockCopy(data, 0, dataBytes, 0, data.Length * 4);
             var tBig = new BigInteger(dataBytes);
-            tBig *= tBig;
+            tBig *= 2;
             var bytes = tBig.ToByteArray();
             Array.Clear(data, 0, data.Length);
             Buffer.BlockCopy(bytes, 0, data, 0, Math.Min(bytes.Length, data.Length * 4));

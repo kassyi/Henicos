@@ -47,7 +47,7 @@ public static class HybridReduction
                 // (Q << E) shifts bits up. If Q is max 2E+1 bits, Q<<E is 3E+1 bits.
                 // To be safe, we just process all available words up to data.Length.
                 var targetWords = data.Length;
-                var chunkSize = System.Math.Max(1024, targetWords / System.Math.Max(1, Environment.ProcessorCount));
+                var chunkSize = Math.Max(1024, targetWords / Math.Max(1, Environment.ProcessorCount));
                 var numChunks = (targetWords + chunkSize - 1) / chunkSize;
 
                 var carryBuffer = new long[numChunks + 1];
@@ -55,7 +55,7 @@ public static class HybridReduction
                 Parallel.For(0, numChunks, chunkIdx =>
                 {
                     var start = chunkIdx * chunkSize;
-                    var end = System.Math.Min(start + chunkSize, targetWords);
+                    var end = Math.Min(start + chunkSize, targetWords);
 
                     long localCarry = 0;
 
@@ -90,7 +90,7 @@ public static class HybridReduction
                 for (var chunkIdx = 0; chunkIdx < numChunks; chunkIdx++)
                 {
                     var start = chunkIdx * chunkSize;
-                    var end = System.Math.Min(start + chunkSize, targetWords);
+                    var end = Math.Min(start + chunkSize, targetWords);
 
                     rippleCarry += carryBuffer[chunkIdx];
                     if (rippleCarry == 0)
