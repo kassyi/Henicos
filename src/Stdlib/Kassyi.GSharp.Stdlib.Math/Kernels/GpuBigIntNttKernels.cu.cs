@@ -447,6 +447,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuKernel]
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Exists solely to trigger snapshot transpilation")]
     public static void DummyTranspilationKernel(uint[] data)
     {
         // This kernel exists solely to ensure that the G# source generator transpiles 
