@@ -35,14 +35,14 @@ public class GeneratorDiagnosticsTests
             .AddSyntaxTrees(syntaxTree);
 
         var assembly = System.AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "Kassyi.Generators.GSharp");
+            .FirstOrDefault(a => a.GetName().Name == "Kassyi.GSharp.Compiler");
         if (assembly == null)
         {
             assembly = Assembly.LoadFrom(
-                @"..\..\..\..\..\src\Kassyi.Generators.GSharp\bin\Debug\netstandard2.0\Kassyi.Generators.GSharp.dll");
+                @"..\..\..\..\..\src\Compiler\Kassyi.GSharp.Compiler\bin\Debug\netstandard2.0\Kassyi.GSharp.Compiler.dll");
         }
 
-        var genType = assembly.GetType("Kassyi.Generators.GSharp.GpuKernelGenerator");
+        var genType = assembly.GetType("Kassyi.GSharp.Compiler.GpuKernelGenerator");
         var generator = (IIncrementalGenerator)System.Activator.CreateInstance(genType)!;
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(

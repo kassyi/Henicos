@@ -43,9 +43,6 @@ extern ""C"" __global__ void TestKernel(int* data) {
             var info89 = new FileInfo(fatbin89);
             var info86 = new FileInfo(fatbin86);
 
-            _output.WriteLine($"sm_89 size: {info89.Length} bytes, registers: {res89.RegistersUsed}");
-            _output.WriteLine($"sm_86 size: {info86.Length} bytes, registers: {res86.RegistersUsed}");
-
             // The fatbin structures or embedded sass are usually different between sm_89 and sm_86.
             // Just verifying it compiles without throwing is sufficient proof of multi-arch compilation.
             Assert.True(res89.RegistersUsed > 0);
@@ -93,9 +90,6 @@ extern ""C"" __global__ void TestKernelStatic(int* data) {
         {
             var resDynamic = NvccCompiler.CompileToFatbin(cuFileDynamic, fatbinDynamic, null, tempDir, "sm_86");
             var resStatic = NvccCompiler.CompileToFatbin(cuFileStatic, fatbinStatic, null, tempDir, "sm_86");
-
-            _output.WriteLine($"Dynamic Registers: {resDynamic.RegistersUsed}");
-            _output.WriteLine($"Static (Unrolled) Registers: {resStatic.RegistersUsed}");
 
             // Unrolled trivial loops typically compile down to a single constant assignment if fully unrolled,
             // or use slightly different register counts. We assert they compiled successfully and their ptxas outputs differ.
