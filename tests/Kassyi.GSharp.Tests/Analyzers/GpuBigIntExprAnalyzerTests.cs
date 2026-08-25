@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Stdlib.Math.Expressions;
@@ -14,117 +16,50 @@ namespace Kassyi.GSharp.Tests;
 
 public class GpuBigIntExprAnalyzerTests
 {
-    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source)
+    private static string GetTestCasePath(string testName, [CallerFilePath] string callerFilePath = "")
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+        var projectDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(callerFilePath)!, ".."));
+        return Path.Combine(projectDir, "TestCases", "Analyzers", "GpuBigIntExpr", $"{testName}.cs");
+    }
 
-        var references = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location))
-            .Cast<MetadataReference>()
-            .ToList();
-
-        references.Add(MetadataReference.CreateFromFile(typeof(GpuBigIntExpr).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location));
-
-        var compilation = CSharpCompilation.Create("AnalyzerTestCompilation")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(references)
-            .AddSyntaxTrees(syntaxTree);
-
+    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsFromTestNameAsync(string testName)
+    {
+        var path = GetTestCasePath(testName);
+        var source = await File.ReadAllTextAsync(path);
         var analyzer = new GpuBigIntExprAnalyzer();
-        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
-        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+        return await Helpers.RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, analyzer);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-26")]
     public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
-        var source = """
-            using Kassyi.GSharp.Stdlib.Math.Expressions;
-
-            public class TestClass
-            {
-                public void Method(GpuBigIntExpr expr)
-                {
-                    var local = expr;
-                }
-            }
-            """;
-
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
-
-        Assert.Contains(diagnostics, d => d.Id == "GSH0005");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_LocalDeclaration");
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-27")]
     public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
-        var source = """
-            using Kassyi.GSharp.Stdlib.Math.Expressions;
-
-            public class TestClass
-            {
-                private GpuBigIntExpr _field;
-
-                public void Method(GpuBigIntExpr expr)
-                {
-                    _field = expr;
-                }
-            }
-            """;
-
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
-
-        Assert.Contains(diagnostics, d => d.Id == "GSH0005");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-27_Assignment");
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-28")]
     public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {
-        var source = """
-            namespace Kassyi.GSharp.GpuBigInt.Expressions
-            {
-                public struct GpuBigIntExpr {}
-            }
-
-            public class TestClass
-            {
-                public void Method(Kassyi.GSharp.GpuBigInt.Expressions.GpuBigIntExpr expr)
-                {
-                    var local = expr;
-                }
-            }
-            """;
-
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
-
-        Assert.Contains(diagnostics, d => d.Id == "GSH0005");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-28_LegacyNamespace");
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
+
     [Fact]
     [Trait("FeatureId", "GBI-26")]
     public async Task MultipleDeclarations_InSingleStatement_EdgeCase()
     {
-        var source = """
-            using Kassyi.GSharp.Stdlib.Math.Expressions;
-
-            public class TestClass
-            {
-                public void Method(GpuBigIntExpr expr)
-                {
-                    GpuBigIntExpr local1 = expr, local2 = expr;
-                }
-            }
-            """;
-
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
-
-        // Expect multiple diagnostics for multiple declarators
-        var count = diagnostics.Count(d => d.Id == "GSH0005");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_MultipleDeclarations");
+        var count = diagnostics.Count(d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
         Assert.Equal(2, count);
     }
 
@@ -132,23 +67,7 @@ public class GpuBigIntExprAnalyzerTests
     [Trait("FeatureId", "GBI-26")]
     public async Task MalformedSyntax_ShouldNotCrash_SadPath()
     {
-        var source = """
-            using Kassyi.GSharp.Stdlib.Math.Expressions;
-
-            public class TestClass
-            {
-                public void Method()
-                {
-                    // Syntax error missing semicolon and incomplete declaration
-                    GpuBigIntExpr 
-                }
-            }
-            """;
-
-        // Analyzer should not throw an exception on syntax errors
-        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
-        
-        // It might or might not produce GSH0005 depending on parser state, but it shouldn't crash
-        Assert.True(true); 
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_MalformedSyntax");
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id && d.Severity == DiagnosticSeverity.Error); 
     }
 }
