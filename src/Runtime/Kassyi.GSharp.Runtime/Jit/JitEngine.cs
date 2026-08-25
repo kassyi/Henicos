@@ -12,6 +12,11 @@ public static class JitEngine
     private static string s_smVersion = "sm_52"; // default fallback
     private static readonly Lock s_initLock = new();
 
+    private static readonly string s_cacheDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Kassyi", "GSharp", "Cache", "Ptx"
+    );
+
     public readonly struct CudaContextScope : IDisposable
     {
         private readonly IntPtr _prevContext;
@@ -146,8 +151,29 @@ public static class JitEngine
             var cppSource = PreprocessSource(baseSource, combinedMacros);
             var sourceHash = ComputeHash(cppSource);
 
+            var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}.ptx";
+            var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
+            byte[] ptxBytes;
+
+            if (File.Exists(cacheFilePath))
+            {
+                ptxBytes = File.ReadAllBytes(cacheFilePath);
+            }
+            else
+            {
+                ptxBytes = CompileToPtx(cppSource, kernelName);
+                try
+                {
+                    Directory.CreateDirectory(s_cacheDirectory);
+                    File.WriteAllBytes(cacheFilePath, ptxBytes);
+                }
+                catch
+                {
+                    // Ignore cache write errors to avoid crashing execution
+                }
+            }
+
             using var scope = new CudaContextScope();
-            var ptxBytes = CompileToPtx(cppSource, kernelName);
             return LoadKernelFunction(ptxBytes, kernelName);
         }));
 
