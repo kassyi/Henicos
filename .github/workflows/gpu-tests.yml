@@ -89,4 +89,4 @@ jobs:
         run: dotnet test tests/Kassyi.GSharp.Tests --filter ArchitectureAndOptimizationTests --no-build -c Release
 
       - name: Run Execution Tests (Requires physical GPU)
-        run: dotnet test tests/Kassyi.GSharp.Tests --filter "PtxEngineExperimentTests|SourceGeneratorTests" --no-build -c Release
+        run: dotnet test tests/Kassyi.GSharp.Tests --filter "PtxEngineExperimentTests|SourceGeneratorTests|Category=Execution" --no-build -c Release

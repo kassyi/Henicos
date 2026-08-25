@@ -50,15 +50,20 @@ public class GeneratorSnapshotTests
             return base.VisitAttributeList(node);
         }
     }
-    private static string GetTestCasesDirectory([CallerFilePath] string callerFilePath = "")
+    private static string GetTestProjectDirectory([CallerFilePath] string callerFilePath = "")
     {
-        var dir = Path.GetDirectoryName(callerFilePath);
-        if (string.IsNullOrEmpty(dir))
+        var fileDir = Path.GetDirectoryName(callerFilePath);
+        if (string.IsNullOrEmpty(fileDir))
         {
             throw new DirectoryNotFoundException("Could not determine test project directory.");
         }
+        return Path.GetFullPath(Path.Combine(fileDir, ".."));
+    }
 
-        var testCasesDir = Path.Combine(dir, "TestCases");
+    private static string GetTestCasesDirectory()
+    {
+        var projectDir = GetTestProjectDirectory();
+        var testCasesDir = Path.Combine(projectDir, "TestCases");
         if (!Directory.Exists(testCasesDir))
         {
             throw new DirectoryNotFoundException($"TestCases directory not found at: {testCasesDir}");
@@ -67,15 +72,10 @@ public class GeneratorSnapshotTests
         return testCasesDir;
     }
 
-    private static string GetSnapshotsDirectory([CallerFilePath] string callerFilePath = "")
+    private static string GetSnapshotsDirectory()
     {
-        var dir = Path.GetDirectoryName(callerFilePath);
-        if (string.IsNullOrEmpty(dir))
-        {
-            throw new DirectoryNotFoundException("Could not determine test project directory.");
-        }
-
-        var snapshotDir = Path.Combine(dir, "Snapshots");
+        var projectDir = GetTestProjectDirectory();
+        var snapshotDir = Path.Combine(projectDir, "Snapshots");
         if (!Directory.Exists(snapshotDir))
         {
             Directory.CreateDirectory(snapshotDir);
@@ -84,15 +84,10 @@ public class GeneratorSnapshotTests
         return snapshotDir;
     }
 
-    private static string GetStdlibKernelsDirectory([CallerFilePath] string callerFilePath = "")
+    private static string GetStdlibKernelsDirectory()
     {
-        var dir = Path.GetDirectoryName(callerFilePath);
-        if (string.IsNullOrEmpty(dir))
-        {
-            throw new DirectoryNotFoundException("Could not determine test project directory.");
-        }
-
-        var kernelsDir = Path.GetFullPath(Path.Combine(dir, "..", "..", "src", "Stdlib", "Kassyi.GSharp.Stdlib.Math", "Kernels"));
+        var projectDir = GetTestProjectDirectory();
+        var kernelsDir = Path.GetFullPath(Path.Combine(projectDir, "..", "..", "src", "Stdlib", "Kassyi.GSharp.Stdlib.Math", "Kernels"));
         if (!Directory.Exists(kernelsDir))
         {
             throw new DirectoryNotFoundException($"Kernels directory not found at: {kernelsDir}");
@@ -232,15 +227,15 @@ public class GeneratorSnapshotTests
         }
 
         await Verifier.Verify(driver)
-            .UseDirectory("Snapshots")
+            .UseDirectory(GetSnapshotsDirectory())
             .UseMethodName($"{testName}_GeneratesCorrectCudaSource");
     }
 
     [Theory]
     // TestCases/
-    [InlineData("AddKernel.cs")]
-    [InlineData("BitOpsTestKernels.cs")]
-    [InlineData("ChunkAddKernel.cs")]
+    [InlineData("AddKernel.cu.cs")]
+    [InlineData("BitOpsTestKernels.cu.cs")]
+    [InlineData("ChunkAddKernel.cu.cs")]
     [InlineData("ComprehensiveSpecKernel.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
@@ -252,6 +247,7 @@ public class GeneratorSnapshotTests
     [InlineData("GpuBigIntBitwiseKernels.cu.cs")]
     [InlineData("GpuBigIntBenchmarkKernels.cu.cs")]
     [InlineData("GpuBigIntNttKernels.cu.cs")]
+    [Trait("FeatureId", "GEN-08")]
     public async Task GeneratorSnapshots(string fileName)
     {
         var testCasesDir = GetTestCasesDirectory();
@@ -272,6 +268,7 @@ public class GeneratorSnapshotTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-09")]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
         var testCasesDir = GetTestCasesDirectory();
@@ -279,7 +276,7 @@ public class GeneratorSnapshotTests
         var snapshotDir = GetSnapshotsDirectory();
 
         var testCaseNames = Directory.GetFiles(testCasesDir, "*.cs")
-            .Select(Path.GetFileNameWithoutExtension)
+            .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
             .ToList();
 
         var kernelNames = Directory.GetFiles(kernelsDir, "*.cu.cs")

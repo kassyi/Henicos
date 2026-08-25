@@ -139,14 +139,35 @@ internal static class DeclarationTranspilers
         }
 
         var cppType = node.Type.IsVar ? "auto" : CudaTypeMapper.MapType(typeSymbol);
+        var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
+        var baseCppType = isPointer ? cppType.TrimEnd('*').TrimEnd() : cppType;
+
+        bool splitStatements = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
 
         for (var i = 0; i < node.Variables.Count; i++)
         {
             var v = node.Variables[i];
 
-            context.Writer.Append(cppType);
-            context.Writer.AppendSpace();
-            context.Writer.Append(v.Identifier.Text);
+            if (splitStatements)
+            {
+                context.Writer.Append(cppType);
+                context.Writer.AppendSpace();
+                context.Writer.Append(v.Identifier.Text);
+            }
+            else
+            {
+                if (i == 0)
+                {
+                    context.Writer.Append(baseCppType);
+                    context.Writer.AppendSpace();
+                }
+                
+                if (isPointer)
+                {
+                    context.Writer.Append("*");
+                }
+                context.Writer.Append(v.Identifier.Text);
+            }
 
             if (v.Initializer != null)
             {
@@ -156,7 +177,15 @@ internal static class DeclarationTranspilers
 
             if (i < node.Variables.Count - 1)
             {
-                context.Writer.AppendComma();
+                if (splitStatements)
+                {
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+                else
+                {
+                    context.Writer.AppendComma();
+                }
             }
         }
     }

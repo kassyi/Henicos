@@ -50,3 +50,6 @@ C#の演算子オーバーロードとして提供されている「記号で記
 | **GBI-23** | **`GetBitLength` / `GetByteCount`** | 有効ビット/バイト長 | - [x] | - [ ] | CPU転送で完全動作中。GPU並列リダクション化（GBI-03）待ち。 |
 | **GBI-24** | **`IsZero` / `IsOne` / `IsEven`** | 状態フラグ判定 | - [x] | - [ ] | CPU転送で完全動作中。GPU並列リダクション化（GBI-03）待ち。 |
 | **GBI-25** | **`GpuBigInteger.Sqrt`** | 平方根 ( $\lfloor\sqrt{a}\rfloor$ ) | - [ ] | - [ ] | ニュートン法または二分探索によるGPUカーネル実装が必要。 |
+| **GBI-26** | Analyzer | **ローカル変数宣言時の GpuBigIntExpr 診断** | - [x] | - [x] |  ar local = expr; などの直接宣言に対する GSH0005 の報告。 | **Tier 3** (20) | ImmutableArray のキャッシュ化や ToDisplayString() の回避など、チューニングの余地あり。 |
+| **GBI-27** | Analyzer | **代入時の GpuBigIntExpr 診断** | - [x] | - [x] | フィールド等への代入に対する GSH0005 の報告。 | **Tier 3** (20) | 同上。 |
+| **GBI-28** | Analyzer | **レガシー名前空間の宣言診断** | - [x] | - [x] | レガシー名前空間からの使用に対する診断。 | **Tier 3** (20) | 同上。 |
