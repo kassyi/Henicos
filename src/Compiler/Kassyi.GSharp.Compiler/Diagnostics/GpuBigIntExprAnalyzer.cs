@@ -46,9 +46,9 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private bool IsGpuBigIntExpr(ITypeSymbol type)
+    private static bool IsGpuBigIntExpr(ITypeSymbol type)
     {
         return type.Name == "GpuBigIntExpr" &&
-               type.ContainingNamespace?.ToDisplayString() == "Kassyi.GSharp.GpuBigInt.Expressions";
+               type.ContainingNamespace?.ToDisplayString() is "Kassyi.GSharp.Stdlib.Math.Expressions" or "Kassyi.GSharp.GpuBigInt.Expressions";
     }
 }
