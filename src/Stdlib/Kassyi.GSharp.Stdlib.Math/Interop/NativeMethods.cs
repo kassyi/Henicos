@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -24,9 +25,44 @@ internal static partial class NativeMethods
         }
 
         _ = SetDllDirectory(binPath);
+
+        NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly,
+            (libraryName, assembly, _) => DlImportResolover(libraryName, assembly));
     }
 
-    [LibraryImport("kernel32.dll", EntryPoint = nameof(SetDllDirectory), SetLastError = true,
+    private static IntPtr DlImportResolover(string libraryName, Assembly assembly)
+    {
+        if (libraryName != DllName && libraryName != DllName + ".dll")
+        {
+            return IntPtr.Zero;
+        }
+
+        // Fallbacks for test runners with shadow copying
+        string[] possiblePaths =
+        [
+            Path.Combine(AppContext.BaseDirectory, DllName + ".dll"),
+            Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, DllName + ".dll"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Native",
+                "Kassyi.GSharp.Stdlib.Math.Cuda", DllName + ".dll") // Fallback to source
+        ];
+
+        foreach (var path in possiblePaths)
+        {
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            if (NativeLibrary.TryLoad(Path.GetFullPath(path), out var handle))
+            {
+                return handle;
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+
+    [LibraryImport("kernel32.dll", EntryPoint = "SetDllDirectoryW", SetLastError = true,
         StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SetDllDirectory(string lpPathName);
@@ -38,7 +74,7 @@ internal static partial class NativeMethods
     [LibraryImport(DllName, EntryPoint = nameof(GpuBigInt_CopyDeviceToDevice))]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static partial bool GpuBigInt_CopyDeviceToDevice(IntPtr dDst, IntPtr dSrc, int numWords,
+    public static partial bool GpuBigInt_CopyDeviceToDevice(IntPtr deviceDestination, IntPtr deviceSource, int numWords,
         IntPtr stream = 0);
 
     [LibraryImport(DllName, EntryPoint = nameof(GpuBigInt_Square))]
@@ -86,7 +122,7 @@ internal static partial class NativeMethods
 
     [LibraryImport(DllName, EntryPoint = nameof(GpuBigInt_Free))]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial void GpuBigInt_Free(IntPtr ptr);
+    public static partial void GpuBigInt_Free(IntPtr devicePointer);
 
     [LibraryImport(DllName, EntryPoint = nameof(GpuBigInt_Cleanup))]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
