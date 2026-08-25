@@ -2,51 +2,8 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn01_91_ControlFlowTests
+public class SYN_01_09_ControlFlowTests
 {
-    [Theory]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-90")]
-    [InlineData(5, 2, 10)]       // 5 <= 10 -> else branch 5 times: 5 * 2 = 10
-    [InlineData(9, 2, 10)]       // 9 <= 10 -> else branch 5 times: 5 * 2 = 10
-    [InlineData(10, 2, 10)]      // 10 <= 10 (Strict Boundary) -> else branch: 5 * 2 = 10
-    [InlineData(11, 2, 55)]      // 11 > 10 (Strict Boundary) -> if branch: 5 * 11 = 55
-    [InlineData(15, 2, 75)]      // 15 > 10 -> if branch: 5 * 15 = 75
-    [InlineData(-5, 3, 15)]      // Negative -> else branch: 5 * 3 = 15
-    [InlineData(0, 0, 0)]        // Zero case
-    public void TestComplexLogicKernel_BoundaryDataDriven(int a, int b, int expectedC)
-    {
-        int[] aArray = [a];
-        int[] bArray = [b];
-        int[] cArray = [0];
-
-        Syn01_91_ControlFlowKernelsWrapper.Launch_ComplexLogicKernel(aArray, bArray, cArray);
-        Assert.Equal(expectedC, cArray[0]);
-    }
-
-    [Fact]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-91")]
-    public void TestControlFlowKernel()
-    {
-        // Test with 8 threads across multiple warps/lanes
-        int[] dataArray = new int[8];
-
-        Syn01_91_ControlFlowKernelsWrapper.Launch_ControlFlowKernel(dataArray, blockDimX: 8);
-
-        // tid 0: 10 + 3 + 100 = 113
-        Assert.Equal(113, dataArray[0]);
-        // tid 1: 20 + 3 + 200 = 223
-        Assert.Equal(223, dataArray[1]);
-        // tid 2: 20 + 3 + 200 = 223
-        Assert.Equal(223, dataArray[2]);
-        // tid 3..7: default branch -> 30 + 3 = 33
-        for (int tid = 3; tid < 8; tid++)
-        {
-            Assert.Equal(33, dataArray[tid]);
-        }
-    }
-
     [Fact(Skip = "未実装: SYN-01 (Switch 式 / switch expression)")]
     [Trait("FeatureId", "SYN-01")]
     [Trait("Category", "Syntax")]
@@ -110,5 +67,3 @@ public class Syn01_91_ControlFlowTests
     {
     }
 }
-
-

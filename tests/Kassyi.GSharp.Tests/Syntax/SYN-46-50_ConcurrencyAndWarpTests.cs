@@ -2,8 +2,48 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn46_50_ConcurrencyAndWarpTests
+public class SYN_46_50_ConcurrencyAndWarpTests
 {
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-47")]
+    public void TestSharedMemoryKernel()
+    {
+        int[] dataArray = [1, 2, 3, 4];
+
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_SharedMemoryKernel(dataArray, 4, blockDimX: 4, sharedMemBytes: 32);
+
+        Assert.Equal(3, dataArray[0]);
+        Assert.Equal(6, dataArray[1]);
+        Assert.Equal(9, dataArray[2]);
+        Assert.Equal(12, dataArray[3]);
+    }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-47")]
+    public void TestSharedMemory_WarpSyncAcross256Threads()
+    {
+        const int size = 256;
+        int[] dataArray = new int[size];
+        for (int i = 0; i < size; i++)
+        {
+            dataArray[i] = i * 3 + 1;
+        }
+
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_SharedMemoryReverseKernel(
+            dataArray,
+            size,
+            blockDimX: size
+        );
+
+        for (int i = 0; i < size; i++)
+        {
+            int expected = (size - 1 - i) * 3 + 1;
+            Assert.Equal(expected, dataArray[i]);
+        }
+    }
+
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-49")]
@@ -14,7 +54,7 @@ public class Syn46_50_ConcurrencyAndWarpTests
         dataArray[0] = 0; // atomic sum
         dataArray[1] = 0; // max value
 
-        Syn46_50_ConcurrencyAndWarpKernelsWrapper.Launch_IntrinsicsKernel(dataArray, blockDimX: 10);
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_IntrinsicsKernel(dataArray, blockDimX: 10);
 
         Assert.Equal(45, dataArray[0]); // Sum of 0..9 is 45
         Assert.Equal(100, dataArray[1]);
@@ -30,7 +70,7 @@ public class Syn46_50_ConcurrencyAndWarpTests
         uint blocksPerGrid = 16;
         int expectedTotalThreads = (int)(threadsPerBlock * blocksPerGrid); // 4096 threads
 
-        Syn46_50_ConcurrencyAndWarpKernelsWrapper.Launch_AtomicAddStressKernel(
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_AtomicAddStressKernel(
             globalSum,
             gridDimX: blocksPerGrid,
             blockDimX: threadsPerBlock
@@ -60,4 +100,3 @@ public class Syn46_50_ConcurrencyAndWarpTests
     {
     }
 }
-

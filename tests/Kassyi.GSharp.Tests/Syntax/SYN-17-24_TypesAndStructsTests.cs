@@ -2,58 +2,8 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn17_92_TypesAndStructsTests
+public class SYN_17_24_TypesAndStructsTests
 {
-    [Fact]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-92")]
-    public void TestStructKernel()
-    {
-        Vector2[] dataArray = new Vector2[1];
-        dataArray[0] = new Vector2 { X = 1.5f, Y = 2.0f };
-
-        Syn17_92_TypesAndStructsKernelsWrapper.Launch_StructKernel(dataArray, 1);
-
-        Assert.Equal(3.0f, dataArray[0].X);
-        Assert.Equal(3.0f, dataArray[0].Y);
-    }
-
-    [Fact]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-92")]
-    public void TestStruct_MixedPaddingAndAlignment()
-    {
-        MixedPaddingStruct[] items = new MixedPaddingStruct[2];
-        items[0] = new MixedPaddingStruct
-        {
-            Flag1 = 10,
-            ValueD = 4.0,
-            ValueI = 50,
-            Flag2 = 20
-        };
-        items[1] = new MixedPaddingStruct
-        {
-            Flag1 = 250,
-            ValueD = 10.0,
-            ValueI = 200,
-            Flag2 = 100
-        };
-
-        Syn17_92_TypesAndStructsKernelsWrapper.Launch_PaddedStructKernel(items, 2, blockDimX: 2);
-
-        // Item 0
-        Assert.Equal((byte)11, items[0].Flag1);
-        Assert.Equal(6.0, items[0].ValueD);
-        Assert.Equal(150, items[0].ValueI);
-        Assert.Equal((short)15, items[0].Flag2);
-
-        // Item 1
-        Assert.Equal((byte)251, items[1].Flag1);
-        Assert.Equal(15.0, items[1].ValueD);
-        Assert.Equal(300, items[1].ValueI);
-        Assert.Equal((short)95, items[1].Flag2);
-    }
-
     [Fact(Skip = "未実装: SYN-17 (Target-typed new() のネスト完全対応)")]
     [Trait("FeatureId", "SYN-17")]
     [Trait("Category", "Syntax")]
@@ -110,4 +60,3 @@ public class Syn17_92_TypesAndStructsTests
     {
     }
 }
-

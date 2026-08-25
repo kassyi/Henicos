@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class Syn31_38_AdvancedMemoryKernels
+public static class SYN_31_38_AdvancedMemoryKernels
 {
     [GpuKernel]
     public static unsafe void FixedBufferKernel(uint[] data)
