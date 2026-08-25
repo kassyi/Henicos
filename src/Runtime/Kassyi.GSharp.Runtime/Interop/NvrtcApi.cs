@@ -66,6 +66,11 @@ public static class NvrtcApi
 
     private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
     {
+        if (Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1")
+        {
+            throw new DllNotFoundException($"Simulated missing library: {libraryName} (GSHARP_TEST_NO_CUDA=1)");
+        }
+
         if (libraryName != DllName)
         {
             return IntPtr.Zero;

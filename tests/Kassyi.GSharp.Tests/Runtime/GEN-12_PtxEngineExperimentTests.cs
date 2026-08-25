@@ -14,6 +14,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
     [Fact]
     [Trait("FeatureId", "GEN-12")]
+    [Trait("Category", "Execution")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
         var (context, smVersion) = InitializeCuda();
@@ -106,6 +107,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     }
     [Fact]
     [Trait("FeatureId", "GEN-12")]
+    [Trait("Category", "SadPath")]
     public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
     {
         var (context, _) = InitializeCuda();
@@ -126,6 +128,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
     [Fact]
     [Trait("FeatureId", "GEN-12")]
+    [Trait("Category", "Stress")]
     public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
     {
         var (context, smVersion) = InitializeCuda();
