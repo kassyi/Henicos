@@ -119,4 +119,36 @@ public class GeneratorDiagnosticsTests
         var generatedCode = sb.ToString().Replace("\r\n", "\n");
         return Verifier.Verify(generatedCode);
     }
+
+    [Fact]
+    [Trait("Category", "Diagnostics")]
+    public void Test_UnsupportedFeatures_ReportsDiagnostics()
+    {
+        var source = """
+            using Kassyi.GSharp.Core;
+            namespace TestSpace
+            {
+                public class ManagedClass {}
+
+                public static class ErrorKernels
+                {
+                    [GpuKernel]
+                    public static int NonVoidReturnKernel()
+                    {
+                        return 1;
+                    }
+
+                    [GpuKernel]
+                    public static void ManagedParamKernel(ManagedClass obj)
+                    {
+                    }
+                }
+            }
+            """;
+        var (_, _, diagnostics) = RunGenerator(source);
+        var gsharpDiagnostics = diagnostics.Where(d => d.Id.StartsWith("GSH")).ToList();
+
+        Assert.NotEmpty(gsharpDiagnostics);
+        Assert.True(gsharpDiagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+    }
 }
