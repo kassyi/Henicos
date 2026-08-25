@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -170,6 +169,22 @@ public static class NvrtcApi
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     public static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, byte[] log);
+
+    [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern NvrtcResult nvrtcVersion(out int major, out int minor);
+
+    public static string GetNvrtcVersion()
+    {
+        try
+        {
+            NvrtcException.ThrowIfError(nvrtcVersion(out var major, out var minor));
+            return $"{major}.{minor}";
+        }
+        catch
+        {
+            return "unknown";
+        }
+    }
 }
 
 public class NvrtcException(NvrtcResult result, string message)

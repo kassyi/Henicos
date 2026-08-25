@@ -113,6 +113,8 @@ public static class JitEngine
     public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
         Dictionary<string, string>? jitConstants = null, Dictionary<string, string>? macros = null)
     {
+        EnsureInitialized();
+
         var sb = new StringBuilder(kernelName);
         if (jitConstants != null)
         {
@@ -150,8 +152,10 @@ public static class JitEngine
 
             var cppSource = PreprocessSource(baseSource, combinedMacros);
             var sourceHash = ComputeHash(cppSource);
+            var toolkitHash = ComputeHash(GetCudaToolkitPath());
+            var nvrtcVersion = NvrtcApi.GetNvrtcVersion();
 
-            var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}.ptx";
+            var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}_{nvrtcVersion}_{toolkitHash}.ptx";
             var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
             byte[] ptxBytes;
 
@@ -226,28 +230,36 @@ public static class JitEngine
             }
         }
 
-        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+        var cudaPath = GetCudaToolkitPath();
         if (!string.IsNullOrEmpty(cudaPath))
         {
             AddIncludePaths(cudaPath);
         }
-        else
+
+        return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
+    }
+
+    private static string GetCudaToolkitPath()
+    {
+        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+        if (!string.IsNullOrEmpty(cudaPath))
         {
-            var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
-            if (Directory.Exists(cudaBaseDir))
+            return cudaPath;
+        }
+
+        var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+        if (Directory.Exists(cudaBaseDir))
+        {
+            foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
             {
-                foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+                if (Directory.Exists(Path.Combine(dir, "include")))
                 {
-                    if (Directory.Exists(Path.Combine(dir, "include")))
-                    {
-                        AddIncludePaths(dir);
-                        break;
-                    }
+                    return dir;
                 }
             }
         }
 
-        return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
+        return string.Empty;
     }
 
     private static unsafe GpuModule LoadKernelFunction(byte[] ptxBytes, string kernelName)
