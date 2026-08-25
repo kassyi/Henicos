@@ -135,6 +135,7 @@ public static class NttCpuReference
     /// <summary>
     /// Multiplies two arrays of 32-bit unsigned integers using 3-Prime NTT and Garner's Algorithm.
     /// </summary>
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "External API used by test assemblies")]
     public static uint[] Multiply(uint[] operandA, uint[] operandB)
     {
         var combinedLength = operandA.Length + operandB.Length;

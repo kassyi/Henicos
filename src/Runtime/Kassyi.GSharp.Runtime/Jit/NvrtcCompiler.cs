@@ -1,4 +1,3 @@
-using System.Text;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;

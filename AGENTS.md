@@ -109,6 +109,12 @@ Whenever you implement support for a new C# syntax, operator, or Transpiler feat
 2. Add the corresponding `[InlineData("YourTestCase.cs")]` to the `GeneratorSnapshots` method in `GeneratorSnapshotTests.cs`.
 3. Run `dotnet test` to generate and verify the `.cu` source code snapshot.
 
+### 3.4. QA & Test Coverage Guidelines
+
+When writing or modifying unit tests (xUnit), you **MUST** adhere to the multi-perspective QA criteria (Edge Case, Stress/Concurrency, Alignment/Padding, Sad Path/Exceptions).
+
+- **See:** [`.agents/skills/qa-testing-guidelines/SKILL.md`](.agents/skills/qa-testing-guidelines/SKILL.md)
+
 ---
 
 ## 4. TASK TRACKING & ROADMAP OBLIGATIONS
