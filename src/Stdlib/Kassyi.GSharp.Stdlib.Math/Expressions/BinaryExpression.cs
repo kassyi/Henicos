@@ -3,10 +3,19 @@ namespace Kassyi.GSharp.Stdlib.Math.Expressions;
 
 internal abstract class BinaryExpression : IGpuBigIntExpression
 {
-    protected IGpuBigIntExpression Left { get; }
-    protected IGpuBigIntExpression Right { get; }
+    protected IGpuBigIntExpression Left
+    {
+        get;
+    }
+    protected IGpuBigIntExpression Right
+    {
+        get;
+    }
 
-    public int NumWords { get; }
+    public int NumWords
+    {
+        get;
+    }
 
     protected BinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     {

@@ -1,8 +1,6 @@
-using System.Runtime.InteropServices;
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Runtime.Jit;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math.Kernels;
 
 namespace Kassyi.GSharp.Stdlib.Math.Providers;
@@ -121,31 +119,31 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer)
     {
-        // Simple fallback to CPU for GCD since it's an iterative CPU-GPU hybrid algorithm
+        // TODO: Simple fallback to CPU for GCD since it's an iterative CPU-GPU hybrid algorithm
         var leftWords = new uint[leftOperand.NumWords];
         var rightWords = new uint[rightOperand.NumWords];
         CopyDeviceToHost(leftWords, leftOperand.DevicePointer, leftOperand.NumWords);
         CopyDeviceToHost(rightWords, rightOperand.DevicePointer, rightOperand.NumWords);
 
-        var leftBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(leftWords).ToArray(),
+        var leftBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(leftWords),
             isUnsigned: true, isBigEndian: false);
-        var rightBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(rightWords).ToArray(),
+        var rightBig = new System.Numerics.BigInteger(MemoryMarshal.Cast<uint, byte>(rightWords),
             isUnsigned: true, isBigEndian: false);
 
-        var resBig = System.Numerics.BigInteger.GreatestCommonDivisor(leftBig, rightBig);
-        var resBytes = resBig.ToByteArray(isUnsigned: true, isBigEndian: false);
-        var resWords = new uint[resultBuffer.NumWords];
-        Buffer.BlockCopy(resBytes, 0, resWords, 0, System.Math.Min(resBytes.Length, resWords.Length * 4));
-        CopyHostToDevice(resultBuffer.DevicePointer, resWords, resultBuffer.NumWords);
+        var resultBig = System.Numerics.BigInteger.GreatestCommonDivisor(leftBig, rightBig);
+        var resultBytes = resultBig.ToByteArray(isUnsigned: true, isBigEndian: false);
+        var resultWords = new uint[resultBuffer.NumWords];
+        Buffer.BlockCopy(resultBytes, 0, resultWords, 0, System.Math.Min(resultBytes.Length, resultWords.Length * 4));
+        CopyHostToDevice(resultBuffer.DevicePointer, resultWords, resultBuffer.NumWords);
     }
 
     public bool IsZero(GpuContext context, GpuBigInteger leftOperand)
     {
         var words = new uint[leftOperand.NumWords];
         CopyDeviceToHost(words, leftOperand.DevicePointer, leftOperand.NumWords);
-        for (int i = 0; i < words.Length; i++)
+        foreach (var word in words)
         {
-            if (words[i] != 0)
+            if (word != 0)
             {
                 return false;
             }
@@ -445,8 +443,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         return _twiddleCache.GetOrAdd(m, key =>
         {
-            var p1 = GpuBigIntNttKernels.NttP1;
-            var p2 = GpuBigIntNttKernels.NttP2;
+            var p1 = GpuBigIntNttKernels.Prime1;
+            var p2 = GpuBigIntNttKernels.Prime2;
             var g1 = GpuBigIntNttKernels.NttG1;
             var g2 = GpuBigIntNttKernels.NttG2;
 

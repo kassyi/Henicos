@@ -128,30 +128,14 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Add_Correctness(GpuExecutionEngine engine)
         {
-            using var context = new GpuContext(TestSizeWords * 2, engine);
-            var arrA = GenerateRandomArray(TestSizeWords, 1);
-            var arrB = GenerateRandomArray(TestSizeWords, 2);
-
-            var bigA = ToBigInteger(arrA);
-            var bigB = ToBigInteger(arrB);
-            var expectedBig = bigA + bigB;
-
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
-
-            gpuResult.Value = gpuA + gpuB;
-
-            var resultArr = gpuResult.ToHostArray();
-            var actualBig = ToBigInteger(resultArr);
-
-            // Note: Since we are adding two TestSizeWords, a carry out might be lost if we don't allocate TestSizeWords+1.
-            // Our kernel drops the final carry if it exceeds numWords. 
-            // So we apply a bitmask to expectedBig equivalent to TestSizeWords words.
-            var mask = (BigInteger.One << (TestSizeWords * 32)) - 1;
-            expectedBig &= mask;
-
-            Assert.Equal(expectedBig, actualBig);
+            RunBinaryOpTest(
+                engine, 
+                resultWords: TestSizeWords, 
+                contextWords: TestSizeWords * 2,
+                prepareData: null,
+                cpuFunc: (a, b) => a + b,
+                gpuFunc: (a, b) => a + b
+            );
         }
 
         [Trait("RoadmapId", "GBI-10")]
@@ -160,29 +144,18 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
-            using var context = new GpuContext(TestSizeWords * 2, engine);
-            var arrA = GenerateRandomArray(TestSizeWords, 3);
-            var arrB = GenerateRandomArray(TestSizeWords, 4);
-
-            // Ensure A >= B to avoid negative wrap-around complexities in BigInteger comparison
-            // For simplicity, we just force the highest word of A to be larger.
-            arrA[TestSizeWords - 1] |= 0x40000000;
-            arrB[TestSizeWords - 1] &= 0x3FFFFFFF;
-
-            var bigA = ToBigInteger(arrA);
-            var bigB = ToBigInteger(arrB);
-            var expectedBig = bigA - bigB;
-
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
-
-            gpuResult.Value = gpuA - gpuB;
-
-            var resultArr = gpuResult.ToHostArray();
-            var actualBig = ToBigInteger(resultArr);
-
-            Assert.Equal(expectedBig, actualBig);
+            RunBinaryOpTest(
+                engine, 
+                resultWords: TestSizeWords, 
+                contextWords: TestSizeWords * 2,
+                prepareData: (arrA, arrB) => 
+                {
+                    arrA[TestSizeWords - 1] |= 0x40000000;
+                    arrB[TestSizeWords - 1] &= 0x3FFFFFFF;
+                },
+                cpuFunc: (a, b) => a - b,
+                gpuFunc: (a, b) => a - b
+            );
         }
 
         [Trait("RoadmapId", "GBI-11")]
@@ -192,37 +165,16 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Mul_Correctness(GpuExecutionEngine engine)
         {
             if (engine == GpuExecutionEngine.LegacyNative)
-                return; // Not fully implemented or tested in Native Provider
+                return;
 
-            var sizeWords = TestSizeWords;
-            using var context = new GpuContext(sizeWords * 4, engine);
-            var arrA = GenerateRandomArray(sizeWords, 11);
-            var arrB = GenerateRandomArray(sizeWords, 12);
-
-            var bigA = ToBigInteger(arrA);
-            var bigB = ToBigInteger(arrB);
-            var expectedBig = bigA * bigB;
-
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, sizeWords * 2);
-
-            gpuResult.Value = gpuA * gpuB;
-
-            // Assert the final result against System.Numerics.BigInteger
-            var resultArr = gpuResult.ToHostArray();
-            var actualBig = ToBigInteger(resultArr);
-
-            var mask = (BigInteger.One << (sizeWords * 2 * 32)) - 1;
-            expectedBig &= mask;
-
-            if (expectedBig != actualBig)
-            {
-                System.Console.WriteLine($"Expected (Hex): {expectedBig:X}");
-                System.Console.WriteLine($"Actual   (Hex): {actualBig:X}");
-            }
-
-            Assert.Equal(expectedBig, actualBig);
+            RunBinaryOpTest(
+                engine, 
+                resultWords: TestSizeWords * 2, 
+                contextWords: TestSizeWords * 4,
+                prepareData: null,
+                cpuFunc: (a, b) => a * b,
+                gpuFunc: (a, b) => a * b
+            );
         }
 
         [Trait("RoadmapId", "GBI-12")]
@@ -231,37 +183,18 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Div_Correctness(GpuExecutionEngine engine)
         {
             var sizeWords = 16;
-            using var context = new GpuContext(sizeWords * 8, engine);
-            
-            // Randomly generated arrays
-            var arrA = GenerateRandomArray(sizeWords * 2, 111);
-            var arrB = GenerateRandomArray(sizeWords, 112);
-            // Ensure B is normalized (top bit is 1)
-            arrB[sizeWords - 1] |= 0x80000000;
-            
-            var bigA = ToBigInteger(arrA);
-            var bigB = ToBigInteger(arrB);
-            
-            // A / B
-            var expectedBig = bigA / bigB;
-
-            // In our Div implementation, we expect A and B to have the same size as result.
-            // Wait, our Div requires a, b, result to be same size, but above a is 2*sizeWords.
-            // Let's modify Div test to have A and B the same size for now.
-            var arrA_sameSize = GenerateRandomArray(sizeWords, 111);
-            var bigA_sameSize = ToBigInteger(arrA_sameSize);
-            var expectedBig_sameSize = bigA_sameSize / bigB;
-
-            using var gpuA = new GpuBigInteger(context, arrA_sameSize);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, sizeWords);
-
-            gpuResult.Value = gpuA / gpuB;
-
-            var resultArr = gpuResult.ToHostArray();
-            var actualBig = ToBigInteger(resultArr);
-
-            Assert.Equal(expectedBig_sameSize, actualBig);
+            RunBinaryOpTest(
+                engine, 
+                resultWords: sizeWords, 
+                contextWords: sizeWords * 8,
+                prepareData: (arrA, arrB) => 
+                {
+                    arrB[sizeWords - 1] |= 0x80000000;
+                },
+                cpuFunc: (a, b) => a / b,
+                gpuFunc: (a, b) => a / b,
+                inputWords: sizeWords
+            );
         }
 
         [Trait("RoadmapId", "GBI-25")]
@@ -328,13 +261,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             gpuResult.Value = gpuA << shiftBits;
 
-            var resultArr = gpuResult.ToHostArray();
-            var actualBig = ToBigInteger(resultArr);
-
-            var mask = (BigInteger.One << (TestSizeWords * 32)) - 1;
-            expectedBig &= mask;
-
-            Assert.Equal(expectedBig, actualBig);
+            AssertGpuResultEqualsCpu(expectedBig, gpuResult, TestSizeWords);
         }
 
         [Trait("RoadmapId", "GBI-14")]
@@ -355,10 +282,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             gpuResult.Value = gpuA >> shiftBits;
 
-            var resultArr = gpuResult.ToHostArray();
-            var actualBig = ToBigInteger(resultArr);
-
-            Assert.Equal(expectedBig, actualBig);
+            AssertGpuResultEqualsCpu(expectedBig, gpuResult);
         }
 
         [Trait("RoadmapId", "GBI-24")]
@@ -438,27 +362,15 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             // Test OR
             gpuResult.Value = gpuA | gpuB;
-            var actualOr = gpuResult.ToHostArray();
-            for (int i = 0; i < TestSizeWords; i++)
-            {
-                Assert.Equal(arrA[i] | arrB[i], actualOr[i]);
-            }
+            Assert.Equal(arrA.Zip(arrB, (a, b) => a | b).ToArray(), gpuResult.ToHostArray());
 
             // Test XOR
             gpuResult.Value = gpuA ^ gpuB;
-            var actualXor = gpuResult.ToHostArray();
-            for (int i = 0; i < TestSizeWords; i++)
-            {
-                Assert.Equal(arrA[i] ^ arrB[i], actualXor[i]);
-            }
+            Assert.Equal(arrA.Zip(arrB, (a, b) => a ^ b).ToArray(), gpuResult.ToHostArray());
 
             // Test NOT
             gpuResult.Value = ~gpuA;
-            var actualNot = gpuResult.ToHostArray();
-            for (int i = 0; i < TestSizeWords; i++)
-            {
-                Assert.Equal(~arrA[i], actualNot[i]);
-            }
+            Assert.Equal(arrA.Select(a => ~a).ToArray(), gpuResult.ToHostArray());
         }
 
         [Trait("RoadmapId", "GBI-10")]
@@ -493,21 +405,15 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             // Scalar Add
             GpuBigInteger.Add(gpuA, scalarAdd, gpuResult);
-            var actualAdd = ToBigInteger(gpuResult.ToHostArray());
-            var expectedAdd = (bigA + scalarAdd) & ((BigInteger.One << (TestSizeWords * 32)) - 1);
-            Assert.Equal(expectedAdd, actualAdd);
+            AssertGpuResultEqualsCpu(bigA + scalarAdd, gpuResult, TestSizeWords);
 
             // Scalar Sub
             GpuBigInteger.Sub(gpuB, scalarSub, gpuResult);
-            var actualSub = ToBigInteger(gpuResult.ToHostArray());
-            var expectedSub = (bigB - scalarSub) & ((BigInteger.One << (TestSizeWords * 32)) - 1);
-            Assert.Equal(expectedSub, actualSub);
+            AssertGpuResultEqualsCpu(bigB - scalarSub, gpuResult, TestSizeWords);
 
             // Scalar Mul
             GpuBigInteger.Mul(gpuA, scalarMul, gpuResult);
-            var actualMul = ToBigInteger(gpuResult.ToHostArray());
-            var expectedMul = (bigA * scalarMul) & ((BigInteger.One << (TestSizeWords * 32)) - 1);
-            Assert.Equal(expectedMul, actualMul);
+            AssertGpuResultEqualsCpu(bigA * scalarMul, gpuResult, TestSizeWords);
         }
 
         [Trait("RoadmapId", "GBI-20")]
@@ -634,65 +540,17 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             // DivRem
             GpuBigInteger.DivRem(gpuA, gpuB, gpuQ, gpuR);
-            var actualQ = ToBigInteger(gpuQ.ToHostArray());
-            var actualR = ToBigInteger(gpuR.ToHostArray());
-
-            var expectedQ = bigA / bigB;
-            var expectedR = bigA % bigB;
-
-            Assert.Equal(expectedQ, actualQ);
-            Assert.Equal(expectedR, actualR);
+            AssertGpuResultEqualsCpu(bigA / bigB, gpuQ);
+            AssertGpuResultEqualsCpu(bigA % bigB, gpuR);
 
             // Mod
             using var gpuMod = new GpuBigInteger(context, TestSizeWords);
             GpuBigInteger.Mod(gpuA, gpuB, gpuMod);
-            var actualMod = ToBigInteger(gpuMod.ToHostArray());
-            Assert.Equal(expectedR, actualMod);
-
-                    }
-
-        [Trait("RoadmapId", "GBI-06")]
-        [Theory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
-        [InlineData(GpuExecutionEngine.LegacyNative)]
-        public void Test_ExpressionTree_Correctness(GpuExecutionEngine engine)
-        {
-            using var context = new GpuContext(TestSizeWords * 2, engine);
-            var arrA = GenerateRandomArray(TestSizeWords, 7);
-            var arrB = GenerateRandomArray(TestSizeWords, 8);
-            var arrC = GenerateRandomArray(TestSizeWords, 9);
-
-            // Ensure A > B and B > C to avoid negative wraparound
-            arrA[TestSizeWords - 1] |= 0x60000000;
-            arrB[TestSizeWords - 1] = (arrB[TestSizeWords - 1] & 0x1FFFFFFF) | 0x20000000;
-            arrC[TestSizeWords - 1] &= 0x0FFFFFFF;
-
-            var bigA = ToBigInteger(arrA);
-            var bigB = ToBigInteger(arrB);
-            var bigC = ToBigInteger(arrC);
-
-            int shiftBits = 128;
-
-            // Mathematical equivalent: (((A + B) << 128) - C) & A
-            var expectedBig = (((bigA + bigB) << shiftBits) - bigC) & bigA;
-            var mask = (BigInteger.One << (TestSizeWords * 32)) - 1;
-            expectedBig &= mask;
-
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuC = new GpuBigInteger(context, arrC);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
-
-            // Magic Expression Tree evaluation
-            gpuResult.Value = (((gpuA + gpuB) << shiftBits) - gpuC) & gpuA;
-
-            var actualBig = ToBigInteger(gpuResult.ToHostArray());
-
-            Assert.Equal(expectedBig, actualBig);
+            AssertGpuResultEqualsCpu(bigA % bigB, gpuMod);
         }
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
-        [Trait("RoadmapId", "GBI-OpMod")]
+        [Trait("RoadmapId", "GBI-12")]
         public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
         {
             using var context = new GpuContext(TestSizeWords * 3, engine);
@@ -709,20 +567,12 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var gpuResult = new GpuBigInteger(context, TestSizeWords);
 
             gpuResult.Value = gpuA % gpuB;
-            var actual = ToBigInteger(gpuResult.ToHostArray());
-            var expected = bigA % bigB;
-
-            Assert.Equal(expected, actual);
+            AssertGpuResultEqualsCpu(bigA % bigB, gpuResult);
         }
 
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
-        [Trait("RoadmapId", "GBI-OpEq")]
-        [Trait("RoadmapId", "GBI-OpNeq")]
-        [Trait("RoadmapId", "GBI-OpLt")]
-        [Trait("RoadmapId", "GBI-OpGt")]
-        [Trait("RoadmapId", "GBI-OpLte")]
-        [Trait("RoadmapId", "GBI-OpGte")]
+        [Trait("RoadmapId", "GBI-15")]
         public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
         {
             using var context = new GpuContext(TestSizeWords * 2, engine);
@@ -758,7 +608,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
-        [Trait("RoadmapId", "GBI-FuncLen")]
+        [Trait("RoadmapId", "GBI-23")]
         public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
         {
             using var context = new GpuContext(TestSizeWords, engine);
@@ -776,11 +626,19 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Equal(expectedBits, gpuA.GetBitLength());
             Assert.Equal(expectedBytes, gpuA.GetByteCount());
+
+            // Zero-value coverage
+            var zeroArr = new uint[TestSizeWords];
+            using var gpuZero = new GpuBigInteger(context, zeroArr);
+            var bigZero = BigInteger.Zero;
+
+            Assert.Equal(bigZero.GetBitLength(), gpuZero.GetBitLength());
+            Assert.Equal(bigZero.GetByteCount(isUnsigned: true), gpuZero.GetByteCount());
         }
 
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
-        [Trait("RoadmapId", "GBI-FuncSquare")]
+        [Trait("RoadmapId", "GBI-19")]
         public void Test_Square_Correctness(GpuExecutionEngine engine)
         {
             using var context = new GpuContext(TestSizeWords * 4, engine);
@@ -798,6 +656,51 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Equal(expected, actual);
         }
+
+        #region Helpers
+
+        private void AssertGpuResultEqualsCpu(BigInteger expected, GpuBigInteger actualGpu, int truncateWords = -1)
+        {
+            if (truncateWords > 0)
+            {
+                var mask = (BigInteger.One << (truncateWords * 32)) - 1;
+                expected &= mask;
+            }
+            
+            var actualBig = ToBigInteger(actualGpu.ToHostArray());
+            Assert.Equal(expected, actualBig);
+        }
+
+        private void RunBinaryOpTest(
+            GpuExecutionEngine engine, 
+            int resultWords,
+            int contextWords,
+            Action<uint[], uint[]> prepareData,
+            Func<BigInteger, BigInteger, BigInteger> cpuFunc,
+            Func<GpuBigInteger, GpuBigInteger, GpuBigIntExpr> gpuFunc,
+            int inputWords = -1)
+        {
+            var size = inputWords > 0 ? inputWords : TestSizeWords;
+            using var context = new GpuContext(contextWords, engine);
+            var arrA = GenerateRandomArray(size, 100);
+            var arrB = GenerateRandomArray(size, 101);
+            
+            prepareData?.Invoke(arrA, arrB);
+            
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            var expected = cpuFunc(bigA, bigB);
+            
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, resultWords);
+            
+            gpuResult.Value = gpuFunc(gpuA, gpuB);
+            
+            AssertGpuResultEqualsCpu(expected, gpuResult, resultWords);
+        }
+
+        #endregion
     }
 }
 

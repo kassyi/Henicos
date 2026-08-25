@@ -1,6 +1,8 @@
 namespace Kassyi.GSharp.Core;
 
-// ReSharper disable UnusedType.Global
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [AttributeUsage(AttributeTargets.Method)]
 public class GpuKernelAttribute : Attribute
 {

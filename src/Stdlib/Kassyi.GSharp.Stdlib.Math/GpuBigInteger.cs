@@ -4,16 +4,30 @@ using Kassyi.GSharp.Stdlib.Math.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math;
 
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedType.Global
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 {
-    public IntPtr DevicePointer { get; private set; }
-    public int NumWords { get; }
+    public IntPtr DevicePointer
+    {
+        get;
+    }
+    public int NumWords
+    {
+        get;
+    }
 
-    public GpuContext Context { get; }
+    public GpuContext Context
+    {
+        get;
+    }
 
-    internal bool IsTemp { get; set; }
+    internal bool IsTemp
+    {
+        get; set;
+    }
 
     private bool _disposed;
 
@@ -74,7 +88,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     public static GpuBigIntExpr operator <<(GpuBigInteger leftOperand, int shiftBits) =>
         new(new ShiftLeftExpression(leftOperand, shiftBits));
 
-    public static GpuBigIntExpr operator >> (GpuBigInteger leftOperand, int shiftBits) =>
+    public static GpuBigIntExpr operator >>(GpuBigInteger leftOperand, int shiftBits) =>
         new(new ShiftRightExpression(leftOperand, shiftBits));
 
     public static GpuBigIntExpr operator |(GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
@@ -490,8 +504,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         var n = baseVal.NumWords;
         var expWords = exp.NumWords;
 
-        using var mod2n = new GpuBigInteger(baseVal.Context, 2 * n);
-        mod2n.CopyFrom(mod, numWords: n);
+        using var mod2N = new GpuBigInteger(baseVal.Context, 2 * n);
+        mod2N.CopyFrom(mod, numWords: n);
 
         using var tempResult = new GpuBigInteger(baseVal.Context, 2 * n);
         var oneData = new uint[2 * n];
@@ -504,15 +518,15 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         // Initial reduction of base
         using var tempBaseQ = new GpuBigInteger(baseVal.Context, 2 * n);
         using var tempBaseR = new GpuBigInteger(baseVal.Context, 2 * n);
-        DivRem(tempBase, mod2n, tempBaseQ, tempBaseR);
+        DivRem(tempBase, mod2N, tempBaseQ, tempBaseR);
         tempBase.CopyFrom(tempBaseR);
 
         using var tempMul = new GpuBigInteger(baseVal.Context, 4 * n);
         using var tempQ = new GpuBigInteger(baseVal.Context, 4 * n);
         using var tempR = new GpuBigInteger(baseVal.Context, 4 * n);
 
-        using var mod4n = new GpuBigInteger(baseVal.Context, 4 * n);
-        mod4n.CopyFrom(mod, numWords: n);
+        using var mod4N = new GpuBigInteger(baseVal.Context, 4 * n);
+        mod4N.CopyFrom(mod, numWords: n);
 
         var hostExp = exp.ToHostArray();
 
@@ -544,12 +558,12 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 if ((e & 1) == 1)
                 {
                     Mul(tempResult, tempBase, tempMul);
-                    DivRem(tempMul, mod4n, tempQ, tempR);
+                    DivRem(tempMul, mod4N, tempQ, tempR);
                     tempResult.CopyFrom(tempR, numWords: 2 * n);
                 }
 
                 Mul(tempBase, tempBase, tempMul);
-                DivRem(tempMul, mod4n, tempQ, tempR);
+                DivRem(tempMul, mod4N, tempQ, tempR);
                 tempBase.CopyFrom(tempR, numWords: 2 * n);
 
                 e >>= 1;
@@ -573,14 +587,13 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
             return;
         }
 
+        _disposed = true;
+
         if (DevicePointer != IntPtr.Zero)
         {
             Context.Provider.FreeMemory(DevicePointer);
-
-            DevicePointer = IntPtr.Zero;
         }
 
-        _disposed = true;
         GC.SuppressFinalize(this);
     }
 
@@ -605,7 +618,11 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     public bool IsOne() => Context.Provider.IsOne(Context, this);
 
     public int GetBitLength() => Context.Provider.GetBitLength(Context, this);
-    public int GetByteCount() => (GetBitLength() + 7) / 8;
+    public int GetByteCount()
+    {
+        var bitLength = GetBitLength();
+        return bitLength == 0 ? 1 : (bitLength + 7) / 8;
+    }
 
     public bool IsEven
     {

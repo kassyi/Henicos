@@ -74,7 +74,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var commonDeviceSource = GenerateCommonDeviceSource(compilation, deviceMethods, context);
         var preludeSource = GetPreludeSource(context);
-        if (preludeSource == null) return;
+        if (preludeSource == null)
+        {
+            return;
+        }
 
         foreach (var method in kernelMethods.OfType<IMethodSymbol>()
                      .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
@@ -161,7 +164,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var assembly = typeof(GpuKernelGenerator).Assembly;
         var resources = assembly.GetManifestResourceNames().Where(n => n.EndsWith("Prelude.cu")).ToList();
-        
+
         if (resources.Count != 1)
         {
             var diagnostic = Diagnostic.Create(

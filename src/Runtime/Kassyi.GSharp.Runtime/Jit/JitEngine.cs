@@ -1,11 +1,10 @@
-// ReSharper disable UnusedMember.Global
-
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;
 
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
 public static class JitEngine
 {
     private static bool s_isGlobalInit;

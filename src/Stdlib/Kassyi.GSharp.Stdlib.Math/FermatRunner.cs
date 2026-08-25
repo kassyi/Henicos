@@ -7,7 +7,10 @@ namespace Kassyi.GSharp.Stdlib.Math;
 
 public class FermatRunner
 {
-    public int E { get; }
+    public int E
+    {
+        get;
+    }
     private int _numWords;
     private int _outNumWords;
     private int _gM;

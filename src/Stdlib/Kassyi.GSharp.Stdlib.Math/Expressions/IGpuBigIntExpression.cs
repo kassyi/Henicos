@@ -3,7 +3,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Expressions;
 
 public interface IGpuBigIntExpression
 {
-    int NumWords { get; }
+    int NumWords
+    {
+        get;
+    }
 
     // Evaluates the AST node. 
     // If targetResult is provided, it tries to write directly to it.

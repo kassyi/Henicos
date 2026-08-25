@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,9 +101,9 @@ public class GeneratorSnapshotTests
         return kernelsDir;
     }
 
-    private static MetadataReference[] _cachedReferencesWithStdlib;
-    private static MetadataReference[] _cachedReferencesWithoutStdlib;
-    private static readonly object _refsLock = new object();
+    private static MetadataReference[]? _cachedReferencesWithStdlib;
+    private static MetadataReference[]? _cachedReferencesWithoutStdlib;
+    private static readonly object _refsLock = new();
 
     private static MetadataReference[] GetReferences(bool includeStdlib)
     {

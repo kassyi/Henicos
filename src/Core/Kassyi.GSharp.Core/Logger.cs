@@ -1,12 +1,12 @@
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedType.Global
-
-
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
+
+[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core", Justification = "Public API exposed for library consumers")]
+[assembly: SuppressMessage("ReSharper", "UnusedType.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core", Justification = "Public API exposed for library consumers")]
 
 namespace Kassyi.GSharp.Core;
 

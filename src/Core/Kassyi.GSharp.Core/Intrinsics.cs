@@ -1,5 +1,7 @@
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedType.Global
+using System.Diagnostics.CodeAnalysis;
+
+[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
+[assembly: SuppressMessage("ReSharper", "UnusedType.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
 
 #pragma warning disable CA1822 // Mark members as static
 

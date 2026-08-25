@@ -1,6 +1,8 @@
 namespace Kassyi.GSharp.Compiler;
 
-// ReSharper disable UnusedMember.Global
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public constants for compiler internals")]
 public static class KnownAttributes
 {
     public const string GpuKernel = "GpuKernel";
