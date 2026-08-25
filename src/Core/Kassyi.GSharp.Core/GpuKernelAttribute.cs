@@ -1,6 +1,5 @@
 namespace Kassyi.GSharp.Core;
 
-using System.Diagnostics.CodeAnalysis;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [AttributeUsage(AttributeTargets.Method)]

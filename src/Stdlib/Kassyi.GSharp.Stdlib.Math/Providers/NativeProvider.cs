@@ -1,4 +1,3 @@
-using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.Providers;

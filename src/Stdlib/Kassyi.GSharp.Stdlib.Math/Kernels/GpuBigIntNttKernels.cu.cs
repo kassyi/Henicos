@@ -1,6 +1,3 @@
-using Kassyi.GSharp.Stdlib.Math.Contexts;
-using Kassyi.GSharp.Core;
-
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 // ReSharper disable UnusedType.Global
@@ -49,16 +46,20 @@ public static class GpuBigIntNttKernels
         return result;
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalse", Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
+    [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalse",
+        Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
     [GpuDevice]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UselessBinaryOperation", Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
+    [SuppressMessage("ReSharper", "UselessBinaryOperation",
+        Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
     public static uint ModMulBarrett(uint operandA, uint operandB, uint primeModulus, ulong barrettMagic)
     {
         ulong product = 0;
-        Gpu.InlinePtx($"asm volatile(\"mul.wide.u32 %0, %1, %2;\" : \"=l\"({product}) : \"r\"({operandA}), \"r\"({operandB}));");
+        Gpu.InlinePtx(
+            $"asm volatile(\"mul.wide.u32 %0, %1, %2;\" : \"=l\"({product}) : \"r\"({operandA}), \"r\"({operandB}));");
 
         ulong quotient = 0;
-        Gpu.InlinePtx($"asm volatile(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"({quotient}) : \"l\"({product}), \"l\"({barrettMagic}));");
+        Gpu.InlinePtx(
+            $"asm volatile(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"({quotient}) : \"l\"({product}), \"l\"({barrettMagic}));");
 
         ulong remainder = product - quotient * primeModulus;
         while (remainder >= primeModulus)
@@ -72,10 +73,12 @@ public static class GpuBigIntNttKernels
     // ReSharper restore UselessBinaryOperation
 
     [GpuDevice]
-    public static uint ModMul1(uint operandA, uint operandB) => ModMulBarrett(operandA, operandB, Prime1, BarrettMagic1);
+    public static uint ModMul1(uint operandA, uint operandB) =>
+        ModMulBarrett(operandA, operandB, Prime1, BarrettMagic1);
 
     [GpuDevice]
-    public static uint ModMul2(uint operandA, uint operandB) => ModMulBarrett(operandA, operandB, Prime2, BarrettMagic2);
+    public static uint ModMul2(uint operandA, uint operandB) =>
+        ModMulBarrett(operandA, operandB, Prime2, BarrettMagic2);
 
     [GpuDevice]
     public static uint ModPow(uint baseValue, uint exponent, uint primeModulus, ulong barrettMagic)
@@ -166,90 +169,94 @@ public static class GpuBigIntNttKernels
                 var threadId = ThreadIndex.X;
                 var blockOffset = rowIndex * currentLength;
 
-            uint value1 = deviceData[blockOffset + threadId];
-            uint value2 = deviceData[blockOffset + threadId + currentLength / 2];
+                uint value1 = deviceData[blockOffset + threadId];
+                uint value2 = deviceData[blockOffset + threadId + currentLength / 2];
 
-            uint reversedThreadId1 = 0;
-            uint reversedThreadId2 = 0;
-            Gpu.InlinePtx($"{reversedThreadId1} = __brev({threadId}) >> (32 - {maxLog2Length});");
-            Gpu.InlinePtx($"{reversedThreadId2} = __brev({threadId + currentLength / 2}) >> (32 - {maxLog2Length});");
+                uint reversedThreadId1 = 0;
+                uint reversedThreadId2 = 0;
+                Gpu.InlinePtx($"{reversedThreadId1} = __brev({threadId}) >> (32 - {maxLog2Length});");
+                Gpu.InlinePtx(
+                    $"{reversedThreadId2} = __brev({threadId + currentLength / 2}) >> (32 - {maxLog2Length});");
 
-            if (applyTwiddleBefore)
-            {
-                var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
-                twiddleIndex1 %= (ulong)transformLength;
-                value1 = ModMulBarrett(value1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
+                if (applyTwiddleBefore)
+                {
+                    var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
+                    twiddleIndex1 %= (ulong)transformLength;
+                    value1 = ModMulBarrett(value1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
 
-                var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
-                twiddleIndex2 %= (ulong)transformLength;
-                value2 = ModMulBarrett(value2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
+                    var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
+                    twiddleIndex2 %= (ulong)transformLength;
+                    value2 = ModMulBarrett(value2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
+                }
+
+                Gpu.InlinePtx($"s_row[{reversedThreadId1}] = {value1};");
+                Gpu.InlinePtx($"s_row[{reversedThreadId2}] = {value2};");
             }
 
-            Gpu.InlinePtx($"s_row[{reversedThreadId1}] = {value1};");
-            Gpu.InlinePtx($"s_row[{reversedThreadId2}] = {value2};");
-        }
-        Gpu.SyncThreads();
+            Gpu.SyncThreads();
 
-        for (int step = 0; step < maxLog2Length; step++)
-        {
+            for (int step = 0; step < maxLog2Length; step++)
+            {
+                if (isActive)
+                {
+                    var threadId = ThreadIndex.X;
+                    var length = 2 << step;
+                    var halfLength = length / 2;
+                    var blockIndex = threadId / halfLength;
+                    var elementIndex = threadId % halfLength;
+                    var position = blockIndex * length + elementIndex;
+
+                    var twiddleFactorIndex = elementIndex * (transformLength / length);
+                    var twiddleFactor = deviceTwiddle[twiddleFactorIndex];
+
+                    uint leftTerm = 0;
+                    Gpu.InlinePtx($"{leftTerm} = s_row[{position}];");
+
+                    uint rightTermSource = 0;
+                    Gpu.InlinePtx($"{rightTermSource} = s_row[{position + halfLength}];");
+                    var rightTerm = ModMulBarrett(rightTermSource, twiddleFactor, primeModulus, barrettMagic);
+
+                    var additionResult = ModAdd(leftTerm, rightTerm, primeModulus);
+                    var subtractionResult = ModSub(leftTerm, rightTerm, primeModulus);
+
+                    Gpu.InlinePtx($"s_row[{position}] = {additionResult};");
+                    Gpu.InlinePtx($"s_row[{position + halfLength}] = {subtractionResult};");
+                }
+
+                Gpu.SyncThreads();
+            }
+
             if (isActive)
             {
                 var threadId = ThreadIndex.X;
-                var length = 2 << step;
-                var halfLength = length / 2;
-                var blockIndex = threadId / halfLength;
-                var elementIndex = threadId % halfLength;
-                var position = blockIndex * length + elementIndex;
+                var blockOffset = rowIndex * currentLength;
 
-                var twiddleFactorIndex = elementIndex * (transformLength / length);
-                var twiddleFactor = deviceTwiddle[twiddleFactorIndex];
+                if (applyTwiddleAfter)
+                {
+                    var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
+                    twiddleIndex1 %= (ulong)transformLength;
+                    uint result1 = 0;
+                    Gpu.InlinePtx($"{result1} = s_row[{threadId}];");
+                    result1 = ModMulBarrett(result1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
+                    Gpu.InlinePtx($"s_row[{threadId}] = {result1};");
 
-                uint leftTerm = 0;
-                Gpu.InlinePtx($"{leftTerm} = s_row[{position}];");
+                    var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
+                    twiddleIndex2 %= (ulong)transformLength;
+                    uint result2 = 0;
+                    Gpu.InlinePtx($"{result2} = s_row[{threadId + currentLength / 2}];");
+                    result2 = ModMulBarrett(result2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
+                    Gpu.InlinePtx($"s_row[{threadId + currentLength / 2}] = {result2};");
+                }
 
-                uint rightTermSource = 0;
-                Gpu.InlinePtx($"{rightTermSource} = s_row[{position + halfLength}];");
-                var rightTerm = ModMulBarrett(rightTermSource, twiddleFactor, primeModulus, barrettMagic);
+                uint output1 = 0;
+                uint output2 = 0;
+                Gpu.InlinePtx($"{output1} = s_row[{threadId}];");
+                Gpu.InlinePtx($"{output2} = s_row[{threadId + currentLength / 2}];");
 
-                var additionResult = ModAdd(leftTerm, rightTerm, primeModulus);
-                var subtractionResult = ModSub(leftTerm, rightTerm, primeModulus);
-
-                Gpu.InlinePtx($"s_row[{position}] = {additionResult};");
-                Gpu.InlinePtx($"s_row[{position + halfLength}] = {subtractionResult};");
-            }
-            Gpu.SyncThreads();
-        }
-
-        if (isActive)
-        {
-            var threadId = ThreadIndex.X;
-            var blockOffset = rowIndex * currentLength;
-
-            if (applyTwiddleAfter)
-            {
-                var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
-                twiddleIndex1 %= (ulong)transformLength;
-                uint result1 = 0;
-                Gpu.InlinePtx($"{result1} = s_row[{threadId}];");
-                result1 = ModMulBarrett(result1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
-                Gpu.InlinePtx($"s_row[{threadId}] = {result1};");
-
-                var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
-                twiddleIndex2 %= (ulong)transformLength;
-                uint result2 = 0;
-                Gpu.InlinePtx($"{result2} = s_row[{threadId + currentLength / 2}];");
-                result2 = ModMulBarrett(result2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
-                Gpu.InlinePtx($"s_row[{threadId + currentLength / 2}] = {result2};");
+                deviceData[blockOffset + threadId] = output1;
+                deviceData[blockOffset + threadId + currentLength / 2] = output2;
             }
 
-            uint output1 = 0;
-            uint output2 = 0;
-            Gpu.InlinePtx($"{output1} = s_row[{threadId}];");
-            Gpu.InlinePtx($"{output2} = s_row[{threadId + currentLength / 2}];");
-
-            deviceData[blockOffset + threadId] = output1;
-            deviceData[blockOffset + threadId + currentLength / 2] = output2;
-            }
             Gpu.SyncThreads();
         }
     }
@@ -266,7 +273,8 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDevice]
-    public static void Device_NTT_PointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B, uint[] deviceData2B, int transformLength)
+    public static void Device_NTT_PointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B,
+        uint[] deviceData2B, int transformLength)
     {
         var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         for (var index = threadId; index < transformLength; index += GridDimension.X * BlockDimension.X)
@@ -277,7 +285,8 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDevice]
-    public static void Device_CRT_ParallelAtomic([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2, uint[] outputBuffer,
+    public static void Device_CRT_ParallelAtomic([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2,
+        uint[] outputBuffer,
         int transformLength, int maxWordCount)
     {
         var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;

@@ -1,7 +1,3 @@
-using System.Numerics;
-using BenchmarkDotNet.Attributes;
-using Kassyi.GSharp.Stdlib.Math;
-
 namespace Henicos.Cli;
 
 [MarkdownExporterAttribute.GitHub]

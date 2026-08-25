@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace Kassyi.GSharp.Compiler;
 
 internal static class MarshalingEmitter

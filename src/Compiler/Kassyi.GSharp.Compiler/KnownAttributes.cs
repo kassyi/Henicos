@@ -1,6 +1,5 @@
 namespace Kassyi.GSharp.Compiler;
 
-using System.Diagnostics.CodeAnalysis;
 
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public constants for compiler internals")]
 public static class KnownAttributes

@@ -1,9 +1,6 @@
 using System.Diagnostics;
-using System.Numerics;
-using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Cocona;
-using Kassyi.GSharp.Stdlib.Math;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Henicos.Cli;

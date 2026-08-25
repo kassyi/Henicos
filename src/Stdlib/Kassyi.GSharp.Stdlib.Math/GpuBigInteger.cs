@@ -1,10 +1,7 @@
-
-using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math;
 
-using System.Diagnostics.CodeAnalysis;
 
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]

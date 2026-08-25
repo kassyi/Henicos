@@ -1,5 +1,3 @@
-using System.Numerics;
-
 namespace Kassyi.GSharp.Stdlib.Math.Algorithms;
 
 public static class HalfGcdCpuReference
