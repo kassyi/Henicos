@@ -38,6 +38,26 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 Assert.Equal(expectedWords[i], actualWords[i]);
             }
         }
+
+        [Trait("RoadmapId", "GBI-11")]
+        [Theory]
+        [InlineData(5u, 10u, 17u)] // Normal no-wrap
+        [InlineData(12u, 10u, 17u)] // Normal wrap
+        [InlineData(0u, 0u, 17u)] // Zero
+        [InlineData(16u, 0u, 17u)] // Just below prime
+        [InlineData(0u, 16u, 17u)] // Just below prime
+        [InlineData(16u, 1u, 17u)] // Exactly prime (wraps to 0)
+        [InlineData(0u, 4294967294u, 4294967295u)]
+        [InlineData(4294967294u, 4294967294u, 4294967295u)]
+        [InlineData(4294967293u, 1u, 4294967295u)]
+        [InlineData(4294967294u, 1u, 4294967295u)] // Wraps to 0
+        public void Test_ModAdd_BoundaryConditions(uint a, uint b, uint p)
+        {
+            var expected = (uint)(((ulong)a + b) % p);
+            var actual = Kassyi.GSharp.Stdlib.Math.Kernels.GpuBigIntNttKernels.ModAdd(a, b, p);
+            Assert.Equal(expected, actual);
+        }
+
         private const int TestSizeWords = 256; // 8192 bits
 
         #region 1. GBI アーキテクチャ・最適化課題
