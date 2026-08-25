@@ -130,10 +130,10 @@ public static class NvccCompiler
 
     public static string GetNvccPath()
     {
-        var binPath = CudaEnvironment.GetCudaBinPath();
-        if (!string.IsNullOrEmpty(binPath))
+        var cudaPath = CudaEnvironment.GetCudaPath();
+        if (!string.IsNullOrEmpty(cudaPath))
         {
-            var nvcc = FileSystem.Path.Combine(binPath, OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc");
+            var nvcc = FileSystem.Path.Combine(cudaPath, "bin", OperatingSystem.IsWindows() ? "nvcc.exe" : "nvcc");
             if (FileSystem.File.Exists(nvcc))
             {
                 return nvcc;
