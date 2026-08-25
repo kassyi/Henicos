@@ -58,7 +58,11 @@ public class ChudnovskyPi
                 BigInteger denominatorQ = 10939058860032000L * a * a * a;
                 var sumT = numeratorP * (13591409 + 545140134L * a);
                 return new ChudnovskyResult
-                    { PolynomialP = numeratorP, PolynomialQ = denominatorQ, PolynomialT = sumT };
+                {
+                    PolynomialP = numeratorP,
+                    PolynomialQ = denominatorQ,
+                    PolynomialT = sumT
+                };
             }
         }
 

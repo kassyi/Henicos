@@ -4,11 +4,12 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Cocona;
 using Kassyi.GSharp.Stdlib.Math;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Henicos.Cli;
 
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedType.Global
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by CLI execution")]
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by CLI execution")]
 internal class Program
 {
     private static void Main(string[] args) => CoconaApp.Run<Program>(args);
@@ -49,7 +50,7 @@ internal class Program
         var runner = new FermatRunner(e);
 
         var numBits = (2 * e + 1);
-        var numDigits = numBits * System.Math.Log10(2);
+        var numDigits = numBits * Math.Log10(2);
         var mDigitsPerLoop = (numDigits * 2) / 1_000_000.0;
 
         var globalSw = Stopwatch.StartNew();
@@ -84,7 +85,7 @@ internal class Program
         var runner = new FermatRunner(e);
 
         var numBits = (2 * e + 1);
-        var numDigits = numBits * System.Math.Log10(2);
+        var numDigits = numBits * Math.Log10(2);
         var mDigitsPerLoop = (numDigits * 2) / 1_000_000.0;
 
         var globalSw = Stopwatch.StartNew();

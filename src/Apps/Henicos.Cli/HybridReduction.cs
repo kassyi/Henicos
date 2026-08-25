@@ -14,47 +14,29 @@ public static class HybridReduction
     /// Operates in-place on the input array to prevent massive allocations.
     /// </summary>
     /// <param name="data">The double-width input array from GPU (length >= 2 * numWords). Lower half will contain the result.</param>
-    /// <param name="E">The Fermat parameter E</param>
+    /// <param name="e">The Fermat parameter E</param>
     /// <param name="numWords">The number of uint words required to store N</param>
-    public static void ReduceInPlace(uint[] data, int E, int numWords)
+    public static void ReduceInPlace(uint[] data, int e, int numWords)
     {
-        var bit2E1 = 2 * E + 1;
+        var bit2E1 = 2 * e + 1;
         var word2E1 = bit2E1 / 32;
         var rem2E1 = bit2E1 % 32;
 
-        var wordE = E / 32;
-        var remE = E % 32;
+        var wordE = e / 32;
+        var remE = e % 32;
 
         var rMask = (rem2E1 == 0) ? 0xFFFFFFFF : (1U << rem2E1) - 1;
 
         for (var pass = 0; pass < 2; pass++)
         {
-            var q0_boundary = data[word2E1];
-            // We do NOT mask data[word2E1] destructively yet because Q needs the upper bits.
-            // Wait, we need to read Q from data[]. So we shouldn't mask out R until AFTER we read Q.
-            // Actually, because we are processing chunks in parallel, we MUST NOT modify data[] in place
-            // if those indices might be read by other threads as part of Q.
-            // However, Q is ALWAYS at index >= word2E1.
-            // We write results to index 0...numWords-1.
-            // Since word2E1 is approximately numWords (specifically word2E1 = numWords - 1 or numWords),
-            // the regions of R (where we write) and Q (where we read) are MOSTLY disjoint.
-            // For E=10, 2E+1 = 21 bits. numWords = 1. word2E1 = 0.
-            // Ah! If word2E1 < numWords, reading Q and writing R overlaps!
-            // Wait, Q is read from indices [word2E1, 2*numWords-1].
-            // We write to [0, numWords-1].
-            // This is a data race if we do it in place blindly.
-            // To be perfectly safe without allocations, we must buffer the reads or use a temp array.
-            // Since we are aiming for zero-allocation but high parallelism, creating a single `uint[] nextPass` 
-            // per thread or a global one is safer.
-            // We must allocate nextData to be large enough to hold intermediate results (like 3E+1 bits).
-            // Using ArrayPool to prevent huge GC allocations for every pass
+            // Direct in-place mutation would cause data races and destructive overwrites when word2E1 < numWords,
+            // as reading the upper quotient Q [word2E1, 2*numWords-1] overlaps with writing the remainder R [0, numWords-1].
+            // To ensure thread safety while remaining zero-allocation, buffer intermediate results via ArrayPool.
             var nextData = ArrayPool<uint>.Shared.Rent(data.Length);
             try
             {
-
                 // R starts as the lower 2E+1 bits of data.
-                // We can just copy R into nextData.
-                var rCopyWords = System.Math.Min(data.Length, word2E1 + 1);
+                var rCopyWords = Math.Min(data.Length, word2E1 + 1);
                 Array.Copy(data, nextData, rCopyWords);
                 if (rem2E1 != 0 && rCopyWords > 0)
                 {
@@ -141,7 +123,7 @@ public static class HybridReduction
     }
 
     /// <summary>
-    /// Gets the targetIndex-th word of (Q << (wordShift*32 + bitShift))
+    /// Gets the targetIndex-th word of (Q &lt;&lt; (wordShift*32 + bitShift))
     /// </summary>
     private static uint GetShiftedQWord(uint[] data, int qWordStart, int qBitStart, int targetIndex, int wordShift, int bitShift, int dataLen)
     {

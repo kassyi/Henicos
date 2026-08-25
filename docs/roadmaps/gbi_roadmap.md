@@ -49,3 +49,4 @@ C#の演算子オーバーロードとして提供されている「記号で記
 | **GBI-22** | **`CompareTo` / `Equals`** | 大小比較・等値判定 | - [x] | - [ ] | CPU転送で完全動作中。GPU並列リダクション化（GBI-03）待ち。 |
 | **GBI-23** | **`GetBitLength` / `GetByteCount`** | 有効ビット/バイト長 | - [x] | - [ ] | CPU転送で完全動作中。GPU並列リダクション化（GBI-03）待ち。 |
 | **GBI-24** | **`IsZero` / `IsOne` / `IsEven`** | 状態フラグ判定 | - [x] | - [ ] | CPU転送で完全動作中。GPU並列リダクション化（GBI-03）待ち。 |
+| **GBI-25** | **`GpuBigInteger.Sqrt`** | 平方根 ( $\lfloor\sqrt{a}\rfloor$ ) | - [ ] | - [ ] | ニュートン法または二分探索によるGPUカーネル実装が必要。 |
