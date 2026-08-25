@@ -41,6 +41,33 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             }
         }
 
+        [Trait("RoadmapId", "GBI-11")]
+        [Theory]
+        // Standard prime: p = 17, threshold = primeModulus - b = 7 (for b = 10)
+        [InlineData(6u, 10u, 17u)] // Just below threshold: (6 + 10 = 16 < 17) -> 16
+        [InlineData(7u, 10u, 17u)] // Exactly at threshold: (7 + 10 = 17) -> 0
+        [InlineData(8u, 10u, 17u)] // Just above threshold: (8 + 10 = 18 > 17) -> 1
+        [InlineData(5u, 10u, 17u)] // Normal no-wrap
+        [InlineData(12u, 10u, 17u)] // Normal wrap
+        [InlineData(0u, 0u, 17u)] // Zero
+        [InlineData(16u, 0u, 17u)] // Just below prime
+        [InlineData(0u, 16u, 17u)] // Just below prime
+        [InlineData(16u, 1u, 17u)] // Exactly prime (wraps to 0)
+        [InlineData(16u, 16u, 17u)] // Max valid residues for p=17 -> 15
+        // Near uint.MaxValue prime: p = 4294967295u, threshold = 4294967293u (for b = 2u)
+        [InlineData(4294967292u, 2u, 4294967295u)] // Just below threshold -> 4294967294
+        [InlineData(4294967293u, 2u, 4294967295u)] // Exactly at threshold -> 0
+        [InlineData(4294967294u, 2u, 4294967295u)] // Just above threshold -> 1
+        [InlineData(0u, 4294967294u, 4294967295u)]
+        [InlineData(4294967294u, 4294967294u, 4294967295u)] // Max valid residues -> 4294967293
+        [InlineData(4294967293u, 1u, 4294967295u)]
+        [InlineData(4294967294u, 1u, 4294967295u)] // Wraps to 0
+        public void Test_ModAdd_BoundaryConditions(uint a, uint b, uint p)
+        {
+            var expected = (uint)(((ulong)a + b) % p);
+            var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
+            Assert.Equal(expected, actual);
+        }
         private const int TestSizeWords = 256; // 8192 bits
 
         #region 1. GBI アーキテクチャ・最適化課題

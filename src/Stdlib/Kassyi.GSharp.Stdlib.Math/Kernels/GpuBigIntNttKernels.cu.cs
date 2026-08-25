@@ -25,13 +25,11 @@ public static class GpuBigIntNttKernels
     [GpuDevice]
     public static uint ModAdd(uint operandA, uint operandB, uint primeModulus)
     {
-        var result = operandA + operandB;
-        if (result >= primeModulus || result < operandA)
+        if (operandA >= primeModulus - operandB)
         {
-            result -= primeModulus;
+            return operandA - (primeModulus - operandB);
         }
-
-        return result;
+        return operandA + operandB;
     }
 
     [GpuDevice]

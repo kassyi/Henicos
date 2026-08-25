@@ -113,12 +113,11 @@ struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
 inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
 inline __device__ unsigned int ModAdd(unsigned int operandA,unsigned int operandB,unsigned int primeModulus){
-auto result=(operandA+operandB);
-if(((result>=primeModulus)||(result<operandA)))
+if((operandA>=(primeModulus-operandB)))
 {
-result-=primeModulus;
+return (operandA-((primeModulus-operandB)));
 }
-return result;
+return (operandA+operandB);
 }
 
 inline __device__ unsigned int ModSub(unsigned int operandA,unsigned int operandB,unsigned int primeModulus){

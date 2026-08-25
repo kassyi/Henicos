@@ -334,6 +334,7 @@ public static class JitEngine
 
     private static void WriteCacheFileAtomic(string targetPath, byte[] content)
     {
+        string? tempFilePath = null;
         try
         {
             var dir = Path.GetDirectoryName(targetPath);
@@ -342,21 +343,20 @@ public static class JitEngine
                 Directory.CreateDirectory(dir);
             }
 
-            var tempFilePath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
+            tempFilePath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
             File.WriteAllBytes(tempFilePath, content);
-            try
-            {
-                File.Move(tempFilePath, targetPath, overwrite: true);
-            }
-            catch
-            {
-                // Ignore rename collision / lock errors on best-effort basis
-                TryDeleteFile(tempFilePath);
-            }
+            File.Move(tempFilePath, targetPath, overwrite: true);
         }
         catch
         {
             // Ignore cache write errors on best-effort basis to avoid crashing execution
+        }
+        finally
+        {
+            if (tempFilePath != null)
+            {
+                TryDeleteFile(tempFilePath);
+            }
         }
     }
 

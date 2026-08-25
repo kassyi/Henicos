@@ -66,4 +66,22 @@ extern ""C"" __global__ void TestKernelStatic(int* data) {
         Assert.True(ptxStatic.Length > 0);
         Assert.NotEqual(ptxDynamic.Length, ptxStatic.Length); // The compiler will optimize them differently.
     }
+    [Fact]
+    [Trait("FeatureId", "GEN-10")]
+    public void CompileToPtx_InvalidArchitecture_ThrowsException()
+    {
+        var source = @"
+extern ""C"" __global__ void TestKernel(int* data) {
+    int idx = threadIdx.x;
+    data[idx] = idx;
+}";
+
+        // Expect exception when passing an invalid architecture
+        var ex = Assert.ThrowsAny<Exception>(() =>
+        {
+            NvrtcCompiler.CompileToPtx(source, "TestKernel", ["-arch=sm_999"]);
+        });
+        
+        Assert.Contains("nvrtc: error", ex.Message);
+    }
 }
