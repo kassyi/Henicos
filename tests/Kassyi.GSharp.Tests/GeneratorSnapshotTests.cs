@@ -170,6 +170,13 @@ public class GeneratorSnapshotTests
         if (isStdlibKernel)
         {
             var stdlibDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
+            
+            var globalUsingsPath = Path.Combine(stdlibDir, "GlobalUsings.cs");
+            if (File.Exists(globalUsingsPath))
+            {
+                syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(globalUsingsPath), path: globalUsingsPath));
+            }
+
             var contextsDir = Path.Combine(stdlibDir, "Contexts");
             if (Directory.Exists(contextsDir))
             {

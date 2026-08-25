@@ -78,106 +78,106 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
-inline __device__ unsigned int ModAdd(unsigned int a,unsigned int b,unsigned int p);
+inline __device__ unsigned int ModAdd(unsigned int operandA,unsigned int operandB,unsigned int primeModulus);
 
-inline __device__ unsigned int ModSub(unsigned int a,unsigned int b,unsigned int p);
+inline __device__ unsigned int ModSub(unsigned int operandA,unsigned int operandB,unsigned int primeModulus);
 
-inline __device__ unsigned int ModMulBarrett(unsigned int a,unsigned int b,unsigned int p,unsigned long long m);
+inline __device__ unsigned int ModMulBarrett(unsigned int operandA,unsigned int operandB,unsigned int primeModulus,unsigned long long barrettMagic);
 
-inline __device__ unsigned int ModMul1(unsigned int a,unsigned int b);
+inline __device__ unsigned int ModMul1(unsigned int operandA,unsigned int operandB);
 
-inline __device__ unsigned int ModMul2(unsigned int a,unsigned int b);
+inline __device__ unsigned int ModMul2(unsigned int operandA,unsigned int operandB);
 
-inline __device__ unsigned int ModPow(unsigned int baseVal,unsigned int exp,unsigned int p,unsigned long long m);
+inline __device__ unsigned int ModPow(unsigned int baseValue,unsigned int exponent,unsigned int primeModulus,unsigned long long barrettMagic);
 
-inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIdx,unsigned int val,int maxWords);
+inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIndex,unsigned int valueToAdd,int maxWordCount);
 
-inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIdx,unsigned int val,int maxWords);
+inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,unsigned int valueToSubtract,int maxWordCount);
 
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
-inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
+inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
-inline __device__ void Device_NTT_PointwiseSquare(unsigned int* dData1,unsigned int* dData2,int n);
+inline __device__ void Device_NTT_PointwiseSquare(unsigned int* deviceData1,unsigned int* deviceData2,int transformLength);
 
-inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* dData1A,unsigned int* dData2A,unsigned int* dData1B,unsigned int* dData2B,int n);
+inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* deviceData1A,unsigned int* deviceData2A,unsigned int* deviceData1B,unsigned int* deviceData2B,int transformLength);
 
-inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* dRes1,const unsigned int* dRes2,unsigned int* outUint,int n,int outNumWords);
+inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* outputBuffer,int transformLength,int maxWordCount);
 
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
-inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
+inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
-inline __device__ void Device_ForwardNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
+inline __device__ void Device_ForwardNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs;
-inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args);
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
+inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
-inline __device__ unsigned int ModAdd(unsigned int a,unsigned int b,unsigned int p){
-auto res=(a+b);
-if(((res>=p)||(res<a)))
+inline __device__ unsigned int ModAdd(unsigned int operandA,unsigned int operandB,unsigned int primeModulus){
+auto result=(operandA+operandB);
+if(((result>=primeModulus)||(result<operandA)))
 {
-res-=p;
+result-=primeModulus;
 }
-return res;
+return result;
 }
 
-inline __device__ unsigned int ModSub(unsigned int a,unsigned int b,unsigned int p){
-auto res=(a-b);
-if((a<b))
+inline __device__ unsigned int ModSub(unsigned int operandA,unsigned int operandB,unsigned int primeModulus){
+auto result=(operandA-operandB);
+if((operandA<operandB))
 {
-res+=p;
+result+=primeModulus;
 }
-return res;
+return result;
 }
 
-inline __device__ unsigned int ModMulBarrett(unsigned int a,unsigned int b,unsigned int p,unsigned long long m){
-unsigned long long prod=0;
-asm volatile(""mul.wide.u32 %0, %1, %2;"" : ""=l""(prod) : ""r""(a), ""r""(b));
+inline __device__ unsigned int ModMulBarrett(unsigned int operandA,unsigned int operandB,unsigned int primeModulus,unsigned long long barrettMagic){
+unsigned long long product=0;
+asm volatile(""mul.wide.u32 %0, %1, %2;"" : ""=l""(product) : ""r""(operandA), ""r""(operandB));
 ;
-unsigned long long q=0;
-asm volatile(""mul.hi.u64 %0, %1, %2;"" : ""=l""(q) : ""l""(prod), ""l""(m));
+unsigned long long quotient=0;
+asm volatile(""mul.hi.u64 %0, %1, %2;"" : ""=l""(quotient) : ""l""(product), ""l""(barrettMagic));
 ;
-unsigned long long r=(prod-(q*p));
-while((r>=p))
+unsigned long long remainder=(product-(quotient*primeModulus));
+while((remainder>=primeModulus))
 {
-r-=p;
+remainder-=primeModulus;
 }
-return (unsigned int)r;
+return (unsigned int)remainder;
 }
 
-inline __device__ unsigned int ModMul1(unsigned int a,unsigned int b){
-return ModMulBarrett(a,b,4253024257U,4337323974ULL);
+inline __device__ unsigned int ModMul1(unsigned int operandA,unsigned int operandB){
+return ModMulBarrett(operandA,operandB,4253024257U,4337323974ULL);
 }
 
-inline __device__ unsigned int ModMul2(unsigned int a,unsigned int b){
-return ModMulBarrett(a,b,4293918721U,4296016127ULL);
+inline __device__ unsigned int ModMul2(unsigned int operandA,unsigned int operandB){
+return ModMulBarrett(operandA,operandB,4293918721U,4296016127ULL);
 }
 
-inline __device__ unsigned int ModPow(unsigned int baseVal,unsigned int exp,unsigned int p,unsigned long long m){
-unsigned int res=1;
-baseVal=(baseVal%p);
-while((exp>0))
+inline __device__ unsigned int ModPow(unsigned int baseValue,unsigned int exponent,unsigned int primeModulus,unsigned long long barrettMagic){
+unsigned int result=1;
+baseValue=(baseValue%primeModulus);
+while((exponent>0))
 {
-if((((exp&1))!=0))
+if((((exponent&1))!=0))
 {
-res=ModMulBarrett(res,baseVal,p,m);
+result=ModMulBarrett(result,baseValue,primeModulus,barrettMagic);
 }
-baseVal=ModMulBarrett(baseVal,baseVal,p,m);
-exp>>=1;
+baseValue=ModMulBarrett(baseValue,baseValue,primeModulus,barrettMagic);
+exponent>>=1;
 }
-return res;
+return result;
 }
 
-inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIdx,unsigned int val,int maxWords){
-auto carry=val;
-auto idx=wordIdx;
-while(((carry>0)&&(idx<maxWords)))
+inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIndex,unsigned int valueToAdd,int maxWordCount){
+auto carry=valueToAdd;
+auto index=wordIndex;
+while(((carry>0)&&(index<maxWordCount)))
 {
-auto old=atomicAdd(&address[idx],carry);
-if(((old+carry)<old))
+auto oldValue=atomicAdd(&address[index],carry);
+if(((oldValue+carry)<oldValue))
 {
 carry=1;
-idx++;
+index++;
 }
 else
 {
@@ -186,16 +186,16 @@ break;
 }
 }
 
-inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIdx,unsigned int val,int maxWords){
-auto borrow=val;
-auto idx=wordIdx;
-while(((borrow>0)&&(idx<maxWords)))
+inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,unsigned int valueToSubtract,int maxWordCount){
+auto borrow=valueToSubtract;
+auto index=wordIndex;
+while(((borrow>0)&&(index<maxWordCount)))
 {
-auto old=atomicSub(&address[idx],borrow);
-if((old<borrow))
+auto oldValue=atomicSub(&address[index],borrow);
+if((oldValue<borrow))
 {
 borrow=1;
-idx++;
+index++;
 }
 else
 {
@@ -204,9 +204,9 @@ break;
 }
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -224,196 +224,196 @@ int CurrentL;
 }
 ;
 #endif
-inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
-auto dData=args->Buffer;
-auto dTwiddle=args->Twiddle;
-auto n=args->M;
-auto l=args->CurrentL;
-auto p=args->P;
-auto m=args->Pm;
+inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args){
+auto deviceData=args->Buffer;
+auto deviceTwiddle=args->Twiddle;
+auto transformLength=args->M;
+auto currentLength=args->CurrentL;
+auto primeModulus=args->P;
+auto barrettMagic=args->Pm;
 auto applyTwiddleBefore=args->ApplyTwiddleBefore;
 auto applyTwiddleAfter=args->ApplyTwiddleAfter;
 auto maxBlocks=args->MaxBlocks;
-auto threadsNeeded=(l/2);
-int maxLog2L=0;
-while((((1<<maxLog2L))<l))
+auto threadsNeeded=(currentLength/2);
+int maxLog2Length=0;
+while((((1<<maxLog2Length))<currentLength))
 {
-maxLog2L++;
+maxLog2Length++;
 }
 extern __shared__ uint32_t s_row[];
 ;
-for(int row=blockIdx.x;(row<maxBlocks);row+=gridDim.x)
+for(int rowIndex=blockIdx.x;(rowIndex<maxBlocks);rowIndex+=gridDim.x)
 {
 auto isActive=(threadIdx.x<threadsNeeded);
 if(isActive)
 {
-auto tid=threadIdx.x;
-auto offset=(row*l);
-unsigned int val1=dData[(offset+tid)];
-unsigned int val2=dData[((offset+tid)+(l/2))];
-unsigned int revTid1=0;
-unsigned int revTid2=0;
-revTid1 = __brev(tid) >> (32 - maxLog2L);
+auto threadId=threadIdx.x;
+auto blockOffset=(rowIndex*currentLength);
+unsigned int value1=deviceData[(blockOffset+threadId)];
+unsigned int value2=deviceData[((blockOffset+threadId)+(currentLength/2))];
+unsigned int reversedThreadId1=0;
+unsigned int reversedThreadId2=0;
+reversedThreadId1 = __brev(threadId) >> (32 - maxLog2Length);
 ;
-revTid2 = __brev((tid+(l/2))) >> (32 - maxLog2L);
+reversedThreadId2 = __brev((threadId+(currentLength/2))) >> (32 - maxLog2Length);
 ;
 if(applyTwiddleBefore)
 {
-auto k1=((unsigned long long)row*(unsigned long long)tid);
-k1%=(unsigned long long)n;
-val1=ModMulBarrett(val1,dTwiddle[k1],p,m);
-auto k2=((unsigned long long)row*(unsigned long long)((tid+(l/2))));
-k2%=(unsigned long long)n;
-val2=ModMulBarrett(val2,dTwiddle[k2],p,m);
+auto twiddleIndex1=((unsigned long long)rowIndex*(unsigned long long)threadId);
+twiddleIndex1%=(unsigned long long)transformLength;
+value1=ModMulBarrett(value1,deviceTwiddle[twiddleIndex1],primeModulus,barrettMagic);
+auto twiddleIndex2=((unsigned long long)rowIndex*(unsigned long long)((threadId+(currentLength/2))));
+twiddleIndex2%=(unsigned long long)transformLength;
+value2=ModMulBarrett(value2,deviceTwiddle[twiddleIndex2],primeModulus,barrettMagic);
 }
-s_row[revTid1] = val1;
+s_row[reversedThreadId1] = value1;
 ;
-s_row[revTid2] = val2;
-;
-}
-__syncthreads();
-for(int s=0;(s<maxLog2L);s++)
-{
-if(isActive)
-{
-auto tid=threadIdx.x;
-auto len=(2<<s);
-auto halfLen=(len/2);
-auto blockIdx=(tid/halfLen);
-auto idx=(tid%halfLen);
-auto pos=((blockIdx*len)+idx);
-auto twiddleIdx=(idx*((n/len)));
-auto w=dTwiddle[twiddleIdx];
-unsigned int u=0;
-u = s_row[pos];
-;
-unsigned int vSrc=0;
-vSrc = s_row[(pos+halfLen)];
-;
-auto v=ModMulBarrett(vSrc,w,p,m);
-auto addRes=ModAdd(u,v,p);
-auto subRes=ModSub(u,v,p);
-s_row[pos] = addRes;
-;
-s_row[(pos+halfLen)] = subRes;
+s_row[reversedThreadId2] = value2;
 ;
 }
 __syncthreads();
+for(int step=0;(step<maxLog2Length);step++)
+{
+if(isActive)
+{
+auto threadId=threadIdx.x;
+auto length=(2<<step);
+auto halfLength=(length/2);
+auto blockIndex=(threadId/halfLength);
+auto elementIndex=(threadId%halfLength);
+auto position=((blockIndex*length)+elementIndex);
+auto twiddleFactorIndex=(elementIndex*((transformLength/length)));
+auto twiddleFactor=deviceTwiddle[twiddleFactorIndex];
+unsigned int leftTerm=0;
+leftTerm = s_row[position];
+;
+unsigned int rightTermSource=0;
+rightTermSource = s_row[(position+halfLength)];
+;
+auto rightTerm=ModMulBarrett(rightTermSource,twiddleFactor,primeModulus,barrettMagic);
+auto additionResult=ModAdd(leftTerm,rightTerm,primeModulus);
+auto subtractionResult=ModSub(leftTerm,rightTerm,primeModulus);
+s_row[position] = additionResult;
+;
+s_row[(position+halfLength)] = subtractionResult;
+;
+}
+__syncthreads();
 }
 if(isActive)
 {
-auto tid=threadIdx.x;
-auto offset=(row*l);
+auto threadId=threadIdx.x;
+auto blockOffset=(rowIndex*currentLength);
 if(applyTwiddleAfter)
 {
-auto k1=((unsigned long long)row*(unsigned long long)tid);
-k1%=(unsigned long long)n;
-unsigned int r1=0;
-r1 = s_row[tid];
+auto twiddleIndex1=((unsigned long long)rowIndex*(unsigned long long)threadId);
+twiddleIndex1%=(unsigned long long)transformLength;
+unsigned int result1=0;
+result1 = s_row[threadId];
 ;
-r1=ModMulBarrett(r1,dTwiddle[k1],p,m);
-s_row[tid] = r1;
+result1=ModMulBarrett(result1,deviceTwiddle[twiddleIndex1],primeModulus,barrettMagic);
+s_row[threadId] = result1;
 ;
-auto k2=((unsigned long long)row*(unsigned long long)((tid+(l/2))));
-k2%=(unsigned long long)n;
-unsigned int r2=0;
-r2 = s_row[(tid+(l/2))];
+auto twiddleIndex2=((unsigned long long)rowIndex*(unsigned long long)((threadId+(currentLength/2))));
+twiddleIndex2%=(unsigned long long)transformLength;
+unsigned int result2=0;
+result2 = s_row[(threadId+(currentLength/2))];
 ;
-r2=ModMulBarrett(r2,dTwiddle[k2],p,m);
-s_row[(tid+(l/2))] = r2;
+result2=ModMulBarrett(result2,deviceTwiddle[twiddleIndex2],primeModulus,barrettMagic);
+s_row[(threadId+(currentLength/2))] = result2;
 ;
 }
-unsigned int out1=0;
-unsigned int out2=0;
-out1 = s_row[tid];
+unsigned int output1=0;
+unsigned int output2=0;
+output1 = s_row[threadId];
 ;
-out2 = s_row[(tid+(l/2))];
+output2 = s_row[(threadId+(currentLength/2))];
 ;
-dData[(offset+tid)]=out1;
-dData[((offset+tid)+(l/2))]=out2;
+deviceData[(blockOffset+threadId)]=output1;
+deviceData[((blockOffset+threadId)+(currentLength/2))]=output2;
 }
 __syncthreads();
 }
 }
 
-inline __device__ void Device_NTT_PointwiseSquare(unsigned int* dData1,unsigned int* dData2,int n){
-auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
-for(int i=tid;(i<n);i+=(gridDim.x*blockDim.x))
+inline __device__ void Device_NTT_PointwiseSquare(unsigned int* deviceData1,unsigned int* deviceData2,int transformLength){
+auto threadId=((blockIdx.x*blockDim.x)+threadIdx.x);
+for(int index=threadId;(index<transformLength);index+=(gridDim.x*blockDim.x))
 {
-dData1[i]=ModMulBarrett(dData1[i],dData1[i],4253024257U,4337323974ULL);
-dData2[i]=ModMulBarrett(dData2[i],dData2[i],4293918721U,4296016127ULL);
+deviceData1[index]=ModMulBarrett(deviceData1[index],deviceData1[index],4253024257U,4337323974ULL);
+deviceData2[index]=ModMulBarrett(deviceData2[index],deviceData2[index],4293918721U,4296016127ULL);
 }
 }
 
-inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* dData1A,unsigned int* dData2A,unsigned int* dData1B,unsigned int* dData2B,int n){
-auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
-for(int i=tid;(i<n);i+=(gridDim.x*blockDim.x))
+inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* deviceData1A,unsigned int* deviceData2A,unsigned int* deviceData1B,unsigned int* deviceData2B,int transformLength){
+auto threadId=((blockIdx.x*blockDim.x)+threadIdx.x);
+for(int index=threadId;(index<transformLength);index+=(gridDim.x*blockDim.x))
 {
-dData1A[i]=ModMulBarrett(dData1A[i],dData1B[i],4253024257U,4337323974ULL);
-dData2A[i]=ModMulBarrett(dData2A[i],dData2B[i],4293918721U,4296016127ULL);
+deviceData1A[index]=ModMulBarrett(deviceData1A[index],deviceData1B[index],4253024257U,4337323974ULL);
+deviceData2A[index]=ModMulBarrett(deviceData2A[index],deviceData2B[index],4293918721U,4296016127ULL);
 }
 }
 
-inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* dRes1,const unsigned int* dRes2,unsigned int* outUint,int n,int outNumWords){
-auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
-auto invN1=ModPow((unsigned int)n,(4253024257U-2),4253024257U,4337323974ULL);
-auto invN2=ModPow((unsigned int)n,(4293918721U-2),4293918721U,4296016127ULL);
-for(int k=tid;(k<n);k+=(gridDim.x*blockDim.x))
+inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* outputBuffer,int transformLength,int maxWordCount){
+auto threadId=((blockIdx.x*blockDim.x)+threadIdx.x);
+auto inverseN1=ModPow((unsigned int)transformLength,(4253024257U-2),4253024257U,4337323974ULL);
+auto inverseN2=ModPow((unsigned int)transformLength,(4293918721U-2),4293918721U,4296016127ULL);
+for(int index=threadId;(index<transformLength);index+=(gridDim.x*blockDim.x))
 {
-unsigned long long P1=4253024257U;
-unsigned long long P2=4293918721U;
-unsigned long long v1=ModMulBarrett(dRes1[k],invN1,4253024257U,4337323974ULL);
-unsigned long long v2=ModMulBarrett(dRes2[k],invN2,4293918721U,4296016127ULL);
-unsigned long long diff;
-if((v2>=v1))
+unsigned long long Modulus1=4253024257U;
+unsigned long long Modulus2=4293918721U;
+unsigned long long value1=ModMulBarrett(deviceResult1[index],inverseN1,4253024257U,4337323974ULL);
+unsigned long long value2=ModMulBarrett(deviceResult2[index],inverseN2,4293918721U,4296016127ULL);
+unsigned long long difference;
+if((value2>=value1))
 {
-diff=(v2-v1);
+difference=(value2-value1);
 }
 else
 {
-diff=((v2+P2)-v1);
+difference=((value2+Modulus2)-value1);
 }
 unsigned long long Prime1InverseModPrime2=105UL;
-auto h=(((diff*Prime1InverseModPrime2))%P2);
-auto val=(v1+(P1*h));
-if((val<=0))
+auto crtCoefficient=(((difference*Prime1InverseModPrime2))%Modulus2);
+auto recombinedValue=(value1+(Modulus1*crtCoefficient));
+if((recombinedValue<=0))
 {
 continue;
 }
-auto wordIdx=(k/2);
-auto bitOffset=(((k%2))*16);
+auto wordIndex=(index/2);
+auto bitOffset=(((index%2))*16);
 unsigned int low32;
 unsigned int mid32;
 unsigned int high32=0;
 if((bitOffset==0))
 {
-low32=(unsigned int)((val&0xFFFFFFFF));
-mid32=(unsigned int)((val>>32));
+low32=(unsigned int)((recombinedValue&0xFFFFFFFF));
+mid32=(unsigned int)((recombinedValue>>32));
 }
 else
 {
-low32=(unsigned int)((((val<<16))&0xFFFFFFFF));
-mid32=(unsigned int)((((val>>16))&0xFFFFFFFF));
-high32=(unsigned int)((val>>48));
+low32=(unsigned int)((((recombinedValue<<16))&0xFFFFFFFF));
+mid32=(unsigned int)((((recombinedValue>>16))&0xFFFFFFFF));
+high32=(unsigned int)((recombinedValue>>48));
 }
 if((low32!=0))
 {
-AtomicAddWithCarry(outUint,wordIdx,low32,outNumWords);
+AtomicAddWithCarry(outputBuffer,wordIndex,low32,maxWordCount);
 }
 if((mid32!=0))
 {
-AtomicAddWithCarry(outUint,(wordIdx+1),mid32,outNumWords);
+AtomicAddWithCarry(outputBuffer,(wordIndex+1),mid32,maxWordCount);
 }
 if((high32!=0))
 {
-AtomicAddWithCarry(outUint,(wordIdx+2),high32,outNumWords);
+AtomicAddWithCarry(outputBuffer,(wordIndex+2),high32,maxWordCount);
 }
 }
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -431,16 +431,16 @@ int CurrentL;
 }
 ;
 #endif
-inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
-auto buf=args->Buffer;
-auto tmp=args->TemporaryBuffer;
-auto m=args->M;
-auto n1=args->N1;
-auto n2=args->N2;
+inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args){
+auto buffer=args->Buffer;
+auto temporaryBuffer=args->TemporaryBuffer;
+auto transformLength=args->M;
+auto length1=args->N1;
+auto length2=args->N2;
 auto isInverse=args->IsInverse;
-if((m<=512))
+if((transformLength<=512))
 {
-args->CurrentL=m;
+args->CurrentL=transformLength;
 args->ApplyTwiddleBefore=false;
 args->ApplyTwiddleAfter=false;
 args->MaxBlocks=1;
@@ -451,52 +451,52 @@ else
 {
 if(isInverse)
 {
-args->CurrentL=n2;
+args->CurrentL=length2;
 args->ApplyTwiddleBefore=false;
 args->ApplyTwiddleAfter=true;
-args->MaxBlocks=n1;
+args->MaxBlocks=length1;
 Device_NTT_Shared_Row(args);
 cg::this_grid().sync();
-Device_Transpose_32x32(buf,tmp,n2,n1);
+Device_Transpose_32x32(buffer,temporaryBuffer,length2,length1);
 cg::this_grid().sync();
-args->Buffer=tmp;
-args->CurrentL=n1;
+args->Buffer=temporaryBuffer;
+args->CurrentL=length1;
 args->ApplyTwiddleBefore=false;
 args->ApplyTwiddleAfter=false;
-args->MaxBlocks=n2;
+args->MaxBlocks=length2;
 Device_NTT_Shared_Row(args);
-args->Buffer=buf;
+args->Buffer=buffer;
 cg::this_grid().sync();
-Device_Transpose_32x32(tmp,buf,n1,n2);
+Device_Transpose_32x32(temporaryBuffer,buffer,length1,length2);
 cg::this_grid().sync();
 }
 else
 {
-Device_Transpose_32x32(buf,tmp,n2,n1);
+Device_Transpose_32x32(buffer,temporaryBuffer,length2,length1);
 cg::this_grid().sync();
-args->Buffer=tmp;
-args->CurrentL=n1;
+args->Buffer=temporaryBuffer;
+args->CurrentL=length1;
 args->ApplyTwiddleBefore=false;
 args->ApplyTwiddleAfter=true;
-args->MaxBlocks=n2;
+args->MaxBlocks=length2;
 Device_NTT_Shared_Row(args);
-args->Buffer=buf;
+args->Buffer=buffer;
 cg::this_grid().sync();
-Device_Transpose_32x32(tmp,buf,n1,n2);
+Device_Transpose_32x32(temporaryBuffer,buffer,length1,length2);
 cg::this_grid().sync();
-args->CurrentL=n2;
+args->CurrentL=length2;
 args->ApplyTwiddleBefore=false;
 args->ApplyTwiddleAfter=false;
-args->MaxBlocks=n1;
+args->MaxBlocks=length1;
 Device_NTT_Shared_Row(args);
 cg::this_grid().sync();
 }
 }
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -514,14 +514,14 @@ int CurrentL;
 }
 ;
 #endif
-inline __device__ void Device_ForwardNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
+inline __device__ void Device_ForwardNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args){
 args->IsInverse=false;
 Device_NTT_Internal(args);
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -539,14 +539,14 @@ int CurrentL;
 }
 ;
 #endif
-inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs* args){
+inline __device__ void Device_InverseNTT(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args){
 args->IsInverse=true;
 Device_NTT_Internal(args);
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -565,7 +565,7 @@ int CurrentL;
 ;
 #endif
 extern ""C"" __global__ void DummyTranspilationKernel(unsigned int* data){
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs args=default;
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs args=default;
 args.Buffer=data;
 Device_ForwardNTT(&args);
 }

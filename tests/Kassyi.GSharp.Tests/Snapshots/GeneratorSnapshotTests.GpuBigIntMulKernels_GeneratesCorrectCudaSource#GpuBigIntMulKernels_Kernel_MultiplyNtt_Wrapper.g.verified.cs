@@ -78,9 +78,9 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -114,34 +114,34 @@ n2*=2;
 }
 auto n1=(transformLength/n2);
 auto nttArgs1A=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf1A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = nttBuf1A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
 ());
 Device_ForwardNTT(&nttArgs1A);
 cg::this_grid().sync();
 auto nttArgs2A=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf2A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = nttBuf2A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
 ());
 Device_ForwardNTT(&nttArgs2A);
 cg::this_grid().sync();
 auto nttArgs1B=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf1B; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = nttBuf1B; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
 ());
 Device_ForwardNTT(&nttArgs1B);
 cg::this_grid().sync();
 auto nttArgs2B=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf2B; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = nttBuf2B; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleForward2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
 ());
 Device_ForwardNTT(&nttArgs2B);
 cg::this_grid().sync();
 Device_NTT_PointwiseMultiply(nttBuf1A,nttBuf2A,nttBuf1B,nttBuf2B,transformLength);
 cg::this_grid().sync();
 auto invArgs1=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf1A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleInverse1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = nttBuf1A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleInverse1; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
 ());
 Device_InverseNTT(&invArgs1);
 cg::this_grid().sync();
 auto invArgs2=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = nttBuf2A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleInverse2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = nttBuf2A; _tmp.TemporaryBuffer = nttTmpBuf; _tmp.Twiddle = twiddleInverse2; _tmp.M = transformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4293918721U; _tmp.Pm = 4296016127ULL; return _tmp; }
 ());
 Device_InverseNTT(&invArgs2);
 cg::this_grid().sync();

@@ -276,9 +276,9 @@ Kassyi_GSharp_Stdlib_Math_Contexts_NttContext Ntt;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs__
-struct Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
+struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs
 {
 unsigned int* Buffer;
 unsigned int* TemporaryBuffer;
@@ -306,7 +306,7 @@ n2*=2;
 }
 auto n1=(ctx->Ntt.TransformLength/n2);
 auto nttArgs=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NttKernelArgs _tmp; _tmp.Buffer = ctx->Ntt.Buffers.Buffer1; _tmp.TemporaryBuffer = ctx->Ntt.Buffers.TemporaryBuffer; _tmp.Twiddle = ctx->Ntt.TwiddleFactors.Forward1; _tmp.M = ctx->Ntt.TransformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
+Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp.Buffer = ctx->Ntt.Buffers.Buffer1; _tmp.TemporaryBuffer = ctx->Ntt.Buffers.TemporaryBuffer; _tmp.Twiddle = ctx->Ntt.TwiddleFactors.Forward1; _tmp.M = ctx->Ntt.TransformLength; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = 4253024257U; _tmp.Pm = 4337323974ULL; return _tmp; }
 ());
 Device_ForwardNTT(&nttArgs);
 nttArgs.Buffer=ctx->Ntt.Buffers.Buffer2;
