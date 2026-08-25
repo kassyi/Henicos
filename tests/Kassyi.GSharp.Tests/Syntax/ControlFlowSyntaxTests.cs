@@ -1,0 +1,69 @@
+using Xunit;
+
+namespace Kassyi.GSharp.Tests.Syntax;
+
+public class ControlFlowSyntaxTests
+{
+    [Fact(Skip = "未実装: SYN-01 (Switch 式 / switch expression)")]
+    [Trait("RoadmapId", "SYN-01")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN01_SwitchExpression_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-02 (パターンマッチング is / 結合 / リレーショナル)")]
+    [Trait("RoadmapId", "SYN-02")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN02_PatternMatching_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-03 (インライン out var 変数宣言)")]
+    [Trait("RoadmapId", "SYN-03")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN03_InlineOutVarDeclaration_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-04 (Null合体 / 複合代入 ??, ??=)")]
+    [Trait("RoadmapId", "SYN-04")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN04_NullCoalescing_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-05 (三項演算子 ? : の型変換・ネスト)")]
+    [Trait("RoadmapId", "SYN-05")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN05_ConditionalExpression_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-06 (ref 条件式 / ref ternary)")]
+    [Trait("RoadmapId", "SYN-06")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN06_RefConditionalExpression_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-07 (ローカル関数 / local functions)")]
+    [Trait("RoadmapId", "SYN-07")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN07_LocalFunctions_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-08 (ラムダ式・無名関数 / Lambdas / Anonymous Functions)")]
+    [Trait("RoadmapId", "SYN-08")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN08_LambdaExpressions_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-09 (デフォルトリテラル default, default(T))")]
+    [Trait("RoadmapId", "SYN-09")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN09_DefaultLiteral_Transpilation()
+    {
+    }
+}

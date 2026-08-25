@@ -43,6 +43,41 @@ asm volatile(
 return res;
 }
 
+__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    offset &= 31;
+    return __funnelshift_l(value, value, offset);
+}
+__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    offset &= 31;
+    return __funnelshift_r(value, value, offset);
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value << offset) | (value >> (64 - offset)) : value;
+}
+__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value >> offset) | (value << (64 - offset)) : value;
+}
+__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
+    return value ? __ffs(value) - 1 : 32;
+}
+__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
+    return value ? __ffsll(value) - 1 : 64;
+}
+__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
+    return value ? 31 - __clz(value) : 0;
+}
+__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
+    return value ? 63 - __clzll(value) : 0;
+}
+__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
+    return value ? __clz(value) : 32;
+}
+__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
+    return value ? __clzll(value) : 64;
+}
+
 struct DebugReduc_PhysicsVector;
 __forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
 
@@ -72,24 +107,10 @@ data[tid]=tid;
 cg::this_grid().sync();
 }
 ";
-private static IntPtr s_hfunc_CooperativePhysicsProcess = IntPtr.Zero;
 public static unsafe void Launch_CooperativePhysicsProcess(int[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
-IntPtr hfunc;
-if (macros != null || s_hfunc_CooperativePhysicsProcess == IntPtr.Zero)
-{
-IntPtr dynamic_hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(CooperativePhysicsProcess_CudaSource, "CooperativePhysicsProcess", macros);
-if (macros == null)
-{
-s_hfunc_CooperativePhysicsProcess = dynamic_hfunc;
-}
-hfunc = dynamic_hfunc;
-}
-else
-{
-hfunc = s_hfunc_CooperativePhysicsProcess;
-}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("CooperativePhysicsProcess", CooperativePhysicsProcess_CudaSource, null, macros);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -109,14 +130,13 @@ finally
 handle_data.Free();
 }
 kernelParams[0] = &d_data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
 // Copy back array: data
 System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -138,33 +158,19 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 public static unsafe void Launch_CooperativePhysicsProcess_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
-IntPtr hfunc;
-if (macros != null || s_hfunc_CooperativePhysicsProcess == IntPtr.Zero)
-{
-IntPtr dynamic_hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(CooperativePhysicsProcess_CudaSource, "CooperativePhysicsProcess", macros);
-if (macros == null)
-{
-s_hfunc_CooperativePhysicsProcess = dynamic_hfunc;
-}
-hfunc = dynamic_hfunc;
-}
-else
-{
-hfunc = s_hfunc_CooperativePhysicsProcess;
-}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("CooperativePhysicsProcess", CooperativePhysicsProcess_CudaSource, null, macros);
 try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal device array: data
 kernelParams[0] = &data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+kernelParams
 ));
 }
 finally
