@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.IO;
 using Kassyi.GSharp.Core;
 using Microsoft.Extensions.Logging;
 using Logger = Kassyi.GSharp.Core.Logger;
@@ -21,12 +19,33 @@ public class LoggerFixture : IAsyncLifetime
     {
         await Logger.ShutdownAsync();
     }
+
+    public static async Task<string> WaitForLogContentAsync(string logPath, Func<string, bool> predicate,
+        int timeoutMs = 3000)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            if (File.Exists(logPath))
+            {
+                using var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(fs);
+                var content = await reader.ReadToEndAsync();
+                if (predicate(content))
+                {
+                    return content;
+                }
+            }
+
+            await Task.Delay(50);
+        }
+
+        throw new TimeoutException($"Log content did not satisfy predicate within {timeoutMs}ms");
+    }
 }
 
 [CollectionDefinition("LoggerCollection")]
-public class LoggerCollectionDefinition : ICollectionFixture<LoggerFixture>
-{
-}
+public class LoggerCollectionDefinition : ICollectionFixture<LoggerFixture>;
 
 [Collection("LoggerCollection")]
 public class LoggerTests
@@ -45,18 +64,16 @@ public class LoggerTests
         logger.LogInformation("Test Info Message");
         logger.LogError("Test Error Message");
 
-        // Allow background channel to flush
-        await Task.Delay(100);
+        var marker = $"Marker-{Guid.NewGuid()}";
+        logger.LogInformation(marker);
 
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        if (File.Exists(logPath))
-        {
-            var content = await File.ReadAllTextAsync(logPath);
-            Assert.Contains("Test Info Message", content);
-            Assert.Contains("[INFO]", content);
-            Assert.Contains("Test Error Message", content);
-            Assert.Contains("[ERROR]", content);
-        }
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker));
+
+        Assert.Contains("Test Info Message", content);
+        Assert.Contains("[INFO]", content);
+        Assert.Contains("Test Error Message", content);
+        Assert.Contains("[ERROR]", content);
     }
 
     [Fact]
@@ -70,18 +87,20 @@ public class LoggerTests
             await Task.Delay(10);
         }
 
-        // Allow background channel to flush
-        await Task.Delay(100);
+        var marker = $"Marker-{Guid.NewGuid()}";
+        // Cannot use logger because we need it to use the static Log internally maybe?
+        // Wait, we can just use the static Logger method indirectly or create a new logger.
+        var logger = new TestLogger();
+        logger.LogInformation(marker);
 
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        if (File.Exists(logPath))
-        {
-            var content = await File.ReadAllTextAsync(logPath);
-            Assert.Contains("[Start Scope] TestOperation", content);
-            Assert.Contains("[End Scope] TestOperation took", content);
-            Assert.Contains("ms", content);
-        }
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker));
+
+        Assert.Contains("[Start Scope] TestOperation", content);
+        Assert.Contains("[End Scope] TestOperation took", content);
+        Assert.Contains("ms", content);
     }
+
     [Fact]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
@@ -90,7 +109,7 @@ public class LoggerTests
         Logger.ActiveLogLevel = LogLevel.Info;
         int threadCount = 50;
         int messagesPerThread = 100;
-        
+
         var tasks = Enumerable.Range(0, threadCount).Select(async t =>
         {
             await Task.Yield();
@@ -99,18 +118,21 @@ public class LoggerTests
                 logger.LogInformation($"Concurrent message T{t}-M{i}");
             }
         });
-        
+
         await Task.WhenAll(tasks);
-        await Task.Delay(500); // Allow background channel to flush
-        
+
+        var marker = $"Marker-{Guid.NewGuid()}";
+        logger.LogInformation(marker);
+
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        Assert.True(File.Exists(logPath));
-        
-        var content = await File.ReadAllTextAsync(logPath);
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 5000);
+
         for (int t = 0; t < threadCount; t++)
         {
-            // Just check the last message of each thread to ensure completion
-            Assert.Contains($"Concurrent message T{t}-M{messagesPerThread - 1}", content);
+            for (int i = 0; i < messagesPerThread; i++)
+            {
+                Assert.Contains($"Concurrent message T{t}-M{i}", content);
+            }
         }
     }
 
@@ -120,17 +142,17 @@ public class LoggerTests
     {
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
-        
+
         // 1MB string
         var giantString = new string('A', 1024 * 1024);
         logger.LogInformation(giantString);
-        
-        await Task.Delay(200); // Allow background channel to flush
-        
+
+        var marker = $"Marker-{Guid.NewGuid()}";
+        logger.LogInformation(marker);
+
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        Assert.True(File.Exists(logPath));
-        
-        var content = await File.ReadAllTextAsync(logPath);
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 5000);
+
         Assert.Contains(giantString, content);
     }
 
@@ -141,17 +163,16 @@ public class LoggerTests
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.None;
         var uniqueGuid = Guid.NewGuid().ToString();
-        
+
         logger.LogInformation($"Should not appear {uniqueGuid}");
         logger.LogError($"Should not appear {uniqueGuid}");
-        
-        await Task.Delay(100);
-        
+
+        Logger.ActiveLogLevel = LogLevel.Info;
+        var marker = $"Marker-{Guid.NewGuid()}";
+        logger.LogInformation(marker);
+
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        if (File.Exists(logPath))
-        {
-            var content = await File.ReadAllTextAsync(logPath);
-            Assert.DoesNotContain(uniqueGuid, content);
-        }
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker));
+        Assert.DoesNotContain(uniqueGuid, content);
     }
 }

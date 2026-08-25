@@ -69,10 +69,11 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     private unsafe void RunKernelAndVerify(byte[] ptxBytes, int a, int b, int expected)
     {
         IntPtr dA = IntPtr.Zero, dB = IntPtr.Zero, dC = IntPtr.Zero;
+        IntPtr module = IntPtr.Zero;
 
         try
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out IntPtr module, ptxBytes, 0, null, null));
+            CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out module, ptxBytes, 0, null, null));
             CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out IntPtr hfunc, module, "AddKernel"));
             
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out dA, 4));
@@ -100,6 +101,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             if (dA != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dA);
             if (dB != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dB);
             if (dC != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dC);
+            if (module != IntPtr.Zero) CudaDriverApi.cuModuleUnload(module);
         }
     }
     [Fact]
