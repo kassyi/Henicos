@@ -153,7 +153,7 @@ public static class JitEngine
 
             var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}.ptx";
             var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
-            byte[] ptxBytes;
+            byte[]? ptxBytes;
 
             if (File.Exists(cacheFilePath))
             {
@@ -164,16 +164,21 @@ public static class JitEngine
                 catch
                 {
                     // If read fails (e.g. corruption or concurrent deletion), fallback to recompile
-                    ptxBytes = CompileToPtx(cppSource, kernelName);
+                    ptxBytes = null;
                 }
             }
             else
             {
+                ptxBytes = null;
+            }
+
+            if (ptxBytes == null)
+            {
                 ptxBytes = CompileToPtx(cppSource, kernelName);
+                var tempFilePath = cacheFilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
                 try
                 {
                     Directory.CreateDirectory(s_cacheDirectory);
-                    var tempFilePath = cacheFilePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
                     File.WriteAllBytes(tempFilePath, ptxBytes);
                     // Atomically move the file into place (File.Move with overwrite on newer runtimes, or just move)
                     File.Move(tempFilePath, cacheFilePath, overwrite: true);
@@ -181,6 +186,13 @@ public static class JitEngine
                 catch
                 {
                     // Ignore cache write errors to avoid crashing execution
+                }
+                finally
+                {
+                    if (File.Exists(tempFilePath))
+                    {
+                        try { File.Delete(tempFilePath); } catch { /* best effort cleanup */ }
+                    }
                 }
             }
 
