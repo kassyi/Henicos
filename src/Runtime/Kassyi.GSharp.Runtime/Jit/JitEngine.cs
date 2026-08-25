@@ -7,10 +7,15 @@ namespace Kassyi.GSharp.Runtime.Jit;
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
 public static class JitEngine
 {
-    private static bool s_isGlobalInit;
+    private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
     private static string s_smVersion = "sm_52"; // default fallback
     private static readonly Lock s_initLock = new();
+
+    private static readonly string s_cacheDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Kassyi", "GSharp", "Cache", "Ptx"
+    );
 
     public readonly struct CudaContextScope : IDisposable
     {
@@ -108,6 +113,8 @@ public static class JitEngine
     public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
         Dictionary<string, string>? jitConstants = null, Dictionary<string, string>? macros = null)
     {
+        EnsureInitialized();
+
         var sb = new StringBuilder(kernelName);
         if (jitConstants != null)
         {
@@ -145,10 +152,52 @@ public static class JitEngine
 
             var cppSource = PreprocessSource(baseSource, combinedMacros);
             var sourceHash = ComputeHash(cppSource);
+            var toolkitHash = ComputeHash(GetCudaToolkitPath());
+            var nvrtcVersion = NvrtcApi.GetNvrtcVersion();
+
+            var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}_{nvrtcVersion}_{toolkitHash}.ptx";
+            var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
+            byte[]? ptxBytes = null;
+
+            if (File.Exists(cacheFilePath))
+            {
+                try
+                {
+                    var loadedBytes = File.ReadAllBytes(cacheFilePath);
+                    if (loadedBytes.Length > 0)
+                    {
+                        ptxBytes = loadedBytes;
+                    }
+                    else
+                    {
+                        TryDeleteFile(cacheFilePath);
+                    }
+                }
+                catch
+                {
+                    // Ignore read errors and fallback to fresh compilation
+                    TryDeleteFile(cacheFilePath);
+                }
+            }
 
             using var scope = new CudaContextScope();
-            var fatbinFile = CompileToFatbin(sourceHash, cppSource);
-            return LoadKernelFunction(fatbinFile, kernelName);
+
+            if (ptxBytes != null)
+            {
+                try
+                {
+                    return LoadKernelFunction(ptxBytes, kernelName);
+                }
+                catch
+                {
+                    // Cached PTX is invalid or corrupt. Invalidate cache and fallback to recompile.
+                    TryDeleteFile(cacheFilePath);
+                }
+            }
+
+            ptxBytes = CompileToPtx(cppSource, kernelName);
+            WriteCacheFileAtomic(cacheFilePath, ptxBytes);
+            return LoadKernelFunction(ptxBytes, kernelName);
         }));
 
         return lazyModule.Value.Function;
@@ -170,31 +219,104 @@ public static class JitEngine
         return sb + cppSource;
     }
 
-    private static string CompileToFatbin(string sourceHash, string cppSource)
+    private static byte[] CompileToPtx(string cppSource, string kernelName)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "Kassyi.GSharp.Runtime.JitCache");
-        Directory.CreateDirectory(tempDir);
-
-        var cuFile = Path.Combine(tempDir, $"{sourceHash}.cu");
-        var fatbinFile = Path.Combine(tempDir, $"{sourceHash}_{s_smVersion}.fatbin");
-
-        if (File.Exists(fatbinFile))
+        var options = new List<string>
         {
-            return fatbinFile;
+            $"-arch={s_smVersion}",
+            "--std=c++17",
+            "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
+        };
+
+        void addIncludePaths(string baseDir)
+        {
+            var includePath = Path.Combine(baseDir, "include");
+            if (Directory.Exists(includePath))
+            {
+                options.Add($"-I{includePath}");
+                
+                var ccclPath = Path.Combine(includePath, "cccl");
+                if (Directory.Exists(ccclPath))
+                {
+                    options.Add($"-I{ccclPath}");
+                    
+                    var libcxxPath = Path.Combine(ccclPath, "libcxx", "include");
+                    if (Directory.Exists(libcxxPath))
+                    {
+                        options.Add($"-I{libcxxPath}");
+                    }
+                }
+            }
         }
 
-        File.WriteAllText(cuFile, cppSource, new UTF8Encoding(false));
-        NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, s_smVersion);
+        var cudaPath = GetCudaToolkitPath();
+        if (!string.IsNullOrEmpty(cudaPath))
+        {
+            addIncludePaths(cudaPath);
+        }
 
-        return fatbinFile;
+        return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
     }
 
-    private static GpuModule LoadKernelFunction(string fatbinFile, string kernelName)
+    private static string GetCudaToolkitPath()
     {
-        var ptxBytes = File.ReadAllBytes(fatbinFile);
-        CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, 0, null, null));
-        CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
-        return new GpuModule(module, hfunc);
+        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+        if (!string.IsNullOrEmpty(cudaPath))
+        {
+            return cudaPath;
+        }
+
+        var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+        if (Directory.Exists(cudaBaseDir))
+        {
+            foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+            {
+                if (Directory.Exists(Path.Combine(dir, "include")))
+                {
+                    return dir;
+                }
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static unsafe GpuModule LoadKernelFunction(byte[] ptxBytes, string kernelName)
+    {
+        var errorLogBuffer = new byte[8192];
+        var infoLogBuffer = new byte[8192];
+
+        fixed (byte* pError = errorLogBuffer, pInfo = infoLogBuffer)
+        {
+            IntPtr[] options =
+            [
+                3, // CU_JIT_INFO_LOG_BUFFER
+                4, // CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES
+                5, // CU_JIT_ERROR_LOG_BUFFER
+                6  // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
+            ];
+
+            IntPtr[] optionValues =
+            [
+                (IntPtr)pInfo,
+                infoLogBuffer.Length,
+                (IntPtr)pError,
+                errorLogBuffer.Length
+            ];
+
+            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, (uint)options.Length, options, optionValues);
+            if (loadResult != CUresult.CudaSuccess)
+            {
+                var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
+                var infoLog = Encoding.UTF8.GetString(infoLogBuffer).TrimEnd('\0');
+                var ptxStr = Encoding.UTF8.GetString(ptxBytes).TrimEnd('\0');
+                Console.WriteLine($"[CUDA JIT ERROR]: {loadResult}\nInfo Log:\n{infoLog}\nError Log:\n{errorLog}\nPTX Source:\n{ptxStr}");
+                throw new Exception($"cuModuleLoadDataEx failed with {loadResult}:\nInfo: {infoLog}\nError: {errorLog}");
+            }
+
+            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
+            return new GpuModule(module, hfunc);
+        }
     }
 
     private static string ComputeHash(string input)
@@ -208,5 +330,48 @@ public static class JitEngine
     {
         using var scope = new CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+    }
+
+    private static void WriteCacheFileAtomic(string targetPath, byte[] content)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(targetPath);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var tempFilePath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
+            File.WriteAllBytes(tempFilePath, content);
+            try
+            {
+                File.Move(tempFilePath, targetPath, overwrite: true);
+            }
+            catch
+            {
+                // Ignore rename collision / lock errors on best-effort basis
+                TryDeleteFile(tempFilePath);
+            }
+        }
+        catch
+        {
+            // Ignore cache write errors on best-effort basis to avoid crashing execution
+        }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Ignore cleanup errors on best-effort basis
+        }
     }
 }

@@ -54,6 +54,30 @@ tmp/
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
 
-.agents/*
-!.agents/rules/
 TestResults/
+
+# --- BEGIN Antigravity global AGENTS MANAGED FILES ---
+# These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
+/.agents/bin/check-meta-scan.js
+/.agents/bin/collect-coverage.js
+/.agents/bin/common.js
+/.agents/bin/extract-issues.js
+/.agents/bin/merge-code-reviews.js
+/.agents/bin/normalize-meta-index.js
+/.agents/bin/setup.js
+/.agents/skills/code-meta-scanner/SKILL.md
+/.agents/skills/code-review/SKILL.md
+/.agents/skills/gpu-code-review/SKILL.md
+/.agents/workflows/clean-branches.prompt.md
+/.agents/workflows/code-review.prompt.md
+/.agents/workflows/commit.en.prompt.md
+/.agents/workflows/commit.ja.prompt.md
+/.agents/workflows/phased-code-review-flash.prompt.md
+/.agents/workflows/phased-code-review-pro.prompt.md
+/.agents/workflows/qodo.en.prompt.md
+/.agents/workflows/qodo.ja.prompt.md
+/.agents/workflows/watch-ci.en.prompt.md
+/.agents/workflows/watch-ci.ja.prompt.md
+/.agents/workflows/write-csharp-xml-comment.en.prompt.md
+/.agents/workflows/write-csharp-xml-comment.ja.prompt.md
+# --- END Antigravity global AGENTS MANAGED FILES ---

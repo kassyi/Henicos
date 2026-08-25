@@ -14,7 +14,8 @@
 | **[ブランチ戦略 & 運用ガイドライン](./branching_strategy.md)**                   | Git運用・開発プロセス           | タスクIDに基づくブランチ命名規則（`feature/<layer>/<task-id>-*`）とマージフロー            |
 | **[GBI 課題 & 演算子進捗管理表](./roadmaps/gbi_roadmap.md)**                      | `GpuBigInt` モジュール         | メモリプール(GBI-01)、ModPowテスト復帰(GBI-02)、GPUリダクション(GBI-03)、記号演算子・関数型演算子の網羅状況 |
 | **[G# トランスパイラ & ランタイム課題](./roadmaps/gsharp_transpiler_issues.md)**  | `Generators.GSharp`, `Runtime` | 三項演算子、タプル、ローカル関数、スタック配列、JITディスクキャッシュ等のアーキテクチャ課題                 |
-| **[C# 構文・シュガー対応 & 永久非対応一覧](./roadmaps/gsharp_syntax_support.md)** | 言語機能・AST走査              | SYN-01〜SYN-88 の全構文対応状況、および GPU アーキテクチャ上永久非対応（UNS-01〜14）の定義                  |
+| **[G# ソースジェネレータ・コア基盤課題](./roadmaps/gsharp_generator_core.md)**    | `Generators.GSharp`, `Core`    | 自動生成ラッパー、JITバインディング、エラー診断ハンドリング等の基本基盤                                     |
+| **[C# 構文・シュガー対応 & 永久非対応一覧](./roadmaps/gsharp_syntax_support.md)** | 言語機能・AST走査              | SYN-01〜SYN-93 の全構文対応状況、および GPU アーキテクチャ上永久非対応（UNS-01〜14）の定義                  |
 
 ---
 
@@ -26,7 +27,8 @@
 flowchart TD
     subgraph Phase1["Phase 1: Tier 1 (最優先)"]
         direction LR
-        Phase1_SYN["SYN (構文): 17件"]
+        Phase1_GEN["GEN (ジェネレータ基盤): 2件"]
+        Phase1_SYN["SYN (構文): 21件"]
         Phase1_GSH["GSH (トランスパイラ): 3件"]
     end
 
@@ -58,9 +60,15 @@ flowchart TD
 ### 直近のマイルストーン & 推奨着手順
 
 1. **マイルストーン 1: Tier 1 (即効性の高いブロッカー解放)**
+    - **GEN-01**: C# ラッパーと CUDA 連携の基本機能（JITバインディング） (Score: 45)
     - **SYN-35**: ビット演算 Intrinsics (BitOperations) (Score: 45)
     - **SYN-77**: インライン PTX / C++ 埋め込み (Score: 45)
+    - **SYN-90**: 複雑な制御フロー（if-else ネストとループの複合） (Score: 45)
+    - **SYN-91**: 基本制御構文（switch, do-while, 論理演算） (Score: 45)
+    - **SYN-92**: ユーザー定義構造体のカーネル引数および操作 (Score: 45)
+    - **SYN-93**: デバイスメソッド ([GpuDevice]) の呼び出し・再利用 (Score: 45)
     - **GSH-01**: 三項演算子 (`? :`) の複雑式展開 (Score: 42)
+    - **GEN-02**: NVRTC コンパイルエラーの例外ラップ (Score: 41)
     - **SYN-09**: デフォルトリテラル (default) (Score: 41)
     - **SYN-28**: [MethodImpl(AggressiveInlining)] マッピング (Score: 41)
     - **SYN-68**: Math / MathF / Math.Clamp 関数群 (Score: 41)

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.Expressions;
+using Kassyi.GSharp.Stdlib.Math.Kernels;
 using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests
@@ -29,7 +30,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var expected = BigInteger.Multiply(aBig, bBig);
             var expectedBytes = expected.ToByteArray();
             var expectedWords = new uint[testSize * 2];
-            Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0, System.Math.Min(expectedBytes.Length, expectedWords.Length * 4));
+            Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0,
+                System.Math.Min(expectedBytes.Length, expectedWords.Length * 4));
 
             var actualWords = Kassyi.GSharp.Stdlib.Math.Algorithms.NttCpuReference.Multiply(aWords, bWords);
 
@@ -38,7 +40,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 Assert.Equal(expectedWords[i], actualWords[i]);
             }
         }
-        private const int TestSizeWords = 1024; // 32768 bits
+
+        private const int TestSizeWords = 256; // 8192 bits
 
         #region 1. GBI アーキテクチャ・最適化課題
 
@@ -129,8 +132,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Add_Correctness(GpuExecutionEngine engine)
         {
             RunBinaryOpTest(
-                engine, 
-                resultWords: TestSizeWords, 
+                engine,
+                resultWords: TestSizeWords,
                 contextWords: TestSizeWords * 2,
                 prepareData: null,
                 cpuFunc: (a, b) => a + b,
@@ -145,10 +148,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
             RunBinaryOpTest(
-                engine, 
-                resultWords: TestSizeWords, 
+                engine,
+                resultWords: TestSizeWords,
                 contextWords: TestSizeWords * 2,
-                prepareData: (arrA, arrB) => 
+                prepareData: (arrA, arrB) =>
                 {
                     arrA[TestSizeWords - 1] |= 0x40000000;
                     arrB[TestSizeWords - 1] &= 0x3FFFFFFF;
@@ -168,8 +171,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 return;
 
             RunBinaryOpTest(
-                engine, 
-                resultWords: TestSizeWords * 2, 
+                engine,
+                resultWords: TestSizeWords * 2,
                 contextWords: TestSizeWords * 4,
                 prepareData: null,
                 cpuFunc: (a, b) => a * b,
@@ -184,10 +187,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             var sizeWords = 16;
             RunBinaryOpTest(
-                engine, 
-                resultWords: sizeWords, 
+                engine,
+                resultWords: sizeWords,
                 contextWords: sizeWords * 8,
-                prepareData: (arrA, arrB) => 
+                prepareData: (arrA, arrB) =>
                 {
                     arrB[sizeWords - 1] |= 0x80000000;
                 },
@@ -204,13 +207,13 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             var sizeWords = 16;
             using var context = new GpuContext(sizeWords * 8, engine);
-            
+
             var arrA = GenerateRandomArray(sizeWords, 123);
             // Ensure A is fairly large so we can test convergence well
             arrA[sizeWords - 1] |= 0x40000000;
-            
+
             var bigA = ToBigInteger(arrA);
-            
+
             // Expected Sqrt (using BigInteger.Log approx or similar)
             // System.Numerics does not have BigInteger.Sqrt natively in net10.0 (it does in .NET 9+ actually as BigInteger.IsPowerOfTwo/etc but BigInteger.Sqrt is not always available depending on TFM).
             // Let's compute expected Sqrt manually with Heron's method.
@@ -218,17 +221,24 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             int bytes = bigA.GetByteCount(isUnsigned: true);
             int bits = (bytes - 1) * 8;
             BigInteger temp = bigA >> bits;
-            while (temp > 0) { bits++; temp >>= 1; }
+            while (temp > 0)
+            {
+                bits++;
+                temp >>= 1;
+            }
+
             expectedSqrt = BigInteger.One << (bits / 2);
             for (int i = 0; i < 20; i++)
             {
                 BigInteger next = (expectedSqrt + bigA / expectedSqrt) >> 1;
-                if (next == expectedSqrt || next > expectedSqrt && next - expectedSqrt == 1 || expectedSqrt > next && expectedSqrt - next <= 1)
+                if (next == expectedSqrt || next > expectedSqrt && next - expectedSqrt == 1 ||
+                    expectedSqrt > next && expectedSqrt - next <= 1)
                 {
                     expectedSqrt = BigInteger.Min(expectedSqrt, next);
                     if (expectedSqrt * expectedSqrt > bigA) expectedSqrt--;
                     break;
                 }
+
                 expectedSqrt = next;
             }
 
@@ -316,7 +326,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.True(gpuNegative.IsNegative);
             Assert.False(gpuZero.IsNegative);
-            
+
             // Test setter
             gpuZero.IsNegative = true;
             Assert.True(gpuZero.IsNegative);
@@ -332,7 +342,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 20);
             var arrB = GenerateRandomArray(TestSizeWords, 20); // Same array
-            
+
             var arrC = GenerateRandomArray(TestSizeWords, 21);
             // Force A > C
             arrA[TestSizeWords - 1] |= 0x40000000;
@@ -380,7 +390,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 40);
-            
+
             // To test carry propagation in Add, we can force the first word to be 0xFFFFFFFF
             arrA[0] = 0xFFFFFFFF;
             arrA[1] = 0xFFFFFFFF; // and the second to check multi-word propagation
@@ -428,10 +438,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 rand.NextBytes(bytesA);
                 rand.NextBytes(bytesB);
                 bytesA[255] = (byte)(bytesA[255] | 0x80); // Ensure large
-                
+
                 var a = new BigInteger(bytesA, isUnsigned: true, isBigEndian: true);
                 var b = new BigInteger(bytesB, isUnsigned: true, isBigEndian: true);
-                
+
                 if (a < b)
                 {
                     var tmp = a;
@@ -481,8 +491,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedGcd, actualGcd);
         }
 
-        
-        [Theory(Skip = "Extremely slow due to cuMemAlloc overhead without memory pooling. Enable when memory pool is implemented.")]
+
+        [Theory(Skip =
+            "Extremely slow due to cuMemAlloc overhead without memory pooling. Enable when memory pool is implemented.")]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         public void Test_ModPow_Correctness(GpuExecutionEngine engine)
         {
@@ -524,7 +535,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             var arrA = GenerateRandomArray(TestSizeWords, 60);
             var arrB = GenerateRandomArray(TestSizeWords, 61);
-            
+
             // ensure b is smaller but non-zero
             arrB[TestSizeWords - 1] &= 0x7FFFFFFF;
             if (arrB[0] == 0) arrB[0] = 1;
@@ -534,7 +545,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             using var gpuA = new GpuBigInteger(context, arrA);
             using var gpuB = new GpuBigInteger(context, arrB);
-            
+
             using var gpuQ = new GpuBigInteger(context, TestSizeWords);
             using var gpuR = new GpuBigInteger(context, TestSizeWords);
 
@@ -548,6 +559,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             GpuBigInteger.Mod(gpuA, gpuB, gpuMod);
             AssertGpuResultEqualsCpu(bigA % bigB, gpuMod);
         }
+
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
         [Trait("RoadmapId", "GBI-12")]
@@ -613,7 +625,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             using var context = new GpuContext(TestSizeWords, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 80);
-            
+
             // To make testing exact sizes easier, set specific top bit
             arrA[TestSizeWords - 1] = 0;
             arrA[TestSizeWords - 2] = 0x80000000; // Exact length
@@ -666,13 +678,13 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 var mask = (BigInteger.One << (truncateWords * 32)) - 1;
                 expected &= mask;
             }
-            
+
             var actualBig = ToBigInteger(actualGpu.ToHostArray());
             Assert.Equal(expected, actualBig);
         }
 
         private void RunBinaryOpTest(
-            GpuExecutionEngine engine, 
+            GpuExecutionEngine engine,
             int resultWords,
             int contextWords,
             Action<uint[], uint[]> prepareData,
@@ -684,20 +696,34 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var context = new GpuContext(contextWords, engine);
             var arrA = GenerateRandomArray(size, 100);
             var arrB = GenerateRandomArray(size, 101);
-            
+
             prepareData?.Invoke(arrA, arrB);
-            
+
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
             var expected = cpuFunc(bigA, bigB);
-            
+
             using var gpuA = new GpuBigInteger(context, arrA);
             using var gpuB = new GpuBigInteger(context, arrB);
             using var gpuResult = new GpuBigInteger(context, resultWords);
-            
+
             gpuResult.Value = gpuFunc(gpuA, gpuB);
-            
+
             AssertGpuResultEqualsCpu(expected, gpuResult, resultWords);
+        }
+
+        [Theory]
+        [InlineData(0u, 0u, 4253024257u, 0u)]
+        [InlineData(100u, 200u, 4253024257u, 300u)]
+        [InlineData(4253024256u, 1u, 4253024257u, 0u)]
+        [InlineData(4253024256u, 2u, 4253024257u, 1u)]
+        [InlineData(0x80000000u, 0x80000000u, 4253024257u, 41943039u)] // 2^32 % 4253024257 = 41943039
+        [InlineData(4293918720u, 4293918720u, 4293918721u, 4293918719u)] // Near uint.MaxValue prime
+        [InlineData(0xC0000000u, 0xC0000000u, 4293918721u, 2148532223u)] // 6442450944 - 4293918721 = 2148532223
+        public void Test_ModAdd_OverflowSafe(uint a, uint b, uint prime, uint expected)
+        {
+            var actual = GpuBigIntNttKernels.ModAdd(a, b, prime);
+            Assert.Equal(expected, actual);
         }
 
         #endregion

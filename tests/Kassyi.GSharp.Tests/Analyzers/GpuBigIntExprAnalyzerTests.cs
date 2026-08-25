@@ -39,6 +39,7 @@ public class GpuBigIntExprAnalyzerTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GBI-26")]
     public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
         var source = """
@@ -59,6 +60,7 @@ public class GpuBigIntExprAnalyzerTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GBI-27")]
     public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
         var source = """
@@ -81,6 +83,7 @@ public class GpuBigIntExprAnalyzerTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GBI-28")]
     public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {
         var source = """
