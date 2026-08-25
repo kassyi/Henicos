@@ -1,24 +1,52 @@
-name: GPU Optimization Tests
+name: Hybrid CI Tests
 
-# Trigger only on pushes to main; never on pull_request events.
-# Self-hosted runners are high-value targets: running repo-controlled scripts
-# from untrusted PRs would allow any contributor with write access to RCE the runner.
+# Hybrid CI Architecture:
+# - Job 1 (Static/Syntax Tests): Runs instantly on GitHub Cloud for all pushes and PRs.
+# - Job 2 (GPU Execution Tests): Runs on Self-Hosted Runner. 
+#   Securely gated to only run on pushes to main or PRs from internal branches.
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
+  test-static-cloud:
+    name: Run Static & Syntax Tests on Cloud
+    runs-on: windows-latest
+    # Runs on all pushes and PRs safely because it is sandboxed in GitHub's cloud
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --no-restore -c Release
+
+      - name: Run Static Compilation & Syntax Tests
+        env:
+          GSHARP_TEST_NO_CUDA: "1"
+        run: dotnet test tests/Kassyi.GSharp.Tests --filter "Category!=Execution" --no-build -c Release
+
   test-on-gpu:
-    name: Run Tests on Self-Hosted GPU Runner
+    name: Run Execution Tests on Self-Hosted GPU Runner
     runs-on: [self-hosted, gpu, windows]
 
     # Require explicit deployment-environment approval before executing on the runner.
     # Configure the "github-gpu-runner" environment in Settings > Environments with required reviewers.
     environment: github-gpu-runner
 
-    # Defence-in-depth: even if the above environment gate is misconfigured, only
-    # pushes that have already landed on main are allowed (i.e. code has been reviewed).
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Defence-in-depth: Block automatic execution of PRs from external forks (prevent RCE).
+    # Only run on pushes to main, or PRs originating from branches within this exact repository.
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
 
     steps:
       # Pin the checkout action to a specific commit SHA instead of a mutable tag to
@@ -85,8 +113,5 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore -c Release
 
-      - name: Run Static Compilation Tests (Physical GPU not required)
-        run: dotnet test tests/Kassyi.GSharp.Tests --filter ArchitectureAndOptimizationTests --no-build -c Release
-
       - name: Run Execution Tests (Requires physical GPU)
-        run: dotnet test tests/Kassyi.GSharp.Tests --filter "PtxEngineExperimentTests|SourceGeneratorTests|Category=Execution" --no-build -c Release
+        run: dotnet test tests/Kassyi.GSharp.Tests --filter "Category=Execution" --no-build -c Release
