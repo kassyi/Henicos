@@ -1,0 +1,105 @@
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Stdlib.Math.Expressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Xunit;
+
+namespace Kassyi.GSharp.Tests;
+
+public class GpuBigIntExprAnalyzerTests
+{
+    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source)
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
+        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+
+        var references = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
+            .Select(a => MetadataReference.CreateFromFile(a.Location))
+            .Cast<MetadataReference>()
+            .ToList();
+
+        references.Add(MetadataReference.CreateFromFile(typeof(GpuBigIntExpr).Assembly.Location));
+        references.Add(MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location));
+
+        var compilation = CSharpCompilation.Create("AnalyzerTestCompilation")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .AddReferences(references)
+            .AddSyntaxTrees(syntaxTree);
+
+        var analyzer = new GpuBigIntExprAnalyzer();
+        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(analyzer));
+        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+    }
+
+    [Fact]
+    public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
+    {
+        var source = """
+            using Kassyi.GSharp.Stdlib.Math.Expressions;
+
+            public class TestClass
+            {
+                public void Method(GpuBigIntExpr expr)
+                {
+                    var local = expr;
+                }
+            }
+            """;
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "GSH0005");
+    }
+
+    [Fact]
+    public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
+    {
+        var source = """
+            using Kassyi.GSharp.Stdlib.Math.Expressions;
+
+            public class TestClass
+            {
+                private GpuBigIntExpr _field;
+
+                public void Method(GpuBigIntExpr expr)
+                {
+                    _field = expr;
+                }
+            }
+            """;
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "GSH0005");
+    }
+
+    [Fact]
+    public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
+    {
+        var source = """
+            namespace Kassyi.GSharp.GpuBigInt.Expressions
+            {
+                public struct GpuBigIntExpr {}
+            }
+
+            public class TestClass
+            {
+                public void Method(Kassyi.GSharp.GpuBigInt.Expressions.GpuBigIntExpr expr)
+                {
+                    var local = expr;
+                }
+            }
+            """;
+
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(source);
+
+        Assert.Contains(diagnostics, d => d.Id == "GSH0005");
+    }
+}
