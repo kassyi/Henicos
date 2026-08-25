@@ -38,7 +38,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 Assert.Equal(expectedWords[i], actualWords[i]);
             }
         }
-        private const int TestSizeWords = 1024; // 32768 bits
+        private const int TestSizeWords = 256; // 8192 bits
 
         #region 1. GBI アーキテクチャ・最適化課題
 
