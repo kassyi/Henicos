@@ -147,8 +147,8 @@ public static class JitEngine
             var sourceHash = ComputeHash(cppSource);
 
             using var scope = new CudaContextScope();
-            var fatbinFile = CompileToFatbin(sourceHash, cppSource);
-            return LoadKernelFunction(fatbinFile, kernelName);
+            var ptxBytes = CompileToPtx(cppSource, kernelName);
+            return LoadKernelFunction(ptxBytes, kernelName);
         }));
 
         return lazyModule.Value.Function;
@@ -170,31 +170,96 @@ public static class JitEngine
         return sb + cppSource;
     }
 
-    private static string CompileToFatbin(string sourceHash, string cppSource)
+    private static byte[] CompileToPtx(string cppSource, string kernelName)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "Kassyi.GSharp.Runtime.JitCache");
-        Directory.CreateDirectory(tempDir);
-
-        var cuFile = Path.Combine(tempDir, $"{sourceHash}.cu");
-        var fatbinFile = Path.Combine(tempDir, $"{sourceHash}_{s_smVersion}.fatbin");
-
-        if (File.Exists(fatbinFile))
+        var options = new List<string>
         {
-            return fatbinFile;
+            $"-arch={s_smVersion}",
+            "--std=c++17",
+            "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
+        };
+
+        void AddIncludePaths(string baseDir)
+        {
+            var includePath = Path.Combine(baseDir, "include");
+            if (Directory.Exists(includePath))
+            {
+                options.Add($"-I{includePath}");
+                
+                var ccclPath = Path.Combine(includePath, "cccl");
+                if (Directory.Exists(ccclPath))
+                {
+                    options.Add($"-I{ccclPath}");
+                    
+                    var libcxxPath = Path.Combine(ccclPath, "libcxx", "include");
+                    if (Directory.Exists(libcxxPath))
+                    {
+                        options.Add($"-I{libcxxPath}");
+                    }
+                }
+            }
         }
 
-        File.WriteAllText(cuFile, cppSource, new UTF8Encoding(false));
-        NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, s_smVersion);
+        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
+        if (!string.IsNullOrEmpty(cudaPath))
+        {
+            AddIncludePaths(cudaPath);
+        }
+        else
+        {
+            var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+            if (Directory.Exists(cudaBaseDir))
+            {
+                foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+                {
+                    if (Directory.Exists(Path.Combine(dir, "include")))
+                    {
+                        AddIncludePaths(dir);
+                        break;
+                    }
+                }
+            }
+        }
 
-        return fatbinFile;
+        return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
     }
 
-    private static GpuModule LoadKernelFunction(string fatbinFile, string kernelName)
+    private static unsafe GpuModule LoadKernelFunction(byte[] ptxBytes, string kernelName)
     {
-        var ptxBytes = File.ReadAllBytes(fatbinFile);
-        CudaException.ThrowIfError(CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, 0, null, null));
-        CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
-        return new GpuModule(module, hfunc);
+        var errorLogBuffer = new byte[8192];
+        var infoLogBuffer = new byte[8192];
+
+        fixed (byte* pError = errorLogBuffer, pInfo = infoLogBuffer)
+        {
+            var options = new IntPtr[]
+            {
+                (IntPtr)3, // CU_JIT_INFO_LOG_BUFFER
+                (IntPtr)4, // CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES
+                (IntPtr)5, // CU_JIT_ERROR_LOG_BUFFER
+                (IntPtr)6  // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
+            };
+
+            var optionValues = new IntPtr[]
+            {
+                (IntPtr)pInfo,
+                (IntPtr)infoLogBuffer.Length,
+                (IntPtr)pError,
+                (IntPtr)errorLogBuffer.Length
+            };
+
+            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, (uint)options.Length, options, optionValues);
+            if (loadResult != Kassyi.GSharp.Runtime.Interop.CUresult.CudaSuccess)
+            {
+                var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
+                var infoLog = Encoding.UTF8.GetString(infoLogBuffer).TrimEnd('\0');
+                var ptxStr = Encoding.UTF8.GetString(ptxBytes).TrimEnd('\0');
+                Console.WriteLine($"[CUDA JIT ERROR]: {loadResult}\nInfo Log:\n{infoLog}\nError Log:\n{errorLog}\nPTX Source:\n{ptxStr}");
+                throw new Exception($"cuModuleLoadDataEx failed with {loadResult}:\nInfo: {infoLog}\nError: {errorLog}");
+            }
+
+            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
+            return new GpuModule(module, hfunc);
+        }
     }
 
     private static string ComputeHash(string input)
