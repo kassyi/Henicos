@@ -88,6 +88,16 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxDestroy_v2(IntPtr ctx);
 
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Exposed for runtime context management")]
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxPushCurrent_v2(IntPtr ctx);
+
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Exposed for runtime context management")]
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxPopCurrent_v2(out IntPtr pctx);
+
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxSetCurrent(IntPtr ctx);

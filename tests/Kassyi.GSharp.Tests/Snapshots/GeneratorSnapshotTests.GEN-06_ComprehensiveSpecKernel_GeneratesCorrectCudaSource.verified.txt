@@ -7,7 +7,7 @@
         ^^^^^^^^^^^^^^^^^^^^^^^^
         int particleCount,
 */
- ComprehensiveSpecKernel.cs: (80,8)-(80,32),
+ GEN-06_ComprehensiveSpecKernel.cs: (80,8)-(80,32),
       Message: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
       Severity: Warning,
       WarningLevel: 1,
@@ -27,7 +27,7 @@
                                                               ^^^^^
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
 */
- ComprehensiveSpecKernel.cs: (108,62)-(108,67),
+ GEN-06_ComprehensiveSpecKernel.cs: (108,62)-(108,67),
       Message: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.,
       Severity: Warning,
       WarningLevel: 1,

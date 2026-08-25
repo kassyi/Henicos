@@ -20,7 +20,7 @@ public class GpuContext : IDisposable
     }
     public GpuExecutionEngine Engine
     {
-        get; set;
+        get;
     }
 
     public Providers.IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
