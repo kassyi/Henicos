@@ -1,5 +1,6 @@
 // ReSharper disable All
 using System.Runtime.CompilerServices;
+#pragma warning disable GSH1002
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
@@ -103,7 +104,7 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void Device_NTT_Shared_Row(ref NumberTheoreticTransformKernelArgs args)
+    public static void Device_NTT_Shared_Row(NumberTheoreticTransformKernelArgs args)
     {
         var deviceData = args.Buffer;
         var deviceTwiddle = args.Twiddle;
@@ -167,10 +168,8 @@ public static class GpuBigIntNttKernels
         var value1 = deviceData[blockOffset + threadId];
         var value2 = deviceData[blockOffset + threadId + currentLength / 2];
 
-        uint reversedThreadId1 = 0;
-        uint reversedThreadId2 = 0;
-        Gpu.InlinePtx($"{reversedThreadId1} = __brev({threadId}) >> (32 - {maxLog2Length});");
-        Gpu.InlinePtx($"{reversedThreadId2} = __brev({threadId + currentLength / 2}) >> (32 - {maxLog2Length});");
+        uint reversedThreadId1 = Gpu.BitReverse((uint)threadId) >> (32 - maxLog2Length);
+        uint reversedThreadId2 = Gpu.BitReverse((uint)(threadId + currentLength / 2)) >> (32 - maxLog2Length);
 
         if (applyTwiddleBefore)
         {
@@ -353,7 +352,7 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void Device_NTT_Internal(ref NumberTheoreticTransformKernelArgs args)
+    public static void Device_NTT_Internal(NumberTheoreticTransformKernelArgs args)
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
@@ -367,7 +366,7 @@ public static class GpuBigIntNttKernels
             args.ApplyTwiddleBefore = false;
             args.ApplyTwiddleAfter = false;
             args.MaxBlocks = 1;
-            Device_NTT_Shared_Row(ref args);
+            Device_NTT_Shared_Row(args);
             Gpu.SyncGrid();
         }
         else
@@ -378,7 +377,7 @@ public static class GpuBigIntNttKernels
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = true;
                 args.MaxBlocks = length1;
-                Device_NTT_Shared_Row(ref args);
+                Device_NTT_Shared_Row(args);
                 Gpu.SyncGrid();
 
                 GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
@@ -389,7 +388,7 @@ public static class GpuBigIntNttKernels
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = false;
                 args.MaxBlocks = length2;
-                Device_NTT_Shared_Row(ref args);
+                Device_NTT_Shared_Row(args);
                 args.Buffer = buffer; // Restore buffer
                 Gpu.SyncGrid();
 
@@ -406,7 +405,7 @@ public static class GpuBigIntNttKernels
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = true;
                 args.MaxBlocks = length2;
-                Device_NTT_Shared_Row(ref args);
+                Device_NTT_Shared_Row(args);
                 args.Buffer = buffer; // Restore buffer
                 Gpu.SyncGrid();
 
@@ -417,36 +416,35 @@ public static class GpuBigIntNttKernels
                 args.ApplyTwiddleBefore = false;
                 args.ApplyTwiddleAfter = false;
                 args.MaxBlocks = length1;
-                Device_NTT_Shared_Row(ref args);
+                Device_NTT_Shared_Row(args);
                 Gpu.SyncGrid();
             }
         }
     }
 
     [GpuDeviceFunction]
-    public static void Device_ForwardNTT(ref NumberTheoreticTransformKernelArgs args)
+    public static void Device_ForwardNTT(NumberTheoreticTransformKernelArgs args)
     {
         args.IsInverse = false;
-        Device_NTT_Internal(ref args);
+        Device_NTT_Internal(args);
     }
 
     [GpuDeviceFunction]
-    public static void Device_InverseNTT(ref NumberTheoreticTransformKernelArgs args)
+    public static void Device_InverseNTT(NumberTheoreticTransformKernelArgs args)
     {
         args.IsInverse = true;
-        Device_NTT_Internal(ref args);
+        Device_NTT_Internal(args);
     }
 
     [GpuKernel]
     [SuppressMessage("ReSharper", "UnusedMember.Global",
         Justification = "Exists solely to trigger snapshot transpilation")]
-    public static void DummyTranspilationKernel(uint[] data)
+    public static void _DiagnosticsWrapper_Device_NTT_Shared_Row(uint[] data)
     {
-        // This kernel exists solely to ensure that the G# source generator transpiles 
+        // This is a dummy kernel wrapper that exists solely to force the compilation of
         // the [GpuDeviceFunction] methods in this file for snapshot testing.
         NumberTheoreticTransformKernelArgs args = default;
         args.Buffer = data;
-        Device_ForwardNTT(ref args);
+        Device_ForwardNTT(args);
     }
 }
-
