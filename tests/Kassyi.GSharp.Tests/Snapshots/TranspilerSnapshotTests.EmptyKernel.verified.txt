@@ -1,9 +1,0 @@
-﻿--- IL DUMP ---
-// Method: System.Void Kassyi.GSharp.Tests.SnapshotKernels::EmptyKernel()
-
-IL_0000: nop
-IL_0001: ret
-
-
---- CPP CODE ---
-return;

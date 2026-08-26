@@ -29,7 +29,7 @@ public static class NvrtcApi
     {
         var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
         var addedToPath = false;
-        
+
         if (!string.IsNullOrEmpty(cudaPath))
         {
             var binPath = Path.Combine(cudaPath, "bin");
@@ -97,9 +97,9 @@ public static class NvrtcApi
         {
             var binPath = Path.Combine(cudaPath, "bin");
             var binX64Path = Path.Combine(binPath, "x64");
-            
+
             string[] pathsToProbe = [binPath, binX64Path];
-            
+
             foreach (var path in pathsToProbe)
             {
                 if (Directory.Exists(path))

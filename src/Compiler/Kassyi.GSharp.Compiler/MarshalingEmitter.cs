@@ -216,9 +216,7 @@ internal static class MarshalingEmitter
             {
                 writer.Append(
                     $"System.Collections.Generic.List<IntPtr> {p.Name}_allocatedPtrs = new System.Collections.Generic.List<IntPtr>");
-                using (writer.Parentheses())
-                {
-                }
+                writer.AppendParentheses();
 
                 writer.AppendLine(";");
                 if (p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out)
@@ -325,7 +323,7 @@ internal static class MarshalingEmitter
         {
             writer.AppendLine($"// Marshal array: {p.Name}");
             writer.AppendLine(
-                $"int {p.Name}_size = {p.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));");
+                $"int {p.Name}_size = {p.Name}.Length * sizeof({arrayType.ElementType.ToDisplayString()});");
             writer.AppendKeyword("if");
             using (writer.Parentheses())
             {
@@ -365,7 +363,7 @@ internal static class MarshalingEmitter
         var typeString = p.Type.ToDisplayString();
         writer.AppendLine($"""
             // Marshal ref/out scalar: {p.Name}
-            int {p.Name}_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof({typeString}));
+            int {p.Name}_size = sizeof({typeString});
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));
             """);
 
@@ -464,23 +462,9 @@ internal static class MarshalingEmitter
         if (p.RefKind == RefKind.Ref || p.RefKind == RefKind.Out)
         {
             writer.AppendLine($"""
-                // Unmarshal ref/out struct: {p.Name}
-                IntPtr p_{p.Name}_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal({p.Name}_size);
-                try
+                // Fast zero-allocation copy from device
+                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_{p.Name}), d_{p.Name}, {p.Name}_size));
                 """);
-            using (writer.Scope())
-            {
-                writer.AppendLine($"""
-                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}_temp_out, d_{p.Name}, {p.Name}_size));
-                    native_{p.Name} = (__Native_{pTypeName})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp_out, typeof(__Native_{pTypeName}))!;
-                    """);
-            }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"System.Runtime.InteropServices.Marshal.FreeHGlobal(p_{p.Name}_temp_out);");
-            }
         }
 
         writer.AppendLine(
@@ -530,23 +514,21 @@ internal static class MarshalingEmitter
     private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, IParameterSymbol p)
     {
         var typeString = p.Type.ToDisplayString();
+
+        if (p.RefKind == RefKind.Out)
+        {
+            writer.AppendLine($"{p.Name} = default;");
+        }
+
         writer.AppendLine($"""
-            // Unmarshal ref/out scalar: {p.Name}
-            IntPtr p_{p.Name}_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal({p.Name}_size);
-            try
+            // Fast zero-allocation copy from device for scalar: {p.Name}
+            fixed ({typeString}* ptr_{p.Name} = &{p.Name})
             """);
         using (writer.Scope())
         {
             writer.AppendLine($"""
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}_temp, d_{p.Name}, {p.Name}_size));
-                {p.Name} = ({typeString})System.Runtime.InteropServices.Marshal.PtrToStructure(p_{p.Name}_temp, typeof({typeString}))!;
+                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_{p.Name}, d_{p.Name}, {p.Name}_size));
                 """);
-        }
-
-        writer.AppendLine("finally");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"System.Runtime.InteropServices.Marshal.FreeHGlobal(p_{p.Name}_temp);");
         }
     }
 

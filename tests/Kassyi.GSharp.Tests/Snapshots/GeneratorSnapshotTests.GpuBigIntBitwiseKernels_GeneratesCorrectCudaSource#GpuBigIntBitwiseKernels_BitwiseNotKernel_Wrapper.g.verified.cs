@@ -118,7 +118,8 @@ if (dA.Length == 0 || dResult.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitwiseNotKernel", BitwiseNotKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -126,7 +127,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: dA
-int dA_size = dA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int dA_size = dA.Length * sizeof(uint);
 if(dA_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dA, dA_size));
@@ -143,7 +144,7 @@ handle_dA.Free();
 }
 kernelParams[0] = &d_dA;
 // Marshal array: dResult
-int dResult_size = dResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int dResult_size = dResult.Length * sizeof(uint);
 if(dResult_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));
@@ -205,9 +206,11 @@ if (d_dA != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dA);
 if (d_dResult != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dResult);
 }
 }
+}
 public static unsafe void Launch_BitwiseNotKernel_Device(IntPtr dA, IntPtr dResult, int numWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitwiseNotKernel", BitwiseNotKernel_CudaSource, null, macros);
 try
 {
@@ -230,6 +233,7 @@ IntPtr.Zero // Extra
 }
 finally
 {
+}
 }
 }
 }

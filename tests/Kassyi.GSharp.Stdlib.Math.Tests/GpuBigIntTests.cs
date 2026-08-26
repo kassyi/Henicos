@@ -520,6 +520,60 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedGcd, actualGcd);
         }
 
+        [Trait("RoadmapId", "GBI-20")]
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_GBI20_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(10, engine);
+            var arrEmpty = Array.Empty<uint>();
+
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                using var gpuA = new GpuBigInteger(context, arrEmpty);
+                using var gpuB = new GpuBigInteger(context, arrEmpty);
+                using var gpuResult = new GpuBigInteger(context, 0);
+
+                GpuBigInteger.Gcd(gpuA, gpuB, gpuResult);
+            });
+        }
+
+        [Trait("RoadmapId", "GBI-20")]
+        [Theory]
+        // Happy path
+        [InlineData(GpuExecutionEngine.GSharpJit, 48u, 18u)]
+        // Edge cases: 0
+        [InlineData(GpuExecutionEngine.GSharpJit, 0u, 0u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 0u, 10u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 10u, 0u)]
+        // Edge cases: 1
+        [InlineData(GpuExecutionEngine.GSharpJit, 1u, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 1u, 100u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 100u, 1u)]
+        // Edge cases: MaxValue and Alternating Bits
+        [InlineData(GpuExecutionEngine.GSharpJit, uint.MaxValue, uint.MaxValue)]
+        [InlineData(GpuExecutionEngine.GSharpJit, uint.MaxValue, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 0x80000000u, 0x55555555u)]
+        public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
+        {
+            using var context = new GpuContext(10, engine);
+            var arrA = new uint[] { valA };
+            var arrB = new uint[] { valB };
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            var expectedGcd = BigInteger.GreatestCommonDivisor(bigA, bigB);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, 1);
+
+            GpuBigInteger.Gcd(gpuA, gpuB, gpuResult);
+
+            var actualGcd = ToBigInteger(gpuResult.ToHostArray());
+            Assert.Equal(expectedGcd, actualGcd);
+        }
+
 
         [Theory(Skip =
             "Extremely slow due to cuMemAlloc overhead without memory pooling. Enable when memory pool is implemented.")]
@@ -753,6 +807,37 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             var actual = GpuBigIntNttKernels.ModAdd(a, b, prime);
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void Test_NttCarryResolver_ZeroLengthBuffers_ReturnsEarly()
+        {
+            var low = Array.Empty<uint>();
+            var high = Array.Empty<uint>();
+            var output = Array.Empty<uint>();
+
+            // Assert no exceptions thrown for 0 length buffers due to guard clause
+            var exception = Record.Exception(() =>
+            {
+                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread(low, high, output, 0, 0);
+            });
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void Test_NttCarryResolver_SingleWord_ValidatesCarryCalculation()
+        {
+            var low = new uint[] { 0x12345678, 0x9ABCDEF0 };
+            var high = new uint[] { 0, 0 };
+            var output = new uint[1];
+
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread(low, high, output, 2, 1);
+
+            // Calculation logic:
+            // sum0 = 0x12345678 -> low16 = 0x5678, carry = 0x1234
+            // sum1 = 0x1234 + 0x9ABCDEF0 = 0x9ABCF124 -> high16 = 0xF124, carry = 0x9ABC
+            // output[0] = low16 | (high16 << 16) = 0x5678 | (0xF124 << 16) = 0xF1245678
+            Assert.Equal(0xF1245678, output[0]);
         }
 
         [Fact]

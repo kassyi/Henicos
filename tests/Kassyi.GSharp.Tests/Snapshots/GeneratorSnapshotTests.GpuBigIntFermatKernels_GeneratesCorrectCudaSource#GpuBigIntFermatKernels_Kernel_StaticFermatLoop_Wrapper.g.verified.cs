@@ -334,7 +334,9 @@ for(int i=tid;(i<actualOutNumWords);i+=(gridDim.x*blockDim.x))
 ctx->Buffers.ValueT[i]=0;
 }
 cg::this_grid().sync();
-Device_CRT_ParallelAtomic(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Buffers.ValueT,ctx->Ntt.TransformLength,(ctx->Dimensions.NumberOfWords*2));
+Device_CRT_ComputeCoefficients(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Ntt.Buffers.Buffer3,ctx->Ntt.Buffers.TemporaryBuffer,ctx->Ntt.TransformLength);
+cg::this_grid().sync();
+Device_ResolveNttCarries_SingleThread(ctx->Ntt.Buffers.Buffer3,ctx->Ntt.Buffers.TemporaryBuffer,ctx->Buffers.ValueT,ctx->Ntt.TransformLength,(ctx->Dimensions.NumberOfWords*2));
 cg::this_grid().sync();
 }
 
@@ -359,83 +361,24 @@ int NumberOfWords;
 ;
 #endif
 inline __device__ void Device_AddSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,bool isSubtract){
-auto dA=ctx->Operands.LeftOperand;
-auto dB=ctx->Operands.RightOperand;
-auto dResult=ctx->Operands.ResultBuffer;
-auto carryBuffer=ctx->Operands.CarryBuffer;
-auto numWords=ctx->NumberOfWords;
-if(((blockIdx.x==0)&&(threadIdx.x==0)))
-{
-carryBuffer[0]=0;
-}
-cg::this_grid().sync();
 int chunkSize=256;
-auto chunkIdx=blockIdx.x;
-auto start=(chunkIdx*chunkSize);
-if(((start<numWords)&&(threadIdx.x<chunkSize)))
-{
-auto end=(start+chunkSize);
-if((end>numWords))
-{
-end=numWords;
-}
-if((threadIdx.x==0))
-{
-unsigned long long localCarry=0;
 if(isSubtract)
 {
-if((chunkIdx==0))
-{
-localCarry=1;
-}
-}
-for(int i=start;(i<end);i++)
-{
-unsigned int bVal;
-if(isSubtract)
-{
-bVal=~dB[i];
+Device_ChunkSub(ctx,chunkSize);
 }
 else
 {
-bVal=dB[i];
-}
-auto current=((dA[i]+(unsigned long long)bVal)+localCarry);
-dResult[i]=(unsigned int)((current&0xFFFFFFFF));
-localCarry=(current>>32);
-}
-carryBuffer[(chunkIdx+1)]=(long long)localCarry;
-}
+Device_ChunkAdd(ctx,chunkSize);
 }
 cg::this_grid().sync();
-if(((blockIdx.x==0)&&(threadIdx.x==0)))
+auto numChunks=((((ctx->NumberOfWords+chunkSize)-1))/chunkSize);
+if(isSubtract)
 {
-auto numChunks=((((numWords+chunkSize)-1))/chunkSize);
-unsigned long long rippleCarry=0;
-for(int cIdx=0;(cIdx<numChunks);cIdx++)
-{
-auto s=(cIdx*chunkSize);
-auto e=(s+chunkSize);
-if((e>numWords))
-{
-e=numWords;
+Device_ApplySubBorrow(ctx,numChunks,chunkSize);
 }
-rippleCarry+=(unsigned long long)carryBuffer[cIdx];
-if((rippleCarry==0))
+else
 {
-continue;
-}
-for(int i=s;(i<e);i++)
-{
-auto current=(dResult[i]+rippleCarry);
-dResult[i]=(unsigned int)((current&0xFFFFFFFF));
-rippleCarry=(current>>32);
-if((rippleCarry==0))
-{
-break;
-}
-}
-}
+Device_ApplyAddCarry(ctx,numChunks,chunkSize);
 }
 cg::this_grid().sync();
 }
@@ -1795,7 +1738,8 @@ handle.Free();
 }
 public static unsafe void Launch_Kernel_StaticFermatLoop(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, string gsharpExponent, string gsharpExponentMinus4, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("gsharpExponent", (gsharpExponent).ToString());
 __gsharp_jit_constants.Add("gsharpExponentMinus4", (gsharpExponentMinus4).ToString());
@@ -1820,17 +1764,8 @@ sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
 kernelParams
 ));
-// Unmarshal ref/out struct: ctx
-IntPtr p_ctx_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp_out, d_ctx, ctx_size));
-native_ctx = (__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp_out, typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext))!;
-}
-finally
-{
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp_out);
-}
+// Fast zero-allocation copy from device
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_ctx), d_ctx, ctx_size));
 Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, ref native_ctx, false);
 }
 finally
@@ -1839,9 +1774,11 @@ foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (d_ctx != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ctx);
 }
 }
+}
 public static unsafe void Launch_Kernel_StaticFermatLoop_Device(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, string gsharpExponent, string gsharpExponentMinus4, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("gsharpExponent", (gsharpExponent).ToString());
 __gsharp_jit_constants.Add("gsharpExponentMinus4", (gsharpExponentMinus4).ToString());
@@ -1866,23 +1803,15 @@ sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
 kernelParams
 ));
-// Unmarshal ref/out struct: ctx
-IntPtr p_ctx_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp_out, d_ctx, ctx_size));
-native_ctx = (__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp_out, typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext))!;
-}
-finally
-{
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp_out);
-}
+// Fast zero-allocation copy from device
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_ctx), d_ctx, ctx_size));
 Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, ref native_ctx, true);
 }
 finally
 {
 foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (d_ctx != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ctx);
+}
 }
 }
 }

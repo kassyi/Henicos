@@ -73,6 +73,7 @@ public class FermatRunner
         _context.Ntt.TransformLength = _gM;
         _context.Ntt.Buffers.Buffer1 = new uint[_gM];
         _context.Ntt.Buffers.Buffer2 = new uint[_gM];
+        _context.Ntt.Buffers.Buffer3 = new uint[_gM];
         _context.Ntt.Buffers.TemporaryBuffer = new uint[_gM];
 
         // Twiddle Factors
