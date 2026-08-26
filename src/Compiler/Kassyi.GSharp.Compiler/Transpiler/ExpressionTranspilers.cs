@@ -298,6 +298,8 @@ internal static class ExpressionTranspilers
     {
         if (node.ArgumentList.Arguments.Count != 1)
         {
+            context.ReportDiagnostic?.Invoke(
+                Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
             return;
         }
 
