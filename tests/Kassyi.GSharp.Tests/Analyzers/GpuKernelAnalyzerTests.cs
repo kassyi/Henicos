@@ -14,7 +14,7 @@ public class GpuKernelAnalyzerTests
     private static string GetTestCasePath(string testName, [CallerFilePath] string callerFilePath = "")
     {
         var projectDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(callerFilePath)!, ".."));
-        return Path.Combine(projectDir, "TestCases", "Analyzers", "GpuKernel", $"{testName}.cs");
+        return Path.Combine(projectDir, "TestCases", "Analyzers", "GpuKernel", $"{testName}.cu.cs");
     }
 
     private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsFromTestNameAsync(string testName)
@@ -31,7 +31,7 @@ public class GpuKernelAnalyzerTests
     public async Task Test_GSH01_Foreach_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-01_Foreach_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id);
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class GpuKernelAnalyzerTests
     public async Task Test_GSH02_LinqQuery_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-02_LinqQuery_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.LinqNotSupported.Id);
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.LinqNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class GpuKernelAnalyzerTests
     public async Task Test_GSH03_ImplicitVar_WithoutSuffix_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-03_ImplicitVar_WithoutSuffix_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ImplicitVarNeedsSuffix.Id);
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ImplicitVarNeedsSuffix.Id && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]

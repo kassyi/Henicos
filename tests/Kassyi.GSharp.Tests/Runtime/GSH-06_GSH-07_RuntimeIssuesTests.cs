@@ -84,26 +84,33 @@ public partial class Gsh06_07_RuntimeIssuesTests
             // Free all allocated chunks to restore system stability
             foreach (var ptr in allocatedPointers)
             {
-                CudaDriverApi.cuMemFree_v2(ptr);
+                var freeRes = CudaDriverApi.cuMemFree_v2(ptr);
+                Assert.Equal(CUresult.CudaSuccess, freeRes);
             }
         }
     }
-
-    [LibraryImport("nvcuda_missing_dummy.dll")]
-    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvStdcall)])]
-    private static partial CUresult cuInit_Dummy(uint flags);
 
     [Fact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "SadPath")]
     public void Test_Runtime_MissingCudaToolkit_GracefulDegradation()
     {
-        var ex = Assert.ThrowsAny<Exception>(() =>
+        var originalEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
+        try
         {
-            cuInit_Dummy(0);
-        });
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", "1");
+            var ex = Assert.ThrowsAny<Exception>(() =>
+            {
+                NativeLibrary.Load("nvrtc_custom", typeof(NvrtcApi).Assembly, null);
+            });
 
-        var rootEx = ex.GetBaseException();
-        Assert.IsType<DllNotFoundException>(rootEx);
+            var rootEx = ex.GetBaseException();
+            Assert.IsType<DllNotFoundException>(rootEx);
+            Assert.Contains("nvrtc_custom", rootEx.Message);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", originalEnv);
+        }
     }
 }
