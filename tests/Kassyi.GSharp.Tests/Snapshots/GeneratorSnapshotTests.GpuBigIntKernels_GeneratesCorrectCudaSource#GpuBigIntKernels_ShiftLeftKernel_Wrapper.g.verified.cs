@@ -544,7 +544,7 @@ try
 {
 void** kernelParams = stackalloc void*[5];
 // Marshal array: dA
-int dA_size = dA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int dA_size = dA.Length * sizeof(uint);
 if(dA_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dA, dA_size));
@@ -565,7 +565,7 @@ kernelParams[1] = &wordShift;
 // Marshal scalar: bitShift
 kernelParams[2] = &bitShift;
 // Marshal array: dResult
-int dResult_size = dResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int dResult_size = dResult.Length * sizeof(uint);
 if(dResult_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));

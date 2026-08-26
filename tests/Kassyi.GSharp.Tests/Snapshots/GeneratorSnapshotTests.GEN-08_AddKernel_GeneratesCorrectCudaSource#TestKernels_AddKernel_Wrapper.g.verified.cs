@@ -98,7 +98,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: a
-int a_size = a.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int a_size = a.Length * sizeof(int);
 if(a_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
@@ -115,7 +115,7 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int b_size = b.Length * sizeof(int);
 if(b_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
@@ -132,7 +132,7 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: c
-int c_size = c.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int c_size = c.Length * sizeof(int);
 if(c_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, c_size));

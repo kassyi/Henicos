@@ -323,7 +323,7 @@ internal static class MarshalingEmitter
         {
             writer.AppendLine($"// Marshal array: {p.Name}");
             writer.AppendLine(
-                $"int {p.Name}_size = {p.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));");
+                $"int {p.Name}_size = {p.Name}.Length * sizeof({arrayType.ElementType.ToDisplayString()});");
             writer.AppendKeyword("if");
             using (writer.Parentheses())
             {
@@ -363,7 +363,7 @@ internal static class MarshalingEmitter
         var typeString = p.Type.ToDisplayString();
         writer.AppendLine($"""
             // Marshal ref/out scalar: {p.Name}
-            int {p.Name}_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof({typeString}));
+            int {p.Name}_size = sizeof({typeString});
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));
             """);
 

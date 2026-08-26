@@ -351,7 +351,7 @@ try
 {
 void** kernelParams = stackalloc void*[5];
 // Marshal array: particles
-int particles_size = particles.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(DebugReduc.PhysicsVector));
+int particles_size = particles.Length * sizeof(DebugReduc.PhysicsVector);
 if(particles_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_particles, particles_size));
@@ -368,7 +368,7 @@ handle_particles.Free();
 }
 kernelParams[0] = &d_particles;
 // Marshal ref/out scalar: totalMagnitude
-int totalMagnitude_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(float));
+int totalMagnitude_size = sizeof(float);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_totalMagnitude, totalMagnitude_size));
 // Fast zero-allocation copy to device
 fixed (float* p_totalMagnitude_temp = &totalMagnitude)
@@ -377,7 +377,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_totalMagnitude, (IntP
 }
 kernelParams[1] = &d_totalMagnitude;
 // Marshal ref/out scalar: successFlag
-int successFlag_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(bool));
+int successFlag_size = sizeof(bool);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
 kernelParams[2] = &d_successFlag;
 var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, false, largeStructVal_allocatedPtrs);
@@ -444,7 +444,7 @@ void** kernelParams = stackalloc void*[5];
 // Marshal device array: particles
 kernelParams[0] = &particles;
 // Marshal ref/out scalar: totalMagnitude
-int totalMagnitude_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(float));
+int totalMagnitude_size = sizeof(float);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_totalMagnitude, totalMagnitude_size));
 // Fast zero-allocation copy to device
 fixed (float* p_totalMagnitude_temp = &totalMagnitude)
@@ -453,7 +453,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_totalMagnitude, (IntP
 }
 kernelParams[1] = &d_totalMagnitude;
 // Marshal ref/out scalar: successFlag
-int successFlag_size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(bool));
+int successFlag_size = sizeof(bool);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
 kernelParams[2] = &d_successFlag;
 var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, true, largeStructVal_allocatedPtrs);
@@ -617,7 +617,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
-int data_size = data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int data_size = data.Length * sizeof(int);
 if(data_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));

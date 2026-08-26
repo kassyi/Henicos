@@ -336,50 +336,58 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
         var twiddle = GetOrCreateTwiddleFactors(context, m);
 
-        var buf1A = context.Provider.AllocateMemory(m);
-        var buf2A = context.Provider.AllocateMemory(m);
-        var buf1B = context.Provider.AllocateMemory(m);
-        var buf2B = context.Provider.AllocateMemory(m);
-        var tmpBuf = context.Provider.AllocateMemory(m);
-        
-        var uncarriedLow = context.Provider.AllocateMemory(m);
-        var uncarriedHigh = context.Provider.AllocateMemory(m);
+        IntPtr buf1A = IntPtr.Zero, buf2A = IntPtr.Zero, buf1B = IntPtr.Zero, buf2B = IntPtr.Zero;
+        IntPtr tmpBuf = IntPtr.Zero, uncarriedLow = IntPtr.Zero, uncarriedHigh = IntPtr.Zero;
 
-        var n2 = 1;
-        while (n2 * n2 < m)
+        try
         {
-            n2 *= 2;
+            buf1A = context.Provider.AllocateMemory(m);
+            buf2A = context.Provider.AllocateMemory(m);
+            buf1B = context.Provider.AllocateMemory(m);
+            buf2B = context.Provider.AllocateMemory(m);
+            tmpBuf = context.Provider.AllocateMemory(m);
+            
+            uncarriedLow = context.Provider.AllocateMemory(m);
+            uncarriedHigh = context.Provider.AllocateMemory(m);
+
+            var n2 = 1;
+            while (n2 * n2 < m)
+            {
+                n2 *= 2;
+            }
+
+            var n1 = m / n2;
+            var maxL = m <= 512 ? m : System.Math.Max(n1, n2);
+            var sharedMemWords = System.Math.Max(1055, maxL);
+            var threadsNeeded = maxL / 2;
+
+            var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
+            var gridDim = (uint)((m + blockDim - 1) / blockDim);
+
+            GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Device(
+                leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
+                buf1A, buf2A, buf1B, buf2B, tmpBuf, uncarriedLow, uncarriedHigh,
+                twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
+                leftOperand.NumWords, rightOperand.NumWords, outWords, m,
+                gridDimX: gridDim, blockDimX: blockDim,
+                sharedMemBytes: (uint)(sharedMemWords * 4)
+            );
+
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread_Device(
+                uncarriedLow, uncarriedHigh, resultBuffer.DevicePointer, m, outWords,
+                gridDimX: 1, blockDimX: 1
+            );
         }
-
-        var n1 = m / n2;
-        var maxL = m <= 512 ? m : System.Math.Max(n1, n2);
-        var sharedMemWords = System.Math.Max(1055, maxL);
-        var threadsNeeded = maxL / 2;
-
-        var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
-        var gridDim = (uint)((m + blockDim - 1) / blockDim);
-
-        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Device(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
-            buf1A, buf2A, buf1B, buf2B, tmpBuf, uncarriedLow, uncarriedHigh,
-            twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
-            leftOperand.NumWords, rightOperand.NumWords, outWords, m,
-            gridDimX: gridDim, blockDimX: blockDim,
-            sharedMemBytes: (uint)(sharedMemWords * 4)
-        );
-
-        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread_Device(
-            uncarriedLow, uncarriedHigh, resultBuffer.DevicePointer, m, outWords,
-            gridDimX: 1, blockDimX: 1
-        );
-
-        context.Provider.FreeMemory(buf1A);
-        context.Provider.FreeMemory(buf2A);
-        context.Provider.FreeMemory(buf1B);
-        context.Provider.FreeMemory(buf2B);
-        context.Provider.FreeMemory(tmpBuf);
-        context.Provider.FreeMemory(uncarriedLow);
-        context.Provider.FreeMemory(uncarriedHigh);
+        finally
+        {
+            if (buf1A != IntPtr.Zero) context.Provider.FreeMemory(buf1A);
+            if (buf2A != IntPtr.Zero) context.Provider.FreeMemory(buf2A);
+            if (buf1B != IntPtr.Zero) context.Provider.FreeMemory(buf1B);
+            if (buf2B != IntPtr.Zero) context.Provider.FreeMemory(buf2B);
+            if (tmpBuf != IntPtr.Zero) context.Provider.FreeMemory(tmpBuf);
+            if (uncarriedLow != IntPtr.Zero) context.Provider.FreeMemory(uncarriedLow);
+            if (uncarriedHigh != IntPtr.Zero) context.Provider.FreeMemory(uncarriedHigh);
+        }
     }
 
     private uint CpuModPow(ulong baseVal, ulong exp, uint p)
