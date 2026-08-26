@@ -150,8 +150,12 @@ public static class GpuBigIntFermatKernels
 
         Gpu.SyncGrid();
 
-        GpuBigIntNttKernels.Device_CRT_ParallelAtomic(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2,
-            ctx.Buffers.ValueT,
+        GpuBigIntNttKernels.Device_CRT_ComputeCoefficients(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2,
+            ctx.Ntt.Buffers.Buffer3, ctx.Ntt.Buffers.TemporaryBuffer, ctx.Ntt.TransformLength);
+        Gpu.SyncGrid();
+
+        GpuBigIntNttKernels.Device_ResolveNttCarries_SingleThread(
+            ctx.Ntt.Buffers.Buffer3, ctx.Ntt.Buffers.TemporaryBuffer, ctx.Buffers.ValueT,
             ctx.Ntt.TransformLength, ctx.Dimensions.NumberOfWords * 2);
         Gpu.SyncGrid();
     }

@@ -100,45 +100,6 @@ public static class GpuBigIntNttKernels
         return result;
     }
 
-    [GpuDeviceFunction]
-    public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
-    {
-        var carry = valueToAdd;
-        var index = wordIndex;
-        while (carry > 0 && index < maxWordCount)
-        {
-            var oldValue = Gpu.AtomicAdd(ref address[index], carry);
-            if (oldValue + carry < oldValue)
-            {
-                carry = 1;
-                index++;
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-
-    [GpuDeviceFunction]
-    public static void AtomicSubWithBorrow(uint[] address, int wordIndex, uint valueToSubtract, int maxWordCount)
-    {
-        var borrow = valueToSubtract;
-        var index = wordIndex;
-        while (borrow > 0 && index < maxWordCount)
-        {
-            var oldValue = Gpu.AtomicSub(ref address[index], borrow);
-            if (oldValue < borrow)
-            {
-                borrow = 1;
-                index++;
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
 
     [GpuDeviceFunction]
     public static void Device_NTT_Shared_Row(ref NumberTheoreticTransformKernelArgs args)
@@ -316,131 +277,83 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void SharedAtomicAddWithCarry(int localIndex, uint value, int maxLength)
+    public static void Device_CRT_ComputeCoefficients([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2,
+        uint[] uncarriedLow, uint[] uncarriedHigh,
+        int transformLength)
     {
-        Gpu.InlinePtx("extern __shared__ uint32_t s_crt[];");
-        var carry = value;
-        var idx = localIndex;
-        while (carry > 0 && idx < maxLength)
+        var inverseN1 = ModPow((uint)transformLength, Prime1 - 2, Prime1, BarrettMagic1);
+        var inverseN2 = ModPow((uint)transformLength, Prime2 - 2, Prime2, BarrettMagic2);
+
+        var index = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (index < transformLength)
         {
-            uint old = 0;
-            Gpu.InlinePtx($"{old} = atomicAdd(&s_crt[{idx}], {carry});");
-            if (old + carry < old)
+            const ulong Modulus1 = Prime1;
+            const ulong Modulus2 = Prime2;
+
+            ulong value1 = ModMulBarrett(deviceResult1[index], inverseN1, Prime1, BarrettMagic1);
+            ulong value2 = ModMulBarrett(deviceResult2[index], inverseN2, Prime2, BarrettMagic2);
+
+            ulong difference;
+            if (value2 >= value1)
             {
-                carry = 1;
-                idx++;
+                difference = value2 - value1;
             }
             else
             {
-                break;
+                difference = value2 + Modulus2 - value1;
             }
+
+            const ulong Prime1InverseModPrime2 = 105UL;
+            var crtCoefficient = (difference * Prime1InverseModPrime2) % Modulus2;
+            var recombinedValue = value1 + Modulus1 * crtCoefficient;
+
+            uncarriedLow[index] = (uint)(recombinedValue & 0xFFFFFFFF);
+            uncarriedHigh[index] = (uint)(recombinedValue >> 32);
         }
     }
 
     [GpuDeviceFunction]
-    public static void Device_CRT_ParallelAtomic([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2,
-        uint[] outputBuffer,
-        int transformLength, int maxWordCount)
+    public static void Device_ResolveNttCarries_SingleThread(uint[] uncarriedLow, uint[] uncarriedHigh,
+        uint[] outputBuffer, int transformLength, int maxWordCount)
     {
-        Gpu.InlinePtx("extern __shared__ uint32_t s_crt[];");
-
-        var inverseN1 = ModPow((uint)transformLength, Prime1 - 2, Prime1, BarrettMagic1);
-        var inverseN2 = ModPow((uint)transformLength, Prime2 - 2, Prime2, BarrettMagic2);
-
-        for (var baseIndex = BlockIndex.X * BlockDimension.X;
-             baseIndex < transformLength;
-             baseIndex += GridDimension.X * BlockDimension.X)
+        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
         {
-            int sCrtLen = BlockDimension.X / 2 + 2;
-            if (ThreadIndex.X < sCrtLen)
+            return;
+        }
+
+        ulong carry = 0;
+
+        for (int i = 0; i < maxWordCount; i++)
+        {
+            ulong sum0 = carry;
+            if (2 * i < transformLength)
             {
-                Gpu.InlinePtx($"s_crt[{ThreadIndex.X}] = 0;");
+                sum0 += uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
             }
 
-            Gpu.SyncThreads();
+            uint low16 = (uint)(sum0 & 0xFFFF);
+            carry = sum0 >> 16;
 
-            uint low32 = 0;
-            uint mid32 = 0;
-            uint high32 = 0;
-            int wordIndexLocal = 0;
-
-            var index = baseIndex + ThreadIndex.X;
-            if (index < transformLength)
+            ulong sum1 = carry;
+            if (2 * i + 1 < transformLength)
             {
-                const ulong Modulus1 = Prime1;
-                const ulong Modulus2 = Prime2;
-
-                ulong value1 = ModMulBarrett(deviceResult1[index], inverseN1, Prime1, BarrettMagic1);
-                ulong value2 = ModMulBarrett(deviceResult2[index], inverseN2, Prime2, BarrettMagic2);
-
-                ulong difference;
-                if (value2 >= value1)
-                {
-                    difference = value2 - value1;
-                }
-                else
-                {
-                    difference = value2 + Modulus2 - value1;
-                }
-
-                const ulong Prime1InverseModPrime2 = 105UL;
-                var crtCoefficient = (difference * Prime1InverseModPrime2) % Modulus2;
-                var recombinedValue = value1 + Modulus1 * crtCoefficient;
-
-                if (recombinedValue > 0)
-                {
-                    wordIndexLocal = (int)(ThreadIndex.X / 2);
-                    var bitOffset = (ThreadIndex.X % 2) * 16;
-
-                    if (bitOffset == 0)
-                    {
-                        low32 = (uint)(recombinedValue & 0xFFFFFFFF);
-                        mid32 = (uint)(recombinedValue >> 32);
-                    }
-                    else
-                    {
-                        low32 = (uint)((recombinedValue << 16) & 0xFFFFFFFF);
-                        mid32 = (uint)((recombinedValue >> 16) & 0xFFFFFFFF);
-                        high32 = (uint)(recombinedValue >> 48);
-                    }
-                }
+                sum1 += uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
             }
 
-            if (low32 > 0)
-            {
-                SharedAtomicAddWithCarry(wordIndexLocal, low32, sCrtLen);
-            }
+            uint high16 = (uint)(sum1 & 0xFFFF);
+            carry = sum1 >> 16;
 
-            if (mid32 > 0)
-            {
-                SharedAtomicAddWithCarry(wordIndexLocal + 1, mid32, sCrtLen);
-            }
-
-            if (high32 > 0)
-            {
-                SharedAtomicAddWithCarry(wordIndexLocal + 2, high32, sCrtLen);
-            }
-
-            Gpu.SyncThreads();
-
-            if (ThreadIndex.X < sCrtLen)
-            {
-                uint sVal = 0;
-                Gpu.InlinePtx($"{sVal} = s_crt[{ThreadIndex.X}];");
-                if (sVal > 0)
-                {
-                    var globalWordIndex = baseIndex / 2 + ThreadIndex.X;
-                    if (globalWordIndex < maxWordCount)
-                    {
-                        AtomicAddWithCarry(outputBuffer, globalWordIndex, sVal, maxWordCount);
-                    }
-                }
-            }
-
-            Gpu.SyncThreads();
+            outputBuffer[i] = low16 | (high16 << 16);
         }
     }
+
+    [GpuKernel]
+    public static void Kernel_ResolveNttCarries_SingleThread(uint[] uncarriedLow, uint[] uncarriedHigh,
+        uint[] outputBuffer, int transformLength, int maxWordCount)
+    {
+        Device_ResolveNttCarries_SingleThread(uncarriedLow, uncarriedHigh, outputBuffer, transformLength, maxWordCount);
+    }
+
 
     [GpuDeviceFunction]
     public static void Device_NTT_Internal(ref NumberTheoreticTransformKernelArgs args)
