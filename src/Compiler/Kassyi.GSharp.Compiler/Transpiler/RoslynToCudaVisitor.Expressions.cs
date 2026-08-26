@@ -4,6 +4,11 @@ public partial class RoslynToCudaVisitor
 {
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
     {
+        if (MacroTranspiler.TryTranspileMacro(node, this))
+        {
+            return;
+        }
+
         Visit(node.Expression);
         Writer.AppendSemiColon();
     }
