@@ -351,6 +351,7 @@ public static class GpuBigIntFermatKernels
     {
         for (int iter = 0; iter < Gpu.JitConstant(gsharpExponent); iter++)
         {
+            Device_MultiplySquare(ref ctx);
             Gpu.ForUnroll(ref ctx, 0, 3, (ref c, _) =>
             {
                 Device_FermatReduceStep(ref c);
@@ -360,6 +361,7 @@ public static class GpuBigIntFermatKernels
 
         for (int iter = 0; iter < Gpu.JitConstant(gsharpExponentMinus4); iter++)
         {
+            Device_MultiplySquare(ref ctx);
             Gpu.ForUnroll(ref ctx, 0, 3, (ref c, _) =>
             {
                 Device_FermatReduceStep(ref c);
@@ -367,6 +369,7 @@ public static class GpuBigIntFermatKernels
         }
 
         // bit 3 (1)
+        Device_MultiplySquare(ref ctx);
         Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
         {
             Device_FermatReduceStep(ref c);
@@ -374,6 +377,7 @@ public static class GpuBigIntFermatKernels
         Device_ShiftLeftAndReduce(1, ref ctx);
 
         // bit 2 (0)
+        Device_MultiplySquare(ref ctx);
         Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
         {
             Device_FermatReduceStep(ref c);
@@ -381,6 +385,7 @@ public static class GpuBigIntFermatKernels
 
         for (int iter = 0; iter < Gpu.JitConstant(gsharpExponentMinus4); iter++)
         {
+            Device_MultiplySquare(ref ctx);
             Gpu.ForUnroll(ref ctx, 0, 3, (ref c, _) =>
             {
                 Device_FermatReduceStep(ref c);
@@ -388,6 +393,7 @@ public static class GpuBigIntFermatKernels
         }
 
         // bit 3 (1)
+        Device_MultiplySquare(ref ctx);
         Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
         {
             Device_FermatReduceStep(ref c);
@@ -395,12 +401,14 @@ public static class GpuBigIntFermatKernels
         Device_ShiftLeftAndReduce(1, ref ctx);
 
         // bit 2 (0)
+        Device_MultiplySquare(ref ctx);
         Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
         {
             Device_FermatReduceStep(ref c);
         });
 
         // bit 1 (1)
+        Device_MultiplySquare(ref ctx);
         Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
         {
             Device_FermatReduceStep(ref c);
@@ -408,6 +416,7 @@ public static class GpuBigIntFermatKernels
         Device_ShiftLeftAndReduce(1, ref ctx);
 
         // bit 0 (0)
+        Device_MultiplySquare(ref ctx);
         Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
         {
             Device_FermatReduceStep(ref c);

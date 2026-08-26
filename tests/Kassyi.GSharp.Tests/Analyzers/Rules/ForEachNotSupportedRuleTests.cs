@@ -1,3 +1,4 @@
+// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -11,7 +12,8 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 public class ForEachNotSupportedRuleTests
 {
     [Fact]
-    public void Validate_ReportsDiagnostic_OnForEachStatement()
+    [Trait("FeatureId", "GSH-01")]
+    public void Validate_GSH01_ReportsDiagnostic_OnForEachStatement()
     {
         // Arrange
         var rule = ForEachNotSupportedRule.Instance;

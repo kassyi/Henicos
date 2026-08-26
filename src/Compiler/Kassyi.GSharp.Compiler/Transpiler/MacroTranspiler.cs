@@ -64,6 +64,14 @@ internal static class MacroTranspiler
             return false;
         }
 
+        string? contextParamName = null;
+        if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
+        {
+            contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
+            var contextArgExpr = args[0].Expression;
+            context.LocalVariableOverrides[contextParamName] = new RoslynToCudaVisitor.OverrideValue(contextArgExpr);
+        }
+
         context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         for (var i = start; i < start + count; i++)
@@ -73,6 +81,10 @@ internal static class MacroTranspiler
         }
 
         context.LocalVariableOverrides.Remove(paramName);
+        if (hasContext && contextParamName != null)
+        {
+            context.LocalVariableOverrides.Remove(contextParamName);
+        }
 
         return true;
     }
