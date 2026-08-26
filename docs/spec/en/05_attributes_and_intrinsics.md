@@ -14,22 +14,22 @@ The `[GpuKernel]` attribute acts as the entry point marker for a G# transpilatio
 * **Target**: Methods only.
 * **Return Type**: Must be `void`. Kernels execute asynchronously on the device and cannot return a primitive value directly. Use pointer arguments (e.g., `int* result`) to output data.
 * **Accessibility**: Must be `public static` or `internal static`. Instance methods (requiring a `this` pointer) are strictly prohibited.
-* **Calling Constraints (CRITICAL)**: Because this attribute yields a `__global__` function, a `[GpuKernel]` method **CANNOT** be called by another `[GpuKernel]` method (as CUDA does not allow `__global__` to call `__global__` without Dynamic Parallelism). Doing so will result in an `identifier undefined` compilation error from NVCC during the JIT pipeline. Subroutines must be decorated with `[GpuDevice]` instead.
+* **Calling Constraints (CRITICAL)**: Because this attribute yields a `__global__` function, a `[GpuKernel]` method **CANNOT** be called by another `[GpuKernel]` method (as CUDA does not allow `__global__` to call `__global__` without Dynamic Parallelism). Doing so will result in an `identifier undefined` compilation error from NVCC during the JIT pipeline. Subroutines must be decorated with `[GpuDeviceFunction]` instead.
 * **Transpilation**: The source generator targets the decorated method and transpiles it into an `extern "C" __global__ void` CUDA kernel. 
 
-## 3.2 `[GpuDevice]`
+## 3.2 `[GpuDeviceFunction]`
 
-The `[GpuDevice]` attribute marks a helper method intended for execution solely on the GPU device, callable only by `[GpuKernel]` methods or other `[GpuDevice]` methods. It translates directly to the `__device__` specifier in CUDA C++.
+The `[GpuDeviceFunction]` attribute marks a helper method intended for execution solely on the GPU device, callable only by `[GpuKernel]` methods or other `[GpuDeviceFunction]` methods. It translates directly to the `__device__` specifier in CUDA C++.
 
 ### 3.2.1 Semantic Rules
 * **Target**: Methods only.
 * **Return Type**: Standard primitive types are permitted (unlike `[GpuKernel]`).
 * **Accessibility**: Must be `public static` or `internal static`.
 * **Transpilation**: The source generator transpiles the decorated method into an `inline __device__` CUDA C++ function by default.
-* **Proper Usage**: Always use `[GpuDevice]` for math utilities, internal helpers, and any logic meant to be reused within larger GPU functions. Mislabeling a helper method with `[GpuKernel]` will break the compilation linkage.
+* **Proper Usage**: Always use `[GpuDeviceFunction]` for math utilities, internal helpers, and any logic meant to be reused within larger GPU functions. Mislabeling a helper method with `[GpuKernel]` will break the compilation linkage.
 
 ### 3.2.2 Inlining Control via `[MethodImpl]`
-The transpiler respects standard C# `[MethodImpl]` attributes to provide fine-grained control over the CUDA compiler's inlining behavior for `[GpuDevice]` methods. This is critical for managing GPU register pressure and instruction cache.
+The transpiler respects standard C# `[MethodImpl]` attributes to provide fine-grained control over the CUDA compiler's inlining behavior for `[GpuDeviceFunction]` methods. This is critical for managing GPU register pressure and instruction cache.
 
 * `[MethodImpl(MethodImplOptions.AggressiveInlining)]`: Transpiled to `__forceinline__ __device__`. Instructs NVCC to always inline the method, eliminating function call overhead.
 * `[MethodImpl(MethodImplOptions.NoInlining)]`: Transpiled to `__noinline__ __device__`. Prevents NVCC from automatically inlining large helper functions, keeping them as separate device function calls to conserve registers in the main kernel.

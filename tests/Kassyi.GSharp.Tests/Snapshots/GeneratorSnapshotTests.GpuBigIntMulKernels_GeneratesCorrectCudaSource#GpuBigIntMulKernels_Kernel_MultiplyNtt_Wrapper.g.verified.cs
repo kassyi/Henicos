@@ -150,6 +150,10 @@ Device_CRT_ParallelAtomic(nttBuf1A,nttBuf2A,opResult,transformLength,outNumWords
 ";
 public static unsafe void Launch_Kernel_MultiplyNtt(uint[] opA, uint[] opB, uint[] opResult, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] nttTmpBuf, uint[] twiddleForward1, uint[] twiddleForward2, uint[] twiddleInverse1, uint[] twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (opA.Length == 0 || opB.Length == 0 || opResult.Length == 0 || nttBuf1A.Length == 0 || nttBuf2A.Length == 0 || nttBuf1B.Length == 0 || nttBuf2B.Length == 0 || nttTmpBuf.Length == 0 || twiddleForward1.Length == 0 || twiddleForward2.Length == 0 || twiddleInverse1.Length == 0 || twiddleInverse2.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MultiplyNtt", Kernel_MultiplyNtt_CudaSource, null, macros);
 IntPtr d_opA = IntPtr.Zero;
@@ -169,8 +173,9 @@ try
 void** kernelParams = stackalloc void*[16];
 // Marshal array: opA
 int opA_size = opA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (opA_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_opA, opA_size));
-
 System.Runtime.InteropServices.GCHandle handle_opA = System.Runtime.InteropServices.GCHandle.Alloc(opA, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -181,11 +186,13 @@ finally
 {
 handle_opA.Free();
 }
+}
 kernelParams[0] = &d_opA;
 // Marshal array: opB
 int opB_size = opB.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (opB_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_opB, opB_size));
-
 System.Runtime.InteropServices.GCHandle handle_opB = System.Runtime.InteropServices.GCHandle.Alloc(opB, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -196,11 +203,13 @@ finally
 {
 handle_opB.Free();
 }
+}
 kernelParams[1] = &d_opB;
 // Marshal array: opResult
 int opResult_size = opResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (opResult_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_opResult, opResult_size));
-
 System.Runtime.InteropServices.GCHandle handle_opResult = System.Runtime.InteropServices.GCHandle.Alloc(opResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -211,11 +220,13 @@ finally
 {
 handle_opResult.Free();
 }
+}
 kernelParams[2] = &d_opResult;
 // Marshal array: nttBuf1A
 int nttBuf1A_size = nttBuf1A.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (nttBuf1A_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf1A, nttBuf1A_size));
-
 System.Runtime.InteropServices.GCHandle handle_nttBuf1A = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf1A, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -226,11 +237,13 @@ finally
 {
 handle_nttBuf1A.Free();
 }
+}
 kernelParams[3] = &d_nttBuf1A;
 // Marshal array: nttBuf2A
 int nttBuf2A_size = nttBuf2A.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (nttBuf2A_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf2A, nttBuf2A_size));
-
 System.Runtime.InteropServices.GCHandle handle_nttBuf2A = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf2A, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -241,11 +254,13 @@ finally
 {
 handle_nttBuf2A.Free();
 }
+}
 kernelParams[4] = &d_nttBuf2A;
 // Marshal array: nttBuf1B
 int nttBuf1B_size = nttBuf1B.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (nttBuf1B_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf1B, nttBuf1B_size));
-
 System.Runtime.InteropServices.GCHandle handle_nttBuf1B = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf1B, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -256,11 +271,13 @@ finally
 {
 handle_nttBuf1B.Free();
 }
+}
 kernelParams[5] = &d_nttBuf1B;
 // Marshal array: nttBuf2B
 int nttBuf2B_size = nttBuf2B.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (nttBuf2B_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf2B, nttBuf2B_size));
-
 System.Runtime.InteropServices.GCHandle handle_nttBuf2B = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf2B, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -271,11 +288,13 @@ finally
 {
 handle_nttBuf2B.Free();
 }
+}
 kernelParams[6] = &d_nttBuf2B;
 // Marshal array: nttTmpBuf
 int nttTmpBuf_size = nttTmpBuf.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (nttTmpBuf_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttTmpBuf, nttTmpBuf_size));
-
 System.Runtime.InteropServices.GCHandle handle_nttTmpBuf = System.Runtime.InteropServices.GCHandle.Alloc(nttTmpBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -286,11 +305,13 @@ finally
 {
 handle_nttTmpBuf.Free();
 }
+}
 kernelParams[7] = &d_nttTmpBuf;
 // Marshal array: twiddleForward1
 int twiddleForward1_size = twiddleForward1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (twiddleForward1_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleForward1, twiddleForward1_size));
-
 System.Runtime.InteropServices.GCHandle handle_twiddleForward1 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleForward1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -301,11 +322,13 @@ finally
 {
 handle_twiddleForward1.Free();
 }
+}
 kernelParams[8] = &d_twiddleForward1;
 // Marshal array: twiddleForward2
 int twiddleForward2_size = twiddleForward2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (twiddleForward2_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleForward2, twiddleForward2_size));
-
 System.Runtime.InteropServices.GCHandle handle_twiddleForward2 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleForward2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -316,11 +339,13 @@ finally
 {
 handle_twiddleForward2.Free();
 }
+}
 kernelParams[9] = &d_twiddleForward2;
 // Marshal array: twiddleInverse1
 int twiddleInverse1_size = twiddleInverse1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (twiddleInverse1_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleInverse1, twiddleInverse1_size));
-
 System.Runtime.InteropServices.GCHandle handle_twiddleInverse1 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleInverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -331,11 +356,13 @@ finally
 {
 handle_twiddleInverse1.Free();
 }
+}
 kernelParams[10] = &d_twiddleInverse1;
 // Marshal array: twiddleInverse2
 int twiddleInverse2_size = twiddleInverse2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (twiddleInverse2_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleInverse2, twiddleInverse2_size));
-
 System.Runtime.InteropServices.GCHandle handle_twiddleInverse2 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleInverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -345,6 +372,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_twiddleInverse2, p_tw
 finally
 {
 handle_twiddleInverse2.Free();
+}
 }
 kernelParams[11] = &d_twiddleInverse2;
 // Marshal scalar: numWordsA
@@ -364,6 +392,8 @@ IntPtr.Zero, // Stream
 kernelParams
 ));
 // Copy back array: opA
+if (opA_size > 0 && d_opA != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_opA = System.Runtime.InteropServices.GCHandle.Alloc(opA, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -374,7 +404,10 @@ finally
 {
 handleBack_opA.Free();
 }
+}
 // Copy back array: opB
+if (opB_size > 0 && d_opB != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_opB = System.Runtime.InteropServices.GCHandle.Alloc(opB, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -385,7 +418,10 @@ finally
 {
 handleBack_opB.Free();
 }
+}
 // Copy back array: opResult
+if (opResult_size > 0 && d_opResult != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_opResult = System.Runtime.InteropServices.GCHandle.Alloc(opResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -396,7 +432,10 @@ finally
 {
 handleBack_opResult.Free();
 }
+}
 // Copy back array: nttBuf1A
+if (nttBuf1A_size > 0 && d_nttBuf1A != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_nttBuf1A = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf1A, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -407,7 +446,10 @@ finally
 {
 handleBack_nttBuf1A.Free();
 }
+}
 // Copy back array: nttBuf2A
+if (nttBuf2A_size > 0 && d_nttBuf2A != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_nttBuf2A = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf2A, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -418,7 +460,10 @@ finally
 {
 handleBack_nttBuf2A.Free();
 }
+}
 // Copy back array: nttBuf1B
+if (nttBuf1B_size > 0 && d_nttBuf1B != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_nttBuf1B = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf1B, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -429,7 +474,10 @@ finally
 {
 handleBack_nttBuf1B.Free();
 }
+}
 // Copy back array: nttBuf2B
+if (nttBuf2B_size > 0 && d_nttBuf2B != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_nttBuf2B = System.Runtime.InteropServices.GCHandle.Alloc(nttBuf2B, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -440,7 +488,10 @@ finally
 {
 handleBack_nttBuf2B.Free();
 }
+}
 // Copy back array: nttTmpBuf
+if (nttTmpBuf_size > 0 && d_nttTmpBuf != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_nttTmpBuf = System.Runtime.InteropServices.GCHandle.Alloc(nttTmpBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -451,7 +502,10 @@ finally
 {
 handleBack_nttTmpBuf.Free();
 }
+}
 // Copy back array: twiddleForward1
+if (twiddleForward1_size > 0 && d_twiddleForward1 != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_twiddleForward1 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleForward1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -462,7 +516,10 @@ finally
 {
 handleBack_twiddleForward1.Free();
 }
+}
 // Copy back array: twiddleForward2
+if (twiddleForward2_size > 0 && d_twiddleForward2 != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_twiddleForward2 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleForward2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -473,7 +530,10 @@ finally
 {
 handleBack_twiddleForward2.Free();
 }
+}
 // Copy back array: twiddleInverse1
+if (twiddleInverse1_size > 0 && d_twiddleInverse1 != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_twiddleInverse1 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleInverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -484,7 +544,10 @@ finally
 {
 handleBack_twiddleInverse1.Free();
 }
+}
 // Copy back array: twiddleInverse2
+if (twiddleInverse2_size > 0 && d_twiddleInverse2 != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_twiddleInverse2 = System.Runtime.InteropServices.GCHandle.Alloc(twiddleInverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -494,6 +557,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_twiddleInverse2, d_tw
 finally
 {
 handleBack_twiddleInverse2.Free();
+}
 }
 }
 finally
