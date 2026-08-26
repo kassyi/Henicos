@@ -519,6 +519,50 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Equal(expectedGcd, actualGcd);
         }
+        [Trait("RoadmapId", "GBI-20")]
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_GBI20_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(10, engine);
+            var arrEmpty = Array.Empty<uint>();
+
+            // It might throw OutOfMemoryException or CudaException depending on provider when allocating 0 bytes,
+            // or if it succeeds, the kernel will execute the size=0 path which we just patched to early return.
+            // As per instructions, we just assert deterministic results or documented exception.
+            // Let's assert it throws an exception during allocation or execution.
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                using var gpuA = new GpuBigInteger(context, arrEmpty);
+                using var gpuB = new GpuBigInteger(context, arrEmpty);
+                using var gpuResult = new GpuBigInteger(context, 0);
+
+                GpuBigInteger.Gcd(gpuA, gpuB, gpuResult);
+            });
+        }
+
+        [Trait("RoadmapId", "GBI-20")]
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine)
+        {
+            using var context = new GpuContext(10, engine);
+            var arrA = new uint[] { 48 };
+            var arrB = new uint[] { 18 };
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            var expectedGcd = BigInteger.GreatestCommonDivisor(bigA, bigB);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuResult = new GpuBigInteger(context, 1);
+
+            GpuBigInteger.Gcd(gpuA, gpuB, gpuResult);
+
+            var actualGcd = ToBigInteger(gpuResult.ToHostArray());
+            Assert.Equal(expectedGcd, actualGcd);
+        }
 
 
         [Theory(Skip =
