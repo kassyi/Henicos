@@ -98,7 +98,14 @@ internal static class MarshalingEmitter
                         {
                             writer.AppendLine(
                                 $"int size = host.{member.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));");
-                            writer.AppendLine("if (size > 0)");
+                            writer.AppendKeyword("if");
+                            using (writer.Parentheses())
+                            {
+                                writer.Append("size");
+                                writer.AppendOperator(">");
+                                writer.Append("0");
+                            }
+                            writer.AppendLine();
                             using (writer.Scope())
                             {
                                 writer.AppendLine(
@@ -113,7 +120,12 @@ internal static class MarshalingEmitter
                                         $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.{member.Name}, handle.AddrOfPinnedObject(), size));");
                                 }
 
-                                writer.AppendLine("finally { handle.Free(); }");
+                                writer.AppendKeyword("finally");
+                                writer.AppendLine();
+                                using (writer.Scope())
+                                {
+                                    writer.AppendLine("handle.Free();");
+                                }
                             }
                         }
                     }
@@ -152,7 +164,14 @@ internal static class MarshalingEmitter
                     {
                         writer.AppendLine(
                             $"int size = host.{member.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));");
-                        writer.AppendLine("if (size > 0)");
+                        writer.AppendKeyword("if");
+                        using (writer.Parentheses())
+                        {
+                            writer.Append("size");
+                            writer.AppendOperator(">");
+                            writer.Append("0");
+                        }
+                        writer.AppendLine();
                         using (writer.Scope())
                         {
                             writer.AppendLine(
@@ -164,7 +183,12 @@ internal static class MarshalingEmitter
                                     $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.{member.Name}, size));");
                             }
 
-                            writer.AppendLine("finally { handle.Free(); }");
+                            writer.AppendKeyword("finally");
+                            writer.AppendLine();
+                            using (writer.Scope())
+                            {
+                                writer.AppendLine("handle.Free();");
+                            }
                         }
                     }
                 }
@@ -299,11 +323,17 @@ internal static class MarshalingEmitter
         }
         else
         {
-            writer.AppendLine($"""
-                // Marshal array: {p.Name}
-                int {p.Name}_size = {p.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));
-                if ({p.Name}_size > 0)
-                """);
+            writer.AppendLine($"// Marshal array: {p.Name}");
+            writer.AppendLine(
+                $"int {p.Name}_size = {p.Name}.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof({arrayType.ElementType.ToDisplayString()}));");
+            writer.AppendKeyword("if");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{p.Name}_size");
+                writer.AppendOperator(">");
+                writer.Append("0");
+            }
+            writer.AppendLine();
             using (writer.Scope())
             {
                 writer.AppendLine($"""
@@ -461,10 +491,19 @@ internal static class MarshalingEmitter
     {
         if (!isDevicePtr)
         {
-            writer.AppendLine($"""
-                // Copy back array: {p.Name}
-                if ({p.Name}_size > 0 && d_{p.Name} != IntPtr.Zero)
-                """);
+            writer.AppendLine($"// Copy back array: {p.Name}");
+            writer.AppendKeyword("if");
+            using (writer.Parentheses())
+            {
+                writer.Append($"{p.Name}_size");
+                writer.AppendOperator(">");
+                writer.Append("0");
+                writer.AppendOperator("&&");
+                writer.Append($"d_{p.Name}");
+                writer.AppendOperator("!=");
+                writer.Append("IntPtr.Zero");
+            }
+            writer.AppendLine();
             using (writer.Scope())
             {
                 writer.AppendLine($"""
