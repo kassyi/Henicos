@@ -188,7 +188,7 @@ C# 開発者が無意識に書いてしまいがちな構文シュガー・現�
 | **SYN-91** | **基本制御構文 (`switch`, `do-while`, 論理演算 `&&`, `\ | \ | `)** | - [x] | - [x] | `switch(tid) { ... }`<br>`do { ... } while (...);` | **Tier 1** (45) | C++ switch / do-while / 論理積・和へマッピング。 | **Tier 1** (45) |
 | **SYN-92** | **ユーザー定義構造体 (`struct`) のカーネル引数および操作** | - [x] | - [x] | `public struct Vector2 { public float X, Y; }` | 正常にトランスパイル・実行完了。 | C++ 構造体型宣言およびフィールドアクセスへマッピング。 | **Tier 1** (45) |
 | **SYN-93** | **デバイスメソッド (`[GpuDeviceFunction]`) の呼び出し・再利用** | - [x] | - [x] | `[GpuDeviceFunction] public static int Add(...)` | 正常にトランスパイル・実行完了。 | C++ `__device__` 修飾子付き関数宣言およびインライン呼出へマッピング。 | **Tier 1** (45) |
-| **SYN-94** | **Macro DSL (`Gpu.GridStrideLoop`, `ForUnroll`, `SingleThread`)** | - [x] | - [x] | `Gpu.GridStrideLoop(n, i => { ... });` | C# 上でラムダ構文を用いて、AST レベルで CUDA イディオムを直接インライン展開可能。 | CUDA の `for (int i = blockIdx.x * blockDim.x + threadIdx.x; ...)` や `#pragma unroll` に完全に展開。 | **Tier 1** (45) |
+| **SYN-94** | **Macro DSL (`Gpu.GridStrideLoop`, `ForUnroll`, `SingleThread`)** | - [x] | - [x] | `Gpu.GridStrideLoop(ref ctx, n, (ref C c, int i) => ...);` | C# 上でラムダ構文を用いて AST レベルで CUDA イディオムを展開。C#仕様上 `ref` パラメータがラムダにキャプチャ不可（CS1628）な制約は、コンテキスト引数渡し用のジェネリックオーバーロード（`<TContext>`）で解決済。 | CUDA の `for (int i = blockIdx.x * ...)` や `#pragma unroll` に完全に展開。 | **Tier 1** (45) |
 
 ---
 
