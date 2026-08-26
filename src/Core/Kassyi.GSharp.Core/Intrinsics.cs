@@ -71,4 +71,27 @@ public static class Gpu
     /// Use string interpolation ($"") to reference C# variables safely.
     /// </summary>
     public static void InlinePtx(string ptx) => GpuOnlyException.Throw();
+
+    /// <summary>
+    /// A macro marker for fully unrolling a loop at Transpile-time.
+    /// The G# Transpiler will emit the inner action body inline `count` times.
+    /// </summary>
+    public static void ForUnroll(int start, int count, Action<int> body) => GpuOnlyException.Throw();
+
+    public delegate void UnrollAction<TContext>(ref TContext ctx, int index);
+
+    /// <summary>
+    /// A macro marker for fully unrolling a loop at Transpile-time, with context passing.
+    /// </summary>
+    public static void ForUnroll<TContext>(ref TContext ctx, int start, int count, UnrollAction<TContext> body) => GpuOnlyException.Throw();
+
+    /// <summary>
+    /// A macro marker for generating a standard Grid-Stride Loop over a number of threads.
+    /// </summary>
+    public static void GridStrideLoop(int maxBounds, Action<int> body) => GpuOnlyException.Throw();
+
+    /// <summary>
+    /// A macro marker for executing a block of code on a single thread (ThreadIndex.X == 0 && BlockIndex.X == 0).
+    /// </summary>
+    public static void SingleThread(Action body) => GpuOnlyException.Throw();
 }

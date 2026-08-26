@@ -142,7 +142,7 @@ internal static class DeclarationTranspilers
         var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
         var baseCppType = isPointer ? cppType.TrimEnd('*').TrimEnd() : cppType;
 
-        bool splitStatements = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
+        var splitStatements = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
 
         for (var i = 0; i < node.Variables.Count; i++)
         {

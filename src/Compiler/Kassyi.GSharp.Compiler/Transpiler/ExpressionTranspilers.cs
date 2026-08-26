@@ -153,8 +153,8 @@ internal static class ExpressionTranspilers
 
         context.Visit(node.Expression);
 
-        bool isPointer = exprSymbol is IParameterSymbol pSym &&
-                         (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out);
+        var isPointer = exprSymbol is IParameterSymbol pSym &&
+                        (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out);
 
         context.Writer.Append(isPointer ? "->" : ".");
         context.Writer.Append(node.Name.Identifier.Text);
