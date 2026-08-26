@@ -1,5 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by Roslyn compiler infra")]
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by Roslyn compiler infra")]
 internal static class MacroTranspiler
 {
     public static bool TryTranspileMacro(ExpressionStatementSyntax node, RoslynToCudaVisitor context)
@@ -59,10 +61,7 @@ internal static class MacroTranspiler
         {
             var rewriter = new UnrollRewriter(paramName, i);
             var rewrittenBody = rewriter.Visit(lambdaExpr.Body);
-            if (rewrittenBody != null)
-            {
-                EmitUnrolledBody(context, rewrittenBody);
-            }
+            EmitUnrolledBody(context, rewrittenBody);
         }
 
         return true;
@@ -147,7 +146,7 @@ internal static class MacroTranspiler
     private static bool TryGetConstantInt(ExpressionSyntax expression, SemanticModel semanticModel, out int value)
     {
         var constant = semanticModel.GetConstantValue(expression);
-        if (constant.HasValue && constant.Value is int intValue)
+        if (constant.Value is int intValue)
         {
             value = intValue;
             return true;
