@@ -81,7 +81,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         }
 
-        [Fact(Skip = "未実装・課題: GBI-03 (CPU-Fallback メソッドの GPU 並列リダクション化)")]
+        [Fact]
         [Trait("RoadmapId", "GBI-03")]
         [Trait("Category", "Performance")]
         public void Test_GBI03_GpuReductionCompareAndFlags()
