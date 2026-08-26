@@ -2,7 +2,6 @@ using Kassyi.GSharp.Stdlib.Math.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math;
 
-
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 public class GpuBigInteger : IDisposable, IGpuBigIntExpression
@@ -489,8 +488,10 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     {
         if (NumWords < logicalWords * 2)
         {
-            throw new InvalidOperationException($"Square requires the destination buffer to have at least {logicalWords * 2} words, but only has {NumWords}.");
+            throw new InvalidOperationException(
+                $"Square requires the destination buffer to have at least {logicalWords * 2} words, but only has {NumWords}.");
         }
+
         return Context.Provider.Square(Context, DevicePointer, logicalWords);
     }
 
@@ -527,15 +528,15 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 
         var hostExp = exp.ToHostArray();
 
-        for (int i = 0; i < expWords; i++)
+        for (var i = 0; i < expWords; i++)
         {
-            uint e = hostExp[i];
+            var e = hostExp[i];
 
             // Optimization: if remaining bits are 0, we can break
             if (e == 0)
             {
-                bool allZero = true;
-                for (int j = i; j < expWords; j++)
+                var allZero = true;
+                for (var j = i; j < expWords; j++)
                 {
                     if (hostExp[j] != 0)
                     {
@@ -550,7 +551,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
                 }
             }
 
-            for (int bit = 0; bit < 32; bit++)
+            for (var bit = 0; bit < 32; bit++)
             {
                 if ((e & 1) == 1)
                 {
@@ -615,6 +616,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     public bool IsOne() => Context.Provider.IsOne(Context, this);
 
     public int GetBitLength() => Context.Provider.GetBitLength(Context, this);
+
     public int GetByteCount()
     {
         var bitLength = GetBitLength();
