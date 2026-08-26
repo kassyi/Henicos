@@ -49,6 +49,22 @@ internal static class WrapperEmitter
         WriteLaunchMethodSignature(writer, method, isDevicePtr);
         using (writer.Scope())
         {
+            if (!isDevicePtr)
+            {
+                var arrayParams = method.Parameters.Where(p => p.Type is IArrayTypeSymbol).ToList();
+                if (arrayParams.Count > 0)
+                {
+                    var condition = string.Join(" || ", arrayParams.Select(p => $"{p.Name}.Length == 0"));
+                    writer.AppendLine($"if ({condition})");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("return;");
+                    }
+
+                    writer.AppendLine();
+                }
+            }
+
             writer.Append(
                 "using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope");
             using (writer.Parentheses())

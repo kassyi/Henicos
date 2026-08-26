@@ -8,7 +8,7 @@ public static class GpuBigIntBitwiseKernels
         Device_BitwiseOr(dA, dB, dResult, numWords);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseOr(uint[] left, uint[] right, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -24,7 +24,7 @@ public static class GpuBigIntBitwiseKernels
         Device_BitwiseXor(dA, dB, dResult, numWords);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseXor(uint[] left, uint[] right, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -40,7 +40,7 @@ public static class GpuBigIntBitwiseKernels
         Device_BitwiseNot(dA, dResult, numWords);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseNot(uint[] left, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;

@@ -45,14 +45,14 @@ public struct NestedPhysicsState
 
 public static partial class ComprehensiveSpecKernel
 {
-    [GpuDevice]
+    [GpuDeviceFunctionAttribute]
     [GpuInline]
     public static float ComputeMagnitude(PhysicsVector v)
     {
         return (float)Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     [GpuNoInline]
     public static bool IsPositive(float value)
     {
@@ -238,7 +238,7 @@ public static partial class ComprehensiveSpecKernel
 
     /// <summary>
     /// Demonstrates the host-side AST construction for GpuBigInt.
-    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDevice].
+    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDeviceFunction].
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {
