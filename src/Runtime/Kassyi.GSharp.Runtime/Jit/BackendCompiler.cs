@@ -11,10 +11,7 @@ public static class NvccCompiler
         public string Output { get; } = output;
     }
 
-    public static Func<ProcessStartInfo, string> ProcessRunner
-    {
-        get; set;
-    } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
     {
         using var process = new Process { StartInfo = psi };
         var outputBuilder = new StringBuilder();
@@ -55,9 +52,17 @@ public static class NvccCompiler
             {
                 process.Kill(true);
             }
-            catch
+            catch (Exception ex1)
             {
-                // Ignore kill errors on best-effort basis
+                try
+                {
+                    process.Kill();
+                }
+                catch (Exception ex2)
+                {
+                    Console.WriteLine(
+                        $"[JIT] Failed to kill process tree: {ex1.Message}. Fallback to kill process also failed: {ex2.Message}");
+                }
             }
 
             throw new TimeoutException($"Process timed out after 60 seconds. Partial output:\n{outputBuilder}");
@@ -88,28 +93,12 @@ public static class NvccCompiler
             "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath")
         {
             RedirectStandardOutput = true,
+            RedirectStandardError = true, // Required for ProcessRunner
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
-        using var process =
-            Process.Start(psi) ?? throw new InvalidOperationException("Failed to start vswhere process");
-        if (!process.WaitForExit(10000))
-        {
-            try
-            {
-                process.Kill(true);
-            }
-            catch
-            {
-                /* Ignore cleanup errors on best-effort basis */
-            }
-
-            throw new TimeoutException("vswhere.exe timed out.");
-        }
-
-        var output = process.StandardOutput.ReadToEnd().Trim();
-        return output;
+        return ProcessRunner(psi).Trim();
     });
 
     public static Func<string> GetVswhereOutputFunc { get; set; } = () => s_vswhereCache.Value;
@@ -206,7 +195,7 @@ public static class NvccCompiler
         Console.WriteLine($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
         Console.WriteLine("====== CUDA SOURCE ======");
         var cuSrc = FileSystem.File.ReadAllText(cuFile);
-        Console.WriteLine(cuSrc.Substring(0, Math.Min(cuSrc.Length, 2000))); // Print first 2000 chars
+        Console.WriteLine(cuSrc.AsSpan(0, Math.Min(cuSrc.Length, 2000))); // Print first 2000 chars
         Console.WriteLine("...");
         if (cuSrc.Contains("Kernel_StaticFermatLoop"))
         {
