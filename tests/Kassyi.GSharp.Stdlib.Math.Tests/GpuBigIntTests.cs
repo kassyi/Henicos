@@ -769,6 +769,11 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var gpuA = new GpuBigInteger(context, arrA);
             using var gpuB = new GpuBigInteger(context, arrB);
 
+            // Compute expected single-threaded baseline result
+            using var expectedGpu = new GpuBigInteger(context, 256);
+            expectedGpu.Value = gpuA + gpuB;
+            var expectedHostResult = expectedGpu.ToHostArray();
+
             // Execute 100 concurrent Add operations modifying different targets
             // but reading from the same gpuA / gpuB to ensure context/stream stability
             var exceptions = new ConcurrentBag<Exception>();
@@ -785,6 +790,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
                     var hostResult = gpuResult.ToHostArray();
                     Assert.Equal(256, hostResult.Length);
+                    Assert.Equal(expectedHostResult, hostResult);
                 }
                 catch (Exception ex)
                 {
