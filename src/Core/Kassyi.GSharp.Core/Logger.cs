@@ -4,12 +4,10 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core", Justification = "Public API exposed for library consumers")]
-[assembly: SuppressMessage("ReSharper", "UnusedType.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core", Justification = "Public API exposed for library consumers")]
-
 namespace Kassyi.GSharp.Core;
 
 /// <summary>ログの出力レベルを表します。</summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public enum LogLevel
 {
     Trace = 0,
@@ -22,6 +20,8 @@ public enum LogLevel
 }
 
 /// <summary>パフォーマンス計測および診断ログの出力を行う基底クラスです。</summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 public abstract class Logger : ILogger
 {
     private const int MaxRetries = 3;
@@ -236,6 +236,8 @@ public abstract class Logger : ILogger
     }
 
     /// <summary>処理時間の累積計測を行うためのタイマーです。</summary>
+    [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
     public class PerformanceTimer
     {
         private readonly Stopwatch _sw = Stopwatch.StartNew();
@@ -279,4 +281,19 @@ public abstract class Logger : ILogger
             GC.SuppressFinalize(this);
         }
     }
+}
+
+/// <summary>型パラメータに基づく静的ロギングメソッドを提供する具象ロガーです。</summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+public class Logger<T> : Logger
+{
+    protected override string GetTag() => typeof(T).Name;
+
+    public static void Trace(string message) => Log(LogLevel.Trace, typeof(T).Name, message);
+    public static void Debug(string message) => Log(LogLevel.Debug, typeof(T).Name, message);
+    public static void Info(string message) => Log(LogLevel.Info, typeof(T).Name, message);
+    public static void Warning(string message) => Log(LogLevel.Warning, typeof(T).Name, message);
+    public static void Error(string message) => Log(LogLevel.Error, typeof(T).Name, message);
+    public static void Error(Exception ex, string message) => Log(LogLevel.Error, typeof(T).Name, $"{message}\n{ex}");
 }

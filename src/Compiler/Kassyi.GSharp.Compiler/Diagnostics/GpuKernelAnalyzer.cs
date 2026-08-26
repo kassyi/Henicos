@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.Diagnostics;
+using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
@@ -8,7 +9,9 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         GSharpDiagnostics.ForeachNotSupported,
         GSharpDiagnostics.LinqNotSupported,
-        GSharpDiagnostics.ImplicitVarNeedsSuffix);
+        GSharpDiagnostics.ImplicitVarNeedsSuffix,
+        GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
+        GSharpDiagnostics.MacroArgumentMustBeConstant);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -36,46 +39,17 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Single-pass traversal of the AST to minimize time complexity
-        foreach (var node in methodDeclaration.DescendantNodes())
+        // Single-pass traversal of the AST to minimize time complexity and zero allocations
+        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, context.ReportDiagnostic);
+        var walker = GpuKernelValidationWalker.Rent(validationContext);
+        
+        try
         {
-            switch (node)
-            {
-                case ForEachStatementSyntax foreachStmt:
-                    {
-                        var diagnostic = Diagnostic.Create(GSharpDiagnostics.ForeachNotSupported, foreachStmt.GetLocation(),
-                            methodSymbol.Name);
-                        context.ReportDiagnostic(diagnostic);
-                        break;
-                    }
-                case QueryExpressionSyntax queryExpr:
-                    {
-                        var diagnostic = Diagnostic.Create(GSharpDiagnostics.LinqNotSupported, queryExpr.GetLocation(),
-                            methodSymbol.Name);
-                        context.ReportDiagnostic(diagnostic);
-                        break;
-                    }
-                case VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax { Type.IsVar: true }, Initializer: { Value: LiteralExpressionSyntax literal } } variable
-                    when literal.IsKind(SyntaxKind.NumericLiteralExpression):
-                    {
-                        var text = literal.Token.Text;
-                        if (text.Contains('.') || text.Contains('e') || text.Contains('E'))
-                        {
-                            continue;
-                        }
-
-                        var upper = text.ToUpperInvariant();
-                        if (upper.Contains("U") || upper.Contains("L"))
-                        {
-                            continue;
-                        }
-
-                        var diagnostic = Diagnostic.Create(GSharpDiagnostics.ImplicitVarNeedsSuffix, variable.GetLocation(),
-                            variable.Identifier.Text);
-                        context.ReportDiagnostic(diagnostic);
-                        break;
-                    }
-            }
+            walker.Visit(methodDeclaration);
+        }
+        finally
+        {
+            walker.Free();
         }
     }
 }

@@ -3,6 +3,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("GSharp", "GSH1002", Justification = "Lambda capture limitations in source generation prevent passing context by reference.")]
 public static class GpuBigIntKernels
 {
     [GpuKernel]
@@ -183,14 +184,13 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_ShiftLeft(ref ctx, wordShift, bitShift);
+        Device_ShiftLeft(ctx, wordShift, bitShift);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ShiftLeft(ref BigIntKernelContext ctx, int wordShift, int bitShift)
+    public static void Device_ShiftLeft(BigIntKernelContext ctx, int wordShift, int bitShift)
     {
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < ctx.NumberOfWords)
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             var srcIdx0 = i - wordShift;
             var srcIdx1 = srcIdx0 - 1;
@@ -215,7 +215,7 @@ public static class GpuBigIntKernels
             {
                 ctx.Operands.ResultBuffer[i] = (w0 << bitShift) | (w1 >> (32 - bitShift));
             }
-        }
+        });
     }
 
     [GpuKernel]
@@ -226,41 +226,38 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_ShiftRight(ref ctx, wordShift, bitShift);
+        Device_ShiftRight(ctx, wordShift, bitShift);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ShiftRight(ref BigIntKernelContext ctx, int wordShift, int bitShift)
+    public static void Device_ShiftRight(BigIntKernelContext ctx, int wordShift, int bitShift)
     {
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i >= ctx.NumberOfWords)
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
-            return;
-        }
+            var srcIdx0 = i + wordShift;
+            var srcIdx1 = srcIdx0 + 1;
+            uint w0 = 0;
+            uint w1 = 0;
 
-        var srcIdx0 = i + wordShift;
-        var srcIdx1 = srcIdx0 + 1;
-        uint w0 = 0;
-        uint w1 = 0;
+            if (srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords)
+            {
+                w0 = ctx.Operands.LeftOperand[srcIdx0];
+            }
 
-        if (srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords)
-        {
-            w0 = ctx.Operands.LeftOperand[srcIdx0];
-        }
+            if (srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords)
+            {
+                w1 = ctx.Operands.LeftOperand[srcIdx1];
+            }
 
-        if (srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords)
-        {
-            w1 = ctx.Operands.LeftOperand[srcIdx1];
-        }
-
-        if (bitShift == 0)
-        {
-            ctx.Operands.ResultBuffer[i] = w0;
-        }
-        else
-        {
-            ctx.Operands.ResultBuffer[i] = (w0 >> bitShift) | (w1 << (32 - bitShift));
-        }
+            if (bitShift == 0)
+            {
+                ctx.Operands.ResultBuffer[i] = w0;
+            }
+            else
+            {
+                ctx.Operands.ResultBuffer[i] = (w0 >> bitShift) | (w1 << (32 - bitShift));
+            }
+        });
     }
 
     [GpuKernel]
@@ -271,17 +268,16 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseAnd(ref ctx);
+        Device_BitwiseAnd(ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseAnd(ref BigIntKernelContext ctx)
+    public static void Device_BitwiseAnd(BigIntKernelContext ctx)
     {
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < ctx.NumberOfWords)
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] & ctx.Operands.RightOperand[i];
-        }
+        });
     }
 
     [GpuKernel]
@@ -292,17 +288,16 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseOr(ref ctx);
+        Device_BitwiseOr(ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseOr(ref BigIntKernelContext ctx)
+    public static void Device_BitwiseOr(BigIntKernelContext ctx)
     {
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < ctx.NumberOfWords)
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] | ctx.Operands.RightOperand[i];
-        }
+        });
     }
 
     [GpuKernel]
@@ -313,17 +308,16 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseXor(ref ctx);
+        Device_BitwiseXor(ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseXor(ref BigIntKernelContext ctx)
+    public static void Device_BitwiseXor(BigIntKernelContext ctx)
     {
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < ctx.NumberOfWords)
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] ^ ctx.Operands.RightOperand[i];
-        }
+        });
     }
 
     [GpuKernel]
@@ -334,16 +328,15 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseNot(ref ctx);
+        Device_BitwiseNot(ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseNot(ref BigIntKernelContext ctx)
+    public static void Device_BitwiseNot(BigIntKernelContext ctx)
     {
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < ctx.NumberOfWords)
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
             ctx.Operands.ResultBuffer[i] = ~ctx.Operands.LeftOperand[i];
-        }
+        });
     }
 }

@@ -49,11 +49,13 @@ internal static class CudaTypeMapper
         return symbol.Name;
     }
 
-    public static int GetApproximateSize(ITypeSymbol typeSymbol)
+    public static int GetApproximateSize(ITypeSymbol typeSymbol) => GetSizeAndAlignment(typeSymbol).Size;
+
+    private static (int Size, int Alignment) GetSizeAndAlignment(ITypeSymbol typeSymbol)
     {
         if (typeSymbol.SpecialType != SpecialType.None)
         {
-            return typeSymbol.SpecialType switch
+            var size = typeSymbol.SpecialType switch
             {
                 SpecialType.System_Boolean => 1,
                 SpecialType.System_Byte => 1,
@@ -68,20 +70,41 @@ internal static class CudaTypeMapper
                 SpecialType.System_Double => 8,
                 _ => 4
             };
+            return (size, size);
         }
 
         if (typeSymbol is not INamedTypeSymbol named || named.TypeKind != TypeKind.Struct)
         {
-            return 8; // arrays/pointers
+            return (8, 8); // arrays/pointers
         }
 
-        var size = 0;
+        int currentOffset = 0;
+        int maxAlignment = 1;
+
         foreach (var field in named.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
         {
-            size += GetApproximateSize(field.Type);
+            var (fieldSize, fieldAlign) = GetSizeAndAlignment(field.Type);
+
+            // Align current offset
+            if (currentOffset % fieldAlign != 0)
+            {
+                currentOffset += fieldAlign - (currentOffset % fieldAlign);
+            }
+
+            currentOffset += fieldSize;
+            if (fieldAlign > maxAlignment)
+            {
+                maxAlignment = fieldAlign;
+            }
         }
 
-        return size == 0 ? 1 : size;
+        // Padding at the end of the struct
+        if (currentOffset % maxAlignment != 0)
+        {
+            currentOffset += maxAlignment - (currentOffset % maxAlignment);
+        }
+
+        return (currentOffset == 0 ? 1 : currentOffset, maxAlignment);
     }
 
     public static (string CppType, bool IsPointer) GetParameterCppType(ParameterSyntax p, ITypeSymbol? typeSymbol)

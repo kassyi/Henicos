@@ -1,3 +1,4 @@
+// ReSharper disable All
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
