@@ -43,6 +43,12 @@ asm volatile(
 return res;
 }
 
+__device__ __forceinline__ unsigned long long __gsharp_mul_wide(unsigned int a, unsigned int b) {
+    unsigned long long res;
+    asm volatile(""mul.wide.u32 %0, %1, %2;"" : ""=l""(res) : ""r""(a), ""r""(b));
+    return res;
+}
+
 __device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
     offset &= 31;
     return __funnelshift_l(value, value, offset);
