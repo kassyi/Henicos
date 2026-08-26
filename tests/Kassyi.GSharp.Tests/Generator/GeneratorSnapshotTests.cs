@@ -268,6 +268,16 @@ public class GeneratorSnapshotTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-13")]
+    public async Task Test_GEN13_MacroExpansionGeneratedSource()
+    {
+        var testCasesDir = Path.Combine(GetTestCasesDirectory(), "Generator");
+        var sourcePath = Path.Combine(testCasesDir, "GEN-13_MacroExpansion.cu.cs");
+        var source = await File.ReadAllTextAsync(sourcePath);
+        await VerifyGeneratorAsync(source, "GEN-13_MacroExpansion", testCasesDir);
+    }
+
+    [Fact]
     [Trait("FeatureId", "GEN-09")]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
