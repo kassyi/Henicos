@@ -334,7 +334,9 @@ for(int i=tid;(i<actualOutNumWords);i+=(gridDim.x*blockDim.x))
 ctx->Buffers.ValueT[i]=0;
 }
 cg::this_grid().sync();
-Device_CRT_ParallelAtomic(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Buffers.ValueT,ctx->Ntt.TransformLength,(ctx->Dimensions.NumberOfWords*2));
+Device_CRT_ComputeCoefficients(ctx->Ntt.Buffers.Buffer1,ctx->Ntt.Buffers.Buffer2,ctx->Ntt.Buffers.Buffer3,ctx->Ntt.Buffers.TemporaryBuffer,ctx->Ntt.TransformLength);
+cg::this_grid().sync();
+Device_ResolveNttCarries_SingleThread(ctx->Ntt.Buffers.Buffer3,ctx->Ntt.Buffers.TemporaryBuffer,ctx->Buffers.ValueT,ctx->Ntt.TransformLength,(ctx->Dimensions.NumberOfWords*2));
 cg::this_grid().sync();
 }
 

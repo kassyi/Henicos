@@ -90,10 +90,6 @@ inline __device__ unsigned int ModMul2(unsigned int operandA,unsigned int operan
 
 inline __device__ unsigned int ModPow(unsigned int baseValue,unsigned int exponent,unsigned int primeModulus,unsigned long long barrettMagic);
 
-inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIndex,unsigned int valueToAdd,int maxWordCount);
-
-inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,unsigned int valueToSubtract,int maxWordCount);
-
 struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
 inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
@@ -107,9 +103,9 @@ inline __device__ void Device_NTT_PointwiseSquare(unsigned int* deviceData1,unsi
 
 inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* deviceData1A,unsigned int* deviceData2A,unsigned int* deviceData1B,unsigned int* deviceData2B,int transformLength);
 
-inline __device__ void SharedAtomicAddWithCarry(int localIndex,unsigned int value,int maxLength);
+inline __device__ void Device_CRT_ComputeCoefficients(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* uncarriedLow,unsigned int* uncarriedHigh,int transformLength);
 
-inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* outputBuffer,int transformLength,int maxWordCount);
+inline __device__ void Device_ResolveNttCarries_SingleThread(unsigned int* uncarriedLow,unsigned int* uncarriedHigh,unsigned int* outputBuffer,int transformLength,int maxWordCount);
 
 struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
 inline __device__ void Device_NTT_Internal(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
@@ -173,42 +169,6 @@ baseValue=ModMulBarrett(baseValue,baseValue,primeModulus,barrettMagic);
 exponent>>=1;
 }
 return result;
-}
-
-inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIndex,unsigned int valueToAdd,int maxWordCount){
-auto carry=valueToAdd;
-auto index=wordIndex;
-while(((carry>0)&&(index<maxWordCount)))
-{
-auto oldValue=atomicAdd(&address[index],carry);
-if(((oldValue+carry)<oldValue))
-{
-carry=1;
-index++;
-}
-else
-{
-break;
-}
-}
-}
-
-inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,unsigned int valueToSubtract,int maxWordCount){
-auto borrow=valueToSubtract;
-auto index=wordIndex;
-while(((borrow>0)&&(index<maxWordCount)))
-{
-auto oldValue=atomicSub(&address[index],borrow);
-if((oldValue<borrow))
-{
-borrow=1;
-index++;
-}
-else
-{
-break;
-}
-}
 }
 
 #ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs__
@@ -375,47 +335,10 @@ deviceData2A[index]=ModMulBarrett(deviceData2A[index],deviceData2B[index],429391
 }
 }
 
-inline __device__ void SharedAtomicAddWithCarry(int localIndex,unsigned int value,int maxLength){
-extern __shared__ uint32_t s_crt[];
-;
-auto carry=value;
-auto idx=localIndex;
-while(((carry>0)&&(idx<maxLength)))
-{
-unsigned int old=0;
-old = atomicAdd(&s_crt[idx], carry);
-;
-if(((old+carry)<old))
-{
-carry=1;
-idx++;
-}
-else
-{
-break;
-}
-}
-}
-
-inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* outputBuffer,int transformLength,int maxWordCount){
-extern __shared__ uint32_t s_crt[];
-;
+inline __device__ void Device_CRT_ComputeCoefficients(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* uncarriedLow,unsigned int* uncarriedHigh,int transformLength){
 auto inverseN1=ModPow((unsigned int)transformLength,(4253024257U-2),4253024257U,4337323974ULL);
 auto inverseN2=ModPow((unsigned int)transformLength,(4293918721U-2),4293918721U,4296016127ULL);
-for(int baseIndex=(blockIdx.x*blockDim.x);(baseIndex<transformLength);baseIndex+=(gridDim.x*blockDim.x))
-{
-int sCrtLen=((blockDim.x/2)+2);
-if((threadIdx.x<sCrtLen))
-{
-s_crt[threadIdx.x] = 0;
-;
-}
-__syncthreads();
-unsigned int low32=0;
-unsigned int mid32=0;
-unsigned int high32=0;
-int wordIndexLocal=0;
-auto index=(baseIndex+threadIdx.x);
+auto index=((blockIdx.x*blockDim.x)+threadIdx.x);
 if((index<transformLength))
 {
 unsigned long long Modulus1=4253024257U;
@@ -434,51 +357,34 @@ difference=((value2+Modulus2)-value1);
 unsigned long long Prime1InverseModPrime2=105UL;
 auto crtCoefficient=(((difference*Prime1InverseModPrime2))%Modulus2);
 auto recombinedValue=(value1+(Modulus1*crtCoefficient));
-if((recombinedValue>0))
+uncarriedLow[index]=(unsigned int)((recombinedValue&0xFFFFFFFF));
+uncarriedHigh[index]=(unsigned int)((recombinedValue>>32));
+}
+}
+
+inline __device__ void Device_ResolveNttCarries_SingleThread(unsigned int* uncarriedLow,unsigned int* uncarriedHigh,unsigned int* outputBuffer,int transformLength,int maxWordCount){
+if(((threadIdx.x!=0)||(blockIdx.x!=0)))
 {
-wordIndexLocal=(int)((threadIdx.x/2));
-auto bitOffset=(((threadIdx.x%2))*16);
-if((bitOffset==0))
+return;
+}
+unsigned long long carry=0;
+for(int i=0;(i<maxWordCount);i++)
 {
-low32=(unsigned int)((recombinedValue&0xFFFFFFFF));
-mid32=(unsigned int)((recombinedValue>>32));
-}
-else
+unsigned long long sum0=carry;
+if(((2*i)<transformLength))
 {
-low32=(unsigned int)((((recombinedValue<<16))&0xFFFFFFFF));
-mid32=(unsigned int)((((recombinedValue>>16))&0xFFFFFFFF));
-high32=(unsigned int)((recombinedValue>>48));
+sum0+=(uncarriedLow[(2*i)]|(((unsigned long long)uncarriedHigh[(2*i)]<<32)));
 }
-}
-}
-if((low32>0))
+unsigned int low16=(unsigned int)((sum0&0xFFFF));
+carry=(sum0>>16);
+unsigned long long sum1=carry;
+if((((2*i)+1)<transformLength))
 {
-SharedAtomicAddWithCarry(wordIndexLocal,low32,sCrtLen);
+sum1+=(uncarriedLow[((2*i)+1)]|(((unsigned long long)uncarriedHigh[((2*i)+1)]<<32)));
 }
-if((mid32>0))
-{
-SharedAtomicAddWithCarry((wordIndexLocal+1),mid32,sCrtLen);
-}
-if((high32>0))
-{
-SharedAtomicAddWithCarry((wordIndexLocal+2),high32,sCrtLen);
-}
-__syncthreads();
-if((threadIdx.x<sCrtLen))
-{
-unsigned int sVal=0;
-sVal = s_crt[threadIdx.x];
-;
-if((sVal>0))
-{
-auto globalWordIndex=((baseIndex/2)+threadIdx.x);
-if((globalWordIndex<maxWordCount))
-{
-AtomicAddWithCarry(outputBuffer,globalWordIndex,sVal,maxWordCount);
-}
-}
-}
-__syncthreads();
+unsigned int high16=(unsigned int)((sum1&0xFFFF));
+carry=(sum1>>16);
+outputBuffer[i]=(low16|((high16<<16)));
 }
 }
 
