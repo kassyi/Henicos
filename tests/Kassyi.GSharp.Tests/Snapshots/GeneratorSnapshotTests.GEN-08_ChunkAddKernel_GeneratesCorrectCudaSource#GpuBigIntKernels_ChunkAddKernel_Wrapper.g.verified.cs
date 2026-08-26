@@ -106,7 +106,8 @@ if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Lengt
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", ChunkAddKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
@@ -261,9 +262,11 @@ if (d_dResult != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dResult);
 if (d_carryBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_carryBuffer);
 }
 }
+}
 public static unsafe void Launch_ChunkAddKernel_Device(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", ChunkAddKernel_CudaSource, null, macros);
 try
 {
@@ -292,6 +295,7 @@ IntPtr.Zero // Extra
 }
 finally
 {
+}
 }
 }
 }

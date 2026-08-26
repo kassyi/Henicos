@@ -154,7 +154,8 @@ if (opA.Length == 0 || opB.Length == 0 || opResult.Length == 0 || nttBuf1A.Lengt
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MultiplyNtt", Kernel_MultiplyNtt_CudaSource, null, macros);
 IntPtr d_opA = IntPtr.Zero;
 IntPtr d_opB = IntPtr.Zero;
@@ -576,9 +577,11 @@ if (d_twiddleInverse1 != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_twiddleInvers
 if (d_twiddleInverse2 != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_twiddleInverse2);
 }
 }
+}
 public static unsafe void Launch_Kernel_MultiplyNtt_Device(IntPtr opA, IntPtr opB, IntPtr opResult, IntPtr nttBuf1A, IntPtr nttBuf2A, IntPtr nttBuf1B, IntPtr nttBuf2B, IntPtr nttTmpBuf, IntPtr twiddleForward1, IntPtr twiddleForward2, IntPtr twiddleInverse1, IntPtr twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MultiplyNtt", Kernel_MultiplyNtt_CudaSource, null, macros);
 try
 {
@@ -626,6 +629,7 @@ kernelParams
 }
 finally
 {
+}
 }
 }
 }

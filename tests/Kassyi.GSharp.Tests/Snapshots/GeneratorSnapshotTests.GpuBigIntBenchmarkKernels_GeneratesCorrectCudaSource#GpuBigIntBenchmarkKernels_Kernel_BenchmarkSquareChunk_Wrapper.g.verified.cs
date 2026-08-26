@@ -929,7 +929,8 @@ handle.Free();
 }
 public static unsafe void Launch_Kernel_BenchmarkSquareChunk(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_BenchmarkSquareChunk", Kernel_BenchmarkSquareChunk_CudaSource, null, macros);
 System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_ctx = IntPtr.Zero;
@@ -953,17 +954,8 @@ sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
 kernelParams
 ));
-// Unmarshal ref/out struct: ctx
-IntPtr p_ctx_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp_out, d_ctx, ctx_size));
-native_ctx = (__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp_out, typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext))!;
-}
-finally
-{
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp_out);
-}
+// Fast zero-allocation copy from device
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_ctx), d_ctx, ctx_size));
 Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, ref native_ctx, false);
 }
 finally
@@ -972,9 +964,11 @@ foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (d_ctx != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ctx);
 }
 }
+}
 public static unsafe void Launch_Kernel_BenchmarkSquareChunk_Device(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_BenchmarkSquareChunk", Kernel_BenchmarkSquareChunk_CudaSource, null, macros);
 System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_ctx = IntPtr.Zero;
@@ -998,23 +992,15 @@ sharedMemBytes, // Shared mem
 IntPtr.Zero, // Stream
 kernelParams
 ));
-// Unmarshal ref/out struct: ctx
-IntPtr p_ctx_temp_out = System.Runtime.InteropServices.Marshal.AllocHGlobal(ctx_size);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ctx_temp_out, d_ctx, ctx_size));
-native_ctx = (__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext)System.Runtime.InteropServices.Marshal.PtrToStructure(p_ctx_temp_out, typeof(__Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext))!;
-}
-finally
-{
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_ctx_temp_out);
-}
+// Fast zero-allocation copy from device
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_ctx), d_ctx, ctx_size));
 Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext(ref ctx, ref native_ctx, true);
 }
 finally
 {
 foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 if (d_ctx != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ctx);
+}
 }
 }
 }

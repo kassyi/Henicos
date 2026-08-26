@@ -97,9 +97,17 @@ inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,u
 struct Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs;
 inline __device__ void Device_NTT_Shared_Row(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs* args);
 
+inline __device__ void Device_NTT_LoadAndTwiddleBefore(int rowIndex,int threadId,int currentLength,int maxLog2Length,int transformLength,bool applyTwiddleBefore,unsigned int primeModulus,unsigned long long barrettMagic,const unsigned int* deviceData,const unsigned int* deviceTwiddle);
+
+inline __device__ void Device_NTT_ButterflyStep(int step,int threadId,int transformLength,unsigned int primeModulus,unsigned long long barrettMagic,const unsigned int* deviceTwiddle);
+
+inline __device__ void Device_NTT_TwiddleAfterAndStore(int rowIndex,int threadId,int currentLength,int transformLength,bool applyTwiddleAfter,unsigned int primeModulus,unsigned long long barrettMagic,unsigned int* deviceData,const unsigned int* deviceTwiddle);
+
 inline __device__ void Device_NTT_PointwiseSquare(unsigned int* deviceData1,unsigned int* deviceData2,int transformLength);
 
 inline __device__ void Device_NTT_PointwiseMultiply(unsigned int* deviceData1A,unsigned int* deviceData2A,unsigned int* deviceData1B,unsigned int* deviceData2B,int transformLength);
+
+inline __device__ void SharedAtomicAddWithCarry(int localIndex,unsigned int value,int maxLength);
 
 inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* outputBuffer,int transformLength,int maxWordCount);
 
@@ -136,7 +144,7 @@ asm volatile(""mul.wide.u32 %0, %1, %2;"" : ""=l""(product) : ""r""(operandA), "
 unsigned long long quotient=0;
 asm volatile(""mul.hi.u64 %0, %1, %2;"" : ""=l""(quotient) : ""l""(product), ""l""(barrettMagic));
 ;
-unsigned long long remainder=(product-(quotient*primeModulus));
+auto remainder=(product-(quotient*primeModulus));
 while((remainder>=primeModulus))
 {
 remainder-=primeModulus;
@@ -243,13 +251,33 @@ extern __shared__ uint32_t s_row[];
 ;
 for(int rowIndex=blockIdx.x;(rowIndex<maxBlocks);rowIndex+=gridDim.x)
 {
-auto isActive=(threadIdx.x<threadsNeeded);
-if(isActive)
+for(int threadId=threadIdx.x;(threadId<threadsNeeded);threadId+=blockDim.x)
 {
-auto threadId=threadIdx.x;
+Device_NTT_LoadAndTwiddleBefore(rowIndex,threadId,currentLength,maxLog2Length,transformLength,applyTwiddleBefore,primeModulus,barrettMagic,deviceData,deviceTwiddle);
+}
+__syncthreads();
+for(int step=0;(step<maxLog2Length);step++)
+{
+for(int threadId=threadIdx.x;(threadId<threadsNeeded);threadId+=blockDim.x)
+{
+Device_NTT_ButterflyStep(step,threadId,transformLength,primeModulus,barrettMagic,deviceTwiddle);
+}
+__syncthreads();
+}
+for(int threadId=threadIdx.x;(threadId<threadsNeeded);threadId+=blockDim.x)
+{
+Device_NTT_TwiddleAfterAndStore(rowIndex,threadId,currentLength,transformLength,applyTwiddleAfter,primeModulus,barrettMagic,deviceData,deviceTwiddle);
+}
+__syncthreads();
+}
+}
+
+inline __device__ void Device_NTT_LoadAndTwiddleBefore(int rowIndex,int threadId,int currentLength,int maxLog2Length,int transformLength,bool applyTwiddleBefore,unsigned int primeModulus,unsigned long long barrettMagic,const unsigned int* deviceData,const unsigned int* deviceTwiddle){
+extern __shared__ uint32_t s_row[];
+;
 auto blockOffset=(rowIndex*currentLength);
-unsigned int value1=deviceData[(blockOffset+threadId)];
-unsigned int value2=deviceData[((blockOffset+threadId)+(currentLength/2))];
+auto value1=deviceData[(blockOffset+threadId)];
+auto value2=deviceData[((blockOffset+threadId)+(currentLength/2))];
 unsigned int reversedThreadId1=0;
 unsigned int reversedThreadId2=0;
 reversedThreadId1 = __brev(threadId) >> (32 - maxLog2Length);
@@ -270,12 +298,10 @@ s_row[reversedThreadId1] = value1;
 s_row[reversedThreadId2] = value2;
 ;
 }
-__syncthreads();
-for(int step=0;(step<maxLog2Length);step++)
-{
-if(isActive)
-{
-auto threadId=threadIdx.x;
+
+inline __device__ void Device_NTT_ButterflyStep(int step,int threadId,int transformLength,unsigned int primeModulus,unsigned long long barrettMagic,const unsigned int* deviceTwiddle){
+extern __shared__ uint32_t s_row[];
+;
 auto length=(2<<step);
 auto halfLength=(length/2);
 auto blockIndex=(threadId/halfLength);
@@ -297,11 +323,10 @@ s_row[position] = additionResult;
 s_row[(position+halfLength)] = subtractionResult;
 ;
 }
-__syncthreads();
-}
-if(isActive)
-{
-auto threadId=threadIdx.x;
+
+inline __device__ void Device_NTT_TwiddleAfterAndStore(int rowIndex,int threadId,int currentLength,int transformLength,bool applyTwiddleAfter,unsigned int primeModulus,unsigned long long barrettMagic,unsigned int* deviceData,const unsigned int* deviceTwiddle){
+extern __shared__ uint32_t s_row[];
+;
 auto blockOffset=(rowIndex*currentLength);
 if(applyTwiddleAfter)
 {
@@ -331,9 +356,6 @@ output2 = s_row[(threadId+(currentLength/2))];
 deviceData[(blockOffset+threadId)]=output1;
 deviceData[((blockOffset+threadId)+(currentLength/2))]=output2;
 }
-__syncthreads();
-}
-}
 
 inline __device__ void Device_NTT_PointwiseSquare(unsigned int* deviceData1,unsigned int* deviceData2,int transformLength){
 auto threadId=((blockIdx.x*blockDim.x)+threadIdx.x);
@@ -353,11 +375,48 @@ deviceData2A[index]=ModMulBarrett(deviceData2A[index],deviceData2B[index],429391
 }
 }
 
+inline __device__ void SharedAtomicAddWithCarry(int localIndex,unsigned int value,int maxLength){
+extern __shared__ uint32_t s_crt[];
+;
+auto carry=value;
+auto idx=localIndex;
+while(((carry>0)&&(idx<maxLength)))
+{
+unsigned int old=0;
+old = atomicAdd(&s_crt[idx], carry);
+;
+if(((old+carry)<old))
+{
+carry=1;
+idx++;
+}
+else
+{
+break;
+}
+}
+}
+
 inline __device__ void Device_CRT_ParallelAtomic(const unsigned int* deviceResult1,const unsigned int* deviceResult2,unsigned int* outputBuffer,int transformLength,int maxWordCount){
-auto threadId=((blockIdx.x*blockDim.x)+threadIdx.x);
+extern __shared__ uint32_t s_crt[];
+;
 auto inverseN1=ModPow((unsigned int)transformLength,(4253024257U-2),4253024257U,4337323974ULL);
 auto inverseN2=ModPow((unsigned int)transformLength,(4293918721U-2),4293918721U,4296016127ULL);
-for(int index=threadId;(index<transformLength);index+=(gridDim.x*blockDim.x))
+for(int baseIndex=(blockIdx.x*blockDim.x);(baseIndex<transformLength);baseIndex+=(gridDim.x*blockDim.x))
+{
+int sCrtLen=((blockDim.x/2)+2);
+if((threadIdx.x<sCrtLen))
+{
+s_crt[threadIdx.x] = 0;
+;
+}
+__syncthreads();
+unsigned int low32=0;
+unsigned int mid32=0;
+unsigned int high32=0;
+int wordIndexLocal=0;
+auto index=(baseIndex+threadIdx.x);
+if((index<transformLength))
 {
 unsigned long long Modulus1=4253024257U;
 unsigned long long Modulus2=4293918721U;
@@ -375,15 +434,10 @@ difference=((value2+Modulus2)-value1);
 unsigned long long Prime1InverseModPrime2=105UL;
 auto crtCoefficient=(((difference*Prime1InverseModPrime2))%Modulus2);
 auto recombinedValue=(value1+(Modulus1*crtCoefficient));
-if((recombinedValue<=0))
+if((recombinedValue>0))
 {
-continue;
-}
-auto wordIndex=(index/2);
-auto bitOffset=(((index%2))*16);
-unsigned int low32;
-unsigned int mid32;
-unsigned int high32=0;
+wordIndexLocal=(int)((threadIdx.x/2));
+auto bitOffset=(((threadIdx.x%2))*16);
 if((bitOffset==0))
 {
 low32=(unsigned int)((recombinedValue&0xFFFFFFFF));
@@ -395,18 +449,36 @@ low32=(unsigned int)((((recombinedValue<<16))&0xFFFFFFFF));
 mid32=(unsigned int)((((recombinedValue>>16))&0xFFFFFFFF));
 high32=(unsigned int)((recombinedValue>>48));
 }
-if((low32!=0))
-{
-AtomicAddWithCarry(outputBuffer,wordIndex,low32,maxWordCount);
 }
-if((mid32!=0))
-{
-AtomicAddWithCarry(outputBuffer,(wordIndex+1),mid32,maxWordCount);
 }
-if((high32!=0))
+if((low32>0))
 {
-AtomicAddWithCarry(outputBuffer,(wordIndex+2),high32,maxWordCount);
+SharedAtomicAddWithCarry(wordIndexLocal,low32,sCrtLen);
 }
+if((mid32>0))
+{
+SharedAtomicAddWithCarry((wordIndexLocal+1),mid32,sCrtLen);
+}
+if((high32>0))
+{
+SharedAtomicAddWithCarry((wordIndexLocal+2),high32,sCrtLen);
+}
+__syncthreads();
+if((threadIdx.x<sCrtLen))
+{
+unsigned int sVal=0;
+sVal = s_crt[threadIdx.x];
+;
+if((sVal>0))
+{
+auto globalWordIndex=((baseIndex/2)+threadIdx.x);
+if((globalWordIndex<maxWordCount))
+{
+AtomicAddWithCarry(outputBuffer,globalWordIndex,sVal,maxWordCount);
+}
+}
+}
+__syncthreads();
 }
 }
 
@@ -575,7 +647,8 @@ if (data.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("DummyTranspilationKernel", DummyTranspilationKernel_CudaSource, null, macros);
 IntPtr d_data = IntPtr.Zero;
 try
@@ -627,9 +700,11 @@ finally
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 }
 }
+}
 public static unsafe void Launch_DummyTranspilationKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("DummyTranspilationKernel", DummyTranspilationKernel_CudaSource, null, macros);
 try
 {
@@ -648,6 +723,7 @@ IntPtr.Zero // Extra
 }
 finally
 {
+}
 }
 }
 }
