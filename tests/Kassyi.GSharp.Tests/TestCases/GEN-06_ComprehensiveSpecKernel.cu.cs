@@ -45,7 +45,7 @@ public struct NestedPhysicsState
 
 public static partial class ComprehensiveSpecKernel
 {
-    [GpuDeviceFunction]
+    [GpuDeviceFunctionAttribute]
     [GpuInline]
     public static float ComputeMagnitude(PhysicsVector v)
     {
