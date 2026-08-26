@@ -343,7 +343,7 @@ public static class GpuBigIntNttKernels
         });
     }
 
-    [GpuKernel]
+    [GpuKernel(Cooperative = true)]
     public static void Kernel_ResolveNttCarries(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, int transformLength, int maxWordCount)
     {
