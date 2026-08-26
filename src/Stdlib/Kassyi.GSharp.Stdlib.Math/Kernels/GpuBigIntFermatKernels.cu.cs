@@ -115,14 +115,14 @@ public static class GpuBigIntFermatKernels
         };
 
         // Forward NTT 1
-        GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs);
+        GpuBigIntNttKernels.Device_ForwardNTT(nttArgs);
 
         // Forward NTT 2
         nttArgs.Buffer = ctx.Ntt.Buffers.Buffer2;
         nttArgs.Twiddle = ctx.Ntt.TwiddleFactors.Forward2;
         nttArgs.P = GpuBigIntNttKernels.Prime2;
         nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic2;
-        GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs);
+        GpuBigIntNttKernels.Device_ForwardNTT(nttArgs);
 
         GpuBigIntNttKernels.Device_NTT_PointwiseSquare(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2,
             ctx.Ntt.TransformLength);
@@ -133,14 +133,14 @@ public static class GpuBigIntFermatKernels
         nttArgs.Twiddle = ctx.Ntt.TwiddleFactors.Inverse1;
         nttArgs.P = GpuBigIntNttKernels.Prime1;
         nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic1;
-        GpuBigIntNttKernels.Device_InverseNTT(ref nttArgs);
+        GpuBigIntNttKernels.Device_InverseNTT(nttArgs);
 
         // Inverse NTT 2
         nttArgs.Buffer = ctx.Ntt.Buffers.Buffer2;
         nttArgs.Twiddle = ctx.Ntt.TwiddleFactors.Inverse2;
         nttArgs.P = GpuBigIntNttKernels.Prime2;
         nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic2;
-        GpuBigIntNttKernels.Device_InverseNTT(ref nttArgs);
+        GpuBigIntNttKernels.Device_InverseNTT(nttArgs);
         Gpu.SyncGrid();
 
         var actualOutNumWords = ctx.Dimensions.NumberOfWords * 2 + 16;
@@ -206,8 +206,7 @@ public static class GpuBigIntFermatKernels
         var numWords = ctx.NumberOfWords;
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (i < numWords)
+        Gpu.GridStrideLoop(ref ctx, numWords, (ref BigIntKernelContext c, int i) =>
         {
             int srcIdx0;
             if (isRight)
@@ -230,13 +229,13 @@ public static class GpuBigIntFermatKernels
             }
 
             var w0 = 0U;
-            if (srcIdx0 >= 0 && srcIdx0 < numWords)
+            if (srcIdx0 >= 0 && srcIdx0 < c.NumberOfWords)
             {
                 w0 = dA[srcIdx0];
             }
 
             var w1 = 0U;
-            if (srcIdx1 >= 0 && srcIdx1 < numWords)
+            if (srcIdx1 >= 0 && srcIdx1 < c.NumberOfWords)
             {
                 w1 = dA[srcIdx1];
             }
@@ -256,7 +255,7 @@ public static class GpuBigIntFermatKernels
                     dResult[i] = (w0 << bitShift) | (w1 >> (32 - bitShift));
                 }
             }
-        }
+        });
 
         Gpu.SyncGrid();
     }

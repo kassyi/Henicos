@@ -25,7 +25,7 @@ public static class GpuBigIntCmpKernels
         {
             if (ctx.Operands.LeftOperand[i] != 0)
             {
-                Gpu.InlinePtx("atomicOr((unsigned int*)&({0}), 1);", ctx.Operands.ResultBuffer[0]);
+                Gpu.AtomicOr(ref ctx.Operands.ResultBuffer[0], 1);
             }
         });
     }
@@ -50,14 +50,14 @@ public static class GpuBigIntCmpKernels
             {
                 if (ctx.Operands.LeftOperand[0] != 1)
                 {
-                    Gpu.InlinePtx("atomicOr((unsigned int*)&({0}), 1);", ctx.Operands.ResultBuffer[0]);
+                    Gpu.AtomicOr(ref ctx.Operands.ResultBuffer[0], 1);
                 }
             }
             else
             {
                 if (ctx.Operands.LeftOperand[i] != 0)
                 {
-                    Gpu.InlinePtx("atomicOr((unsigned int*)&({0}), 1);", ctx.Operands.ResultBuffer[0]);
+                    Gpu.AtomicOr(ref ctx.Operands.ResultBuffer[0], 1);
                 }
             }
         });
@@ -90,7 +90,7 @@ public static class GpuBigIntCmpKernels
                 var val = ((ulong)i << 32) | resultBits;
 
                 // Emits C++ atomicMax
-                Gpu.InlinePtx("atomicMax((unsigned long long*)dResult, val);");
+                Gpu.AtomicMax(ref dResult[0], val);
             }
         });
     }
