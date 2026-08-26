@@ -26,7 +26,7 @@ internal static class MacroTranspiler
         return symbol.Name switch
         {
             "ForUnroll" => TranspileForUnroll(invocation, context, symbol),
-            "GridStrideLoop" => TranspileGridStrideLoop(invocation, context),
+            "GridStrideLoop" => TranspileGridStrideLoop(invocation, context, symbol),
             "SingleThread" => TranspileSingleThread(invocation, context),
             _ => false
         };
@@ -55,27 +55,48 @@ internal static class MacroTranspiler
         }
 
         var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
+        if (string.IsNullOrEmpty(paramName))
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.MacroLambdaRequiresParameter,
+                invocation.GetLocation(),
+                "ForUnroll"));
+            return false;
+        }
+
         context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         for (var i = start; i < start + count; i++)
         {
-            var rewriter = new UnrollRewriter(paramName, i);
-            var rewrittenBody = rewriter.Visit(lambdaExpr.Body);
-            EmitUnrolledBody(context, rewrittenBody);
+            context.LocalVariableOverrides[paramName] = i.ToString();
+            EmitUnrolledBody(context, lambdaExpr.Body);
         }
+        
+        context.LocalVariableOverrides.Remove(paramName);
 
         return true;
     }
 
-    private static bool TranspileGridStrideLoop(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context)
+    private static bool TranspileGridStrideLoop(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context, IMethodSymbol symbol)
     {
+        var hasContext = symbol.Parameters.Length == 3;
+        var offset = hasContext ? 1 : 0;
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count != 2 || args[1].Expression is not LambdaExpressionSyntax lambdaExpr)
+
+        if (args.Count < offset + 2 || args[offset + 1].Expression is not LambdaExpressionSyntax lambdaExpr)
         {
             return false;
         }
 
-        var paramName = ExtractUnrollLoopParameterName(lambdaExpr, false);
+        var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
+        if (string.IsNullOrEmpty(paramName))
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.MacroLambdaRequiresParameter,
+                invocation.GetLocation(),
+                "GridStrideLoop"));
+            return false;
+        }
 
         context.Writer.Append("for");
         using (context.Writer.Parentheses())
@@ -85,7 +106,7 @@ internal static class MacroTranspiler
             context.Writer.AppendSpace();
             context.Writer.Append(paramName);
             context.Writer.AppendOperator("<");
-            context.Visit(args[0].Expression);
+            context.Visit(args[offset].Expression);
             context.Writer.AppendSemiColon();
             context.Writer.AppendSpace();
             context.Writer.Append(paramName);
@@ -285,19 +306,5 @@ internal static class MacroTranspiler
         context.Writer.AppendLine();
     }
 
-    private class UnrollRewriter(string paramName, int iterationValue) : CSharpSyntaxRewriter
-    {
-        public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
-        {
-            if (!string.IsNullOrEmpty(paramName) && node.Identifier.Text == paramName)
-            {
-                return SyntaxFactory.LiteralExpression(
-                        SyntaxKind.NumericLiteralExpression,
-                        SyntaxFactory.Literal(iterationValue))
-                    .WithTriviaFrom(node);
-            }
 
-            return base.VisitIdentifierName(node);
-        }
-    }
 }
