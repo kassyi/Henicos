@@ -19,7 +19,7 @@ public static class GpuBigIntScalarKernels
             ulong carry = s;
             for (int j = 0; j < numWords; j++)
             {
-                ulong sum = (ulong)left[j] + carry;
+                var sum = (ulong)left[j] + carry;
                 result[j] = (uint)sum;
                 carry = sum >> 32;
             }
@@ -41,7 +41,7 @@ public static class GpuBigIntScalarKernels
             long borrow = s;
             for (int j = 0; j < numWords; j++)
             {
-                long diff = (long)left[j] - borrow;
+                var diff = (long)left[j] - borrow;
                 if (diff < 0)
                 {
                     diff += 0x100000000L;
@@ -72,7 +72,7 @@ public static class GpuBigIntScalarKernels
             ulong carry = 0;
             for (int j = 0; j < numWords; j++)
             {
-                ulong prod = (ulong)left[j] * s + carry;
+                var prod = (ulong)left[j] * s + carry;
                 result[j] = (uint)(prod & 0xFFFFFFFFul);
                 carry = prod >> 32;
             }
@@ -106,7 +106,7 @@ public static class GpuBigIntScalarKernels
         ulong carry = 0;
         for (var i = start; i < end; i++)
         {
-            ulong prod = (ulong)left[i] * s + carry;
+            var prod = (ulong)left[i] * s + carry;
             result[i] = (uint)(prod & 0xFFFFFFFFul);
             carry = prod >> 32;
         }
