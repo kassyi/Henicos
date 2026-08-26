@@ -86,6 +86,8 @@ struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
 inline __device__ void Device_ApplyAddCarry(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int numChunks,int chunkSize);
 
+inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIndex,unsigned int valueToAdd,int maxWordCount);
+
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
 inline __device__ void Device_ChunkSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int chunkSize);
@@ -93,6 +95,8 @@ inline __device__ void Device_ChunkSub(Kassyi_GSharp_Stdlib_Math_Contexts_BigInt
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
 inline __device__ void Device_ApplySubBorrow(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext* ctx,int numChunks,int chunkSize);
+
+inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,unsigned int valueToSubtract,int maxWordCount);
 
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
@@ -191,6 +195,24 @@ AtomicAddWithCarry(ctx->Operands.ResultBuffer,(cIdx*chunkSize),(unsigned int)car
 }
 }
 
+inline __device__ void AtomicAddWithCarry(unsigned int* address,int wordIndex,unsigned int valueToAdd,int maxWordCount){
+auto carry=valueToAdd;
+auto index=wordIndex;
+while(((carry>0)&&(index<maxWordCount)))
+{
+auto oldValue=atomicAdd(&address[index],carry);
+if(((oldValue+carry)<oldValue))
+{
+carry=1;
+index++;
+}
+else
+{
+break;
+}
+}
+}
+
 #ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext__
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext
@@ -261,6 +283,24 @@ auto borrow=ctx->Operands.CarryBuffer[cIdx];
 if((borrow>0))
 {
 AtomicSubWithBorrow(ctx->Operands.ResultBuffer,(cIdx*chunkSize),(unsigned int)borrow,ctx->NumberOfWords);
+}
+}
+
+inline __device__ void AtomicSubWithBorrow(unsigned int* address,int wordIndex,unsigned int valueToSubtract,int maxWordCount){
+auto borrow=valueToSubtract;
+auto index=wordIndex;
+while(((borrow>0)&&(index<maxWordCount)))
+{
+auto oldValue=atomicSub(&address[index],borrow);
+if((oldValue<borrow))
+{
+borrow=1;
+index++;
+}
+else
+{
+break;
+}
 }
 }
 
