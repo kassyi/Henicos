@@ -161,7 +161,7 @@ internal static class DeclarationTranspilers
                     context.Writer.Append(baseCppType);
                     context.Writer.AppendSpace();
                 }
-                
+
                 if (isPointer)
                 {
                     context.Writer.Append("*");

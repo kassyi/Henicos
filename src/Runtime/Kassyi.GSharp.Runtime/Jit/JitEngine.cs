@@ -234,12 +234,12 @@ public static class JitEngine
             if (Directory.Exists(includePath))
             {
                 options.Add($"-I{includePath}");
-                
+
                 var ccclPath = Path.Combine(includePath, "cccl");
                 if (Directory.Exists(ccclPath))
                 {
                     options.Add($"-I{ccclPath}");
-                    
+
                     var libcxxPath = Path.Combine(ccclPath, "libcxx", "include");
                     if (Directory.Exists(libcxxPath))
                     {

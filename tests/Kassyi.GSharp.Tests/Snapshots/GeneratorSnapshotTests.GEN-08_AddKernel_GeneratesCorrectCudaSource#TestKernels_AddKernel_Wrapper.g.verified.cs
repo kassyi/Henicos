@@ -88,7 +88,8 @@ if (a.Length == 0 || b.Length == 0 || c.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", AddKernel_CudaSource, null, macros);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
@@ -97,7 +98,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: a
-int a_size = a.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int a_size = a.Length * sizeof(int);
 if(a_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
@@ -114,7 +115,7 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int b_size = b.Length * sizeof(int);
 if(b_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
@@ -131,7 +132,7 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: c
-int c_size = c.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int c_size = c.Length * sizeof(int);
 if(c_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, c_size));
@@ -206,9 +207,11 @@ if (d_b != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_b);
 if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
 }
 }
+}
 public static unsafe void Launch_AddKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", AddKernel_CudaSource, null, macros);
 try
 {
@@ -231,6 +234,7 @@ IntPtr.Zero // Extra
 }
 finally
 {
+}
 }
 }
 }

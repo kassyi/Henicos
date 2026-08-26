@@ -1,6 +1,5 @@
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
-
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public static class GpuBigIntMulKernels
@@ -9,22 +8,16 @@ public static class GpuBigIntMulKernels
     public static void Kernel_MultiplyNtt(
         uint[] opA, uint[] opB, uint[] opResult,
         uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] nttTmpBuf,
+        uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] twiddleForward1, uint[] twiddleForward2, uint[] twiddleInverse1, uint[] twiddleInverse2,
         int numWordsA, int numWordsB, int outNumWords, int transformLength)
     {
-        // 1. Init
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var i = tid; i < outNumWords; i += GridDimension.X * BlockDimension.X)
-        {
-            opResult[i] = 0;
-        }
-
-        // 2. Unpack
+        // 1. Unpack
         GpuBigIntFermatKernels.Device_Unpack16(opA, nttBuf1A, nttBuf2A, transformLength, numWordsA);
         GpuBigIntFermatKernels.Device_Unpack16(opB, nttBuf1B, nttBuf2B, transformLength, numWordsB);
         Gpu.SyncGrid();
 
-        // 3. Forward NTT
+        // 2. Forward NTT
         int n2 = 1;
         while (n2 * n2 < transformLength)
         {
@@ -89,12 +82,12 @@ public static class GpuBigIntMulKernels
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs2B);
         Gpu.SyncGrid();
 
-        // 4. Pointwise Multiply
+        // 3. Pointwise Multiply
         GpuBigIntNttKernels.Device_NTT_PointwiseMultiply(
             nttBuf1A, nttBuf2A, nttBuf1B, nttBuf2B, transformLength);
         Gpu.SyncGrid();
 
-        // 5. Inverse NTT
+        // 4. Inverse NTT
         var invArgs1 = new NumberTheoreticTransformKernelArgs
         {
             Buffer = nttBuf1A,
@@ -123,9 +116,9 @@ public static class GpuBigIntMulKernels
         GpuBigIntNttKernels.Device_InverseNTT(ref invArgs2);
         Gpu.SyncGrid();
 
-        // 6. CRT & Carry Resolution
-        GpuBigIntNttKernels.Device_CRT_ParallelAtomic(
-            nttBuf1A, nttBuf2A, opResult, transformLength, outNumWords);
+        // 5. CRT & Compute Coefficients
+        GpuBigIntNttKernels.Device_CRT_ComputeCoefficients(
+            nttBuf1A, nttBuf2A, uncarriedLow, uncarriedHigh, transformLength);
     }
 }
 

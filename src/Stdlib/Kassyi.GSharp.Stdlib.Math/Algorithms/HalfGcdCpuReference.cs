@@ -11,8 +11,8 @@ public static class HalfGcdCpuReference
 
         while (!b.IsZero)
         {
-            int bitsA = GetBitLength(a);
-            int bitsB = GetBitLength(b);
+            var bitsA = GetBitLength(a);
+            var bitsB = GetBitLength(b);
 
             if (bitsA - bitsB > 64 || bitsA <= 64)
             {
@@ -22,19 +22,19 @@ public static class HalfGcdCpuReference
                 continue;
             }
 
-            int shift = bitsA - 64;
+            var shift = bitsA - 64;
             if (shift < 0)
             {
                 shift = 0;
             }
 
-            ulong x = (ulong)(a >> shift);
-            ulong y = (ulong)(b >> shift);
+            var x = (ulong)(a >> shift);
+            var y = (ulong)(b >> shift);
 
             long u0 = 1, v0 = 0;
             long u1 = 0, v1 = 1;
 
-            bool progress = false;
+            var progress = false;
 
             while (y != 0)
             {
@@ -51,24 +51,24 @@ public static class HalfGcdCpuReference
                     break; // overflow protection
                 }
 
-                ulong qMin = x / (y + 1);
-                ulong qMax = (x + 1) / y;
+                var qMin = x / (y + 1);
+                var qMax = (x + 1) / y;
 
                 if (qMin != qMax)
                 {
                     break;
                 }
 
-                ulong q = qMin;
+                var q = qMin;
                 if (q == 0)
                 {
                     break;
                 }
 
-                ulong r = x - q * y;
+                var r = x - q * y;
 
-                long u2 = u0 - (long)q * u1;
-                long v2 = v0 - (long)q * v1;
+                var u2 = u0 - (long)q * u1;
+                var v2 = v0 - (long)q * v1;
 
                 x = y;
                 y = r;
@@ -121,8 +121,8 @@ public static class HalfGcdCpuReference
         }
 
         var bytes = b.ToByteArray(isUnsigned: true, isBigEndian: true);
-        int bitLength = (bytes.Length - 1) * 8;
-        byte first = bytes[0];
+        var bitLength = (bytes.Length - 1) * 8;
+        var first = bytes[0];
         while (first > 0)
         {
             bitLength++;

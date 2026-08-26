@@ -1,5 +1,6 @@
-namespace Kassyi.GSharp.Stdlib.Math.Kernels;
+using System.Runtime.CompilerServices;
 
+namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
@@ -121,7 +122,8 @@ public static class GpuBigIntFermatKernels
         nttArgs.Pm = GpuBigIntNttKernels.BarrettMagic2;
         GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs);
 
-        GpuBigIntNttKernels.Device_NTT_PointwiseSquare(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2, ctx.Ntt.TransformLength);
+        GpuBigIntNttKernels.Device_NTT_PointwiseSquare(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2,
+            ctx.Ntt.TransformLength);
         Gpu.SyncGrid();
 
         // Inverse NTT 1
@@ -148,7 +150,12 @@ public static class GpuBigIntFermatKernels
 
         Gpu.SyncGrid();
 
-        GpuBigIntNttKernels.Device_CRT_ParallelAtomic(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2, ctx.Buffers.ValueT,
+        GpuBigIntNttKernels.Device_CRT_ComputeCoefficients(ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2,
+            ctx.Ntt.Buffers.Buffer3, ctx.Ntt.Buffers.TemporaryBuffer, ctx.Ntt.TransformLength);
+        Gpu.SyncGrid();
+
+        GpuBigIntNttKernels.Device_ResolveNttCarries_SingleThread(
+            ctx.Ntt.Buffers.Buffer3, ctx.Ntt.Buffers.TemporaryBuffer, ctx.Buffers.ValueT,
             ctx.Ntt.TransformLength, ctx.Dimensions.NumberOfWords * 2);
         Gpu.SyncGrid();
     }
@@ -156,94 +163,26 @@ public static class GpuBigIntFermatKernels
     [GpuDeviceFunction]
     private static void Device_AddSub(ref BigIntKernelContext ctx, bool isSubtract)
     {
-        var dA = ctx.Operands.LeftOperand;
-        var dB = ctx.Operands.RightOperand;
-        var dResult = ctx.Operands.ResultBuffer;
-        var carryBuffer = ctx.Operands.CarryBuffer;
-        var numWords = ctx.NumberOfWords;
-        if (BlockIndex.X == 0 && ThreadIndex.X == 0)
-        {
-            carryBuffer[0] = 0;
-        }
-
-        Gpu.SyncGrid();
-
         int chunkSize = 256;
-        var chunkIdx = BlockIndex.X;
-        var start = chunkIdx * chunkSize;
-
-        if (start < numWords && ThreadIndex.X < chunkSize)
+        if (isSubtract)
         {
-            var end = start + chunkSize;
-            if (end > numWords)
-            {
-                end = numWords;
-            }
-
-            if (ThreadIndex.X == 0)
-            {
-                ulong localCarry = 0;
-                if (isSubtract)
-                {
-                    if (chunkIdx == 0)
-                    {
-                        localCarry = 1;
-                    }
-                }
-
-                for (var i = start; i < end; i++)
-                {
-                    uint bVal;
-                    if (isSubtract)
-                    {
-                        bVal = ~dB[i];
-                    }
-                    else
-                    {
-                        bVal = dB[i];
-                    }
-
-                    var current = dA[i] + (ulong)bVal + localCarry;
-                    dResult[i] = (uint)(current & 0xFFFFFFFF);
-                    localCarry = current >> 32;
-                }
-
-                carryBuffer[chunkIdx + 1] = (long)localCarry;
-            }
+            GpuBigIntKernels.Device_ChunkSub(ref ctx, chunkSize);
+        }
+        else
+        {
+            GpuBigIntKernels.Device_ChunkAdd(ref ctx, chunkSize);
         }
 
         Gpu.SyncGrid();
 
-        if (BlockIndex.X == 0 && ThreadIndex.X == 0)
+        var numChunks = (ctx.NumberOfWords + chunkSize - 1) / chunkSize;
+        if (isSubtract)
         {
-            var numChunks = (numWords + chunkSize - 1) / chunkSize;
-            ulong rippleCarry = 0;
-            for (int cIdx = 0; cIdx < numChunks; cIdx++)
-            {
-                var s = cIdx * chunkSize;
-                var e = s + chunkSize;
-                if (e > numWords)
-                {
-                    e = numWords;
-                }
-
-                rippleCarry += (ulong)carryBuffer[cIdx];
-                if (rippleCarry == 0)
-                {
-                    continue;
-                }
-
-                for (var i = s; i < e; i++)
-                {
-                    var current = dResult[i] + rippleCarry;
-                    dResult[i] = (uint)(current & 0xFFFFFFFF);
-                    rippleCarry = current >> 32;
-                    if (rippleCarry == 0)
-                    {
-                        break;
-                    }
-                }
-            }
+            GpuBigIntKernels.Device_ApplySubBorrow(ref ctx, numChunks, chunkSize);
+        }
+        else
+        {
+            GpuBigIntKernels.Device_ApplyAddCarry(ref ctx, numChunks, chunkSize);
         }
 
         Gpu.SyncGrid();
@@ -258,6 +197,7 @@ public static class GpuBigIntFermatKernels
         => Device_AddSub(ref ctx, true);
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void Device_ShiftLeftRight(ref BigIntKernelContext ctx, int shiftBits, bool isRight)
     {
         var dA = ctx.Operands.LeftOperand;

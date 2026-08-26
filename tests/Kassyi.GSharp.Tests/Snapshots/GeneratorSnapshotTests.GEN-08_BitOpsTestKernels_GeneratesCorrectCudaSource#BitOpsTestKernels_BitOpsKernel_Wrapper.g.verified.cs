@@ -101,7 +101,8 @@ if (u32Data.Length == 0 || u64Data.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", BitOpsKernel_CudaSource, null, macros);
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
@@ -109,7 +110,7 @@ try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal array: u32Data
-int u32Data_size = u32Data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int u32Data_size = u32Data.Length * sizeof(uint);
 if(u32Data_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_u32Data, u32Data_size));
@@ -126,7 +127,7 @@ handle_u32Data.Free();
 }
 kernelParams[0] = &d_u32Data;
 // Marshal array: u64Data
-int u64Data_size = u64Data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(ulong));
+int u64Data_size = u64Data.Length * sizeof(ulong);
 if(u64Data_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_u64Data, u64Data_size));
@@ -186,9 +187,11 @@ if (d_u32Data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_u32Data);
 if (d_u64Data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_u64Data);
 }
 }
+}
 public static unsafe void Launch_BitOpsKernel_Device(IntPtr u32Data, IntPtr u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", BitOpsKernel_CudaSource, null, macros);
 try
 {
@@ -209,6 +212,7 @@ IntPtr.Zero // Extra
 }
 finally
 {
+}
 }
 }
 }

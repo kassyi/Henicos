@@ -49,88 +49,23 @@ For all C# coding style conventions (Naming, Syntax, Zero-Allocation preferences
 
 - **See:** [`.agents/rules/coding-style.md`](.agents/rules/coding-style.md)
 
-### 2.1. GPU Kernel Naming Convention (.cu.cs)
-
-Any C# file that contains G# GPU kernel implementations (e.g., methods annotated with `[GpuKernel]` or `[GpuDeviceFunction]`) **MUST** use the `.cu.cs` extension (e.g., `GpuBigIntMulKernels.cu.cs`). This convention signals to the system and developers that the file contains transpilation targets for CUDA C++.
-
-- **Separation in Test Projects (`tests/`):**
-  - Test files containing test runner/assertion logic (e.g., `FooTests.cs`) **MUST NOT** directly contain `[GpuKernel]` implementations.
-  - Test helper kernels **MUST** be separated into dedicated `.cu.cs` files matching the corresponding test file name (e.g., `FooTests.cs` -> `FooTestKernels.cu.cs` or `FooKernels.cu.cs`).
-  - This ensures clean separation between test execution code and transpiler target kernels, avoiding rule violations and keeping wrapper generation predictable.
-
 ---
 
-## 3. Source Generation & Transpilation Best Practices (GSharp)
+## 3. PROJECT-SPECIFIC SKILLS
 
-This project (GSharp) operates by reading C# code via Roslyn Source Generators to generate C# boilerplate/stubs, and ultimately transpiling the logic into CUDA C++ (`.cu`) source code. Both generation steps heavily rely on building code strings using the custom `SourceWriter`.
+To keep this context file lean, specialized guidelines are offloaded to external skills. **You MUST load and read the corresponding skill using `view_file` when performing related tasks.**
 
-### Core Principle: Use Zero-Allocation Scopes for Brackets and Parentheses
+- **Transpiler & Source Generator Development:**
+  When modifying `Kassyi.GSharp.Compiler` or related Source Generation / Transpiler logic, you **MUST** read:
+  [`.agents/skills/gsharp-transpiler-guidelines/SKILL.md`](.agents/skills/gsharp-transpiler-guidelines/SKILL.md)
 
-When generating C# code or ultimately generating `.cu` C++ code (e.g., in `RoslynToCudaVisitor.cs`), **NEVER manually manage braces (`{}`), parentheses (`()`), or brackets (`[]`) with raw string appends.**
+- **QA & Test Coverage Guidelines:**
+  When writing or modifying unit tests (xUnit), you **MUST** adhere to:
+  [`.agents/skills/qa-testing-guidelines/SKILL.md`](.agents/skills/qa-testing-guidelines/SKILL.md)
 
-Manual management is a breeding ground for bugs (e.g., missing closing parentheses).
-
-- ❌ **DO NOT** write:
-
-```csharp
-_writer.Append("if (");
-Visit(node.Condition);
-_writer.AppendLine(")");
-```
-
-- ✨ **DO** use the `using` pattern with `SourceWriter` inline scopes and helpers:
-
-```csharp
-_writer.AppendKeyword("if");
-using (_writer.Parentheses())
-{
-    Visit(node.Condition);
-}
-_writer.AppendLine();
-```
-
-### Supported Harnesses (`SourceWriter` extensions):
-
-- `using (_writer.Scope())` -> outputs `{` and `}` with line breaks and block structure.
-- `using (_writer.Parentheses())` -> outputs `(` and `)` inline.
-- `using (_writer.Brackets())` -> outputs `[` and `]` inline.
-
-This prevents mismatched scopes and eliminates the risk of missing closing characters.
-
-### No Spacing Rule (Dense Formatting)
-
-When generating C# code or ultimately `.cu` C++ code, **do not insert spaces around operators or symbols** (e.g., `=`, `,`, `+`). To prevent spacing errors, let the AI output dense code without manual visual formatting. Rely exclusively on `SourceWriter` helpers (`AppendComma()`, `AppendOperator()`, `AppendKeyword()`, etc.) instead of hardcoding spaces in string literals.
-
-### 3.3. Mandatory Snapshot Testing for New Features
-
-Whenever you implement support for a new C# syntax, operator, or Transpiler feature in G#, you **MUST** create a corresponding snapshot test to verify the generated CUDA C++ output.
-
-1. Create a new `.cs` test case file inside `tests/Kassyi.GSharp.Tests/TestCases/`.
-2. Add the corresponding `[InlineData("YourTestCase.cs")]` to the `GeneratorSnapshots` method in `GeneratorSnapshotTests.cs`.
-3. Run `dotnet test` to generate and verify the `.cu` source code snapshot.
-
-### 3.4. QA & Test Coverage Guidelines
-
-When writing or modifying unit tests (xUnit), you **MUST** adhere to the multi-perspective QA criteria (Edge Case, Stress/Concurrency, Alignment/Padding, Sad Path/Exceptions).
-
-- **See:** [`.agents/skills/qa-testing-guidelines/SKILL.md`](.agents/skills/qa-testing-guidelines/SKILL.md)
-
----
-
-## 4. TASK TRACKING & ROADMAP OBLIGATIONS
-
-When working on G# (GSharp) or GpuBigInt (GBI) implementation tasks, you **MUST** strictly adhere to the project's roadmap and progress tracking system.
-
-### 4.1. Mandatory Progress Tracking
-
-All development tasks are tracked in the Markdown files located at `docs/roadmaps/` (e.g., `gbi_roadmap.md`, `gsharp_transpiler_issues.md`, `csharp_syntax_support.md`).
-
-- **Update Checkboxes:** Whenever you successfully implement, test, and verify a feature or fix a bug related to a task, you **MUST** update the corresponding checkbox from `- [ ]` to `- [x]` in the roadmap file.
-- **Update Status Details:** You **MUST** also update the status, impact, and notes columns in the table with your current findings, next actions, or reasoning. **All table updates and notes MUST be written in Japanese**, as the roadmap is maintained in Japanese.
-
-### 4.2. Reporting New Tasks
-
-If you discover a new technical debt, missing syntax support, or an optimization opportunity, **DO NOT ignore it**. You must append it as a new task with a new ID to the appropriate roadmap file, and ideally recalculate priorities using `node scripts/calculate_priorities.js --update-docs`.
+- **Roadmap & Task Management:**
+  When completing a task, fixing a tracked bug, or discovering new technical debt, you **MUST** read:
+  [`.agents/skills/roadmap-management/SKILL.md`](.agents/skills/roadmap-management/SKILL.md)
 
 ---
 

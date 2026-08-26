@@ -98,12 +98,7 @@ int CurrentL;
 }
 ;
 #endif
-extern ""C"" __global__ void Kernel_MultiplyNtt(unsigned int* opA,unsigned int* opB,unsigned int* opResult,unsigned int* nttBuf1A,unsigned int* nttBuf2A,unsigned int* nttBuf1B,unsigned int* nttBuf2B,unsigned int* nttTmpBuf,unsigned int* twiddleForward1,unsigned int* twiddleForward2,unsigned int* twiddleInverse1,unsigned int* twiddleInverse2,int numWordsA,int numWordsB,int outNumWords,int transformLength){
-auto tid=((blockIdx.x*blockDim.x)+threadIdx.x);
-for(int i=tid;(i<outNumWords);i+=(gridDim.x*blockDim.x))
-{
-opResult[i]=0;
-}
+extern ""C"" __global__ void Kernel_MultiplyNtt(unsigned int* opA,unsigned int* opB,unsigned int* opResult,unsigned int* nttBuf1A,unsigned int* nttBuf2A,unsigned int* nttBuf1B,unsigned int* nttBuf2B,unsigned int* nttTmpBuf,unsigned int* uncarriedLow,unsigned int* uncarriedHigh,unsigned int* twiddleForward1,unsigned int* twiddleForward2,unsigned int* twiddleInverse1,unsigned int* twiddleInverse2,int numWordsA,int numWordsB,int outNumWords,int transformLength){
 Device_Unpack16(opA,nttBuf1A,nttBuf2A,transformLength,numWordsA);
 Device_Unpack16(opB,nttBuf1B,nttBuf2B,transformLength,numWordsB);
 cg::this_grid().sync();
@@ -145,16 +140,17 @@ Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp; _tmp
 ());
 Device_InverseNTT(&invArgs2);
 cg::this_grid().sync();
-Device_CRT_ParallelAtomic(nttBuf1A,nttBuf2A,opResult,transformLength,outNumWords);
+Device_CRT_ComputeCoefficients(nttBuf1A,nttBuf2A,uncarriedLow,uncarriedHigh,transformLength);
 }
 ";
-public static unsafe void Launch_Kernel_MultiplyNtt(uint[] opA, uint[] opB, uint[] opResult, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] nttTmpBuf, uint[] twiddleForward1, uint[] twiddleForward2, uint[] twiddleInverse1, uint[] twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_Kernel_MultiplyNtt(uint[] opA, uint[] opB, uint[] opResult, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] nttTmpBuf, uint[] uncarriedLow, uint[] uncarriedHigh, uint[] twiddleForward1, uint[] twiddleForward2, uint[] twiddleInverse1, uint[] twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-if (opA.Length == 0 || opB.Length == 0 || opResult.Length == 0 || nttBuf1A.Length == 0 || nttBuf2A.Length == 0 || nttBuf1B.Length == 0 || nttBuf2B.Length == 0 || nttTmpBuf.Length == 0 || twiddleForward1.Length == 0 || twiddleForward2.Length == 0 || twiddleInverse1.Length == 0 || twiddleInverse2.Length == 0)
+if (opA.Length == 0 || opB.Length == 0 || opResult.Length == 0 || nttBuf1A.Length == 0 || nttBuf2A.Length == 0 || nttBuf1B.Length == 0 || nttBuf2B.Length == 0 || nttTmpBuf.Length == 0 || uncarriedLow.Length == 0 || uncarriedHigh.Length == 0 || twiddleForward1.Length == 0 || twiddleForward2.Length == 0 || twiddleInverse1.Length == 0 || twiddleInverse2.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MultiplyNtt", Kernel_MultiplyNtt_CudaSource, null, macros);
 IntPtr d_opA = IntPtr.Zero;
 IntPtr d_opB = IntPtr.Zero;
@@ -164,15 +160,17 @@ IntPtr d_nttBuf2A = IntPtr.Zero;
 IntPtr d_nttBuf1B = IntPtr.Zero;
 IntPtr d_nttBuf2B = IntPtr.Zero;
 IntPtr d_nttTmpBuf = IntPtr.Zero;
+IntPtr d_uncarriedLow = IntPtr.Zero;
+IntPtr d_uncarriedHigh = IntPtr.Zero;
 IntPtr d_twiddleForward1 = IntPtr.Zero;
 IntPtr d_twiddleForward2 = IntPtr.Zero;
 IntPtr d_twiddleInverse1 = IntPtr.Zero;
 IntPtr d_twiddleInverse2 = IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[16];
+void** kernelParams = stackalloc void*[18];
 // Marshal array: opA
-int opA_size = opA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int opA_size = opA.Length * sizeof(uint);
 if(opA_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_opA, opA_size));
@@ -189,7 +187,7 @@ handle_opA.Free();
 }
 kernelParams[0] = &d_opA;
 // Marshal array: opB
-int opB_size = opB.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int opB_size = opB.Length * sizeof(uint);
 if(opB_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_opB, opB_size));
@@ -206,7 +204,7 @@ handle_opB.Free();
 }
 kernelParams[1] = &d_opB;
 // Marshal array: opResult
-int opResult_size = opResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int opResult_size = opResult.Length * sizeof(uint);
 if(opResult_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_opResult, opResult_size));
@@ -223,7 +221,7 @@ handle_opResult.Free();
 }
 kernelParams[2] = &d_opResult;
 // Marshal array: nttBuf1A
-int nttBuf1A_size = nttBuf1A.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int nttBuf1A_size = nttBuf1A.Length * sizeof(uint);
 if(nttBuf1A_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf1A, nttBuf1A_size));
@@ -240,7 +238,7 @@ handle_nttBuf1A.Free();
 }
 kernelParams[3] = &d_nttBuf1A;
 // Marshal array: nttBuf2A
-int nttBuf2A_size = nttBuf2A.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int nttBuf2A_size = nttBuf2A.Length * sizeof(uint);
 if(nttBuf2A_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf2A, nttBuf2A_size));
@@ -257,7 +255,7 @@ handle_nttBuf2A.Free();
 }
 kernelParams[4] = &d_nttBuf2A;
 // Marshal array: nttBuf1B
-int nttBuf1B_size = nttBuf1B.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int nttBuf1B_size = nttBuf1B.Length * sizeof(uint);
 if(nttBuf1B_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf1B, nttBuf1B_size));
@@ -274,7 +272,7 @@ handle_nttBuf1B.Free();
 }
 kernelParams[5] = &d_nttBuf1B;
 // Marshal array: nttBuf2B
-int nttBuf2B_size = nttBuf2B.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int nttBuf2B_size = nttBuf2B.Length * sizeof(uint);
 if(nttBuf2B_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttBuf2B, nttBuf2B_size));
@@ -291,7 +289,7 @@ handle_nttBuf2B.Free();
 }
 kernelParams[6] = &d_nttBuf2B;
 // Marshal array: nttTmpBuf
-int nttTmpBuf_size = nttTmpBuf.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int nttTmpBuf_size = nttTmpBuf.Length * sizeof(uint);
 if(nttTmpBuf_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nttTmpBuf, nttTmpBuf_size));
@@ -307,8 +305,42 @@ handle_nttTmpBuf.Free();
 }
 }
 kernelParams[7] = &d_nttTmpBuf;
+// Marshal array: uncarriedLow
+int uncarriedLow_size = uncarriedLow.Length * sizeof(uint);
+if(uncarriedLow_size>0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_uncarriedLow, uncarriedLow_size));
+System.Runtime.InteropServices.GCHandle handle_uncarriedLow = System.Runtime.InteropServices.GCHandle.Alloc(uncarriedLow, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_uncarriedLow = handle_uncarriedLow.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_uncarriedLow, p_uncarriedLow, uncarriedLow_size));
+}
+finally
+{
+handle_uncarriedLow.Free();
+}
+}
+kernelParams[8] = &d_uncarriedLow;
+// Marshal array: uncarriedHigh
+int uncarriedHigh_size = uncarriedHigh.Length * sizeof(uint);
+if(uncarriedHigh_size>0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_uncarriedHigh, uncarriedHigh_size));
+System.Runtime.InteropServices.GCHandle handle_uncarriedHigh = System.Runtime.InteropServices.GCHandle.Alloc(uncarriedHigh, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_uncarriedHigh = handle_uncarriedHigh.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_uncarriedHigh, p_uncarriedHigh, uncarriedHigh_size));
+}
+finally
+{
+handle_uncarriedHigh.Free();
+}
+}
+kernelParams[9] = &d_uncarriedHigh;
 // Marshal array: twiddleForward1
-int twiddleForward1_size = twiddleForward1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int twiddleForward1_size = twiddleForward1.Length * sizeof(uint);
 if(twiddleForward1_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleForward1, twiddleForward1_size));
@@ -323,9 +355,9 @@ finally
 handle_twiddleForward1.Free();
 }
 }
-kernelParams[8] = &d_twiddleForward1;
+kernelParams[10] = &d_twiddleForward1;
 // Marshal array: twiddleForward2
-int twiddleForward2_size = twiddleForward2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int twiddleForward2_size = twiddleForward2.Length * sizeof(uint);
 if(twiddleForward2_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleForward2, twiddleForward2_size));
@@ -340,9 +372,9 @@ finally
 handle_twiddleForward2.Free();
 }
 }
-kernelParams[9] = &d_twiddleForward2;
+kernelParams[11] = &d_twiddleForward2;
 // Marshal array: twiddleInverse1
-int twiddleInverse1_size = twiddleInverse1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int twiddleInverse1_size = twiddleInverse1.Length * sizeof(uint);
 if(twiddleInverse1_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleInverse1, twiddleInverse1_size));
@@ -357,9 +389,9 @@ finally
 handle_twiddleInverse1.Free();
 }
 }
-kernelParams[10] = &d_twiddleInverse1;
+kernelParams[12] = &d_twiddleInverse1;
 // Marshal array: twiddleInverse2
-int twiddleInverse2_size = twiddleInverse2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int twiddleInverse2_size = twiddleInverse2.Length * sizeof(uint);
 if(twiddleInverse2_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_twiddleInverse2, twiddleInverse2_size));
@@ -374,15 +406,15 @@ finally
 handle_twiddleInverse2.Free();
 }
 }
-kernelParams[11] = &d_twiddleInverse2;
+kernelParams[13] = &d_twiddleInverse2;
 // Marshal scalar: numWordsA
-kernelParams[12] = &numWordsA;
+kernelParams[14] = &numWordsA;
 // Marshal scalar: numWordsB
-kernelParams[13] = &numWordsB;
+kernelParams[15] = &numWordsB;
 // Marshal scalar: outNumWords
-kernelParams[14] = &outNumWords;
+kernelParams[16] = &outNumWords;
 // Marshal scalar: transformLength
-kernelParams[15] = &transformLength;
+kernelParams[17] = &transformLength;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -503,6 +535,34 @@ finally
 handleBack_nttTmpBuf.Free();
 }
 }
+// Copy back array: uncarriedLow
+if(uncarriedLow_size>0&&d_uncarriedLow!=IntPtr.Zero)
+{
+System.Runtime.InteropServices.GCHandle handleBack_uncarriedLow = System.Runtime.InteropServices.GCHandle.Alloc(uncarriedLow, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_uncarriedLow = handleBack_uncarriedLow.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_uncarriedLow, d_uncarriedLow, uncarriedLow_size));
+}
+finally
+{
+handleBack_uncarriedLow.Free();
+}
+}
+// Copy back array: uncarriedHigh
+if(uncarriedHigh_size>0&&d_uncarriedHigh!=IntPtr.Zero)
+{
+System.Runtime.InteropServices.GCHandle handleBack_uncarriedHigh = System.Runtime.InteropServices.GCHandle.Alloc(uncarriedHigh, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_uncarriedHigh = handleBack_uncarriedHigh.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_uncarriedHigh, d_uncarriedHigh, uncarriedHigh_size));
+}
+finally
+{
+handleBack_uncarriedHigh.Free();
+}
+}
 // Copy back array: twiddleForward1
 if(twiddleForward1_size>0&&d_twiddleForward1!=IntPtr.Zero)
 {
@@ -570,19 +630,23 @@ if (d_nttBuf2A != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_nttBuf2A);
 if (d_nttBuf1B != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_nttBuf1B);
 if (d_nttBuf2B != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_nttBuf2B);
 if (d_nttTmpBuf != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_nttTmpBuf);
+if (d_uncarriedLow != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_uncarriedLow);
+if (d_uncarriedHigh != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_uncarriedHigh);
 if (d_twiddleForward1 != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_twiddleForward1);
 if (d_twiddleForward2 != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_twiddleForward2);
 if (d_twiddleInverse1 != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_twiddleInverse1);
 if (d_twiddleInverse2 != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_twiddleInverse2);
 }
 }
-public static unsafe void Launch_Kernel_MultiplyNtt_Device(IntPtr opA, IntPtr opB, IntPtr opResult, IntPtr nttBuf1A, IntPtr nttBuf2A, IntPtr nttBuf1B, IntPtr nttBuf2B, IntPtr nttTmpBuf, IntPtr twiddleForward1, IntPtr twiddleForward2, IntPtr twiddleInverse1, IntPtr twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+}
+public static unsafe void Launch_Kernel_MultiplyNtt_Device(IntPtr opA, IntPtr opB, IntPtr opResult, IntPtr nttBuf1A, IntPtr nttBuf2A, IntPtr nttBuf1B, IntPtr nttBuf2B, IntPtr nttTmpBuf, IntPtr uncarriedLow, IntPtr uncarriedHigh, IntPtr twiddleForward1, IntPtr twiddleForward2, IntPtr twiddleInverse1, IntPtr twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MultiplyNtt", Kernel_MultiplyNtt_CudaSource, null, macros);
 try
 {
-void** kernelParams = stackalloc void*[16];
+void** kernelParams = stackalloc void*[18];
 // Marshal device array: opA
 kernelParams[0] = &opA;
 // Marshal device array: opB
@@ -599,22 +663,26 @@ kernelParams[5] = &nttBuf1B;
 kernelParams[6] = &nttBuf2B;
 // Marshal device array: nttTmpBuf
 kernelParams[7] = &nttTmpBuf;
+// Marshal device array: uncarriedLow
+kernelParams[8] = &uncarriedLow;
+// Marshal device array: uncarriedHigh
+kernelParams[9] = &uncarriedHigh;
 // Marshal device array: twiddleForward1
-kernelParams[8] = &twiddleForward1;
+kernelParams[10] = &twiddleForward1;
 // Marshal device array: twiddleForward2
-kernelParams[9] = &twiddleForward2;
+kernelParams[11] = &twiddleForward2;
 // Marshal device array: twiddleInverse1
-kernelParams[10] = &twiddleInverse1;
+kernelParams[12] = &twiddleInverse1;
 // Marshal device array: twiddleInverse2
-kernelParams[11] = &twiddleInverse2;
+kernelParams[13] = &twiddleInverse2;
 // Marshal scalar: numWordsA
-kernelParams[12] = &numWordsA;
+kernelParams[14] = &numWordsA;
 // Marshal scalar: numWordsB
-kernelParams[13] = &numWordsB;
+kernelParams[15] = &numWordsB;
 // Marshal scalar: outNumWords
-kernelParams[14] = &outNumWords;
+kernelParams[16] = &outNumWords;
 // Marshal scalar: transformLength
-kernelParams[15] = &transformLength;
+kernelParams[17] = &transformLength;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -626,6 +694,7 @@ kernelParams
 }
 finally
 {
+}
 }
 }
 }
