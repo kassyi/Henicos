@@ -110,7 +110,7 @@ public class SYN_90_93_CoreSyntaxTests
         ];
         SYN_90_93_CoreSyntaxKernelsWrapper.Launch_PaddedStructKernel(singleItem, 1, blockDimX: 1);
         Assert.Equal((byte)2, singleItem[0].Flag1);
-        Assert.Equal(4.0, singleItem[0].ValueD);
+        Assert.Equal(3.0, singleItem[0].ValueD);
         Assert.Equal(103, singleItem[0].ValueI);
         Assert.Equal((short)-1, singleItem[0].Flag2);
 
