@@ -4,6 +4,12 @@ export DiffEngine_Disabled := "true"
 test *args="":
     dotnet test {{args}}
 
+test-stress *args="":
+    dotnet test --filter "Category=Stress" {{args}}
+
+alias stress := test-stress
+alias stress-test := test-stress
+
 
 run-bench:
     dotnet run --project src/Henicos -c Release -- bench
