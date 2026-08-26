@@ -84,6 +84,10 @@ c[0]=(a[0]+b[0]);
 ";
 public static unsafe void Launch_AddKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (a.Length == 0 || b.Length == 0 || c.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", AddKernel_CudaSource, null, macros);
 IntPtr d_a = IntPtr.Zero;

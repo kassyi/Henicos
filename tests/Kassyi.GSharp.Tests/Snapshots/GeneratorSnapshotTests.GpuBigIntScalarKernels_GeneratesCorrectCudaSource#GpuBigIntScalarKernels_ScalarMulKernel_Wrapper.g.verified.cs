@@ -167,6 +167,10 @@ Device_ScalarMul(dA,s,dResult,numWords);
 ";
 public static unsafe void Launch_ScalarMulKernel(uint[] dA, uint s, uint[] dResult, int numWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (dA.Length == 0 || dResult.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ScalarMulKernel", ScalarMulKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
