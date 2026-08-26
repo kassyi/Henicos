@@ -10,7 +10,7 @@ public static class GpuBigIntScalarKernels
         Device_ScalarAdd(dA, s, dResult, numWords);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ScalarAdd(uint[] left, uint s, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -32,7 +32,7 @@ public static class GpuBigIntScalarKernels
         Device_ScalarSub(dA, s, dResult, numWords);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ScalarSub(uint[] left, uint s, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -51,6 +51,7 @@ public static class GpuBigIntScalarKernels
                 {
                     borrow = 0;
                 }
+
                 result[j] = (uint)diff;
             }
         }
@@ -62,7 +63,7 @@ public static class GpuBigIntScalarKernels
         Device_ScalarMul(dA, s, dResult, numWords);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ScalarMul(uint[] left, uint s, uint[] result, int numWords)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -79,13 +80,15 @@ public static class GpuBigIntScalarKernels
     }
 
     [GpuKernel]
-    public static void ChunkScalarMulKernel(uint[] dA, uint s, uint[] dResult, long[] dCarry, int numWords, int chunkSize)
+    public static void ChunkScalarMulKernel(uint[] dA, uint s, uint[] dResult, long[] dCarry, int numWords,
+        int chunkSize)
     {
         Device_ChunkScalarMul(dA, s, dResult, dCarry, numWords, chunkSize);
     }
 
-    [GpuDevice]
-    public static void Device_ChunkScalarMul(uint[] left, uint s, uint[] result, long[] carryBuf, int numWords, int chunkSize)
+    [GpuDeviceFunction]
+    public static void Device_ChunkScalarMul(uint[] left, uint s, uint[] result, long[] carryBuf, int numWords,
+        int chunkSize)
     {
         var chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         var start = chunkIdx * chunkSize;

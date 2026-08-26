@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public static class GpuBigIntGcdKernels
 {
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static int GetBitLength_Device(uint[] data, int numWords)
     {
         for (int i = numWords - 1; i >= 0; i--)
