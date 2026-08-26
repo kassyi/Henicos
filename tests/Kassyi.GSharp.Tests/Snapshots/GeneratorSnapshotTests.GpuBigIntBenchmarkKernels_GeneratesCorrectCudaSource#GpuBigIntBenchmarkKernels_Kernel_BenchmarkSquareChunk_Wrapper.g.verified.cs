@@ -196,6 +196,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.ValueT.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.ValueT, size));
 allocatedPtrs.Add(native.ValueT);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -204,6 +206,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.ValueT, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Quotient != null)
@@ -215,6 +218,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Quotient.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Quotient, size));
 allocatedPtrs.Add(native.Quotient);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -223,6 +228,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Quotient, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Remainder != null)
@@ -234,6 +240,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Remainder.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Remainder, size));
 allocatedPtrs.Add(native.Remainder);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -242,6 +250,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Remainder, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.RemainderMask != null)
@@ -253,6 +262,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.RemainderMask.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.RemainderMask, size));
 allocatedPtrs.Add(native.RemainderMask);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -261,6 +272,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.RemainderMask, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.TemporaryBuffer != null)
@@ -272,6 +284,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.TemporaryBuffer, size));
 allocatedPtrs.Add(native.TemporaryBuffer);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -280,6 +294,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.TemporaryBuffer, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.CarryBuffer != null)
@@ -291,6 +306,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.CarryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.CarryBuffer, size));
 allocatedPtrs.Add(native.CarryBuffer);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -301,6 +318,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.CarryBuffer, han
 finally { handle.Free(); }
 }
 }
+}
 return native;
 }
 public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext.BuffersContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_BuffersContext native, bool isDevicePtr)
@@ -308,6 +326,8 @@ public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_FermatContext_Bu
 if (host.ValueT != null && !isDevicePtr && native.ValueT != IntPtr.Zero)
 {
 int size = host.ValueT.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.ValueT, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -315,9 +335,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Quotient != null && !isDevicePtr && native.Quotient != IntPtr.Zero)
 {
 int size = host.Quotient.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Quotient, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -325,9 +348,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Remainder != null && !isDevicePtr && native.Remainder != IntPtr.Zero)
 {
 int size = host.Remainder.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Remainder, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -335,9 +361,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.RemainderMask != null && !isDevicePtr && native.RemainderMask != IntPtr.Zero)
 {
 int size = host.RemainderMask.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.RemainderMask, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -345,9 +374,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.TemporaryBuffer != null && !isDevicePtr && native.TemporaryBuffer != IntPtr.Zero)
 {
 int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -355,15 +387,19 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.CarryBuffer != null && !isDevicePtr && native.CarryBuffer != IntPtr.Zero)
 {
 int size = host.CarryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CarryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.CarryBuffer, size));
 }
 finally { handle.Free(); }
+}
 }
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
@@ -431,6 +467,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Buffer1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Buffer1, size));
 allocatedPtrs.Add(native.Buffer1);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -439,6 +477,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Buffer1, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Buffer2 != null)
@@ -450,6 +489,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Buffer2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Buffer2, size));
 allocatedPtrs.Add(native.Buffer2);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -458,6 +499,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Buffer2, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Buffer3 != null)
@@ -469,6 +511,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Buffer3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Buffer3, size));
 allocatedPtrs.Add(native.Buffer3);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -477,6 +521,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Buffer3, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.TemporaryBuffer != null)
@@ -488,6 +533,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.TemporaryBuffer, size));
 allocatedPtrs.Add(native.TemporaryBuffer);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -498,6 +545,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.TemporaryBuffer,
 finally { handle.Free(); }
 }
 }
+}
 return native;
 }
 public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext.BuffersContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_BuffersContext native, bool isDevicePtr)
@@ -505,6 +553,8 @@ public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_Buffe
 if (host.Buffer1 != null && !isDevicePtr && native.Buffer1 != IntPtr.Zero)
 {
 int size = host.Buffer1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -512,9 +562,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Buffer2 != null && !isDevicePtr && native.Buffer2 != IntPtr.Zero)
 {
 int size = host.Buffer2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -522,9 +575,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Buffer3 != null && !isDevicePtr && native.Buffer3 != IntPtr.Zero)
 {
 int size = host.Buffer3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Buffer3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -532,15 +588,19 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.TemporaryBuffer != null && !isDevicePtr && native.TemporaryBuffer != IntPtr.Zero)
 {
 int size = host.TemporaryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.TemporaryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.TemporaryBuffer, size));
 }
 finally { handle.Free(); }
+}
 }
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
@@ -565,6 +625,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Forward1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Forward1, size));
 allocatedPtrs.Add(native.Forward1);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -573,6 +635,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Forward1, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Forward2 != null)
@@ -584,6 +647,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Forward2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Forward2, size));
 allocatedPtrs.Add(native.Forward2);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -592,6 +657,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Forward2, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Forward3 != null)
@@ -603,6 +669,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Forward3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Forward3, size));
 allocatedPtrs.Add(native.Forward3);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -611,6 +679,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Forward3, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Inverse1 != null)
@@ -622,6 +691,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Inverse1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Inverse1, size));
 allocatedPtrs.Add(native.Inverse1);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -630,6 +701,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Inverse1, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Inverse2 != null)
@@ -641,6 +713,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Inverse2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Inverse2, size));
 allocatedPtrs.Add(native.Inverse2);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -649,6 +723,7 @@ try
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Inverse2, handle.AddrOfPinnedObject(), size));
 }
 finally { handle.Free(); }
+}
 }
 }
 if (host.Inverse3 != null)
@@ -660,6 +735,8 @@ throw new System.NotSupportedException("Passing a struct with arrays is not supp
 else
 {
 int size = host.Inverse3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.Inverse3, size));
 allocatedPtrs.Add(native.Inverse3);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -670,6 +747,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.Inverse3, handle
 finally { handle.Free(); }
 }
 }
+}
 return native;
 }
 public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext(ref Kassyi.GSharp.Stdlib.Math.Contexts.NttContext.TwiddleFactorsContext host, ref __Native_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext native, bool isDevicePtr)
@@ -677,6 +755,8 @@ public static void Unmarshal_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_Twidd
 if (host.Forward1 != null && !isDevicePtr && native.Forward1 != IntPtr.Zero)
 {
 int size = host.Forward1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -684,9 +764,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Forward2 != null && !isDevicePtr && native.Forward2 != IntPtr.Zero)
 {
 int size = host.Forward2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -694,9 +777,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Forward3 != null && !isDevicePtr && native.Forward3 != IntPtr.Zero)
 {
 int size = host.Forward3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Forward3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -704,9 +790,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Inverse1 != null && !isDevicePtr && native.Inverse1 != IntPtr.Zero)
 {
 int size = host.Inverse1.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse1, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -714,9 +803,12 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Inverse2 != null && !isDevicePtr && native.Inverse2 != IntPtr.Zero)
 {
 int size = host.Inverse2.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse2, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -724,15 +816,19 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObje
 }
 finally { handle.Free(); }
 }
+}
 if (host.Inverse3 != null && !isDevicePtr && native.Inverse3 != IntPtr.Zero)
 {
 int size = host.Inverse3.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (size > 0)
+{
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.Inverse3, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.Inverse3, size));
 }
 finally { handle.Free(); }
+}
 }
 }
 public static unsafe void Launch_Kernel_BenchmarkSquareChunk(Kassyi.GSharp.Stdlib.Math.Contexts.FermatContext ctx, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)

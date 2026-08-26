@@ -491,6 +491,10 @@ Device_ChunkSub(&ctx,chunkSize);
 ";
 public static unsafe void Launch_ChunkSubKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkSubKernel", ChunkSubKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
@@ -502,8 +506,9 @@ try
 void** kernelParams = stackalloc void*[6];
 // Marshal array: dA
 int dA_size = dA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (dA_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dA, dA_size));
-
 System.Runtime.InteropServices.GCHandle handle_dA = System.Runtime.InteropServices.GCHandle.Alloc(dA, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -514,11 +519,13 @@ finally
 {
 handle_dA.Free();
 }
+}
 kernelParams[0] = &d_dA;
 // Marshal array: dB
 int dB_size = dB.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (dB_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dB, dB_size));
-
 System.Runtime.InteropServices.GCHandle handle_dB = System.Runtime.InteropServices.GCHandle.Alloc(dB, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -529,11 +536,13 @@ finally
 {
 handle_dB.Free();
 }
+}
 kernelParams[1] = &d_dB;
 // Marshal array: dResult
 int dResult_size = dResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (dResult_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));
-
 System.Runtime.InteropServices.GCHandle handle_dResult = System.Runtime.InteropServices.GCHandle.Alloc(dResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -544,11 +553,13 @@ finally
 {
 handle_dResult.Free();
 }
+}
 kernelParams[2] = &d_dResult;
 // Marshal array: carryBuffer
 int carryBuffer_size = carryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
+if (carryBuffer_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_carryBuffer, carryBuffer_size));
-
 System.Runtime.InteropServices.GCHandle handle_carryBuffer = System.Runtime.InteropServices.GCHandle.Alloc(carryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -558,6 +569,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_carryBuffer, p_carryB
 finally
 {
 handle_carryBuffer.Free();
+}
 }
 kernelParams[3] = &d_carryBuffer;
 // Marshal scalar: numWords
@@ -574,6 +586,8 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: dA
+if (dA_size > 0 && d_dA != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_dA = System.Runtime.InteropServices.GCHandle.Alloc(dA, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -584,7 +598,10 @@ finally
 {
 handleBack_dA.Free();
 }
+}
 // Copy back array: dB
+if (dB_size > 0 && d_dB != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_dB = System.Runtime.InteropServices.GCHandle.Alloc(dB, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -595,7 +612,10 @@ finally
 {
 handleBack_dB.Free();
 }
+}
 // Copy back array: dResult
+if (dResult_size > 0 && d_dResult != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_dResult = System.Runtime.InteropServices.GCHandle.Alloc(dResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -606,7 +626,10 @@ finally
 {
 handleBack_dResult.Free();
 }
+}
 // Copy back array: carryBuffer
+if (carryBuffer_size > 0 && d_carryBuffer != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_carryBuffer = System.Runtime.InteropServices.GCHandle.Alloc(carryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -616,6 +639,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_carryBuffer, d_carryB
 finally
 {
 handleBack_carryBuffer.Free();
+}
 }
 }
 finally
