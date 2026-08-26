@@ -17,7 +17,7 @@ public static class GpuBigIntKernels
         Device_ChunkAdd(ref ctx, chunkSize);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ChunkAdd(ref BigIntKernelContext ctx, int chunkSize)
     {
         var chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -54,7 +54,7 @@ public static class GpuBigIntKernels
         Device_ApplyAddCarry(ref ctx, numChunks, chunkSize);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ApplyAddCarry(ref BigIntKernelContext ctx, int numChunks, int chunkSize)
     {
         var cIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -82,7 +82,7 @@ public static class GpuBigIntKernels
         Device_ChunkSub(ref ctx, chunkSize);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ChunkSub(ref BigIntKernelContext ctx, int chunkSize)
     {
         var chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -119,7 +119,7 @@ public static class GpuBigIntKernels
         Device_ApplySubBorrow(ref ctx, numChunks, chunkSize);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ApplySubBorrow(ref BigIntKernelContext ctx, int numChunks, int chunkSize)
     {
         var cIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -146,7 +146,7 @@ public static class GpuBigIntKernels
         Device_ShiftLeft(ref ctx, wordShift, bitShift);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ShiftLeft(ref BigIntKernelContext ctx, int wordShift, int bitShift)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -189,7 +189,7 @@ public static class GpuBigIntKernels
         Device_ShiftRight(ref ctx, wordShift, bitShift);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ShiftRight(ref BigIntKernelContext ctx, int wordShift, int bitShift)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -234,7 +234,7 @@ public static class GpuBigIntKernels
         Device_BitwiseAnd(ref ctx);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseAnd(ref BigIntKernelContext ctx)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -255,7 +255,7 @@ public static class GpuBigIntKernels
         Device_BitwiseOr(ref ctx);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseOr(ref BigIntKernelContext ctx)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -276,7 +276,7 @@ public static class GpuBigIntKernels
         Device_BitwiseXor(ref ctx);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseXor(ref BigIntKernelContext ctx)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -297,7 +297,7 @@ public static class GpuBigIntKernels
         Device_BitwiseNot(ref ctx);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_BitwiseNot(ref BigIntKernelContext ctx)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;

@@ -14,7 +14,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `do...while` loop | Yes | `do...while` loop | Supported. |
 | `switch` statement | Yes | `switch` statement | Pattern matching is **not** supported (only basic value switches). |
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
-| `return` | Yes | `return` | Kernels (`[GpuKernel]`) must return `void`. Helpers (`[GpuDevice]`) can return values. |
+| `return` | Yes | `return` | Kernels (`[GpuKernel]`) must return `void`. Helpers (`[GpuDeviceFunction]`) can return values. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
 | `goto` | No | - | Strictly prohibited to ensure static analyzability and structured control flow. |
 | `try` / `catch` / `finally` | No | - | GPU execution does not support C++ exception handling for performance reasons. |

@@ -22,7 +22,7 @@ public static class GpuBigIntNttKernels
     // M2 = floor(2^64 / 4293918721) = 4296016127
     public const ulong BarrettMagic2 = 4296016127UL; // for P2
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static uint ModAdd(uint operandA, uint operandB, uint primeModulus)
     {
         if (operandA >= primeModulus - operandB)
@@ -32,7 +32,7 @@ public static class GpuBigIntNttKernels
         return operandA + operandB;
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static uint ModSub(uint operandA, uint operandB, uint primeModulus)
     {
         var result = operandA - operandB;
@@ -46,7 +46,7 @@ public static class GpuBigIntNttKernels
 
     [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalse",
         Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
-    [GpuDevice]
+    [GpuDeviceFunction]
     [SuppressMessage("ReSharper", "UselessBinaryOperation",
         Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
     public static uint ModMulBarrett(uint operandA, uint operandB, uint primeModulus, ulong barrettMagic)
@@ -70,15 +70,15 @@ public static class GpuBigIntNttKernels
     // ReSharper restore ConditionIsAlwaysTrueOrFalse
     // ReSharper restore UselessBinaryOperation
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static uint ModMul1(uint operandA, uint operandB) =>
         ModMulBarrett(operandA, operandB, Prime1, BarrettMagic1);
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static uint ModMul2(uint operandA, uint operandB) =>
         ModMulBarrett(operandA, operandB, Prime2, BarrettMagic2);
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static uint ModPow(uint baseValue, uint exponent, uint primeModulus, ulong barrettMagic)
     {
         uint result = 1;
@@ -97,7 +97,7 @@ public static class GpuBigIntNttKernels
         return result;
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
     {
         var carry = valueToAdd;
@@ -117,7 +117,7 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void AtomicSubWithBorrow(uint[] address, int wordIndex, uint valueToSubtract, int maxWordCount)
     {
         var borrow = valueToSubtract;
@@ -137,7 +137,7 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_NTT_Shared_Row(ref NumberTheoreticTransformKernelArgs args)
     {
         var deviceData = args.Buffer;
@@ -259,7 +259,7 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_NTT_PointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
     {
         var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -270,7 +270,7 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_NTT_PointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B,
         uint[] deviceData2B, int transformLength)
     {
@@ -282,7 +282,7 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_CRT_ParallelAtomic([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2,
         uint[] outputBuffer,
         int transformLength, int maxWordCount)
@@ -359,7 +359,7 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_NTT_Internal(ref NumberTheoreticTransformKernelArgs args)
     {
         var buffer = args.Buffer;
@@ -430,14 +430,14 @@ public static class GpuBigIntNttKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ForwardNTT(ref NumberTheoreticTransformKernelArgs args)
     {
         args.IsInverse = false;
         Device_NTT_Internal(ref args);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_InverseNTT(ref NumberTheoreticTransformKernelArgs args)
     {
         args.IsInverse = true;
@@ -450,7 +450,7 @@ public static class GpuBigIntNttKernels
     public static void DummyTranspilationKernel(uint[] data)
     {
         // This kernel exists solely to ensure that the G# source generator transpiles 
-        // the [GpuDevice] methods in this file for snapshot testing.
+        // the [GpuDeviceFunction] methods in this file for snapshot testing.
         NumberTheoreticTransformKernelArgs args = default;
         args.Buffer = data;
         Device_ForwardNTT(ref args);
