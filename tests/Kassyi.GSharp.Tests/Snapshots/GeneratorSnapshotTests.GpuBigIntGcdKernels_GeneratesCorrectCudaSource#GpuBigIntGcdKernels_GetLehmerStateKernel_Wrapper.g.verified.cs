@@ -183,7 +183,7 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
 int a_size = a.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (a_size > 0)
+if(a_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
 System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -200,7 +200,7 @@ handle_a.Free();
 kernelParams[0] = &d_a;
 // Marshal array: b
 int b_size = b.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (b_size > 0)
+if(b_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
 System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -219,7 +219,7 @@ kernelParams[1] = &d_b;
 kernelParams[2] = &numWords;
 // Marshal array: resultHost
 int resultHost_size = resultHost.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (resultHost_size > 0)
+if(resultHost_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_resultHost, resultHost_size));
 System.Runtime.InteropServices.GCHandle handle_resultHost = System.Runtime.InteropServices.GCHandle.Alloc(resultHost, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -244,7 +244,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: a
-if (a_size > 0 && d_a != IntPtr.Zero)
+if(a_size>0&&d_a!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -258,7 +258,7 @@ handleBack_a.Free();
 }
 }
 // Copy back array: b
-if (b_size > 0 && d_b != IntPtr.Zero)
+if(b_size>0&&d_b!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -272,7 +272,7 @@ handleBack_b.Free();
 }
 }
 // Copy back array: resultHost
-if (resultHost_size > 0 && d_resultHost != IntPtr.Zero)
+if(resultHost_size>0&&d_resultHost!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_resultHost = System.Runtime.InteropServices.GCHandle.Alloc(resultHost, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
