@@ -23,7 +23,7 @@ public partial class RoslynToCudaVisitor
     {
         if (LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
         {
-            Writer.Append(overrideValue);
+            overrideValue.WriteTo(this);
             return;
         }
 

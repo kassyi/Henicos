@@ -68,16 +68,17 @@ internal static class MacroTranspiler
 
         for (var i = start; i < start + count; i++)
         {
-            context.LocalVariableOverrides[paramName] = i.ToString();
+            context.LocalVariableOverrides[paramName] = new RoslynToCudaVisitor.OverrideValue(i.ToString());
             EmitUnrolledBody(context, lambdaExpr.Body);
         }
-        
+
         context.LocalVariableOverrides.Remove(paramName);
 
         return true;
     }
 
-    private static bool TranspileGridStrideLoop(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context, IMethodSymbol symbol)
+    private static bool TranspileGridStrideLoop(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context,
+        IMethodSymbol symbol)
     {
         var hasContext = symbol.Parameters.Length == 3;
         var offset = hasContext ? 1 : 0;
@@ -98,6 +99,14 @@ internal static class MacroTranspiler
             return false;
         }
 
+        string contextParamName = null;
+        if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
+        {
+            contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
+            var contextArgExpr = args[0].Expression;
+            context.LocalVariableOverrides[contextParamName] = new RoslynToCudaVisitor.OverrideValue(contextArgExpr);
+        }
+
         context.Writer.Append("for");
         using (context.Writer.Parentheses())
         {
@@ -116,6 +125,11 @@ internal static class MacroTranspiler
 
         context.Writer.AppendLine();
         EmitUnrolledBody(context, lambdaExpr.Body);
+
+        if (hasContext && contextParamName != null)
+        {
+            context.LocalVariableOverrides.Remove(contextParamName);
+        }
 
         return true;
     }
@@ -305,6 +319,4 @@ internal static class MacroTranspiler
         context.Writer.AppendSemiColon();
         context.Writer.AppendLine();
     }
-
-
 }

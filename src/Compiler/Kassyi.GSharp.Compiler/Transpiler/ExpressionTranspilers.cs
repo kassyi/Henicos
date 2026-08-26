@@ -103,10 +103,18 @@ internal static class ExpressionTranspilers
     public static void TranspileMemberAccessExpression(MemberAccessExpressionSyntax node, RoslynToCudaVisitor context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
-        if (symbol is { ContainingType: not null })
+        
+        var exprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (node.Expression is IdentifierNameSyntax idName &&
+            context.LocalVariableOverrides.TryGetValue(idName.Identifier.Text, out var overrideValue) &&
+            overrideValue.NodeValue != null)
         {
-            var typeName = symbol.ContainingType.Name;
-            if (CudaIntrinsicsMapper.TryMap(typeName, node.Name.Identifier.Text, out var mappedName))
+            exprSymbol = context.SemanticModel.GetSymbolInfo(overrideValue.NodeValue).Symbol;
+        }
+
+        if (symbol != null)
+        {
+            if (CudaIntrinsicsMapper.TryMap(symbol, out var mappedName))
             {
                 context.Writer.Append(mappedName);
                 return;
@@ -135,8 +143,8 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        var exprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-        if (exprSymbol is ITypeSymbol typeSym)
+        var memberExprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (memberExprSymbol is ITypeSymbol typeSym)
         {
             if (typeSym.TypeKind == TypeKind.Enum)
             {
