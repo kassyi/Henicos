@@ -93,7 +93,7 @@ if((i==0))
 unsigned long long carry=s;
 for(int j=0;(j<numWords);j++)
 {
-unsigned long long sum=((unsigned long long)left[j]+carry);
+auto sum=((unsigned long long)left[j]+carry);
 result[j]=(unsigned int)sum;
 carry=(sum>>32);
 }
@@ -107,7 +107,7 @@ if((i==0))
 long long borrow=s;
 for(int j=0;(j<numWords);j++)
 {
-long long diff=((long long)left[j]-borrow);
+auto diff=((long long)left[j]-borrow);
 if((diff<0))
 {
 diff+=0x100000000L;
@@ -129,7 +129,7 @@ if((i==0))
 unsigned long long carry=0;
 for(int j=0;(j<numWords);j++)
 {
-unsigned long long prod=(((unsigned long long)left[j]*s)+carry);
+auto prod=(((unsigned long long)left[j]*s)+carry);
 result[j]=(unsigned int)((prod&0xFFFFFFFFul));
 carry=(prod>>32);
 }
@@ -151,7 +151,7 @@ end=numWords;
 unsigned long long carry=0;
 for(int i=start;(i<end);i++)
 {
-unsigned long long prod=(((unsigned long long)left[i]*s)+carry);
+auto prod=(((unsigned long long)left[i]*s)+carry);
 result[i]=(unsigned int)((prod&0xFFFFFFFFul));
 carry=(prod>>32);
 }
@@ -171,7 +171,8 @@ if (dA.Length == 0 || dResult.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ScalarSubKernel", ScalarSubKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -260,9 +261,11 @@ if (d_dA != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dA);
 if (d_dResult != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dResult);
 }
 }
+}
 public static unsafe void Launch_ScalarSubKernel_Device(IntPtr dA, uint s, IntPtr dResult, int numWords, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ScalarSubKernel", ScalarSubKernel_CudaSource, null, macros);
 try
 {
@@ -287,6 +290,7 @@ IntPtr.Zero // Extra
 }
 finally
 {
+}
 }
 }
 }

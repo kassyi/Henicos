@@ -338,7 +338,8 @@ if (particles.Length == 0)
 {
 return;
 }
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
@@ -407,27 +408,16 @@ finally
 handleBack_particles.Free();
 }
 }
-// Unmarshal ref/out scalar: totalMagnitude
-IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(totalMagnitude_size);
-try
+// Fast zero-allocation copy from device for scalar: totalMagnitude
+fixed (float* ptr_totalMagnitude = &totalMagnitude)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_totalMagnitude_temp, d_totalMagnitude, totalMagnitude_size));
-totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float))!;
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_totalMagnitude, d_totalMagnitude, totalMagnitude_size));
 }
-finally
+successFlag = default;
+// Fast zero-allocation copy from device for scalar: successFlag
+fixed (bool* ptr_successFlag = &successFlag)
 {
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_totalMagnitude_temp);
-}
-// Unmarshal ref/out scalar: successFlag
-IntPtr p_successFlag_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(successFlag_size);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_successFlag_temp, d_successFlag, successFlag_size));
-successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool))!;
-}
-finally
-{
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_successFlag_temp);
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_successFlag, d_successFlag, successFlag_size));
 }
 Unmarshal_DebugReduc_SpecTypes(ref largeStructVal, ref native_largeStructVal, false);
 }
@@ -439,9 +429,11 @@ if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_successFlag);
 foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 }
 }
+}
 public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+{
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
@@ -478,27 +470,16 @@ IntPtr.Zero, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-// Unmarshal ref/out scalar: totalMagnitude
-IntPtr p_totalMagnitude_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(totalMagnitude_size);
-try
+// Fast zero-allocation copy from device for scalar: totalMagnitude
+fixed (float* ptr_totalMagnitude = &totalMagnitude)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_totalMagnitude_temp, d_totalMagnitude, totalMagnitude_size));
-totalMagnitude = (float)System.Runtime.InteropServices.Marshal.PtrToStructure(p_totalMagnitude_temp, typeof(float))!;
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_totalMagnitude, d_totalMagnitude, totalMagnitude_size));
 }
-finally
+successFlag = default;
+// Fast zero-allocation copy from device for scalar: successFlag
+fixed (bool* ptr_successFlag = &successFlag)
 {
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_totalMagnitude_temp);
-}
-// Unmarshal ref/out scalar: successFlag
-IntPtr p_successFlag_temp = System.Runtime.InteropServices.Marshal.AllocHGlobal(successFlag_size);
-try
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_successFlag_temp, d_successFlag, successFlag_size));
-successFlag = (bool)System.Runtime.InteropServices.Marshal.PtrToStructure(p_successFlag_temp, typeof(bool))!;
-}
-finally
-{
-System.Runtime.InteropServices.Marshal.FreeHGlobal(p_successFlag_temp);
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_successFlag, d_successFlag, successFlag_size));
 }
 Unmarshal_DebugReduc_SpecTypes(ref largeStructVal, ref native_largeStructVal, true);
 }
@@ -507,6 +488,7 @@ finally
 if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_totalMagnitude);
 if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_successFlag);
 foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
+}
 }
 }
 }
