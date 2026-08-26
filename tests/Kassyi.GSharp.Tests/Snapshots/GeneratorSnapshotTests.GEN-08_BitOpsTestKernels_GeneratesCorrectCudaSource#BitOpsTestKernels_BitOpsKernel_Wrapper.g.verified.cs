@@ -97,6 +97,10 @@ u64Data[6]=__gsharp_rotr64(u64Val,7);
 ";
 public static unsafe void Launch_BitOpsKernel(uint[] u32Data, ulong[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (u32Data.Length == 0 || u64Data.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", BitOpsKernel_CudaSource, null, macros);
 IntPtr d_u32Data = IntPtr.Zero;
@@ -106,8 +110,9 @@ try
 void** kernelParams = stackalloc void*[2];
 // Marshal array: u32Data
 int u32Data_size = u32Data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+if (u32Data_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_u32Data, u32Data_size));
-
 System.Runtime.InteropServices.GCHandle handle_u32Data = System.Runtime.InteropServices.GCHandle.Alloc(u32Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -118,11 +123,13 @@ finally
 {
 handle_u32Data.Free();
 }
+}
 kernelParams[0] = &d_u32Data;
 // Marshal array: u64Data
 int u64Data_size = u64Data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(ulong));
+if (u64Data_size > 0)
+{
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_u64Data, u64Data_size));
-
 System.Runtime.InteropServices.GCHandle handle_u64Data = System.Runtime.InteropServices.GCHandle.Alloc(u64Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -132,6 +139,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_u64Data, p_u64Data, u
 finally
 {
 handle_u64Data.Free();
+}
 }
 kernelParams[1] = &d_u64Data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -144,6 +152,8 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: u32Data
+if (u32Data_size > 0 && d_u32Data != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_u32Data = System.Runtime.InteropServices.GCHandle.Alloc(u32Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -154,7 +164,10 @@ finally
 {
 handleBack_u32Data.Free();
 }
+}
 // Copy back array: u64Data
+if (u64Data_size > 0 && d_u64Data != IntPtr.Zero)
+{
 System.Runtime.InteropServices.GCHandle handleBack_u64Data = System.Runtime.InteropServices.GCHandle.Alloc(u64Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
@@ -164,6 +177,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_u64Data, d_u64Data, u
 finally
 {
 handleBack_u64Data.Free();
+}
 }
 }
 finally
