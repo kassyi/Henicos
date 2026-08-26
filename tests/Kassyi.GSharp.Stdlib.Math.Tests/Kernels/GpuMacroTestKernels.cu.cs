@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
 
 public static class GpuMacroTestKernels
 {
-    [GpuKernel]
+    [GpuKernel(Cooperative = true)]
     public static void Kernel_MacroTest_FillAndSingle(uint[] outputBuffer, int length, uint fillValue, uint singleValue)
     {
         // GridStrideLoop to fill the array with fillValue
@@ -13,8 +13,8 @@ public static class GpuMacroTestKernels
             outputBuffer[i] = fillValue;
         });
 
-        // Ensure all threads within block have finished writing
-        Gpu.SyncThreads();
+        // Ensure all threads have finished writing
+        Gpu.SyncGrid();
 
         // SingleThread to overwrite the first element
         Gpu.SingleThread(() =>
