@@ -810,6 +810,37 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [Fact]
+        public void Test_NttCarryResolver_ZeroLengthBuffers_ReturnsEarly()
+        {
+            var low = Array.Empty<uint>();
+            var high = Array.Empty<uint>();
+            var output = Array.Empty<uint>();
+
+            // Assert no exceptions thrown for 0 length buffers due to guard clause
+            var exception = Record.Exception(() =>
+            {
+                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread(low, high, output, 0, 0);
+            });
+            Assert.Null(exception);
+        }
+
+        [Fact]
+        public void Test_NttCarryResolver_SingleWord_ValidatesCarryCalculation()
+        {
+            var low = new uint[] { 0x12345678, 0x9ABCDEF0 };
+            var high = new uint[] { 0, 0 };
+            var output = new uint[1];
+
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread(low, high, output, 2, 1);
+
+            // Calculation logic:
+            // sum0 = 0x12345678 -> low16 = 0x5678, carry = 0x1234
+            // sum1 = 0x1234 + 0x9ABCDEF0 = 0x9ABCF124 -> high16 = 0xF124, carry = 0x9ABC
+            // output[0] = low16 | (high16 << 16) = 0x5678 | (0xF124 << 16) = 0xF1245678
+            Assert.Equal(0xF1245678, output[0]);
+        }
+
+        [Fact]
         [Trait("Category", "Stress")]
         public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
         {
