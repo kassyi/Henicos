@@ -111,6 +111,11 @@ public static class GpuBigIntGcdKernels
     [GpuKernel]
     public static void Kernel_Gcd(uint[] a, uint[] b, uint[] result, int numWords)
     {
+        if (numWords <= 0)
+        {
+            return;
+        }
+
         if (ThreadIndex.X == 0 && BlockIndex.X == 0)
         {
             if (IsZero_Device(a, numWords))
