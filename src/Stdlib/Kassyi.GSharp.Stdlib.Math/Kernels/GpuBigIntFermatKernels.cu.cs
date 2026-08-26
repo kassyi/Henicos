@@ -12,8 +12,7 @@ public static class GpuBigIntFermatKernels
     [GpuDeviceFunction]
     public static void Device_Unpack16([GpuConst] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
     {
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (int i = tid; i < n; i += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(n, i =>
         {
             uint val = 0;
             var wordIdx = i / 2;
@@ -32,7 +31,7 @@ public static class GpuBigIntFermatKernels
 
             dDst1[i] = val;
             dDst2[i] = val;
-        }
+        });
     }
 
     [GpuDeviceFunction]
@@ -61,30 +60,30 @@ public static class GpuBigIntFermatKernels
         var xIndex = bx * 32 + tx;
         var yIndex = by * 32 + ty;
 
-        for (int i = 0; i < 32; i += 8)
+        Gpu.ForUnroll(0, 4, iter =>
         {
+            var i = iter * 8;
             if (xIndex < width && yIndex + i < height)
             {
                 Gpu.InlinePtx($"s_mem[({ty} + {i}) * 33 + {tx}] = {idata[(yIndex + i) * width + xIndex]};");
             }
-        }
+        });
 
         Gpu.SyncThreads();
 
         xIndex = by * 32 + tx;
         yIndex = bx * 32 + ty;
 
-        for (int i = 0; i < 32; i += 8)
+        Gpu.ForUnroll(0, 4, iter =>
         {
-            if (xIndex >= height || yIndex + i >= width)
+            var i = iter * 8;
+            if (xIndex < height && yIndex + i < width)
             {
-                continue;
+                uint val = 0;
+                Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
+                odata[(yIndex + i) * height + xIndex] = val;
             }
-
-            uint val = 0;
-            Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
-            odata[(yIndex + i) * height + xIndex] = val;
-        }
+        });
     }
 
 
@@ -145,11 +144,10 @@ public static class GpuBigIntFermatKernels
         Gpu.SyncGrid();
 
         var actualOutNumWords = ctx.Dimensions.NumberOfWords * 2 + 16;
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (int i = tid; i < actualOutNumWords; i += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(ref ctx, actualOutNumWords, (ref FermatContext c, int i) =>
         {
-            ctx.Buffers.ValueT[i] = 0;
-        }
+            c.Buffers.ValueT[i] = 0;
+        });
 
         Gpu.SyncGrid();
 
@@ -282,11 +280,10 @@ public static class GpuBigIntFermatKernels
         var dSrc = ctx.Operands.LeftOperand;
         var dDst = ctx.Operands.ResultBuffer;
         var numWords = ctx.NumberOfWords;
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (int tid = i; tid < numWords; tid += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(numWords, tid =>
         {
             dDst[tid] = dSrc[tid];
-        }
+        });
 
         Gpu.SyncGrid();
     }

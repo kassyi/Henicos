@@ -74,7 +74,7 @@ public static class Gpu
     /// Injects raw PTX or CUDA C++ code directly into the generated output.
     /// Use string interpolation ($"") to reference C# variables safely.
     /// </summary>
-    public static void InlinePtx(string ptx) => GpuOnlyException.Throw();
+    public static void InlinePtx(string ptx, params object[] args) => GpuOnlyException.Throw();
 
     /// <summary>
     /// A macro marker for fully unrolling a loop at Transpile-time.
@@ -93,6 +93,13 @@ public static class Gpu
     /// A macro marker for generating a standard Grid-Stride Loop over a number of threads.
     /// </summary>
     public static void GridStrideLoop(int maxBounds, Action<int> body) => GpuOnlyException.Throw();
+
+    public delegate void GridStrideAction<TContext>(ref TContext ctx, int index);
+
+    /// <summary>
+    /// A macro marker for generating a standard Grid-Stride Loop over a number of threads, with context passing.
+    /// </summary>
+    public static void GridStrideLoop<TContext>(ref TContext ctx, int maxBounds, GridStrideAction<TContext> body) => GpuOnlyException.Throw();
 
     /// <summary>
     /// A macro marker for executing a block of code on a single thread (ThreadIndex.X == 0 && BlockIndex.X == 0).
