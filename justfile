@@ -1,4 +1,9 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+export DiffEngine_Disabled := "true"
+
+test *args="":
+    dotnet test {{args}}
+
 
 run-bench:
     dotnet run --project src/Henicos -c Release -- bench
