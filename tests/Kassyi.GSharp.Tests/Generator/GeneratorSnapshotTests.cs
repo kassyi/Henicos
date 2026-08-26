@@ -1,4 +1,5 @@
 #nullable enable
+// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -237,6 +238,7 @@ public class GeneratorSnapshotTests
     [InlineData("GEN-08_BitOpsTestKernels.cu.cs")]
     [InlineData("GEN-08_ChunkAddKernel.cu.cs")]
     [InlineData("GEN-06_ComprehensiveSpecKernel.cu.cs")]
+    [InlineData("GEN-13_MacroExpansion.cu.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]
@@ -265,16 +267,6 @@ public class GeneratorSnapshotTests
         var testName = Path.GetFileNameWithoutExtension(fileName).Replace(".cu", "");
 
         await VerifyGeneratorAsync(source, testName, sourceDir);
-    }
-
-    [Fact]
-    [Trait("FeatureId", "GEN-13")]
-    public async Task Test_GEN13_MacroExpansionGeneratedSource()
-    {
-        var testCasesDir = GetTestCasesDirectory();
-        var sourcePath = Path.Combine(testCasesDir, "GEN-13_MacroExpansion.cu.cs");
-        var source = await File.ReadAllTextAsync(sourcePath);
-        await VerifyGeneratorAsync(source, "GEN-13_MacroExpansion", testCasesDir);
     }
 
     [Fact]

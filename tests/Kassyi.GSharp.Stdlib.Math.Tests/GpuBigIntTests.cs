@@ -1,3 +1,4 @@
+// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -82,7 +83,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [Fact]
-        [Trait("RoadmapId", "GBI-03")]
+        [Trait("FeatureId", "GBI-03")]
         [Trait("Category", "Performance")]
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
