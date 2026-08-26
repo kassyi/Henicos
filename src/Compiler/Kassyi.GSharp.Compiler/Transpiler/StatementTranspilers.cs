@@ -2,45 +2,45 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal static class StatementTranspilers
 {
-    public static void TranspileIfStatement(IfStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("if");
         using (context.Writer.Parentheses())
         {
-            context.Visit(node.Condition);
+            context.Visitor.Visit(node.Condition);
         }
 
         context.Writer.AppendLine();
 
-        context.VisitStatementOrBlock(node.Statement);
+        context.Visitor.VisitStatementOrBlock(node.Statement);
 
         if (node.Else != null)
         {
             context.Writer.AppendKeyword("else");
             context.Writer.AppendLine();
-            context.VisitStatementOrBlock(node.Else.Statement);
+            context.Visitor.VisitStatementOrBlock(node.Else.Statement);
         }
     }
 
-    public static void TranspileForStatement(ForStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileForStatement(ForStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("for");
         using (context.Writer.Parentheses())
         {
-            TranspileForInitializers(node, context);
+            TranspileForInitializers(node, ref context);
             context.Writer.AppendSemiColon();
 
-            TranspileForCondition(node, context);
+            TranspileForCondition(node, ref context);
             context.Writer.AppendSemiColon();
 
-            TranspileForIncrementors(node, context);
+            TranspileForIncrementors(node, ref context);
         }
 
         context.Writer.AppendLine();
-        context.VisitStatementOrBlock(node.Statement);
+        context.Visitor.VisitStatementOrBlock(node.Statement);
     }
 
-    private static void TranspileForInitializers(ForStatementSyntax node, RoslynToCudaVisitor context)
+    private static void TranspileForInitializers(ForStatementSyntax node, ref TranspileContext context)
     {
         if (node.Declaration != null)
         {
@@ -55,7 +55,7 @@ internal static class StatementTranspilers
                 if (v.Initializer != null)
                 {
                     context.Writer.AppendOperator("=");
-                    context.Visit(v.Initializer.Value);
+                    context.Visitor.Visit(v.Initializer.Value);
                 }
 
                 if (i < node.Declaration.Variables.Count - 1)
@@ -68,7 +68,7 @@ internal static class StatementTranspilers
         {
             for (var i = 0; i < node.Initializers.Count; i++)
             {
-                context.Visit(node.Initializers[i]);
+                context.Visitor.Visit(node.Initializers[i]);
                 if (i < node.Initializers.Count - 1)
                 {
                     context.Writer.AppendComma();
@@ -77,19 +77,19 @@ internal static class StatementTranspilers
         }
     }
 
-    private static void TranspileForCondition(ForStatementSyntax node, RoslynToCudaVisitor context)
+    private static void TranspileForCondition(ForStatementSyntax node, ref TranspileContext context)
     {
         if (node.Condition != null)
         {
-            context.Visit(node.Condition);
+            context.Visitor.Visit(node.Condition);
         }
     }
 
-    private static void TranspileForIncrementors(ForStatementSyntax node, RoslynToCudaVisitor context)
+    private static void TranspileForIncrementors(ForStatementSyntax node, ref TranspileContext context)
     {
         for (var i = 0; i < node.Incrementors.Count; i++)
         {
-            context.Visit(node.Incrementors[i]);
+            context.Visitor.Visit(node.Incrementors[i]);
             if (i < node.Incrementors.Count - 1)
             {
                 context.Writer.AppendComma();
@@ -97,39 +97,39 @@ internal static class StatementTranspilers
         }
     }
 
-    public static void TranspileWhileStatement(WhileStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileWhileStatement(WhileStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("while");
         using (context.Writer.Parentheses())
         {
-            context.Visit(node.Condition);
+            context.Visitor.Visit(node.Condition);
         }
 
         context.Writer.AppendLine();
-        context.VisitStatementOrBlock(node.Statement);
+        context.Visitor.VisitStatementOrBlock(node.Statement);
     }
 
-    public static void TranspileDoStatement(DoStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileDoStatement(DoStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("do");
         context.Writer.AppendLine();
-        context.VisitStatementOrBlock(node.Statement);
+        context.Visitor.VisitStatementOrBlock(node.Statement);
         context.Writer.AppendKeyword("while");
         using (context.Writer.Parentheses())
         {
-            context.Visit(node.Condition);
+            context.Visitor.Visit(node.Condition);
         }
 
         context.Writer.Append(";");
         context.Writer.AppendLine();
     }
 
-    public static void TranspileSwitchStatement(SwitchStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("switch");
         using (context.Writer.Parentheses())
         {
-            context.Visit(node.Expression);
+            context.Visitor.Visit(node.Expression);
         }
 
         context.Writer.AppendLine();
@@ -137,47 +137,49 @@ internal static class StatementTranspilers
         {
             foreach (var section in node.Sections)
             {
-                context.Visit(section);
+                context.Visitor.Visit(section);
             }
         }
     }
 
-    public static void TranspileSwitchSection(SwitchSectionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileSwitchSection(SwitchSectionSyntax node, ref TranspileContext context)
     {
         foreach (var label in node.Labels)
         {
-            context.Visit(label);
+            context.Visitor.Visit(label);
             context.Writer.AppendLine();
         }
 
         foreach (var stmt in node.Statements)
         {
-            context.Visit(stmt);
+            context.Visitor.Visit(stmt);
             context.Writer.AppendLine();
         }
     }
 
-    public static void TranspileBreakStatement(BreakStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("break");
         context.Writer.AppendSemiColon();
     }
 
-    public static void TranspileContinueStatement(ContinueStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("continue");
         context.Writer.AppendSemiColon();
     }
 
-    public static void TranspileReturnStatement(ReturnStatementSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("return");
         if (node.Expression != null)
         {
             context.Writer.AppendSpace();
-            context.Visit(node.Expression);
+            context.Visitor.Visit(node.Expression);
         }
 
         context.Writer.AppendSemiColon();
     }
 }
+
+

@@ -4,17 +4,17 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by Roslyn compiler infra")]
 internal static class MacroTranspiler
 {
-    public static bool TryTranspileMacro(ExpressionStatementSyntax node, RoslynToCudaVisitor context)
+    public static bool TryTranspileMacro(ExpressionStatementSyntax node, ref TranspileContext context)
     {
         return node.Expression switch
         {
-            InvocationExpressionSyntax invocation => TryTranspileInvocation(invocation, context),
-            AssignmentExpressionSyntax assignment => TryTranspileAssignment(assignment, context),
+            InvocationExpressionSyntax invocation => TryTranspileInvocation(invocation, ref context),
+            AssignmentExpressionSyntax assignment => TryTranspileAssignment(assignment, ref context),
             _ => false
         };
     }
 
-    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context)
+    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
             symbol.ContainingType.Name != "Gpu" ||
@@ -25,14 +25,14 @@ internal static class MacroTranspiler
 
         return symbol.Name switch
         {
-            "ForUnroll" => TranspileForUnroll(invocation, context, symbol),
-            "GridStrideLoop" => TranspileGridStrideLoop(invocation, context, symbol),
-            "SingleThread" => TranspileSingleThread(invocation, context),
+            "ForUnroll" => TranspileForUnroll(invocation, ref context, symbol),
+            "GridStrideLoop" => TranspileGridStrideLoop(invocation, ref context, symbol),
+            "SingleThread" => TranspileSingleThread(invocation, ref context),
             _ => false
         };
     }
 
-    private static bool TranspileForUnroll(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context,
+    private static bool TranspileForUnroll(InvocationExpressionSyntax invocation, ref TranspileContext context,
         IMethodSymbol symbol)
     {
         var hasContext = symbol.Parameters.Length == 4;
@@ -69,7 +69,7 @@ internal static class MacroTranspiler
         for (var i = start; i < start + count; i++)
         {
             context.LocalVariableOverrides[paramName] = new RoslynToCudaVisitor.OverrideValue(i.ToString());
-            EmitUnrolledBody(context, lambdaExpr.Body);
+            EmitUnrolledBody(ref context, lambdaExpr.Body);
         }
 
         context.LocalVariableOverrides.Remove(paramName);
@@ -77,7 +77,7 @@ internal static class MacroTranspiler
         return true;
     }
 
-    private static bool TranspileGridStrideLoop(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context,
+    private static bool TranspileGridStrideLoop(InvocationExpressionSyntax invocation, ref TranspileContext context,
         IMethodSymbol symbol)
     {
         var hasContext = symbol.Parameters.Length == 3;
@@ -115,7 +115,7 @@ internal static class MacroTranspiler
             context.Writer.AppendSpace();
             context.Writer.Append(paramName);
             context.Writer.AppendOperator("<");
-            context.Visit(args[offset].Expression);
+            context.Visitor.Visit(args[offset].Expression);
             context.Writer.AppendSemiColon();
             context.Writer.AppendSpace();
             context.Writer.Append(paramName);
@@ -124,7 +124,7 @@ internal static class MacroTranspiler
         }
 
         context.Writer.AppendLine();
-        EmitUnrolledBody(context, lambdaExpr.Body);
+        EmitUnrolledBody(ref context, lambdaExpr.Body);
 
         if (hasContext && contextParamName != null)
         {
@@ -134,7 +134,7 @@ internal static class MacroTranspiler
         return true;
     }
 
-    private static bool TranspileSingleThread(InvocationExpressionSyntax invocation, RoslynToCudaVisitor context)
+    private static bool TranspileSingleThread(InvocationExpressionSyntax invocation, ref TranspileContext context)
     {
         var args = invocation.ArgumentList.Arguments;
         if (args.Count != 1 || args[0].Expression is not LambdaExpressionSyntax lambdaExpr)
@@ -149,12 +149,12 @@ internal static class MacroTranspiler
         }
 
         context.Writer.AppendLine();
-        EmitUnrolledBody(context, lambdaExpr.Body);
+        EmitUnrolledBody(ref context, lambdaExpr.Body);
 
         return true;
     }
 
-    private static void EmitUnrolledBody(RoslynToCudaVisitor context, SyntaxNode rewrittenBody)
+    private static void EmitUnrolledBody(ref TranspileContext context, SyntaxNode rewrittenBody)
     {
         using (context.Writer.Scope())
         {
@@ -163,14 +163,14 @@ internal static class MacroTranspiler
                 case BlockSyntax block:
                     foreach (var stmt in block.Statements)
                     {
-                        context.Visit(stmt);
+                        context.Visitor.Visit(stmt);
                         context.Writer.AppendLine();
                     }
 
                     break;
 
                 case ExpressionSyntax expr:
-                    context.Visit(expr);
+                    context.Visitor.Visit(expr);
                     context.Writer.AppendSemiColon();
                     context.Writer.AppendLine();
                     break;
@@ -206,7 +206,7 @@ internal static class MacroTranspiler
         };
     }
 
-    private static bool TryTranspileAssignment(AssignmentExpressionSyntax assignment, RoslynToCudaVisitor context)
+    private static bool TryTranspileAssignment(AssignmentExpressionSyntax assignment, ref TranspileContext context)
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
         if (rightNode is not BinaryExpressionSyntax binaryExpr)
@@ -220,7 +220,7 @@ internal static class MacroTranspiler
             return false;
         }
 
-        EmitGpuBigIntRefBinaryOperation(assignment, binaryExpr, context);
+        EmitGpuBigIntRefBinaryOperation(assignment, binaryExpr, ref context);
         return true;
     }
 
@@ -243,7 +243,7 @@ internal static class MacroTranspiler
     private static void EmitGpuBigIntRefBinaryOperation(
         AssignmentExpressionSyntax assignment,
         BinaryExpressionSyntax binaryExpr,
-        RoslynToCudaVisitor context)
+        ref TranspileContext context)
     {
         using (context.Writer.Scope())
         {
@@ -251,15 +251,15 @@ internal static class MacroTranspiler
             context.Writer.AppendSemiColon();
             context.Writer.AppendLine();
 
-            EmitAssignment(context, "_macroCtx.Operands.LeftOperand", binaryExpr.Left);
+            EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", binaryExpr.Left);
 
             if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
                 !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
             {
-                EmitAssignment(context, "_macroCtx.Operands.RightOperand", binaryExpr.Right);
+                EmitAssignment(ref context, "_macroCtx.Operands.RightOperand", binaryExpr.Right);
             }
 
-            EmitAssignment(context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
+            EmitAssignment(ref context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
 
             // Context buffers propagation (standard in Henicos BigInt kernels)
             context.Writer.Append("_macroCtx.Operands.CarryBuffer");
@@ -274,20 +274,20 @@ internal static class MacroTranspiler
             context.Writer.AppendSemiColon();
             context.Writer.AppendLine();
 
-            EmitDeviceFunctionCall(context, binaryExpr);
+            EmitDeviceFunctionCall(ref context, binaryExpr);
         }
     }
 
-    private static void EmitAssignment(RoslynToCudaVisitor context, string target, ExpressionSyntax value)
+    private static void EmitAssignment(ref TranspileContext context, string target, ExpressionSyntax value)
     {
         context.Writer.Append(target);
         context.Writer.AppendOperator("=");
-        context.Visit(value);
+        context.Visitor.Visit(value);
         context.Writer.AppendSemiColon();
         context.Writer.AppendLine();
     }
 
-    private static void EmitDeviceFunctionCall(RoslynToCudaVisitor context, BinaryExpressionSyntax binaryExpr)
+    private static void EmitDeviceFunctionCall(ref TranspileContext context, BinaryExpressionSyntax binaryExpr)
     {
         var (functionName, extraArg) = binaryExpr.Kind() switch
         {
@@ -312,7 +312,7 @@ internal static class MacroTranspiler
             if (extraArg != null)
             {
                 context.Writer.AppendComma();
-                context.Visit(extraArg);
+                context.Visitor.Visit(extraArg);
             }
         }
 
@@ -320,3 +320,7 @@ internal static class MacroTranspiler
         context.Writer.AppendLine();
     }
 }
+
+
+
+

@@ -7,18 +7,18 @@ public partial class RoslynToCudaVisitor
         foreach (var statement in node.Statements)
         {
             Visit(statement);
-            Writer.AppendLine();
+            _context.Writer.AppendLine();
         }
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)
-        => StatementTranspilers.TranspileIfStatement(node, this);
+        => StatementTranspilers.TranspileIfStatement(node, ref _context);
 
     public override void VisitFixedStatement(FixedStatementSyntax node)
     {
         Visit(node.Declaration);
-        Writer.AppendSemiColon();
-        Writer.AppendLine();
+        _context.Writer.AppendSemiColon();
+        _context.Writer.AppendLine();
         VisitStatementOrBlock(node.Statement);
     }
 
@@ -26,42 +26,44 @@ public partial class RoslynToCudaVisitor
         => VisitStatementOrBlock(node.Block);
 
     public override void VisitForStatement(ForStatementSyntax node)
-        => StatementTranspilers.TranspileForStatement(node, this);
+        => StatementTranspilers.TranspileForStatement(node, ref _context);
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
-        => StatementTranspilers.TranspileWhileStatement(node, this);
+        => StatementTranspilers.TranspileWhileStatement(node, ref _context);
 
     public override void VisitDoStatement(DoStatementSyntax node)
-        => StatementTranspilers.TranspileDoStatement(node, this);
+        => StatementTranspilers.TranspileDoStatement(node, ref _context);
 
     public override void VisitSwitchStatement(SwitchStatementSyntax node)
-        => StatementTranspilers.TranspileSwitchStatement(node, this);
+        => StatementTranspilers.TranspileSwitchStatement(node, ref _context);
 
     public override void VisitSwitchSection(SwitchSectionSyntax node)
-        => StatementTranspilers.TranspileSwitchSection(node, this);
+        => StatementTranspilers.TranspileSwitchSection(node, ref _context);
 
     public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
     {
-        Writer.AppendKeyword("case");
-        Writer.AppendSpace();
+        _context.Writer.AppendKeyword("case");
+        _context.Writer.AppendSpace();
         Visit(node.Value);
-        Writer.Append(":");
+        _context.Writer.Append(":");
     }
 
-    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node) => Writer.Append("default:");
+    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node) => _context.Writer.Append("default:");
 
     public override void VisitBreakStatement(BreakStatementSyntax node)
-        => StatementTranspilers.TranspileBreakStatement(node, this);
+        => StatementTranspilers.TranspileBreakStatement(node, ref _context);
 
     public override void VisitContinueStatement(ContinueStatementSyntax node)
-        => StatementTranspilers.TranspileContinueStatement(node, this);
+        => StatementTranspilers.TranspileContinueStatement(node, ref _context);
 
     public override void VisitReturnStatement(ReturnStatementSyntax node)
-        => StatementTranspilers.TranspileReturnStatement(node, this);
+        => StatementTranspilers.TranspileReturnStatement(node, ref _context);
 
     public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
-        => DeclarationTranspilers.TranspileLocalDeclarationStatement(node, this);
+        => DeclarationTranspilers.TranspileLocalDeclarationStatement(node, ref _context);
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
-        => DeclarationTranspilers.TranspileVariableDeclaration(node, this);
+        => DeclarationTranspilers.TranspileVariableDeclaration(node, ref _context);
 }
+
+
