@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn70_72_LoopsAndJumpsTests
+public class SYN_70_72_LoopsAndJumpsTests
 {
     [Fact(Skip = "未実装: SYN-70 (foreach ループ on Span<T> / 配列)")]
     [Trait("FeatureId", "SYN-70")]

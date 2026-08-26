@@ -3,11 +3,11 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn64_69_NumericsAndHwMathTests
+public class SYN_64_69_NumericsAndHwMathTests
 {
     [Theory]
     [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-35")]
+    [Trait("FeatureId", "SYN-68")]
     [InlineData(0u, 0ul)]
     [InlineData(1u, 1ul)]
     [InlineData(uint.MaxValue, ulong.MaxValue)]
@@ -23,7 +23,7 @@ public class Syn64_69_NumericsAndHwMathTests
         ulong[] u64Data = new ulong[7];
         u64Data[0] = u64Input;
 
-        Syn64_69_NumericsAndHwMathKernelsWrapper.Launch_BitOperationsTestKernel(u32Data, u64Data);
+        SYN_64_69_NumericsAndHwMathKernelsWrapper.Launch_BitOperationsTestKernel(u32Data, u64Data);
 
         uint u32Val = u32Data[0];
         Assert.Equal((uint)BitOperations.LeadingZeroCount(u32Val), u32Data[1]);
@@ -42,39 +42,38 @@ public class Syn64_69_NumericsAndHwMathTests
         Assert.Equal(BitOperations.RotateRight(u64Val, 7), u64Data[6]);
     }
 
-    [Fact(Skip = "未実装: SYN-64 (半精度浮動小数点数 Half / half2)")]
+    [Fact(Skip = "未実装: SYN-64 (Half 半精度浮動小数点数 fp16)")]
     [Trait("FeatureId", "SYN-64")]
     [Trait("Category", "Syntax")]
     public void Test_SYN64_HalfPrecision_Transpilation()
     {
     }
 
-    [Fact(Skip = "未実装: SYN-65 (ネイティブ整数 nint, nuint)")]
+    [Fact(Skip = "未実装: SYN-65 (nint / nuint ネイティブサイズ整数)")]
     [Trait("FeatureId", "SYN-65")]
     [Trait("Category", "Syntax")]
     public void Test_SYN65_NativeInt_Transpilation()
     {
     }
 
-    [Fact(Skip = "未実装: SYN-66 (128ビット整数 UInt128, Int128)")]
+    [Fact(Skip = "未実装: SYN-66 (Int128 / UInt128 128ビット整数)")]
     [Trait("FeatureId", "SYN-66")]
     [Trait("Category", "Syntax")]
     public void Test_SYN66_Int128UInt128_Transpilation()
     {
     }
 
-    [Fact(Skip = "未実装: SYN-67 (BFloat16 / FP8 型 BFloat16, fp8)")]
+    [Fact(Skip = "未実装: SYN-67 (bfloat16 / fp8 次世代AI浮動小数点数)")]
     [Trait("FeatureId", "SYN-67")]
     [Trait("Category", "Syntax")]
     public void Test_SYN67_BFloat16Fp8_Transpilation()
     {
     }
 
-    [Fact(Skip = "未実装: SYN-69 (64ビット飽和 / キャリー演算)")]
+    [Fact(Skip = "未実装: SYN-69 (AddWithCarry / MultiplyExtended 64ビットHW演算)")]
     [Trait("FeatureId", "SYN-69")]
     [Trait("Category", "Syntax")]
     public void Test_SYN69_AddWithCarry64_Transpilation()
     {
     }
 }
-
