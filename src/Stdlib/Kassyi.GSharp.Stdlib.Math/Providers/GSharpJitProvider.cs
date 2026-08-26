@@ -260,8 +260,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     public void Add(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer)
     {
-        const int chunkSize = 256;
-        var numChunks = (leftOperand.NumWords + chunkSize - 1) / chunkSize;
+        const int ChunkSize = 256;
+        var numChunks = (leftOperand.NumWords + ChunkSize - 1) / ChunkSize;
         var dims = CalculateGridDim(numChunks);
 
         var carryBuffer = RentCarryBuffer(numChunks);
@@ -272,11 +272,11 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
             GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
                 leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, carryBuffer,
-                leftOperand.NumWords, chunkSize,
+                leftOperand.NumWords, ChunkSize,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
 
             GpuBigIntKernelsWrapper.Launch_ApplyAddCarryKernel_Device(
-                resultBuffer.DevicePointer, carryBuffer, numChunks, leftOperand.NumWords, chunkSize,
+                resultBuffer.DevicePointer, carryBuffer, numChunks, leftOperand.NumWords, ChunkSize,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
         }
         finally
@@ -288,8 +288,8 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     public void Sub(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer)
     {
-        var chunkSize = 256;
-        var numChunks = (leftOperand.NumWords + chunkSize - 1) / chunkSize;
+        const int ChunkSize = 256;
+        var numChunks = (leftOperand.NumWords + ChunkSize - 1) / ChunkSize;
         var dims = CalculateGridDim(numChunks);
 
         var carryBuffer = RentCarryBuffer(numChunks);
@@ -300,11 +300,11 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
             GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(
                 leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, carryBuffer,
-                leftOperand.NumWords, chunkSize,
+                leftOperand.NumWords, ChunkSize,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
 
             GpuBigIntKernelsWrapper.Launch_ApplySubBorrowKernel_Device(
-                resultBuffer.DevicePointer, carryBuffer, numChunks, leftOperand.NumWords, chunkSize,
+                resultBuffer.DevicePointer, carryBuffer, numChunks, leftOperand.NumWords, ChunkSize,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
         }
         finally

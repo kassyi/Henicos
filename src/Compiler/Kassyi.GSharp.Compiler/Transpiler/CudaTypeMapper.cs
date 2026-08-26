@@ -104,7 +104,7 @@ internal static class CudaTypeMapper
         }
 
         // Padding at the end of the struct
-        if (maxAlignment > 0 && currentOffset % maxAlignment != 0)
+        if (currentOffset % maxAlignment != 0)
         {
             currentOffset += maxAlignment - (currentOffset % maxAlignment);
         }

@@ -1,7 +1,9 @@
 [assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
 [assembly: SuppressMessage("ReSharper", "UnusedType.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
-
-#pragma warning disable CA1822 // Mark members as static
+[assembly: SuppressMessage("IDE", "IDE0051", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
+[assembly: SuppressMessage("Compiler", "CS0169", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
+[assembly: SuppressMessage("Compiler", "CS0414", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
+[assembly: SuppressMessage("Performance", "CA1822", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Core.Intrinsics", Justification = "Public API exposed for library consumers")]
 
 namespace Kassyi.GSharp.Core;
 
@@ -9,6 +11,7 @@ namespace Kassyi.GSharp.Core;
 /// Dummy structs to allow intellisense for CUDA built-in variables in C#.
 /// The Transpiler will intercept these and replace them with CUDA equivalents.
 /// </summary>
+[SuppressMessage("IDE", "IDE0051", Justification = "Public API exposed for library consumers")]
 public struct Dim3
 {
     public int X => GpuOnlyException.Throw<int>();
@@ -44,6 +47,7 @@ public static class GridDimension
     public static int Z => GpuOnlyException.Throw<int>();
 }
 
+[SuppressMessage("IDE", "IDE0051", Justification = "Public API exposed for library consumers")]
 public static class Gpu
 {
     public static void SyncThreads() => GpuOnlyException.Throw();
