@@ -115,12 +115,21 @@ public static class GpuBigIntGcdKernels
         {
             if (IsZero_Device(a, numWords))
             {
-                for (int i = 0; i < numWords; i++) result[i] = b[i];
+                for (int i = 0; i < numWords; i++)
+                {
+                    result[i] = b[i];
+                }
+
                 return;
             }
+
             if (IsZero_Device(b, numWords))
             {
-                for (int i = 0; i < numWords; i++) result[i] = a[i];
+                for (int i = 0; i < numWords; i++)
+                {
+                    result[i] = a[i];
+                }
+
                 return;
             }
 
@@ -138,6 +147,7 @@ public static class GpuBigIntGcdKernels
                 {
                     ShiftRight1_Device(a, numWords);
                 }
+
                 while ((b[0] & 1) == 0 && !IsZero_Device(b, numWords))
                 {
                     ShiftRight1_Device(b, numWords);
@@ -147,12 +157,18 @@ public static class GpuBigIntGcdKernels
                 {
                     Swap_Device(a, b, numWords);
                 }
-                
-                if (IsZero_Device(b, numWords)) break;
+
+                if (IsZero_Device(b, numWords))
+                {
+                    break;
+                }
 
                 var bitsA = GetBitLength_Device(a, numWords);
                 var shift = bitsA - 64;
-                if (shift < 0) shift = 0;
+                if (shift < 0)
+                {
+                    shift = 0;
+                }
 
                 ulong x = 0;
                 ulong y = 0;
@@ -224,14 +240,24 @@ public static class GpuBigIntGcdKernels
 
                 while (y != 0)
                 {
-                    if (y + 1 == 0) break; // Overflow protection
+                    if (y == ulong.MaxValue || x == ulong.MaxValue)
+                    {
+                        break; // Overflow protection
+                    }
+
                     ulong qMin = x / (y + 1);
                     ulong qMax = (x + 1) / y;
 
-                    if (qMin != qMax) break;
+                    if (qMin != qMax)
+                    {
+                        break;
+                    }
 
                     long q = (long)qMin;
-                    if (q == 0) break;
+                    if (q == 0)
+                    {
+                        break;
+                    }
 
                     ulong r = x - (ulong)q * y;
 

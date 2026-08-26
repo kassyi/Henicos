@@ -288,7 +288,7 @@ long long v1=1;
 bool progress=false;
 while((y!=0))
 {
-if(((y+1)==0))
+if(((y==18446744073709551615ULL)||(x==18446744073709551615ULL)))
 {
 break;
 }
@@ -371,7 +371,7 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
-int a_size = a.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int a_size = a.Length * sizeof(uint);
 if(a_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
@@ -388,7 +388,7 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int b_size = b.Length * sizeof(uint);
 if(b_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
@@ -405,7 +405,7 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: result
-int result_size = result.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int result_size = result.Length * sizeof(uint);
 if(result_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_result, result_size));

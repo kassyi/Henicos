@@ -40,7 +40,9 @@ internal static partial class NativeMethods
         string[] possiblePaths =
         [
             Path.Combine(AppContext.BaseDirectory, DllName + ".dll"),
-            Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, DllName + ".dll")
+            Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, DllName + ".dll"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Native",
+                "Kassyi.GSharp.Stdlib.Math.Cuda", DllName + ".dll")
         ];
 
         foreach (var path in possiblePaths)

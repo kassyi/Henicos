@@ -121,7 +121,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
-int data_size = data.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(int));
+int data_size = data.Length * sizeof(int);
 if(data_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));

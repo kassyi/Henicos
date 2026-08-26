@@ -544,7 +544,7 @@ try
 {
 void** kernelParams = stackalloc void*[5];
 // Marshal array: dResult
-int dResult_size = dResult.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+int dResult_size = dResult.Length * sizeof(uint);
 if(dResult_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));
@@ -561,7 +561,7 @@ handle_dResult.Free();
 }
 kernelParams[0] = &d_dResult;
 // Marshal array: carryBuffer
-int carryBuffer_size = carryBuffer.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(long));
+int carryBuffer_size = carryBuffer.Length * sizeof(long);
 if(carryBuffer_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_carryBuffer, carryBuffer_size));
