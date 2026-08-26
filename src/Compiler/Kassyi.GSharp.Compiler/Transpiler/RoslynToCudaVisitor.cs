@@ -5,6 +5,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
 {
     public SourceWriter Writer { get; private set; } = new();
     public HashSet<INamedTypeSymbol> UsedStructs { get; } = new(SymbolEqualityComparer.Default);
+    public Dictionary<string, string> LocalVariableOverrides { get; } = new();
     public bool HasEmittedDynamicSmemBase
     {
         get; set;

@@ -102,4 +102,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor MacroLambdaRequiresParameter = new(
+        id: "GSH0011",
+        title: "Macro lambda requires a parameter",
+        messageFormat: "{0} lambda must declare a parameter for the loop variable",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

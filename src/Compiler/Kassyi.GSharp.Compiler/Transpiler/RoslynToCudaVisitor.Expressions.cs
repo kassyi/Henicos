@@ -21,6 +21,12 @@ public partial class RoslynToCudaVisitor
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
+        if (LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
+        {
+            Writer.Append(overrideValue);
+            return;
+        }
+
         var symbol = SemanticModel.GetSymbolInfo(node).Symbol;
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
