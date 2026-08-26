@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll">
+    <Content Include="..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll" Condition="Exists('..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

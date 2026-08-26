@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn39_45_OperatorsAndInterfacesTests
+public class SYN_39_45_OperatorsAndInterfacesTests
 {
     [Fact(Skip = "未実装: SYN-39 (明示的 / 暗黙的型変換演算子 implicit/explicit)")]
     [Trait("FeatureId", "SYN-39")]

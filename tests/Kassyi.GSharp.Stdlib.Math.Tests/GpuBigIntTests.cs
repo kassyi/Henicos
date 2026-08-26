@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Jit;
@@ -68,6 +69,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
             Assert.Equal(expected, actual);
         }
+
         private const int TestSizeWords = 256; // 8192 bits
 
         #region 1. GBI アーキテクチャ・最適化課題
@@ -751,6 +753,52 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             var actual = GpuBigIntNttKernels.ModAdd(a, b, prime);
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        [Trait("Category", "Stress")]
+        public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
+        {
+            using var scope = new JitEngine.CudaContextScope();
+            var engine = GpuExecutionEngine.GSharpJit;
+            using var context = new GpuContext(1024, engine);
+
+            var arrA = GenerateRandomArray(256, 42);
+            var arrB = GenerateRandomArray(256, 43);
+
+            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuB = new GpuBigInteger(context, arrB);
+
+            // Compute expected single-threaded baseline result
+            using var expectedGpu = new GpuBigInteger(context, 256);
+            expectedGpu.Value = gpuA + gpuB;
+            var expectedHostResult = expectedGpu.ToHostArray();
+
+            // Execute 100 concurrent Add operations modifying different targets
+            // but reading from the same gpuA / gpuB to ensure context/stream stability
+            var exceptions = new ConcurrentBag<Exception>();
+
+            Parallel.For(0, 100, i =>
+            {
+                try
+                {
+                    // Ensure each worker thread has the CUDA context bound
+                    using var threadScope = new JitEngine.CudaContextScope();
+
+                    using var gpuResult = new GpuBigInteger(context, 256);
+                    gpuResult.Value = gpuA + gpuB;
+
+                    var hostResult = gpuResult.ToHostArray();
+                    Assert.Equal(256, hostResult.Length);
+                    Assert.Equal(expectedHostResult, hostResult);
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            });
+
+            Assert.Empty(exceptions);
         }
 
         #endregion

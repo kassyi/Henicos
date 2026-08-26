@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn79_88_MicroModifiersTests
+public class SYN_79_88_MicroModifiersTests
 {
     [Fact(Skip = "未実装: SYN-79 (ファイルローカル型 file struct)")]
     [Trait("FeatureId", "SYN-79")]

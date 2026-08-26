@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class Syn25_30_StringsAndAttributesTests
+public class SYN_25_30_StringsAndAttributesTests
 {
     [Fact(Skip = "未実装: SYN-25 (文字列補間 $\"\" のデバッグ出力化)")]
     [Trait("FeatureId", "SYN-25")]

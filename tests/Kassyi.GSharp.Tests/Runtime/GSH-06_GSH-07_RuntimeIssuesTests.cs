@@ -1,11 +1,14 @@
+using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Runtime.Jit;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class Gsh06_07_RuntimeIssuesTests
+public partial class Gsh06_07_RuntimeIssuesTests
 {
     [Fact(Skip = "未実装: GSH-06 (PTX / C++ コンパイルエラーの行番号マッピング)")]
     [Trait("FeatureId", "GSH-06")]
@@ -17,6 +20,7 @@ public class Gsh06_07_RuntimeIssuesTests
     [Fact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
+    [Trait("Category", "Execution")]
     public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache()
     {
         const string kernelName = "CacheTestKernel";
@@ -27,7 +31,7 @@ public class Gsh06_07_RuntimeIssuesTests
             "Henicos",
             "GSharp",
             "PtxCache");
-        
+
         Directory.CreateDirectory(cacheDir);
 
         // Pre-create corrupted 0-byte or garbage cache files matching wildcard
@@ -45,5 +49,68 @@ public class Gsh06_07_RuntimeIssuesTests
             Assert.NotEqual(IntPtr.Zero, funcConcurrent);
         });
     }
-}
 
+    [Fact]
+    [Trait("FeatureId", "GSH-07")]
+    [Trait("Category", "Stress")]
+    [Trait("Category", "SadPath")]
+    [Trait("Category", "Execution")]
+    public void Test_Runtime_OutOfMemory_SadPath()
+    {
+        // Require CUDA context for allocation
+        using var scope = new JitEngine.CudaContextScope();
+        var allocatedPointers = new System.Collections.Generic.List<IntPtr>();
+
+        try
+        {
+            // Try to allocate 1GB chunks until OOM
+            IntPtr chunkSize = (IntPtr)(1024 * 1024 * 1024);
+            while (true)
+            {
+                var result = CudaDriverApi.cuMemAlloc_v2(out var dptr, chunkSize);
+                if (result == CUresult.CudaSuccess)
+                {
+                    allocatedPointers.Add(dptr);
+                }
+                else
+                {
+                    Assert.Equal(CUresult.CudaErrorOutOfMemory, result);
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            // Free all allocated chunks to restore system stability
+            foreach (var ptr in allocatedPointers)
+            {
+                var freeRes = CudaDriverApi.cuMemFree_v2(ptr);
+                Assert.Equal(CUresult.CudaSuccess, freeRes);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GSH-07")]
+    [Trait("Category", "SadPath")]
+    public void Test_Runtime_MissingCudaToolkit_GracefulDegradation()
+    {
+        var originalEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
+        try
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", "1");
+            var ex = Assert.ThrowsAny<Exception>(() =>
+            {
+                NativeLibrary.Load("nvrtc_custom", typeof(NvrtcApi).Assembly, null);
+            });
+
+            var rootEx = ex.GetBaseException();
+            Assert.IsType<DllNotFoundException>(rootEx);
+            Assert.Contains("nvrtc_custom", rootEx.Message);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", originalEnv);
+        }
+    }
+}

@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class Syn73_78_ContractsAndPtxKernels
+public static class SYN_73_78_ContractsAndPtxKernels
 {
     [GpuKernel]
     public static void InlinePtxKernel(uint[] data)
