@@ -167,6 +167,10 @@ Device_ChunkScalarMul(dA,s,dResult,dCarry,numWords,chunkSize);
 ";
 public static unsafe void Launch_ChunkScalarMulKernel(uint[] dA, uint s, uint[] dResult, long[] dCarry, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (dA.Length == 0 || dResult.Length == 0 || dCarry.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkScalarMulKernel", ChunkScalarMulKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;

@@ -169,6 +169,10 @@ resultHost[5]=(unsigned int)bitsB;
 ";
 public static unsafe void Launch_GetLehmerStateKernel(uint[] a, uint[] b, int numWords, uint[] resultHost, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (a.Length == 0 || b.Length == 0 || resultHost.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("GetLehmerStateKernel", GetLehmerStateKernel_CudaSource, null, macros);
 IntPtr d_a = IntPtr.Zero;

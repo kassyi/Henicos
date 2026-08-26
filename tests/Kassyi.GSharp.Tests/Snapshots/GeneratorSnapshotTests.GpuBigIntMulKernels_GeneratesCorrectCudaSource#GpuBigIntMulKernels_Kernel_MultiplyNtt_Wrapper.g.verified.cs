@@ -150,6 +150,10 @@ Device_CRT_ParallelAtomic(nttBuf1A,nttBuf2A,opResult,transformLength,outNumWords
 ";
 public static unsafe void Launch_Kernel_MultiplyNtt(uint[] opA, uint[] opB, uint[] opResult, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] nttTmpBuf, uint[] twiddleForward1, uint[] twiddleForward2, uint[] twiddleInverse1, uint[] twiddleInverse2, int numWordsA, int numWordsB, int outNumWords, int transformLength, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+if (opA.Length == 0 || opB.Length == 0 || opResult.Length == 0 || nttBuf1A.Length == 0 || nttBuf2A.Length == 0 || nttBuf1B.Length == 0 || nttBuf2B.Length == 0 || nttTmpBuf.Length == 0 || twiddleForward1.Length == 0 || twiddleForward2.Length == 0 || twiddleInverse1.Length == 0 || twiddleInverse2.Length == 0)
+{
+return;
+}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MultiplyNtt", Kernel_MultiplyNtt_CudaSource, null, macros);
 IntPtr d_opA = IntPtr.Zero;
