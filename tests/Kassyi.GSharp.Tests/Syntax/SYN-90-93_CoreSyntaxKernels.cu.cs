@@ -106,8 +106,8 @@ public static class SYN_90_93_CoreSyntaxKernels
         }
     }
 
-    // SYN-93: デバイスメソッド ([GpuDevice]) の呼び出し・再利用
-    [GpuDevice]
+    // SYN-93: デバイスメソッド ([GpuDeviceFunction]) の呼び出し・再利用
+    [GpuDeviceFunction]
     public static int MyCustomAdd(int a, int b)
     {
         return a + b;
