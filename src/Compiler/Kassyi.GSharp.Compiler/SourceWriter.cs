@@ -167,6 +167,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
 
+    public void AppendParentheses() => Append("()");
+    public void AppendBrackets() => Append("[]");
+    public void AppendEmptyScope() => Append("{}");
+
     public static bool operator ==(SourceWriter left, SourceWriter right) => left.Equals(right);
 
     public static bool operator !=(SourceWriter left, SourceWriter right) => !(left == right);

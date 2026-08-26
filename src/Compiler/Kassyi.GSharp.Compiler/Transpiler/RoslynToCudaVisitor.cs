@@ -342,9 +342,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                 Writer.AppendLine(";");
 
                 Writer.Append($"__device__ inline {cppElementType}& operator");
-                using (Writer.Brackets())
-                {
-                }
+                Writer.AppendBrackets();
 
                 using (Writer.Parentheses())
                 {
@@ -363,9 +361,7 @@ public partial class RoslynToCudaVisitor(SemanticModel semanticModel, Action<Dia
                 }
 
                 Writer.Append($"__device__ inline const {cppElementType}& operator");
-                using (Writer.Brackets())
-                {
-                }
+                Writer.AppendBrackets();
 
                 using (Writer.Parentheses())
                 {

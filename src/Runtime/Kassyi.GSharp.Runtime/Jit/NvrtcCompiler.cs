@@ -27,7 +27,7 @@ public static class NvrtcCompiler
                 {
                     throw new Exception($"NVRTC Compilation Failed:\n{log}");
                 }
-                
+
                 // You could log warnings here if needed
                 // Console.WriteLine($"[NVRTC Log]:\n{log}");
             }
@@ -36,12 +36,12 @@ public static class NvrtcCompiler
 
             // Get PTX
             NvrtcException.ThrowIfError(
-                NvrtcApi.nvrtcGetPTXSize(prog, out var ptxSize), 
+                NvrtcApi.nvrtcGetPTXSize(prog, out var ptxSize),
                 "Failed to get PTX size.");
 
             var ptxBytes = new byte[ptxSize];
             NvrtcException.ThrowIfError(
-                NvrtcApi.nvrtcGetPTX(prog, ptxBytes), 
+                NvrtcApi.nvrtcGetPTX(prog, ptxBytes),
                 "Failed to get PTX data.");
 
             return ptxBytes;
