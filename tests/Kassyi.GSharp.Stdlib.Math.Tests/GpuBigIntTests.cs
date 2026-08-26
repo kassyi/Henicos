@@ -1,3 +1,4 @@
+// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -81,8 +82,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         }
 
-        [Fact(Skip = "未実装・課題: GBI-03 (CPU-Fallback メソッドの GPU 並列リダクション化)")]
-        [Trait("RoadmapId", "GBI-03")]
+        [Fact]
+        [Trait("FeatureId", "GBI-03")]
         [Trait("Category", "Performance")]
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
@@ -819,7 +820,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // Assert no exceptions thrown for 0 length buffers due to guard clause
             var exception = Record.Exception(() =>
             {
-                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread(low, high, output, 0, 0);
+                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries(low, high, output, 0, 0);
             });
             Assert.Null(exception);
         }
@@ -831,7 +832,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var high = new uint[] { 0, 0 };
             var output = new uint[1];
 
-            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread(low, high, output, 2, 1);
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries(low, high, output, 2, 1);
 
             // Calculation logic:
             // sum0 = 0x12345678 -> low16 = 0x5678, carry = 0x1234

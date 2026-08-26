@@ -1,3 +1,4 @@
+// ReSharper disable All
 using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
@@ -123,9 +124,9 @@ public static class GpuBigIntNttKernels
 
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
 
-        for (var rowIndex = BlockIndex.X; rowIndex < maxBlocks; rowIndex += GridDimension.X)
+        for (int rowIndex = BlockIndex.X; rowIndex < maxBlocks; rowIndex += GridDimension.X)
         {
-            for (var threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
+            for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
             {
                 Device_NTT_LoadAndTwiddleBefore(rowIndex, threadId, currentLength, maxLog2Length, transformLength,
                     applyTwiddleBefore, primeModulus, barrettMagic, deviceData, deviceTwiddle);
@@ -135,7 +136,7 @@ public static class GpuBigIntNttKernels
 
             for (int step = 0; step < maxLog2Length; step++)
             {
-                for (var threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
+                for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
                 {
                     Device_NTT_ButterflyStep(step, threadId, transformLength, primeModulus, barrettMagic,
                         deviceTwiddle);
@@ -144,7 +145,7 @@ public static class GpuBigIntNttKernels
                 Gpu.SyncThreads();
             }
 
-            for (var threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
+            for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
             {
                 Device_NTT_TwiddleAfterAndStore(rowIndex, threadId, currentLength, transformLength, applyTwiddleAfter,
                     primeModulus, barrettMagic, deviceData, deviceTwiddle);
@@ -256,24 +257,22 @@ public static class GpuBigIntNttKernels
     [GpuDeviceFunction]
     public static void Device_NTT_PointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
     {
-        var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var index = threadId; index < transformLength; index += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(transformLength, index =>
         {
             deviceData1[index] = ModMulBarrett(deviceData1[index], deviceData1[index], Prime1, BarrettMagic1);
             deviceData2[index] = ModMulBarrett(deviceData2[index], deviceData2[index], Prime2, BarrettMagic2);
-        }
+        });
     }
 
     [GpuDeviceFunction]
     public static void Device_NTT_PointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B,
         uint[] deviceData2B, int transformLength)
     {
-        var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var index = threadId; index < transformLength; index += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(transformLength, index =>
         {
             deviceData1A[index] = ModMulBarrett(deviceData1A[index], deviceData1B[index], Prime1, BarrettMagic1);
             deviceData2A[index] = ModMulBarrett(deviceData2A[index], deviceData2B[index], Prime2, BarrettMagic2);
-        }
+        });
     }
 
     [GpuDeviceFunction]
@@ -284,8 +283,7 @@ public static class GpuBigIntNttKernels
         var inverseN1 = ModPow((uint)transformLength, Prime1 - 2, Prime1, BarrettMagic1);
         var inverseN2 = ModPow((uint)transformLength, Prime2 - 2, Prime2, BarrettMagic2);
 
-        var index = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (index < transformLength)
+        Gpu.GridStrideLoop(transformLength, index =>
         {
             const ulong Modulus1 = Prime1;
             const ulong Modulus2 = Prime2;
@@ -309,54 +307,48 @@ public static class GpuBigIntNttKernels
 
             uncarriedLow[index] = (uint)(recombinedValue & 0xFFFFFFFF);
             uncarriedHigh[index] = (uint)(recombinedValue >> 32);
-        }
+        });
     }
 
     [GpuDeviceFunction]
-    public static void Device_ResolveNttCarries_SingleThread(uint[] uncarriedLow, uint[] uncarriedHigh,
+    public static void Device_ResolveNttCarries(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, int transformLength, int maxWordCount)
     {
-        if (ThreadIndex.X != 0 || BlockIndex.X != 0)
+        Gpu.SingleThread(() =>
         {
-            return;
-        }
+            ulong carry = 0;
 
-        if (maxWordCount <= 0)
-        {
-            return;
-        }
-
-        ulong carry = 0;
-
-        for (int i = 0; i < maxWordCount; i++)
-        {
-            ulong sum0 = carry;
-            if (2 * i < transformLength)
+            for (int i = 0; i < maxWordCount; i++)
             {
-                sum0 += uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
+                ulong sum0 = carry;
+                if (2 * i < transformLength)
+                {
+                    sum0 += uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
+                }
+
+                ulong sum1 = 0;
+                if (2 * i + 1 < transformLength)
+                {
+                    sum1 = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
+                }
+
+                var low16 = (uint)(sum0 & 0xFFFF);
+                var carry0 = sum0 >> 16;
+                var sum1_with_carry = sum1 + carry0;
+                var high16 = (uint)(sum1_with_carry & 0xFFFF);
+
+                carry = sum1_with_carry >> 16;
+
+                outputBuffer[i] = low16 | (high16 << 16);
             }
-
-            uint low16 = (uint)(sum0 & 0xFFFF);
-            carry = sum0 >> 16;
-
-            ulong sum1 = carry;
-            if (2 * i + 1 < transformLength)
-            {
-                sum1 += uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
-            }
-
-            uint high16 = (uint)(sum1 & 0xFFFF);
-            carry = sum1 >> 16;
-
-            outputBuffer[i] = low16 | (high16 << 16);
-        }
+        });
     }
 
     [GpuKernel]
-    public static void Kernel_ResolveNttCarries_SingleThread(uint[] uncarriedLow, uint[] uncarriedHigh,
+    public static void Kernel_ResolveNttCarries(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, int transformLength, int maxWordCount)
     {
-        Device_ResolveNttCarries_SingleThread(uncarriedLow, uncarriedHigh, outputBuffer, transformLength, maxWordCount);
+        Device_ResolveNttCarries(uncarriedLow, uncarriedHigh, outputBuffer, transformLength, maxWordCount);
     }
 
 

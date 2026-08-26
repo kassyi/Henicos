@@ -37,6 +37,26 @@ const TASKS = [
     { Id: "GBI-04", Title: "Square 専用 JIT カーネルのディスパッチ", B: 2, E: 4, G: 4 },
     { Id: "GBI-05", Title: "Lehmer's GCD の大桁並列化", B: 1, E: 1, G: 2 },
     { Id: "GBI-06", Title: "式木の Kernel Fusion", B: 1, E: 1, G: 4 },
+    // 欠番: GBI-07 ~ GBI-09
+    { Id: "GBI-10", Title: "加算・減算 (+, -)", B: 3, E: 4, G: 3 },
+    { Id: "GBI-11", Title: "乗算 (*)", B: 4, E: 3, G: 5 },
+    { Id: "GBI-12", Title: "除算・剰余 (/, %)", B: 3, E: 4, G: 4 },
+    { Id: "GBI-13", Title: "ビット論理演算 (&, |, ^, ~)", B: 3, E: 4, G: 3 },
+    { Id: "GBI-14", Title: "ビットシフト (<<, >>)", B: 3, E: 4, G: 3 },
+    { Id: "GBI-15", Title: "比較演算 (==, !=, <, >, <=, >=)", B: 3, E: 4, G: 3 },
+    { Id: "GBI-16", Title: "インクリメント/デクリメント (++, --)", B: 2, E: 4, G: 0 },
+    { Id: "GBI-17", Title: "GpuBigInteger.DivRem", B: 3, E: 4, G: 4 },
+    { Id: "GBI-18", Title: "GpuBigInteger.ModPow", B: 3, E: 3, G: 2 },
+    { Id: "GBI-19", Title: "GpuBigInteger.Square", B: 3, E: 4, G: 2 },
+    { Id: "GBI-20", Title: "GpuBigInteger.GreatestCommonDivisor", B: 3, E: 4, G: 4 },
+    { Id: "GBI-21", Title: "GpuBigInteger.ModInverse", B: 3, E: 4, G: 3 },
+    { Id: "GBI-22", Title: "CompareTo / Equals", B: 3, E: 4, G: 3 },
+    { Id: "GBI-23", Title: "GetBitLength / GetByteCount", B: 3, E: 4, G: 3 },
+    { Id: "GBI-24", Title: "IsZero / IsOne / IsEven", B: 3, E: 4, G: 3 },
+    { Id: "GBI-25", Title: "GpuBigInteger.Sqrt", B: 3, E: 3, G: 2 },
+    { Id: "GBI-26", Title: "ローカル変数宣言時の GpuBigIntExpr 診断", B: 2, E: 3, G: 1.5 },
+    { Id: "GBI-27", Title: "代入時の GpuBigIntExpr 診断", B: 2, E: 3, G: 1.5 },
+    { Id: "GBI-28", Title: "レガシー名前空間の宣言診断", B: 2, E: 3, G: 1.5 },
 
     // --- GSH (GSharp トランスパイラ / ランタイム) 領域 ---
     { Id: "GSH-01", Title: "三項演算子 (`? :`) の複雑式展開", B: 5, E: 4, G: 5 },
@@ -46,10 +66,24 @@ const TASKS = [
     { Id: "GSH-05", Title: "ジェネリクス (<T>) の制約解決", B: 3, E: 1, G: 3 },
     { Id: "GSH-06", Title: "PTX / C++ コンパイルエラーの行番号マッピング", B: 2, E: 3, G: 5 },
     { Id: "GSH-07", Title: "JIT ディスクキャッシュ機構", B: 1, E: 2, G: 5 },
+    { Id: "GSH-08", Title: "Macro DSL と Intrinsics サポート", B: 5, E: 5, G: 5 },
+    { Id: "GSH-09", Title: "コンパイルタイムアウト時のプロセスツリー終了", B: 4, E: 2, G: 4 },
 
     // --- GEN (GSharp ソースジェネレータ / ランタイム基盤) 領域 ---
     { Id: "GEN-01", Title: "C# ラッパーと CUDA 連携の基本機能（JITバインディング）", B: 5, E: 5, G: 5 },
     { Id: "GEN-02", Title: "NVRTC コンパイルエラーの例外ラップ", B: 4, E: 5, G: 5 },
+    { Id: "GEN-03", Title: "ログ出力とフォーマットの非同期実行", B: 3, E: 4, G: 3 },
+    { Id: "GEN-04", Title: "MeasureScope による実行時間計測ログ", B: 3, E: 4, G: 3 },
+    { Id: "GEN-05", Title: "異常系経路での診断情報出力", B: 2, E: 3, G: 1.5 },
+    { Id: "GEN-06", Title: "包括的仕様カーネルの生成コード診断", B: 2, E: 3, G: 1.5 },
+    { Id: "GEN-07", Title: "未対応機能の診断レポート", B: 2, E: 3, G: 1.5 },
+    { Id: "GEN-08", Title: "ジェネレータのスナップショット一貫性テスト", B: 1, E: 2, G: 0 },
+    { Id: "GEN-09", Title: "テストケースとスナップショットの整合性保証", B: 1, E: 2, G: 0 },
+    { Id: "GEN-10", Title: "異なるアーキテクチャ指定時のPTX生成差異", B: 3, E: 4, G: 3 },
+    { Id: "GEN-11", Title: "JitConstant とアンロールによるPTX出力最適化", B: 3, E: 4, G: 3 },
+    { Id: "GEN-12", Title: "インメモリでのPTX実行検証", B: 3, E: 4, G: 3 },
+    { Id: "GEN-13", Title: "カーネル引数マーシャリングのヒープアロケーション完全排除", B: 4, E: 5, G: 2 },
+    { Id: "GEN-14", Title: "ゼロ長配列 (`new T[0]`) 引数のエッジケース処理", B: 3, E: 3, G: 2 },
 
     // --- SYN (C# 構文・シンタックスシュガー) 領域 ---
     { Id: "SYN-01", Title: "Switch 式 (switch expression)", B: 4, E: 4, G: 4 },
@@ -61,6 +95,7 @@ const TASKS = [
     { Id: "SYN-07", Title: "ローカル関数 (local functions)", B: 5, E: 3, G: 4 },
     { Id: "SYN-08", Title: "ラムダ式・無名関数", B: 5, E: 2, G: 5 },
     { Id: "SYN-09", Title: "デフォルトリテラル (default)", B: 4, E: 5, G: 5 },
+    // 欠番: SYN-10
     { Id: "SYN-11", Title: "Index & Range 構文 (^1, [1..5])", B: 3, E: 3, G: 4 },
     { Id: "SYN-12", Title: "コレクション式 ([1, 2, 3])", B: 3, E: 4, G: 4 },
     { Id: "SYN-13", Title: "stackalloc と固定長スタック配列", B: 5, E: 3, G: 4 },
@@ -101,6 +136,7 @@ const TASKS = [
     { Id: "SYN-48", Title: "グリッド協調グループ同期", B: 2, E: 1, G: 2 },
     { Id: "SYN-49", Title: "アトミック演算完全マッピング", B: 4, E: 4, G: 5 },
     { Id: "SYN-50", Title: "非同期コピー / TMA", B: 1, E: 1, G: 3 },
+    // 欠番: SYN-51 ~ SYN-56
     { Id: "SYN-57", Title: "リストパターン", B: 2, E: 2, G: 2 },
     { Id: "SYN-58", Title: "プロパティパターン", B: 2, E: 3, G: 2 },
     { Id: "SYN-59", Title: "位置パターン", B: 2, E: 3, G: 2 },
@@ -129,13 +165,16 @@ const TASKS = [
     { Id: "SYN-82", Title: "volatile フィールド修飾子", B: 2, E: 3, G: 2 },
     { Id: "SYN-83", Title: "[module: SkipLocalsInit] 属性", B: 1, E: 5, G: 1 },
     { Id: "SYN-84", Title: "タプル宣言分解の foreach ループ", B: 2, E: 3, G: 2 },
+    // 欠番: SYN-85
     { Id: "SYN-86", Title: "関数ポインタの呼出規約", B: 1, E: 4, G: 1 },
     { Id: "SYN-87", Title: "#line hidden / #line default", B: 1, E: 3, G: 1 },
     { Id: "SYN-88", Title: "暗黙のスタック配列 (stackalloc[])", B: 2, E: 4, G: 2 },
+    // 欠番: SYN-89
     { Id: "SYN-90", Title: "複雑な制御フロー（if-else ネストとループの複合）", B: 5, E: 5, G: 5 },
     { Id: "SYN-91", Title: "基本制御構文（switch, do-while, 論理演算）", B: 5, E: 5, G: 5 },
     { Id: "SYN-92", Title: "ユーザー定義構造体のカーネル引数および操作", B: 5, E: 5, G: 5 },
-    { Id: "SYN-93", Title: "デバイスメソッド ([GpuDeviceFunction]) の呼び出し・再利用", B: 5, E: 5, G: 5 }
+    { Id: "SYN-93", Title: "デバイスメソッド ([GpuDeviceFunction]) の呼び出し・再利用", B: 5, E: 5, G: 5 },
+    { Id: "SYN-94", Title: "Macro DSL (Gpu.GridStrideLoop, ForUnroll, SingleThread)", B: 5, E: 5, G: 5 }
 ];
 
 // =============================================================================

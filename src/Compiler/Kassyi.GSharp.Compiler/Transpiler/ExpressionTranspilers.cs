@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal static class ExpressionTranspilers
 {
-    public static void TranspileAssignmentExpression(AssignmentExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileAssignmentExpression(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
@@ -12,14 +12,14 @@ internal static class ExpressionTranspilers
                 for (var i = 0; i < rightTuple.Arguments.Count; i++)
                 {
                     context.Writer.Append($"auto _t{i} = ");
-                    context.Visit(rightTuple.Arguments[i].Expression);
+                    context.Visitor.Visit(rightTuple.Arguments[i].Expression);
                     context.Writer.AppendSemiColon();
                     context.Writer.AppendLine();
                 }
 
                 for (var i = 0; i < leftTuple.Arguments.Count; i++)
                 {
-                    context.Visit(leftTuple.Arguments[i].Expression);
+                    context.Visitor.Visit(leftTuple.Arguments[i].Expression);
                     context.Writer.Append($" = _t{i}");
                     context.Writer.AppendSemiColon();
                     context.Writer.AppendLine();
@@ -30,29 +30,29 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        context.Visit(node.Left);
+        context.Visitor.Visit(node.Left);
         context.Writer.AppendOperator(node.OperatorToken.Text);
-        context.Visit(node.Right);
+        context.Visitor.Visit(node.Right);
     }
 
-    public static void TranspileBinaryExpression(BinaryExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileBinaryExpression(BinaryExpressionSyntax node, ref TranspileContext context)
     {
         using (context.Writer.Parentheses())
         {
-            context.Visit(node.Left);
+            context.Visitor.Visit(node.Left);
             context.Writer.AppendOperator(node.OperatorToken.Text);
-            context.Visit(node.Right);
+            context.Visitor.Visit(node.Right);
         }
     }
 
-    public static void TranspileElementAccessExpression(ElementAccessExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileElementAccessExpression(ElementAccessExpressionSyntax node, ref TranspileContext context)
     {
-        context.Visit(node.Expression);
+        context.Visitor.Visit(node.Expression);
         using (context.Writer.Brackets())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
             {
-                context.Visit(node.ArgumentList.Arguments[i].Expression);
+                context.Visitor.Visit(node.ArgumentList.Arguments[i].Expression);
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
                     context.Writer.AppendComma();
@@ -61,52 +61,60 @@ internal static class ExpressionTranspilers
         }
     }
 
-    public static void TranspilePrefixUnaryExpression(PrefixUnaryExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspilePrefixUnaryExpression(PrefixUnaryExpressionSyntax node, ref TranspileContext context)
     {
         // For pointers: *a
         if (node.IsKind(SyntaxKind.PointerIndirectionExpression))
         {
             context.Writer.Append("*");
-            context.Visit(node.Operand);
+            context.Visitor.Visit(node.Operand);
             return;
         }
 
         var op = node.OperatorToken.Text;
         context.Writer.Append(op);
-        context.Visit(node.Operand);
+        context.Visitor.Visit(node.Operand);
     }
 
-    public static void TranspileCastExpression(CastExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileCastExpression(CastExpressionSyntax node, ref TranspileContext context)
     {
         using (context.Writer.Parentheses())
         {
             context.Writer.Append(CudaTypeMapper.MapType(context.SemanticModel.GetTypeInfo(node.Type).Type));
         }
 
-        context.Visit(node.Expression);
+        context.Visitor.Visit(node.Expression);
     }
 
-    public static void TranspileParenthesizedExpression(ParenthesizedExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileParenthesizedExpression(ParenthesizedExpressionSyntax node, ref TranspileContext context)
     {
         using (context.Writer.Parentheses())
         {
-            context.Visit(node.Expression);
+            context.Visitor.Visit(node.Expression);
         }
     }
 
-    public static void TranspilePostfixUnaryExpression(PostfixUnaryExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspilePostfixUnaryExpression(PostfixUnaryExpressionSyntax node, ref TranspileContext context)
     {
-        context.Visit(node.Operand);
+        context.Visitor.Visit(node.Operand);
         context.Writer.Append(node.OperatorToken.Text);
     }
 
-    public static void TranspileMemberAccessExpression(MemberAccessExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileMemberAccessExpression(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
-        if (symbol is { ContainingType: not null })
+        
+        var exprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (node.Expression is IdentifierNameSyntax idName &&
+            context.LocalVariableOverrides.TryGetValue(idName.Identifier.Text, out var overrideValue) &&
+            overrideValue.NodeValue != null)
         {
-            var typeName = symbol.ContainingType.Name;
-            if (CudaIntrinsicsMapper.TryMap(typeName, node.Name.Identifier.Text, out var mappedName))
+            exprSymbol = context.SemanticModel.GetSymbolInfo(overrideValue.NodeValue).Symbol;
+        }
+
+        if (symbol != null)
+        {
+            if (CudaIntrinsicsMapper.TryMap(symbol, out var mappedName))
             {
                 context.Writer.Append(mappedName);
                 return;
@@ -135,12 +143,12 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        var exprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-        if (exprSymbol is ITypeSymbol typeSym)
+        var memberExprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (memberExprSymbol is ITypeSymbol typeSym)
         {
             if (typeSym.TypeKind == TypeKind.Enum)
             {
-                context.Visit(node.Expression);
+                context.Visitor.Visit(node.Expression);
                 context.Writer.Append("::");
                 context.Writer.Append(node.Name.Identifier.Text);
                 return;
@@ -151,30 +159,30 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        context.Visit(node.Expression);
+        context.Visitor.Visit(node.Expression);
 
-        bool isPointer = exprSymbol is IParameterSymbol pSym &&
-                         (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out);
+        var isPointer = exprSymbol is IParameterSymbol pSym &&
+                        (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out);
 
         context.Writer.Append(isPointer ? "->" : ".");
         context.Writer.Append(node.Name.Identifier.Text);
     }
 
 
-    public static void TranspileInvocationExpression(InvocationExpressionSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileInvocationExpression(InvocationExpressionSyntax node, ref TranspileContext context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
 
         if (symbol is { ContainingType.Name: "Gpu", Name: "InlinePtx" })
         {
-            TranspileInlinePtx(node, context);
+            TranspileInlinePtx(node, ref context);
             return;
         }
 
         if (symbol is { ContainingType.Name: "BitOperations" } &&
             symbol.ContainingType.ToString() == "System.Numerics.BitOperations")
         {
-            TranspileBitOperationsInvocation(node, context, symbol);
+            TranspileBitOperationsInvocation(node, ref context, symbol);
             return;
         }
 
@@ -196,12 +204,12 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        context.Visit(node.Expression);
+        context.Visitor.Visit(node.Expression);
         using (context.Writer.Parentheses())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
             {
-                context.Visit(node.ArgumentList.Arguments[i]);
+                context.Visitor.Visit(node.ArgumentList.Arguments[i]);
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
                     context.Writer.AppendComma();
@@ -210,7 +218,7 @@ internal static class ExpressionTranspilers
         }
     }
 
-    private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, RoslynToCudaVisitor context,
+    private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, ref TranspileContext context,
         IMethodSymbol symbol)
     {
         var is64Bit = false;
@@ -270,12 +278,12 @@ internal static class ExpressionTranspilers
                     }
                     using (context.Writer.Parentheses())
                     {
-                        context.Visit(node.ArgumentList.Arguments[i]);
+                        context.Visitor.Visit(node.ArgumentList.Arguments[i]);
                     }
                 }
                 else
                 {
-                    context.Visit(node.ArgumentList.Arguments[i]);
+                    context.Visitor.Visit(node.ArgumentList.Arguments[i]);
                 }
 
                 if (i < node.ArgumentList.Arguments.Count - 1)
@@ -286,34 +294,36 @@ internal static class ExpressionTranspilers
         }
     }
 
-    private static void TranspileInlinePtx(InvocationExpressionSyntax node, RoslynToCudaVisitor context)
+    private static void TranspileInlinePtx(InvocationExpressionSyntax node, ref TranspileContext context)
     {
         if (node.ArgumentList.Arguments.Count != 1)
         {
             return;
         }
 
-        switch (node.ArgumentList.Arguments[0].Expression)
+        var argExpr = node.ArgumentList.Arguments[0].Expression;
+
+        var constantValue = context.SemanticModel.GetConstantValue(argExpr);
+        if (constantValue is { HasValue: true, Value: string ptxString })
         {
-            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
-                context.Writer.Append(literal.Token.ValueText);
-                context.Writer.AppendLine();
-                break;
-
-            case InterpolatedStringExpressionSyntax interpolated:
-                TranspileInterpolatedInlinePtx(interpolated, context);
-                break;
-
-            default:
-                context.ReportDiagnostic?.Invoke(
-                    Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
-                break;
+            context.Writer.Append(ptxString);
+            context.Writer.AppendLine();
+            return;
         }
+
+        if (argExpr is InterpolatedStringExpressionSyntax interpolated)
+        {
+            TranspileInterpolatedInlinePtx(interpolated, ref context);
+            return;
+        }
+
+        context.ReportDiagnostic?.Invoke(
+            Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
     }
 
 
     private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,
-        RoslynToCudaVisitor context)
+        ref TranspileContext context)
     {
         foreach (var content in interpolated.Contents)
         {
@@ -323,7 +333,7 @@ internal static class ExpressionTranspilers
                     context.Writer.Append(text.TextToken.ValueText);
                     break;
                 case InterpolationSyntax interpolation:
-                    context.Visit(interpolation.Expression);
+                    context.Visitor.Visit(interpolation.Expression);
                     break;
             }
         }
@@ -331,7 +341,7 @@ internal static class ExpressionTranspilers
         context.Writer.AppendLine();
     }
 
-    public static void TranspileArgument(ArgumentSyntax node, RoslynToCudaVisitor context)
+    public static void TranspileArgument(ArgumentSyntax node, ref TranspileContext context)
     {
         if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) || node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
         {
@@ -345,56 +355,56 @@ internal static class ExpressionTranspilers
             }
         }
 
-        context.Visit(node.Expression);
+        context.Visitor.Visit(node.Expression);
     }
 
     public static void TranspileObjectCreationExpression(ObjectCreationExpressionSyntax node,
-        RoslynToCudaVisitor context)
+        ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
         if (typeSymbol is { Name: TypeConstants.SharedMemoryType } &&
             typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace)
         {
-            context.DefaultVisit(node);
+            context.Visitor.DefaultVisit(node);
             return;
         }
 
         if (typeSymbol is { TypeKind: TypeKind.Struct })
         {
-            TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, context);
+            TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, ref context);
             return;
         }
 
         context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
             node.GetLocation()));
-        context.DefaultVisit(node);
+        context.Visitor.DefaultVisit(node);
     }
 
     public static void TranspileImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node,
-        RoslynToCudaVisitor context)
+        ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
         switch (typeSymbol)
         {
             case { Name: TypeConstants.SharedMemoryType } when
                 typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace:
-                context.DefaultVisit(node);
+                context.Visitor.DefaultVisit(node);
 
                 return;
             case { TypeKind: TypeKind.Struct }:
 
-                TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, context);
+                TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, ref context);
                 return;
             default:
                 context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
                     node.GetLocation()));
-                context.DefaultVisit(node);
+                context.Visitor.DefaultVisit(node);
                 break;
         }
     }
 
     private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, InitializerExpressionSyntax? initializer,
-        ArgumentListSyntax? argumentList, RoslynToCudaVisitor context)
+        ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         var cppType = CudaTypeMapper.MapType(typeSymbol);
         if (initializer != null)
@@ -419,9 +429,9 @@ internal static class ExpressionTranspilers
                         if (expr is AssignmentExpressionSyntax assignment)
                         {
                             context.Writer.Append("_tmp.");
-                            context.Visit(assignment.Left);
+                            context.Visitor.Visit(assignment.Left);
                             context.Writer.Append(" = ");
-                            context.Visit(assignment.Right);
+                            context.Visitor.Visit(assignment.Right);
                             context.Writer.Append("; ");
                         }
                     }
@@ -450,7 +460,7 @@ internal static class ExpressionTranspilers
                         context.Writer.Append(", ");
                     }
 
-                    context.Visit(arg.Expression);
+                    context.Visitor.Visit(arg.Expression);
                     first = false;
                 }
             }
@@ -461,5 +471,9 @@ internal static class ExpressionTranspilers
         context.Writer.Append(cppType);
     }
 }
+
+
+
+
 
 

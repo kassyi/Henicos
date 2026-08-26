@@ -1,16 +1,18 @@
+// ReSharper disable All
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("GSharp", "GSH1002", Justification = "Lambda capture limitations in source generation prevent passing context by reference.")]
 public static class GpuBigIntFermatKernels
 {
     [GpuDeviceFunction]
     public static void Device_Unpack16([GpuConst] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
     {
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var i = tid; i < n; i += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(n, i =>
         {
             uint val = 0;
             var wordIdx = i / 2;
@@ -29,7 +31,7 @@ public static class GpuBigIntFermatKernels
 
             dDst1[i] = val;
             dDst2[i] = val;
-        }
+        });
     }
 
     [GpuDeviceFunction]
@@ -58,30 +60,30 @@ public static class GpuBigIntFermatKernels
         var xIndex = bx * 32 + tx;
         var yIndex = by * 32 + ty;
 
-        for (int i = 0; i < 32; i += 8)
+        Gpu.ForUnroll(0, 4, iter =>
         {
+            var i = iter * 8;
             if (xIndex < width && yIndex + i < height)
             {
                 Gpu.InlinePtx($"s_mem[({ty} + {i}) * 33 + {tx}] = {idata[(yIndex + i) * width + xIndex]};");
             }
-        }
+        });
 
         Gpu.SyncThreads();
 
         xIndex = by * 32 + tx;
         yIndex = bx * 32 + ty;
 
-        for (int i = 0; i < 32; i += 8)
+        Gpu.ForUnroll(0, 4, iter =>
         {
-            if (xIndex >= height || yIndex + i >= width)
+            var i = iter * 8;
+            if (xIndex < height && yIndex + i < width)
             {
-                continue;
+                uint val = 0;
+                Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
+                odata[(yIndex + i) * height + xIndex] = val;
             }
-
-            uint val = 0;
-            Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
-            odata[(yIndex + i) * height + xIndex] = val;
-        }
+        });
     }
 
 
@@ -142,11 +144,10 @@ public static class GpuBigIntFermatKernels
         Gpu.SyncGrid();
 
         var actualOutNumWords = ctx.Dimensions.NumberOfWords * 2 + 16;
-        var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var i = tid; i < actualOutNumWords; i += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(ref ctx, actualOutNumWords, (ref FermatContext c, int i) =>
         {
-            ctx.Buffers.ValueT[i] = 0;
-        }
+            c.Buffers.ValueT[i] = 0;
+        });
 
         Gpu.SyncGrid();
 
@@ -154,14 +155,14 @@ public static class GpuBigIntFermatKernels
             ctx.Ntt.Buffers.Buffer3, ctx.Ntt.Buffers.TemporaryBuffer, ctx.Ntt.TransformLength);
         Gpu.SyncGrid();
 
-        GpuBigIntNttKernels.Device_ResolveNttCarries_SingleThread(
+        GpuBigIntNttKernels.Device_ResolveNttCarries(
             ctx.Ntt.Buffers.Buffer3, ctx.Ntt.Buffers.TemporaryBuffer, ctx.Buffers.ValueT,
             ctx.Ntt.TransformLength, ctx.Dimensions.NumberOfWords * 2);
         Gpu.SyncGrid();
     }
 
     [GpuDeviceFunction]
-    private static void Device_AddSub(ref BigIntKernelContext ctx, bool isSubtract)
+    private static void Device_AddSub(BigIntKernelContext ctx, bool isSubtract)
     {
         int chunkSize = 256;
         if (isSubtract)
@@ -189,16 +190,16 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_Add(ref BigIntKernelContext ctx)
-        => Device_AddSub(ref ctx, false);
+    public static void Device_Add(BigIntKernelContext ctx)
+        => Device_AddSub(ctx, false);
 
     [GpuDeviceFunction]
-    public static void Device_Sub(ref BigIntKernelContext ctx)
-        => Device_AddSub(ref ctx, true);
+    public static void Device_Sub(BigIntKernelContext ctx)
+        => Device_AddSub(ctx, true);
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Device_ShiftLeftRight(ref BigIntKernelContext ctx, int shiftBits, bool isRight)
+    private static void Device_ShiftLeftRight(BigIntKernelContext ctx, int shiftBits, bool isRight)
     {
         var dA = ctx.Operands.LeftOperand;
         var dResult = ctx.Operands.ResultBuffer;
@@ -261,29 +262,28 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_ShiftLeft(ref BigIntKernelContext ctx, int shiftBits)
+    public static void Device_ShiftLeft(BigIntKernelContext ctx, int shiftBits)
     {
-        Device_ShiftLeftRight(ref ctx, shiftBits, false);
+        Device_ShiftLeftRight(ctx, shiftBits, false);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ShiftRight(ref BigIntKernelContext ctx, int shiftBits)
+    public static void Device_ShiftRight(BigIntKernelContext ctx, int shiftBits)
     {
-        Device_ShiftLeftRight(ref ctx, shiftBits, true);
+        Device_ShiftLeftRight(ctx, shiftBits, true);
     }
 
 
     [GpuDeviceFunction]
-    public static void Device_Copy(ref BigIntKernelContext ctx)
+    public static void Device_Copy(BigIntKernelContext ctx)
     {
         var dSrc = ctx.Operands.LeftOperand;
         var dDst = ctx.Operands.ResultBuffer;
         var numWords = ctx.NumberOfWords;
-        var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        for (var tid = i; tid < numWords; tid += GridDimension.X * BlockDimension.X)
+        Gpu.GridStrideLoop(numWords, tid =>
         {
             dDst[tid] = dSrc[tid];
-        }
+        });
 
         Gpu.SyncGrid();
     }
@@ -292,52 +292,24 @@ public static class GpuBigIntFermatKernels
     [GpuDeviceFunction, GpuInline]
     public static void Device_FermatReduceStep(ref FermatContext ctx)
     {
-        var mathCtx = new BigIntKernelContext
-        {
-            Operands = new BigIntKernelContext.OperandsContext
-            {
-                LeftOperand = ctx.Buffers.ValueT,
-                ResultBuffer = ctx.Buffers.Quotient,
-                CarryBuffer = ctx.Buffers.CarryBuffer
-            },
-            NumberOfWords = ctx.Dimensions.NumberOfWordsExtended
-        };
-        Device_ShiftRight(ref mathCtx, ctx.Dimensions.BitOffset2E1);
+        GpuBigIntRef valueT = ctx.Buffers.ValueT;
+        GpuBigIntRef quotient = ctx.Buffers.Quotient;
+        GpuBigIntRef remainder = ctx.Buffers.Remainder;
+        GpuBigIntRef temp = ctx.Buffers.TemporaryBuffer;
+        GpuBigIntRef remainderMask = ctx.Buffers.RemainderMask;
 
-        mathCtx.Operands.LeftOperand = ctx.Buffers.ValueT;
-        mathCtx.Operands.RightOperand = ctx.Buffers.RemainderMask;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.Remainder;
-        GpuBigIntKernels.Device_BitwiseAnd(ref mathCtx);
+        quotient = valueT >> ctx.Dimensions.BitOffset2E1;
+        remainder = valueT & remainderMask;
 
-        mathCtx.Operands.LeftOperand = ctx.Buffers.Quotient;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.TemporaryBuffer;
-        Device_ShiftLeft(ref mathCtx, ctx.Dimensions.Exponent);
+        temp = quotient << ctx.Dimensions.Exponent;
+        remainder = remainder + temp;
 
-        mathCtx.Operands.LeftOperand = ctx.Buffers.Remainder;
-        mathCtx.Operands.RightOperand = ctx.Buffers.TemporaryBuffer;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.Remainder;
-        Device_Add(ref mathCtx);
+        temp = quotient << 1;
+        remainder = remainder - quotient;
+        remainder = remainder - temp;
 
-        mathCtx.Operands.LeftOperand = ctx.Buffers.Quotient;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.TemporaryBuffer;
-        Device_ShiftLeft(ref mathCtx, 1);
-
-        mathCtx.Operands.LeftOperand = ctx.Buffers.Remainder;
-        mathCtx.Operands.RightOperand = ctx.Buffers.Quotient;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.Remainder;
-        Device_Sub(ref mathCtx);
-
-        mathCtx.Operands.RightOperand = ctx.Buffers.TemporaryBuffer;
-        Device_Sub(ref mathCtx);
-
-        mathCtx.Operands.LeftOperand = ctx.Buffers.Quotient;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.TemporaryBuffer;
-        Device_ShiftLeft(ref mathCtx, 3);
-
-        mathCtx.Operands.LeftOperand = ctx.Buffers.Remainder;
-        mathCtx.Operands.RightOperand = ctx.Buffers.TemporaryBuffer;
-        mathCtx.Operands.ResultBuffer = ctx.Buffers.ValueT;
-        Device_Sub(ref mathCtx);
+        temp = quotient << 3;
+        valueT = remainder - temp;
     }
 
     [GpuDeviceFunction, GpuInline]
@@ -362,11 +334,11 @@ public static class GpuBigIntFermatKernels
             },
             NumberOfWords = ctx.Dimensions.NumberOfWordsExtended
         };
-        Device_ShiftLeft(ref mathCtx, 1);
+        Device_ShiftLeft(mathCtx, 1);
 
         mathCtx.Operands.LeftOperand = ctx.Buffers.TemporaryBuffer;
         mathCtx.Operands.ResultBuffer = ctx.Buffers.ValueT;
-        Device_Copy(ref mathCtx);
+        Device_Copy(mathCtx);
 
         for (int j = 0; j < reduceCount; j++)
         {
@@ -380,40 +352,67 @@ public static class GpuBigIntFermatKernels
     {
         for (int iter = 0; iter < Gpu.JitConstant(gsharpExponent); iter++)
         {
-            Device_MultiplySquareAndReduce(3, ref ctx);
+            Gpu.ForUnroll(ref ctx, 0, 3, (ref c, _) =>
+            {
+                Device_FermatReduceStep(ref c);
+            });
             Device_ShiftLeftAndReduce(3, ref ctx);
         }
 
         for (int iter = 0; iter < Gpu.JitConstant(gsharpExponentMinus4); iter++)
         {
-            Device_MultiplySquareAndReduce(3, ref ctx);
+            Gpu.ForUnroll(ref ctx, 0, 3, (ref c, _) =>
+            {
+                Device_FermatReduceStep(ref c);
+            });
         }
 
         // bit 3 (1)
-        Device_MultiplySquareAndReduce(9, ref ctx);
+        Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
+        {
+            Device_FermatReduceStep(ref c);
+        });
         Device_ShiftLeftAndReduce(1, ref ctx);
 
         // bit 2 (0)
-        Device_MultiplySquareAndReduce(9, ref ctx);
+        Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
+        {
+            Device_FermatReduceStep(ref c);
+        });
 
         for (int iter = 0; iter < Gpu.JitConstant(gsharpExponentMinus4); iter++)
         {
-            Device_MultiplySquareAndReduce(3, ref ctx);
+            Gpu.ForUnroll(ref ctx, 0, 3, (ref c, _) =>
+            {
+                Device_FermatReduceStep(ref c);
+            });
         }
 
         // bit 3 (1)
-        Device_MultiplySquareAndReduce(9, ref ctx);
+        Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
+        {
+            Device_FermatReduceStep(ref c);
+        });
         Device_ShiftLeftAndReduce(1, ref ctx);
 
         // bit 2 (0)
-        Device_MultiplySquareAndReduce(9, ref ctx);
+        Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
+        {
+            Device_FermatReduceStep(ref c);
+        });
 
         // bit 1 (1)
-        Device_MultiplySquareAndReduce(9, ref ctx);
+        Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
+        {
+            Device_FermatReduceStep(ref c);
+        });
         Device_ShiftLeftAndReduce(1, ref ctx);
 
         // bit 0 (0)
-        Device_MultiplySquareAndReduce(9, ref ctx);
+        Gpu.ForUnroll(ref ctx, 0, 9, (ref c, _) =>
+        {
+            Device_FermatReduceStep(ref c);
+        });
     }
 }
 

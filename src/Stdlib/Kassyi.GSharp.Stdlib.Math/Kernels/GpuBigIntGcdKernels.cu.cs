@@ -1,5 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
-
+// ReSharper disable All
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
@@ -9,7 +8,7 @@ public static class GpuBigIntGcdKernels
     [GpuDeviceFunction]
     public static int GetBitLength_Device(uint[] data, int numWords)
     {
-        for (var i = numWords - 1; i >= 0; i--)
+        for (int i = numWords - 1; i >= 0; i--)
         {
             var w = data[i];
             if (w != 0)
@@ -45,7 +44,7 @@ public static class GpuBigIntGcdKernels
     [GpuDeviceFunction]
     public static int Compare_Device(uint[] a, uint[] b, int numWords)
     {
-        for (var i = numWords - 1; i >= 0; i--)
+        for (int i = numWords - 1; i >= 0; i--)
         {
             if (a[i] > b[i])
             {
@@ -78,7 +77,7 @@ public static class GpuBigIntGcdKernels
         long borrow = 0;
         for (int i = 0; i < numWords; i++)
         {
-            long diff = (long)a[i] - b[i] + borrow;
+            var diff = (long)a[i] - b[i] + borrow;
             a[i] = (uint)(diff & 0xFFFFFFFF);
             borrow = diff >> 32;
         }
@@ -90,7 +89,7 @@ public static class GpuBigIntGcdKernels
         long carry = 0;
         for (int i = 0; i < numWords; i++)
         {
-            long sum = (long)a[i] + b[i] + carry;
+            var sum = (long)a[i] + b[i] + carry;
             a[i] = (uint)(sum & 0xFFFFFFFF);
             carry = sum >> 32;
         }
@@ -102,7 +101,7 @@ public static class GpuBigIntGcdKernels
         uint carry = 0;
         for (int i = numWords - 1; i >= 0; i--)
         {
-            uint nextCarry = (a[i] & 1) << 31;
+            var nextCarry = (a[i] & 1) << 31;
             a[i] = (a[i] >> 1) | carry;
             carry = nextCarry;
         }
@@ -116,7 +115,7 @@ public static class GpuBigIntGcdKernels
             return;
         }
 
-        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        Gpu.SingleThread(() =>
         {
             if (IsZero_Device(a, numWords))
             {
@@ -177,8 +176,8 @@ public static class GpuBigIntGcdKernels
 
                 ulong x = 0;
                 ulong y = 0;
-                int wordShift = shift / 32;
-                int bitShift = shift % 32;
+                var wordShift = shift / 32;
+                var bitShift = shift % 32;
 
                 if (wordShift < numWords)
                 {
@@ -241,7 +240,7 @@ public static class GpuBigIntGcdKernels
 
                 long u0 = 1, v0 = 0;
                 long u1 = 0, v1 = 1;
-                bool progress = false;
+                var progress = false;
 
                 while (y != 0)
                 {
@@ -250,24 +249,24 @@ public static class GpuBigIntGcdKernels
                         break; // Overflow protection
                     }
 
-                    ulong qMin = x / (y + 1);
-                    ulong qMax = (x + 1) / y;
+                    var qMin = x / (y + 1);
+                    var qMax = (x + 1) / y;
 
                     if (qMin != qMax)
                     {
                         break;
                     }
 
-                    long q = (long)qMin;
+                    var q = (long)qMin;
                     if (q == 0)
                     {
                         break;
                     }
 
-                    ulong r = x - (ulong)q * y;
+                    var r = x - (ulong)q * y;
 
-                    long next_u = u0 - q * u1;
-                    long next_v = v0 - q * v1;
+                    var next_u = u0 - q * u1;
+                    var next_v = v0 - q * v1;
 
                     // Stop if matrix entries grow beyond 32-bit to prevent overflow in Apply
                     if (next_u > 0x7FFFFFFF || next_u < -0x7FFFFFFF ||
@@ -316,7 +315,7 @@ public static class GpuBigIntGcdKernels
                 uint carry = 0;
                 for (int i = 0; i < numWords; i++)
                 {
-                    uint nextCarry = a[i] >> 31;
+                    var nextCarry = a[i] >> 31;
                     a[i] = (a[i] << 1) | carry;
                     carry = nextCarry;
                 }
@@ -326,6 +325,6 @@ public static class GpuBigIntGcdKernels
             {
                 result[i] = a[i];
             }
-        }
+        });
     }
 }

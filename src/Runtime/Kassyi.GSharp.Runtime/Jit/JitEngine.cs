@@ -1,11 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;
 
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
-public static class JitEngine
+public sealed class JitEngine
 {
     private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
@@ -40,6 +41,7 @@ public static class JitEngine
         }
     }
 
+    // ReSharper disable once InconsistentlySynchronizedField
     private static void EnsureInitialized()
     {
         if (s_isGlobalInit)
@@ -123,6 +125,7 @@ public static class JitEngine
                 sb.Append($"|{kvp.Key}={kvp.Value}");
             }
         }
+
         if (macros != null)
         {
             foreach (var kvp in macros.OrderBy(x => x.Key))
@@ -130,6 +133,7 @@ public static class JitEngine
                 sb.Append($"|{kvp.Key}={kvp.Value}");
             }
         }
+
         var cacheKey = sb.ToString();
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
@@ -142,6 +146,7 @@ public static class JitEngine
                     combinedMacros[kvp.Key] = kvp.Value;
                 }
             }
+
             if (macros != null)
             {
                 foreach (var kvp in macros)
@@ -293,7 +298,7 @@ public static class JitEngine
                 3, // CU_JIT_INFO_LOG_BUFFER
                 4, // CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES
                 5, // CU_JIT_ERROR_LOG_BUFFER
-                6  // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
+                6 // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
             ];
 
             IntPtr[] optionValues =
@@ -304,14 +309,17 @@ public static class JitEngine
                 errorLogBuffer.Length
             ];
 
-            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, (uint)options.Length, options, optionValues);
+            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, (uint)options.Length, options,
+                optionValues);
             if (loadResult != CUresult.CudaSuccess)
             {
                 var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
                 var infoLog = Encoding.UTF8.GetString(infoLogBuffer).TrimEnd('\0');
                 var ptxStr = Encoding.UTF8.GetString(ptxBytes).TrimEnd('\0');
-                Console.WriteLine($"[CUDA JIT ERROR]: {loadResult}\nInfo Log:\n{infoLog}\nError Log:\n{errorLog}\nPTX Source:\n{ptxStr}");
-                throw new Exception($"cuModuleLoadDataEx failed with {loadResult}:\nInfo: {infoLog}\nError: {errorLog}");
+                Logger<JitEngine>.Info(
+                    $"[CUDA JIT ERROR]: {loadResult}\nInfo Log:\n{infoLog}\nError Log:\n{errorLog}\nPTX Source:\n{ptxStr}");
+                throw new Exception(
+                    $"cuModuleLoadDataEx failed with {loadResult}:\nInfo: {infoLog}\nError: {errorLog}");
             }
 
             CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));

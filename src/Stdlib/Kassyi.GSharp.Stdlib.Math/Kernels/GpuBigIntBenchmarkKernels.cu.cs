@@ -1,3 +1,4 @@
+// ReSharper disable All
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 public static class GpuBigIntBenchmarkKernels

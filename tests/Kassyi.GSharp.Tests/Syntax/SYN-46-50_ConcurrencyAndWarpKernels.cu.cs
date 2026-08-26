@@ -1,3 +1,4 @@
+// ReSharper disable All
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
@@ -71,5 +72,20 @@ public static class SYN_46_50_ConcurrencyAndWarpKernels
     {
         // Every thread in the grid atomically adds 1 to globalSum[0]
         Gpu.AtomicAdd(ref globalSum[0], 1);
+    }
+
+    [GpuKernel]
+    public static void AtomicOrMaxStressKernel(uint[] globalState)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        
+        // globalState[0]: AtomicOr with a unique bit for the first 31 threads
+        if (tid < 31)
+        {
+            Gpu.AtomicOr(ref globalState[0], (uint)(1 << tid));
+        }
+
+        // globalState[1]: AtomicMax with the thread ID
+        Gpu.AtomicMax(ref globalState[1], (uint)tid);
     }
 }

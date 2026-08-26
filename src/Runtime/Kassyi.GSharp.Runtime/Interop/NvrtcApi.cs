@@ -1,10 +1,10 @@
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
+
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Enum maps to native C++ API values")]
 public enum NvrtcResult
 {
     Success = 0,
