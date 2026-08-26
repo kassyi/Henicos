@@ -314,54 +314,32 @@ public static class GpuBigIntNttKernels
     public static void Device_ResolveNttCarries(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, int transformLength, int maxWordCount)
     {
-        // Pass 1: write base values. Overwrites any garbage in outputBuffer.
-        Gpu.GridStrideLoop(maxWordCount, i =>
+        Gpu.SingleThread(() =>
         {
-            ulong sum0 = 0;
-            if (2 * i < transformLength)
+            ulong carry = 0;
+
+            for (int i = 0; i < maxWordCount; i++)
             {
-                sum0 = uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
-            }
+                ulong sum0 = carry;
+                if (2 * i < transformLength)
+                {
+                    sum0 += uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
+                }
 
-            ulong sum1 = 0;
-            if (2 * i + 1 < transformLength)
-            {
-                sum1 = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
-            }
+                ulong sum1 = 0;
+                if (2 * i + 1 < transformLength)
+                {
+                    sum1 = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
+                }
 
-            var low16 = (uint)(sum0 & 0xFFFF);
-            var carry0 = sum0 >> 16;
-            var sum1_with_carry = sum1 + carry0;
-            var high16 = (uint)(sum1_with_carry & 0xFFFF);
+                var low16 = (uint)(sum0 & 0xFFFF);
+                var carry0 = sum0 >> 16;
+                var sum1_with_carry = sum1 + carry0;
+                var high16 = (uint)(sum1_with_carry & 0xFFFF);
 
-            outputBuffer[i] = low16 | (high16 << 16);
-        });
+                carry = sum1_with_carry >> 16;
 
-        // Ensure all threads have finished writing base values before we start propagating carries.
-        Gpu.SyncGrid();
-
-        // Pass 2: propagate carries.
-        Gpu.GridStrideLoop(maxWordCount, i =>
-        {
-            ulong sum0 = 0;
-            if (2 * i < transformLength)
-            {
-                sum0 = uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
-            }
-
-            ulong sum1 = 0;
-            if (2 * i + 1 < transformLength)
-            {
-                sum1 = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
-            }
-
-            var carry0 = sum0 >> 16;
-            var sum1_with_carry = sum1 + carry0;
-            var carry1 = sum1_with_carry >> 16;
-
-            if (carry1 > 0)
-            {
-                GpuBigIntKernels.AtomicAddWithCarry(outputBuffer, i + 1, (uint)carry1, maxWordCount);
+                outputBuffer[i] = low16 | (high16 << 16);
             }
         });
     }

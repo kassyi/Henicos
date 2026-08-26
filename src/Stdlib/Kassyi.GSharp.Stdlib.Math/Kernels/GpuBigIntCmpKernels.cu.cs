@@ -25,7 +25,7 @@ public static class GpuBigIntCmpKernels
         {
             if (ctx.Operands.LeftOperand[i] != 0)
             {
-                ctx.Operands.ResultBuffer[0] = 1; // Any non-zero element sets this to 1
+                Gpu.InlinePtx("atomicOr((unsigned int*)&({0}), 1);", ctx.Operands.ResultBuffer[0]);
             }
         });
     }
@@ -50,14 +50,14 @@ public static class GpuBigIntCmpKernels
             {
                 if (ctx.Operands.LeftOperand[0] != 1)
                 {
-                    ctx.Operands.ResultBuffer[0] = 1;
+                    Gpu.InlinePtx("atomicOr((unsigned int*)&({0}), 1);", ctx.Operands.ResultBuffer[0]);
                 }
             }
             else
             {
                 if (ctx.Operands.LeftOperand[i] != 0)
                 {
-                    ctx.Operands.ResultBuffer[0] = 1;
+                    Gpu.InlinePtx("atomicOr((unsigned int*)&({0}), 1);", ctx.Operands.ResultBuffer[0]);
                 }
             }
         });
