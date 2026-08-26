@@ -66,7 +66,7 @@ flowchart TD
     - **SYN-90**: 複雑な制御フロー（if-else ネストとループの複合） (Score: 45)
     - **SYN-91**: 基本制御構文（switch, do-while, 論理演算） (Score: 45)
     - **SYN-92**: ユーザー定義構造体のカーネル引数および操作 (Score: 45)
-    - **SYN-93**: デバイスメソッド ([GpuDevice]) の呼び出し・再利用 (Score: 45)
+    - **SYN-93**: デバイスメソッド ([GpuDeviceFunction]) の呼び出し・再利用 (Score: 45)
     - **GSH-01**: 三項演算子 (`? :`) の複雑式展開 (Score: 42)
     - **GEN-02**: NVRTC コンパイルエラーの例外ラップ (Score: 41)
     - **SYN-09**: デフォルトリテラル (default) (Score: 41)

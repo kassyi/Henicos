@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
 public static class GpuBigIntFermatKernels
 {
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_Unpack16([GpuConst] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
     {
         var tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -31,7 +31,7 @@ public static class GpuBigIntFermatKernels
         }
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_Transpose_32x32([GpuConst] uint[] idata, uint[] odata, int width, int height)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_mem[];");
@@ -84,7 +84,7 @@ public static class GpuBigIntFermatKernels
     }
 
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_MultiplySquare(ref FermatContext ctx)
     {
         Device_Unpack16(ctx.Buffers.ValueT, ctx.Ntt.Buffers.Buffer1, ctx.Ntt.Buffers.Buffer2, ctx.Ntt.TransformLength,
@@ -153,7 +153,7 @@ public static class GpuBigIntFermatKernels
         Gpu.SyncGrid();
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     private static void Device_AddSub(ref BigIntKernelContext ctx, bool isSubtract)
     {
         var dA = ctx.Operands.LeftOperand;
@@ -249,15 +249,15 @@ public static class GpuBigIntFermatKernels
         Gpu.SyncGrid();
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_Add(ref BigIntKernelContext ctx)
         => Device_AddSub(ref ctx, false);
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_Sub(ref BigIntKernelContext ctx)
         => Device_AddSub(ref ctx, true);
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     private static void Device_ShiftLeftRight(ref BigIntKernelContext ctx, int shiftBits, bool isRight)
     {
         var dA = ctx.Operands.LeftOperand;
@@ -320,20 +320,20 @@ public static class GpuBigIntFermatKernels
         Gpu.SyncGrid();
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ShiftLeft(ref BigIntKernelContext ctx, int shiftBits)
     {
         Device_ShiftLeftRight(ref ctx, shiftBits, false);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_ShiftRight(ref BigIntKernelContext ctx, int shiftBits)
     {
         Device_ShiftLeftRight(ref ctx, shiftBits, true);
     }
 
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_Copy(ref BigIntKernelContext ctx)
     {
         var dSrc = ctx.Operands.LeftOperand;
@@ -349,7 +349,7 @@ public static class GpuBigIntFermatKernels
     }
 
 
-    [GpuDevice, GpuInline]
+    [GpuDeviceFunction, GpuInline]
     public static void Device_FermatReduceStep(ref FermatContext ctx)
     {
         var mathCtx = new BigIntKernelContext
@@ -400,7 +400,7 @@ public static class GpuBigIntFermatKernels
         Device_Sub(ref mathCtx);
     }
 
-    [GpuDevice, GpuInline]
+    [GpuDeviceFunction, GpuInline]
     public static void Device_MultiplySquareAndReduce(int reduceCount, ref FermatContext ctx)
     {
         Device_MultiplySquare(ref ctx);
@@ -410,7 +410,7 @@ public static class GpuBigIntFermatKernels
         }
     }
 
-    [GpuDevice, GpuInline]
+    [GpuDeviceFunction, GpuInline]
     public static void Device_ShiftLeftAndReduce(int reduceCount, ref FermatContext ctx)
     {
         var mathCtx = new BigIntKernelContext

@@ -1,6 +1,6 @@
 # 8. Comprehensive Example
 
-This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDevice]`, `[JitConstant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
+This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[JitConstant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
 
 ## 8.1 The G# Source Code
 
@@ -48,14 +48,14 @@ public struct NestedPhysicsState
 
 public static partial class ComprehensiveSpecKernel
 {
-    [GpuDevice]
+    [GpuDeviceFunction]
     [GpuInline]
     public static float ComputeMagnitude(PhysicsVector v)
     {
         return (float)Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     [GpuNoInline]
     public static bool IsPositive(float value)
     {
@@ -241,7 +241,7 @@ public static partial class ComprehensiveSpecKernel
 
     /// <summary>
     /// Demonstrates the host-side AST construction for GpuBigInt.
-    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDevice].
+    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDeviceFunction].
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {

@@ -28,7 +28,7 @@ public class GeneratorSnapshotTests
             {
                 var name = attr.Name.ToString();
                 if (name == "GpuKernel" || name == "GpuKernelAttribute" || 
-                    name == "GpuDevice" || name == "GpuDeviceAttribute")
+                    name == "GpuDeviceFunction" || name == "GpuDeviceFunctionAttribute")
                 {
                     changed = true;
                 }

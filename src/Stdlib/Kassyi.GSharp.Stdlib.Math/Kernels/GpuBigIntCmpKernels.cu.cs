@@ -17,7 +17,7 @@ public static class GpuBigIntCmpKernels
         Device_IsZero(ref ctx);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_IsZero(ref BigIntKernelContext ctx)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -43,7 +43,7 @@ public static class GpuBigIntCmpKernels
         Device_IsOne(ref ctx);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_IsOne(ref BigIntKernelContext ctx)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -79,7 +79,7 @@ public static class GpuBigIntCmpKernels
         Device_CompareTo(ref ctx, dResult);
     }
 
-    [GpuDevice]
+    [GpuDeviceFunction]
     public static void Device_CompareTo(ref BigIntKernelContext ctx, ulong[] dResult)
     {
         var i = BlockIndex.X * BlockDimension.X + ThreadIndex.X;

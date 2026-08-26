@@ -29,7 +29,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         // Check if the method is a GPU kernel or device method
         var isGpuKernel = methodSymbol.GetAttributes().Any(a =>
             KnownAttributes.IsGpuKernel(a.AttributeClass?.Name) ||
-            KnownAttributes.IsGpuDevice(a.AttributeClass?.Name));
+            KnownAttributes.IsGpuDeviceFunction(a.AttributeClass?.Name));
 
         if (!isGpuKernel)
         {

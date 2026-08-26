@@ -51,7 +51,7 @@ For all C# coding style conventions (Naming, Syntax, Zero-Allocation preferences
 
 ### 2.1. GPU Kernel Naming Convention (.cu.cs)
 
-Any C# file that contains G# GPU kernel implementations (e.g., methods annotated with `[GpuKernel]` or `[GpuDevice]`) **MUST** use the `.cu.cs` extension (e.g., `GpuBigIntMulKernels.cu.cs`). This convention signals to the system and developers that the file contains transpilation targets for CUDA C++.
+Any C# file that contains G# GPU kernel implementations (e.g., methods annotated with `[GpuKernel]` or `[GpuDeviceFunction]`) **MUST** use the `.cu.cs` extension (e.g., `GpuBigIntMulKernels.cu.cs`). This convention signals to the system and developers that the file contains transpilation targets for CUDA C++.
 
 - **Separation in Test Projects (`tests/`):**
   - Test files containing test runner/assertion logic (e.g., `FooTests.cs`) **MUST NOT** directly contain `[GpuKernel]` implementations.
