@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
-internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
+internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposable
 {
     private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
 
@@ -24,7 +24,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
         return walker;
     }
 
-    public void Free()
+    public void Dispose()
     {
         _context = default;
         s_pool.Add(this);
