@@ -19,6 +19,7 @@ public class ArchitectureAndOptimizationTests
     [Fact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
+    [Trait("Category", "Execution")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
     {
         var source = @"
@@ -37,6 +38,7 @@ extern ""C"" __global__ void TestKernel(int* data) {
     [Fact]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
+    [Trait("Category", "Execution")]
     public void JitConstant_Unroll_AltersPtxOutput()
     {
         var srcDynamic = @"
@@ -71,6 +73,7 @@ extern ""C"" __global__ void TestKernelStatic(int* data) {
     [Fact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
+    [Trait("Category", "Execution")]
     public void CompileToPtx_InvalidArchitecture_ThrowsException()
     {
         var source = @"

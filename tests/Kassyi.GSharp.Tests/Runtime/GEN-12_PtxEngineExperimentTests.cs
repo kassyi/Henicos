@@ -108,6 +108,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [Fact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "SadPath")]
+    [Trait("Category", "Execution")]
     public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
     {
         var (context, _) = InitializeCuda();
@@ -129,6 +130,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [Fact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Stress")]
+    [Trait("Category", "Execution")]
     public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
     {
         var (context, smVersion) = InitializeCuda();

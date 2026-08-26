@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Runtime.Jit;
@@ -19,6 +20,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
     [Fact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
+    [Trait("Category", "Execution")]
     public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache()
     {
         const string kernelName = "CacheTestKernel";
@@ -52,6 +54,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Stress")]
     [Trait("Category", "SadPath")]
+    [Trait("Category", "Execution")]
     public void Test_Runtime_OutOfMemory_SadPath()
     {
         // Require CUDA context for allocation
@@ -86,8 +89,8 @@ public partial class Gsh06_07_RuntimeIssuesTests
         }
     }
 
-    [System.Runtime.InteropServices.LibraryImport("nvcuda_missing_dummy.dll")]
-    [System.Runtime.InteropServices.UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvStdcall)])]
+    [LibraryImport("nvcuda_missing_dummy.dll")]
+    [UnmanagedCallConv(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvStdcall)])]
     private static partial CUresult cuInit_Dummy(uint flags);
 
     [Fact]
@@ -99,7 +102,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
         {
             cuInit_Dummy(0);
         });
-        
+
         var rootEx = ex.GetBaseException();
         Assert.IsType<DllNotFoundException>(rootEx);
     }
