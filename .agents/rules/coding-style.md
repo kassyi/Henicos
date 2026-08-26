@@ -45,7 +45,20 @@ You must conform to these modern .NET guidelines, matching the project's `.edito
 
 ---
 
-## 3. OUTPUT VALIDATION & RESPONSE STYLE RULE
+## 3. GPU KERNEL DEVELOPMENT CONVENTIONS
+
+### 3.1. GPU Kernel Naming Convention (.cu.cs)
+
+Any C# file that contains G# GPU kernel implementations (e.g., methods annotated with `[GpuKernel]` or `[GpuDeviceFunction]`) **MUST** use the `.cu.cs` extension (e.g., `GpuBigIntMulKernels.cu.cs`). This convention signals to the system and developers that the file contains transpilation targets for CUDA C++.
+
+- **Separation in Test Projects (`tests/`):**
+  - Test files containing test runner/assertion logic (e.g., `FooTests.cs`) **MUST NOT** directly contain `[GpuKernel]` implementations.
+  - Test helper kernels **MUST** be separated into dedicated `.cu.cs` files matching the corresponding test file name (e.g., `FooTests.cs` -> `FooTestKernels.cu.cs` or `FooKernels.cu.cs`).
+  - This ensures clean separation between test execution code and transpiler target kernels, avoiding rule violations and keeping wrapper generation predictable.
+
+---
+
+## 4. OUTPUT VALIDATION & RESPONSE STYLE RULE
 
 Before presenting any code modification, refactored files, or responding to the user:
 
