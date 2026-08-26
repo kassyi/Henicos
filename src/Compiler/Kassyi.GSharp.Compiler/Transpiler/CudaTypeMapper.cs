@@ -9,11 +9,6 @@ internal static class CudaTypeMapper
             return "void";
         }
 
-        if (typeSymbol.Name == "GpuBigIntRef")
-        {
-            return "unsigned int*";
-        }
-
         if (typeSymbol is IArrayTypeSymbol arrayType)
         {
             return MapType(arrayType.ElementType) + "*";
