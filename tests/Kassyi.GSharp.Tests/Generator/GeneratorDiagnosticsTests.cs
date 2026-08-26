@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Tests.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using VerifyXunit;
@@ -14,62 +15,39 @@ public class GeneratorDiagnosticsTests
 {
     [Fact]
     [Trait("FeatureId", "GEN-05")]
-    public Task TestSadPathDiagnostics()
+    public async Task TestSadPathDiagnostics()
     {
-        var source = System.IO.File.ReadAllText(System.IO.Path.Combine(Helpers.RoslynTestUtility.GetTestCasesDirectory(), "Generator", "GEN-05_SadPathDiagnostics.cu.cs"));
-        var (_, _, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
-        var gsharpDiagnostics = diagnostics.Where(d => d.Id.StartsWith("GSH"));
-        return Verifier.Verify(gsharpDiagnostics);
+        var path = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Generator",
+            "GEN-05_SadPathDiagnostics.cu.cs");
+        var source = await File.ReadAllTextAsync(path);
+        var (driver, _, _) = RoslynTestUtility.RunGenerator(source);
+
+        await Verifier.Verify(driver).UseMethodName("TestSadPathDiagnostics");
     }
 
     [Fact]
     [Trait("FeatureId", "GEN-06")]
-    public Task TestComprehensiveSpecKernelGeneratedSource()
+    public async Task TestComprehensiveSpecKernelGeneratedSource()
     {
-        var source = System.IO.File.ReadAllText(System.IO.Path.Combine(Helpers.RoslynTestUtility.GetTestCasesDirectory(), "GEN-06_ComprehensiveSpecKernel.cu.cs"));
+        var path = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "GEN-06_ComprehensiveSpecKernel.cu.cs");
+        var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
+        var (driver, _, _) = RoslynTestUtility.RunGenerator(source);
 
-        var runResult = driver.GetRunResult();
-        var sb = new System.Text.StringBuilder();
-        foreach (var tree in runResult.GeneratedTrees)
-        {
-            sb.AppendLine("TREE: " + tree.FilePath);
-            sb.AppendLine(tree.GetText().ToString());
-        }
-
-        var compDiagnostics = compilation.GetDiagnostics();
-        foreach (var result in runResult.Results)
-        {
-            if (result.Exception != null)
-            {
-                sb.AppendLine("GENERATOR EXCEPTION: " + result.Exception.ToString());
-            }
-        }
-
-        if (sb.Length == 0)
-        {
-            sb.AppendLine("NO CODE GENERATED.");
-            sb.AppendLine("Generator Diagnostics:");
-            sb.AppendLine(string.Join("\n", diagnostics));
-            sb.AppendLine("Compilation Diagnostics:");
-            sb.AppendLine(string.Join("\n", compDiagnostics));
-        }
-
-        var generatedCode = sb.ToString().Replace("\r\n", "\n");
-        return Verifier.Verify(generatedCode);
+        await Verifier.Verify(driver).UseMethodName("TestComprehensiveSpecKernelGeneratedSource");
     }
 
     [Fact]
     [Trait("Category", "Diagnostics")]
     [Trait("FeatureId", "GEN-07")]
-    public void Test_UnsupportedFeatures_ReportsDiagnostics()
+    public async Task Test_UnsupportedFeatures_ReportsDiagnostics()
     {
-        var source = System.IO.File.ReadAllText(System.IO.Path.Combine(Helpers.RoslynTestUtility.GetTestCasesDirectory(), "Generator", "GEN-07_UnsupportedFeatures.cu.cs"));
-        var (_, _, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
-        var gsharpDiagnostics = diagnostics.Where(d => d.Id.StartsWith("GSH")).ToList();
+        var path = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Generator",
+            "GEN-07_UnsupportedFeatures.cu.cs");
+        var source = await File.ReadAllTextAsync(path);
 
-        Assert.NotEmpty(gsharpDiagnostics);
-        Assert.True(gsharpDiagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+        var (driver, _, _) = RoslynTestUtility.RunGenerator(source);
+
+        await Verifier.Verify(driver).UseMethodName("Test_UnsupportedFeatures_ReportsDiagnostics");
     }
 }
