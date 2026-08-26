@@ -1,20 +1,24 @@
+using System;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 internal readonly struct ValidationContext
 {
-    public readonly SyntaxNodeAnalysisContext AnalyzerContext;
+    public readonly SemanticModel SemanticModel;
     public readonly IMethodSymbol MethodSymbol;
+    private readonly Action<Diagnostic> _reportDiagnostic;
 
-    public ValidationContext(SyntaxNodeAnalysisContext analyzerContext, IMethodSymbol methodSymbol)
+    public ValidationContext(SemanticModel semanticModel, IMethodSymbol methodSymbol, Action<Diagnostic> reportDiagnostic)
     {
-        AnalyzerContext = analyzerContext;
+        SemanticModel = semanticModel;
         MethodSymbol = methodSymbol;
+        _reportDiagnostic = reportDiagnostic;
     }
 
     public void ReportDiagnostic(Diagnostic diagnostic)
     {
-        AnalyzerContext.ReportDiagnostic(diagnostic);
+        _reportDiagnostic(diagnostic);
     }
 }

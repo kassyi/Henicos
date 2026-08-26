@@ -40,7 +40,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         }
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
-        var validationContext = new ValidationContext(context, methodSymbol);
+        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, context.ReportDiagnostic);
         var walker = GpuKernelValidationWalker.Rent(validationContext);
         
         try
