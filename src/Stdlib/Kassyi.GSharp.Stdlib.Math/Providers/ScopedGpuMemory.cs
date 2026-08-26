@@ -1,11 +1,9 @@
-using System;
-
 namespace Kassyi.GSharp.Stdlib.Math.Providers;
 
-public readonly ref struct ScopedGpuMemory
+public ref struct ScopedGpuMemory
 {
     private readonly IGpuExecutionProvider _provider;
-    public readonly IntPtr Pointer;
+    public IntPtr Pointer { get; private set; }
 
     public ScopedGpuMemory(IGpuExecutionProvider provider, int numWords)
     {
@@ -18,6 +16,7 @@ public readonly ref struct ScopedGpuMemory
         if (Pointer != IntPtr.Zero)
         {
             _provider.FreeMemory(Pointer);
+            Pointer = IntPtr.Zero;
         }
     }
 }
