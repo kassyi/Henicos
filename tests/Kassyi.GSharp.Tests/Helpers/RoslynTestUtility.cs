@@ -66,17 +66,7 @@ public static class RoslynTestUtility
     {
         var compilation = CreateCompilation(source);
         
-        var assembly = System.AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == "Kassyi.GSharp.Compiler");
-        if (assembly == null)
-        {
-            // Dynamically load compiler if not already loaded (typical for tests that don't directly reference it as library)
-            var compilerPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\src\Compiler\Kassyi.GSharp.Compiler\bin\Debug\netstandard2.0\Kassyi.GSharp.Compiler.dll"));
-            assembly = Assembly.LoadFrom(compilerPath);
-        }
-
-        var genType = assembly.GetType("Kassyi.GSharp.Compiler.GpuKernelGenerator");
-        var generator = (IIncrementalGenerator)System.Activator.CreateInstance(genType)!;
+        var generator = new Kassyi.GSharp.Compiler.GpuKernelGenerator();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: new[] { generator.AsSourceGenerator() },
