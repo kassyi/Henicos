@@ -368,7 +368,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             sharedMemBytes: (uint)(sharedMemWords * 4)
         );
 
-        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread_Device(
+        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Device(
             uncarriedLow.Pointer, uncarriedHigh.Pointer, resultBuffer.DevicePointer, m, outWords,
             gridDimX: 1, blockDimX: 1
         );
