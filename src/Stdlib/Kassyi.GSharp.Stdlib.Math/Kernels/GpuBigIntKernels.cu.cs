@@ -66,7 +66,27 @@ public static class GpuBigIntKernels
         var carry = ctx.Operands.CarryBuffer[cIdx];
         if (carry > 0)
         {
-            GpuBigIntNttKernels.AtomicAddWithCarry(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)carry, ctx.NumberOfWords);
+            AtomicAddWithCarry(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)carry, ctx.NumberOfWords);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
+    {
+        var carry = valueToAdd;
+        var index = wordIndex;
+        while (carry > 0 && index < maxWordCount)
+        {
+            var oldValue = Gpu.AtomicAdd(ref address[index], carry);
+            if (oldValue + carry < oldValue)
+            {
+                carry = 1;
+                index++;
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -131,7 +151,27 @@ public static class GpuBigIntKernels
         var borrow = ctx.Operands.CarryBuffer[cIdx];
         if (borrow > 0)
         {
-            GpuBigIntNttKernels.AtomicSubWithBorrow(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)borrow, ctx.NumberOfWords);
+            AtomicSubWithBorrow(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)borrow, ctx.NumberOfWords);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void AtomicSubWithBorrow(uint[] address, int wordIndex, uint valueToSubtract, int maxWordCount)
+    {
+        var borrow = valueToSubtract;
+        var index = wordIndex;
+        while (borrow > 0 && index < maxWordCount)
+        {
+            var oldValue = Gpu.AtomicSub(ref address[index], borrow);
+            if (oldValue < borrow)
+            {
+                borrow = 1;
+                index++;
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
