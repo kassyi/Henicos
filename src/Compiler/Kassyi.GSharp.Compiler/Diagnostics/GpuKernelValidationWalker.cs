@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;

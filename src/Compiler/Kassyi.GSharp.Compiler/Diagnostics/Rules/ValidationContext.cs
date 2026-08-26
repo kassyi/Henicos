@@ -1,24 +1,14 @@
-using System;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
-internal readonly struct ValidationContext
+internal readonly struct ValidationContext(
+    SemanticModel semanticModel,
+    IMethodSymbol methodSymbol,
+    System.Action<Diagnostic> reportDiagnostic)
 {
-    public readonly SemanticModel SemanticModel;
-    public readonly IMethodSymbol MethodSymbol;
-    private readonly Action<Diagnostic> _reportDiagnostic;
+    public readonly SemanticModel SemanticModel = semanticModel;
+    public readonly IMethodSymbol MethodSymbol = methodSymbol;
 
-    public ValidationContext(SemanticModel semanticModel, IMethodSymbol methodSymbol, Action<Diagnostic> reportDiagnostic)
-    {
-        SemanticModel = semanticModel;
-        MethodSymbol = methodSymbol;
-        _reportDiagnostic = reportDiagnostic;
-    }
-
-    public void ReportDiagnostic(Diagnostic diagnostic)
-    {
-        _reportDiagnostic(diagnostic);
-    }
+    public void ReportDiagnostic(Diagnostic diagnostic) => reportDiagnostic(diagnostic);
 }
