@@ -336,58 +336,42 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
         var twiddle = GetOrCreateTwiddleFactors(context, m);
 
-        IntPtr buf1A = IntPtr.Zero, buf2A = IntPtr.Zero, buf1B = IntPtr.Zero, buf2B = IntPtr.Zero;
-        IntPtr tmpBuf = IntPtr.Zero, uncarriedLow = IntPtr.Zero, uncarriedHigh = IntPtr.Zero;
+        using var buf1A = new ScopedGpuMemory(context.Provider, m);
+        using var buf2A = new ScopedGpuMemory(context.Provider, m);
+        using var buf1B = new ScopedGpuMemory(context.Provider, m);
+        using var buf2B = new ScopedGpuMemory(context.Provider, m);
+        using var tmpBuf = new ScopedGpuMemory(context.Provider, m);
 
-        try
+        using var uncarriedLow = new ScopedGpuMemory(context.Provider, m);
+        using var uncarriedHigh = new ScopedGpuMemory(context.Provider, m);
+
+        var n2 = 1;
+        while (n2 * n2 < m)
         {
-            buf1A = context.Provider.AllocateMemory(m);
-            buf2A = context.Provider.AllocateMemory(m);
-            buf1B = context.Provider.AllocateMemory(m);
-            buf2B = context.Provider.AllocateMemory(m);
-            tmpBuf = context.Provider.AllocateMemory(m);
-            
-            uncarriedLow = context.Provider.AllocateMemory(m);
-            uncarriedHigh = context.Provider.AllocateMemory(m);
-
-            var n2 = 1;
-            while (n2 * n2 < m)
-            {
-                n2 *= 2;
-            }
-
-            var n1 = m / n2;
-            var maxL = m <= 512 ? m : System.Math.Max(n1, n2);
-            var sharedMemWords = System.Math.Max(1055, maxL);
-            var threadsNeeded = maxL / 2;
-
-            var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
-            var gridDim = (uint)((m + blockDim - 1) / blockDim);
-
-            GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Device(
-                leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
-                buf1A, buf2A, buf1B, buf2B, tmpBuf, uncarriedLow, uncarriedHigh,
-                twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
-                leftOperand.NumWords, rightOperand.NumWords, outWords, m,
-                gridDimX: gridDim, blockDimX: blockDim,
-                sharedMemBytes: (uint)(sharedMemWords * 4)
-            );
-
-            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread_Device(
-                uncarriedLow, uncarriedHigh, resultBuffer.DevicePointer, m, outWords,
-                gridDimX: 1, blockDimX: 1
-            );
+            n2 *= 2;
         }
-        finally
-        {
-            if (buf1A != IntPtr.Zero) context.Provider.FreeMemory(buf1A);
-            if (buf2A != IntPtr.Zero) context.Provider.FreeMemory(buf2A);
-            if (buf1B != IntPtr.Zero) context.Provider.FreeMemory(buf1B);
-            if (buf2B != IntPtr.Zero) context.Provider.FreeMemory(buf2B);
-            if (tmpBuf != IntPtr.Zero) context.Provider.FreeMemory(tmpBuf);
-            if (uncarriedLow != IntPtr.Zero) context.Provider.FreeMemory(uncarriedLow);
-            if (uncarriedHigh != IntPtr.Zero) context.Provider.FreeMemory(uncarriedHigh);
-        }
+
+        var n1 = m / n2;
+        var maxL = m <= 512 ? m : System.Math.Max(n1, n2);
+        var sharedMemWords = System.Math.Max(1055, maxL);
+        var threadsNeeded = maxL / 2;
+
+        var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
+        var gridDim = (uint)((m + blockDim - 1) / blockDim);
+
+        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Device(
+            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
+            buf1A.Pointer, buf2A.Pointer, buf1B.Pointer, buf2B.Pointer, tmpBuf.Pointer, uncarriedLow.Pointer, uncarriedHigh.Pointer,
+            twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
+            leftOperand.NumWords, rightOperand.NumWords, outWords, m,
+            gridDimX: gridDim, blockDimX: blockDim,
+            sharedMemBytes: (uint)(sharedMemWords * 4)
+        );
+
+        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_SingleThread_Device(
+            uncarriedLow.Pointer, uncarriedHigh.Pointer, resultBuffer.DevicePointer, m, outWords,
+            gridDimX: 1, blockDimX: 1
+        );
     }
 
     private uint CpuModPow(ulong baseVal, ulong exp, uint p)
