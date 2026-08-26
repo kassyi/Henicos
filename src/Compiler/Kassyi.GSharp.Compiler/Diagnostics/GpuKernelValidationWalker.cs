@@ -9,7 +9,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
     private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
 
     private SyntaxNodeAnalysisContext _analyzerContext;
-    private IMethodSymbol _methodSymbol;
+    private IMethodSymbol _methodSymbol = null!;
 
     private GpuKernelValidationWalker()
     {
@@ -62,3 +62,4 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
         base.VisitInvocationExpression(node);
     }
 }
+
