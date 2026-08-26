@@ -99,7 +99,7 @@ internal static class MacroTranspiler
             return false;
         }
 
-        string contextParamName = null;
+        string? contextParamName = null;
         if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
         {
             contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
@@ -209,18 +209,31 @@ internal static class MacroTranspiler
     private static bool TryTranspileAssignment(AssignmentExpressionSyntax assignment, ref TranspileContext context)
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
-        if (rightNode is not BinaryExpressionSyntax binaryExpr)
+        
+        var isSupportedGpuBigIntOp = false;
+        if (rightNode is BinaryExpressionSyntax binaryExpr)
+        {
+            var type = context.SemanticModel.GetTypeInfo(binaryExpr).Type;
+            if (type is { Name: "GpuBigIntRef" })
+            {
+                isSupportedGpuBigIntOp = true;
+            }
+        }
+        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
+        {
+            var type = context.SemanticModel.GetTypeInfo(unaryExpr).Type;
+            if (type is { Name: "GpuBigIntRef" })
+            {
+                isSupportedGpuBigIntOp = true;
+            }
+        }
+
+        if (!isSupportedGpuBigIntOp)
         {
             return false;
         }
 
-        var binaryType = context.SemanticModel.GetTypeInfo(binaryExpr).Type;
-        if (binaryType is not { Name: "GpuBigIntRef" })
-        {
-            return false;
-        }
-
-        EmitGpuBigIntRefBinaryOperation(assignment, binaryExpr, ref context);
+        EmitGpuBigIntRefOperation(assignment, rightNode, ref context);
         return true;
     }
 
@@ -240,9 +253,9 @@ internal static class MacroTranspiler
         return expression;
     }
 
-    private static void EmitGpuBigIntRefBinaryOperation(
+    private static void EmitGpuBigIntRefOperation(
         AssignmentExpressionSyntax assignment,
-        BinaryExpressionSyntax binaryExpr,
+        ExpressionSyntax rightNode,
         ref TranspileContext context)
     {
         using (context.Writer.Scope())
@@ -251,12 +264,19 @@ internal static class MacroTranspiler
             context.Writer.AppendSemiColon();
             context.Writer.AppendLine();
 
-            EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", binaryExpr.Left);
-
-            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
-                !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
+            if (rightNode is BinaryExpressionSyntax binaryExpr)
             {
-                EmitAssignment(ref context, "_macroCtx.Operands.RightOperand", binaryExpr.Right);
+                EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", binaryExpr.Left);
+
+                if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
+                    !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
+                {
+                    EmitAssignment(ref context, "_macroCtx.Operands.RightOperand", binaryExpr.Right);
+                }
+            }
+            else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
+            {
+                EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", unaryExpr.Operand);
             }
 
             EmitAssignment(ref context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
@@ -274,7 +294,7 @@ internal static class MacroTranspiler
             context.Writer.AppendSemiColon();
             context.Writer.AppendLine();
 
-            EmitDeviceFunctionCall(ref context, binaryExpr);
+            EmitDeviceFunctionCall(ref context, rightNode);
         }
     }
 
@@ -287,18 +307,33 @@ internal static class MacroTranspiler
         context.Writer.AppendLine();
     }
 
-    private static void EmitDeviceFunctionCall(ref TranspileContext context, BinaryExpressionSyntax binaryExpr)
+    private static void EmitDeviceFunctionCall(ref TranspileContext context, ExpressionSyntax opNode)
     {
-        var (functionName, extraArg) = binaryExpr.Kind() switch
+        ExpressionSyntax? extraArg = null;
+        string? functionName = null;
+
+        if (opNode is BinaryExpressionSyntax binaryExpr)
         {
-            SyntaxKind.AddExpression => ("Device_Add", (ExpressionSyntax?)null),
-            SyntaxKind.SubtractExpression => ("Device_Sub", null),
-            SyntaxKind.BitwiseAndExpression => ("Device_BitwiseAnd", null),
-            SyntaxKind.BitwiseOrExpression => ("Device_BitwiseOr", null),
-            SyntaxKind.LeftShiftExpression => ("Device_ShiftLeft", binaryExpr.Right),
-            SyntaxKind.RightShiftExpression => ("Device_ShiftRight", binaryExpr.Right),
-            _ => (null, null)
-        };
+            (functionName, extraArg) = binaryExpr.Kind() switch
+            {
+                SyntaxKind.AddExpression => ("Device_Add", (ExpressionSyntax?)null),
+                SyntaxKind.SubtractExpression => ("Device_Sub", null),
+                SyntaxKind.BitwiseAndExpression => ("Device_BitwiseAnd", null),
+                SyntaxKind.BitwiseOrExpression => ("Device_BitwiseOr", null),
+                SyntaxKind.ExclusiveOrExpression => ("Device_BitwiseXor", null),
+                SyntaxKind.LeftShiftExpression => ("Device_ShiftLeft", binaryExpr.Right),
+                SyntaxKind.RightShiftExpression => ("Device_ShiftRight", binaryExpr.Right),
+                _ => (null, null)
+            };
+        }
+        else if (opNode is PrefixUnaryExpressionSyntax unaryExpr)
+        {
+            functionName = unaryExpr.Kind() switch
+            {
+                SyntaxKind.BitwiseNotExpression => "Device_BitwiseNot",
+                _ => null
+            };
+        }
 
         if (functionName == null)
         {
