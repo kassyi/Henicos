@@ -53,7 +53,7 @@ public static class NvccCompiler
         {
             try
             {
-                process.Kill();
+                process.Kill(true);
             }
             catch
             {
@@ -98,7 +98,7 @@ public static class NvccCompiler
         {
             try
             {
-                process.Kill();
+                process.Kill(true);
             }
             catch
             {
