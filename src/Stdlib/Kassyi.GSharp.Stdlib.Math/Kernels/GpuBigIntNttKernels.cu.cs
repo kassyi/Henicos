@@ -321,6 +321,11 @@ public static class GpuBigIntNttKernels
             return;
         }
 
+        if (maxWordCount <= 0)
+        {
+            return;
+        }
+
         ulong carry = 0;
 
         for (int i = 0; i < maxWordCount; i++)
