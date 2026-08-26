@@ -301,22 +301,24 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        switch (node.ArgumentList.Arguments[0].Expression)
+        var argExpr = node.ArgumentList.Arguments[0].Expression;
+
+        var constantValue = context.SemanticModel.GetConstantValue(argExpr);
+        if (constantValue is { HasValue: true, Value: string ptxString })
         {
-            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
-                context.Writer.Append(literal.Token.ValueText);
-                context.Writer.AppendLine();
-                break;
-
-            case InterpolatedStringExpressionSyntax interpolated:
-                TranspileInterpolatedInlinePtx(interpolated, ref context);
-                break;
-
-            default:
-                context.ReportDiagnostic?.Invoke(
-                    Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
-                break;
+            context.Writer.Append(ptxString);
+            context.Writer.AppendLine();
+            return;
         }
+
+        if (argExpr is InterpolatedStringExpressionSyntax interpolated)
+        {
+            TranspileInterpolatedInlinePtx(interpolated, ref context);
+            return;
+        }
+
+        context.ReportDiagnostic?.Invoke(
+            Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
     }
 
 
