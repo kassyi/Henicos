@@ -79,6 +79,30 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads, globalSum[0]);
     }
 
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-49")]
+    public void TestAtomicOrMaxStress_HighContention()
+    {
+        uint[] globalState = [0, 0];
+        uint threadsPerBlock = 256;
+        uint blocksPerGrid = 16;
+        uint expectedTotalThreads = threadsPerBlock * blocksPerGrid; // 4096 threads
+
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_AtomicOrMaxStressKernel(
+            globalState,
+            gridDimX: blocksPerGrid,
+            blockDimX: threadsPerBlock
+        );
+
+        // First 31 threads will OR their bits: 1 << 0 to 1 << 30
+        uint expectedOr = int.MaxValue; // 0x7FFFFFFF
+        Assert.Equal(expectedOr, globalState[0]);
+
+        // Max thread ID will be 4095
+        Assert.Equal(expectedTotalThreads - 1, globalState[1]);
+    }
+
     [Fact(Skip = "未実装: SYN-46 (ワープシャッフル・同期プリミティブ)")]
     [Trait("FeatureId", "SYN-46")]
     [Trait("Category", "Syntax")]
