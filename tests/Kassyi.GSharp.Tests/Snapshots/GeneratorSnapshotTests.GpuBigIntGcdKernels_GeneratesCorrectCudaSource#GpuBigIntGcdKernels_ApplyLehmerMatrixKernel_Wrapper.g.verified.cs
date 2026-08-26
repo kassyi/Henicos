@@ -151,10 +151,6 @@ resultHost[0]=0;
 ";
 public static unsafe void Launch_ApplyLehmerMatrixKernel(uint[] a, uint[] b, uint[] newA, uint[] newB, int numWords, long u0, long v0, long u1, long v1, uint[] resultHost, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-if (a.Length == 0 || b.Length == 0 || newA.Length == 0 || newB.Length == 0 || resultHost.Length == 0)
-{
-return;
-}
 using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ApplyLehmerMatrixKernel", ApplyLehmerMatrixKernel_CudaSource, null, macros);
 IntPtr d_a = IntPtr.Zero;
@@ -167,7 +163,7 @@ try
 void** kernelParams = stackalloc void*[10];
 // Marshal array: a
 int a_size = a.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (a_size > 0)
+if(a_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
 System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -184,7 +180,7 @@ handle_a.Free();
 kernelParams[0] = &d_a;
 // Marshal array: b
 int b_size = b.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (b_size > 0)
+if(b_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
 System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -201,7 +197,7 @@ handle_b.Free();
 kernelParams[1] = &d_b;
 // Marshal array: newA
 int newA_size = newA.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (newA_size > 0)
+if(newA_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_newA, newA_size));
 System.Runtime.InteropServices.GCHandle handle_newA = System.Runtime.InteropServices.GCHandle.Alloc(newA, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -218,7 +214,7 @@ handle_newA.Free();
 kernelParams[2] = &d_newA;
 // Marshal array: newB
 int newB_size = newB.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (newB_size > 0)
+if(newB_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_newB, newB_size));
 System.Runtime.InteropServices.GCHandle handle_newB = System.Runtime.InteropServices.GCHandle.Alloc(newB, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -245,7 +241,7 @@ kernelParams[7] = &u1;
 kernelParams[8] = &v1;
 // Marshal array: resultHost
 int resultHost_size = resultHost.Length * System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-if (resultHost_size > 0)
+if(resultHost_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_resultHost, resultHost_size));
 System.Runtime.InteropServices.GCHandle handle_resultHost = System.Runtime.InteropServices.GCHandle.Alloc(resultHost, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -270,7 +266,7 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: a
-if (a_size > 0 && d_a != IntPtr.Zero)
+if(a_size>0&&d_a!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -284,7 +280,7 @@ handleBack_a.Free();
 }
 }
 // Copy back array: b
-if (b_size > 0 && d_b != IntPtr.Zero)
+if(b_size>0&&d_b!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -298,7 +294,7 @@ handleBack_b.Free();
 }
 }
 // Copy back array: newA
-if (newA_size > 0 && d_newA != IntPtr.Zero)
+if(newA_size>0&&d_newA!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_newA = System.Runtime.InteropServices.GCHandle.Alloc(newA, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -312,7 +308,7 @@ handleBack_newA.Free();
 }
 }
 // Copy back array: newB
-if (newB_size > 0 && d_newB != IntPtr.Zero)
+if(newB_size>0&&d_newB!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_newB = System.Runtime.InteropServices.GCHandle.Alloc(newB, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
@@ -326,7 +322,7 @@ handleBack_newB.Free();
 }
 }
 // Copy back array: resultHost
-if (resultHost_size > 0 && d_resultHost != IntPtr.Zero)
+if(resultHost_size>0&&d_resultHost!=IntPtr.Zero)
 {
 System.Runtime.InteropServices.GCHandle handleBack_resultHost = System.Runtime.InteropServices.GCHandle.Alloc(resultHost, System.Runtime.InteropServices.GCHandleType.Pinned);
 try

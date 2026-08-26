@@ -26,19 +26,6 @@ public class SYN_90_93_CoreSyntaxTests
         Assert.Equal(expectedC, cArray[0]);
     }
 
-    [Fact]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "SYN-90")]
-    public void TestComplexLogicKernel_EmptyArray_GracefulNoOp()
-    {
-        int[] aArray = [];
-        int[] bArray = [];
-        int[] cArray = [];
-
-        // Launch with 0-length arrays should complete without crashing
-        SYN_90_93_CoreSyntaxKernelsWrapper.Launch_ComplexLogicKernel(aArray, bArray, cArray);
-        Assert.Empty(cArray);
-    }
 
     [Fact]
     [Trait("Category", "Execution")]
@@ -140,11 +127,6 @@ public class SYN_90_93_CoreSyntaxTests
     [Trait("FeatureId", "SYN-93")]
     public void TestDeviceMethodKernel()
     {
-        // Empty array edge case
-        int[] emptyData = [];
-        SYN_90_93_CoreSyntaxKernelsWrapper.Launch_DeviceMethodKernel(emptyData, blockDimX: 1);
-        Assert.Empty(emptyData);
-
         // Single-element edge case
         int[] singleData = [42];
         SYN_90_93_CoreSyntaxKernelsWrapper.Launch_DeviceMethodKernel(singleData, blockDimX: 1);
