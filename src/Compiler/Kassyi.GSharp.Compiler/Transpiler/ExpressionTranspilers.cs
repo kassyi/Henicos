@@ -45,7 +45,8 @@ internal static class ExpressionTranspilers
         }
     }
 
-    public static void TranspileElementAccessExpression(ElementAccessExpressionSyntax node, ref TranspileContext context)
+    public static void TranspileElementAccessExpression(ElementAccessExpressionSyntax node,
+        ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
         using (context.Writer.Brackets())
@@ -86,7 +87,8 @@ internal static class ExpressionTranspilers
         context.Visitor.Visit(node.Expression);
     }
 
-    public static void TranspileParenthesizedExpression(ParenthesizedExpressionSyntax node, ref TranspileContext context)
+    public static void TranspileParenthesizedExpression(ParenthesizedExpressionSyntax node,
+        ref TranspileContext context)
     {
         using (context.Writer.Parentheses())
         {
@@ -103,7 +105,7 @@ internal static class ExpressionTranspilers
     public static void TranspileMemberAccessExpression(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
-        
+
         var exprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
         if (node.Expression is IdentifierNameSyntax idName &&
             context.LocalVariableOverrides.TryGetValue(idName.Identifier.Text, out var overrideValue) &&
@@ -168,40 +170,26 @@ internal static class ExpressionTranspilers
         context.Writer.Append(node.Name.Identifier.Text);
     }
 
+    private static readonly ImmutableArray<Rules.IInvocationTranspilerRule> s_invocationRules =
+        ImmutableArray.Create<Rules.IInvocationTranspilerRule>(
+            Rules.BitOperationsTranspilerRule.Instance,
+            Rules.GpuMacroTranspilerRule.Instance
+        );
+
 
     public static void TranspileInvocationExpression(InvocationExpressionSyntax node, ref TranspileContext context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
 
-        if (symbol is { ContainingType.Name: "Gpu", Name: "InlinePtx" })
+        if (symbol != null)
         {
-            TranspileInlinePtx(node, ref context);
-            return;
-        }
-
-        if (symbol is { ContainingType.Name: "BitOperations" } &&
-            symbol.ContainingType.ToString() == "System.Numerics.BitOperations")
-        {
-            TranspileBitOperationsInvocation(node, ref context, symbol);
-            return;
-        }
-
-        if (symbol is { ContainingType.Name: "Gpu", Name: "JitConstant" })
-        {
-            if (node.ArgumentList.Arguments.Count == 1)
+            foreach (var rule in s_invocationRules)
             {
-                var expr = node.ArgumentList.Arguments[0].Expression;
-                if (expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
+                if (rule.TryTranspile(node, ref context, symbol))
                 {
-                    context.Writer.Append(literal.Token.ValueText);
-                }
-                else if (expr is IdentifierNameSyntax identifier)
-                {
-                    context.Writer.Append(identifier.Identifier.ValueText);
+                    return;
                 }
             }
-
-            return;
         }
 
         context.Visitor.Visit(node.Expression);
@@ -218,128 +206,6 @@ internal static class ExpressionTranspilers
         }
     }
 
-    private static void TranspileBitOperationsInvocation(InvocationExpressionSyntax node, ref TranspileContext context,
-        IMethodSymbol symbol)
-    {
-        var is64Bit = false;
-        if (symbol.Parameters.Length > 0)
-        {
-            var paramType = symbol.Parameters[0].Type;
-            if (paramType.TypeKind == TypeKind.Enum)
-            {
-                paramType = ((INamedTypeSymbol)paramType).EnumUnderlyingType ?? paramType;
-            }
-
-            var platform = context.SemanticModel.Compilation.Options.Platform;
-            var is64BitPointer = platform == Platform.X64 || platform == Platform.Arm64 ||
-                                 platform == Platform.Itanium || platform == Platform.AnyCpu;
-
-            is64Bit = paramType.SpecialType == SpecialType.System_UInt64 ||
-                      paramType.SpecialType == SpecialType.System_Int64 ||
-                      (is64BitPointer &&
-                       (paramType.SpecialType == SpecialType.System_UIntPtr ||
-                        paramType.SpecialType == SpecialType.System_IntPtr ||
-                        paramType.Name == "nuint" ||
-                        paramType.Name == "nint"));
-        }
-
-        var functionName = symbol.Name switch
-        {
-            "LeadingZeroCount" => is64Bit ? "__gsharp_lzc_64" : "__gsharp_lzc_32",
-            "PopCount" => is64Bit ? "__popcll" : "__popc",
-            "TrailingZeroCount" => is64Bit ? "__gsharp_tzc_64" : "__gsharp_tzc_32",
-            "Log2" => is64Bit ? "__gsharp_log2_64" : "__gsharp_log2_32",
-            "RotateLeft" => is64Bit ? "__gsharp_rotl64" : "__gsharp_rotl32",
-            "RotateRight" => is64Bit ? "__gsharp_rotr64" : "__gsharp_rotr32",
-            _ => throw new InvalidOperationException($"Unsupported BitOperations method: {symbol.Name}")
-        };
-
-        context.Writer.Append(functionName);
-        using (context.Writer.Parentheses())
-        {
-            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
-            {
-                if (symbol.Name == "PopCount" && i == 0)
-                {
-                    using (context.Writer.Parentheses())
-                    {
-                        context.Writer.AppendKeyword("unsigned");
-                        context.Writer.AppendSpace();
-                        if (is64Bit)
-                        {
-                            context.Writer.AppendKeyword("long");
-                            context.Writer.AppendSpace();
-                            context.Writer.AppendKeyword("long");
-                        }
-                        else
-                        {
-                            context.Writer.AppendKeyword("int");
-                        }
-                    }
-                    using (context.Writer.Parentheses())
-                    {
-                        context.Visitor.Visit(node.ArgumentList.Arguments[i]);
-                    }
-                }
-                else
-                {
-                    context.Visitor.Visit(node.ArgumentList.Arguments[i]);
-                }
-
-                if (i < node.ArgumentList.Arguments.Count - 1)
-                {
-                    context.Writer.AppendComma();
-                }
-            }
-        }
-    }
-
-    private static void TranspileInlinePtx(InvocationExpressionSyntax node, ref TranspileContext context)
-    {
-        if (node.ArgumentList.Arguments.Count != 1)
-        {
-            return;
-        }
-
-        var argExpr = node.ArgumentList.Arguments[0].Expression;
-
-        var constantValue = context.SemanticModel.GetConstantValue(argExpr);
-        if (constantValue is { HasValue: true, Value: string ptxString })
-        {
-            context.Writer.Append(ptxString);
-            context.Writer.AppendLine();
-            return;
-        }
-
-        if (argExpr is InterpolatedStringExpressionSyntax interpolated)
-        {
-            TranspileInterpolatedInlinePtx(interpolated, ref context);
-            return;
-        }
-
-        context.ReportDiagnostic?.Invoke(
-            Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
-    }
-
-
-    private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,
-        ref TranspileContext context)
-    {
-        foreach (var content in interpolated.Contents)
-        {
-            switch (content)
-            {
-                case InterpolatedStringTextSyntax text:
-                    context.Writer.Append(text.TextToken.ValueText);
-                    break;
-                case InterpolationSyntax interpolation:
-                    context.Visitor.Visit(interpolation.Expression);
-                    break;
-            }
-        }
-
-        context.Writer.AppendLine();
-    }
 
     public static void TranspileArgument(ArgumentSyntax node, ref TranspileContext context)
     {
