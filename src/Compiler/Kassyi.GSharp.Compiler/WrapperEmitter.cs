@@ -65,26 +65,23 @@ internal static class WrapperEmitter
                 }
             }
 
-            writer.Append(
-                "using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope");
-            using (writer.Parentheses())
-            {
-            }
-
-            writer.AppendLine(";");
-            WriteKernelCompilationCall(writer, method);
-            MarshalingEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
-
-            writer.AppendLine("try");
+            writer.AppendLine("using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())");
             using (writer.Scope())
             {
-                MarshalingEmitter.WriteMarshalAndLaunchKernel(writer, method, isDevicePtr);
-            }
+                WriteKernelCompilationCall(writer, method);
+                MarshalingEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
 
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                MarshalingEmitter.WriteCleanup(writer, method, isDevicePtr);
+                writer.AppendLine("try");
+                using (writer.Scope())
+                {
+                    MarshalingEmitter.WriteMarshalAndLaunchKernel(writer, method, isDevicePtr);
+                }
+
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    MarshalingEmitter.WriteCleanup(writer, method, isDevicePtr);
+                }
             }
         }
     }

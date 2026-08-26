@@ -4,7 +4,10 @@ namespace Kassyi.GSharp.Core;
 [AttributeUsage(AttributeTargets.Method)]
 public class GpuKernelAttribute : Attribute
 {
-    public bool Cooperative { get; set; }
+    public bool Cooperative
+    {
+        get; set;
+    }
 }
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
