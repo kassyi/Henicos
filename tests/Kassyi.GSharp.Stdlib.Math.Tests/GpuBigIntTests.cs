@@ -519,6 +519,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Equal(expectedGcd, actualGcd);
         }
+
         [Trait("RoadmapId", "GBI-20")]
         [Theory]
         [InlineData(GpuExecutionEngine.GSharpJit)]
@@ -527,10 +528,6 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var context = new GpuContext(10, engine);
             var arrEmpty = Array.Empty<uint>();
 
-            // It might throw OutOfMemoryException or CudaException depending on provider when allocating 0 bytes,
-            // or if it succeeds, the kernel will execute the size=0 path which we just patched to early return.
-            // As per instructions, we just assert deterministic results or documented exception.
-            // Let's assert it throws an exception during allocation or execution.
             Assert.ThrowsAny<Exception>(() =>
             {
                 using var gpuA = new GpuBigInteger(context, arrEmpty);
@@ -543,12 +540,25 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-20")]
         [Theory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
-        public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine)
+        // Happy path
+        [InlineData(GpuExecutionEngine.GSharpJit, 48u, 18u)]
+        // Edge cases: 0
+        [InlineData(GpuExecutionEngine.GSharpJit, 0u, 0u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 0u, 10u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 10u, 0u)]
+        // Edge cases: 1
+        [InlineData(GpuExecutionEngine.GSharpJit, 1u, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 1u, 100u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 100u, 1u)]
+        // Edge cases: MaxValue and Alternating Bits
+        [InlineData(GpuExecutionEngine.GSharpJit, uint.MaxValue, uint.MaxValue)]
+        [InlineData(GpuExecutionEngine.GSharpJit, uint.MaxValue, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpJit, 0x80000000u, 0x55555555u)]
+        public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
         {
             using var context = new GpuContext(10, engine);
-            var arrA = new uint[] { 48 };
-            var arrB = new uint[] { 18 };
+            var arrA = new uint[] { valA };
+            var arrB = new uint[] { valB };
 
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
