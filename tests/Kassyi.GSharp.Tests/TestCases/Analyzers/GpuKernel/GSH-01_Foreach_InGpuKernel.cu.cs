@@ -1,3 +1,4 @@
+// ReSharper disable All
 using Kassyi.GSharp.Core;
 
 public class TestClass

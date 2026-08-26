@@ -1,3 +1,4 @@
+// ReSharper disable All
 using System.Numerics;
 using Kassyi.GSharp.Core;
 
