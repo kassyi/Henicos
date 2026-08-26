@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Runtime.Jit;
 
-public static class NvccCompiler
+public sealed class NvccCompiler
 {
     public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
 
@@ -13,7 +13,8 @@ public static class NvccCompiler
 
     public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
     {
-        using var process = new Process { StartInfo = psi };
+        using var process = new Process();
+        process.StartInfo = psi;
         var outputBuilder = new StringBuilder();
         process.OutputDataReceived += (_, e) =>
         {
@@ -60,7 +61,7 @@ public static class NvccCompiler
                 }
                 catch (Exception ex2)
                 {
-                    Console.WriteLine(
+                    Logger<NvccCompiler>.Info(
                         $"[JIT] Failed to kill process tree: {ex1.Message}. Fallback to kill process also failed: {ex2.Message}");
                 }
             }
@@ -150,6 +151,10 @@ public static class NvccCompiler
             ], $"out_{Guid.CreateVersion7():N}.log");
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UnusedMember.Global",
+        Justification = "Public API exposed for runtime consumers")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
+        Justification = "Public API for library")]
     public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
         string tempDir, string smVersion = "sm_52")
     {
@@ -192,22 +197,22 @@ public static class NvccCompiler
             RedirectStandardError = true
         };
 
-        Console.WriteLine($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
-        Console.WriteLine("====== CUDA SOURCE ======");
+        Logger<NvccCompiler>.Info($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
+        Logger<NvccCompiler>.Info("====== CUDA SOURCE ======");
         var cuSrc = FileSystem.File.ReadAllText(cuFile);
-        Console.WriteLine(cuSrc.AsSpan(0, Math.Min(cuSrc.Length, 2000))); // Print first 2000 chars
-        Console.WriteLine("...");
+        Logger<NvccCompiler>.Info(cuSrc.AsSpan(0, Math.Min(cuSrc.Length, 2000)).ToString()); // Print first 2000 chars
+        Logger<NvccCompiler>.Info("...");
         if (cuSrc.Contains("Kernel_StaticFermatLoop"))
         {
             var match = System.Text.RegularExpressions.Regex.Match(cuSrc,
                 @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
             if (match.Success)
             {
-                Console.WriteLine(match.Value);
+                Logger<NvccCompiler>.Info(match.Value);
             }
         }
 
-        Console.WriteLine("=========================");
+        Logger<NvccCompiler>.Info("=========================");
 
         var sw = Stopwatch.StartNew();
 
@@ -225,7 +230,7 @@ public static class NvccCompiler
                 throw new Exception($"JIT Compilation failed! Expected {outFile} to be created.");
             }
 
-            Console.WriteLine($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
+            Logger<NvccCompiler>.Info($"[JIT] Compilation successful in {sw.ElapsedMilliseconds} ms.");
             return result;
         }
         catch (ProcessFailedException ex)
