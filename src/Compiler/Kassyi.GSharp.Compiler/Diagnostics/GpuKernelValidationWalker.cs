@@ -8,8 +8,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
 {
     private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
 
-    private SyntaxNodeAnalysisContext _analyzerContext;
-    private IMethodSymbol _methodSymbol = null!;
+    private ValidationContext _context;
 
     private GpuKernelValidationWalker()
     {
@@ -22,43 +21,37 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
             walker = new GpuKernelValidationWalker();
         }
 
-        walker._analyzerContext = context.AnalyzerContext;
-        walker._methodSymbol = context.MethodSymbol;
+        walker._context = context;
         return walker;
     }
 
     public void Free()
     {
-        _analyzerContext = default;
-        _methodSymbol = default;
+        _context = default;
         s_pool.Add(this);
     }
 
     public override void VisitForEachStatement(ForEachStatementSyntax node)
     {
-        var context = new ValidationContext(_analyzerContext, _methodSymbol);
-        ForEachNotSupportedRule.Instance.Analyze(node, ref context);
+        ForEachNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitForEachStatement(node);
     }
 
     public override void VisitQueryExpression(QueryExpressionSyntax node)
     {
-        var context = new ValidationContext(_analyzerContext, _methodSymbol);
-        LinqNotSupportedRule.Instance.Analyze(node, ref context);
+        LinqNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitQueryExpression(node);
     }
 
     public override void VisitVariableDeclarator(VariableDeclaratorSyntax node)
     {
-        var context = new ValidationContext(_analyzerContext, _methodSymbol);
-        ImplicitVarNeedsSuffixRule.Instance.Analyze(node, ref context);
+        ImplicitVarNeedsSuffixRule.Instance.Analyze(node, ref _context);
         base.VisitVariableDeclarator(node);
     }
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
     {
-        var context = new ValidationContext(_analyzerContext, _methodSymbol);
-        GpuMacroArgumentRule.Instance.Analyze(node, ref context);
+        GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
         base.VisitInvocationExpression(node);
     }
 }

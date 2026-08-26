@@ -10,7 +10,7 @@ internal sealed class GpuMacroArgumentRule
 
     public void Analyze(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
-        var semanticModel = context.AnalyzerContext.SemanticModel;
+        var semanticModel = context.SemanticModel;
         if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol invocationSymbol)
         {
             return;
@@ -54,7 +54,7 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        var constant = context.AnalyzerContext.SemanticModel.GetConstantValue(expr);
+        var constant = context.SemanticModel.GetConstantValue(expr);
         if (constant.HasValue && constant.Value is string)
         {
             return;
@@ -66,7 +66,7 @@ internal sealed class GpuMacroArgumentRule
 
     private void CheckConstant(ExpressionSyntax expr, string paramName, string macroName, ref ValidationContext context)
     {
-        var constant = context.AnalyzerContext.SemanticModel.GetConstantValue(expr);
+        var constant = context.SemanticModel.GetConstantValue(expr);
         if (!constant.HasValue)
         {
             var diagnostic = Diagnostic.Create(
@@ -78,3 +78,4 @@ internal sealed class GpuMacroArgumentRule
         }
     }
 }
+
