@@ -10,7 +10,10 @@ namespace Kassyi.GSharp.Stdlib.Math;
 public class FermatRunner
 {
     /// <summary>Gets the Fermat exponent parameter <c>E</c> (testing <c>F_n = 2^(2^E) + 1</c>).</summary>
-    public int E { get; }
+    public int E
+    {
+        get;
+    }
     private int _numWords;
     private int _outNumWords;
     private int _gM;

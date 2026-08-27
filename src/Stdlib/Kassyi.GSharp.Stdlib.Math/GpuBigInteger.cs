@@ -16,17 +16,26 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <summary>
     /// Gets the native GPU global device memory pointer (<c>CUdeviceptr</c>) holding the integer limb data.
     /// </summary>
-    public IntPtr DevicePointer { get; }
+    public IntPtr DevicePointer
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the total number of 32-bit words (limbs) allocated for this big integer.
     /// </summary>
-    public int NumWords { get; }
+    public int NumWords
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the parent <see cref="GpuContext"/> associated with this instance.
     /// </summary>
-    public GpuContext Context { get; }
+    public GpuContext Context
+    {
+        get;
+    }
 
     internal bool IsTemp
     {

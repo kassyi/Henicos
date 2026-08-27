@@ -9,7 +9,10 @@ public readonly struct GpuBigIntExpr
     /// <summary>
     /// Gets the root AST node of this expression tree.
     /// </summary>
-    public IGpuBigIntExpression Node { get; }
+    public IGpuBigIntExpression Node
+    {
+        get;
+    }
 
     internal GpuBigIntExpr(IGpuBigIntExpression node)
     {

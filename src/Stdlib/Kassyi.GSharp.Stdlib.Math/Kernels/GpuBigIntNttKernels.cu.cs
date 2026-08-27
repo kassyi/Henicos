@@ -1,5 +1,4 @@
 // ReSharper disable All
-using System.Runtime.CompilerServices;
 #pragma warning disable GSH1002
 
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
