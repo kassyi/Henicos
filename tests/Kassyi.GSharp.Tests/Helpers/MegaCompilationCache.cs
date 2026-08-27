@@ -35,11 +35,12 @@ public static class MegaCompilationCache
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
             .AddReferences(references);
 
-        var combinedSource = string.Join("\n\n", s_registeredSources);
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-        var tree = CSharpSyntaxTree.ParseText(combinedSource, parseOptions, path: "MegaTestSources.cs");
+        var trees = s_registeredSources
+            .Select((src, i) => CSharpSyntaxTree.ParseText(src, parseOptions, path: $"MegaTestSources_{i}.cs"))
+            .ToArray();
 
-        return baseComp.AddSyntaxTrees(tree);
+        return baseComp.AddSyntaxTrees(trees);
     });
 
     public static CSharpCompilation BaseCompilation => s_baseCompilation.Value;
