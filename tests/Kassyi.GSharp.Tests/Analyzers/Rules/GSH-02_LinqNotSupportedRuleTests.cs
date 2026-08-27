@@ -11,15 +11,23 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_02_LinqNotSupportedRuleTests
 {
+    private class Dummy
+    {
+        public void TargetMethod()
+        {
+            var list = new int[0];
+            var x = from a in list select a;
+        }
+    }
+
     [Fact]
     [Trait("FeatureId", "GSH-02")]
     public void Validate_GSH02_ReportsDiagnostic_OnQueryExpression()
     {
         // Arrange
         var rule = LinqNotSupportedRule.Instance;
-        var tree = CSharpSyntaxTree.ParseText("class C { void M() { var x = from a in list select a; } }");
-        var node = tree.GetRoot().DescendantNodes().OfType<QueryExpressionSyntax>().First();
-        var (model, method) = TestHelpers.CreateDummyContext();
+        var (model, method) = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext(nameof(GSH_02_LinqNotSupportedRuleTests), nameof(Dummy), nameof(Dummy.TargetMethod));
+        var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<QueryExpressionSyntax>().First();
         
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);

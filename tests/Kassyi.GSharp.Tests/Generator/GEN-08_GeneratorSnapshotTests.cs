@@ -100,68 +100,6 @@ public class GEN_08_GeneratorSnapshotTests
         return kernelsDir;
     }
 
-    private static MetadataReference[]? _cachedReferencesWithStdlib;
-    private static MetadataReference[]? _cachedReferencesWithoutStdlib;
-    private static readonly object _refsLock = new();
-
-    private static MetadataReference[] GetReferences(bool includeStdlib)
-    {
-        lock (_refsLock)
-        {
-            if (includeStdlib && _cachedReferencesWithStdlib != null) return _cachedReferencesWithStdlib;
-            if (!includeStdlib && _cachedReferencesWithoutStdlib != null) return _cachedReferencesWithoutStdlib;
-
-            var refs = new List<MetadataReference>();
-            var coreDir = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-            var appDir = AppDomain.CurrentDomain.BaseDirectory;
-
-            void SafeAddReference(string path)
-            {
-                if (!File.Exists(path)) return;
-                try
-                {
-                    System.Reflection.AssemblyName.GetAssemblyName(path);
-                    refs.Add(MetadataReference.CreateFromFile(path));
-                }
-                catch (BadImageFormatException)
-                {
-                    // Ignore native or invalid DLLs
-                }
-                catch (Exception)
-                {
-                    // Ignore locks or other IO errors
-                }
-            }
-
-            // Core system libraries
-            foreach (var dll in Directory.GetFiles(coreDir, "System*.dll"))
-            {
-                SafeAddReference(dll);
-            }
-
-            SafeAddReference(Path.Combine(coreDir, "mscorlib.dll"));
-            SafeAddReference(Path.Combine(coreDir, "netstandard.dll"));
-
-            // App dependencies
-            foreach (var dll in Directory.GetFiles(appDir, "*.dll"))
-            {
-                if (!includeStdlib && Path.GetFileName(dll)
-                        .Equals("Kassyi.GSharp.Stdlib.Math.dll", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                SafeAddReference(dll);
-            }
-
-            var result = refs.ToArray();
-            if (includeStdlib) _cachedReferencesWithStdlib = result;
-            else _cachedReferencesWithoutStdlib = result;
-
-            return result;
-        }
-    }
-
     private static async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
     {
         var syntaxTrees = new List<SyntaxTree>();
@@ -207,20 +145,24 @@ public class GEN_08_GeneratorSnapshotTests
             }
         }
 
-        var refs = GetReferences(!isStdlibKernel);
-        var compilation = CSharpCompilation.Create(
-            "TestCompilation",
-            syntaxTrees,
-            refs,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true));
+        var compilation = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.BaseCompilation;
+        if (isStdlibKernel)
+        {
+            var stdlibRef = compilation.References.FirstOrDefault(r => r.Display != null && r.Display.Contains("Kassyi.GSharp.Stdlib.Math.dll"));
+            if (stdlibRef != null)
+            {
+                compilation = compilation.RemoveReferences(stdlibRef);
+            }
+        }
+        
+        compilation = compilation.AddSyntaxTrees(syntaxTrees);
 
         var compileDiagnostics = compilation.GetDiagnostics();
         var errors = compileDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
         if (errors.Any())
         {
             var errorMessages = string.Join(Environment.NewLine, errors.Select(e => e.ToString()));
-            var loadedRefs = string.Join(Environment.NewLine, refs.Select(r => r.Display));
-            Assert.Fail($"Compilation failed with errors:\n{errorMessages}\n\nLoaded References:\n{loadedRefs}");
+            Assert.Fail($"Compilation failed with errors:\n{errorMessages}");
         }
 
         var generator = new GpuKernelGenerator();

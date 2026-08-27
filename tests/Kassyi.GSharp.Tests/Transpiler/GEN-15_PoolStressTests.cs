@@ -13,19 +13,15 @@ namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_15_PoolStressTests
 {
+    class Dummy { public void M() { } }
+
     [Fact]
     [Trait("FeatureId", "GEN-15")]
     [Trait("Category", "Stress")]
     public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            """
-                class Dummy { 
-                    void M() { } 
-                }
-            """);
-        var compilation = CSharpCompilation.Create("DummyCompilation", new[] { syntaxTree });
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var context = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext(nameof(GEN_15_PoolStressTests), nameof(Dummy), nameof(Dummy.M));
+        var semanticModel = context.Model;
 
         var exceptions = new ConcurrentBag<Exception>();
 
@@ -56,16 +52,10 @@ public class GEN_15_PoolStressTests
     [Trait("Category", "Stress")]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText(
-            """
-                class Dummy { 
-                    void M() { } 
-                }
-            """);
-        var compilation = CSharpCompilation.Create("DummyCompilation", new[] { syntaxTree });
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+        var context = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext(nameof(GEN_15_PoolStressTests), nameof(Dummy), nameof(Dummy.M));
+        var semanticModel = context.Model;
+        var methodSymbol = context.MethodSymbol;
+        var methodDecl = (Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var exceptions = new ConcurrentBag<Exception>();
 
@@ -73,7 +63,7 @@ public class GEN_15_PoolStressTests
         {
             try
             {
-                var dummyContext = new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(semanticModel, methodSymbol!, _ => { });
+                var dummyContext = new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(semanticModel, methodSymbol, _ => { });
                 using var walker = GpuKernelValidationWalker.Rent(dummyContext);
                 
                 walker.Visit(methodDecl);
