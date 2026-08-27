@@ -79,6 +79,27 @@ internal static class BclIntrinsicMapBuilder
                         }
                     }
 
+                    if (bclTypeFullName == "System.Numerics.BitOperations" &&
+                        parameterTypesArray.Length > 0 &&
+                        parameterTypesArray[0].Value is "System.UIntPtr" or "System.IntPtr")
+                    {
+                        var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
+                        if (is32Bit)
+                        {
+                            cudaIntrinsicName = cudaIntrinsicName.Replace("_64", "_32");
+                            if (cudaIntrinsicName == "__popcll")
+                            {
+                                cudaIntrinsicName = "__popc";
+                            }
+
+                            castFirstArgTo = "unsigned int";
+                        }
+                        else
+                        {
+                            castFirstArgTo = "unsigned long long int";
+                        }
+                    }
+
                     builder[method.OriginalDefinition] =
                         new IntrinsicMappingInfo(cudaIntrinsicName, castFirstArgTo);
                 }

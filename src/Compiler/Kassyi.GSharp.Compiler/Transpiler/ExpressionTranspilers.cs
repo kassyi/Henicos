@@ -282,7 +282,7 @@ internal static class ExpressionTranspilers
 
                 if (argumentList is { Arguments.Count: > 0 })
                 {
-                    using (context.Writer.Parentheses())
+                    using (context.Writer.Braces())
                     {
                         var first = true;
                         foreach (var arg in argumentList.Arguments)
@@ -293,7 +293,7 @@ internal static class ExpressionTranspilers
                                 context.Writer.AppendSpace();
                             }
 
-                            context.Visitor.Visit(arg.Expression);
+                            context.Visitor.Visit(arg);
                             first = false;
                         }
                     }
@@ -352,7 +352,7 @@ internal static class ExpressionTranspilers
                         context.Writer.AppendSpace();
                     }
 
-                    context.Visitor.Visit(arg.Expression);
+                    context.Visitor.Visit(arg);
                     first = false;
                 }
             }
