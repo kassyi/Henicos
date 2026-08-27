@@ -122,7 +122,7 @@ public static class Gpu
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     [CudaIntrinsic("__syncthreads")]
     public static void SyncThreads() => GpuOnlyException.Throw();
-    
+
     /// <summary>
     /// Synchronizes all threads across the entire cooperative grid (<c>cg::this_grid().sync()</c>).
     /// </summary>
@@ -177,7 +177,7 @@ public static class Gpu
     /// <summary>Atomically computes bitwise OR on the target unsigned 64-bit integer address.</summary>
     [CudaIntrinsic("atomicOr")]
     public static ulong AtomicOr(ref ulong address, ulong val) => GpuOnlyException.Throw<ulong>();
-    
+
     /// <summary>Atomically computes the maximum value between the address content and the supplied value.</summary>
     [CudaIntrinsic("atomicMax")]
     public static uint AtomicMax(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
@@ -189,7 +189,7 @@ public static class Gpu
     /// <summary>Reverses the bit order of a 32-bit unsigned integer using the <c>__brev</c> hardware instruction.</summary>
     [CudaIntrinsic("__brev")]
     public static uint BitReverse(uint val) => GpuOnlyException.Throw<uint>();
-    
+
     /// <summary>Computes the full 64-bit product of two 32-bit unsigned integers without overflow.</summary>
     [CudaIntrinsic("__gsharp_mul_wide")]
     public static ulong MultiplyWide(uint a, uint b) => GpuOnlyException.Throw<ulong>();
