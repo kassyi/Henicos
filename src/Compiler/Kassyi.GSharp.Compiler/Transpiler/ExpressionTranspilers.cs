@@ -26,7 +26,7 @@ internal static class ExpressionTranspilers
                 }
             }
 
-            context.Writer.Append("()");
+            context.Writer.AppendParentheses();
             return;
         }
 
@@ -125,23 +125,7 @@ internal static class ExpressionTranspilers
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            context.Writer.Append(field.ConstantValue!.ToString());
-            switch (field.Type.SpecialType)
-            {
-                case SpecialType.System_UInt64:
-
-                    context.Writer.Append("ULL");
-                    break;
-                case SpecialType.System_UInt32:
-
-                    context.Writer.Append("U");
-                    break;
-                case SpecialType.System_Int64:
-
-                    context.Writer.Append("LL");
-                    break;
-            }
-
+            context.Writer.AppendConstantField(field);
             return;
         }
 
@@ -172,7 +156,7 @@ internal static class ExpressionTranspilers
 
     private static readonly ImmutableArray<Rules.IInvocationTranspilerRule> s_invocationRules =
         ImmutableArray.Create<Rules.IInvocationTranspilerRule>(
-            Rules.BitOperationsTranspilerRule.Instance,
+            Rules.BclIntrinsicTranspilerRule.Instance,
             Rules.GpuMacroTranspilerRule.Instance
         );
 
@@ -207,7 +191,6 @@ internal static class ExpressionTranspilers
     }
 
 
-
     public static void TranspileArgument(ArgumentSyntax node, ref TranspileContext context)
     {
         if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) || node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
@@ -229,6 +212,23 @@ internal static class ExpressionTranspilers
         ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
+        TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList, ref context);
+    }
+
+    public static void TranspileImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
+        TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList, ref context);
+    }
+
+    private static void TryTranspileObjectCreationHelper(
+        ITypeSymbol? typeSymbol, 
+        ExpressionSyntax node,
+        InitializerExpressionSyntax? initializer,
+        ArgumentListSyntax? argumentList,
+        ref TranspileContext context)
+    {
         if (typeSymbol is { Name: TypeConstants.SharedMemoryType } &&
             typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace)
         {
@@ -238,7 +238,7 @@ internal static class ExpressionTranspilers
 
         if (typeSymbol is { TypeKind: TypeKind.Struct })
         {
-            TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, ref context);
+            TranspileStructCreationCore(typeSymbol, initializer, argumentList, ref context);
             return;
         }
 
@@ -247,76 +247,98 @@ internal static class ExpressionTranspilers
         context.Visitor.DefaultVisit(node);
     }
 
-    public static void TranspileImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node,
-        ref TranspileContext context)
-    {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
-        switch (typeSymbol)
-        {
-            case { Name: TypeConstants.SharedMemoryType } when
-                typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace:
-                context.Visitor.DefaultVisit(node);
-
-                return;
-            case { TypeKind: TypeKind.Struct }:
-
-                TranspileStructCreationCore(typeSymbol, node.Initializer, node.ArgumentList, ref context);
-                return;
-            default:
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
-                    node.GetLocation()));
-                context.Visitor.DefaultVisit(node);
-                break;
-        }
-    }
-
     private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, InitializerExpressionSyntax? initializer,
         ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         var cppType = CudaTypeMapper.MapType(typeSymbol);
+
         if (initializer != null)
         {
-            using (context.Writer.Parentheses())
+            TranspileStructCreationWithInitializer(cppType, initializer, argumentList, ref context);
+        }
+        else
+        {
+            TranspileStructCreationWithoutInitializer(cppType, argumentList, ref context);
+        }
+    }
+
+    private static void TranspileStructCreationWithInitializer(string cppType, InitializerExpressionSyntax initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
+        using (context.Writer.Parentheses())
+        {
+            using (context.Writer.Brackets())
             {
-                using (context.Writer.Brackets())
-                {
-                    context.Writer.Append("&");
-                }
-
-                using (context.Writer.Parentheses())
-                {
-                }
-
-                context.Writer.AppendSpace();
-                using (context.Writer.Scope())
-                {
-                    context.Writer.Append($"{cppType} _tmp; ");
-                    foreach (var expr in initializer.Expressions)
-                    {
-                        if (expr is AssignmentExpressionSyntax assignment)
-                        {
-                            context.Writer.Append("_tmp.");
-                            context.Visitor.Visit(assignment.Left);
-                            context.Writer.Append(" = ");
-                            context.Visitor.Visit(assignment.Right);
-                            context.Writer.Append("; ");
-                        }
-                    }
-
-                    context.Writer.Append("return _tmp; ");
-                }
-
-                using (context.Writer.Parentheses())
-                {
-                }
+                context.Writer.Append("&");
             }
 
-            return;
+            context.Writer.AppendParentheses();
+            context.Writer.AppendSpace();
+            using (context.Writer.Scope())
+            {
+                context.Writer.Append(cppType);
+                context.Writer.AppendSpace();
+                context.Writer.Append("_tmp");
+
+                if (argumentList is { Arguments.Count: > 0 })
+                {
+                    using (context.Writer.Parentheses())
+                    {
+                        var first = true;
+                        foreach (var arg in argumentList.Arguments)
+                        {
+                            if (!first)
+                            {
+                                context.Writer.AppendComma();
+                                context.Writer.AppendSpace();
+                            }
+
+                            context.Visitor.Visit(arg.Expression);
+                            first = false;
+                        }
+                    }
+                }
+                else
+                {
+                    context.Writer.AppendEmptyScope();
+                }
+
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendSpace();
+
+                foreach (var expr in initializer.Expressions)
+                {
+                    if (expr is not AssignmentExpressionSyntax assignment)
+                    {
+                        continue;
+                    }
+
+                    context.Writer.Append("_tmp.");
+                    context.Visitor.Visit(assignment.Left);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Visitor.Visit(assignment.Right);
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendSpace();
+                }
+
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+                context.Writer.Append("_tmp");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendSpace();
+            }
+
+            context.Writer.AppendParentheses();
         }
+    }
+
+    private static void TranspileStructCreationWithoutInitializer(string cppType, ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
+        context.Writer.Append(cppType);
 
         if (argumentList is { Arguments.Count: > 0 })
         {
-            context.Writer.Append(cppType);
             using (context.Writer.Scope())
             {
                 var first = true;
@@ -324,18 +346,19 @@ internal static class ExpressionTranspilers
                 {
                     if (!first)
                     {
-                        context.Writer.Append(", ");
+                        context.Writer.AppendComma();
+                        context.Writer.AppendSpace();
                     }
 
                     context.Visitor.Visit(arg.Expression);
                     first = false;
                 }
             }
-
-            return;
         }
-
-        context.Writer.Append(cppType);
+        else
+        {
+            context.Writer.AppendEmptyScope();
+        }
     }
 }
 
