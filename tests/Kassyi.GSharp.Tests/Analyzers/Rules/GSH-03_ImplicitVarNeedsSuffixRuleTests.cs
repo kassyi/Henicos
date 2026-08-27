@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,18 +13,24 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 {
-    private class Dummy
-    {
-        public void WithoutSuffix()
-        {
+    private const string ID = nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests);
+
+    public static readonly string GSH03_Sources = $$"""
+    using System.Collections.Generic;
+
+    class Dummy_{{ID}} { 
+        public void WithoutSuffix() {
             var x = 1;
         }
 
-        public void WithSuffix()
-        {
+        public void WithSuffix() {
             var x = 1U;
         }
     }
+    """;
+
+    [ModuleInitializer]
+    public static void Register() => MegaCompilationCache.RegisterSource(GSH03_Sources);
 
     [Fact]
     [Trait("FeatureId", "GSH-03")]
@@ -31,8 +38,7 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var (model, method) = MegaCompilationCache.GetMethodContext(nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests),
-            nameof(Dummy), nameof(Dummy.WithoutSuffix));
+        var (model, method) = MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "WithoutSuffix");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
             .First();
 
@@ -54,8 +60,7 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var (model, method) = MegaCompilationCache.GetMethodContext(nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests),
-            nameof(Dummy), nameof(Dummy.WithSuffix));
+        var (model, method) = MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "WithSuffix");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
             .First();
 
