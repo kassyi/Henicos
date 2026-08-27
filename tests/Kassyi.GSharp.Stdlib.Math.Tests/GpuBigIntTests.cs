@@ -1,4 +1,3 @@
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Collections.Concurrent;
 using System.Linq;

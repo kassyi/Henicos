@@ -1,5 +1,4 @@
 #nullable enable
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Collections.Generic;
 using System.IO;
