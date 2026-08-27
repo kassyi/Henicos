@@ -102,6 +102,7 @@ public class LoggerTests
     }
 
     [Fact]
+    [Trait("Category", "Stress")]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
     {

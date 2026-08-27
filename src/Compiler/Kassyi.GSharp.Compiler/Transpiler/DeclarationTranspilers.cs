@@ -2,7 +2,32 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal static class DeclarationTranspilers
 {
-    public static void TranspileLocalDeclarationStatement(LocalDeclarationStatementSyntax node, ref TranspileContext context)
+    private readonly struct SharedMemoryAllocation(
+        VariableDeclaratorSyntax declarator,
+        ExpressionSyntax sizeArgument,
+        int? constantSize)
+    {
+        public VariableDeclaratorSyntax Declarator { get; } = declarator;
+        public ExpressionSyntax SizeArgument { get; } = sizeArgument;
+        public int? ConstantSize { get; } = constantSize;
+        public bool IsDynamic => !ConstantSize.HasValue;
+        public int StaticSize => ConstantSize ?? 0;
+    }
+
+    private readonly struct VariableMapping(
+        string cppType,
+        string baseCppType,
+        bool isPointer,
+        bool shouldSplitStatements)
+    {
+        public string CppType { get; } = cppType;
+        public string BaseCppType { get; } = baseCppType;
+        public bool IsPointer { get; } = isPointer;
+        public bool ShouldSplitStatements { get; } = shouldSplitStatements;
+    }
+
+    public static void TranspileLocalDeclarationStatement(LocalDeclarationStatementSyntax node,
+        ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
         if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
@@ -16,57 +41,71 @@ internal static class DeclarationTranspilers
         context.Writer.AppendSemiColon();
     }
 
-    private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node, INamedTypeSymbol typeSymbol, ref TranspileContext context)
+    private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
+        INamedTypeSymbol typeSymbol, ref TranspileContext context)
     {
         var typeArg = typeSymbol.TypeArguments[0];
         var cppElementType = CudaTypeMapper.MapType(typeArg);
 
         for (var i = 0; i < node.Declaration.Variables.Count; i++)
         {
-            var v = node.Declaration.Variables[i];
-            var sizeArg = (v.Initializer?.Value as ObjectCreationExpressionSyntax)?.ArgumentList?.Arguments
-                .FirstOrDefault()?.Expression;
-            if (sizeArg == null && v.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
-            {
-                sizeArg = implCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-            }
-
-            if (sizeArg == null)
+            var alloc = AnalyzeSharedMemoryAllocation(node.Declaration.Variables[i], context.SemanticModel);
+            if (alloc == null)
             {
                 continue;
             }
 
-            var constantValue = context.SemanticModel.GetConstantValue(sizeArg);
-            if (constantValue.HasValue)
+            if (alloc.Value.IsDynamic)
             {
-                WriteStaticSharedMemory(v, sizeArg, constantValue.Value!, cppElementType, typeArg, node, i, ref context);
+                WriteDynamicSharedMemory(alloc.Value, cppElementType, node, i, ref context);
             }
             else
             {
-                WriteDynamicSharedMemory(v, sizeArg, cppElementType, node, i, ref context);
+                WriteStaticSharedMemory(alloc.Value, cppElementType, typeArg, node, i, ref context);
             }
         }
     }
 
-    private static void WriteStaticSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, object constantValue,
-        string cppElementType, ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i, ref TranspileContext context)
+    private static SharedMemoryAllocation? AnalyzeSharedMemoryAllocation(VariableDeclaratorSyntax declarator,
+        SemanticModel semanticModel)
     {
-        var elemSize = CudaTypeMapper.GetApproximateSize(typeArg);
-        var byteSize = (int)constantValue * elemSize;
-        if (byteSize > 32768)
+        ExpressionSyntax? sizeArg = null;
+
+        if (declarator.Initializer?.Value is ObjectCreationExpressionSyntax objCreation)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning,
-                sizeArg.GetLocation(), byteSize, 32768));
+            sizeArg = objCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
         }
+        else if (declarator.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
+        {
+            sizeArg = implCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+        }
+
+        if (sizeArg == null)
+        {
+            return null;
+        }
+
+        var constantValue = semanticModel.GetConstantValue(sizeArg);
+        return new SharedMemoryAllocation(
+            declarator,
+            sizeArg,
+            constantValue.HasValue ? Convert.ToInt32(constantValue.Value!) : null
+        );
+    }
+
+    private static void WriteStaticSharedMemory(SharedMemoryAllocation alloc, string cppElementType,
+        ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i, ref TranspileContext context)
+    {
+        CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
 
         context.Writer.AppendKeyword("__shared__");
         context.Writer.AppendSpace();
         context.Writer.Append(cppElementType);
         context.Writer.AppendSpace();
-        context.Writer.Append(v.Identifier.Text);
+        context.Writer.Append(alloc.Declarator.Identifier.Text);
         using (context.Writer.Brackets())
         {
-            context.Visitor.Visit(sizeArg);
+            context.Visitor.Visit(alloc.SizeArgument);
         }
 
         context.Writer.Append(";");
@@ -76,60 +115,146 @@ internal static class DeclarationTranspilers
         }
     }
 
-    private static void WriteDynamicSharedMemory(VariableDeclaratorSyntax v, ExpressionSyntax sizeArg, string cppElementType,
-        LocalDeclarationStatementSyntax node, int i, ref TranspileContext context)
+    private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
+        ITypeSymbol typeArg, ref TranspileContext context)
     {
-        if (!context.HasEmittedDynamicSmemBase)
+        var elemSize = CudaTypeMapper.GetApproximateSize(typeArg);
+        var byteSize = elementCount * elemSize;
+        if (byteSize > 32768)
         {
-            context.Writer.Append("extern __shared__ char __gsharp_dynamic_smem");
-            using (context.Writer.Brackets()) { }
-            context.Writer.AppendLine(";");
-            context.Writer.AppendLine("size_t __smem_offset = 0;");
-            context.HasEmittedDynamicSmemBase = true;
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning,
+                sizeArg.GetLocation(), byteSize, 32768));
         }
+    }
 
-        context.Writer.Append("__smem_offset = ");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("__smem_offset + alignof");
-            using (context.Writer.Parentheses()) { context.Writer.Append(cppElementType); }
-            context.Writer.Append(" - 1");
-        }
-        context.Writer.Append(" & ~");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("alignof");
-            using (context.Writer.Parentheses()) { context.Writer.Append(cppElementType); }
-            context.Writer.Append(" - 1");
-        }
-        context.Writer.Append(";");
-        context.Writer.AppendLine();
+    private static void WriteDynamicSharedMemory(SharedMemoryAllocation alloc, string cppElementType,
+        LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
+    {
+        EnsureDynamicSharedMemoryBase(ref context);
+        AlignDynamicSharedMemoryOffset(cppElementType, ref context.Writer);
+        EmitDynamicSharedMemoryPointerAndAdvance(alloc, cppElementType, ref context);
 
-        context.Writer.Append($"{cppElementType}* {v.Identifier.Text} = ");
-        using (context.Writer.Parentheses()) { context.Writer.Append($"{cppElementType}*"); }
-        using (context.Writer.Parentheses()) { context.Writer.Append("__gsharp_dynamic_smem + __smem_offset"); }
-        context.Writer.Append(";");
-        context.Writer.AppendLine();
-        context.Writer.Append("__smem_offset += ");
-        using (context.Writer.Parentheses())
-        {
-            context.Visitor.Visit(sizeArg);
-        }
-
-        context.Writer.Append($" * sizeof({cppElementType});");
-
-        if (i < node.Declaration.Variables.Count - 1)
+        if (index < node.Declaration.Variables.Count - 1)
         {
             context.Writer.AppendLine();
         }
+    }
+
+    private static void EnsureDynamicSharedMemoryBase(ref TranspileContext context)
+    {
+        if (context.HasEmittedDynamicSmemBase)
+        {
+            return;
+        }
+
+        context.Writer.Append("extern __shared__ char __gsharp_dynamic_smem");
+        context.Writer.AppendBrackets();
+        context.Writer.AppendLine(";");
+        context.Writer.AppendLine("size_t __smem_offset = 0;");
+        context.HasEmittedDynamicSmemBase = true;
+    }
+
+    private static void AlignDynamicSharedMemoryOffset(string cppElementType, ref SourceWriter writer)
+    {
+        writer.Append("__smem_offset");
+        writer.AppendOperator("=");
+        using (writer.Parentheses())
+        {
+            writer.Append("__smem_offset");
+            writer.AppendOperator("+");
+            writer.Append("alignof");
+            using (writer.Parentheses())
+            {
+                writer.Append(cppElementType);
+            }
+
+            writer.AppendOperator("-");
+            writer.Append("1");
+        }
+
+        writer.AppendOperator("&");
+        writer.Append("~");
+        using (writer.Parentheses())
+        {
+            writer.Append("alignof");
+            using (writer.Parentheses())
+            {
+                writer.Append(cppElementType);
+            }
+
+            writer.AppendOperator("-");
+            writer.Append("1");
+        }
+
+        writer.AppendSemiColon();
+        writer.AppendLine();
+    }
+
+    private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
+        string cppElementType, ref TranspileContext context)
+    {
+        context.Writer.Append($"{cppElementType}* {alloc.Declarator.Identifier.Text}");
+        context.Writer.AppendOperator("=");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append($"{cppElementType}*");
+        }
+
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append("__gsharp_dynamic_smem");
+            context.Writer.AppendOperator("+");
+            context.Writer.Append("__smem_offset");
+        }
+
+        context.Writer.AppendSemiColon();
+        context.Writer.AppendLine();
+        context.Writer.Append("__smem_offset");
+        context.Writer.AppendOperator("+=");
+        using (context.Writer.Parentheses())
+        {
+            context.Visitor.Visit(alloc.SizeArgument);
+        }
+
+        context.Writer.AppendOperator("*");
+        context.Writer.Append($"sizeof({cppElementType})");
+        context.Writer.AppendSemiColon();
     }
 
     public static void TranspileVariableDeclaration(VariableDeclarationSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
+        ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
+
+        var mapping = AnalyzeVariableMapping(node, typeSymbol);
+
+        if (mapping.ShouldSplitStatements)
+        {
+            TranspileSplitVariableDeclarations(node.Variables, mapping.CppType, ref context);
+        }
+        else
+        {
+            TranspileCombinedVariableDeclarations(node.Variables, mapping.BaseCppType, mapping.IsPointer, ref context);
+        }
+    }
+
+    private static VariableMapping AnalyzeVariableMapping(VariableDeclarationSyntax node, ITypeSymbol? typeSymbol)
+    {
+        var cppType = node.Type.IsVar ? "auto" : CudaTypeMapper.MapType(typeSymbol);
+        var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
+        var baseCppType = isPointer ? cppType.TrimEnd('*').TrimEnd() : cppType;
+        var shouldSplit = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
+
+        return new VariableMapping(cppType, baseCppType, isPointer, shouldSplit);
+    }
+
+    private static void ValidateAndTrackVariableType(ITypeSymbol? typeSymbol, TypeSyntax typeSyntax,
+        ref TranspileContext context)
+    {
         if (typeSymbol is { SpecialType: SpecialType.System_String })
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.Type.GetLocation()));
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported,
+                typeSyntax.GetLocation()));
         }
 
         if (typeSymbol is { TypeKind: TypeKind.Struct } &&
@@ -138,59 +263,59 @@ internal static class DeclarationTranspilers
         {
             context.UsedStructs.Add((INamedTypeSymbol)typeSymbol);
         }
+    }
 
-        var cppType = node.Type.IsVar ? "auto" : CudaTypeMapper.MapType(typeSymbol);
-        var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
-        var baseCppType = isPointer ? cppType.TrimEnd('*').TrimEnd() : cppType;
-
-        var splitStatements = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
-
-        for (var i = 0; i < node.Variables.Count; i++)
+    private static void TranspileSplitVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
+        string cppType, ref TranspileContext context)
+    {
+        for (var i = 0; i < variables.Count; i++)
         {
-            var v = node.Variables[i];
+            var v = variables[i];
+            context.Writer.Append(cppType);
+            context.Writer.AppendSpace();
+            context.Writer.Append(v.Identifier.Text);
+            WriteDeclaratorInitializer(v, ref context);
 
-            if (splitStatements)
+            if (i >= variables.Count - 1)
             {
-                context.Writer.Append(cppType);
-                context.Writer.AppendSpace();
-                context.Writer.Append(v.Identifier.Text);
-            }
-            else
-            {
-                if (i == 0)
-                {
-                    context.Writer.Append(baseCppType);
-                    context.Writer.AppendSpace();
-                }
-
-                if (isPointer)
-                {
-                    context.Writer.Append("*");
-                }
-                context.Writer.Append(v.Identifier.Text);
+                continue;
             }
 
-            if (v.Initializer != null)
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+        }
+    }
+
+    private static void TranspileCombinedVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
+        string baseCppType, bool isPointer, ref TranspileContext context)
+    {
+        context.Writer.Append(baseCppType);
+        context.Writer.AppendSpace();
+
+        for (var i = 0; i < variables.Count; i++)
+        {
+            var v = variables[i];
+            if (isPointer)
             {
-                context.Writer.AppendOperator("=");
-                context.Visitor.Visit(v.Initializer.Value);
+                context.Writer.Append("*");
             }
 
-            if (i < node.Variables.Count - 1)
+            context.Writer.Append(v.Identifier.Text);
+            WriteDeclaratorInitializer(v, ref context);
+
+            if (i < variables.Count - 1)
             {
-                if (splitStatements)
-                {
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
-                }
-                else
-                {
-                    context.Writer.AppendComma();
-                }
+                context.Writer.AppendComma();
             }
         }
     }
+
+    private static void WriteDeclaratorInitializer(VariableDeclaratorSyntax variable, ref TranspileContext context)
+    {
+        if (variable.Initializer != null)
+        {
+            context.Writer.AppendOperator("=");
+            context.Visitor.Visit(variable.Initializer.Value);
+        }
+    }
 }
-
-
-

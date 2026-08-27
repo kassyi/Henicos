@@ -69,14 +69,14 @@ internal static class MacroTranspiler
         {
             contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
             var contextArgExpr = args[0].Expression;
-            context.LocalVariableOverrides[contextParamName] = new RoslynToCudaVisitor.OverrideValue(contextArgExpr);
+            context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
         }
 
         context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         for (var i = start; i < start + count; i++)
         {
-            context.LocalVariableOverrides[paramName] = new RoslynToCudaVisitor.OverrideValue(i.ToString());
+            context.LocalVariableOverrides[paramName] = new OverrideValue(i.ToString());
             EmitUnrolledBody(ref context, lambdaExpr.Body);
         }
 
@@ -116,7 +116,7 @@ internal static class MacroTranspiler
         {
             contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
             var contextArgExpr = args[0].Expression;
-            context.LocalVariableOverrides[contextParamName] = new RoslynToCudaVisitor.OverrideValue(contextArgExpr);
+            context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
         }
 
         context.Writer.Append("for");

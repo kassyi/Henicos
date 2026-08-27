@@ -63,6 +63,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
 
     [Fact]
     [Trait("Category", "Execution")]
+    [Trait("Category", "Stress")]
     [Trait("FeatureId", "SYN-49")]
     public void TestAtomicAddStress_HighContention()
     {
@@ -82,6 +83,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
 
     [Fact]
     [Trait("Category", "Execution")]
+    [Trait("Category", "Stress")]
     [Trait("FeatureId", "SYN-49")]
     public void TestAtomicOrMaxStress_HighContention()
     {
