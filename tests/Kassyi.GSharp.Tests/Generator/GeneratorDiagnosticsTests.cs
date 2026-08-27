@@ -1,4 +1,3 @@
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
