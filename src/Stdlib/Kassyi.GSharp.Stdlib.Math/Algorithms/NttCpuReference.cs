@@ -2,13 +2,10 @@ using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Stdlib.Math.Algorithms;
 
-/// <summary>
-/// 3-Prime NTT (Number Theoretic Transform) and Garner's CRT combination for O(N log N) large integer multiplication.
-/// CPU reference implementation designed for validation before GPU porting.
-/// </summary>
+/// <summary>3-Prime NTT (Number Theoretic Transform) and Garner's CRT combination for large integer multiplication CPU reference.</summary>
 public static class NttCpuReference
 {
-    // The three Solinas-like Proth primes chosen for 64-bit non-overflowing arithmetic
+    // [WHY] Solinas-like Proth primes chosen for 64-bit non-overflowing arithmetic in NTT.
     public const uint P1 = 2130706433; // 2^24 * 127 + 1
     public const uint P2 = 1224736769; // 73 * 2^24 + 1
     public const uint P3 = 754974721; // 45 * 2^24 + 1
@@ -17,7 +14,11 @@ public static class NttCpuReference
     public const uint G2 = 3;
     public const uint G3 = 11;
 
-    // ModPow for uint
+    /// <summary>Computes modular exponentiation (baseValue^exponent % modulus).</summary>
+    /// <param name="baseValue">The base value.</param>
+    /// <param name="exponent">The exponent.</param>
+    /// <param name="modulus">The modulus.</param>
+    /// <returns>The result of the modular exponentiation.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModPow(uint baseValue, uint exponent, uint modulus)
     {
@@ -37,9 +38,18 @@ public static class NttCpuReference
         return (uint)result;
     }
 
+    /// <summary>Computes the modular multiplicative inverse using Fermat's Little Theorem.</summary>
+    /// <param name="value">The value to invert.</param>
+    /// <param name="modulus">The modulus.</param>
+    /// <returns>The modular inverse of the value.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModInverse(uint value, uint modulus) => ModPow(value, modulus - 2, modulus);
 
+    /// <summary>Computes modular addition (a + b % modulus) without overflow.</summary>
+    /// <param name="operandA">The first operand.</param>
+    /// <param name="operandB">The second operand.</param>
+    /// <param name="modulus">The modulus.</param>
+    /// <returns>The result of the modular addition.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModAdd(uint operandA, uint operandB, uint modulus)
     {
@@ -52,6 +62,11 @@ public static class NttCpuReference
         return result;
     }
 
+    /// <summary>Computes modular subtraction (a - b % modulus) with wrap-around handling.</summary>
+    /// <param name="operandA">The first operand.</param>
+    /// <param name="operandB">The second operand.</param>
+    /// <param name="modulus">The modulus.</param>
+    /// <returns>The result of the modular subtraction.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModSub(uint operandA, uint operandB, uint modulus)
     {
@@ -63,9 +78,19 @@ public static class NttCpuReference
         return operandA - operandB;
     }
 
+    /// <summary>Computes modular multiplication (a * b % modulus) via 64-bit intermediate arithmetic.</summary>
+    /// <param name="operandA">The first operand.</param>
+    /// <param name="operandB">The second operand.</param>
+    /// <param name="modulus">The modulus.</param>
+    /// <returns>The result of the modular multiplication.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModMul(uint operandA, uint operandB, uint modulus) => (uint)(((ulong)operandA * operandB) % modulus);
 
+    /// <summary>Performs in-place forward or inverse Number Theoretic Transform on power-of-two buffer.</summary>
+    /// <param name="values">The array of values to transform in-place.</param>
+    /// <param name="modulus">The prime modulus.</param>
+    /// <param name="primitiveRoot">The primitive root of unity.</param>
+    /// <param name="isInverse">If <c>true</c>, performs the inverse NTT; otherwise, the forward NTT.</param>
     public static void Ntt(uint[] values, uint modulus, uint primitiveRoot, bool isInverse)
     {
         var length = values.Length;
@@ -132,9 +157,10 @@ public static class NttCpuReference
         }
     }
 
-    /// <summary>
-    /// Multiplies two arrays of 32-bit unsigned integers using 3-Prime NTT and Garner's Algorithm.
-    /// </summary>
+    /// <summary>Multiplies two arrays of 32-bit unsigned integers using 3-Prime NTT and Garner's CRT algorithm.</summary>
+    /// <param name="operandA">The first operand array.</param>
+    /// <param name="operandB">The second operand array.</param>
+    /// <returns>An array containing the product.</returns>
     [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "External API used by test assemblies")]
     public static uint[] Multiply(uint[] operandA, uint[] operandB)
     {
@@ -189,12 +215,8 @@ public static class NttCpuReference
         Ntt(result2, P2, G2, true);
         Ntt(result3, P3, G3, true);
 
-        // Garner's Algorithm to reconstruct C
+        // [WHY] Reconstructs final coefficients from 3 modular residues via Garner's algorithm without multi-precision division:
         // X = x1 + x2*P1 + x3*P1*P2
-        // X = result1 (mod P1) -> x1 = result1
-        // X = result2 (mod P2) -> x1 + x2*P1 = result2 (mod P2) -> x2 = (result2 - x1) * inv(P1, P2) (mod P2)
-        // X = result3 (mod P3) -> x1 + x2*P1 + x3*P1*P2 = result3 (mod P3) -> x3 = (result3 - x1 - x2*P1) * inv(P1*P2, P3) (mod P3)
-
         var inverseP1ModP2 = ModInverse(P1, P2);
         var inverseP1P2ModP3 = ModInverse((uint)(((ulong)P1 * P2) % P3), P3);
 

@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
+/// <summary>Diagnostic rule that verifies required arguments to GPU macro methods are compile-time constants.</summary>
 internal sealed class GpuMacroArgumentRule
 {
     public static readonly GpuMacroArgumentRule Instance = new();

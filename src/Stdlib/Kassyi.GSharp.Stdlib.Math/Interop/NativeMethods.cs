@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Stdlib.Math.Interop;
 
+/// <summary>P/Invoke bindings to the legacy pre-compiled native CUDA C++ dynamic library (<c>Kassyi.GSharp.GpuBigInt.Cuda.dll</c>).</summary>
 internal static partial class NativeMethods
 {
     private const string DllName = "Kassyi.GSharp.GpuBigInt.Cuda";

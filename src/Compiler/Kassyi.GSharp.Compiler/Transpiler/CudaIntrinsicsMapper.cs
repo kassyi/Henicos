@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Maps C# methods decorated with CUDA intrinsic attributes to CUDA C++ function names.</summary>
 internal static class CudaIntrinsicsMapper
 {
     public static bool TryMap(ISymbol symbol, out string mappedName)

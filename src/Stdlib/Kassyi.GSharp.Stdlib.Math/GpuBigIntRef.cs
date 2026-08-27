@@ -1,15 +1,18 @@
 namespace Kassyi.GSharp.Stdlib.Math;
 
 /// <summary>
-/// A macro dummy struct for G# Transpiler.
-/// Represents a pointer to a BigInt operand array in GPU memory.
-/// Overloads operators to allow C# syntax like `a = b + c`, which the G# Transpiler intercepts 
-/// and lowers into `BigIntKernelContext` boilerplate and `Device_Add` calls.
+/// A ref struct representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
 /// </summary>
+/// <remarks>
+/// <para>Overloads C# arithmetic operators to permit expressions like <c>a = b + c</c> inside GPU kernels. The GSharp Transpiler replaces these with optimized device function calls.</para>
+/// <para><b>Target:</b> GPU device functions and kernels only.</para>
+/// </remarks>
 public readonly ref struct GpuBigIntRef
 {
+    /// <summary>Gets the raw underlying uint limb array buffer.</summary>
     public readonly uint[] Data;
 
+    /// <summary>Initializes a new instance of the <see cref="GpuBigIntRef"/> struct wrapping the specified limb array.</summary>
     public GpuBigIntRef(uint[] data)
     {
         Data = data;

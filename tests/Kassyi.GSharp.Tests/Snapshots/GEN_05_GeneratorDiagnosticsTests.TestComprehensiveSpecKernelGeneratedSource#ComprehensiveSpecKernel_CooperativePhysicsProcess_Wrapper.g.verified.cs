@@ -154,7 +154,7 @@ kernelParams
 // Copy back array: data
 if(data_size>0&&d_data!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_data=System.Runtime.InteropServices.GCHandle.Alloc(data,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_data = handleBack_data.AddrOfPinnedObject();

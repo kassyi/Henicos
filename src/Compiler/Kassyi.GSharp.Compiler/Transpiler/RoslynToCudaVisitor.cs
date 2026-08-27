@@ -2,8 +2,10 @@ using System.Collections.Concurrent;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Pooled Roslyn syntax visitor that transpiles C# statements and expressions directly into CUDA C++.</summary>
 public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
+    // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
     private static readonly ConcurrentBag<RoslynToCudaVisitor> s_pool = [];
 
     // Pooled Collections to achieve true zero-allocation during generation
@@ -86,7 +88,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
         else
         {
-            // Auto-wrap single statements in braces to support C# bracket omission safely in C++
+            // [WHY] Automatically wraps single-statement bodies (like unbraced if/for branches) in C++ braces to prevent scoping bugs in generated CUDA code.
             using (Context.Writer.Scope())
             {
                 Visit(statement);

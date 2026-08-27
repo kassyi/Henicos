@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Stdlib.Math.Expressions;
 
+/// <summary>Abstract base AST node representing a binary GPU BigInteger operation.</summary>
 internal abstract class BinaryExpression : IGpuBigIntExpression
 {
     protected IGpuBigIntExpression Left
@@ -34,6 +35,8 @@ internal abstract class BinaryExpression : IGpuBigIntExpression
         var leftResult = Left.Evaluate(context);
         var rightResult = Right.Evaluate(context);
 
+        // [WHY] Rent temporary GPU memory buffers from the pool during AST evaluation
+        // to avoid costly device memory allocation calls (cuMemAlloc) in expression chains.
         var finalResult = targetResult ?? context.RentTemp(NumWords);
 
         try

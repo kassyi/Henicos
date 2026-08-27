@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 
+/// <summary>Invocation transpiler rule that maps BCL method calls to CUDA intrinsic functions.</summary>
 internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
 {
     public static readonly BclIntrinsicTranspilerRule Instance = new();

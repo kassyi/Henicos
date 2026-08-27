@@ -2,6 +2,7 @@
 
 namespace Kassyi.GSharp.Stdlib.Math.Contexts;
 
+/// <summary>Encapsulates parameter buffers, dimensions, and twiddle factor pointers for NTT-based big integer multiplication kernels.</summary>
 public struct NttMulContext
 {
     public OperandsBuffers Operands;

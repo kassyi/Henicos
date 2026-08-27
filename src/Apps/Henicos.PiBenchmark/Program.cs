@@ -1,5 +1,6 @@
 namespace Henicos.PiBenchmark;
 
+/// <summary>Console application entry point for the Chudnovsky Pi benchmark baseline.</summary>
 class Program
 {
     static void Main(string[] args)

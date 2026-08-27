@@ -1,9 +1,9 @@
 using System.Reflection;
-
 using System.Diagnostics.CodeAnalysis;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
+/// <summary>Represents NVRTC runtime compilation status codes.</summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Enum maps to native C++ API values")]
 public enum NvrtcResult
 {
@@ -21,6 +21,7 @@ public enum NvrtcResult
     InternalError = 11
 }
 
+/// <summary>P/Invoke bindings and native DLL resolver for the NVIDIA Runtime Compilation (NVRTC) library.</summary>
 public static class NvrtcApi
 {
     private const string DllName = "nvrtc_custom";
@@ -51,12 +52,14 @@ public static class NvrtcApi
                 {
                     var binPath = Path.Combine(dir, "bin");
                     var binX64Path = Path.Combine(binPath, "x64");
-                    if (Directory.Exists(binX64Path))
+                    if (!Directory.Exists(binX64Path))
                     {
-                        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-                        Environment.SetEnvironmentVariable("PATH", pathEnv + ";" + binX64Path + ";" + binPath);
-                        break;
+                        continue;
                     }
+
+                    var pathEnv = Environment.GetEnvironmentVariable("PATH");
+                    Environment.SetEnvironmentVariable("PATH", pathEnv + ";" + binX64Path + ";" + binPath);
+                    break;
                 }
             }
         }
@@ -102,22 +105,28 @@ public static class NvrtcApi
 
             foreach (var path in pathsToProbe)
             {
-                if (Directory.Exists(path))
+                if (!Directory.Exists(path))
                 {
-                    foreach (var name in potentialNames)
+                    continue;
+                }
+
+                foreach (var name in potentialNames)
+                {
+                    var fullPath = Path.Combine(path, name);
+                    if (NativeLibrary.TryLoad(fullPath, out var handle))
                     {
-                        var fullPath = Path.Combine(path, name);
-                        if (NativeLibrary.TryLoad(fullPath, out var handle))
-                        {
-                            return handle;
-                        }
+                        return handle;
                     }
                 }
             }
         }
 
         var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
-        if (Directory.Exists(cudaBaseDir))
+        if (!Directory.Exists(cudaBaseDir))
+        {
+            return IntPtr.Zero;
+        }
+
         {
             foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
             {
@@ -127,15 +136,17 @@ public static class NvrtcApi
 
                 foreach (var path in pathsToProbe)
                 {
-                    if (Directory.Exists(path))
+                    if (!Directory.Exists(path))
                     {
-                        foreach (var name in potentialNames)
+                        continue;
+                    }
+
+                    foreach (var name in potentialNames)
+                    {
+                        var fullPath = Path.Combine(path, name);
+                        if (NativeLibrary.TryLoad(fullPath, out var handle))
                         {
-                            var fullPath = Path.Combine(path, name);
-                            if (NativeLibrary.TryLoad(fullPath, out var handle))
-                            {
-                                return handle;
-                            }
+                            return handle;
                         }
                     }
                 }
