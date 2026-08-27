@@ -112,7 +112,7 @@ public static class Gpu
     /// Injects raw PTX or CUDA C++ code directly into the generated output.
     /// Use string interpolation ($"") to reference C# variables safely.
     /// </summary>
-    public static void InlinePtx(string ptx, params object[] args) => GpuOnlyException.Throw();
+    public static void InlinePtx(string ptx) => GpuOnlyException.Throw();
 
     /// <summary>
     /// A macro marker for fully unrolling a loop at Transpile-time.
