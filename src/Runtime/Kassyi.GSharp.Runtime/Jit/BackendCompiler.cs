@@ -24,7 +24,10 @@ public sealed partial class NvccCompiler
     }
 
     /// <summary>Gets or sets the delegate used to execute external system processes.</summary>
-    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner
+    {
+        get; set;
+    } = psi =>
     {
         using var process = new Process();
         process.StartInfo = psi;

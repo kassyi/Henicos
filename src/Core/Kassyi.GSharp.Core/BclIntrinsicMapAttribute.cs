@@ -13,27 +13,42 @@ public sealed class BclIntrinsicMapAttribute : Attribute
     /// <summary>
     /// Gets the fully qualified name of the target BCL type (e.g., <c>System.Numerics.BitOperations</c>).
     /// </summary>
-    public string BclTypeFullName { get; }
+    public string BclTypeFullName
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the name of the method within the target BCL type.
     /// </summary>
-    public string MethodName { get; }
+    public string MethodName
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the list of fully qualified parameter type names used to resolve the specific method overload.
     /// </summary>
-    public IReadOnlyList<string> ParameterTypeFullNames { get; }
+    public IReadOnlyList<string> ParameterTypeFullNames
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets or sets an optional C++ type cast applied to the first argument before calling the intrinsic (e.g., <c>unsigned int</c>).
     /// </summary>
-    public string? CastFirstArgumentTo { get; set; }
+    public string? CastFirstArgumentTo
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets the CUDA C++ or PTX intrinsic function name to emit (e.g., <c>__popc</c>).
     /// </summary>
-    public string CudaIntrinsicName { get; }
+    public string CudaIntrinsicName
+    {
+        get;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BclIntrinsicMapAttribute"/> class.

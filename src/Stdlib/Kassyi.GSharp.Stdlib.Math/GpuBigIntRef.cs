@@ -24,7 +24,7 @@ public readonly ref struct GpuBigIntRef
 
     public static GpuBigIntRef operator <<(GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
 
-    public static GpuBigIntRef operator >> (GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
+    public static GpuBigIntRef operator >>(GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
 
     public static GpuBigIntRef operator &(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 

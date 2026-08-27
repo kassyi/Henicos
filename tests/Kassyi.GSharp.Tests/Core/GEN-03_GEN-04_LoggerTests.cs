@@ -1,8 +1,6 @@
-using Kassyi.GSharp.Core;
 using Microsoft.Extensions.Logging;
 using Logger = Kassyi.GSharp.Core.Logger;
 using LogLevel = Kassyi.GSharp.Core.LogLevel;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests;
 

@@ -13,7 +13,10 @@ public class GpuKernelAttribute : Attribute
     /// <summary>
     /// Gets or sets a value indicating whether this kernel is launched as a cooperative kernel (<c>cuLaunchCooperativeKernel</c> / CUDA Cooperative Groups).
     /// </summary>
-    public bool Cooperative { get; set; }
+    public bool Cooperative
+    {
+        get; set;
+    }
 }
 
 /// <summary>

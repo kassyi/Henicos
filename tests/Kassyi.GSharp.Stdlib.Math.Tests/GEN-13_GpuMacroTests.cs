@@ -1,4 +1,3 @@
-using System;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
 using Xunit;

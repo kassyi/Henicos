@@ -1,5 +1,4 @@
 using System.Numerics;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
