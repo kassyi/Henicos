@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
