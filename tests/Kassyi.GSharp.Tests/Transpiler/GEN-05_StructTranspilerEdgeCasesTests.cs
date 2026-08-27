@@ -1,4 +1,3 @@
-// Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Runtime.CompilerServices;
 using System.Linq;
