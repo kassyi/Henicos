@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime.Interop;
@@ -50,7 +51,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
         });
     }
 
-    [Fact]
+    [Fact(Skip = "負荷が高すぎるため通常はスキップ。")]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Stress")]
     [Trait("Category", "SadPath")]

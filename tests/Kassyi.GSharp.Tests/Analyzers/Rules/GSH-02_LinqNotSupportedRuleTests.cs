@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,15 +12,34 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_02_LinqNotSupportedRuleTests
 {
+    private const string ID = nameof(GSH_02_LinqNotSupportedRuleTests);
+
+    public static readonly string GSH02_Sources = $$"""
+    using System.Linq;
+    using System.Collections.Generic;
+
+    class Dummy_{{ID}} { 
+        public void Valid(IEnumerable<int> items) {
+            foreach(var item in items) { }
+        }
+
+        public void Invalid(IEnumerable<int> items) {
+            var x = from i in items select i;
+        }
+    }
+    """;
+
+    [ModuleInitializer]
+    public static void Register() => Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.RegisterSource(GSH02_Sources);
+
     [Fact]
     [Trait("FeatureId", "GSH-02")]
     public void Validate_GSH02_ReportsDiagnostic_OnQueryExpression()
     {
         // Arrange
         var rule = LinqNotSupportedRule.Instance;
-        var tree = CSharpSyntaxTree.ParseText("class C { void M() { var x = from a in list select a; } }");
-        var node = tree.GetRoot().DescendantNodes().OfType<QueryExpressionSyntax>().First();
-        var (model, method) = TestHelpers.CreateDummyContext();
+        var (model, method) = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "Invalid");
+        var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<QueryExpressionSyntax>().First();
         
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);
@@ -32,4 +52,6 @@ public class GSH_02_LinqNotSupportedRuleTests
         Assert.Equal(GSharpDiagnostics.LinqNotSupported.Id, diagnostic.Id);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
+
+
 }
