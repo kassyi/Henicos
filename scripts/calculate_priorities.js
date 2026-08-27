@@ -84,6 +84,7 @@ const TASKS = [
     { Id: "GEN-12", Title: "インメモリでのPTX実行検証", B: 3, E: 4, G: 3 },
     { Id: "GEN-13", Title: "カーネル引数マーシャリングのヒープアロケーション完全排除", B: 4, E: 5, G: 2 },
     { Id: "GEN-14", Title: "ゼロ長配列 (`new T[0]`) 引数のエッジケース処理", B: 3, E: 3, G: 2 },
+    { Id: "GEN-15", Title: "Analyzer/Visitor プールのスレッドセーフ性と再利用性確保", B: 3, E: 4, G: 4 },
 
     // --- SYN (C# 構文・シンタックスシュガー) 領域 ---
     { Id: "SYN-01", Title: "Switch 式 (switch expression)", B: 4, E: 4, G: 4 },
