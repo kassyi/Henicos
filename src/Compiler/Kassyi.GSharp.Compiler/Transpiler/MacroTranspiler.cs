@@ -223,7 +223,7 @@ internal static class MacroTranspiler
     private static bool TryTranspileAssignment(AssignmentExpressionSyntax assignment, ref TranspileContext context)
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
-        
+
         var isSupportedGpuBigIntOp = false;
         if (rightNode is BinaryExpressionSyntax binaryExpr)
         {

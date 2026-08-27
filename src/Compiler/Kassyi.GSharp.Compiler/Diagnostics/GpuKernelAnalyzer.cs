@@ -1,5 +1,5 @@
-using Microsoft.CodeAnalysis.Diagnostics;
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
