@@ -5,6 +5,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
@@ -13,11 +15,11 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     private static INamedTypeSymbol[] GetTypeSymbols(string source, params string[] typeNames)
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
-        
+
         var references = new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) };
         var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
         var compilation = CSharpCompilation.Create("TestCompilation", new[] { syntaxTree }, references, options);
-        
+
         var diags = compilation.GetDiagnostics();
         if (diags.Any(d => d.Severity == DiagnosticSeverity.Error))
         {
@@ -25,11 +27,25 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         }
 
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        var decls = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.StructDeclarationSyntax>().ToList();
-        
-        return typeNames.Select(name => 
+        var decls = syntaxTree.GetRoot().DescendantNodes()
+            .OfType<StructDeclarationSyntax>().ToList();
+
+        return typeNames.Select(name =>
             (INamedTypeSymbol)semanticModel.GetDeclaredSymbol(decls.First(s => s.Identifier.Text == name))!
         ).ToArray();
+    }
+
+    private static TranspileContext CreateTestContext(params INamedTypeSymbol[] usedStructsArray)
+    {
+        var usedStructs = new HashSet<INamedTypeSymbol>(usedStructsArray, SymbolEqualityComparer.Default);
+        return new TranspileContext(
+            default,
+            usedStructs,
+            new Dictionary<string, OverrideValue>(),
+            null!,
+            null,
+            null!,
+            ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty);
     }
 
     [Fact]
@@ -41,9 +57,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         var symbols = GetTypeSymbols(source, "Empty");
         var structSym = symbols[0];
 
-        var usedStructs = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { structSym };
-        var context = new TranspileContext(default, usedStructs, new Dictionary<string, OverrideValue>(), null!, null,
-            null!);
+        var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
@@ -69,12 +83,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         var symC = symbols[2];
         var symD = symbols[3];
 
-        var usedStructs = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { symA, symB, symC, symD };
-        
-        var fieldB = symA.GetMembers().OfType<IFieldSymbol>().First(f => f.Name == "b");
-        Assert.True(SymbolEqualityComparer.Default.Equals(fieldB.Type, symB), "Field type StructB is not equal to symB");
-
-        var context = new TranspileContext(default, usedStructs, new Dictionary<string, OverrideValue>(), null!, null, null!);
+        var context = CreateTestContext(symA, symB, symC, symD);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
@@ -98,9 +107,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         var symbols = GetTypeSymbols(source, "MyStruct");
         var structSym = symbols[0];
 
-        var usedStructs = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default) { structSym };
-        var context = new TranspileContext(default, usedStructs, new Dictionary<string, OverrideValue>(), null!, null,
-            null!);
+        var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 

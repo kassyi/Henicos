@@ -210,7 +210,7 @@ auto origin=DebugReduc_Point{
 ;
 auto distance=(origin.X+p.X);
 auto nested=([&]() {
-DebugReduc_NestedPhysicsState _tmp; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
+DebugReduc_NestedPhysicsState _tmp{}; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
 ());
 float mag=ComputeMagnitude(p);
 mag=(float)abs(mag);
@@ -254,11 +254,11 @@ if((tx==0))
 atomicAdd(totalMagnitude,dynamicCache[0]);
 successFlag=true;
 }
-DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec=DebugReduc_ComprehensiveSpecKernel_Vector8;
+DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec=DebugReduc_ComprehensiveSpecKernel_Vector8{};
 inlineVec[0]=123;
 inlineVec[1]=456;
 {
-DebugReduc_ComprehensiveSpecKernel_PhysicsState state=DebugReduc_ComprehensiveSpecKernel_PhysicsState;
+DebugReduc_ComprehensiveSpecKernel_PhysicsState state=DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
 DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState=&state;
 pState.Buffer[0]=inlineVec[0];
 (*pState).Buffer[1]=inlineVec[1];

@@ -21,10 +21,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder
-    {
-        get;
-    }
+    private StringBuilder Builder { get; }
 
     public SourceWriter()
     {
@@ -67,6 +64,23 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public void AppendSemiColon() => Builder.Append(';');
     public void AppendOperator(string op) => Builder.Append(op);
     public void AppendKeyword(string keyword) => Builder.Append(keyword);
+
+    public void AppendConstantField(IFieldSymbol field)
+    {
+        Append(field.ConstantValue!.ToString());
+        switch (field.Type.SpecialType)
+        {
+            case SpecialType.System_UInt64:
+                Append("ULL");
+                break;
+            case SpecialType.System_UInt32:
+                Append("U");
+                break;
+            case SpecialType.System_Int64:
+                Append("LL");
+                break;
+        }
+    }
 
 #pragma warning disable CA1822 // Mark members as static
     public void Append([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler)
