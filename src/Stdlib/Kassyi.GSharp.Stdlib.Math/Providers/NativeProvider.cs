@@ -2,8 +2,12 @@ using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.Providers;
 
+/// <summary>
+/// Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries.
+/// </summary>
 public class NativeProvider : IGpuExecutionProvider
 {
+    /// <summary>Gets the singleton instance of the <see cref="NativeProvider"/>.</summary>
     public static readonly NativeProvider Instance = new();
 
     private const string ErrorNotImplemented =
@@ -17,7 +21,11 @@ public class NativeProvider : IGpuExecutionProvider
     {
     }
 
+    /// <inheritdoc/>
+
     public IntPtr AllocateMemory(int numWords) => NativeMethods.GpuBigInt_Alloc(numWords);
+
+    /// <inheritdoc/>
 
     public void FreeMemory(IntPtr devicePointer)
     {
@@ -27,6 +35,8 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
+
     public void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords)
     {
         if (!NativeMethods.GpuBigInt_CopyHostToDevice(devicePointer, hostData, numWords))
@@ -34,6 +44,8 @@ public class NativeProvider : IGpuExecutionProvider
             throw new InvalidOperationException(string.Format(ErrorCopyHostToDeviceFailed, devicePointer));
         }
     }
+
+    /// <inheritdoc/>
 
     public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords)
     {
@@ -43,6 +55,8 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
+
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords)
     {
         if (!NativeMethods.GpuBigInt_CopyDeviceToDevice(destPointer, srcPointer, numWords))
@@ -51,11 +65,15 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
+
     public void Add(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         NativeMethods.GpuBigInt_Add(context.WorkspacePointer, leftOperand.DevicePointer, rightOperand.DevicePointer,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
+
+    /// <inheritdoc/>
 
     public void Sub(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
@@ -63,18 +81,28 @@ public class NativeProvider : IGpuExecutionProvider
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
+    /// <inheritdoc/>
+
     public void Mul(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc/>
+
     public void Add(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
 
     public void Sub(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc/>
+
     public void Mul(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
 
     public void BitwiseAnd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer)
@@ -82,34 +110,52 @@ public class NativeProvider : IGpuExecutionProvider
             rightOperand.DevicePointer,
             resultBuffer.DevicePointer, leftOperand.NumWords);
 
+    /// <inheritdoc/>
+
     public void BitwiseOr(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
 
     public void BitwiseXor(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc/>
+
     public void BitwiseNot(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
 
     public void ShiftLeft(GpuContext context, GpuBigInteger leftOperand, int shiftBits, GpuBigInteger resultBuffer) =>
         NativeMethods.GpuBigInt_ShiftLeft(context.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
+    /// <inheritdoc/>
+
     public void ShiftRight(GpuContext context, GpuBigInteger leftOperand, int shiftBits, GpuBigInteger resultBuffer) =>
         NativeMethods.GpuBigInt_ShiftRight(context.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
+    /// <inheritdoc/>
+
     public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords) =>
         NativeMethods.GpuBigInt_Square(context.WorkspacePointer, devicePointer, logicalWords);
+
+    /// <inheritdoc/>
 
     public bool IsZero(GpuContext context, GpuBigInteger leftOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc/>
+
     public bool IsOne(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
+
+    /// <inheritdoc/>
 
     public int GetBitLength(GpuContext context, GpuBigInteger leftOperand)
     {
@@ -126,8 +172,12 @@ public class NativeProvider : IGpuExecutionProvider
         return 0;
     }
 
+    /// <inheritdoc/>
+
     public int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
 
     public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
