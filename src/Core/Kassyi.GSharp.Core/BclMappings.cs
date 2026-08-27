@@ -10,7 +10,7 @@ using Kassyi.GSharp.Core;
 // PopCount
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "PopCount", ["System.UInt32"], "__popc", CastFirstArgumentTo = "unsigned int")]
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "PopCount", ["System.UInt64"], "__popcll", CastFirstArgumentTo = "unsigned long long int")]
-[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "PopCount", ["System.UIntPtr"], "__popcll", CastFirstArgumentTo = "unsigned long long int")]
+[assembly: BclIntrinsicMap("System.Numerics.BitOperations", "PopCount", ["System.UIntPtr"], "__popcll")]
 
 // TrailingZeroCount
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "TrailingZeroCount", ["System.UInt32"], "__gsharp_tzc_32")]
