@@ -128,14 +128,20 @@ public class LoggerTests
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
         var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 5000);
 
-        var lines = new HashSet<string>(content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+        var messages = new HashSet<string>(
+            content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                   .Select(line =>
+                   {
+                       var lastBracket = line.LastIndexOf(']');
+                       return lastBracket >= 0 ? line[(lastBracket + 1)..].Trim() : line.Trim();
+                   }));
 
         for (int t = 0; t < threadCount; t++)
         {
             for (int i = 0; i < messagesPerThread; i++)
             {
                 var expected = $"Concurrent message T{t}-M{i}";
-                Assert.Contains(lines, l => l.Contains(expected));
+                Assert.Contains(expected, messages);
             }
         }
     }
