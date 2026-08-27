@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,14 +14,21 @@ namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_15_PoolStressTests
 {
-    class Dummy { public void M() { } }
+    private const string ID = nameof(GEN_15_PoolStressTests);
+
+    public static readonly string GEN15_Sources = $$"""
+    class Dummy_{{ID}} { public void M() { } }
+    """;
+
+    [ModuleInitializer]
+    public static void Register() => Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.RegisterSource(GEN15_Sources);
 
     [Fact]
     [Trait("FeatureId", "GEN-15")]
     [Trait("Category", "Stress")]
     public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext(nameof(GEN_15_PoolStressTests), nameof(Dummy), nameof(Dummy.M));
+        var context = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "M");
         var semanticModel = context.Model;
 
         var exceptions = new ConcurrentBag<Exception>();
@@ -52,7 +60,7 @@ public class GEN_15_PoolStressTests
     [Trait("Category", "Stress")]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext(nameof(GEN_15_PoolStressTests), nameof(Dummy), nameof(Dummy.M));
+        var context = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "M");
         var semanticModel = context.Model;
         var methodSymbol = context.MethodSymbol;
         var methodDecl = (Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();

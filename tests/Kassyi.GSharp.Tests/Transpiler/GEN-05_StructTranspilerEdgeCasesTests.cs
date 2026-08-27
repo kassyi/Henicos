@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis;
@@ -25,36 +26,46 @@ public class GEN_05_StructTranspilerEdgeCasesTests
             ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty);
     }
 
-    struct Empty { }
+
+    private const string ID = nameof(GEN_05_StructTranspilerEdgeCasesTests);
+
+    public static readonly string GEN05_Sources = $$"""
+    struct Empty_{{ID}} { }
+    
+    struct StructA_{{ID}} { public StructB_{{ID}} b; }
+    struct StructB_{{ID}} { public StructC_{{ID}} c; }
+    struct StructC_{{ID}} { public StructD_{{ID}} d; }
+    struct StructD_{{ID}} { public int val; }
+
+    struct MyStruct_{{ID}} { public System.DateTime time; }
+    """;
+
+    [ModuleInitializer]
+    public static void Register() => MegaCompilationCache.RegisterSource(GEN05_Sources);
 
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_EmptyStruct()
     {
-        var structSym = MegaCompilationCache.GetNamedTypeSymbol(nameof(GEN_05_StructTranspilerEdgeCasesTests), nameof(Empty));
+        var structSym = MegaCompilationCache.GetNamedTypeSymbol($"Empty_{ID}");
         var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
         Assert.Single(sorted);
-        Assert.Equal("Empty", sorted[0].Name);
+        Assert.Equal($"Empty_{ID}", sorted[0].Name);
     }
-
-    struct StructA { public StructB b; }
-    struct StructB { public StructC c; }
-    struct StructC { public StructD d; }
-    struct StructD { public int val; }
 
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
     {
-        var symA = MegaCompilationCache.GetNamedTypeSymbol(nameof(GEN_05_StructTranspilerEdgeCasesTests), nameof(StructA));
-        var symB = MegaCompilationCache.GetNamedTypeSymbol(nameof(GEN_05_StructTranspilerEdgeCasesTests), nameof(StructB));
-        var symC = MegaCompilationCache.GetNamedTypeSymbol(nameof(GEN_05_StructTranspilerEdgeCasesTests), nameof(StructC));
-        var symD = MegaCompilationCache.GetNamedTypeSymbol(nameof(GEN_05_StructTranspilerEdgeCasesTests), nameof(StructD));
+        var symA = MegaCompilationCache.GetNamedTypeSymbol($"StructA_{ID}");
+        var symB = MegaCompilationCache.GetNamedTypeSymbol($"StructB_{ID}");
+        var symC = MegaCompilationCache.GetNamedTypeSymbol($"StructC_{ID}");
+        var symD = MegaCompilationCache.GetNamedTypeSymbol($"StructD_{ID}");
 
         var context = CreateTestContext(symA, symB, symC, symD);
 
@@ -62,25 +73,23 @@ public class GEN_05_StructTranspilerEdgeCasesTests
 
         Assert.Equal(4, sorted.Count);
         // Order must be D -> C -> B -> A (dependents last)
-        Assert.Equal("StructD", sorted[0].Name);
-        Assert.Equal("StructC", sorted[1].Name);
-        Assert.Equal("StructB", sorted[2].Name);
-        Assert.Equal("StructA", sorted[3].Name);
+        Assert.Equal($"StructD_{ID}", sorted[0].Name);
+        Assert.Equal($"StructC_{ID}", sorted[1].Name);
+        Assert.Equal($"StructB_{ID}", sorted[2].Name);
+        Assert.Equal($"StructA_{ID}", sorted[3].Name);
     }
-
-    struct MyStruct { public DateTime time; }
 
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes()
     {
-        var structSym = MegaCompilationCache.GetNamedTypeSymbol(nameof(GEN_05_StructTranspilerEdgeCasesTests), nameof(MyStruct));
+        var structSym = MegaCompilationCache.GetNamedTypeSymbol($"MyStruct_{ID}");
         var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
         Assert.Single(sorted);
-        Assert.Equal("MyStruct", sorted[0].Name);
+        Assert.Equal($"MyStruct_{ID}", sorted[0].Name);
     }
 }
