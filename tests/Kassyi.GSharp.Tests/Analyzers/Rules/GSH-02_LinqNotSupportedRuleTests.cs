@@ -1,4 +1,3 @@
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,7 +9,7 @@ using System.Linq;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
-public class LinqNotSupportedRuleTests
+public class GSH_02_LinqNotSupportedRuleTests
 {
     [Fact]
     [Trait("FeatureId", "GSH-02")]

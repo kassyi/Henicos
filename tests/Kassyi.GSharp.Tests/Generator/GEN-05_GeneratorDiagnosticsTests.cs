@@ -1,4 +1,3 @@
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
@@ -12,7 +11,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests;
 
-public class GeneratorDiagnosticsTests
+public class GEN_05_GeneratorDiagnosticsTests
 {
     [Fact]
     [Trait("FeatureId", "GEN-05")]

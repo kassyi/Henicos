@@ -1,5 +1,4 @@
 #nullable enable
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +15,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests;
 
-public class GeneratorSnapshotTests
+public class GEN_08_GeneratorSnapshotTests
 {
     private class GpuAttributeRemover : CSharpSyntaxRewriter
     {
@@ -289,7 +288,7 @@ public class GeneratorSnapshotTests
 
         Assert.NotEmpty(allNames);
 
-        var snapshotPrefix = $"{nameof(GeneratorSnapshotTests)}.";
+        var snapshotPrefix = $"{nameof(GEN_08_GeneratorSnapshotTests)}.";
         var snapshotFiles = Directory.GetFiles(snapshotDir, $"{snapshotPrefix}*")
             .Select(Path.GetFileName)
             .OfType<string>()

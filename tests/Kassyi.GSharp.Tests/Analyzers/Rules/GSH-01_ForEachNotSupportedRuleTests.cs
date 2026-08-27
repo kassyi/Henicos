@@ -1,4 +1,3 @@
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -9,7 +8,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
-public class ForEachNotSupportedRuleTests
+public class GSH_01_ForEachNotSupportedRuleTests
 {
     [Fact]
     [Trait("FeatureId", "GSH-01")]
