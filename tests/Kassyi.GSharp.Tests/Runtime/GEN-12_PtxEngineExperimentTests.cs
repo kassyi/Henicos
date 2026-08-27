@@ -1,10 +1,6 @@
 using System.Runtime.InteropServices;
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Runtime.Jit;
-using Xunit;
-using Xunit.Abstractions;
 using System.Text;
+using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Tests;
 

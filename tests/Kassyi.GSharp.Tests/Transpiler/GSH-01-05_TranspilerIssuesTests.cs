@@ -1,4 +1,3 @@
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 

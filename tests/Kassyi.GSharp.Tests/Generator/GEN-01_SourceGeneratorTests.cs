@@ -1,6 +1,3 @@
-using Kassyi.GSharp.Core;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Tests;
 
