@@ -1,5 +1,4 @@
 // ReSharper disable All
-using System.Diagnostics.CodeAnalysis;
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "NotAccessedVariable", Justification = "Variables are accessed within inline PTX assembly blocks")]

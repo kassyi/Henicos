@@ -22,7 +22,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the top-left element of the matrix.
     /// </value>
-    public GpuBigInteger M00 { get; }
+    public GpuBigInteger M00
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the <see cref="GpuBigInteger"/> element located at row 0, column 1 ($M_{01}$) in GPU device memory.
@@ -30,7 +33,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the top-right element of the matrix.
     /// </value>
-    public GpuBigInteger M01 { get; }
+    public GpuBigInteger M01
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the <see cref="GpuBigInteger"/> element located at row 1, column 0 ($M_{10}$) in GPU device memory.
@@ -38,7 +44,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the bottom-left element of the matrix.
     /// </value>
-    public GpuBigInteger M10 { get; }
+    public GpuBigInteger M10
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the <see cref="GpuBigInteger"/> element located at row 1, column 1 ($M_{11}$) in GPU device memory.
@@ -46,7 +55,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the bottom-right element of the matrix.
     /// </value>
-    public GpuBigInteger M11 { get; }
+    public GpuBigInteger M11
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether this matrix represents an odd number of reduction steps in the Euclidean algorithm.
@@ -57,7 +69,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <remarks>
     /// In Half-GCD computations, step parity determines the sign and operand ordering when applying the matrix to reduce operand pairs.
     /// </remarks>
-    public bool IsOddStep { get; }
+    public bool IsOddStep
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the parent <see cref="GpuContext"/> managing the GPU device memory and execution provider for this matrix.
@@ -65,7 +80,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The active GPU context associated with this matrix and all its constituent elements.
     /// </value>
-    public GpuContext Context { get; }
+    public GpuContext Context
+    {
+        get;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with uninitialized memory for each matrix element.
