@@ -34,7 +34,7 @@ flowchart TD
 
     subgraph Phase2["Phase 2: Tier 2 (準優先)"]
         direction LR
-        Phase2_GEN["GEN (ジェネレータ基盤): 6件"]
+        Phase2_GEN["GEN (ジェネレータ基盤): 7件"]
         Phase2_SYN["SYN (構文): 27件"]
         Phase2_GSH["GSH (トランスパイラ): 2件"]
         Phase2_GBI["GBI (GPU基盤): 16件"]
@@ -106,6 +106,7 @@ flowchart TD
     - **GBI-12**: 除算・剰余 (/, %) (Score: 32)
     - **GBI-17**: GpuBigInteger.DivRem (Score: 32)
     - **GBI-20**: GpuBigInteger.GreatestCommonDivisor (Score: 32)
+    - **GEN-15**: Analyzer/Visitor プールのスレッドセーフ性と再利用性確保 (Score: 32)
     - **SYN-12**: コレクション式 ([1, 2, 3]) (Score: 32)
     - **SYN-24**: enum の基底型指定とビットフラグ (Score: 32)
     - **SYN-27**: nameof(...) 式の静的文字列解決 (Score: 32)

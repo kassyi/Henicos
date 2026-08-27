@@ -3,11 +3,12 @@ using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
-internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
+internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposable
 {
     private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
 
     private ValidationContext _context;
+    private int _isRented;
 
     private GpuKernelValidationWalker()
     {
@@ -20,12 +21,19 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker
             walker = new GpuKernelValidationWalker();
         }
 
+        Volatile.Write(ref walker._isRented, 1);
+
         walker._context = context;
         return walker;
     }
 
-    public void Free()
+    public void Dispose()
     {
+        if (Interlocked.Exchange(ref _isRented, 0) != 1)
+        {
+            return;
+        }
+
         _context = default;
         s_pool.Add(this);
     }

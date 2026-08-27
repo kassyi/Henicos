@@ -4,7 +4,7 @@ public struct TranspileContext
 {
     public SourceWriter Writer;
     public HashSet<INamedTypeSymbol> UsedStructs;
-    public Dictionary<string, RoslynToCudaVisitor.OverrideValue> LocalVariableOverrides;
+    public Dictionary<string, OverrideValue> LocalVariableOverrides;
     public bool HasEmittedDynamicSmemBase;
 
     public SemanticModel SemanticModel { get; }
@@ -16,7 +16,7 @@ public struct TranspileContext
     public TranspileContext(
         SourceWriter writer,
         HashSet<INamedTypeSymbol> usedStructs,
-        Dictionary<string, RoslynToCudaVisitor.OverrideValue> localVariableOverrides,
+        Dictionary<string, OverrideValue> localVariableOverrides,
         SemanticModel semanticModel,
         Action<Diagnostic>? reportDiagnostic,
         RoslynToCudaVisitor visitor)
@@ -28,5 +28,35 @@ public struct TranspileContext
         ReportDiagnostic = reportDiagnostic;
         Visitor = visitor;
         HasEmittedDynamicSmemBase = false;
+    }
+}
+
+public readonly struct OverrideValue
+{
+    public readonly string? StringValue;
+    public readonly Microsoft.CodeAnalysis.SyntaxNode? NodeValue;
+
+    public OverrideValue(string stringValue)
+    {
+        StringValue = stringValue;
+        NodeValue = null;
+    }
+
+    public OverrideValue(Microsoft.CodeAnalysis.SyntaxNode nodeValue)
+    {
+        NodeValue = nodeValue;
+        StringValue = null;
+    }
+
+    public void WriteTo(RoslynToCudaVisitor visitor)
+    {
+        if (NodeValue != null)
+        {
+            visitor.Visit(NodeValue);
+        }
+        else if (StringValue != null)
+        {
+            visitor._context.Writer.Append(StringValue);
+        }
     }
 }

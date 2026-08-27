@@ -89,8 +89,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
-            var cppSource = visitor.GenerateCudaSource(syntaxNode, isDevice: false);
+            var cppSource = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: false);
 
             var finalSource = preludeSource + commonDeviceSource + cppSource;
 
@@ -124,8 +123,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
-            var signatureCode = visitor.GenerateCudaSignature(syntaxNode, isDevice: true);
+            var signatureCode = MethodTranspiler.GenerateCudaSignature(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: true);
             deviceSourceBuilder.AppendLine(signatureCode);
         }
 
@@ -146,8 +144,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var visitor = new RoslynToCudaVisitor(semanticModel, context.ReportDiagnostic);
-            var deviceCode = visitor.GenerateCudaSource(syntaxNode, isDevice: true);
+            var deviceCode = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: true);
             deviceSourceBuilder.AppendLine(deviceCode);
         }
 
