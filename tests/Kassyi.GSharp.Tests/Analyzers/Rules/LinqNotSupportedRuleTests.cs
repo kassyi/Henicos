@@ -1,3 +1,4 @@
+// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -12,7 +13,8 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 public class LinqNotSupportedRuleTests
 {
     [Fact]
-    public void Validate_ReportsDiagnostic_OnQueryExpression()
+    [Trait("FeatureId", "GSH-02")]
+    public void Validate_GSH02_ReportsDiagnostic_OnQueryExpression()
     {
         // Arrange
         var rule = LinqNotSupportedRule.Instance;

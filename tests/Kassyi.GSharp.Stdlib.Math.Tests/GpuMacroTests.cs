@@ -10,6 +10,7 @@ public class GpuMacroTests
 {
     [Theory]
     [Trait("FeatureId", "GEN-13")] // Or another appropriate ID
+    [InlineData(int.MinValue)]
     [InlineData(-1)]
     [InlineData(0)]
     [InlineData(1)]

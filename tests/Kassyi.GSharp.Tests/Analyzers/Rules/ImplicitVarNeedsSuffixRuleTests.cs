@@ -1,3 +1,4 @@
+// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -12,7 +13,8 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 public class ImplicitVarNeedsSuffixRuleTests
 {
     [Fact]
-    public void Validate_ReportsDiagnostic_OnVarWithoutSuffix()
+    [Trait("FeatureId", "GSH-03")]
+    public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix()
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
@@ -33,7 +35,8 @@ public class ImplicitVarNeedsSuffixRuleTests
     }
 
     [Fact]
-    public void Validate_DoesNotReportDiagnostic_OnVarWithSuffix()
+    [Trait("FeatureId", "GSH-03")]
+    public void Validate_GSH03_DoesNotReportDiagnostic_OnVarWithSuffix()
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;

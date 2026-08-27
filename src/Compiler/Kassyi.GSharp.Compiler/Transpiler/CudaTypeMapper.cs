@@ -19,6 +19,11 @@ internal static class CudaTypeMapper
             return MapType(pointerType.PointedAtType) + "*";
         }
 
+        if (typeSymbol.Name == "GpuBigIntRef")
+        {
+            return "unsigned int*";
+        }
+
         return typeSymbol.SpecialType switch
         {
             SpecialType.System_Void => "void",
