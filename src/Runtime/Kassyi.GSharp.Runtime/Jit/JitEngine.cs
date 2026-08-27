@@ -5,6 +5,13 @@ using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;
 
+/// <summary>
+/// Runtime JIT compilation engine that compiles CUDA C++ kernel strings into executable GPU modules and manages thread contexts.
+/// </summary>
+/// <remarks>
+/// <para>Kernels are compiled via NVRTC on-demand and cached in a two-tier cache (in-memory <see cref="ConcurrentDictionary{TKey,TValue}"/> and disk-based PTX cache) to eliminate redundant compilation overhead.</para>
+/// <para><b>Thread Safety:</b> All public methods are safe for concurrent invocation from multiple threads.</para>
+/// </remarks>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
 public sealed class JitEngine
 {
@@ -18,10 +25,16 @@ public sealed class JitEngine
         "Kassyi", "GSharp", "Cache", "Ptx"
     );
 
+    /// <summary>
+    /// An RAII struct that binds the global GSharp CUDA context to the current thread and restores the previous context upon disposal.
+    /// </summary>
     public readonly struct CudaContextScope : IDisposable
     {
         private readonly IntPtr _prevContext;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaContextScope"/> struct, switching the thread's CUDA context to GSharp global context.
+        /// </summary>
         public CudaContextScope()
         {
             EnsureInitialized();
@@ -32,6 +45,9 @@ public sealed class JitEngine
             }
         }
 
+        /// <summary>
+        /// Restores the previously active CUDA context on the current thread.
+        /// </summary>
         public void Dispose()
         {
             if (_prevContext != s_globalContext)
@@ -80,8 +96,11 @@ public sealed class JitEngine
     private static readonly ConcurrentDictionary<string, Lazy<GpuModule>> s_functionCache = new();
 
     /// <summary>
-    /// Unloads all cached modules and clears the cache to prevent device memory leaks.
+    /// Unloads all cached GPU modules from the device driver and clears the in-memory cache to reclaim device memory.
     /// </summary>
+    /// <remarks>
+    /// <para>Safe to call during application teardown or when changing GPU runtime contexts.</para>
+    /// </remarks>
     [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
     public static void Shutdown()
     {
@@ -108,10 +127,19 @@ public sealed class JitEngine
     }
 
     /// <summary>
-    /// JIT compiles the given CUDA C++ source string into a Fatbin, loads it into the current context,
-    /// and returns the handle to the specified kernel function.
-    /// Results are cached based on the hash of the source code.
+    /// JIT-compiles CUDA C++ source text into PTX, loads the module into the active CUDA context, and returns the function handle (<c>CUfunction</c>).
     /// </summary>
+    /// <param name="kernelName">The name of the <c>__global__</c> kernel function to locate and execute.</param>
+    /// <param name="baseSource">The CUDA C++ source code text.</param>
+    /// <param name="jitConstants">Optional compile-time constant key-value pairs to inject as preprocessor macros.</param>
+    /// <param name="macros">Optional preprocessor macro definitions.</param>
+    /// <returns>A native pointer handle (<see cref="IntPtr"/>) representing the loaded <c>CUfunction</c>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> or <paramref name="baseSource"/> is <see langword="null"/>.</exception>
+    /// <exception cref="Exception">Thrown when JIT compilation or driver module loading fails.</exception>
+    /// <remarks>
+    /// <para><b>Caching:</b> Compilation results are cached in-memory and on disk. Identical source text, constants, and SM architectures return the cached module without invoking NVRTC.</para>
+    /// <para><b>Thread Safety:</b> Thread-safe. Compilation is lazily executed once per unique cache key.</para>
+    /// </remarks>
     public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
         Dictionary<string, string>? jitConstants = null, Dictionary<string, string>? macros = null)
     {
@@ -233,27 +261,6 @@ public sealed class JitEngine
             "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
         };
 
-        void addIncludePaths(string baseDir)
-        {
-            var includePath = Path.Combine(baseDir, "include");
-            if (Directory.Exists(includePath))
-            {
-                options.Add($"-I{includePath}");
-
-                var ccclPath = Path.Combine(includePath, "cccl");
-                if (Directory.Exists(ccclPath))
-                {
-                    options.Add($"-I{ccclPath}");
-
-                    var libcxxPath = Path.Combine(ccclPath, "libcxx", "include");
-                    if (Directory.Exists(libcxxPath))
-                    {
-                        options.Add($"-I{libcxxPath}");
-                    }
-                }
-            }
-        }
-
         var cudaPath = GetCudaToolkitPath();
         if (!string.IsNullOrEmpty(cudaPath))
         {
@@ -261,6 +268,31 @@ public sealed class JitEngine
         }
 
         return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
+
+        void addIncludePaths(string baseDir)
+        {
+            var includePath = Path.Combine(baseDir, "include");
+            if (!Directory.Exists(includePath))
+            {
+                return;
+            }
+
+            options.Add($"-I{includePath}");
+
+            var ccclPath = Path.Combine(includePath, "cccl");
+            if (!Directory.Exists(ccclPath))
+            {
+                return;
+            }
+
+            options.Add($"-I{ccclPath}");
+
+            var libcxxPath = Path.Combine(ccclPath, "libcxx", "include");
+            if (Directory.Exists(libcxxPath))
+            {
+                options.Add($"-I{libcxxPath}");
+            }
+        }
     }
 
     private static string GetCudaToolkitPath()
@@ -272,14 +304,16 @@ public sealed class JitEngine
         }
 
         var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
-        if (Directory.Exists(cudaBaseDir))
+        if (!Directory.Exists(cudaBaseDir))
         {
-            foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+            return string.Empty;
+        }
+
+        foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+        {
+            if (Directory.Exists(Path.Combine(dir, "include")))
             {
-                if (Directory.Exists(Path.Combine(dir, "include")))
-                {
-                    return dir;
-                }
+                return dir;
             }
         }
 
@@ -334,6 +368,13 @@ public sealed class JitEngine
         return Convert.ToHexStringLower(hashBytes);
     }
 
+    /// <summary>
+    /// Blocks the CPU host thread until all previously issued GPU operations in the active context complete.
+    /// </summary>
+    /// <exception cref="CudaException">Thrown when device synchronization returns an error code.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> This is a blocking call and forces CPU-GPU synchronization, which degrades parallel execution efficiency.</para>
+    /// </remarks>
     public static void SynchronizeDevice()
     {
         using var scope = new CudaContextScope();
