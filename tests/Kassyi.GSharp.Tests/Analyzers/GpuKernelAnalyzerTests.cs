@@ -1,11 +1,3 @@
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Kassyi.GSharp.Compiler.Diagnostics;
-using Microsoft.CodeAnalysis;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 

@@ -1,10 +1,3 @@
-using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Compiler.Diagnostics.Rules;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 

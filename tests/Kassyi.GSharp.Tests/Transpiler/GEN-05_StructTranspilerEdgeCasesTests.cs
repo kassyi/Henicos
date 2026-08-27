@@ -1,13 +1,4 @@
-using System;
-using System.Runtime.CompilerServices;
-using System.Linq;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Xunit;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
