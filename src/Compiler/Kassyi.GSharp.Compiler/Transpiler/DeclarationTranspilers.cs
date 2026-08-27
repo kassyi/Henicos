@@ -258,6 +258,7 @@ internal static class DeclarationTranspilers
         }
 
         if (typeSymbol is { TypeKind: TypeKind.Struct } &&
+            typeSymbol.Name != "GpuBigIntRef" &&
             typeSymbol.ContainingNamespace.ToDisplayString() != TypeConstants.SystemNamespace)
         {
             context.UsedStructs.Add((INamedTypeSymbol)typeSymbol);

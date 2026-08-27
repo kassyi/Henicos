@@ -27,7 +27,7 @@ public static class GpuBigIntMulKernels
 
         var n1 = transformLength / n2;
 
-        var nttArgs1A = new NumberTheoreticTransformKernelArgs
+        GpuBigIntNttKernels.Device_ForwardNTT(new()
         {
             Buffer = nttBuf1A,
             TemporaryBuffer = nttTmpBuf,
@@ -37,11 +37,10 @@ public static class GpuBigIntMulKernels
             N2 = n2,
             P = GpuBigIntNttKernels.Prime1,
             Pm = GpuBigIntNttKernels.BarrettMagic1
-        };
-        GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs1A);
+        });
         Gpu.SyncGrid();
 
-        var nttArgs2A = new NumberTheoreticTransformKernelArgs
+        GpuBigIntNttKernels.Device_ForwardNTT(new()
         {
             Buffer = nttBuf2A,
             TemporaryBuffer = nttTmpBuf,
@@ -51,11 +50,10 @@ public static class GpuBigIntMulKernels
             N2 = n2,
             P = GpuBigIntNttKernels.Prime2,
             Pm = GpuBigIntNttKernels.BarrettMagic2
-        };
-        GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs2A);
+        });
         Gpu.SyncGrid();
 
-        var nttArgs1B = new NumberTheoreticTransformKernelArgs
+        GpuBigIntNttKernels.Device_ForwardNTT(new()
         {
             Buffer = nttBuf1B,
             TemporaryBuffer = nttTmpBuf,
@@ -65,11 +63,10 @@ public static class GpuBigIntMulKernels
             N2 = n2,
             P = GpuBigIntNttKernels.Prime1,
             Pm = GpuBigIntNttKernels.BarrettMagic1
-        };
-        GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs1B);
+        });
         Gpu.SyncGrid();
 
-        var nttArgs2B = new NumberTheoreticTransformKernelArgs
+        GpuBigIntNttKernels.Device_ForwardNTT(new()
         {
             Buffer = nttBuf2B,
             TemporaryBuffer = nttTmpBuf,
@@ -79,8 +76,7 @@ public static class GpuBigIntMulKernels
             N2 = n2,
             P = GpuBigIntNttKernels.Prime2,
             Pm = GpuBigIntNttKernels.BarrettMagic2
-        };
-        GpuBigIntNttKernels.Device_ForwardNTT(ref nttArgs2B);
+        });
         Gpu.SyncGrid();
 
         // 3. Pointwise Multiply
@@ -89,7 +85,7 @@ public static class GpuBigIntMulKernels
         Gpu.SyncGrid();
 
         // 4. Inverse NTT
-        var invArgs1 = new NumberTheoreticTransformKernelArgs
+        GpuBigIntNttKernels.Device_InverseNTT(new()
         {
             Buffer = nttBuf1A,
             TemporaryBuffer = nttTmpBuf,
@@ -99,11 +95,10 @@ public static class GpuBigIntMulKernels
             N2 = n2,
             P = GpuBigIntNttKernels.Prime1,
             Pm = GpuBigIntNttKernels.BarrettMagic1
-        };
-        GpuBigIntNttKernels.Device_InverseNTT(ref invArgs1);
+        });
         Gpu.SyncGrid();
 
-        var invArgs2 = new NumberTheoreticTransformKernelArgs
+        GpuBigIntNttKernels.Device_InverseNTT(new()
         {
             Buffer = nttBuf2A,
             TemporaryBuffer = nttTmpBuf,
@@ -113,8 +108,7 @@ public static class GpuBigIntMulKernels
             N2 = n2,
             P = GpuBigIntNttKernels.Prime2,
             Pm = GpuBigIntNttKernels.BarrettMagic2
-        };
-        GpuBigIntNttKernels.Device_InverseNTT(ref invArgs2);
+        });
         Gpu.SyncGrid();
 
         // 5. CRT & Compute Coefficients
