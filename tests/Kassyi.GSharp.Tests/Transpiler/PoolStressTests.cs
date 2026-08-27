@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Tests.Transpiler;
 public class PoolStressTests
 {
     [Fact]
-    [Trait("FeatureId", "GEN-09")]
+    [Trait("FeatureId", "GEN-15")]
     [Trait("Category", "Stress")]
     public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
     {
@@ -52,7 +52,7 @@ public class PoolStressTests
     }
 
     [Fact]
-    [Trait("FeatureId", "ANZ-09")]
+    [Trait("FeatureId", "GEN-15")]
     [Trait("Category", "Stress")]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
