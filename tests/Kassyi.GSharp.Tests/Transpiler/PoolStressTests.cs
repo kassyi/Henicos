@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -55,14 +56,27 @@ public class PoolStressTests
     [Trait("Category", "Stress")]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
+        var syntaxTree = CSharpSyntaxTree.ParseText(
+            """
+                class Dummy { 
+                    void M() { } 
+                }
+            """);
+        var compilation = CSharpCompilation.Create("DummyCompilation", new[] { syntaxTree });
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+
         var exceptions = new ConcurrentBag<Exception>();
 
         Parallel.For(0, 10000, new ParallelOptions { MaxDegreeOfParallelism = 16 }, i =>
         {
             try
             {
-                var dummyContext = new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(null!, null!, null!);
+                var dummyContext = new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(semanticModel, methodSymbol!, _ => { });
                 using var walker = GpuKernelValidationWalker.Rent(dummyContext);
+                
+                walker.Visit(methodDecl);
 
                 // Use reflection to ensure _context is set
                 var field = typeof(GpuKernelValidationWalker).GetField("_context",

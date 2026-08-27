@@ -11,6 +11,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     private readonly Dictionary<string, OverrideValue> _localVariableOverrides = new();
 
     internal TranspileContext _context;
+    private int _isRented;
 
     private RoslynToCudaVisitor()
     {
@@ -22,6 +23,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             visitor = new RoslynToCudaVisitor();
         }
+
+        Volatile.Write(ref visitor._isRented, 1);
 
         visitor._usedStructs.Clear();
         visitor._localVariableOverrides.Clear();
@@ -39,6 +42,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _isRented, 0) != 1)
+        {
+            return;
+        }
+
         _context = default;
         s_pool.Add(this);
     }
