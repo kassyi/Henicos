@@ -27,7 +27,7 @@ public class GEN_08_GeneratorSnapshotTests
             foreach (var attr in node.Attributes)
             {
                 var name = attr.Name.ToString();
-                if (name == "GpuKernel" || name == "GpuKernelAttribute" || 
+                if (name == "GpuKernel" || name == "GpuKernelAttribute" ||
                     name == "GpuDeviceFunction" || name == "GpuDeviceFunctionAttribute")
                 {
                     changed = true;
@@ -44,12 +44,14 @@ public class GEN_08_GeneratorSnapshotTests
                 {
                     return null;
                 }
+
                 return node.WithAttributes(newAttributes);
             }
 
             return base.VisitAttributeList(node);
         }
     }
+
     private static string GetTestProjectDirectory([CallerFilePath] string callerFilePath = "")
     {
         var fileDir = Path.GetDirectoryName(callerFilePath);
@@ -57,6 +59,7 @@ public class GEN_08_GeneratorSnapshotTests
         {
             throw new DirectoryNotFoundException("Could not determine test project directory.");
         }
+
         return Path.GetFullPath(Path.Combine(fileDir, ".."));
     }
 
@@ -87,7 +90,8 @@ public class GEN_08_GeneratorSnapshotTests
     private static string GetStdlibKernelsDirectory()
     {
         var projectDir = GetTestProjectDirectory();
-        var kernelsDir = Path.GetFullPath(Path.Combine(projectDir, "..", "..", "src", "Stdlib", "Kassyi.GSharp.Stdlib.Math", "Kernels"));
+        var kernelsDir = Path.GetFullPath(Path.Combine(projectDir, "..", "..", "src", "Stdlib",
+            "Kassyi.GSharp.Stdlib.Math", "Kernels"));
         if (!Directory.Exists(kernelsDir))
         {
             throw new DirectoryNotFoundException($"Kernels directory not found at: {kernelsDir}");
@@ -134,16 +138,19 @@ public class GEN_08_GeneratorSnapshotTests
             {
                 SafeAddReference(dll);
             }
+
             SafeAddReference(Path.Combine(coreDir, "mscorlib.dll"));
             SafeAddReference(Path.Combine(coreDir, "netstandard.dll"));
 
             // App dependencies
             foreach (var dll in Directory.GetFiles(appDir, "*.dll"))
             {
-                if (!includeStdlib && Path.GetFileName(dll).Equals("Kassyi.GSharp.Stdlib.Math.dll", StringComparison.OrdinalIgnoreCase))
+                if (!includeStdlib && Path.GetFileName(dll)
+                        .Equals("Kassyi.GSharp.Stdlib.Math.dll", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
+
                 SafeAddReference(dll);
             }
 
@@ -165,11 +172,12 @@ public class GEN_08_GeneratorSnapshotTests
         if (isStdlibKernel)
         {
             var stdlibDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
-            
+
             var globalUsingsPath = Path.Combine(stdlibDir, "GlobalUsings.cs");
             if (File.Exists(globalUsingsPath))
             {
-                syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(globalUsingsPath), path: globalUsingsPath));
+                syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(globalUsingsPath),
+                    path: globalUsingsPath));
             }
 
             var contextsDir = Path.Combine(stdlibDir, "Contexts");
@@ -180,6 +188,7 @@ public class GEN_08_GeneratorSnapshotTests
                     syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(f), path: f));
                 }
             }
+
             if (Directory.Exists(sourceDir))
             {
                 foreach (var f in Directory.GetFiles(sourceDir, "*.cu.cs"))
@@ -253,7 +262,7 @@ public class GEN_08_GeneratorSnapshotTests
     {
         var testCasesDir = GetTestCasesDirectory();
         var kernelsDir = GetStdlibKernelsDirectory();
-        
+
         var sourcePath = Path.Combine(testCasesDir, fileName);
         var sourceDir = testCasesDir;
         if (!File.Exists(sourcePath))
@@ -318,7 +327,8 @@ public class GEN_08_GeneratorSnapshotTests
             bool hasSnapshot = snapshotFiles.Any(f => f.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase));
             if (!hasSnapshot)
             {
-                missingSnapshots.Add($"TestCase/Kernel '{testCase}' does not have a corresponding snapshot ({expectedPrefix}*)");
+                missingSnapshots.Add(
+                    $"TestCase/Kernel '{testCase}' does not have a corresponding snapshot ({expectedPrefix}*)");
             }
         }
 

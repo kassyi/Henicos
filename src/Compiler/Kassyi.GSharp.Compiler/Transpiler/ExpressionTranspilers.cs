@@ -223,7 +223,7 @@ internal static class ExpressionTranspilers
     }
 
     private static void TryTranspileObjectCreationHelper(
-        ITypeSymbol? typeSymbol, 
+        ITypeSymbol? typeSymbol,
         ExpressionSyntax node,
         InitializerExpressionSyntax? initializer,
         ArgumentListSyntax? argumentList,
@@ -262,7 +262,8 @@ internal static class ExpressionTranspilers
         }
     }
 
-    private static void TranspileStructCreationWithInitializer(string cppType, InitializerExpressionSyntax initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
+    private static void TranspileStructCreationWithInitializer(string cppType, InitializerExpressionSyntax initializer,
+        ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         using (context.Writer.Parentheses())
         {
@@ -333,7 +334,8 @@ internal static class ExpressionTranspilers
         }
     }
 
-    private static void TranspileStructCreationWithoutInitializer(string cppType, ArgumentListSyntax? argumentList, ref TranspileContext context)
+    private static void TranspileStructCreationWithoutInitializer(string cppType, ArgumentListSyntax? argumentList,
+        ref TranspileContext context)
     {
         context.Writer.Append(cppType);
 
