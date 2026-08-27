@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests;
 
-public static class SourceGeneratorTestKernels
+public static class GEN_01_SourceGeneratorTestKernels
 {
     [GpuKernel]
     public static void MyTestKernel(int[] a, int[] b, int[] c)

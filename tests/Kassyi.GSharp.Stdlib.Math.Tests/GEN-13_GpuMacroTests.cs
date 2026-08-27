@@ -1,4 +1,3 @@
-// QA Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
@@ -6,7 +5,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
-public class GpuMacroTests
+public class GEN_13_GpuMacroTests
 {
     [Theory]
     [Trait("FeatureId", "GEN-13")] // Or another appropriate ID
