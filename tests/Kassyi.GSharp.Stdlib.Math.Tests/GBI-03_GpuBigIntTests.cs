@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
-    public class GpuBigIntTests
+    public class GBI_03_GpuBigIntTests
     {
         [Trait("RoadmapId", "GBI-11")]
         [Fact]
@@ -111,7 +111,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         #endregion
 
-        public GpuBigIntTests()
+        public GBI_03_GpuBigIntTests()
         {
             // Ensure CUDA context is initialized for GSharpJit tests
             using var scope = new JitEngine.CudaContextScope();

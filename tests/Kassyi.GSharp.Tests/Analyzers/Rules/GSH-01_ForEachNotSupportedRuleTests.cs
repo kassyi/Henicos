@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
-public class ForEachNotSupportedRuleTests
+public class GSH_01_ForEachNotSupportedRuleTests
 {
     [Fact]
     [Trait("FeatureId", "GSH-01")]

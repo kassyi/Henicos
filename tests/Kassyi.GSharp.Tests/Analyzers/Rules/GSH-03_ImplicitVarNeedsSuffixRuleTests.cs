@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
-public class ImplicitVarNeedsSuffixRuleTests
+public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 {
     [Fact]
     [Trait("FeatureId", "GSH-03")]

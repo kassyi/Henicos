@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
-public class GpuMacroTests
+public class GEN_13_GpuMacroTests
 {
     [Theory]
     [Trait("FeatureId", "GEN-13")] // Or another appropriate ID

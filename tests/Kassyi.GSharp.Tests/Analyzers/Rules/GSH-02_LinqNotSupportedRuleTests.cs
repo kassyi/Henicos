@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
-public class LinqNotSupportedRuleTests
+public class GSH_02_LinqNotSupportedRuleTests
 {
     [Fact]
     [Trait("FeatureId", "GSH-02")]

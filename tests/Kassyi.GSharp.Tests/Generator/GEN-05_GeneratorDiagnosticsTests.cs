@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests;
 
-public class GeneratorDiagnosticsTests
+public class GEN_05_GeneratorDiagnosticsTests
 {
     [Fact]
     [Trait("FeatureId", "GEN-05")]

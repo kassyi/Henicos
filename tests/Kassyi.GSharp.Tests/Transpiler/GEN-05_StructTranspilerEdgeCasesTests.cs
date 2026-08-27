@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
-public class StructTranspilerEdgeCasesTests
+public class GEN_05_StructTranspilerEdgeCasesTests
 {
     private static INamedTypeSymbol[] GetTypeSymbols(string source, params string[] typeNames)
     {
