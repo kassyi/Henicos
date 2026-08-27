@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Henicos.Cli;
 
+/// <summary>Command-line interface entry point for executing Fermat tests, benchmarks, and profiling suites.</summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by CLI execution")]
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by CLI execution")]
 internal class Program

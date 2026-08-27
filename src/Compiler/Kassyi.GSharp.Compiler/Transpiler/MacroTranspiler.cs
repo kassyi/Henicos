@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by Roslyn compiler infra")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by Roslyn compiler infra")]
 internal static class MacroTranspiler
@@ -74,6 +75,7 @@ internal static class MacroTranspiler
 
         context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
+        // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
         for (var i = start; i < start + count; i++)
         {
             context.LocalVariableOverrides[paramName] = new OverrideValue(i.ToString());

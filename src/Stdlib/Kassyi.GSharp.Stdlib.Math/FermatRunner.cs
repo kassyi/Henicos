@@ -4,12 +4,13 @@ using Kassyi.GSharp.Stdlib.Math.Kernels;
 
 namespace Kassyi.GSharp.Stdlib.Math;
 
+/// <summary>
+/// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on the GPU.
+/// </summary>
 public class FermatRunner
 {
-    public int E
-    {
-        get;
-    }
+    /// <summary>Gets the Fermat exponent parameter <c>E</c> (testing <c>F_n = 2^(2^E) + 1</c>).</summary>
+    public int E { get; }
     private int _numWords;
     private int _outNumWords;
     private int _gM;
@@ -20,6 +21,8 @@ public class FermatRunner
     private int _maxBlock;
     private int _sharedSize;
 
+    /// <summary>Initializes a new instance of the <see cref="FermatRunner"/> class for exponent <paramref name="e"/>.</summary>
+    /// <param name="e">The Fermat exponent index.</param>
     public FermatRunner(int e)
     {
         E = e;
@@ -197,6 +200,13 @@ public class FermatRunner
         }
     }
 
+    /// <summary>
+    /// Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.
+    /// </summary>
+    /// <returns>A tuple containing the resulting value buffer and the elapsed execution time in milliseconds.</returns>
+    /// <remarks>
+    /// <para><b>Execution Target:</b> Host-only (CPU) API. Spawns GPU kernels and blocks until completion.</para>
+    /// </remarks>
     public (uint[] Result, long EllapsedMs) RunFermatPrp()
     {
         var sw = Stopwatch.StartNew();
@@ -222,6 +232,13 @@ public class FermatRunner
         return (resultData, sw.ElapsedMilliseconds);
     }
 
+    /// <summary>
+    /// Executes a specified number of squaring iterations on the GPU for benchmarking purposes.
+    /// </summary>
+    /// <param name="chunkSize">The number of iterations to execute.</param>
+    /// <remarks>
+    /// <para><b>Execution Target:</b> Host-only (CPU) API. Spawns GPU kernels and blocks until completion.</para>
+    /// </remarks>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
         GpuBigIntBenchmarkKernelsWrapper.Launch_Kernel_BenchmarkSquareChunk(

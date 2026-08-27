@@ -1,45 +1,49 @@
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
-/// Defines a mapping from a BCL (Base Class Library) method to a CUDA/PTX intrinsic function.
-/// This attribute is used by the GSharp Compiler to translate C# standard library calls into GPU-native instructions without relying on reflection or hardcoded transpile rules.
+/// Maps a Base Class Library (BCL) method to a CUDA C++ or PTX intrinsic instruction during source generation.
 /// </summary>
+/// <remarks>
+/// <para>This assembly-level attribute enables the GSharp Transpiler to translate standard .NET API calls (e.g., <c>BitOperations.PopCount</c>) into optimal GPU hardware instructions without runtime reflection.</para>
+/// <para><b>Target:</b> Assembly declaration.</para>
+/// </remarks>
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 public sealed class BclIntrinsicMapAttribute : Attribute
 {
     /// <summary>
-    /// The fully qualified name of the BCL type containing the method (e.g., "System.Numerics.BitOperations").
+    /// Gets the fully qualified name of the target BCL type (e.g., <c>System.Numerics.BitOperations</c>).
     /// </summary>
     public string BclTypeFullName { get; }
 
     /// <summary>
-    /// The name of the method.
+    /// Gets the name of the method within the target BCL type.
     /// </summary>
     public string MethodName { get; }
 
     /// <summary>
-    /// The fully qualified names of the parameter types to match the exact overload (e.g., ["System.UInt32"]).
+    /// Gets the list of fully qualified parameter type names used to resolve the specific method overload.
     /// </summary>
     public IReadOnlyList<string> ParameterTypeFullNames { get; }
 
     /// <summary>
-    /// If specified, indicates that the first argument should be cast to this C++ type (e.g. "unsigned int") before calling the intrinsic.
+    /// Gets or sets an optional C++ type cast applied to the first argument before calling the intrinsic (e.g., <c>unsigned int</c>).
     /// </summary>
     public string? CastFirstArgumentTo { get; set; }
 
     /// <summary>
-    /// The PTX or CUDA C++ intrinsic function name to emit (e.g., "__popc").
+    /// Gets the CUDA C++ or PTX intrinsic function name to emit (e.g., <c>__popc</c>).
     /// </summary>
     public string CudaIntrinsicName { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BclIntrinsicMapAttribute"/> class.
     /// </summary>
-    /// <param name="bclTypeFullName">The fully qualified name of the BCL type.</param>
-    /// <param name="methodName">The name of the method.</param>
-    /// <param name="parameterTypeFullNames">The fully qualified names of the method parameters.</param>
-    /// <param name="cudaIntrinsicName">The PTX or CUDA C++ intrinsic function name.</param>
-    public BclIntrinsicMapAttribute(string bclTypeFullName, string methodName, string[] parameterTypeFullNames, string cudaIntrinsicName)
+    /// <param name="bclTypeFullName">The fully qualified name of the BCL type containing the method.</param>
+    /// <param name="methodName">The name of the method to map.</param>
+    /// <param name="parameterTypeFullNames">The fully qualified parameter type names for overload matching.</param>
+    /// <param name="cudaIntrinsicName">The CUDA C++ or PTX intrinsic function name.</param>
+    public BclIntrinsicMapAttribute(string bclTypeFullName, string methodName, string[] parameterTypeFullNames,
+        string cudaIntrinsicName)
     {
         BclTypeFullName = bclTypeFullName;
         MethodName = methodName;

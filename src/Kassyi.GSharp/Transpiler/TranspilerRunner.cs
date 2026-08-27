@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Transpiler;
 
+/// <summary>Standalone runner for extracting and transpiling GPU kernels from compiled .NET assemblies.</summary>
 public class TranspilerRunner
 {
     private static readonly ConcurrentDictionary<string, MethodDefinition> s_methodCache = new();

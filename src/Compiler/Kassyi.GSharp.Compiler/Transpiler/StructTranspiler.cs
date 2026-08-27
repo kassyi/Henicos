@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
 internal static class StructTranspiler
 {
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
@@ -23,8 +24,10 @@ internal static class StructTranspiler
         }
     }
 
+    /// <summary>Topologically sorts referenced structs so that dependent nested structs are declared first in C++.</summary>
     public static IEnumerable<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
     {
+        // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
         var result = new List<INamedTypeSymbol>();
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);

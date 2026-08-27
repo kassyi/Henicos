@@ -2,6 +2,7 @@ using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;
 
+/// <summary>Compiles in-memory CUDA C++ source text directly to PTX bytecode via the NVIDIA Runtime Compilation (NVRTC) API.</summary>
 public static class NvrtcCompiler
 {
     public static byte[] CompileToPtx(string cuSource, string kernelName, string[] options)

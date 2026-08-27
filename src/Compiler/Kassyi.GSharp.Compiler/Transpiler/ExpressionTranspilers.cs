@@ -1,11 +1,13 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Transpiles C# expressions (operators, invocations, member accesses, and struct creation) to CUDA C++.</summary>
 internal static class ExpressionTranspilers
 {
     public static void TranspileAssignmentExpression(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
+            // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
             context.Writer.Append("[&]()");
             using (context.Writer.Scope())
             {

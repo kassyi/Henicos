@@ -1,7 +1,12 @@
 namespace Kassyi.GSharp.Stdlib.Math.Algorithms;
 
+/// <summary>CPU reference implementation of Lehmer's / Half-GCD algorithm for validation before GPU kernel execution.</summary>
 public static class HalfGcdCpuReference
 {
+    /// <summary>Computes the greatest common divisor using Lehmer's 2x2 matrix reduction on truncated leading words.</summary>
+    /// <param name="a">The first operand.</param>
+    /// <param name="b">The second operand.</param>
+    /// <returns>The greatest common divisor of <paramref name="a"/> and <paramref name="b"/>.</returns>
     public static BigInteger Gcd(BigInteger a, BigInteger b)
     {
         if (a < b)
@@ -38,14 +43,9 @@ public static class HalfGcdCpuReference
 
             while (y != 0)
             {
-                // To guarantee the quotient is exactly the same as full precision,
-                // we must check if (x)/(y+1) == (x+1)/(y).
-                // Actually, since x and y are truncated, the true values A and B satisfy:
-                // x * 2^s <= A < (x+1) * 2^s
-                // y * 2^s <= B < (y+1) * 2^s
-                // Max quotient is (x+1) / y (if y > 0)
-                // Min quotient is x / (y+1)
-
+                // [WHY] Validates that the quotient computed from truncated single-word precision matches the full-precision quotient.
+                // Truncated bounds satisfy: x * 2^s <= A < (x+1) * 2^s and y * 2^s <= B < (y+1) * 2^s.
+                // If min quotient (x / (y + 1)) equals max quotient ((x + 1) / y), the single-word quotient q is mathematically exact.
                 if (y + 1 == 0)
                 {
                     break; // overflow protection

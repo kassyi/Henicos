@@ -403,7 +403,7 @@ IntPtr.Zero // Extra
 // Copy back array: particles
 if(particles_size>0&&d_particles!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_particles = System.Runtime.InteropServices.GCHandle.Alloc(particles, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_particles=System.Runtime.InteropServices.GCHandle.Alloc(particles,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_particles = handleBack_particles.AddrOfPinnedObject();

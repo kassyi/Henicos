@@ -3,6 +3,7 @@ using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
+/// <summary>Roslyn analyzer that validates C# syntax rules inside GPU kernel and device methods.</summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {

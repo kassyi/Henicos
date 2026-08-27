@@ -4,6 +4,7 @@ using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Compiler;
 
+/// <summary>Roslyn incremental source generator that transpiles C# GPU kernels to CUDA C++ and emits host invocations.</summary>
 [Generator]
 public class GpuKernelGenerator : IIncrementalGenerator
 {

@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
+/// <summary>Represents CUDA Driver API error return codes.</summary>
 public enum CUresult
 {
     CudaSuccess = 0,
@@ -44,6 +45,7 @@ public enum CUresult
     CudaErrorUnknown = 999
 }
 
+/// <summary>Exception thrown when a CUDA Driver API call returns a non-success status code.</summary>
 public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
 {
     public CUresult Result { get; } = result;
@@ -57,6 +59,7 @@ public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
     }
 }
 
+/// <summary>P/Invoke bindings for NVIDIA CUDA Driver API functions (<c>nvcuda.dll</c> / <c>libcuda.so</c>).</summary>
 [SuppressMessage("ReSharper", "InconsistentNaming", Justification = "P/Invoke matches native CUDA API naming")]
 public static partial class CudaDriverApi
 {

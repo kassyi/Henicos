@@ -1,34 +1,86 @@
 namespace Kassyi.GSharp.Stdlib.Math;
 
+/// <summary>
+/// Represents a 2x2 transition matrix of arbitrary-precision integers (<see cref="GpuBigInteger"/>) allocated in GPU device memory.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This matrix structure is used to accelerate the Half-GCD (HGCD), Lehmer's GCD, and Extended Euclidean Algorithm (EEA)
+/// pipelines on NVIDIA GPUs by compounding 2x2 quotient transition matrices into cumulative matrix products.
+/// </para>
+/// <para><b>Thread Safety:</b> Static methods are thread-safe. Instance methods and properties are not thread-safe and must not be accessed concurrently across multiple threads without external synchronization.</para>
+/// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to ensure deterministic deallocation of GPU global memory allocated for all four matrix elements (<see cref="M00"/>, <see cref="M01"/>, <see cref="M10"/>, and <see cref="M11"/>).</para>
+/// <para><b>Execution Target:</b> Host-only (CPU) control API that dispatches arithmetic operations and memory transfers to the GPU.</para>
+/// </remarks>
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 public class GpuBigIntMatrix2x2 : IDisposable
 {
-    public GpuBigInteger M00
-    {
-        get;
-    }
-    public GpuBigInteger M01
-    {
-        get;
-    }
-    public GpuBigInteger M10
-    {
-        get;
-    }
-    public GpuBigInteger M11
-    {
-        get;
-    }
-    public bool IsOddStep
-    {
-        get;
-    }
-    public GpuContext Context
-    {
-        get;
-    }
+    /// <summary>
+    /// Gets the <see cref="GpuBigInteger"/> element located at row 0, column 0 ($M_{00}$) in GPU device memory.
+    /// </summary>
+    /// <value>
+    /// The arbitrary-precision integer representing the top-left element of the matrix.
+    /// </value>
+    public GpuBigInteger M00 { get; }
 
+    /// <summary>
+    /// Gets the <see cref="GpuBigInteger"/> element located at row 0, column 1 ($M_{01}$) in GPU device memory.
+    /// </summary>
+    /// <value>
+    /// The arbitrary-precision integer representing the top-right element of the matrix.
+    /// </value>
+    public GpuBigInteger M01 { get; }
+
+    /// <summary>
+    /// Gets the <see cref="GpuBigInteger"/> element located at row 1, column 0 ($M_{10}$) in GPU device memory.
+    /// </summary>
+    /// <value>
+    /// The arbitrary-precision integer representing the bottom-left element of the matrix.
+    /// </value>
+    public GpuBigInteger M10 { get; }
+
+    /// <summary>
+    /// Gets the <see cref="GpuBigInteger"/> element located at row 1, column 1 ($M_{11}$) in GPU device memory.
+    /// </summary>
+    /// <value>
+    /// The arbitrary-precision integer representing the bottom-right element of the matrix.
+    /// </value>
+    public GpuBigInteger M11 { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether this matrix represents an odd number of reduction steps in the Euclidean algorithm.
+    /// </summary>
+    /// <value>
+    /// <see langword="true"/> if the cumulative reduction step count is odd; otherwise, <see langword="false"/>.
+    /// </value>
+    /// <remarks>
+    /// In Half-GCD computations, step parity determines the sign and operand ordering when applying the matrix to reduce operand pairs.
+    /// </remarks>
+    public bool IsOddStep { get; }
+
+    /// <summary>
+    /// Gets the parent <see cref="GpuContext"/> managing the GPU device memory and execution provider for this matrix.
+    /// </summary>
+    /// <value>
+    /// The active GPU context associated with this matrix and all its constituent elements.
+    /// </value>
+    public GpuContext Context { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with uninitialized memory for each matrix element.
+    /// </summary>
+    /// <param name="context">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
+    /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
+    /// <param name="isOddStep">A value indicating whether this transition matrix represents an odd number of reduction steps.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
+    /// <exception cref="OutOfMemoryException">Thrown when GPU global memory allocation fails for any of the matrix elements.</exception>
     public GpuBigIntMatrix2x2(GpuContext context, int numWords, bool isOddStep)
     {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(numWords);
+
         Context = context;
         IsOddStep = isOddStep;
         M00 = new GpuBigInteger(context, numWords);
@@ -37,6 +89,20 @@ public class GpuBigIntMatrix2x2 : IDisposable
         M11 = new GpuBigInteger(context, numWords);
     }
 
+    /// <summary>
+    /// Creates and initializes a 2x2 identity matrix ($I = \begin{pmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{pmatrix}$) in GPU device memory.
+    /// </summary>
+    /// <param name="context">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
+    /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
+    /// <returns>
+    /// A new <see cref="GpuBigIntMatrix2x2"/> instance representing the identity matrix, where <see cref="M00"/> and <see cref="M11"/> are set to 1, and <see cref="M01"/> and <see cref="M10"/> are set to 0.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
+    /// <exception cref="OutOfMemoryException">Thrown when GPU global memory allocation fails.</exception>
+    /// <remarks>
+    /// <para><b>Lifecycle:</b> The caller is responsible for disposing the returned matrix to release allocated GPU device memory.</para>
+    /// </remarks>
     public static GpuBigIntMatrix2x2 Identity(GpuContext context, int numWords)
     {
         var mat = new GpuBigIntMatrix2x2(context, numWords, false);
@@ -44,15 +110,50 @@ public class GpuBigIntMatrix2x2 : IDisposable
         one[0] = 1;
         context.Provider.CopyHostToDevice(mat.M00.DevicePointer, one, numWords);
         context.Provider.CopyHostToDevice(mat.M11.DevicePointer, one, numWords);
-        // M01 and M10 are initialized to 0 by default cuMemAlloc, but let's be safe
+
+        // [WHY] Explicitly initialize off-diagonal elements to 0 on the GPU to ensure deterministic state regardless of driver-level allocation zeroing.
         var zero = new uint[numWords];
         context.Provider.CopyHostToDevice(mat.M01.DevicePointer, zero, numWords);
         context.Provider.CopyHostToDevice(mat.M10.DevicePointer, zero, numWords);
         return mat;
     }
 
+    /// <summary>
+    /// Multiplies two 2x2 GPU BigInteger matrices (<paramref name="v"/> and <paramref name="u"/>) and returns their product ($R = V \times U$).
+    /// </summary>
+    /// <param name="v">The left-hand operand matrix $V$. Cannot be <see langword="null"/>.</param>
+    /// <param name="u">The right-hand operand matrix $U$. Cannot be <see langword="null"/>.</param>
+    /// <returns>
+    /// A new <see cref="GpuBigIntMatrix2x2"/> instance containing the product of <paramref name="v"/> and <paramref name="u"/>.
+    /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths (<c>v.M00.NumWords + u.M00.NumWords</c>).
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="v"/> or <paramref name="u"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="v"/> and <paramref name="u"/> belong to different <see cref="GpuContext"/> instances.</exception>
+    /// <remarks>
+    /// <para>
+    /// Computes the 2x2 matrix product using GPU arithmetic kernels:
+    /// <list type="bullet">
+    /// <item><description>$R_{00} = V_{00} \cdot U_{00} + V_{01} \cdot U_{10}$</description></item>
+    /// <item><description>$R_{01} = V_{00} \cdot U_{01} + V_{01} \cdot U_{11}$</description></item>
+    /// <item><description>$R_{10} = V_{10} \cdot U_{00} + V_{11} \cdot U_{10}$</description></item>
+    /// <item><description>$R_{11} = V_{10} \cdot U_{01} + V_{11} \cdot U_{11}$</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// The step parity of the result is computed as <c>v.IsOddStep ^ u.IsOddStep</c>.
+    /// </para>
+    /// <para><b>Lifecycle:</b> The caller is responsible for disposing the returned matrix.</para>
+    /// </remarks>
     public static GpuBigIntMatrix2x2 Multiply(GpuBigIntMatrix2x2 v, GpuBigIntMatrix2x2 u)
     {
+        ArgumentNullException.ThrowIfNull(v);
+        ArgumentNullException.ThrowIfNull(u);
+
+        if (v.Context != u.Context)
+        {
+            throw new ArgumentException("Matrices must belong to the same GPU context.", nameof(u));
+        }
+
         var ctx = v.Context;
         var outWords = v.M00.NumWords + u.M00.NumWords;
         var result = new GpuBigIntMatrix2x2(ctx, outWords, v.IsOddStep ^ u.IsOddStep);
@@ -83,8 +184,51 @@ public class GpuBigIntMatrix2x2 : IDisposable
         return result;
     }
 
+    /// <summary>
+    /// Applies this 2x2 reduction matrix to a pair of GPU integers (<paramref name="a"/> and <paramref name="b"/>), storing the reduced outputs in <paramref name="outA"/> and <paramref name="outB"/>.
+    /// </summary>
+    /// <param name="a">The first operand <see cref="GpuBigInteger"/> in the vector $\begin{pmatrix} a \\ b \end{pmatrix}$. Cannot be <see langword="null"/>.</param>
+    /// <param name="b">The second operand <see cref="GpuBigInteger"/> in the vector $\begin{pmatrix} a \\ b \end{pmatrix}$. Cannot be <see langword="null"/>.</param>
+    /// <param name="outA">The destination <see cref="GpuBigInteger"/> to receive the transformed first element $A'$. Cannot be <see langword="null"/>.</param>
+    /// <param name="outB">The destination <see cref="GpuBigInteger"/> to receive the transformed second element $B'$. Cannot be <see langword="null"/>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="a"/>, <paramref name="b"/>, <paramref name="outA"/>, or <paramref name="outB"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuContext"/> as this matrix.</exception>
+    /// <remarks>
+    /// <para>
+    /// The linear transformation applied depends on <see cref="IsOddStep"/>:
+    /// <list type="bullet">
+    /// <item>
+    /// <description>
+    /// When <see cref="IsOddStep"/> is <see langword="false"/>:
+    /// <para>$A' = M_{00} \cdot a - M_{01} \cdot b$</para>
+    /// <para>$B' = M_{11} \cdot b - M_{10} \cdot a$</para>
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// When <see cref="IsOddStep"/> is <see langword="true"/>:
+    /// <para>$A' = M_{01} \cdot b - M_{00} \cdot a$</para>
+    /// <para>$B' = M_{10} \cdot a - M_{11} \cdot b$</para>
+    /// </description>
+    /// </item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// Destination buffers <paramref name="outA"/> and <paramref name="outB"/> are zero-cleared prior to copying the lower limbs of the calculated results.
+    /// </para>
+    /// </remarks>
     public void Apply(GpuBigInteger a, GpuBigInteger b, GpuBigInteger outA, GpuBigInteger outB)
     {
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(b);
+        ArgumentNullException.ThrowIfNull(outA);
+        ArgumentNullException.ThrowIfNull(outB);
+
+        if (a.Context != Context || b.Context != Context || outA.Context != Context || outB.Context != Context)
+        {
+            throw new ArgumentException("All operands must belong to the same GPU context as the matrix.");
+        }
+
         var ctx = Context;
         var tempWords = M00.NumWords + System.Math.Max(a.NumWords, b.NumWords);
 
@@ -117,8 +261,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
             GpuBigInteger.Sub(tempB1, tempB2, resB);
         }
 
-        // Output size might be smaller than tempWords (because values decrease)
-        // We just clear outA and outB and copy
+        // [WHY] Destination buffers may have fewer limbs or need cleanup since reduced numbers decrease in magnitude.
         var zeroA = new uint[outA.NumWords];
         ctx.Provider.CopyHostToDevice(outA.DevicePointer, zeroA, outA.NumWords);
         outA.CopyFrom(resA, numWords: System.Math.Min(outA.NumWords, tempWords));
@@ -128,6 +271,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
         outB.CopyFrom(resB, numWords: System.Math.Min(outB.NumWords, tempWords));
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Disposes all four constituent <see cref="GpuBigInteger"/> instances (<see cref="M00"/>, <see cref="M01"/>, <see cref="M10"/>, and <see cref="M11"/>) and releases their GPU device memory allocations.
+    /// </remarks>
     public void Dispose()
     {
         M00.Dispose();
@@ -136,3 +283,4 @@ public class GpuBigIntMatrix2x2 : IDisposable
         M11.Dispose();
     }
 }
+

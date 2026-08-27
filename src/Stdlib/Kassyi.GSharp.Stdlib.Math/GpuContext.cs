@@ -1,28 +1,47 @@
+using System.Collections.Concurrent;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math;
 
+/// <summary>
+/// Specifies the GPU kernel execution engine backend.
+/// </summary>
 public enum GpuExecutionEngine
 {
+    /// <summary>Executes kernels via the legacy pre-compiled native CUDA C++ dynamic library.</summary>
     LegacyNative,
+
+    /// <summary>Executes kernels via the GSharp JIT transpilation and NVRTC runtime compiler.</summary>
     GSharpJit
 }
 
+/// <summary>
+/// Represents a GPU execution context managing memory allocation pools, device workspaces, and backend providers for large integer computations.
+/// </summary>
+/// <remarks>
+/// <para>Instantiating <see cref="GpuContext"/> allocates workspace memory on the active CUDA device. Ensure instances are properly disposed to prevent device memory exhaustion.</para>
+/// <para><b>Thread Safety:</b> Instance members are thread-safe for allocation pooling.</para>
+/// </remarks>
 public class GpuContext : IDisposable
 {
-    public int MaxWords
-    {
-        get;
-    }
-    public IntPtr WorkspacePointer
-    {
-        get;
-    }
-    public GpuExecutionEngine Engine
-    {
-        get;
-    }
+    /// <summary>
+    /// Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
+    /// </summary>
+    public int MaxWords { get; }
 
+    /// <summary>
+    /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
+    /// </summary>
+    public IntPtr WorkspacePointer { get; }
+
+    /// <summary>
+    /// Gets the active GPU execution engine type.
+    /// </summary>
+    public GpuExecutionEngine Engine { get; }
+
+    /// <summary>
+    /// Gets the active GPU arithmetic execution provider implementation.
+    /// </summary>
     public Providers.IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
         ? Providers.GSharpJitProvider.Instance
         : Providers.NativeProvider.Instance;
@@ -30,10 +49,14 @@ public class GpuContext : IDisposable
     private bool _disposed;
 
     // Memory pooling for Lazy Evaluation
-    private readonly
-        System.Collections.Concurrent.ConcurrentDictionary<int,
-            System.Collections.Concurrent.ConcurrentBag<GpuBigInteger>> _tempPool = new();
+    private readonly ConcurrentDictionary<int, ConcurrentBag<GpuBigInteger>> _tempPool = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GpuContext"/> class with the specified limb capacity and engine backend.
+    /// </summary>
+    /// <param name="maxWords">The maximum word count for BigInteger operations.</param>
+    /// <param name="engine">The GPU execution backend engine to utilize.</param>
+    /// <exception cref="InvalidOperationException">Thrown when CUDA context or native workspace allocation fails.</exception>
     public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpJit)
     {
         MaxWords = maxWords;
@@ -62,6 +85,9 @@ public class GpuContext : IDisposable
         }
     }
 
+    /// <summary>
+    /// Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)

@@ -3,8 +3,10 @@ using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
+/// <summary>Pooled syntax walker that performs zero-allocation validation of GPU kernel AST nodes.</summary>
 internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposable
 {
+    // [WHY] Reuses pooled walker instances to eliminate GC pressure during continuous background Roslyn analysis.
     private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
 
     private ValidationContext _context;

@@ -62,6 +62,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public void AppendComma() => Builder.Append(',');
     public void AppendSpace() => Builder.Append(' ');
     public void AppendSemiColon() => Builder.Append(';');
+    public void AppendSemiColonLine() => Builder.AppendLine(";");
     public void AppendOperator(string op) => Builder.Append(op);
     public void AppendKeyword(string keyword) => Builder.Append(keyword);
 
