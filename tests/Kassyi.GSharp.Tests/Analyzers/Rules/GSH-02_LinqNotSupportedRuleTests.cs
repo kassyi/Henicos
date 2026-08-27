@@ -1,3 +1,4 @@
+// Reference: .agents/skills/qa-testing-guidelines/SKILL.md
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
