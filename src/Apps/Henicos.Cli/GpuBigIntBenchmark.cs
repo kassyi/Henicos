@@ -2,6 +2,7 @@ using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos.Cli;
 
+/// <summary>BenchmarkDotNet performance comparisons between legacy native and GSharp JIT execution providers.</summary>
 [MarkdownExporterAttribute.GitHub]
 public class GpuBigIntBenchmark : IDisposable
 {

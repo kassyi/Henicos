@@ -1,5 +1,6 @@
 namespace Henicos.Cli;
 
+/// <summary>End-to-end verification test comparing CPU BigInteger ModPow against GPU hybrid reduction loops.</summary>
 public static class FullLoopTest
 {
     public static void Run()
