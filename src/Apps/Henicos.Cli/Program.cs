@@ -1,7 +1,7 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Running;
 using Cocona;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Henicos.Cli;
 
