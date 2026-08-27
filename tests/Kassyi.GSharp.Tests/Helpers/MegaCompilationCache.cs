@@ -14,20 +14,14 @@ namespace Kassyi.GSharp.Tests.Helpers;
 
 public static class MegaCompilationCache
 {
-    private static CSharpCompilation s_baseCompilation;
+    private static readonly ConcurrentBag<string> s_registeredSources = new();
 
-    public static CSharpCompilation BaseCompilation
+    public static void RegisterSource(string source)
     {
-        get
-        {
-            return s_baseCompilation
-                   ?? throw new InvalidOperationException(
-                       "Mega compilation base cache was not initialized.");
-        }
+        s_registeredSources.Add(source);
     }
 
-    [ModuleInitializer]
-    public static void Initialize()
+    private static readonly Lazy<CSharpCompilation> s_baseCompilation = new(() =>
     {
         var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
         var references = trustedAssemblies!
@@ -37,50 +31,38 @@ public static class MegaCompilationCache
             .Cast<MetadataReference>()
             .ToList();
 
-        s_baseCompilation = CSharpCompilation.Create("MegaTestCompilationBase")
+        var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
             .AddReferences(references);
-    }
 
-    private static readonly ConcurrentDictionary<string, CSharpCompilation> s_fileCompilations = new();
+        var combinedSource = string.Join("\n\n", s_registeredSources);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+        var tree = CSharpSyntaxTree.ParseText(combinedSource, parseOptions, path: "MegaTestSources.cs");
 
-    public static CSharpCompilation GetCompilationForFile([CallerFilePath] string callerFilePath = "")
+        return baseComp.AddSyntaxTrees(tree);
+    });
+
+    public static CSharpCompilation BaseCompilation => s_baseCompilation.Value;
+
+    public static INamedTypeSymbol GetNamedTypeSymbol(string typeName)
     {
-        if (string.IsNullOrEmpty(callerFilePath))
-            throw new ArgumentException("Caller file path must be provided.");
-
-        return s_fileCompilations.GetOrAdd(callerFilePath, path =>
-        {
-            var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
-            var tree = CSharpSyntaxTree.ParseText(File.ReadAllText(path), parseOptions, path: path);
-            return BaseCompilation.AddSyntaxTrees(tree);
-        });
-    }
-
-    public static INamedTypeSymbol GetNamedTypeSymbol(string className, string targetName,
-        [CallerFilePath] string callerFilePath = "")
-    {
-        var compilation = GetCompilationForFile(callerFilePath);
-        var fullName = className + "." + targetName;
-
-        var symbol = compilation.GetSymbolsWithName(targetName, SymbolFilter.Type)
+        var symbol = BaseCompilation.GetSymbolsWithName(typeName, SymbolFilter.Type)
             .OfType<INamedTypeSymbol>()
-            .FirstOrDefault(s => s.ToDisplayString().EndsWith(fullName));
+            .FirstOrDefault();
 
-        return symbol ?? throw new InvalidOperationException($"Type {fullName} not found in file {callerFilePath}.");
+        return symbol ?? throw new InvalidOperationException($"Type {typeName} not found in the mega compilation.");
     }
 
-    public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(string className,
-        string targetName, string methodName, [CallerFilePath] string callerFilePath = "")
+    public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(string typeName, string methodName)
     {
-        var typeSymbol = GetNamedTypeSymbol(className, targetName, callerFilePath);
+        var typeSymbol = GetNamedTypeSymbol(typeName);
 
         var methodSymbol = typeSymbol.GetMembers(methodName).OfType<IMethodSymbol>().FirstOrDefault()
                            ?? throw new InvalidOperationException(
                                $"Method {methodName} not found in {typeSymbol.Name}.");
 
         var syntaxTree = methodSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
-        var model = GetCompilationForFile(callerFilePath).GetSemanticModel(syntaxTree);
+        var model = BaseCompilation.GetSemanticModel(syntaxTree);
         return (model, methodSymbol);
     }
 }

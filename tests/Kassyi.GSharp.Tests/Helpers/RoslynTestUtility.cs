@@ -33,7 +33,7 @@ public static class RoslynTestUtility
 
     public static Compilation CreateCompilation(string source)
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
 
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
@@ -55,7 +55,7 @@ public static class RoslynTestUtility
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
-            parseOptions: new CSharpParseOptions(LanguageVersion.CSharp10),
+            parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
             optionsProvider: null);
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
