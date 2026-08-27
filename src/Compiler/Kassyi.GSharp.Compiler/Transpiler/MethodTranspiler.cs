@@ -8,7 +8,8 @@ public static class MethodTranspiler
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
-        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic);
+        var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
+        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor._context;
 
         context.Writer = bodyWriter;
@@ -31,7 +32,8 @@ public static class MethodTranspiler
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
-        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic);
+        var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
+        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor._context;
 
         context.Writer = sigWriter;

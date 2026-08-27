@@ -17,7 +17,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
     }
 
-    public static RoslynToCudaVisitor Rent(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null)
+    public static RoslynToCudaVisitor Rent(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null, ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (!s_pool.TryTake(out var visitor))
         {
@@ -35,7 +35,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             visitor._localVariableOverrides,
             semanticModel,
             reportDiagnostic,
-            visitor);
+            visitor,
+            bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty);
 
         return visitor;
     }
@@ -191,20 +192,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            _context.Writer.Append(field.ConstantValue!.ToString());
-            switch (field.Type.SpecialType)
-            {
-                case SpecialType.System_UInt64:
-                    _context.Writer.Append("ULL");
-                    break;
-                case SpecialType.System_UInt32:
-                    _context.Writer.Append("U");
-                    break;
-                case SpecialType.System_Int64:
-                    _context.Writer.Append("LL");
-                    break;
-            }
-
+            _context.Writer.AppendConstantField(field);
             return;
         }
 
