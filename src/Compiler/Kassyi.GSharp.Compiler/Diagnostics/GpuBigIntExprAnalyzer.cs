@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
+/// <summary>Roslyn analyzer that prohibits direct variable declarations or assignments of GpuBigIntExpr without .Value.</summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
 {

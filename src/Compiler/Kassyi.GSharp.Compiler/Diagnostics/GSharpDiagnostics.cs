@@ -3,6 +3,7 @@
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
+/// <summary>Defines Roslyn diagnostic descriptors and error rules for GSharp GPU kernel compilation.</summary>
 public static class GSharpDiagnostics
 {
     private const string Category = "GSharpTranspiler";

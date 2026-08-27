@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler;
 
+/// <summary>Generates host-side C# wrapper classes that JIT-compile and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
     public static string GenerateWrapperClass(IMethodSymbol method, string cppSource)

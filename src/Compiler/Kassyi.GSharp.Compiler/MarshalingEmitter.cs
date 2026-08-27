@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler;
 
+/// <summary>Emits native P/Invoke marshaling code, pinned struct conversions, and CUDA parameter setup.</summary>
 internal static class MarshalingEmitter
 {
     internal static bool IsCustomStruct(ITypeSymbol type)
@@ -105,6 +106,7 @@ internal static class MarshalingEmitter
                                 writer.AppendOperator(">");
                                 writer.Append("0");
                             }
+
                             writer.AppendLine();
                             using (writer.Scope())
                             {
@@ -171,6 +173,7 @@ internal static class MarshalingEmitter
                             writer.AppendOperator(">");
                             writer.Append("0");
                         }
+
                         writer.AppendLine();
                         using (writer.Scope())
                         {
@@ -331,6 +334,7 @@ internal static class MarshalingEmitter
                 writer.AppendOperator(">");
                 writer.Append("0");
             }
+
             writer.AppendLine();
             using (writer.Scope())
             {
@@ -473,40 +477,43 @@ internal static class MarshalingEmitter
 
     private static void WriteArrayUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (!isDevicePtr)
+        if (isDevicePtr)
         {
-            writer.AppendLine($"// Copy back array: {p.Name}");
-            writer.AppendKeyword("if");
-            using (writer.Parentheses())
-            {
-                writer.Append($"{p.Name}_size");
-                writer.AppendOperator(">");
-                writer.Append("0");
-                writer.AppendOperator("&&");
-                writer.Append($"d_{p.Name}");
-                writer.AppendOperator("!=");
-                writer.Append("IntPtr.Zero");
-            }
-            writer.AppendLine();
+            return;
+        }
+
+        writer.AppendLine($"// Copy back array: {p.Name}");
+        writer.AppendKeyword("if");
+        using (writer.Parentheses())
+        {
+            writer.Append($"{p.Name}_size");
+            writer.AppendOperator(">");
+            writer.Append("0");
+            writer.AppendOperator("&&");
+            writer.Append($"d_{p.Name}");
+            writer.AppendOperator("!=");
+            writer.Append("IntPtr.Zero");
+        }
+
+        writer.AppendLine();
+        using (writer.Scope())
+        {
+            writer.AppendLine($"""
+                System.Runtime.InteropServices.GCHandle handleBack_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
+                try
+                """);
             using (writer.Scope())
             {
                 writer.AppendLine($"""
-                    System.Runtime.InteropServices.GCHandle handleBack_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
-                    try
+                    IntPtr p_{p.Name} = handleBack_{p.Name}.AddrOfPinnedObject();
+                    CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}, d_{p.Name}, {p.Name}_size));
                     """);
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"""
-                        IntPtr p_{p.Name} = handleBack_{p.Name}.AddrOfPinnedObject();
-                        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_{p.Name}, d_{p.Name}, {p.Name}_size));
-                        """);
-                }
+            }
 
-                writer.AppendLine("finally");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"handleBack_{p.Name}.Free();");
-                }
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"handleBack_{p.Name}.Free();");
             }
         }
     }

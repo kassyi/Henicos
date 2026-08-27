@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Transpiles C# variable declarations and static/dynamic shared memory allocations to CUDA C++.</summary>
 internal static class DeclarationTranspilers
 {
     private readonly struct SharedMemoryAllocation(
@@ -156,6 +157,7 @@ internal static class DeclarationTranspilers
 
     private static void AlignDynamicSharedMemoryOffset(string cppElementType, ref SourceWriter writer)
     {
+        // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
         writer.Append("__smem_offset");
         writer.AppendOperator("=");
         using (writer.Parentheses())

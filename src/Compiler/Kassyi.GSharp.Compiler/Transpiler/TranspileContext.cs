@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Encapsulates output writers, symbol caches, semantic models, and diagnostics during transpilation.</summary>
 public struct TranspileContext(
     SourceWriter writer,
     HashSet<INamedTypeSymbol> usedStructs,
@@ -21,6 +22,7 @@ public struct TranspileContext(
     public RoslynToCudaVisitor Visitor { get; } = visitor;
 }
 
+/// <summary>Represents an overridden variable substitution value (literal string or AST node) for macro expansions.</summary>
 public readonly struct OverrideValue
 {
     public readonly string? StringValue;

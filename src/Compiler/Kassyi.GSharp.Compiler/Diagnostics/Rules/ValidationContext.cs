@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
+/// <summary>Encapsulates semantic and method symbol context for AST validation rules.</summary>
 internal readonly struct ValidationContext(
     SemanticModel semanticModel,
     IMethodSymbol methodSymbol,
