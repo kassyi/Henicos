@@ -1,15 +1,22 @@
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
-/// CUDA Toolkit のインストールパスや環境変数を解決するための共通ユーティリティ。
-/// アプリケーション全体で CUDA のパス解決ロジックを統一するために使用します。
+/// Provides utility methods for discovering and resolving local NVIDIA CUDA Toolkit installation directories.
 /// </summary>
+/// <remarks>
+/// This utility queries system environment variables and default OS filesystem paths across Windows and Linux.
+/// </remarks>
 public static class CudaEnvironment
 {
     /// <summary>
-    /// システム上の CUDA インストールパスを取得します。
-    /// 環境変数 CUDA_PATH が設定されていない場合は、OS の標準的なインストール先から最新バージョンを探索します。
+    /// Discovers and returns the root installation directory of the NVIDIA CUDA Toolkit.
     /// </summary>
+    /// <returns>
+    /// The absolute path to the CUDA installation directory if located; otherwise, <see langword="null"/>.
+    /// </returns>
+    /// <remarks>
+    /// Searches the <c>CUDA_PATH</c> environment variable first, then inspects standard OS directories (e.g. <c>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA</c> on Windows or <c>/usr/local/cuda</c> on Linux).
+    /// </remarks>
     public static string? GetCudaPath()
     {
         var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
@@ -54,9 +61,11 @@ public static class CudaEnvironment
     }
 
     /// <summary>
-    /// CUDA Toolkit の bin ディレクトリのパスを取得します。
-    /// 見つからない場合は null を返します。
+    /// Discovers and returns the path to the <c>bin</c> directory of the CUDA Toolkit containing binaries and dynamic libraries.
     /// </summary>
+    /// <returns>
+    /// The absolute path to the CUDA <c>bin</c> directory (or <c>bin/x64</c> on Windows if present); otherwise, <see langword="null"/>.
+    /// </returns>
     public static string? GetCudaBinPath()
     {
         var cudaPath = GetCudaPath();
