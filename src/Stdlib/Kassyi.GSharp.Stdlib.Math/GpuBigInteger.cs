@@ -42,6 +42,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <param name="numWords">The number of 32-bit limbs to allocate.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
     /// <exception cref="OutOfMemoryException">Thrown when device memory allocation fails.</exception>
+    /// <exception cref="Kassyi.GSharp.Runtime.Interop.CudaException">Thrown by the default backend when CUDA driver memory allocation fails.</exception>
     public GpuBigInteger(GpuContext context, int numWords)
     {
         Context = context ?? throw new ArgumentNullException(nameof(context));

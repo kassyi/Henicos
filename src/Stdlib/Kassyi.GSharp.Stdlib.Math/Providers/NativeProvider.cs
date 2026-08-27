@@ -81,24 +81,20 @@ public class NativeProvider : IGpuExecutionProvider
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Mul(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Add(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Sub(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Mul(GpuContext context, GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
@@ -110,20 +106,17 @@ public class NativeProvider : IGpuExecutionProvider
             rightOperand.DevicePointer,
             resultBuffer.DevicePointer, leftOperand.NumWords);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void BitwiseOr(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void BitwiseXor(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void BitwiseNot(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
@@ -146,13 +139,11 @@ public class NativeProvider : IGpuExecutionProvider
     public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords) =>
         NativeMethods.GpuBigInt_Square(context.WorkspacePointer, devicePointer, logicalWords);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public bool IsZero(GpuContext context, GpuBigInteger leftOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public bool IsOne(GpuContext context, GpuBigInteger leftOperand) => throw new NotImplementedException();
 
     /// <inheritdoc/>
@@ -172,13 +163,11 @@ public class NativeProvider : IGpuExecutionProvider
         return 0;
     }
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 }

@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// </summary>
 /// <remarks>
 /// <para>Kernels are compiled via NVRTC on-demand and cached in a two-tier cache (in-memory <see cref="ConcurrentDictionary{TKey,TValue}"/> and disk-based PTX cache) to eliminate redundant compilation overhead.</para>
-/// <para><b>Thread Safety:</b> All public methods are safe for concurrent invocation from multiple threads.</para>
+/// <para><b>Thread Safety:</b> All public methods except <see cref="Shutdown"/> are safe for concurrent invocation from multiple threads.</para>
 /// </remarks>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
 public sealed class JitEngine
@@ -100,6 +100,7 @@ public sealed class JitEngine
     /// </summary>
     /// <remarks>
     /// <para>Safe to call during application teardown or when changing GPU runtime contexts.</para>
+    /// <para><b>Thread Safety:</b> This method is NOT safe to call concurrently with other engine operations.</para>
     /// </remarks>
     [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
     public static void Shutdown()

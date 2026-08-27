@@ -498,10 +498,19 @@ internal static class MarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            writer.AppendLine($"""
-                System.Runtime.InteropServices.GCHandle handleBack_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);
-                try
-                """);
+            writer.Append("System.Runtime.InteropServices.GCHandle");
+            writer.Append($" handleBack_{p.Name}");
+            writer.AppendOperator("=");
+            writer.Append("System.Runtime.InteropServices.GCHandle.Alloc");
+            using (writer.Parentheses())
+            {
+                writer.Append(p.Name);
+                writer.AppendComma();
+                writer.Append("System.Runtime.InteropServices.GCHandleType.Pinned");
+            }
+
+            writer.AppendSemiColonLine();
+            writer.AppendLine("try");
             using (writer.Scope())
             {
                 writer.AppendLine($"""
