@@ -9,7 +9,10 @@ public interface IGpuBigIntExpression
     /// <summary>
     /// Gets the word length (limb count) resulting from this expression.
     /// </summary>
-    int NumWords { get; }
+    int NumWords
+    {
+        get;
+    }
 
     /// <summary>
     /// Evaluates this expression on the GPU into the specified target buffer.

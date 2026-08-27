@@ -189,46 +189,46 @@ internal static class StructTranspiler
                 switch (member)
                 {
                     case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
-                    {
-                        var syntax =
-                            field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-                        var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-                        if (sizeExp != null)
                         {
-                            context.Writer.Append($"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}");
-                            using (context.Writer.Brackets())
+                            var syntax =
+                                field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+                            var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+                            if (sizeExp != null)
                             {
-                                context.Visitor.Visit(sizeExp);
+                                context.Writer.Append($"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}");
+                                using (context.Writer.Brackets())
+                                {
+                                    context.Visitor.Visit(sizeExp);
+                                }
+
+                                context.Writer.AppendLine(";");
+                            }
+                            else
+                            {
+                                context.Writer.AppendLine(
+                                    $"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}; // ERROR: fixed size not found");
                             }
 
-                            context.Writer.AppendLine(";");
+                            break;
                         }
-                        else
-                        {
-                            context.Writer.AppendLine(
-                                $"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}; // ERROR: fixed size not found");
-                        }
-
-                        break;
-                    }
                     case IFieldSymbol field:
-                    {
-                        var fieldConst =
-                            field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
-                                ? "const "
-                                : "";
-                        context.Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
-                        break;
-                    }
+                        {
+                            var fieldConst =
+                                field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
+                                    ? "const "
+                                    : "";
+                            context.Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
+                            break;
+                        }
                     case IPropertySymbol prop:
-                    {
-                        var propConst =
-                            prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
-                                ? "const "
-                                : "";
-                        context.Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
-                        break;
-                    }
+                        {
+                            var propConst =
+                                prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
+                                    ? "const "
+                                    : "";
+                            context.Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
+                            break;
+                        }
                 }
             }
 

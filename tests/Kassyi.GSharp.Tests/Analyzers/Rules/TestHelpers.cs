@@ -1,9 +1,3 @@
-using System.Linq;
-using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Tests.Helpers;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 

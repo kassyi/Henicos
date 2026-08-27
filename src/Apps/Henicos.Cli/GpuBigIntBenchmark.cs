@@ -7,7 +7,10 @@ namespace Henicos.Cli;
 public class GpuBigIntBenchmark : IDisposable
 {
     [Params(1024, 4096, 16384)]
-    public int NumWords { get; set; }
+    public int NumWords
+    {
+        get; set;
+    }
 
     private GpuContext _contextJit = null!;
     private GpuContext _contextLegacy = null!;

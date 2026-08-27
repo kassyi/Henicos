@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace Kassyi.GSharp.Stdlib.Math.Algorithms;
 
 /// <summary>3-Prime NTT (Number Theoretic Transform) and Garner's CRT combination for large integer multiplication CPU reference.</summary>
