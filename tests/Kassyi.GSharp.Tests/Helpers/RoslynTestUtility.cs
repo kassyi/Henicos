@@ -36,23 +36,7 @@ public static class RoslynTestUtility
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
 
-        var references = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location))
-            .Cast<MetadataReference>()
-            .ToList();
-
-        // Add typical GSharp references
-        references.Add(MetadataReference.CreateFromFile(typeof(GpuBigIntExpr).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(GpuKernelAttribute).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(SharedMemory<int>).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(MethodImplOptions).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location));
-
-        return CSharpCompilation.Create("TestCompilation")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(references)
-            .AddSyntaxTrees(syntaxTree);
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
     }
 
     public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)

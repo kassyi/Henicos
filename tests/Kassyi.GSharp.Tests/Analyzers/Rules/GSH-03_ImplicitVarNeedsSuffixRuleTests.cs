@@ -6,21 +6,36 @@ using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Xunit;
 using System.Linq;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 {
+    private class Dummy
+    {
+        public void WithoutSuffix()
+        {
+            var x = 1;
+        }
+
+        public void WithSuffix()
+        {
+            var x = 1U;
+        }
+    }
+
     [Fact]
     [Trait("FeatureId", "GSH-03")]
     public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix()
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var tree = CSharpSyntaxTree.ParseText("class C { void M() { var x = 1; } }");
-        var node = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().First();
-        var (model, method) = TestHelpers.CreateDummyContext();
-        
+        var (model, method) = MegaCompilationCache.GetMethodContext(nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests),
+            nameof(Dummy), nameof(Dummy.WithoutSuffix));
+        var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
+            .First();
+
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);
 
@@ -39,10 +54,11 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var tree = CSharpSyntaxTree.ParseText("class C { void M() { var x = 1U; } }");
-        var node = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().First();
-        var (model, method) = TestHelpers.CreateDummyContext();
-        
+        var (model, method) = MegaCompilationCache.GetMethodContext(nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests),
+            nameof(Dummy), nameof(Dummy.WithSuffix));
+        var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
+            .First();
+
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);
 
