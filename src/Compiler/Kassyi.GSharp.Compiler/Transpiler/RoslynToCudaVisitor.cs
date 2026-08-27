@@ -10,14 +10,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, OverrideValue> _localVariableOverrides = new();
 
-    internal TranspileContext _context;
+    internal TranspileContext Context;
     private int _isRented;
 
     private RoslynToCudaVisitor()
     {
     }
 
-    public static RoslynToCudaVisitor Rent(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null, ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
+    public static RoslynToCudaVisitor Rent(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (!s_pool.TryTake(out var visitor))
         {
@@ -29,7 +30,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         visitor._usedStructs.Clear();
         visitor._localVariableOverrides.Clear();
 
-        visitor._context = new TranspileContext(
+        visitor.Context = new TranspileContext(
             default, // Writer is injected by MethodTranspiler
             visitor._usedStructs,
             visitor._localVariableOverrides,
@@ -48,13 +49,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        _context = default;
+        Context = default;
         s_pool.Add(this);
     }
 
     public override void DefaultVisit(SyntaxNode node)
     {
-        _context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
+        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
             node.Kind().ToString()));
         base.DefaultVisit(node);
     }
@@ -63,7 +64,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
         {
-            _context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported,
+            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported,
                 node.GetLocation()));
         }
 
@@ -74,24 +75,24 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (statement is BlockSyntax block)
         {
-            using (_context.Writer.Scope())
+            using (Context.Writer.Scope())
             {
                 foreach (var stmt in block.Statements)
                 {
                     Visit(stmt);
-                    _context.Writer.AppendLine();
+                    Context.Writer.AppendLine();
                 }
             }
         }
         else
         {
             // Auto-wrap single statements in braces to support C# bracket omission safely in C++
-            using (_context.Writer.Scope())
+            using (Context.Writer.Scope())
             {
                 Visit(statement);
                 if (!statement.IsKind(SyntaxKind.Block))
                 {
-                    _context.Writer.AppendLine();
+                    Context.Writer.AppendLine();
                 }
             }
         }
@@ -104,18 +105,18 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         foreach (var statement in node.Statements)
         {
             Visit(statement);
-            _context.Writer.AppendLine();
+            Context.Writer.AppendLine();
         }
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)
-        => StatementTranspilers.TranspileIfStatement(node, ref _context);
+        => StatementTranspilers.TranspileIfStatement(node, ref Context);
 
     public override void VisitFixedStatement(FixedStatementSyntax node)
     {
         Visit(node.Declaration);
-        _context.Writer.AppendSemiColon();
-        _context.Writer.AppendLine();
+        Context.Writer.AppendSemiColon();
+        Context.Writer.AppendLine();
         VisitStatementOrBlock(node.Statement);
     }
 
@@ -123,112 +124,112 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => VisitStatementOrBlock(node.Block);
 
     public override void VisitForStatement(ForStatementSyntax node)
-        => StatementTranspilers.TranspileForStatement(node, ref _context);
+        => StatementTranspilers.TranspileForStatement(node, ref Context);
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
-        => StatementTranspilers.TranspileWhileStatement(node, ref _context);
+        => StatementTranspilers.TranspileWhileStatement(node, ref Context);
 
     public override void VisitDoStatement(DoStatementSyntax node)
-        => StatementTranspilers.TranspileDoStatement(node, ref _context);
+        => StatementTranspilers.TranspileDoStatement(node, ref Context);
 
     public override void VisitSwitchStatement(SwitchStatementSyntax node)
-        => StatementTranspilers.TranspileSwitchStatement(node, ref _context);
+        => StatementTranspilers.TranspileSwitchStatement(node, ref Context);
 
     public override void VisitSwitchSection(SwitchSectionSyntax node)
-        => StatementTranspilers.TranspileSwitchSection(node, ref _context);
+        => StatementTranspilers.TranspileSwitchSection(node, ref Context);
 
     public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
     {
-        _context.Writer.AppendKeyword("case");
-        _context.Writer.AppendSpace();
+        Context.Writer.AppendKeyword("case");
+        Context.Writer.AppendSpace();
         Visit(node.Value);
-        _context.Writer.Append(":");
+        Context.Writer.Append(":");
     }
 
-    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node) => _context.Writer.Append("default:");
+    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node) => Context.Writer.Append("default:");
 
     public override void VisitBreakStatement(BreakStatementSyntax node)
-        => StatementTranspilers.TranspileBreakStatement(node, ref _context);
+        => StatementTranspilers.TranspileBreakStatement(node, ref Context);
 
     public override void VisitContinueStatement(ContinueStatementSyntax node)
-        => StatementTranspilers.TranspileContinueStatement(node, ref _context);
+        => StatementTranspilers.TranspileContinueStatement(node, ref Context);
 
     public override void VisitReturnStatement(ReturnStatementSyntax node)
-        => StatementTranspilers.TranspileReturnStatement(node, ref _context);
+        => StatementTranspilers.TranspileReturnStatement(node, ref Context);
 
     public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
-        => DeclarationTranspilers.TranspileLocalDeclarationStatement(node, ref _context);
+        => DeclarationTranspilers.TranspileLocalDeclarationStatement(node, ref Context);
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
-        => DeclarationTranspilers.TranspileVariableDeclaration(node, ref _context);
+        => DeclarationTranspilers.TranspileVariableDeclaration(node, ref Context);
 
     // --- Expressions ---
 
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
     {
-        if (MacroTranspiler.TryTranspileMacro(node, ref _context))
+        if (MacroTranspiler.TryTranspileMacro(node, ref Context))
         {
             return;
         }
 
         Visit(node.Expression);
-        _context.Writer.AppendSemiColon();
+        Context.Writer.AppendSemiColon();
     }
 
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        => ExpressionTranspilers.TranspileAssignmentExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileAssignmentExpression(node, ref Context);
 
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspileBinaryExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileBinaryExpression(node, ref Context);
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
-        if (_context.LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
+        if (Context.LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
         {
             overrideValue.WriteTo(this);
             return;
         }
 
-        var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol;
+        var symbol = Context.SemanticModel.GetSymbolInfo(node).Symbol;
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            _context.Writer.AppendConstantField(field);
+            Context.Writer.AppendConstantField(field);
             return;
         }
 
-        _context.Writer.Append(node.Identifier.Text);
+        Context.Writer.Append(node.Identifier.Text);
     }
 
     public override void VisitLiteralExpression(LiteralExpressionSyntax node) =>
-        _context.Writer.Append(node.Token.Text);
+        Context.Writer.Append(node.Token.Text);
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
-        => ExpressionTranspilers.TranspileElementAccessExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
 
     public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspilePrefixUnaryExpression(node, ref _context);
+        => ExpressionTranspilers.TranspilePrefixUnaryExpression(node, ref Context);
 
     public override void VisitCastExpression(CastExpressionSyntax node)
-        => ExpressionTranspilers.TranspileCastExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileCastExpression(node, ref Context);
 
     public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
-        => ExpressionTranspilers.TranspileParenthesizedExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileParenthesizedExpression(node, ref Context);
 
     public override void VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspilePostfixUnaryExpression(node, ref _context);
+        => ExpressionTranspilers.TranspilePostfixUnaryExpression(node, ref Context);
 
     public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        => ExpressionTranspilers.TranspileMemberAccessExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileMemberAccessExpression(node, ref Context);
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileInvocationExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileInvocationExpression(node, ref Context);
 
     public override void VisitArgument(ArgumentSyntax node)
-        => ExpressionTranspilers.TranspileArgument(node, ref _context);
+        => ExpressionTranspilers.TranspileArgument(node, ref Context);
 
     public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileObjectCreationExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileObjectCreationExpression(node, ref Context);
 
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref _context);
+        => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref Context);
 }
