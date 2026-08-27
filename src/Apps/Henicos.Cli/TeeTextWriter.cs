@@ -2,6 +2,7 @@ using System.Text;
 
 namespace Henicos.Cli;
 
+/// <summary>TextWriter that duplicates console standard output simultaneously to a persistent file stream.</summary>
 public class TeeTextWriter(TextWriter originalOut, string filePath) : TextWriter
 {
     private StreamWriter _fileOut = new(new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read))

@@ -3,9 +3,7 @@ using System.Buffers;
 namespace Henicos.Cli;
 
 /// <summary>
-/// Phase 4: CPU/GPU Hybrid Parallel Reduction Engine
-/// Handles ultra-fast multi-threaded modular reduction for massive BigIntegers
-/// represented as uint[] arrays, explicitly designed to receive GPU FFT output.
+/// CPU/GPU Hybrid Parallel Reduction Engine for multi-threaded modular reduction of NTT squaring output arrays.
 /// </summary>
 public static class HybridReduction
 {
@@ -29,9 +27,8 @@ public static class HybridReduction
 
         for (var pass = 0; pass < 2; pass++)
         {
-            // Direct in-place mutation would cause data races and destructive overwrites when word2E1 < numWords,
-            // as reading the upper quotient Q [word2E1, 2*numWords-1] overlaps with writing the remainder R [0, numWords-1].
-            // To ensure thread safety while remaining zero-allocation, buffer intermediate results via ArrayPool.
+            // [WHY] Direct in-place mutation causes race conditions and destructive overwrites when word2E1 < numWords,
+            // because reading the upper quotient Q overlaps with writing the remainder R. Renting from ArrayPool ensures thread safety without heap allocations.
             var nextData = ArrayPool<uint>.Shared.Rent(data.Length);
             try
             {

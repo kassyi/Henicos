@@ -3,6 +3,7 @@ using System.Numerics;
 
 namespace Henicos.PiBenchmark;
 
+/// <summary>Computes high-precision Pi digits using the Chudnovsky binary splitting algorithm on CPU.</summary>
 public class ChudnovskyPi
 {
     private struct ChudnovskyResult

@@ -1,5 +1,6 @@
 namespace Henicos.Cli;
 
+/// <summary>BenchmarkDotNet performance comparisons for Fermat PRP algorithms on CPU vs GPU.</summary>
 [MarkdownExporterAttribute.GitHub]
 public class FermatBenchmark
 {

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Henicos.Cli;
 
+/// <summary>P/Invoke bindings for executing legacy CUDA native tests in CLI benchmarks.</summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public interop methods")]
 public static class CudaInterop
 {
