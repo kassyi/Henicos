@@ -35,7 +35,7 @@ public class StructTranspilerEdgeCasesTests
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
-    public void TopologicallySortedStructs_EmptyStruct()
+    public void Test_GEN05_TopologicallySortedStructs_EmptyStruct()
     {
         var source = "public struct Empty { }";
         var symbols = GetTypeSymbols(source, "Empty");
@@ -54,7 +54,7 @@ public class StructTranspilerEdgeCasesTests
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
-    public void TopologicallySortedStructs_DeepNesting()
+    public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
     {
         var source = @"
             public struct StructA { public StructB b; }
@@ -89,7 +89,7 @@ public class StructTranspilerEdgeCasesTests
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
-    public void TopologicallySortedStructs_ExcludesSystemTypes()
+    public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes()
     {
         var source = @"
             using System;

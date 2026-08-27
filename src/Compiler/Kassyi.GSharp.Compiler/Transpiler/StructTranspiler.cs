@@ -236,12 +236,19 @@ internal static class StructTranspiler
                 {
                     // Implicit constructor from param type
                     var paramType = CudaTypeMapper.MapType(conv.Parameters[0].Type);
-                    context.Writer.Append($"__device__ inline {structName}() ");
+                    context.Writer.Append($"__device__ inline {structName}");
+                    using (context.Writer.Parentheses()) { }
+                    context.Writer.AppendSpace();
                     using (context.Writer.Scope())
                     {
                     }
 
-                    context.Writer.Append($"__device__ inline {structName}({paramType} v) ");
+                    context.Writer.Append($"__device__ inline {structName}");
+                    using (context.Writer.Parentheses())
+                    {
+                        context.Writer.Append($"{paramType} v");
+                    }
+                    context.Writer.AppendSpace();
                     using (context.Writer.Scope())
                     {
                         var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);

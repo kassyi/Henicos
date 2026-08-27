@@ -89,7 +89,7 @@ internal static class DeclarationTranspilers
         return new SharedMemoryAllocation(
             declarator,
             sizeArg,
-            constantValue.HasValue ? (int)constantValue.Value! : null
+            constantValue.HasValue ? Convert.ToInt32(constantValue.Value!) : null
         );
     }
 
@@ -156,19 +156,24 @@ internal static class DeclarationTranspilers
 
     private static void AlignDynamicSharedMemoryOffset(string cppElementType, ref SourceWriter writer)
     {
-        writer.Append("__smem_offset = ");
+        writer.Append("__smem_offset");
+        writer.AppendOperator("=");
         using (writer.Parentheses())
         {
-            writer.Append("__smem_offset + alignof");
+            writer.Append("__smem_offset");
+            writer.AppendOperator("+");
+            writer.Append("alignof");
             using (writer.Parentheses())
             {
                 writer.Append(cppElementType);
             }
 
-            writer.Append(" - 1");
+            writer.AppendOperator("-");
+            writer.Append("1");
         }
 
-        writer.Append(" & ~");
+        writer.AppendOperator("&");
+        writer.Append("~");
         using (writer.Parentheses())
         {
             writer.Append("alignof");
@@ -177,17 +182,19 @@ internal static class DeclarationTranspilers
                 writer.Append(cppElementType);
             }
 
-            writer.Append(" - 1");
+            writer.AppendOperator("-");
+            writer.Append("1");
         }
 
-        writer.Append(";");
+        writer.AppendSemiColon();
         writer.AppendLine();
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
         string cppElementType, ref TranspileContext context)
     {
-        context.Writer.Append($"{cppElementType}* {alloc.Declarator.Identifier.Text} = ");
+        context.Writer.Append($"{cppElementType}* {alloc.Declarator.Identifier.Text}");
+        context.Writer.AppendOperator("=");
         using (context.Writer.Parentheses())
         {
             context.Writer.Append($"{cppElementType}*");
@@ -195,18 +202,23 @@ internal static class DeclarationTranspilers
 
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append("__gsharp_dynamic_smem + __smem_offset");
+            context.Writer.Append("__gsharp_dynamic_smem");
+            context.Writer.AppendOperator("+");
+            context.Writer.Append("__smem_offset");
         }
 
-        context.Writer.Append(";");
+        context.Writer.AppendSemiColon();
         context.Writer.AppendLine();
-        context.Writer.Append("__smem_offset += ");
+        context.Writer.Append("__smem_offset");
+        context.Writer.AppendOperator("+=");
         using (context.Writer.Parentheses())
         {
             context.Visitor.Visit(alloc.SizeArgument);
         }
 
-        context.Writer.Append($" * sizeof({cppElementType});");
+        context.Writer.AppendOperator("*");
+        context.Writer.Append($"sizeof({cppElementType})");
+        context.Writer.AppendSemiColon();
     }
 
     public static void TranspileVariableDeclaration(VariableDeclarationSyntax node, ref TranspileContext context)
