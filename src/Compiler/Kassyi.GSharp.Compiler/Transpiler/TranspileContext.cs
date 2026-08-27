@@ -25,7 +25,7 @@ public readonly struct OverrideValue
 {
     public readonly string? StringValue;
     public readonly SyntaxNode? NodeValue;
-　
+
     public OverrideValue(string stringValue)
     {
         StringValue = stringValue;
@@ -46,7 +46,7 @@ public readonly struct OverrideValue
         }
         else if (StringValue != null)
         {
-            visitor._context.Writer.Append(StringValue);
+            visitor.Context.Writer.Append(StringValue);
         }
     }
 }
