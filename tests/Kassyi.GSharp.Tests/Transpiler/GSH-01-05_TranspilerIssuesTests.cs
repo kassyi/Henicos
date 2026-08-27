@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
-public class Gsh01_05_TranspilerIssuesTests
+public class GSH_01_05_TranspilerIssuesTests
 {
     [Fact(Skip = "未実装: GSH-01 (三項演算子の複雑式展開)")]
     [Trait("FeatureId", "GSH-01")]

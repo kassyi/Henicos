@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
-public class PoolStressTests
+public class GEN_15_PoolStressTests
 {
     [Fact]
     [Trait("FeatureId", "GEN-15")]

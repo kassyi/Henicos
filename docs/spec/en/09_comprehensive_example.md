@@ -766,7 +766,7 @@ foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr
 
 ## 8.4 Sad Path Compilation Errors (Diagnostics)
 
-To ensure that the constraints outlined in [06_limitations.md](06_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests\Kassyi.GSharp.Tests\GeneratorDiagnosticsTests.cs`).
+To ensure that the constraints outlined in [06_limitations.md](06_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests\Kassyi.GSharp.Tests\Generator\GEN-05_GeneratorDiagnosticsTests.cs`).
 
 For example, when attempting to write invalid C# code in a kernel:
 
