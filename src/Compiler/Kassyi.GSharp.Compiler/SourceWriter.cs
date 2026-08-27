@@ -67,6 +67,12 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public void AppendConstantField(IFieldSymbol field)
     {
+        if (field.Type.SpecialType == SpecialType.System_Boolean)
+        {
+            Append(((bool)field.ConstantValue!) ? "true" : "false");
+            return;
+        }
+
         Append(field.ConstantValue!.ToString());
         switch (field.Type.SpecialType)
         {
@@ -180,6 +186,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
+    public SourceWriterInlineScope Braces() => new(this, "{", "}");
 
     public void AppendParentheses() => Append("()");
     public void AppendBrackets() => Append("[]");
