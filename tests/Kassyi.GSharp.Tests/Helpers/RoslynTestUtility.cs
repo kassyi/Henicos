@@ -33,26 +33,10 @@ public static class RoslynTestUtility
 
     public static Compilation CreateCompilation(string source)
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp10);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
 
-        var references = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => !a.IsDynamic && !string.IsNullOrWhiteSpace(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location))
-            .Cast<MetadataReference>()
-            .ToList();
-
-        // Add typical GSharp references
-        references.Add(MetadataReference.CreateFromFile(typeof(GpuBigIntExpr).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(GpuKernelAttribute).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(SharedMemory<int>).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(MethodImplOptions).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location));
-
-        return CSharpCompilation.Create("TestCompilation")
-            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-            .AddReferences(references)
-            .AddSyntaxTrees(syntaxTree);
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
     }
 
     public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
@@ -71,7 +55,7 @@ public static class RoslynTestUtility
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
-            parseOptions: new CSharpParseOptions(LanguageVersion.CSharp10),
+            parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
             optionsProvider: null);
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);

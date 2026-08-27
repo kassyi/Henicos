@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis;
@@ -6,35 +7,12 @@ using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_05_StructTranspilerEdgeCasesTests
 {
-    private static INamedTypeSymbol[] GetTypeSymbols(string source, params string[] typeNames)
-    {
-        var syntaxTree = CSharpSyntaxTree.ParseText(source);
-
-        var references = new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) };
-        var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
-        var compilation = CSharpCompilation.Create("TestCompilation", new[] { syntaxTree }, references, options);
-
-        var diags = compilation.GetDiagnostics();
-        if (diags.Any(d => d.Severity == DiagnosticSeverity.Error))
-        {
-            throw new Exception("Compilation errors: " + string.Join(", ", diags.Select(d => d.GetMessage())));
-        }
-
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-        var decls = syntaxTree.GetRoot().DescendantNodes()
-            .OfType<StructDeclarationSyntax>().ToList();
-
-        return typeNames.Select(name =>
-            (INamedTypeSymbol)semanticModel.GetDeclaredSymbol(decls.First(s => s.Identifier.Text == name))!
-        ).ToArray();
-    }
-
     private static TranspileContext CreateTestContext(params INamedTypeSymbol[] usedStructsArray)
     {
         var usedStructs = new HashSet<INamedTypeSymbol>(usedStructsArray, SymbolEqualityComparer.Default);
@@ -48,21 +26,35 @@ public class GEN_05_StructTranspilerEdgeCasesTests
             ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty);
     }
 
+
+    private const string ID = nameof(GEN_05_StructTranspilerEdgeCasesTests);
+
+    public static readonly string GEN05_Sources = $$"""
+    struct Empty_{{ID}} { }
+    
+    struct StructA_{{ID}} { public StructB_{{ID}} b; }
+    struct StructB_{{ID}} { public StructC_{{ID}} c; }
+    struct StructC_{{ID}} { public StructD_{{ID}} d; }
+    struct StructD_{{ID}} { public int val; }
+
+    struct MyStruct_{{ID}} { public System.DateTime time; }
+    """;
+
+    [ModuleInitializer]
+    public static void Register() => MegaCompilationCache.RegisterSource(GEN05_Sources);
+
     [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_EmptyStruct()
     {
-        var source = "public struct Empty { }";
-        var symbols = GetTypeSymbols(source, "Empty");
-        var structSym = symbols[0];
-
+        var structSym = MegaCompilationCache.GetNamedTypeSymbol($"Empty_{ID}");
         var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
         Assert.Single(sorted);
-        Assert.Equal("Empty", sorted[0].Name);
+        Assert.Equal($"Empty_{ID}", sorted[0].Name);
     }
 
     [Fact]
@@ -70,18 +62,10 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
     {
-        var source = @"
-            public struct StructA { public StructB b; }
-            public struct StructB { public StructC c; }
-            public struct StructC { public StructD d; }
-            public struct StructD { public int val; }
-        ";
-
-        var symbols = GetTypeSymbols(source, "StructA", "StructB", "StructC", "StructD");
-        var symA = symbols[0];
-        var symB = symbols[1];
-        var symC = symbols[2];
-        var symD = symbols[3];
+        var symA = MegaCompilationCache.GetNamedTypeSymbol($"StructA_{ID}");
+        var symB = MegaCompilationCache.GetNamedTypeSymbol($"StructB_{ID}");
+        var symC = MegaCompilationCache.GetNamedTypeSymbol($"StructC_{ID}");
+        var symD = MegaCompilationCache.GetNamedTypeSymbol($"StructD_{ID}");
 
         var context = CreateTestContext(symA, symB, symC, symD);
 
@@ -89,10 +73,10 @@ public class GEN_05_StructTranspilerEdgeCasesTests
 
         Assert.Equal(4, sorted.Count);
         // Order must be D -> C -> B -> A (dependents last)
-        Assert.Equal("StructD", sorted[0].Name);
-        Assert.Equal("StructC", sorted[1].Name);
-        Assert.Equal("StructB", sorted[2].Name);
-        Assert.Equal("StructA", sorted[3].Name);
+        Assert.Equal($"StructD_{ID}", sorted[0].Name);
+        Assert.Equal($"StructC_{ID}", sorted[1].Name);
+        Assert.Equal($"StructB_{ID}", sorted[2].Name);
+        Assert.Equal($"StructA_{ID}", sorted[3].Name);
     }
 
     [Fact]
@@ -100,18 +84,12 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes()
     {
-        var source = @"
-            using System;
-            public struct MyStruct { public DateTime time; }
-        ";
-        var symbols = GetTypeSymbols(source, "MyStruct");
-        var structSym = symbols[0];
-
+        var structSym = MegaCompilationCache.GetNamedTypeSymbol($"MyStruct_{ID}");
         var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
         Assert.Single(sorted);
-        Assert.Equal("MyStruct", sorted[0].Name);
+        Assert.Equal($"MyStruct_{ID}", sorted[0].Name);
     }
 }

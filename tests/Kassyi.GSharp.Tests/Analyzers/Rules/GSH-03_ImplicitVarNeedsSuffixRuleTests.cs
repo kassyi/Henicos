@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -6,21 +7,41 @@ using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Xunit;
 using System.Linq;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 {
+    private const string ID = nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests);
+
+    public static readonly string GSH03_Sources = $$"""
+    using System.Collections.Generic;
+
+    class Dummy_{{ID}} { 
+        public void WithoutSuffix() {
+            var x = 1;
+        }
+
+        public void WithSuffix() {
+            var x = 1U;
+        }
+    }
+    """;
+
+    [ModuleInitializer]
+    public static void Register() => MegaCompilationCache.RegisterSource(GSH03_Sources);
+
     [Fact]
     [Trait("FeatureId", "GSH-03")]
     public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix()
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var tree = CSharpSyntaxTree.ParseText("class C { void M() { var x = 1; } }");
-        var node = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().First();
-        var (model, method) = TestHelpers.CreateDummyContext();
-        
+        var (model, method) = MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "WithoutSuffix");
+        var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
+            .First();
+
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);
 
@@ -39,10 +60,10 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var tree = CSharpSyntaxTree.ParseText("class C { void M() { var x = 1U; } }");
-        var node = tree.GetRoot().DescendantNodes().OfType<VariableDeclaratorSyntax>().First();
-        var (model, method) = TestHelpers.CreateDummyContext();
-        
+        var (model, method) = MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "WithSuffix");
+        var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
+            .First();
+
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);
 
