@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>
 internal static class StatementTranspilers
 {
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)

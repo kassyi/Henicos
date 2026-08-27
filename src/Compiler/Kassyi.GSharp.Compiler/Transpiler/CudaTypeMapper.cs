@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>Maps Roslyn type symbols to CUDA C++ type strings, pointers, and memory alignment layouts.</summary>
 internal static class CudaTypeMapper
 {
     public static string MapType(ITypeSymbol? typeSymbol)
