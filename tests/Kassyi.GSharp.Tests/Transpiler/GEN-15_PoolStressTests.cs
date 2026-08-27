@@ -36,11 +36,11 @@ public class GEN_15_PoolStressTests
             {
                 using var visitor = RoslynToCudaVisitor.Rent(semanticModel, null);
 
-                Assert.Empty(visitor._context.UsedStructs);
-                Assert.Empty(visitor._context.LocalVariableOverrides);
+                Assert.Empty(visitor.Context.UsedStructs);
+                Assert.Empty(visitor.Context.LocalVariableOverrides);
 
                 // Mutate to test reset in future loops
-                visitor._context.LocalVariableOverrides[$"var_{i}"] = new OverrideValue("test");
+                visitor.Context.LocalVariableOverrides[$"var_{i}"] = new OverrideValue("test");
             }
             catch (Exception ex)
             {
