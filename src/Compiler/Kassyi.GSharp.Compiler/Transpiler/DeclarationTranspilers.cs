@@ -38,6 +38,7 @@ internal static class DeclarationTranspilers
             return;
         }
 
+        HoistDeclarationExpressions(node, ref context);
         context.Visitor.VisitVariableDeclaration(node.Declaration);
         context.Writer.AppendSemiColon();
     }
@@ -316,8 +317,37 @@ internal static class DeclarationTranspilers
     {
         if (variable.Initializer != null)
         {
+            if (context.SkipLocalsInit)
+            {
+                var val = variable.Initializer.Value;
+                if (val is ImplicitObjectCreationExpressionSyntax ||
+                    val is ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } ||
+                    val is DefaultExpressionSyntax ||
+                    val is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.DefaultLiteralExpression))
+                {
+                    return; // Skip zero-initialization
+                }
+            }
+
             context.Writer.AppendOperator("=");
             context.Visitor.Visit(variable.Initializer.Value);
+        }
+    }
+
+    public static void HoistDeclarationExpressions(SyntaxNode node, ref TranspileContext context)
+    {
+        foreach (var desc in node.DescendantNodes(n => n == node || n is not BlockSyntax))
+        {
+            if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
+            {
+                var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
+                var cppType = typeSymbol != null ? CudaTypeMapper.MapType(typeSymbol) : "auto";
+                context.Writer.Append(cppType);
+                context.Writer.AppendSpace();
+                context.Writer.Append(singleVar.Identifier.Text);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
         }
     }
 }

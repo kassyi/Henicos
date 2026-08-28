@@ -142,7 +142,7 @@ internal static class WrapperEmitter
                 "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
             using (writer.Parentheses())
             {
-                writer.Append($"\"{method.Name}\", {method.Name}_CudaSource, __gsharp_jit_constants, macros");
+                writer.Append($"\"{method.Name}\", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + {method.Name}_CudaSource, __gsharp_jit_constants, macros");
             }
 
             writer.AppendLine(";");
@@ -154,7 +154,7 @@ internal static class WrapperEmitter
                 "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
             using (writer.Parentheses())
             {
-                writer.Append($"\"{method.Name}\", {method.Name}_CudaSource, null, macros");
+                writer.Append($"\"{method.Name}\", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + {method.Name}_CudaSource, null, macros");
             }
             writer.AppendLine(";");
         }

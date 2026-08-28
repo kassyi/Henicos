@@ -9,105 +9,7 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
-public const string ProcessPhysics_CudaSource = @"// GSharp Prelude
-#include <cooperative_groups.h>
-namespace cg=cooperative_groups;
-
-__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
-unsigned int res;
-unsigned int c_in=(unsigned int)*carry;
-unsigned int c_out;
-asm volatile(
-""add.cc.u32 %0, %2, -1;\n\t""
-""addc.cc.u32 %0, %3, %4;\n\t""
-""addc.u32 %1, 0, 0;""
-:""=&r""(res),""=r""(c_out)
-:""r""(c_in),""r""(a),""r""(b)
-);
-*carry=c_out;
-return res;
-}
-__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
-unsigned int res;
-unsigned int dummy;
-unsigned int b_in=(unsigned int)*borrow;
-unsigned int b_out;
-asm volatile(
-""sub.cc.u32 %1, 0, %3;\n\t""
-""subc.cc.u32 %0, %4, %5;\n\t""
-""subc.u32 %2, 0, 0;""
-:""=&r""(res),""=&r""(dummy),""=r""(b_out)
-:""r""(b_in),""r""(a),""r""(b)
-);
-*borrow=b_out&1;
-return res;
-}
-
-__device__ __forceinline__ unsigned long long __gsharp_mul_wide(unsigned int a, unsigned int b) {
-    unsigned long long res;
-    asm volatile(""mul.wide.u32 %0, %1, %2;"" : ""=l""(res) : ""r""(a), ""r""(b));
-    return res;
-}
-
-__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_l(value, value, offset);
-}
-__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_r(value, value, offset);
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value << offset) | (value >> (64 - offset)) : value;
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value >> offset) | (value << (64 - offset)) : value;
-}
-__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
-    return value ? __ffs(value) - 1 : 32;
-}
-__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
-    return value ? __ffsll(value) - 1 : 64;
-}
-__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
-    return value ? 31 - __clz(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
-    return value ? 63 - __clzll(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
-    return value ? __clz(value) : 32;
-}
-__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
-    return value ? __clzll(value) : 64;
-}
-
-struct DebugReduc_PhysicsVector;
-__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
-
-__noinline__ __device__ bool IsPositive(float value);
-
-#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
-#define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
-struct DebugReduc_PhysicsVector
-{
-float X;
-float Y;
-float Z;
-}
-;
-#endif
-__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v){
-return (float)sqrt((((v.X*v.X)+(v.Y*v.Y))+(v.Z*v.Z)));
-}
-
-__noinline__ __device__ bool IsPositive(float value){
-return (value>0);
-}
-
-#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
+public const string ProcessPhysics_CudaSource = @"#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 struct DebugReduc_PhysicsVector
 {
@@ -178,8 +80,8 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* particles,float* totalMagnitude,bool* successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
-successFlag=false;
+extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles,float* __restrict__ totalMagnitude,bool* __restrict__ successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
+(*successFlag)=false;
 float Gravity=9.8f;
 int tx=threadIdx.x;
 int ty=threadIdx.y;
@@ -193,7 +95,7 @@ int bdimZ=blockDim.z;
 int gdimX=gridDim.x;
 int gdimY=gridDim.y;
 int gdimZ=gridDim.z;
-int tid=(tx+(bx*bdimX));
+int tid=tx+bx*bdimX;
 __shared__ int staticCache[10000];
 extern __shared__ char __gsharp_dynamic_smem[];
 size_t __smem_offset = 0;
@@ -201,42 +103,42 @@ __smem_offset=(__smem_offset+alignof(float)-1)&~(alignof(float)-1);
 float* dynamicCache=(float*)(__gsharp_dynamic_smem+__smem_offset);
 __smem_offset+=(particleCount)*sizeof(float);
 __shared__ int targetTypedCache[256];
-if((tid<particleCount))
+if(tid<particleCount)
 {
 DebugReduc_PhysicsVector p=particles[tid];
 DebugReduc_SpecTypes types=largeStructVal;
 auto origin=DebugReduc_Point{
 0, 0}
 ;
-auto distance=(origin.X+p.X);
+auto distance=origin.X+p.X;
 auto nested=([&]() {
 DebugReduc_NestedPhysicsState _tmp{}; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
 ());
 float mag=ComputeMagnitude(p);
 mag=(float)abs(mag);
-for(int i=0;(i<unrollFactor);i++)
+for(int i=0;i<unrollFactor;i++)
 {
-if((i==1))
+if(i==1)
 {
 continue;
 }
-mag=(float)max(mag,((p.X*i)+Gravity));
+mag=(float)max(mag,p.X*i+Gravity);
 }
 if(!IsPositive(mag))
 {
 mag=0;
 }
 int counter=0;
-while((counter<2))
+while(counter<2)
 {
-mag=(float)min(mag,(mag+1));
+mag=(float)min(mag,mag+1);
 counter++;
 }
 do
 {
 counter--;
 }
-while((counter>0));
+while(counter>0);
 switch(tx)
 {
 case 0:
@@ -249,10 +151,10 @@ break;
 staticCache[tx]=tid;
 dynamicCache[tx]=mag;
 __syncthreads();
-if((tx==0))
+if(tx==0)
 {
-atomicAdd(totalMagnitude,dynamicCache[0]);
-successFlag=true;
+atomicAdd(&(*totalMagnitude),dynamicCache[0]);
+(*successFlag)=true;
 }
 DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec=DebugReduc_ComprehensiveSpecKernel_Vector8{};
 inlineVec[0]=123;
@@ -266,27 +168,27 @@ unsigned long long carry=0;
 unsigned int sum=__gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
 long long borrow=0;
 unsigned int diff=__gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
-if((sum>diff))
+if(sum>diff)
 {
 pState.Flags=1;
 }
 }
-bool condition1=(tx>0);
-bool condition2=(ty==0);
-if((condition1&&condition2))
+bool condition1=tx>0;
+bool condition2=ty==0;
+if(condition1&&condition2)
 {
-int bitwise=(((tx<<2))|(((ty>>1))^0xFF));
+int bitwise=(tx<<2)|(ty>>1)^0xFF;
 bitwise&=~1;
 }
 else
 {
-if((condition1||!condition2))
+if(condition1||!condition2)
 {
 mag+=1.5f;
 }
 }
 InlinePtx(""/* test ptx inline */"");
-if((ty>0))
+if(ty>0)
 {
 return;
 }
@@ -348,7 +250,7 @@ using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaC
 {
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -442,7 +344,7 @@ using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaC
 {
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ProcessPhysics_CudaSource, __gsharp_jit_constants, macros);
 System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
