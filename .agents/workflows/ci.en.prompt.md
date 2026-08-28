@@ -159,3 +159,7 @@ All CI checks have passed successfully.
 - **Final Commit**: `<commit-hash> - <commit-message>`
 - **Verified CI Run**: `<run-id> / <workflow-name>`
 ```
+
+
+## Markdown Formatting (GFM)
+Feel free to use GitHub Flavored Markdown (GFM) features such as alerts (e.g. `> [!NOTE]`, `> [!WARNING]`), tables, and Mermaid diagrams at your discretion to enhance the readability of your responses.
