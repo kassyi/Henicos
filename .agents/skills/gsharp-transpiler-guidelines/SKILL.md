@@ -112,7 +112,7 @@ The GSharp generator pipeline strictly enforces several architectural rules. You
    When transpiling variable references (especially passing `ref`/`out` arguments to other methods), you **MUST** query the `SemanticModel` to check if the symbol is _already_ a pointer or reference type in the CUDA context. This prevents emitting invalid double-address operators (e.g., `&(&val)`) and ensures that C# member access (`.`) on `ref` structs is correctly transformed into C++ pointer access (`->`).
 
 6. **Strict `var` Initialization (Literal Suffixes)**:
-   While C#'s `var` is transpiled directly to C++'s `auto`, the transpiler enforces strict literal type constraints (`ImplicitVarNeedsSuffixRule`). When implementing new expressions, never allow `var` to be initialized by an untyped bare literal (e.g., `var x = 0;`). The transpiler must enforce explicit suffixes (`0u`, `1.0f`) to prevent silent precision loss or signedness errors caused by NVCC's `auto` inference differing from Roslyn's.
+   While C#'s `var` is transpiled directly to C++'s `auto`, the transpiler enforces strict literal type constraints (`ImplicitVarNeedsSuffixRule`). When implementing new expressions, never allow `var` to be initialized by an untyped bare integer literal (e.g., `var x = 0;`). The transpiler must enforce explicit suffixes (`0u`, `1L`) for integer literals to prevent signedness errors caused by NVCC's `auto` inference differing from Roslyn's. (Note: Literals containing a decimal point or exponent are currently exempt from this strict suffix requirement).
 
 > [!TIP]
 > **Consult the Specifications (`docs/spec`)**
