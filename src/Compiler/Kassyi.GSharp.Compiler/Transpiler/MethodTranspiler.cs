@@ -14,6 +14,17 @@ public static class MethodTranspiler
         ref var context = ref visitor.Context;
 
         context.Writer = bodyWriter;
+        var methodSymbol = semanticModel.GetDeclaredSymbol(method);
+        if (methodSymbol != null)
+        {
+            if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
+                methodSymbol.ContainingType?.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
+                methodSymbol.ContainingModule?.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
+            {
+                context.SkipLocalsInit = true;
+            }
+        }
+        
         WriteMethodSignature(method, isDevice, ref context);
         WriteMethodBody(method, ref context);
 
