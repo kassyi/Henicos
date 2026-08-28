@@ -162,6 +162,7 @@ public sealed class JitEngine
             }
         }
 
+        sb.Append($"|src={ComputeHash(baseSource)}");
         var cacheKey = sb.ToString();
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
