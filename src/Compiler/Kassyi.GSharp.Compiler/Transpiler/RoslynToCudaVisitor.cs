@@ -174,6 +174,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        DeclarationTranspilers.HoistDeclarationExpressions(node, ref Context);
         Visit(node.Expression);
         Context.Writer.AppendSemiColon();
     }
@@ -234,4 +235,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
         => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref Context);
+
+    public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
+        => Visit(node.Designation);
+
+    public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
+        => Context.Writer.Append(node.Identifier.Text);
 }

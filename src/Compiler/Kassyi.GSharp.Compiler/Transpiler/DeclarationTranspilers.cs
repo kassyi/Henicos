@@ -320,4 +320,22 @@ internal static class DeclarationTranspilers
             context.Visitor.Visit(variable.Initializer.Value);
         }
     }
+
+    public static void HoistDeclarationExpressions(SyntaxNode node, ref TranspileContext context)
+    {
+        foreach (var desc in node.DescendantNodes(n => n == node || n is not BlockSyntax))
+        {
+            if (desc is DeclarationExpressionSyntax declExpr &&
+                declExpr.Designation is SingleVariableDesignationSyntax singleVar)
+            {
+                var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
+                var cppType = typeSymbol != null ? CudaTypeMapper.MapType(typeSymbol) : "auto";
+                context.Writer.Append(cppType);
+                context.Writer.AppendSpace();
+                context.Writer.Append(singleVar.Identifier.Text);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+        }
+    }
 }
