@@ -320,10 +320,11 @@ export function useRoadmap() {
     }
   };
 
-  const copyVibeCodingPrompt = () => {
+  const copyJulesPrompt = () => {
     const jsonStr = JSON.stringify(cartIds, null, 2);
-    const prompt = `【テスト先行AIバイブコーディング】
-以下のタスクを対象に、「テストコード先行生成（Golden Master / Snapshot Testの作成）」のフェーズ1を開始してください。
+    const prompt = `【テスト先行AIバイブコーディング（Jules連携）】
+以下のタスクを対象に、「テストコード先行設計・生成」のフェーズ1を開始してください。
+※ テストの設計と実装は Google Jules に委譲するため、あなたは設計の整理とJulesへの依頼（Issue起票）を担当します。
 
 ASTの責務領域や対象ファイルに基づいて、干渉しないブランチ（レーン）を切って並行実装を進めるアプローチを採用します。
 エージェント自身の判断でタスク間の依存関係やコードの干渉度合いを分析し、以下の要領で事前のレーン分けを提案してください：
@@ -334,12 +335,12 @@ ASTの責務領域や対象ファイルに基づいて、干渉しないブラ�
 ${jsonStr}
 
 指示:
-1. \`AGENTS.md\` および \`.agents/skills/\` 以下のガイドライン（qa-testing-guidelines, gsharp-transpiler-guidelines）を熟読・参照してください。
-2. まず初めに、上記に基づいたレーン分けの計画を提示してください。
-3. その後、レーンごとにQA品質基準（異常系の例外スローなど）を満たす Snapshot Test 用のテストコードを設計し、実装計画を提案してから実際の実装に進んでください。`;
+1. \`AGENTS.md\` および \`.agents/skills/\` 以下のガイドライン（qa-testing-guidelines, gsharp-transpiler-guidelines）を熟読・参照してタスクの仕様を理解してください。
+2. まず初めに、タスクのレーン分け計画と、各タスクで「どのようなテストが必要になりそうか」の概要を提示してください。
+3. 計画についてユーザー（私）の承認を得たら、タスク（またはレーン）ごとに \`/jules.ja.prompt [対象ファイル/実装したい仕様]\` を呼び出し、Julesへテストコードの設計と実装を依頼するIssueを起票してください。`;
     
     navigator.clipboard.writeText(prompt);
-    setToast({ open: true, message: `選択した ${cartIds.length} 件のVibe Codingプロンプトをコピーしました！` });
+    setToast({ open: true, message: `選択した ${cartIds.length} 件のJules依頼プロンプトをコピーしました！` });
   };
 
   const updateNotes = (id: string, notes: string) => {
@@ -374,7 +375,7 @@ ${jsonStr}
     updateTaskStatus,
     handleCartClick,
     toggleTierCart,
-    copyVibeCodingPrompt,
+    copyJulesPrompt,
     updateNotes,
     filteredTasks,
     tasksByTier,
