@@ -56,6 +56,13 @@ BenchmarkDotNet.Artifacts/
 
 TestResults/
 
+# Node.js / Frontend (tools/roadmap-ui)
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm/
+
 # --- BEGIN Antigravity global AGENTS MANAGED FILES ---
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
 /.agents/bin/check-meta-scan.js
