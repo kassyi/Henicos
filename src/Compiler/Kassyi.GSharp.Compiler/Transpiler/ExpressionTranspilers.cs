@@ -39,12 +39,21 @@ internal static class ExpressionTranspilers
 
     public static void TranspileBinaryExpression(BinaryExpressionSyntax node, ref TranspileContext context)
     {
-        using (context.Writer.Parentheses())
+        context.Visitor.Visit(node.Left);
+        
+        var opText = node.OperatorToken.Text;
+        if (opText.Length > 0 && char.IsLetter(opText[0])) 
         {
-            context.Visitor.Visit(node.Left);
-            context.Writer.AppendOperator(node.OperatorToken.Text);
-            context.Visitor.Visit(node.Right);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator(opText);
+            context.Writer.AppendSpace();
         }
+        else 
+        {
+            context.Writer.AppendOperator(opText);
+        }
+        
+        context.Visitor.Visit(node.Right);
     }
 
     public static void TranspileElementAccessExpression(ElementAccessExpressionSyntax node,
