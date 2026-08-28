@@ -7,8 +7,8 @@ internal static class StructTranspiler
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
         if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
-            namedStruct.Name == "GpuBigIntRef" ||
-            namedStruct.ContainingNamespace.ToDisplayString() == "System")
+            namedStruct.IsGpuBigIntRef() ||
+            namedStruct.ContainingNamespace.IsSystemOrNumerics())
         {
             return;
         }
@@ -56,7 +56,7 @@ internal static class StructTranspiler
             {
                 var fieldType = member.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : member.Type;
                 if (fieldType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
-                    namedStruct.ContainingNamespace.ToDisplayString() == "System")
+                    namedStruct.ContainingNamespace.IsSystemOrNumerics())
                 {
                     continue;
                 }
@@ -77,7 +77,7 @@ internal static class StructTranspiler
         ref TranspileContext context)
     {
         if (isPointer || typeSymbol is not { TypeKind: TypeKind.Struct } ||
-            typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.SystemNamespace)
+            typeSymbol.ContainingNamespace.IsSystemOrNumerics())
         {
             return;
         }
@@ -107,7 +107,6 @@ internal static class StructTranspiler
     private static void WriteInlineArrayDefinition(INamedTypeSymbol structSym, AttributeData inlineArrayAttr,
         ref TranspileContext context)
     {
-        var structName = CudaTypeMapper.GetFullyQualifiedCppName(structSym);
         var length = (int)inlineArrayAttr.ConstructorArguments[0].Value!;
         var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);
         if (firstField == null)
@@ -115,13 +114,23 @@ internal static class StructTranspiler
             return;
         }
 
-        var cppElementType = CudaTypeMapper.MapType(firstField.Type);
-        context.Writer.AppendLine($"#ifndef __GSHARP_STRUCT_{structName}__");
-        context.Writer.AppendLine($"#define __GSHARP_STRUCT_{structName}__");
-        context.Writer.AppendLine($"struct {structName}");
+        context.Writer.Append("#ifndef __GSHARP_STRUCT_");
+        context.Writer.AppendFullyQualifiedCppName(structSym);
+        context.Writer.AppendLine("__");
+
+        context.Writer.Append("#define __GSHARP_STRUCT_");
+        context.Writer.AppendFullyQualifiedCppName(structSym);
+        context.Writer.AppendLine("__");
+
+        context.Writer.Append("struct ");
+        context.Writer.AppendFullyQualifiedCppName(structSym);
+        context.Writer.AppendLine();
+        
         using (context.Writer.Scope())
         {
-            context.Writer.Append($"{cppElementType} {firstField.Name}");
+            context.Writer.AppendType(firstField.Type);
+            context.Writer.Append(" ");
+            context.Writer.Append(firstField.Name);
             using (context.Writer.Brackets())
             {
                 context.Writer.Append($"{length}");
@@ -129,7 +138,9 @@ internal static class StructTranspiler
 
             context.Writer.AppendLine(";");
 
-            context.Writer.Append($"__device__ inline {cppElementType}& operator");
+            context.Writer.Append("__device__ inline ");
+            context.Writer.AppendType(firstField.Type);
+            context.Writer.Append("& operator");
             context.Writer.AppendBrackets();
 
             using (context.Writer.Parentheses())
@@ -148,7 +159,9 @@ internal static class StructTranspiler
                 context.Writer.AppendLine(";");
             }
 
-            context.Writer.Append($"__device__ inline const {cppElementType}& operator");
+            context.Writer.Append("__device__ inline const ");
+            context.Writer.AppendType(firstField.Type);
+            context.Writer.Append("& operator");
             context.Writer.AppendBrackets();
 
             using (context.Writer.Parentheses())
@@ -177,111 +190,146 @@ internal static class StructTranspiler
 
     private static void WriteStandardStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        var structName = CudaTypeMapper.GetFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine($"#ifndef __GSHARP_STRUCT_{structName}__");
-        context.Writer.AppendLine($"#define __GSHARP_STRUCT_{structName}__");
-        context.Writer.AppendLine($"struct {structName}");
+        context.Writer.Append("#ifndef __GSHARP_STRUCT_");
+        context.Writer.AppendFullyQualifiedCppName(structSym);
+        context.Writer.AppendLine("__");
+
+        context.Writer.Append("#define __GSHARP_STRUCT_");
+        context.Writer.AppendFullyQualifiedCppName(structSym);
+        context.Writer.AppendLine("__");
+
+        context.Writer.Append("struct ");
+        context.Writer.AppendFullyQualifiedCppName(structSym);
+        context.Writer.AppendLine();
+
         using (context.Writer.Scope())
         {
             var members = structSym.GetMembers().Where(m => !m.IsStatic && !m.IsImplicitlyDeclared);
             foreach (var member in members)
             {
-                switch (member)
-                {
-                    case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
-                        {
-                            var syntax =
-                                field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-                            var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-                            if (sizeExp != null)
-                            {
-                                context.Writer.Append($"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}");
-                                using (context.Writer.Brackets())
-                                {
-                                    context.Visitor.Visit(sizeExp);
-                                }
-
-                                context.Writer.AppendLine(";");
-                            }
-                            else
-                            {
-                                context.Writer.AppendLine(
-                                    $"{CudaTypeMapper.MapType(ptrType.PointedAtType)} {field.Name}; // ERROR: fixed size not found");
-                            }
-
-                            break;
-                        }
-                    case IFieldSymbol field:
-                        {
-                            var fieldConst =
-                                field.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
-                                    ? "const "
-                                    : "";
-                            context.Writer.AppendLine($"{fieldConst}{CudaTypeMapper.MapType(field.Type)} {field.Name};");
-                            break;
-                        }
-                    case IPropertySymbol prop:
-                        {
-                            var propConst =
-                                prop.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name))
-                                    ? "const "
-                                    : "";
-                            context.Writer.AppendLine($"{propConst}{CudaTypeMapper.MapType(prop.Type)} {prop.Name};");
-                            break;
-                        }
-                }
+                WriteStructMember(ref context, member);
             }
 
             var conversions = structSym.GetMembers().OfType<IMethodSymbol>()
                 .Where(m => m.MethodKind == MethodKind.Conversion && m.Name == "op_Implicit");
             foreach (var conv in conversions)
             {
-                if (SymbolEqualityComparer.Default.Equals(conv.ReturnType, structSym))
-                {
-                    // Implicit constructor from param type
-                    var paramType = CudaTypeMapper.MapType(conv.Parameters[0].Type);
-                    context.Writer.Append($"__device__ inline {structName}");
-                    using (context.Writer.Parentheses()) { }
-                    context.Writer.AppendSpace();
-                    using (context.Writer.Scope())
-                    {
-                    }
-
-                    context.Writer.Append($"__device__ inline {structName}");
-                    using (context.Writer.Parentheses())
-                    {
-                        context.Writer.Append($"{paramType} v");
-                    }
-                    context.Writer.AppendSpace();
-                    using (context.Writer.Scope())
-                    {
-                        var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);
-                        if (firstField != null)
-                        {
-                            context.Writer.AppendLine($"this->{firstField.Name} = v;");
-                        }
-                    }
-                }
-                else
-                {
-                    // Implicit conversion operator to return type
-                    var returnType = CudaTypeMapper.MapType(conv.ReturnType);
-                    context.Writer.Append($"__device__ inline operator {returnType}() const ");
-                    using (context.Writer.Scope())
-                    {
-                        var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);
-                        if (firstField != null)
-                        {
-                            context.Writer.AppendLine($"return this->{firstField.Name};");
-                        }
-                    }
-                }
+                WriteImplicitConversionOperator(structSym, ref context, conv);
             }
         }
 
         context.Writer.AppendSemiColon();
         context.Writer.AppendLine();
         context.Writer.AppendLine("#endif");
+        context.Writer.AppendLine();
+    }
+
+    private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context, IMethodSymbol conv)
+    {
+        var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);
+
+        if (SymbolEqualityComparer.Default.Equals(conv.ReturnType, structSym))
+        {
+            // Implicit constructor from param type
+            context.Writer.Append("__device__ inline ");
+            context.Writer.AppendFullyQualifiedCppName(structSym);
+            using (context.Writer.Parentheses()) { }
+            context.Writer.AppendSpace();
+            using (context.Writer.Scope())
+            {
+            }
+
+            context.Writer.Append("__device__ inline ");
+            context.Writer.AppendFullyQualifiedCppName(structSym);
+            using (context.Writer.Parentheses())
+            {
+                context.Writer.AppendType(conv.Parameters[0].Type);
+                context.Writer.AppendSpace();
+                context.Writer.Append("v");
+            }
+            context.Writer.AppendSpace();
+            using (context.Writer.Scope())
+            {
+                if (firstField != null)
+                {
+                    context.Writer.Append("this->");
+                    context.Writer.Append(firstField.Name);
+                    context.Writer.AppendLine(" = v;");
+                }
+            }
+        }
+        else
+        {
+            // Implicit conversion operator to return type
+            context.Writer.Append("__device__ inline operator ");
+            context.Writer.AppendType(conv.ReturnType);
+            context.Writer.Append("() const ");
+            using (context.Writer.Scope())
+            {
+                if (firstField != null)
+                {
+                    context.Writer.Append("return this->");
+                    context.Writer.Append(firstField.Name);
+                    context.Writer.AppendLine(";");
+                }
+            }
+        }
+    }
+
+    private static void WriteStructMember(ref TranspileContext context, ISymbol member)
+    {
+        switch (member)
+        {
+            case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            {
+                var syntax =
+                    field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+                var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+                if (sizeExp != null)
+                {
+                    context.Writer.AppendType(ptrType.PointedAtType);
+                    context.Writer.AppendSpace();
+                    context.Writer.Append(field.Name);
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExp);
+                    }
+
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+                else
+                {
+                    context.Writer.AppendType(ptrType.PointedAtType);
+                    context.Writer.AppendSpace();
+                    context.Writer.Append(field.Name);
+                    context.Writer.AppendLine("; // ERROR: fixed size not found");
+                }
+
+                break;
+            }
+            case IFieldSymbol field:
+                WriteMemberDeclaration(field.Type, field.Name, field, ref context);
+                break;
+            case IPropertySymbol prop:
+                WriteMemberDeclaration(prop.Type, prop.Name, prop, ref context);
+                break;
+        }
+    }
+
+    private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,
+        ref TranspileContext context)
+    {
+        if (memberSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
+        {
+            context.Writer.AppendKeyword("const");
+            context.Writer.AppendSpace();
+        }
+
+        context.Writer.AppendType(type);
+        context.Writer.AppendSpace();
+        context.Writer.Append(name);
+        context.Writer.AppendSemiColon();
         context.Writer.AppendLine();
     }
 }
