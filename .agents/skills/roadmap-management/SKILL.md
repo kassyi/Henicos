@@ -9,11 +9,9 @@ When working on G# (GSharp) or GpuBigInt (GBI) implementation tasks, you **MUST*
 
 ## Mandatory Progress Tracking
 
-All development tasks are tracked in the Markdown files located at `docs/roadmaps/` (e.g., `gbi_roadmap.md`, `gsharp_transpiler_issues.md`, `csharp_syntax_support.md`).
+The roadmap is now managed through an interactive UI application located at `tools/roadmap-ui`, with the single source of truth stored in `docs/data/roadmap_tasks.json`.
 
-- **Update Checkboxes:** Whenever you successfully implement, test, and verify a feature or fix a bug related to a task, you **MUST** update the corresponding checkbox from `- [ ]` to `- [x]` in the roadmap file.
-- **Update Status Details:** You **MUST** also update the status, impact, and notes columns in the table with your current findings, next actions, or reasoning. **All table updates and notes MUST be written in Japanese**, as the roadmap is maintained in Japanese.
+**IMPORTANT**: DO NOT attempt to edit roadmap Markdown files directly.
 
-## Reporting New Tasks
-
-If you discover a new technical debt, missing syntax support, or an optimization opportunity, **DO NOT ignore it**. You must append it as a new task with a new ID to the appropriate roadmap file, and ideally recalculate priorities using `node scripts/calculate_priorities.js --update-docs`.
+- **How to Update:** When you complete a task or want to change its status, you must prompt the human user to invoke the `/roadmap` slash command (which launches the UI), or you can directly modify `docs/data/roadmap_tasks.json` if explicitly instructed by the user.
+- **Reporting New Tasks:** If you discover technical debt or new tasks, do not create them in Markdown. Ask the user to add them via the UI or append them directly to the JSON file.
