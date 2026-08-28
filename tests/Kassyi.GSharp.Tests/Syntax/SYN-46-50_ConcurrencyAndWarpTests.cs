@@ -104,11 +104,194 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads - 1, globalState[1]);
     }
 
-    [Fact(Skip = "未実装: SYN-46 (ワープシャッフル・同期プリミティブ)")]
+    [Fact]
     [Trait("FeatureId", "SYN-46")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN46_WarpPrimitives_Transpilation()
+    public void Test_SYN46_SyncThreads_Transpilation()
     {
+        var source = """
+        using Kassyi.GSharp.Core;
+
+        public static class TestWarpKernel
+        {
+            [GpuKernel]
+            public static void Kernel(int[] data)
+            {
+                data[0] = 1;
+                Gpu.SyncThreads();
+                data[0] = 2;
+            }
+        }
+        """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var syntaxTree = compilation.SyntaxTrees.Last();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+
+        var cudaSource = Kassyi.GSharp.Compiler.Transpiler.MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel);
+
+        Assert.Contains("__syncthreads()", cudaSource);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-46")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN46_WarpShuffle_Transpilation()
+    {
+        var source = """
+        using Kassyi.GSharp.Core;
+
+        public static class TestWarpKernel
+        {
+            [GpuKernel]
+            public static void Kernel(int[] data)
+            {
+                int val = data[ThreadIndex.X];
+                int shuffled = Gpu.WarpShuffle(val, 0);
+                data[ThreadIndex.X] = shuffled;
+            }
+        }
+        """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var syntaxTree = compilation.SyntaxTrees.Last();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+
+        var cudaSource = Kassyi.GSharp.Compiler.Transpiler.MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel);
+
+        Assert.Contains("__shfl_sync(", cudaSource);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-46")]
+    [Trait("Category", "SadPath")]
+    public void Test_SYN46_LockStatement_ReportsDiagnostic()
+    {
+        var source = """
+        using Kassyi.GSharp.Core;
+
+        public static class TestLockKernel
+        {
+            [GpuKernel]
+            public static void Kernel(int[] data)
+            {
+                object obj = null;
+                lock(obj)
+                {
+                    data[0] = 1;
+                }
+            }
+        }
+        """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var syntaxTree = compilation.SyntaxTrees.Last();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+
+        var diagnostics = new List<Diagnostic>();
+        Kassyi.GSharp.Compiler.Transpiler.MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d));
+
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id && d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-46")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN46_WarpShuffle_DefaultMaskAndPathConsistency_Transpilation()
+    {
+        var source = """
+        using Kassyi.GSharp.Core;
+
+        public static class TestWarpKernel
+        {
+            [GpuKernel]
+            public static void Kernel(int[] data)
+            {
+                int val = data[ThreadIndex.X];
+                // Default mask argument (0xffffffff) omitted in C# call
+                int s1 = Gpu.WarpShuffle(val, 0);
+                // Explicit mask argument (0xffffffff) in C# call
+                int s2 = Gpu.WarpShuffle(val, 1, 0xffffffffu);
+                data[ThreadIndex.X] = s1 + s2;
+            }
+        }
+        """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var syntaxTree = compilation.SyntaxTrees.Last();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+
+        var cudaSource = Kassyi.GSharp.Compiler.Transpiler.MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel);
+
+        Assert.Contains("__shfl_sync(", cudaSource);
+        Assert.Contains("0xffffffff", cudaSource.ToLowerInvariant());
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-49")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN49_AtomicAddAndInterlocked_Transpilation()
+    {
+        var source = """
+        using Kassyi.GSharp.Core;
+        using System.Threading;
+
+        public static class TestAtomicKernel
+        {
+            [GpuKernel]
+            public static void Kernel(int[] data)
+            {
+                Gpu.AtomicAdd(ref data[0], 5);
+                Interlocked.Add(ref data[1], 10);
+            }
+        }
+        """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var syntaxTree = compilation.SyntaxTrees.Last();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var methodDecl = syntaxTree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First();
+
+        var cudaSource = Kassyi.GSharp.Compiler.Transpiler.MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel);
+
+        Assert.Contains("atomicAdd", cudaSource);
+        Assert.Contains("data[0]", cudaSource);
+        Assert.Contains("data[1]", cudaSource);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-49")]
+    [Trait("Category", "SadPath")]
+    public void Test_SYN49_AtomicOnUnsupportedType_ReportsDiagnosticOrCompilerError()
+    {
+        var source = """
+        using Kassyi.GSharp.Core;
+
+        public struct CustomUnsupportedStruct
+        {
+            public int Field1;
+        }
+
+        public static class TestAtomicKernel
+        {
+            [GpuKernel]
+            public static void Kernel(CustomUnsupportedStruct[] data)
+            {
+                Gpu.AtomicAdd(ref data[0], new CustomUnsupportedStruct());
+            }
+        }
+        """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var diagnostics = compilation.GetDiagnostics();
+
+        // Gpu.AtomicAdd is only overloaded for int, uint, ulong, float.
+        // Calling it with CustomUnsupportedStruct generates a C# compiler error (CS1503 / CS0121 etc).
+        Assert.Contains(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact(Skip = "未実装: SYN-48 (グリッド協調グループ同期 CooperativeGroups)")]

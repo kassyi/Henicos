@@ -124,6 +124,28 @@ public static class Gpu
     public static void SyncThreads() => GpuOnlyException.Throw();
 
     /// <summary>
+    /// Enforces warp shuffle operation using CUDA <c>__shfl_sync</c> across active threads in the warp.
+    /// </summary>
+    /// <param name="val">The value to shuffle.</param>
+    /// <param name="srcLane">The source lane index (0-31).</param>
+    /// <param name="mask">The warp thread participation mask (default: <c>0xffffffff</c>).</param>
+    /// <returns>The shuffled value from the target lane.</returns>
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
+    [CudaIntrinsic("__shfl_sync")]
+    public static int WarpShuffle(int val, int srcLane, uint mask = 0xffffffff) => GpuOnlyException.Throw<int>();
+
+    /// <summary>
+    /// Enforces warp shuffle operation using CUDA <c>__shfl_sync</c> across active threads in the warp.
+    /// </summary>
+    /// <param name="val">The value to shuffle.</param>
+    /// <param name="srcLane">The source lane index (0-31).</param>
+    /// <param name="mask">The warp thread participation mask (default: <c>0xffffffff</c>).</param>
+    /// <returns>The shuffled value from the target lane.</returns>
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
+    [CudaIntrinsic("__shfl_sync")]
+    public static float WarpShuffle(float val, int srcLane, uint mask = 0xffffffff) => GpuOnlyException.Throw<float>();
+
+    /// <summary>
     /// Synchronizes all threads across the entire cooperative grid (<c>cg::this_grid().sync()</c>).
     /// </summary>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>

@@ -43,3 +43,16 @@ using Kassyi.GSharp.Core;
 [assembly:
     BclIntrinsicMap("System.Numerics.BitOperations", "RotateRight", ["System.UIntPtr", "System.Int32"],
         "__gsharp_rotr64")]
+
+// --- System.Threading.Interlocked Mappings ---
+
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Add", ["System.Int32", "System.Int32"], "atomicAdd")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Add", ["System.Int64", "System.Int64"], "atomicAdd")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Increment", ["System.Int32"], "atomicAdd")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Increment", ["System.Int64"], "atomicAdd")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Decrement", ["System.Int32"], "atomicSub")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Decrement", ["System.Int64"], "atomicSub")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Exchange", ["System.Int32", "System.Int32"], "atomicExch")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Exchange", ["System.Int64", "System.Int64"], "atomicExch")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "CompareExchange", ["System.Int32", "System.Int32", "System.Int32"], "atomicCAS")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "CompareExchange", ["System.Int64", "System.Int64", "System.Int64"], "atomicCAS")]
