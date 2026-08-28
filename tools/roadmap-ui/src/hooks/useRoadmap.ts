@@ -269,10 +269,44 @@ export function useRoadmap() {
   const filteredTasks = useMemo(() => {
     return tasks
       .filter((t) => {
-        const matchesSearch =
-          t.title.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
-          t.id.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
-          t.notes.toLowerCase().includes(deferredSearchQuery.toLowerCase());
+        const query = deferredSearchQuery.trim().toLowerCase();
+        let matchesSearch = true;
+
+        if (query) {
+          const normalizedId = t.id.toLowerCase().replace(/[\s\-_]/g, "");
+          const normalizedTitle = t.title.toLowerCase().replace(/[\s\-_]/g, "");
+          const normalizedNotes = (t.notes || "").toLowerCase().replace(/[\s\-_]/g, "");
+
+          // If query contains commas, treat as OR matching (e.g. "SYN-77, SYN-90, SYN-92")
+          if (query.includes(",")) {
+            const subQueries = query.split(",").map((s) => s.trim()).filter(Boolean);
+            matchesSearch = subQueries.some((sq) => {
+              const normSub = sq.replace(/[\s\-_]/g, "");
+              return (
+                t.id.toLowerCase().includes(sq) ||
+                normalizedId.includes(normSub) ||
+                t.title.toLowerCase().includes(sq) ||
+                normalizedTitle.includes(normSub) ||
+                (t.notes || "").toLowerCase().includes(sq) ||
+                normalizedNotes.includes(normSub)
+              );
+            });
+          } else {
+            // Space-separated tokens treated as AND matching (e.g. "syn 90", "syn 制御")
+            const tokens = query.split(/\s+/).filter(Boolean);
+            matchesSearch = tokens.every((token) => {
+              const normToken = token.replace(/[\s\-_]/g, "");
+              return (
+                t.id.toLowerCase().includes(token) ||
+                normalizedId.includes(normToken) ||
+                t.title.toLowerCase().includes(token) ||
+                normalizedTitle.includes(normToken) ||
+                (t.notes || "").toLowerCase().includes(token) ||
+                normalizedNotes.includes(normToken)
+              );
+            });
+          }
+        }
 
         const taskStatus = t.status || (t.completed ? "implemented" : "incomplete");
         const isExiting = exitingIds.has(t.id);
