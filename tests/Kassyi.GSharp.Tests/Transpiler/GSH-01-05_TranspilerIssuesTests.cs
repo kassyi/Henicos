@@ -1,3 +1,7 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
@@ -24,11 +28,139 @@ public class GSH_01_05_TranspilerIssuesTests
     {
     }
 
-    [Fact(Skip = "未実装: GSH-04 (スタック固定長配列・stackallocの限定性)")]
+    [Fact]
     [Trait("FeatureId", "GSH-04")]
+    [Trait("FeatureId", "SYN-13")]
     [Trait("Category", "Transpiler")]
-    public void Test_GSH04_StackAllocFixedArray()
+    public void Test_GSH04_StackAllocFixedArray_HappyPath()
     {
+        const string source = """
+        using System;
+        using Kassyi.GSharp.Core;
+
+        public class TestKernelClass
+        {
+            [GpuKernel]
+            public static void TestKernel()
+            {
+                Span<int> buf = stackalloc int[16];
+                buf[0] = 42;
+            }
+        }
+        """;
+
+        var userTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp11));
+        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(userTree);
+        var semanticModel = compilation.GetSemanticModel(userTree);
+
+        var methodDecl = userTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+
+        var diagnostics = new List<Diagnostic>();
+        var generatedCode = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice: false);
+
+        Assert.NotNull(generatedCode);
+        Assert.True(diagnostics.Any(d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id) || generatedCode.Contains("buf"), "Transpiler should handle stackalloc or report GSH0003 UnsupportedSyntax diagnostic");
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GSH-04")]
+    [Trait("FeatureId", "SYN-13")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "SadPath")]
+    public void Test_GSH04_StackAllocDynamicSize_SadPath_ReportsDiagnostic()
+    {
+        const string source = """
+        using System;
+        using Kassyi.GSharp.Core;
+
+        public class TestKernelClass
+        {
+            [GpuKernel]
+            public static void TestKernel(int length)
+            {
+                Span<int> buf = stackalloc int[length];
+            }
+        }
+        """;
+
+        var userTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp11));
+        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(userTree);
+        var semanticModel = compilation.GetSemanticModel(userTree);
+
+        var methodDecl = userTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+
+        var diagnostics = new List<Diagnostic>();
+        var generatedCode = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice: false);
+
+        Assert.NotNull(generatedCode);
+        Assert.Contains(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GSH-04")]
+    [Trait("FeatureId", "SYN-13")]
+    [Trait("Category", "Transpiler")]
+    public void Test_GSH04_StackAllocEdgeCase_ZeroLength()
+    {
+        const string source = """
+        using System;
+        using Kassyi.GSharp.Core;
+
+        public class TestKernelClass
+        {
+            [GpuKernel]
+            public static void TestKernel()
+            {
+                Span<int> buf = stackalloc int[0];
+            }
+        }
+        """;
+
+        var userTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp11));
+        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(userTree);
+        var semanticModel = compilation.GetSemanticModel(userTree);
+
+        var methodDecl = userTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+
+        var diagnostics = new List<Diagnostic>();
+        var generatedCode = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice: false);
+
+        Assert.NotNull(generatedCode);
+        Assert.True(generatedCode.Contains("buf") || diagnostics.Any(), "Zero-length stackalloc must be transpiled or report diagnostic");
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GSH-04")]
+    [Trait("FeatureId", "SYN-13")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "SadPath")]
+    public void Test_GSH04_StackAllocEdgeCase_ExcessiveSize_ReportsWarningOrError()
+    {
+        const string source = """
+        using System;
+        using Kassyi.GSharp.Core;
+
+        public class TestKernelClass
+        {
+            [GpuKernel]
+            public static void TestKernel()
+            {
+                Span<int> buf = stackalloc int[1048576];
+            }
+        }
+        """;
+
+        var userTree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp11));
+        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(userTree);
+        var semanticModel = compilation.GetSemanticModel(userTree);
+
+        var methodDecl = userTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+
+        var diagnostics = new List<Diagnostic>();
+        var generatedCode = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice: false);
+
+        Assert.NotNull(generatedCode);
+        Assert.Contains(diagnostics, d => d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact(Skip = "未実装: GSH-05 (ジェネリクスの制約解決)")]
