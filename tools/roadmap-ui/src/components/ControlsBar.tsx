@@ -10,8 +10,8 @@ import {
   Redo as RedoIcon,
   CloudDone as CloudDoneIcon,
   ErrorOutlined as ErrorIcon,
-  ContentCopy as CopyIcon,
 } from '@mui/icons-material';
+import { JulesIcon } from './JulesIcon';
 
 interface ControlsBarProps {
   searchQuery: string;
@@ -26,7 +26,7 @@ interface ControlsBarProps {
   handleRedo: () => void;
   saveStatus: 'saved' | 'saving' | 'error';
   cartIdsCount: number;
-  copyVibeCodingPrompt: () => void;
+  copyJulesPrompt: () => void;
   setCartIds: (ids: string[]) => void;
   setToast: (toast: any) => void;
   minBlocker: number;
@@ -40,7 +40,7 @@ interface ControlsBarProps {
 export const ControlsBar: React.FC<ControlsBarProps> = ({
   searchQuery, setSearchQuery, completionFilter, setCompletionFilter,
   showAdvancedFilters, setShowAdvancedFilters, historyLengthPast, historyLengthFuture,
-  handleUndo, handleRedo, saveStatus, cartIdsCount, copyVibeCodingPrompt,
+  handleUndo, handleRedo, saveStatus, cartIdsCount, copyJulesPrompt,
   setCartIds, setToast, minBlocker, setMinBlocker, minDifficulty, setMinDifficulty,
   minGenerality, setMinGenerality
 }) => {
@@ -198,8 +198,8 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
           <Button
             variant="contained"
             color="secondary"
-            startIcon={<CopyIcon />}
-            onClick={copyVibeCodingPrompt}
+            startIcon={<JulesIcon />}
+            onClick={copyJulesPrompt}
             disabled={cartIdsCount === 0}
             sx={{
               px: 2.2,
@@ -211,7 +211,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
               color: cartIdsCount > 0 ? '#e8def8' : undefined,
             }}
           >
-            Vibe Codingプロンプトをコピー ({cartIdsCount})
+            Jules依頼プロンプトを生成 ({cartIdsCount})
           </Button>
 
           {cartIdsCount > 0 && (
