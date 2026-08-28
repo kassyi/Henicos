@@ -19,8 +19,8 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   HelpOutlined as HelpIcon,
-  ContentCopy as CopyIcon,
 } from '@mui/icons-material';
+import { JulesIcon } from './components/JulesIcon';
 import { m3DarkTheme } from './theme';
 import { useRoadmap } from './hooks/useRoadmap';
 import { ControlsBar } from './components/ControlsBar';
@@ -53,7 +53,7 @@ export default function App() {
     updateTaskStatus,
     handleCartClick,
     toggleTierCart,
-    copyVibeCodingPrompt,
+    copyJulesPrompt,
     updateNotes,
     filteredTasks,
     tasksByTier,
@@ -97,7 +97,7 @@ export default function App() {
           handleRedo={handleRedo}
           saveStatus={saveStatus}
           cartIdsCount={cartIds.length}
-          copyVibeCodingPrompt={copyVibeCodingPrompt}
+          copyJulesPrompt={copyJulesPrompt}
           setCartIds={setCartIds}
           setToast={setToast}
           minBlocker={minBlocker}
@@ -212,12 +212,12 @@ export default function App() {
         {cartIds.length > 0 && (
           <Fab 
             color="primary" 
-            aria-label="Copy Vibe Coding Prompt" 
-            onClick={copyVibeCodingPrompt}
+            aria-label="Generate Jules Prompt" 
+            onClick={copyJulesPrompt}
             sx={{ position: 'fixed', bottom: 32, right: 32, borderRadius: 2 }}
           >
             <Badge badgeContent={cartIds.length} color="error">
-              <CopyIcon />
+              <JulesIcon />
             </Badge>
           </Fab>
         )}
