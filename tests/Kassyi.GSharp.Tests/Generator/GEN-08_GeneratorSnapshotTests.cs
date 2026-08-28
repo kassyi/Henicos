@@ -178,6 +178,7 @@ public class GEN_08_GeneratorSnapshotTests
     [InlineData("GEN-08_ChunkAddKernel.cu.cs")]
     [InlineData("GEN-06_ComprehensiveSpecKernel.cu.cs")]
     [InlineData("GEN-13_MacroExpansion.cu.cs")]
+    [InlineData("GEN-18_VectorBuiltins.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]
