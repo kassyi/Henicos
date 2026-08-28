@@ -65,6 +65,7 @@ TestResults/
 /.agents/bin/merge-code-reviews.js
 /.agents/bin/normalize-meta-index.js
 /.agents/bin/setup.js
+/.agents/bin/wait-qodo.js
 /.agents/skills/code-meta-scanner/SKILL.md
 /.agents/skills/code-review/SKILL.md
 /.agents/skills/gpu-code-review/SKILL.md
