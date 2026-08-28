@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# methods and GPU kernels into CUDA C++ function definitions or forward signatures.</summary>
@@ -95,14 +97,47 @@ public static class MethodTranspiler
         {
             foreach (var attr in methodSymbol.GetAttributes())
             {
-                switch (attr.AttributeClass?.Name)
+                var attrName = attr.AttributeClass?.Name;
+                if (attrName is KnownAttributes.GpuInlineAttribute or KnownAttributes.GpuInline)
                 {
-                    case KnownAttributes.GpuInlineAttribute:
-                        hasAggressiveInlining = true;
-                        break;
-                    case KnownAttributes.GpuNoInlineAttribute:
-                        hasNoInlining = true;
-                        break;
+                    hasAggressiveInlining = true;
+                }
+                else if (attrName is KnownAttributes.GpuNoInlineAttribute or KnownAttributes.GpuNoInline)
+                {
+                    hasNoInlining = true;
+                }
+                else if (attrName is "MethodImplAttribute" or "MethodImpl")
+                {
+                    if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is not null)
+                    {
+                        var options = (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
+                        if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                        {
+                            hasAggressiveInlining = true;
+                        }
+                        if ((options & MethodImplOptions.NoInlining) != 0)
+                        {
+                            hasNoInlining = true;
+                        }
+                    }
+                    else if (attr.NamedArguments.Length > 0)
+                    {
+                        foreach (var namedArg in attr.NamedArguments)
+                        {
+                            if (namedArg.Key == "Value" && namedArg.Value.Value is not null)
+                            {
+                                var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+                                if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                                {
+                                    hasAggressiveInlining = true;
+                                }
+                                if ((options & MethodImplOptions.NoInlining) != 0)
+                                {
+                                    hasNoInlining = true;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
