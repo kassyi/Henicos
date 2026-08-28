@@ -317,6 +317,18 @@ internal static class DeclarationTranspilers
     {
         if (variable.Initializer != null)
         {
+            if (context.SkipLocalsInit)
+            {
+                var val = variable.Initializer.Value;
+                if (val is ImplicitObjectCreationExpressionSyntax ||
+                    val is ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } ||
+                    val is DefaultExpressionSyntax ||
+                    val is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.DefaultLiteralExpression))
+                {
+                    return; // Skip zero-initialization
+                }
+            }
+
             context.Writer.AppendOperator("=");
             context.Visitor.Visit(variable.Initializer.Value);
         }

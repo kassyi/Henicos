@@ -14,6 +14,7 @@ public struct TranspileContext(
     public HashSet<INamedTypeSymbol> UsedStructs = usedStructs;
     public Dictionary<string, OverrideValue> LocalVariableOverrides = localVariableOverrides;
     public bool HasEmittedDynamicSmemBase = false;
+    public bool SkipLocalsInit = false;
 
     public SemanticModel SemanticModel { get; } = semanticModel;
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;

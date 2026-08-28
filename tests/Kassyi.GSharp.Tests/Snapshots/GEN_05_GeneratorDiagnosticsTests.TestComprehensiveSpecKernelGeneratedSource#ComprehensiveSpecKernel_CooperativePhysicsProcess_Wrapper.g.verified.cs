@@ -107,7 +107,7 @@ __noinline__ __device__ bool IsPositive(float value){
 return (value>0);
 }
 
-extern ""C"" __global__ void CooperativePhysicsProcess(int* data){
+extern ""C"" __global__ void CooperativePhysicsProcess(int* __restrict__ data){
 int tid=threadIdx.x;
 data[tid]=tid;
 cg::this_grid().sync();
