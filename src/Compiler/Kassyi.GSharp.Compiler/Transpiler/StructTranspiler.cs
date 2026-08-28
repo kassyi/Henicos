@@ -18,9 +18,12 @@ internal static class StructTranspiler
             return;
         }
 
-        foreach (var member in namedStruct.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+        foreach (var member in namedStruct.GetMembers())
         {
-            RegisterUsedStructIfApplicable(member.Type, ref context);
+            if (member is IFieldSymbol { IsStatic: false } field)
+            {
+                RegisterUsedStructIfApplicable(field.Type, ref context);
+            }
         }
     }
 
@@ -52,9 +55,14 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var member in s.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
+            foreach (var member in s.GetMembers())
             {
-                var fieldType = member.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : member.Type;
+                if (member is not IFieldSymbol { IsStatic: false } field)
+                {
+                    continue;
+                }
+
+                var fieldType = field.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : field.Type;
                 if (fieldType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
                     namedStruct.ContainingNamespace.IsSystemOrNumerics())
                 {
@@ -92,8 +100,16 @@ internal static class StructTranspiler
 
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        var inlineArrayAttr = structSym.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "InlineArrayAttribute");
+        AttributeData? inlineArrayAttr = null;
+        foreach (var attr in structSym.GetAttributes())
+        {
+            if (attr.AttributeClass?.Name == "InlineArrayAttribute")
+            {
+                inlineArrayAttr = attr;
+                break;
+            }
+        }
+
         if (inlineArrayAttr != null)
         {
             WriteInlineArrayDefinition(structSym, inlineArrayAttr, ref context);
@@ -108,7 +124,7 @@ internal static class StructTranspiler
         ref TranspileContext context)
     {
         var length = (int)inlineArrayAttr.ConstructorArguments[0].Value!;
-        var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);
+        var firstField = GetFirstInstanceField(structSym);
         if (firstField == null)
         {
             return;
@@ -125,11 +141,11 @@ internal static class StructTranspiler
         context.Writer.Append("struct ");
         context.Writer.AppendFullyQualifiedCppName(structSym);
         context.Writer.AppendLine();
-        
+
         using (context.Writer.Scope())
         {
             context.Writer.AppendType(firstField.Type);
-            context.Writer.Append(" ");
+            context.Writer.AppendSpace();
             context.Writer.Append(firstField.Name);
             using (context.Writer.Brackets())
             {
@@ -156,7 +172,7 @@ internal static class StructTranspiler
                     context.Writer.Append("index");
                 }
 
-                context.Writer.AppendLine(";");
+                context.Writer.AppendSemiColonLine();
             }
 
             context.Writer.Append("__device__ inline const ");
@@ -178,7 +194,7 @@ internal static class StructTranspiler
                     context.Writer.Append("index");
                 }
 
-                context.Writer.AppendLine(";");
+                context.Writer.AppendSemiColonLine();
             }
         }
 
@@ -204,17 +220,20 @@ internal static class StructTranspiler
 
         using (context.Writer.Scope())
         {
-            var members = structSym.GetMembers().Where(m => !m.IsStatic && !m.IsImplicitlyDeclared);
-            foreach (var member in members)
+            foreach (var member in structSym.GetMembers())
             {
-                WriteStructMember(ref context, member);
+                if (!member.IsStatic && !member.IsImplicitlyDeclared)
+                {
+                    WriteStructMember(ref context, member);
+                }
             }
 
-            var conversions = structSym.GetMembers().OfType<IMethodSymbol>()
-                .Where(m => m.MethodKind == MethodKind.Conversion && m.Name == "op_Implicit");
-            foreach (var conv in conversions)
+            foreach (var member in structSym.GetMembers())
             {
-                WriteImplicitConversionOperator(structSym, ref context, conv);
+                if (member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
+                {
+                    WriteImplicitConversionOperator(structSym, ref context, conv);
+                }
             }
         }
 
@@ -224,16 +243,17 @@ internal static class StructTranspiler
         context.Writer.AppendLine();
     }
 
-    private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context, IMethodSymbol conv)
+    private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,
+        IMethodSymbol conv)
     {
-        var firstField = structSym.GetMembers().OfType<IFieldSymbol>().FirstOrDefault(f => !f.IsStatic);
+        var firstField = GetFirstInstanceField(structSym);
 
         if (SymbolEqualityComparer.Default.Equals(conv.ReturnType, structSym))
         {
             // Implicit constructor from param type
             context.Writer.Append("__device__ inline ");
             context.Writer.AppendFullyQualifiedCppName(structSym);
-            using (context.Writer.Parentheses()) { }
+            context.Writer.AppendParentheses();
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
             {
@@ -247,6 +267,7 @@ internal static class StructTranspiler
                 context.Writer.AppendSpace();
                 context.Writer.Append("v");
             }
+
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
             {
@@ -270,10 +291,23 @@ internal static class StructTranspiler
                 {
                     context.Writer.Append("return this->");
                     context.Writer.Append(firstField.Name);
-                    context.Writer.AppendLine(";");
+                    context.Writer.AppendSemiColonLine();
                 }
             }
         }
+    }
+
+    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym)
+    {
+        foreach (var member in structSym.GetMembers())
+        {
+            if (member is IFieldSymbol { IsStatic: false } field)
+            {
+                return field;
+            }
+        }
+
+        return null;
     }
 
     private static void WriteStructMember(ref TranspileContext context, ISymbol member)
@@ -282,9 +316,19 @@ internal static class StructTranspiler
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
             {
-                var syntax =
-                    field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-                var sizeExp = syntax?.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+                VariableDeclaratorSyntax? syntax = null;
+                var syntaxRefs = field.DeclaringSyntaxReferences;
+                if (!syntaxRefs.IsEmpty)
+                {
+                    syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
+                }
+
+                ExpressionSyntax? sizeExp = null;
+                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+                {
+                    sizeExp = argList.Arguments[0].Expression;
+                }
+
                 if (sizeExp != null)
                 {
                     context.Writer.AppendType(ptrType.PointedAtType);
@@ -320,7 +364,17 @@ internal static class StructTranspiler
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,
         ref TranspileContext context)
     {
-        if (memberSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
+        var isGpuConst = false;
+        foreach (var attr in memberSymbol.GetAttributes())
+        {
+            if (KnownAttributes.IsGpuConst(attr.AttributeClass?.Name))
+            {
+                isGpuConst = true;
+                break;
+            }
+        }
+
+        if (isGpuConst)
         {
             context.Writer.AppendKeyword("const");
             context.Writer.AppendSpace();
