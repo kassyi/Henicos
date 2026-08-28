@@ -51,3 +51,11 @@ build-cs:
 
 format:
     dotnet format Henicos.slnx
+
+# Launch the Interactive Roadmap UI
+[working-directory('tools/roadmap-ui')]
+roadmap:
+    npm run dev
+
+# Alias for roadmap
+run-ui: roadmap
