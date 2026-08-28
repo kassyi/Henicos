@@ -8,6 +8,14 @@ public const string Source = @"// GSharp Prelude
 #include <cooperative_groups.h>
 namespace cg=cooperative_groups;
 
+template <typename T>
+struct System_Nullable {
+    bool HasValue;
+    T Value;
+    __device__ System_Nullable() : HasValue(false), Value() {}
+    __device__ System_Nullable(T val) : HasValue(true), Value(val) {}
+};
+
 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
 unsigned int res;
 unsigned int c_in=(unsigned int)*carry;
