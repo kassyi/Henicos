@@ -79,8 +79,8 @@ gitGraph
 4. **`main` へのマージ**
    - 検証完了後、`main` ブランチへマージ（または Pull Request のマージ）。
 5. **ロードマップ進捗の更新**
-   - 完了したタスクの記述ファイル（例: `docs/roadmaps/csharp_syntax_support.md`）のチェックボックスを `- [x]` に更新し、メモ欄を記入。
-   - 以下の優先度再計算・ドキュメント更新スクリプトを実行してインデックスを同期：
+   - タスクのステータスを更新し、メモ欄に変更内容を記入します。
+   - 以下のUIを起動して進捗状況（ステータスやメモ）を更新し、変更をオートセーブで保存します。
      ```bash
-     node scripts/calculate_priorities.js --update-docs
+     just run-ui
      ```
