@@ -271,7 +271,10 @@ export function useRoadmap() {
         t.blocker >= minBlocker &&
         t.difficulty >= minDifficulty &&
         t.generality >= minGenerality;
-    });
+    }).map(t => ({
+      ...t,
+      score: (t.blocker * 4) + ((6 - t.difficulty) * 3) + (t.generality * 2)
+    }));
   }, [tasks, searchQuery, minBlocker, minDifficulty, minGenerality, completionFilter, exitingIds, gracePeriodIds]);
 
   const tasksByTier = useMemo(() => {

@@ -42,6 +42,14 @@ export default defineConfig({
               try {
                 // Parse to validate JSON format
                 const parsed = JSON.parse(body);
+                
+                // Validate schema (must be array, and each task must have an id)
+                if (!Array.isArray(parsed) || parsed.some(t => !t.id || typeof t.id !== 'string')) {
+                  res.statusCode = 400;
+                  res.end(JSON.stringify({ error: 'Invalid roadmap data format' }));
+                  return;
+                }
+
                 fs.writeFileSync(dataPath, JSON.stringify(parsed, null, 2), 'utf-8');
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ success: true }));
