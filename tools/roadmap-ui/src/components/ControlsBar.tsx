@@ -10,6 +10,7 @@ import {
   Redo as RedoIcon,
   CloudDone as CloudDoneIcon,
   ErrorOutlined as ErrorIcon,
+  ContentCopy as CopyIcon,
 } from '@mui/icons-material';
 import { JulesIcon } from './JulesIcon';
 
@@ -27,6 +28,7 @@ interface ControlsBarProps {
   saveStatus: 'saved' | 'saving' | 'error';
   cartIdsCount: number;
   copyJulesPrompt: () => void;
+  copyCartIdsOnly: () => void;
   setCartIds: (ids: string[]) => void;
   setToast: (toast: any) => void;
   minBlocker: number;
@@ -40,7 +42,7 @@ interface ControlsBarProps {
 export const ControlsBar: React.FC<ControlsBarProps> = ({
   searchQuery, setSearchQuery, completionFilter, setCompletionFilter,
   showAdvancedFilters, setShowAdvancedFilters, historyLengthPast, historyLengthFuture,
-  handleUndo, handleRedo, saveStatus, cartIdsCount, copyJulesPrompt,
+  handleUndo, handleRedo, saveStatus, cartIdsCount, copyJulesPrompt, copyCartIdsOnly,
   setCartIds, setToast, minBlocker, setMinBlocker, minDifficulty, setMinDifficulty,
   minGenerality, setMinGenerality
 }) => {
@@ -126,7 +128,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
         </Box>
 
         {/* Right: Actions, Undo/Redo & Auto-Save Indicator */}
-        <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'center', flexWrap: 'nowrap' }}>
+        <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
           {/* Undo / Redo Buttons */}
           <Box sx={{ display: 'flex', bgcolor: '#141218', border: '1px solid #49454f', borderRadius: 2, p: 0.3 }}>
             <Tooltip title="元に戻す (Ctrl+Z)">
@@ -194,24 +196,50 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             )}
           </Box>
 
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<JulesIcon />}
-            onClick={copyJulesPrompt}
-            disabled={cartIdsCount === 0}
-            sx={{
-              px: 2.2,
-              py: 0.9,
-              fontWeight: 700,
-              fontSize: '0.82rem',
-              borderRadius: 2,
-              bgcolor: cartIdsCount > 0 ? '#4a4458' : undefined,
-              color: cartIdsCount > 0 ? '#e8def8' : undefined,
-            }}
-          >
-            Jules依頼プロンプトを生成 ({cartIdsCount})
-          </Button>
+          <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', alignItems: 'stretch' }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<JulesIcon />}
+              onClick={copyJulesPrompt}
+              disabled={cartIdsCount === 0}
+              sx={{
+                px: 2.2,
+                py: 0.9,
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+                bgcolor: cartIdsCount > 0 ? '#4a4458' : undefined,
+                color: cartIdsCount > 0 ? '#e8def8' : undefined,
+              }}
+            >
+              Jules依頼プロンプトを生成 ({cartIdsCount})
+            </Button>
+            <Tooltip title="タスクIDのみをコピー">
+              <span style={{ display: 'flex' }}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={copyCartIdsOnly}
+                  disabled={cartIdsCount === 0}
+                  sx={{
+                    minWidth: 40,
+                    px: 1,
+                    py: 0.9,
+                    height: '100%',
+                    borderTopLeftRadius: 0,
+                    borderBottomLeftRadius: 0,
+                    borderLeft: '1px solid rgba(0,0,0,0.2)',
+                    bgcolor: cartIdsCount > 0 ? '#4a4458' : undefined,
+                    color: cartIdsCount > 0 ? '#e8def8' : undefined,
+                  }}
+                >
+                  <CopyIcon fontSize="small" />
+                </Button>
+              </span>
+            </Tooltip>
+          </Box>
 
           {cartIdsCount > 0 && (
             <Button
