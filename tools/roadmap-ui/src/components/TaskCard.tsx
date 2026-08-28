@@ -13,7 +13,13 @@ interface TaskCardProps {
   onNotesChange: (id: string, notes: string) => void;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({
+const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: string; border: string }[] = [
+  { val: 'incomplete', label: '未完', color: 'text.secondary', bg: 'rgba(255, 255, 255, 0.05)', border: '#49454f' },
+  { val: 'implemented', label: '🛠️ 実装', color: '#c4eed0', bg: '#1a2e22', border: '#386a4f' },
+  { val: 'tuned', label: '⚡ パフォ', color: '#f3e5f5', bg: '#331b3f', border: '#ab47bc' },
+];
+
+export const TaskCard: React.FC<TaskCardProps> = React.memo(({
   task,
   inCart,
   isExiting,
@@ -47,8 +53,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         boxShadow: inCart ? '0 4px 12px rgba(208, 188, 255, 0.15)' : 'none',
         '&:hover': {
           borderColor: inCart ? 'primary.light' : 'text.disabled',
-          '& .hover-actions': { opacity: 1, pointerEvents: 'auto' }
-        }
+          '& .hover-actions': { opacity: 1, pointerEvents: 'auto' },
+        },
       }}
     >
       <CardContent sx={{ p: 2, flex: '1 0 auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -66,7 +72,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               title={DOMAIN_LABELS[task.domain] || task.domain}
               sx={{ fontSize: '0.68rem', color: 'text.secondary', borderColor: '#49454f', height: 22 }}
             />
-            
+
             <Box
               className="hover-actions"
               sx={{
@@ -75,19 +81,18 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 opacity: 0,
                 pointerEvents: 'none',
                 transition: 'opacity 0.2s',
-                '@media (hover: none)': { opacity: 1, pointerEvents: 'auto' }
+                '@media (hover: none)': { opacity: 1, pointerEvents: 'auto' },
               }}
             >
-              {[
-                { val: 'incomplete', label: '未完', color: 'text.secondary', bg: 'rgba(255, 255, 255, 0.05)', border: '#49454f' },
-                { val: 'implemented', label: '🛠️ 実装', color: '#c4eed0', bg: '#1a2e22', border: '#386a4f' },
-                { val: 'tuned', label: '⚡ パフォ', color: '#f3e5f5', bg: '#331b3f', border: '#ab47bc' }
-              ].map(s => (
+              {STATUS_CHIP_OPTIONS.map((s) => (
                 <Chip
                   key={s.val}
                   label={s.label}
                   size="small"
-                  onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, s.val as TaskStatus); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStatusChange(task.id, s.val);
+                  }}
                   sx={{
                     bgcolor: currentStatus === s.val ? s.bg : 'transparent',
                     color: currentStatus === s.val ? s.color : 'text.disabled',
@@ -98,7 +103,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     cursor: 'pointer',
                     opacity: currentStatus === s.val ? 1 : 0.6,
                     transition: 'all 0.2s',
-                    '&:hover': { opacity: 1, bgcolor: s.bg, color: s.color, borderColor: s.border }
+                    '&:hover': { opacity: 1, bgcolor: s.bg, color: s.color, borderColor: s.border },
                   }}
                 />
               ))}
@@ -116,7 +121,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               transition: 'opacity 0.2s',
               '@media (hover: none)': { opacity: 1, pointerEvents: 'auto' },
               color: inCart ? 'primary.light' : 'text.disabled',
-              '&:hover': { color: 'primary.main' }
+              '&:hover': { color: 'primary.main' },
             }}
           >
             {inCart ? <CheckCircleIcon fontSize="small" /> : <UncheckedIcon fontSize="small" />}
@@ -164,4 +169,4 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});

@@ -1,7 +1,16 @@
 import React from 'react';
 import {
-  Box, Card, TextField, InputAdornment, Typography, ToggleButtonGroup, ToggleButton,
-  Tooltip, IconButton, CircularProgress, Button
+  Box,
+  Card,
+  TextField,
+  InputAdornment,
+  Typography,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tooltip,
+  IconButton,
+  CircularProgress,
+  Button,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -13,12 +22,38 @@ import {
   ContentCopy as CopyIcon,
 } from '@mui/icons-material';
 import { JulesIcon } from './JulesIcon';
+import { FactorFilterControl, type FactorOption } from './FactorFilterControl';
+import type { TaskStatus } from '../types';
+
+const BLOCKER_OPTIONS: FactorOption[] = [
+  { n: 1, color: '#66bb6a', label: '1 (最小)' },
+  { n: 2, color: '#9ccc65', label: '2 (低)' },
+  { n: 3, color: '#ffa726', label: '3 (中)' },
+  { n: 4, color: '#ff7043', label: '4 (高)' },
+  { n: 5, color: '#ef5350', label: '5 (最大)' },
+];
+
+const DIFFICULTY_OPTIONS: FactorOption[] = [
+  { n: 1, color: '#66bb6a', label: '1 (半日/極めて簡単)' },
+  { n: 2, color: '#9ccc65', label: '2 (やや容易)' },
+  { n: 3, color: '#ffa726', label: '3 (中程度)' },
+  { n: 4, color: '#ff7043', label: '4 (難関)' },
+  { n: 5, color: '#ef5350', label: '5 (最難関/大設計)' },
+];
+
+const GENERALITY_OPTIONS: FactorOption[] = [
+  { n: 1, color: '#90caf9', label: '1 (ニッチ/稀)' },
+  { n: 2, color: '#42a5f5', label: '2 (限定的)' },
+  { n: 3, color: '#1e88e5', label: '3 (通常)' },
+  { n: 4, color: '#1565c0', label: '4 (頻繁に利用)' },
+  { n: 5, color: '#0d47a1', label: '5 (常時使われる/基盤)' },
+];
 
 interface ControlsBarProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
-  completionFilter: string;
-  setCompletionFilter: (val: any) => void;
+  statusFilters: TaskStatus[];
+  setStatusFilters: (val: TaskStatus[]) => void;
   showAdvancedFilters: boolean;
   setShowAdvancedFilters: (val: boolean) => void;
   historyLengthPast: number;
@@ -40,12 +75,36 @@ interface ControlsBarProps {
 }
 
 export const ControlsBar: React.FC<ControlsBarProps> = ({
-  searchQuery, setSearchQuery, completionFilter, setCompletionFilter,
-  showAdvancedFilters, setShowAdvancedFilters, historyLengthPast, historyLengthFuture,
-  handleUndo, handleRedo, saveStatus, cartIdsCount, copyJulesPrompt, copyCartIdsOnly,
-  setCartIds, setToast, minBlocker, setMinBlocker, minDifficulty, setMinDifficulty,
-  minGenerality, setMinGenerality
+  searchQuery,
+  setSearchQuery,
+  statusFilters,
+  setStatusFilters,
+  showAdvancedFilters,
+  setShowAdvancedFilters,
+  historyLengthPast,
+  historyLengthFuture,
+  handleUndo,
+  handleRedo,
+  saveStatus,
+  cartIdsCount,
+  copyJulesPrompt,
+  copyCartIdsOnly,
+  setCartIds,
+  setToast,
+  minBlocker,
+  setMinBlocker,
+  minDifficulty,
+  setMinDifficulty,
+  minGenerality,
+  setMinGenerality,
 }) => {
+  const blockerSubLabel =
+    minBlocker === 1 ? '小 (自己完結)' : minBlocker === 5 ? '大 (完全ブロック)' : `レベル ${minBlocker}`;
+  const difficultySubLabel =
+    minDifficulty === 1 ? '極めて簡単' : minDifficulty === 5 ? '最難関/大設計' : `レベル ${minDifficulty}`;
+  const generalitySubLabel =
+    minGenerality === 1 ? 'ニッチ' : minGenerality === 5 ? '常時使われる' : `レベル ${minGenerality}`;
+
   return (
     <Card
       sx={{
@@ -80,7 +139,13 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             placeholder="タスク名、ID、メモを検索..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ width: { xs: '100%', sm: 280 }, bgcolor: '#141218' }}
+            sx={{
+              width: { xs: '100%', sm: 280 },
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#141218',
+                borderRadius: 2,
+              },
+            }}
             slotProps={{
               input: {
                 startAdornment: (
@@ -93,19 +158,98 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
           />
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+            >
               表示:
             </Typography>
+
+            {/* Incomplete Toggle */}
             <ToggleButtonGroup
-              value={completionFilter}
+              value={statusFilters.includes('incomplete') ? 'incomplete' : null}
               exclusive
-              onChange={(_, val) => { if (val !== null) setCompletionFilter(val); }}
-              sx={{ bgcolor: '#141218', border: '1px solid #49454f', borderRadius: 2 }}
+              onChange={(_, val) => {
+                if (val === 'incomplete') {
+                  setStatusFilters(['incomplete']);
+                }
+              }}
+              sx={{
+                bgcolor: '#141218',
+                border: '1px solid #49454f',
+                borderRadius: 2,
+                overflow: 'hidden',
+                '& .MuiToggleButtonGroup-grouped': {
+                  border: 0,
+                  borderRadius: 0,
+                },
+              }}
             >
-              <ToggleButton value="incomplete" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#4a4458', color: '#e8def8' } }}>未完了</ToggleButton>
-              <ToggleButton value="implemented" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#2e5b44', color: '#c4eed0' } }}>🛠️ 実装済</ToggleButton>
-              <ToggleButton value="tuned" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#5c256b', color: '#f3e5f5' } }}>⚡ パフォ済</ToggleButton>
-              <ToggleButton value="completed" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#386a4f', color: '#c4eed0' } }}>完了</ToggleButton>
+              <ToggleButton
+                value="incomplete"
+                sx={{
+                  px: 1.4,
+                  height: 34,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  '&.Mui-selected': { bgcolor: '#4a4458', color: '#e8def8', '&:hover': { bgcolor: '#3e3849' } },
+                }}
+              >
+                未完了
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {/* Completed / Tuned Multi-select Toggle */}
+            <ToggleButtonGroup
+              value={statusFilters.filter((s) => s !== 'incomplete')}
+              onChange={(_, newValues: TaskStatus[]) => {
+                if (newValues.length === 0) {
+                  setStatusFilters(['incomplete']);
+                } else {
+                  setStatusFilters(newValues);
+                }
+              }}
+              sx={{
+                bgcolor: '#141218',
+                border: '1px solid #49454f',
+                borderRadius: 2,
+                overflow: 'hidden',
+                '& .MuiToggleButtonGroup-grouped': {
+                  border: 0,
+                  borderRadius: 0,
+                  '&:not(:first-of-type)': {
+                    borderLeft: '1px solid #49454f',
+                  },
+                },
+              }}
+            >
+              <ToggleButton
+                value="implemented"
+                sx={{
+                  px: 1.4,
+                  height: 34,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  '&.Mui-selected': { bgcolor: '#2e5b44', color: '#c4eed0', '&:hover': { bgcolor: '#244836' } },
+                }}
+              >
+                🛠️ 実装済
+              </ToggleButton>
+              <ToggleButton
+                value="tuned"
+                sx={{
+                  px: 1.4,
+                  height: 34,
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: 'text.secondary',
+                  '&.Mui-selected': { bgcolor: '#5c256b', color: '#f3e5f5', '&:hover': { bgcolor: '#4a1e56' } },
+                }}
+              >
+                ⚡ パフォ済
+              </ToggleButton>
             </ToggleButtonGroup>
 
             <Tooltip title="詳細フィルター (B/D/G)">
@@ -118,7 +262,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
                   color: showAdvancedFilters ? 'primary.light' : 'text.secondary',
                   border: '1px solid',
                   borderColor: showAdvancedFilters ? 'primary.main' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.08)' }
+                  '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.08)' },
                 }}
               >
                 <TuneIcon fontSize="small" />
@@ -196,6 +340,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             )}
           </Box>
 
+          {/* Jules & ID Copy Button Group */}
           <Box sx={{ display: 'flex', borderRadius: 2, overflow: 'hidden', alignItems: 'stretch' }}>
             <Button
               variant="contained"
@@ -270,8 +415,8 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
           animation: 'fadeIn 0.2s ease-in-out',
           '@keyframes fadeIn': {
             from: { opacity: 0, transform: 'translateY(-10px)' },
-            to: { opacity: 1, transform: 'translateY(0)' }
-          }
+            to: { opacity: 1, transform: 'translateY(0)' },
+          },
         }}
       >
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
@@ -279,142 +424,32 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
             因子フィルター (最小閾値):
           </Typography>
 
-          {/* M3 Segmented Buttons: B */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-            <Box sx={{ minWidth: 90 }}>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.78rem' }}>
-                依存度 (B) &ge; <span style={{ color: '#d0bcff' }}>{minBlocker}</span>
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', display: 'block', lineHeight: 1.1 }}>
-                {minBlocker === 1 ? '小 (自己完結)' : minBlocker === 5 ? '大 (完全ブロック)' : `レベル ${minBlocker}`}
-              </Typography>
-            </Box>
-            <ToggleButtonGroup
-              value={minBlocker}
-              exclusive
-              onChange={(_, val) => { if (val !== null) setMinBlocker(val); }}
-              sx={{ bgcolor: '#141218', border: '1px solid #49454f', borderRadius: 2 }}
-            >
-              {[
-                { n: 1, color: '#66bb6a', label: '1 (最小)' },
-                { n: 2, color: '#9ccc65', label: '2 (低)' },
-                { n: 3, color: '#ffa726', label: '3 (中)' },
-                { n: 4, color: '#ff7043', label: '4 (高)' },
-                { n: 5, color: '#ef5350', label: '5 (最大)' },
-              ].map(({ n, color, label }) => (
-                <ToggleButton
-                  key={n}
-                  value={n}
-                  title={label}
-                  sx={{
-                    minWidth: 32,
-                    height: 30,
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: 'text.secondary',
-                    borderColor: '#49454f',
-                    position: 'relative',
-                    '&.Mui-selected': { bgcolor: color, color: '#141218', fontWeight: 800, '&:hover': { bgcolor: color } },
-                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
-                    '&::after': {
-                      content: '""', position: 'absolute', bottom: 2, left: '20%', right: '20%',
-                      height: 2, borderRadius: 1, bgcolor: color, opacity: minBlocker === n ? 0 : 0.6,
-                    }
-                  }}
-                >
-                  {n}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </Box>
+          <FactorFilterControl
+            name="依存度"
+            symbol="B"
+            value={minBlocker}
+            subLabel={blockerSubLabel}
+            options={BLOCKER_OPTIONS}
+            onChange={setMinBlocker}
+          />
 
-          {/* M3 Segmented Buttons: D */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-            <Box sx={{ minWidth: 90 }}>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.78rem' }}>
-                難易度 (D) &ge; <span style={{ color: '#d0bcff' }}>{minDifficulty}</span>
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', display: 'block', lineHeight: 1.1 }}>
-                {minDifficulty === 1 ? '極めて簡単' : minDifficulty === 5 ? '最難関/大設計' : `レベル ${minDifficulty}`}
-              </Typography>
-            </Box>
-            <ToggleButtonGroup
-              value={minDifficulty}
-              exclusive
-              onChange={(_, val) => { if (val !== null) setMinDifficulty(val); }}
-              sx={{ bgcolor: '#141218', border: '1px solid #49454f', borderRadius: 2 }}
-            >
-              {[
-                { n: 1, color: '#66bb6a', label: '1 (半日/極めて簡単)' },
-                { n: 2, color: '#9ccc65', label: '2 (やや容易)' },
-                { n: 3, color: '#ffa726', label: '3 (中程度)' },
-                { n: 4, color: '#ff7043', label: '4 (難関)' },
-                { n: 5, color: '#ef5350', label: '5 (最難関/大設計)' },
-              ].map(({ n, color, label }) => (
-                <ToggleButton
-                  key={n}
-                  value={n}
-                  title={label}
-                  sx={{
-                    minWidth: 32, height: 30, fontSize: '0.8rem', fontWeight: 700,
-                    color: 'text.secondary', borderColor: '#49454f', position: 'relative',
-                    '&.Mui-selected': { bgcolor: color, color: '#141218', fontWeight: 800, '&:hover': { bgcolor: color } },
-                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
-                    '&::after': {
-                      content: '""', position: 'absolute', bottom: 2, left: '20%', right: '20%',
-                      height: 2, borderRadius: 1, bgcolor: color, opacity: minDifficulty === n ? 0 : 0.6,
-                    }
-                  }}
-                >
-                  {n}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </Box>
+          <FactorFilterControl
+            name="難易度"
+            symbol="D"
+            value={minDifficulty}
+            subLabel={difficultySubLabel}
+            options={DIFFICULTY_OPTIONS}
+            onChange={setMinDifficulty}
+          />
 
-          {/* M3 Segmented Buttons: G */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-            <Box sx={{ minWidth: 90 }}>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.78rem' }}>
-                汎用性 (G) &ge; <span style={{ color: '#d0bcff' }}>{minGenerality}</span>
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.68rem', display: 'block', lineHeight: 1.1 }}>
-                {minGenerality === 1 ? 'ニッチ' : minGenerality === 5 ? '常時使われる' : `レベル ${minGenerality}`}
-              </Typography>
-            </Box>
-            <ToggleButtonGroup
-              value={minGenerality}
-              exclusive
-              onChange={(_, val) => { if (val !== null) setMinGenerality(val); }}
-              sx={{ bgcolor: '#141218', border: '1px solid #49454f', borderRadius: 2 }}
-            >
-              {[
-                { n: 1, color: '#90caf9', label: '1 (ニッチ/稀)' },
-                { n: 2, color: '#42a5f5', label: '2 (限定的)' },
-                { n: 3, color: '#1e88e5', label: '3 (通常)' },
-                { n: 4, color: '#1565c0', label: '4 (頻繁に利用)' },
-                { n: 5, color: '#0d47a1', label: '5 (常時使われる/基盤)' },
-              ].map(({ n, color, label }) => (
-                <ToggleButton
-                  key={n}
-                  value={n}
-                  title={label}
-                  sx={{
-                    minWidth: 32, height: 30, fontSize: '0.8rem', fontWeight: 700,
-                    color: 'text.secondary', borderColor: '#49454f', position: 'relative',
-                    '&.Mui-selected': { bgcolor: color, color: '#ffffff', fontWeight: 800, '&:hover': { bgcolor: color } },
-                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
-                    '&::after': {
-                      content: '""', position: 'absolute', bottom: 2, left: '20%', right: '20%',
-                      height: 2, borderRadius: 1, bgcolor: color, opacity: minGenerality === n ? 0 : 0.6,
-                    }
-                  }}
-                >
-                  {n}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </Box>
+          <FactorFilterControl
+            name="汎用性"
+            symbol="G"
+            value={minGenerality}
+            subLabel={generalitySubLabel}
+            options={GENERALITY_OPTIONS}
+            onChange={setMinGenerality}
+          />
         </Box>
       </Box>
     </Card>

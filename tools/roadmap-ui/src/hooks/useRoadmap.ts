@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useDeferredValue } from "react";
 import type { RoadmapTask, TaskStatus, ToastState } from "../types";
 import julesPromptTemplate from "../templates/jules-prompt-template.md?raw";
 
@@ -24,14 +24,19 @@ export function useRoadmap() {
   const [minDifficulty, setMinDifficulty] = useState<number>(1);
   const [minGenerality, setMinGenerality] = useState<number>(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
-  const [completionFilter, setCompletionFilter] = useState<"incomplete" | "implemented" | "tuned" | "completed">(
-    "incomplete",
-  );
+  const [statusFilters, setStatusFilters] = useState<TaskStatus[]>(["incomplete"]);
 
   const [toast, setToast] = useState<ToastState>({
     open: false,
     message: "",
   });
+
+  // Retained IDs when toggling between implemented and tuned in filtered views
+  const [retainedIds, setRetainedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setRetainedIds(new Set());
+  }, [statusFilters]);
 
   // AI Cart Feature
   const [cartIds, setCartIds] = useState<string[]>([]);
@@ -170,12 +175,15 @@ export function useRoadmap() {
     }
 
     const willBeFilteredOut =
-      (completionFilter === "incomplete" && (newStatus === "implemented" || newStatus === "tuned")) ||
-      (completionFilter === "implemented" && newStatus !== "implemented") ||
-      (completionFilter === "tuned" && newStatus !== "tuned") ||
-      (completionFilter === "completed" && newStatus === "incomplete");
+      (statusFilters.includes("incomplete") && newStatus !== "incomplete") ||
+      (!statusFilters.includes("incomplete") && newStatus === "incomplete");
 
     if (willBeFilteredOut) {
+      setRetainedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       setGracePeriodIds((prev) => new Set(prev).add(id));
 
       if (exitTimers.current[id]) clearTimeout(exitTimers.current[id]);
@@ -196,6 +204,9 @@ export function useRoadmap() {
         }, 350);
       }, 4000); // 4 seconds grace period
     } else {
+      if (!statusFilters.includes("incomplete")) {
+        setRetainedIds((prev) => new Set(prev).add(id));
+      }
       if (exitTimers.current[id]) {
         clearTimeout(exitTimers.current[id]);
         delete exitTimers.current[id];
@@ -249,13 +260,19 @@ export function useRoadmap() {
     return 4;
   };
 
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredStatusFilters = useDeferredValue(statusFilters);
+  const deferredMinBlocker = useDeferredValue(minBlocker);
+  const deferredMinDifficulty = useDeferredValue(minDifficulty);
+  const deferredMinGenerality = useDeferredValue(minGenerality);
+
   const filteredTasks = useMemo(() => {
     return tasks
       .filter((t) => {
         const matchesSearch =
-          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          t.notes.toLowerCase().includes(searchQuery.toLowerCase());
+          t.title.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
+          t.id.toLowerCase().includes(deferredSearchQuery.toLowerCase()) ||
+          t.notes.toLowerCase().includes(deferredSearchQuery.toLowerCase());
 
         const taskStatus = t.status || (t.completed ? "implemented" : "incomplete");
         const isExiting = exitingIds.has(t.id);
@@ -263,24 +280,33 @@ export function useRoadmap() {
         const matchesCompletion =
           isExiting ||
           gracePeriodIds.has(t.id) ||
-          (completionFilter === "incomplete" && taskStatus !== "implemented" && taskStatus !== "tuned") ||
-          (completionFilter === "implemented" && taskStatus === "implemented") ||
-          (completionFilter === "tuned" && taskStatus === "tuned") ||
-          (completionFilter === "completed" && taskStatus !== "incomplete");
+          (deferredStatusFilters.includes("incomplete") && taskStatus === "incomplete") ||
+          (deferredStatusFilters.includes("implemented") && (taskStatus === "implemented" || retainedIds.has(t.id))) ||
+          (deferredStatusFilters.includes("tuned") && (taskStatus === "tuned" || retainedIds.has(t.id)));
 
         return (
           matchesSearch &&
           matchesCompletion &&
-          t.blocker >= minBlocker &&
-          t.difficulty >= minDifficulty &&
-          t.generality >= minGenerality
+          t.blocker >= deferredMinBlocker &&
+          t.difficulty >= deferredMinDifficulty &&
+          t.generality >= deferredMinGenerality
         );
       })
       .map((t) => ({
         ...t,
         score: t.blocker * 4 + (6 - t.difficulty) * 3 + t.generality * 2,
       }));
-  }, [tasks, searchQuery, minBlocker, minDifficulty, minGenerality, completionFilter, exitingIds, gracePeriodIds]);
+  }, [
+    tasks,
+    deferredSearchQuery,
+    deferredMinBlocker,
+    deferredMinDifficulty,
+    deferredMinGenerality,
+    deferredStatusFilters,
+    exitingIds,
+    gracePeriodIds,
+    retainedIds,
+  ]);
 
   const tasksByTier = useMemo(() => {
     const grouped: Record<number, RoadmapTask[]> = { 1: [], 2: [], 3: [], 4: [] };
@@ -374,8 +400,8 @@ export function useRoadmap() {
     setMinGenerality,
     showAdvancedFilters,
     setShowAdvancedFilters,
-    completionFilter,
-    setCompletionFilter,
+    statusFilters,
+    setStatusFilters,
     toast,
     setToast,
     cartIds,
