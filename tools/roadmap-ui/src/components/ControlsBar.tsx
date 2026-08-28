@@ -103,8 +103,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
               <ToggleButton value="incomplete" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#4a4458', color: '#e8def8' } }}>未完了</ToggleButton>
               <ToggleButton value="implemented" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#2e5b44', color: '#c4eed0' } }}>🛠️ 実装済</ToggleButton>
               <ToggleButton value="tuned" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#5c256b', color: '#f3e5f5' } }}>⚡ パフォ済</ToggleButton>
-              <ToggleButton value="completed" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#386a4f', color: '#c4eed0' } }}>完了全般</ToggleButton>
-              <ToggleButton value="all" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#4a4458', color: '#e8def8' } }}>すべて</ToggleButton>
+              <ToggleButton value="completed" sx={{ px: 1.2, height: 34, fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', borderColor: '#49454f', '&.Mui-selected': { bgcolor: '#386a4f', color: '#c4eed0' } }}>完了</ToggleButton>
             </ToggleButtonGroup>
 
             <Tooltip title="詳細フィルター (B/D/G)">

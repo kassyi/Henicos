@@ -25,7 +25,7 @@ export function useRoadmap() {
   const [minGenerality, setMinGenerality] = useState<number>(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
   const [completionFilter, setCompletionFilter] = useState<
-    "all" | "incomplete" | "implemented" | "tuned" | "completed"
+    "incomplete" | "implemented" | "tuned" | "completed"
   >("incomplete");
 
   const [toast, setToast] = useState<ToastState>({
@@ -170,7 +170,7 @@ export function useRoadmap() {
     }
 
     const willBeFilteredOut =
-      (completionFilter === "incomplete" && newStatus !== "incomplete") ||
+      (completionFilter === "incomplete" && (newStatus === "implemented" || newStatus === "tuned")) ||
       (completionFilter === "implemented" && newStatus !== "implemented") ||
       (completionFilter === "tuned" && newStatus !== "tuned") ||
       (completionFilter === "completed" && newStatus === "incomplete");
@@ -263,8 +263,7 @@ export function useRoadmap() {
         const matchesCompletion =
           isExiting ||
           gracePeriodIds.has(t.id) ||
-          completionFilter === "all" ||
-          (completionFilter === "incomplete" && taskStatus === "incomplete") ||
+          (completionFilter === "incomplete" && taskStatus !== "implemented" && taskStatus !== "tuned") ||
           (completionFilter === "implemented" && taskStatus === "implemented") ||
           (completionFilter === "tuned" && taskStatus === "tuned") ||
           (completionFilter === "completed" && taskStatus !== "incomplete");
