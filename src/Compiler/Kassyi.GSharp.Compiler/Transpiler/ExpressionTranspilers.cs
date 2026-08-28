@@ -159,7 +159,8 @@ internal static class ExpressionTranspilers
     private static readonly ImmutableArray<Rules.IInvocationTranspilerRule> s_invocationRules =
         ImmutableArray.Create<Rules.IInvocationTranspilerRule>(
             Rules.BclIntrinsicTranspilerRule.Instance,
-            Rules.GpuMacroTranspilerRule.Instance
+            Rules.GpuMacroTranspilerRule.Instance,
+            Rules.ExtensionMethodTranspilerRule.Instance
         );
 
 

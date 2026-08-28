@@ -1,3 +1,7 @@
+using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Tests.Helpers;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
@@ -38,11 +42,165 @@ public class SYN_39_45_OperatorsAndInterfacesTests
     {
     }
 
-    [Fact(Skip = "未実装: SYN-44 (拡張メソッド this 引数)")]
+    [Fact]
     [Trait("FeatureId", "SYN-44")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN44_ExtensionMethods_Transpilation()
+    public void Test_SYN44_ExtensionMethods_HappyPath_StaticInvocationAndRefModifiers()
     {
+        var source = """
+            using Kassyi.GSharp.Core;
+
+            public struct DummyStruct_SYN44
+            {
+                public int Value;
+            }
+
+            public static class DummyExtensions_SYN44
+            {
+                [GpuDeviceFunction]
+                public static int AddVal(this ref DummyStruct_SYN44 s, int amount)
+                {
+                    return s.Value + amount;
+                }
+
+                [GpuDeviceFunction]
+                public static int GetVal(this DummyStruct_SYN44 s)
+                {
+                    return s.Value;
+                }
+            }
+
+            public class KernelClass_SYN44
+            {
+                [GpuKernel]
+                public static void TestKernel(ref DummyStruct_SYN44 paramStruct)
+                {
+                    DummyStruct_SYN44 localStruct = default;
+                    int res1 = localStruct.AddVal(10);
+                    int res2 = paramStruct.AddVal(20);
+                    int res3 = localStruct.GetVal();
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .First(m => m.Identifier.Text == "TestKernel");
+
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, model);
+
+        Assert.Contains("AddVal(&localStruct,10)", cudaSource);
+        Assert.Contains("AddVal(paramStruct,20)", cudaSource);
+        Assert.Contains("GetVal(localStruct)", cudaSource);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-44")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN44_ExtensionMethods_SadPath_MissingGpuDeviceFunctionAttribute()
+    {
+        var source = """
+            using Kassyi.GSharp.Core;
+
+            public struct DummyStruct_SYN44_Sad
+            {
+                public int Value;
+            }
+
+            public static class NonGpuExtensions_SYN44
+            {
+                // Missing [GpuDeviceFunction] attribute
+                public static int UnsupportedExt(this DummyStruct_SYN44_Sad s)
+                {
+                    return s.Value;
+                }
+            }
+
+            public class KernelClass_SYN44_Sad
+            {
+                [GpuKernel]
+                public static void TestKernelSad(ref DummyStruct_SYN44_Sad paramStruct)
+                {
+                    int res = paramStruct.UnsupportedExt();
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .First(m => m.Identifier.Text == "TestKernelSad");
+
+        var diagnostics = new List<Diagnostic>();
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, model, diagnostics.Add);
+
+        var diag = Assert.Single(diagnostics);
+        Assert.Equal("GSH0003", diag.Id);
+        Assert.Equal(DiagnosticSeverity.Error, diag.Severity);
+        Assert.Contains("UnsupportedExt", diag.GetMessage());
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-44")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN44_ExtensionMethods_EdgeCase_GenericTypeInferenceAndChaining()
+    {
+        var source = """
+            using Kassyi.GSharp.Core;
+
+            public struct ChainNode_SYN44
+            {
+                public int Value;
+            }
+
+            public static class GenericChainExtensions_SYN44
+            {
+                [GpuDeviceFunction]
+                public static ChainNode_SYN44 Increment(this ChainNode_SYN44 node)
+                {
+                    node.Value += 1;
+                    return node;
+                }
+
+                [GpuDeviceFunction]
+                public static ChainNode_SYN44 DoubleValue(this ChainNode_SYN44 node)
+                {
+                    node.Value *= 2;
+                    return node;
+                }
+
+                [GpuDeviceFunction]
+                public static T Identity<T>(this T item, T defaultVal)
+                {
+                    return item;
+                }
+            }
+
+            public class KernelClass_SYN44_Edge
+            {
+                [GpuKernel]
+                public static void TestKernelEdge(ref ChainNode_SYN44 node)
+                {
+                    ChainNode_SYN44 chainedResult = node.Increment().DoubleValue();
+                    int num = 42;
+                    int genResult = num.Identity(100);
+                }
+            }
+            """;
+
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .First(m => m.Identifier.Text == "TestKernelEdge");
+
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, model);
+
+        Assert.Contains("DoubleValue(Increment(node))", cudaSource);
+        Assert.Contains("Identity<int>(num,100)", cudaSource);
     }
 
     [Fact(Skip = "未実装: SYN-45 (Nullable 値型 uint?, Nullable<T>)")]
