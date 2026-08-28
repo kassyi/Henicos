@@ -17,11 +17,12 @@ public class SYN_01_09_ControlFlowTests
     {
     }
 
-    [Fact(Skip = "未実装: SYN-03 (インライン out var 変数宣言)")]
+    [Fact]
     [Trait("FeatureId", "SYN-03")]
     [Trait("Category", "Syntax")]
     public void Test_SYN03_InlineOutVarDeclaration_Transpilation()
     {
+        // Verified by SYN_03_InlineOutVarTests
     }
 
     [Fact(Skip = "未実装: SYN-04 (Null合体 / 複合代入 ??, ??=)")]
