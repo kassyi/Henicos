@@ -1,13 +1,37 @@
 
+using Kassyi.GSharp.Compiler.Transpiler;
+
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GSH_01_05_TranspilerIssuesTests
 {
-    [Fact(Skip = "未実装: GSH-01 (三項演算子の複雑式展開)")]
+    [Fact]
     [Trait("FeatureId", "GSH-01")]
     [Trait("Category", "Transpiler")]
-    public void Test_GSH01_ComplexConditionalExpression()
+    public void Test_GSH01_ComplexConditionalExpression_EdgeCase_NestedAndPrecedence()
     {
+        var source = """
+        using Kassyi.GSharp.Core;
+
+        public class TestClass_GSH01
+        {
+            [GpuKernel]
+            public static void Kernel(int x, int y, int z, int[] outVal)
+            {
+                outVal[0] = x > 0 ? (y > 0 ? 1 : 2) : (z > 0 ? 3 : 4);
+            }
+        }
+        """;
+
+        var tree = CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp11));
+        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(tree);
+        var model = compilation.GetSemanticModel(tree);
+        var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
+
+        var cuda = MethodTranspiler.GenerateCudaSource(methodDecl, model);
+
+        Assert.Contains("Kernel", cuda);
+        Assert.NotNull(cuda);
     }
 
     [Fact(Skip = "未実装: GSH-02 (タプル構文の一般化)")]
