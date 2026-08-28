@@ -306,10 +306,10 @@
     "blocker": 5,
     "generality": 5,
     "score": 42,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 2,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "GSH-02",
@@ -414,10 +414,10 @@
     "blocker": 5,
     "generality": 5,
     "score": 45,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 1,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "GEN-02",
@@ -630,10 +630,10 @@
     "blocker": 4,
     "generality": 5,
     "score": 38,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 2,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "SYN-05",
@@ -678,10 +678,10 @@
     "blocker": 5,
     "generality": 5,
     "score": 36,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 4,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "SYN-09",
@@ -1098,10 +1098,10 @@
     "blocker": 4,
     "generality": 5,
     "score": 38,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 2,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "SYN-45",
@@ -1158,10 +1158,10 @@
     "blocker": 4,
     "generality": 5,
     "score": 38,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 2,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "SYN-50",
@@ -1606,5 +1606,17 @@
     "notes": "",
     "difficulty": 1,
     "status": "incomplete"
+  },
+  {
+    "title": "Vector型の演算子オーバーロードと数学関数の対応",
+    "score": 30,
+    "blocker": 3,
+    "generality": 3,
+    "id": "GEN-19",
+    "status": "incomplete",
+    "difficulty": 3,
+    "domain": "GEN",
+    "completed": false,
+    "notes": ""
   }
 ]
