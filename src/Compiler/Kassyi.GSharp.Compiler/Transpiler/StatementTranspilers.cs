@@ -174,11 +174,16 @@ internal static class StatementTranspilers
 
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        context.Writer.AppendKeyword("return");
         if (node.Expression != null)
         {
+            DeclarationTranspilers.HoistDeclarationExpressions(node.Expression, ref context);
+            context.Writer.AppendKeyword("return");
             context.Writer.AppendSpace();
             context.Visitor.Visit(node.Expression);
+        }
+        else
+        {
+            context.Writer.AppendKeyword("return");
         }
 
         context.Writer.AppendSemiColon();

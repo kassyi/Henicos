@@ -19,8 +19,8 @@ public class SYN_03_InlineOutVarSadPathTests
         var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
-        // Verification: Roslyn/Generator catches duplicate variable name error without transpiler crash
+        // Verification: Roslyn/Generator catches duplicate variable name error (CS0128) without transpiler crash
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error && (d.Id == "CS0128" || d.Id == "CS0136"));
     }
 }

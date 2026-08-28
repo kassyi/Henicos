@@ -19,8 +19,8 @@ public class SYN_17_TargetTypedNewSadPathTests
         var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
-        // Verification: Target type inference failure reports diagnostic error without transpiler crash
+        // Verification: Target type inference failure reports diagnostic error (CS8754) without transpiler crash
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Id == "CS8754");
     }
 }
