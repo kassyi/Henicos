@@ -3,85 +3,137 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Maps Roslyn type symbols to CUDA C++ type strings, pointers, and memory alignment layouts.</summary>
 internal static class CudaTypeMapper
 {
-    public static string MapType(ITypeSymbol? typeSymbol)
+    private static readonly (string? CudaName, byte Size)[] s_specialTypes =
+        new (string?, byte)[(int)SpecialType.System_Double + 1];
+
+    static CudaTypeMapper()
     {
-        if (typeSymbol == null)
-        {
-            return "void";
-        }
+        register(SpecialType.System_Void, TypeConstants.CudaTypes.Void, 0);
+        register(SpecialType.System_Boolean, TypeConstants.CudaTypes.Bool, 1);
+        register(SpecialType.System_Byte, TypeConstants.CudaTypes.UnsignedChar, 1);
+        register(SpecialType.System_SByte, TypeConstants.CudaTypes.Char, 1);
+        register(SpecialType.System_Int16, TypeConstants.CudaTypes.Short, 2);
+        register(SpecialType.System_UInt16, TypeConstants.CudaTypes.UnsignedShort, 2);
+        register(SpecialType.System_Int32, TypeConstants.CudaTypes.Int, 4);
+        register(SpecialType.System_UInt32, TypeConstants.CudaTypes.UnsignedInt, 4);
+        register(SpecialType.System_Int64, TypeConstants.CudaTypes.LongLong, 8);
+        register(SpecialType.System_UInt64, TypeConstants.CudaTypes.UnsignedLongLong, 8);
+        register(SpecialType.System_Single, TypeConstants.CudaTypes.Float, 4);
+        register(SpecialType.System_Double, TypeConstants.CudaTypes.Double, 8);
+        return;
 
-        if (typeSymbol is IArrayTypeSymbol arrayType)
-        {
-            return MapType(arrayType.ElementType) + "*";
-        }
-
-        if (typeSymbol is IPointerTypeSymbol pointerType)
-        {
-            return MapType(pointerType.PointedAtType) + "*";
-        }
-
-        if (typeSymbol.Name == "GpuBigIntRef")
-        {
-            return "unsigned int*";
-        }
-
-        if (typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && typeSymbol is INamedTypeSymbol namedType)
-        {
-            return $"System_Nullable<{MapType(namedType.TypeArguments[0])}>";
-        }
-
-        return typeSymbol.SpecialType switch
-        {
-            SpecialType.System_Void => "void",
-            SpecialType.System_Boolean => "bool",
-            SpecialType.System_Byte => "unsigned char",
-            SpecialType.System_SByte => "char",
-            SpecialType.System_Int16 => "short",
-            SpecialType.System_UInt16 => "unsigned short",
-            SpecialType.System_Int32 => "int",
-            SpecialType.System_UInt32 => "unsigned int",
-            SpecialType.System_Int64 => "long long",
-            SpecialType.System_UInt64 => "unsigned long long",
-            SpecialType.System_Single => "float",
-            SpecialType.System_Double => "double",
-            _ => GetFullyQualifiedCppName(typeSymbol)
-        };
+        void register(SpecialType type, string cudaName, byte size) =>
+            s_specialTypes[(int)type] = (cudaName, size);
     }
 
-    public static string GetFullyQualifiedCppName(ISymbol symbol)
+    public static void AppendType(this ref SourceWriter writer, ITypeSymbol? typeSymbol)
     {
-        // Avoid string.Replace in hot paths by building the name directly
-        if (symbol.ContainingSymbol != null &&
-            !(symbol.ContainingSymbol is INamespaceSymbol { IsGlobalNamespace: true }))
+        switch (typeSymbol)
         {
-            return GetFullyQualifiedCppName(symbol.ContainingSymbol!) + "_" + symbol.Name;
+            case null:
+                writer.Append(TypeConstants.CudaTypes.Void);
+                return;
+            // 1. Indirection Types (Arrays & Pointers)
+            case IArrayTypeSymbol array:
+                writer.AppendType(array.ElementType);
+                writer.Append("*");
+                return;
+            case IPointerTypeSymbol pointer:
+                writer.AppendType(pointer.PointedAtType);
+                writer.Append("*");
+                return;
         }
 
-        return symbol.Name;
+        // 2. Primitive / Special Types (O(1) table lookup)
+        if (TryGetSpecialTypeName(typeSymbol.SpecialType, out var specialName))
+        {
+            writer.Append(specialName);
+            return;
+        }
+
+        // 3. Named Types (Generics, Framework Types, Vectors, Structs)
+        if (typeSymbol is INamedTypeSymbol namedType)
+        {
+            if (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            {
+                writer.Append("System_Nullable<");
+                writer.AppendType(namedType.TypeArguments[0]);
+                writer.Append(">");
+                return;
+            }
+
+            if (namedType.Name == TypeConstants.GpuBigIntRefType)
+            {
+                writer.Append(TypeConstants.CudaTypes.UnsignedIntPtr);
+                return;
+            }
+
+            if (TryGetVectorTypeName(namedType, out var vectorName))
+            {
+                writer.Append(vectorName);
+                return;
+            }
+        }
+
+        // 4. Fallback: User Defined Structs / Custom Types
+        writer.AppendFullyQualifiedCppName(typeSymbol);
+    }
+
+    private static bool TryGetSpecialTypeName(SpecialType specialType, out string cudaName)
+    {
+        if ((uint)specialType < (uint)s_specialTypes.Length &&
+            s_specialTypes[(int)specialType].CudaName is { } name)
+        {
+            cudaName = name;
+            return true;
+        }
+
+        cudaName = string.Empty;
+        return false;
+    }
+
+    private static bool TryGetVectorTypeName(ITypeSymbol typeSymbol, out string cudaName)
+    {
+        if (typeSymbol.IsSystemNumericsVector())
+        {
+            cudaName = typeSymbol.Name switch
+            {
+                TypeConstants.Vector2Type => TypeConstants.CudaTypes.Float2,
+                TypeConstants.Vector3Type => TypeConstants.CudaTypes.Float3,
+                TypeConstants.Vector4Type => TypeConstants.CudaTypes.Float4,
+                _ => string.Empty
+            };
+            return cudaName.Length > 0;
+        }
+
+        cudaName = string.Empty;
+        return false;
+    }
+
+    public static void AppendFullyQualifiedCppName(this ref SourceWriter writer, ISymbol symbol)
+    {
+        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            return;
+        }
+
+        var parent = symbol.ContainingSymbol;
+        if (parent != null && parent is not INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            writer.AppendFullyQualifiedCppName(parent);
+            writer.Append('_');
+        }
+
+        writer.Append(symbol.Name);
     }
 
     public static int GetApproximateSize(ITypeSymbol typeSymbol) => GetSizeAndAlignment(typeSymbol).Size;
 
     private static (int Size, int Alignment) GetSizeAndAlignment(ITypeSymbol typeSymbol)
     {
-        if (typeSymbol.SpecialType != SpecialType.None)
+        if (TryGetSpecialTypeSize(typeSymbol.SpecialType, out var specialSize))
         {
-            var size = typeSymbol.SpecialType switch
-            {
-                SpecialType.System_Boolean => 1,
-                SpecialType.System_Byte => 1,
-                SpecialType.System_SByte => 1,
-                SpecialType.System_Int16 => 2,
-                SpecialType.System_UInt16 => 2,
-                SpecialType.System_Int32 => 4,
-                SpecialType.System_UInt32 => 4,
-                SpecialType.System_Single => 4,
-                SpecialType.System_Int64 => 8,
-                SpecialType.System_UInt64 => 8,
-                SpecialType.System_Double => 8,
-                _ => 4
-            };
-            return (size, size);
+            return (specialSize, specialSize);
         }
 
         if (typeSymbol is not INamedTypeSymbol named || named.TypeKind != TypeKind.Struct)
@@ -89,8 +141,8 @@ internal static class CudaTypeMapper
             return (8, 8); // arrays/pointers
         }
 
-        int currentOffset = 0;
-        int maxAlignment = 1;
+        var currentOffset = 0;
+        var maxAlignment = 1;
 
         foreach (var field in named.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
         {
@@ -118,33 +170,70 @@ internal static class CudaTypeMapper
         return (currentOffset == 0 ? 1 : currentOffset, maxAlignment);
     }
 
-    public static (string CppType, bool IsPointer) GetParameterCppType(ParameterSyntax p, ITypeSymbol? typeSymbol)
+    private static bool TryGetSpecialTypeSize(SpecialType specialType, out byte size)
     {
-        var cppType = MapType(typeSymbol);
-        var isPointer = false;
-
-        if (typeSymbol is { TypeKind: TypeKind.Array })
+        if ((uint)specialType < (uint)s_specialTypes.Length &&
+            s_specialTypes[(int)specialType].Size is var s and > 0)
         {
-            cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "* __restrict__";
+            size = s;
+            return true;
         }
+
+        size = 0;
+        return false;
+    }
+
+    public static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameterCppType(
+        this ref SourceWriter writer, ParameterSyntax p, ITypeSymbol? typeSymbol)
+    {
+        var isRefPointer = false;
+        var isIn = false;
+        var isRefOut = false;
 
         foreach (var m in p.Modifiers)
         {
             if (m.IsKind(SyntaxKind.InKeyword))
             {
-                cppType = $"const {cppType}&";
-                break;
+                isIn = true;
             }
 
             if (m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword))
             {
-                cppType += "*";
-                isPointer = true;
-                break;
+                isRefPointer = true;
+                isRefOut = true;
             }
         }
 
-        return (cppType, isPointer);
+        if (isIn)
+        {
+            writer.Append("const ");
+        }
+
+        var isPointerType = typeSymbol is IPointerTypeSymbol;
+        var hasRestrict = false;
+
+        if (typeSymbol is { TypeKind: TypeKind.Array })
+        {
+            writer.AppendType(((IArrayTypeSymbol)typeSymbol).ElementType);
+            writer.Append("* __restrict__");
+            isPointerType = true;
+            hasRestrict = true;
+        }
+        else
+        {
+            writer.AppendType(typeSymbol);
+        }
+
+        if (isIn)
+        {
+            writer.Append("&");
+        }
+        else if (isRefOut)
+        {
+            writer.Append("*");
+            isPointerType = true;
+        }
+
+        return (isRefPointer, isPointerType, hasRestrict);
     }
 }
-

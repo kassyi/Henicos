@@ -16,15 +16,15 @@ internal static class DeclarationTranspilers
     }
 
     private readonly struct VariableMapping(
-        string cppType,
-        string baseCppType,
+        ITypeSymbol? typeSymbol,
+        bool isVar,
         bool isPointer,
-        bool shouldSplitStatements)
+        bool shouldSplit)
     {
-        public string CppType { get; } = cppType;
-        public string BaseCppType { get; } = baseCppType;
+        public ITypeSymbol? TypeSymbol { get; } = typeSymbol;
+        public bool IsVar { get; } = isVar;
         public bool IsPointer { get; } = isPointer;
-        public bool ShouldSplitStatements { get; } = shouldSplitStatements;
+        public bool ShouldSplit { get; } = shouldSplit;
     }
 
     public static void TranspileLocalDeclarationStatement(LocalDeclarationStatementSyntax node,
@@ -32,7 +32,7 @@ internal static class DeclarationTranspilers
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
         if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
-            typeSymbol.ContainingNamespace.ToDisplayString() == TypeConstants.CoreNamespace)
+            typeSymbol.ContainingNamespace.IsCoreNamespace())
         {
             ProcessSharedMemoryDeclaration(node, (INamedTypeSymbol)typeSymbol, ref context);
             return;
@@ -47,7 +47,6 @@ internal static class DeclarationTranspilers
         INamedTypeSymbol typeSymbol, ref TranspileContext context)
     {
         var typeArg = typeSymbol.TypeArguments[0];
-        var cppElementType = CudaTypeMapper.MapType(typeArg);
 
         for (var i = 0; i < node.Declaration.Variables.Count; i++)
         {
@@ -59,11 +58,11 @@ internal static class DeclarationTranspilers
 
             if (alloc.Value.IsDynamic)
             {
-                WriteDynamicSharedMemory(alloc.Value, cppElementType, node, i, ref context);
+                WriteDynamicSharedMemory(alloc.Value, typeArg, node, i, ref context);
             }
             else
             {
-                WriteStaticSharedMemory(alloc.Value, cppElementType, typeArg, node, i, ref context);
+                WriteStaticSharedMemory(alloc.Value, typeArg, node, i, ref context);
             }
         }
     }
@@ -79,7 +78,7 @@ internal static class DeclarationTranspilers
         }
         else if (declarator.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
         {
-            sizeArg = implCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+            sizeArg = implCreation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
         }
 
         if (sizeArg == null)
@@ -95,14 +94,14 @@ internal static class DeclarationTranspilers
         );
     }
 
-    private static void WriteStaticSharedMemory(SharedMemoryAllocation alloc, string cppElementType,
+    private static void WriteStaticSharedMemory(SharedMemoryAllocation alloc,
         ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i, ref TranspileContext context)
     {
         CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
 
         context.Writer.AppendKeyword("__shared__");
         context.Writer.AppendSpace();
-        context.Writer.Append(cppElementType);
+        context.Writer.AppendType(typeArg);
         context.Writer.AppendSpace();
         context.Writer.Append(alloc.Declarator.Identifier.Text);
         using (context.Writer.Brackets())
@@ -129,12 +128,12 @@ internal static class DeclarationTranspilers
         }
     }
 
-    private static void WriteDynamicSharedMemory(SharedMemoryAllocation alloc, string cppElementType,
+    private static void WriteDynamicSharedMemory(SharedMemoryAllocation alloc, ITypeSymbol typeArg,
         LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
     {
         EnsureDynamicSharedMemoryBase(ref context);
-        AlignDynamicSharedMemoryOffset(cppElementType, ref context.Writer);
-        EmitDynamicSharedMemoryPointerAndAdvance(alloc, cppElementType, ref context);
+        AlignDynamicSharedMemoryOffset(typeArg, ref context.Writer);
+        EmitDynamicSharedMemoryPointerAndAdvance(alloc, typeArg, ref context);
 
         if (index < node.Declaration.Variables.Count - 1)
         {
@@ -156,7 +155,7 @@ internal static class DeclarationTranspilers
         context.HasEmittedDynamicSmemBase = true;
     }
 
-    private static void AlignDynamicSharedMemoryOffset(string cppElementType, ref SourceWriter writer)
+    private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref SourceWriter writer)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
         writer.Append("__smem_offset");
@@ -168,7 +167,7 @@ internal static class DeclarationTranspilers
             writer.Append("alignof");
             using (writer.Parentheses())
             {
-                writer.Append(cppElementType);
+                writer.AppendType(typeArg);
             }
 
             writer.AppendOperator("-");
@@ -182,7 +181,7 @@ internal static class DeclarationTranspilers
             writer.Append("alignof");
             using (writer.Parentheses())
             {
-                writer.Append(cppElementType);
+                writer.AppendType(typeArg);
             }
 
             writer.AppendOperator("-");
@@ -194,13 +193,16 @@ internal static class DeclarationTranspilers
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
-        string cppElementType, ref TranspileContext context)
+        ITypeSymbol typeArg, ref TranspileContext context)
     {
-        context.Writer.Append($"{cppElementType}* {alloc.Declarator.Identifier.Text}");
+        context.Writer.AppendType(typeArg);
+        context.Writer.Append("* ");
+        context.Writer.Append(alloc.Declarator.Identifier.Text);
         context.Writer.AppendOperator("=");
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append($"{cppElementType}*");
+            context.Writer.AppendType(typeArg);
+            context.Writer.Append("*");
         }
 
         using (context.Writer.Parentheses())
@@ -220,7 +222,9 @@ internal static class DeclarationTranspilers
         }
 
         context.Writer.AppendOperator("*");
-        context.Writer.Append($"sizeof({cppElementType})");
+        context.Writer.Append("sizeof(");
+        context.Writer.AppendType(typeArg);
+        context.Writer.Append(")");
         context.Writer.AppendSemiColon();
     }
 
@@ -231,24 +235,23 @@ internal static class DeclarationTranspilers
 
         var mapping = AnalyzeVariableMapping(node, typeSymbol);
 
-        if (mapping.ShouldSplitStatements)
+        if (mapping.ShouldSplit)
         {
-            TranspileSplitVariableDeclarations(node.Variables, mapping.CppType, ref context);
+            TranspileSplitVariableDeclarations(node.Variables, mapping.TypeSymbol, mapping.IsVar, ref context);
         }
         else
         {
-            TranspileCombinedVariableDeclarations(node.Variables, mapping.BaseCppType, mapping.IsPointer, ref context);
+            TranspileCombinedVariableDeclarations(node.Variables, mapping.TypeSymbol, mapping.IsVar, mapping.IsPointer, ref context);
         }
     }
 
     private static VariableMapping AnalyzeVariableMapping(VariableDeclarationSyntax node, ITypeSymbol? typeSymbol)
     {
-        var cppType = node.Type.IsVar ? "auto" : CudaTypeMapper.MapType(typeSymbol);
+        var isVar = node.Type.IsVar;
         var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
-        var baseCppType = isPointer ? cppType.TrimEnd('*').TrimEnd() : cppType;
         var shouldSplit = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
 
-        return new VariableMapping(cppType, baseCppType, isPointer, shouldSplit);
+        return new VariableMapping(typeSymbol, isVar, isPointer, shouldSplit);
     }
 
     private static void ValidateAndTrackVariableType(ITypeSymbol? typeSymbol, TypeSyntax typeSyntax,
@@ -260,21 +263,23 @@ internal static class DeclarationTranspilers
                 typeSyntax.GetLocation()));
         }
 
-        if (typeSymbol is { TypeKind: TypeKind.Struct } &&
-            typeSymbol.Name != "GpuBigIntRef" &&
-            typeSymbol.ContainingNamespace.ToDisplayString() != TypeConstants.SystemNamespace)
-        {
-            context.UsedStructs.Add((INamedTypeSymbol)typeSymbol);
-        }
+        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
     }
 
     private static void TranspileSplitVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
-        string cppType, ref TranspileContext context)
+        ITypeSymbol? typeSymbol, bool isVar, ref TranspileContext context)
     {
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
-            context.Writer.Append(cppType);
+            if (isVar)
+            {
+                context.Writer.AppendKeyword("auto");
+            }
+            else
+            {
+                context.Writer.AppendType(typeSymbol);
+            }
             context.Writer.AppendSpace();
             context.Writer.Append(v.Identifier.Text);
             WriteDeclaratorInitializer(v, ref context);
@@ -290,9 +295,23 @@ internal static class DeclarationTranspilers
     }
 
     private static void TranspileCombinedVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
-        string baseCppType, bool isPointer, ref TranspileContext context)
+        ITypeSymbol? typeSymbol, bool isVar, bool isPointer, ref TranspileContext context)
     {
-        context.Writer.Append(baseCppType);
+        if (isVar)
+        {
+            context.Writer.AppendKeyword("auto");
+        }
+        else
+        {
+            if (isPointer && typeSymbol is IPointerTypeSymbol pointerType)
+            {
+                context.Writer.AppendType(pointerType.PointedAtType);
+            }
+            else
+            {
+                context.Writer.AppendType(typeSymbol);
+            }
+        }
         context.Writer.AppendSpace();
 
         for (var i = 0; i < variables.Count; i++)
@@ -341,8 +360,14 @@ internal static class DeclarationTranspilers
             if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
                 var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
-                var cppType = typeSymbol != null ? CudaTypeMapper.MapType(typeSymbol) : "auto";
-                context.Writer.Append(cppType);
+                if (typeSymbol != null)
+                {
+                    context.Writer.AppendType(typeSymbol);
+                }
+                else
+                {
+                    context.Writer.AppendKeyword("auto");
+                }
                 context.Writer.AppendSpace();
                 context.Writer.Append(singleVar.Identifier.Text);
                 context.Writer.AppendSemiColon();

@@ -47,8 +47,14 @@ internal static class StatementTranspilers
         if (node.Declaration != null)
         {
             var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-            var type = CudaTypeMapper.MapType(typeSymbol);
-            context.Writer.Append(type);
+            if (node.Declaration.Type.IsVar)
+            {
+                context.Writer.AppendKeyword("auto");
+            }
+            else
+            {
+                context.Writer.AppendType(typeSymbol);
+            }
             context.Writer.AppendSpace();
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
             {
