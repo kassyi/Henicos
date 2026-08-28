@@ -618,10 +618,10 @@
     "blocker": 5,
     "generality": 5,
     "score": 39,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 3,
-    "status": "incomplete"
+    "status": "implemented"
   },
   {
     "id": "SYN-04",
@@ -774,10 +774,10 @@
     "blocker": 4,
     "generality": 5,
     "score": 38,
-    "completed": false,
+    "completed": true,
     "notes": "",
     "difficulty": 2,
-    "status": "incomplete"
+    "status": "tuned"
   },
   {
     "id": "SYN-18",

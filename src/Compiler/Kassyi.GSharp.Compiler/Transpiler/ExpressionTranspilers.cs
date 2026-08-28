@@ -148,11 +148,7 @@ internal static class ExpressionTranspilers
         }
 
         context.Visitor.Visit(node.Expression);
-
-        var isPointer = exprSymbol is IParameterSymbol pSym &&
-                        (pSym.RefKind == RefKind.Ref || pSym.RefKind == RefKind.Out);
-
-        context.Writer.Append(isPointer ? "->" : ".");
+        context.Writer.Append(".");
         context.Writer.Append(node.Name.Identifier.Text);
     }
 
@@ -197,14 +193,7 @@ internal static class ExpressionTranspilers
     {
         if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) || node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
         {
-            var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-            var isAlreadyPointer = symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } ||
-                                   symbol is ILocalSymbol { IsRef: true };
-
-            if (!isAlreadyPointer)
-            {
-                context.Writer.Append("&");
-            }
+            context.Writer.Append("&");
         }
 
         context.Visitor.Visit(node.Expression);
