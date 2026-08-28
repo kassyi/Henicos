@@ -1,13 +1,25 @@
-
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GSH_01_05_TranspilerIssuesTests
 {
-    [Fact(Skip = "未実装: GSH-01 (三項演算子の複雑式展開)")]
+    [Theory]
     [Trait("FeatureId", "GSH-01")]
     [Trait("Category", "Transpiler")]
-    public void Test_GSH01_ComplexConditionalExpression()
+    [Trait("Category", "Execution")]
+    [InlineData(10, 5, 2, 1)]
+    [InlineData(10, 2, 5, 2)]
+    [InlineData(2, 5, 1, 3)]
+    [InlineData(2, 5, 3, 4)]
+    public void Test_GSH01_ComplexConditionalExpression(int x, int y, int z, int expectedResult)
     {
+        int[] a = [x];
+        int[] b = [y];
+        int[] c = [z];
+        int[] result = [0];
+
+        Syntax.SYN_01_09_ControlFlowKernelsWrapper.Launch_NestedTernaryKernel(a, b, c, result, blockDimX: 1);
+
+        Assert.Equal(expectedResult, result[0]);
     }
 
     [Fact(Skip = "未実装: GSH-02 (タプル構文の一般化)")]
