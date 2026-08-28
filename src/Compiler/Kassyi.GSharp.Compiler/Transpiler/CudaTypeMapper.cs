@@ -120,11 +120,17 @@ internal static class CudaTypeMapper
 
         if (typeSymbol is { TypeKind: TypeKind.Array })
         {
-            cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "*";
+            cppType = MapType(((IArrayTypeSymbol)typeSymbol).ElementType) + "* __restrict__";
         }
 
         foreach (var m in p.Modifiers)
         {
+            if (m.IsKind(SyntaxKind.InKeyword))
+            {
+                cppType = $"const {cppType}&";
+                break;
+            }
+
             if (m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword))
             {
                 cppType += "*";
