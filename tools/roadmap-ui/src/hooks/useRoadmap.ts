@@ -24,9 +24,9 @@ export function useRoadmap() {
   const [minDifficulty, setMinDifficulty] = useState<number>(1);
   const [minGenerality, setMinGenerality] = useState<number>(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
-  const [completionFilter, setCompletionFilter] = useState<
-    "incomplete" | "implemented" | "tuned" | "completed"
-  >("incomplete");
+  const [completionFilter, setCompletionFilter] = useState<"incomplete" | "implemented" | "tuned" | "completed">(
+    "incomplete",
+  );
 
   const [toast, setToast] = useState<ToastState>({
     open: false,
@@ -340,6 +340,19 @@ export function useRoadmap() {
       });
   };
 
+  const copyCartIdsOnly = () => {
+    const text = cartIds.join(",");
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setToast({ open: true, message: `選択した ${cartIds.length} 件のIDをコピーしました！` });
+      })
+      .catch((err) => {
+        console.error("Failed to copy IDs to clipboard:", err);
+        setToast({ open: true, message: "クリップボードへのコピーに失敗しました" });
+      });
+  };
+
   const updateNotes = (id: string, notes: string) => {
     pushHistory(tasks);
     isDirty.current = true;
@@ -374,6 +387,7 @@ export function useRoadmap() {
     handleCartClick,
     toggleTierCart,
     copyJulesPrompt,
+    copyCartIdsOnly,
     updateNotes,
     filteredTasks,
     tasksByTier,
