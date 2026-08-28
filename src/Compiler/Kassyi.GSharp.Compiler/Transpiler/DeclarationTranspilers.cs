@@ -38,6 +38,7 @@ internal static class DeclarationTranspilers
             return;
         }
 
+        HoistDeclarationExpressions(node, ref context);
         context.Visitor.VisitVariableDeclaration(node.Declaration);
         context.Writer.AppendSemiColon();
     }
@@ -325,8 +326,7 @@ internal static class DeclarationTranspilers
     {
         foreach (var desc in node.DescendantNodes(n => n == node || n is not BlockSyntax))
         {
-            if (desc is DeclarationExpressionSyntax declExpr &&
-                declExpr.Designation is SingleVariableDesignationSyntax singleVar)
+            if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
                 var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
                 var cppType = typeSymbol != null ? CudaTypeMapper.MapType(typeSymbol) : "auto";

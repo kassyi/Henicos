@@ -200,6 +200,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        if (symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } || 
+            symbol is ILocalSymbol { IsRef: true })
+        {
+            using (Context.Writer.Parentheses())
+            {
+                Context.Writer.AppendOperator("*");
+                Context.Writer.Append(node.Identifier.Text);
+            }
+            return;
+        }
+
         Context.Writer.Append(node.Identifier.Text);
     }
 
