@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import type { RoadmapTask, TaskStatus, ToastState } from '../types';
+import { useState, useEffect, useRef, useMemo } from "react";
+import type { RoadmapTask, TaskStatus, ToastState } from "../types";
 
 export function useRoadmap() {
   const [tasks, setTasks] = useState<RoadmapTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
   const isInitialLoaded = useRef(false);
 
   // Undo / Redo History
@@ -18,40 +18,42 @@ export function useRoadmap() {
   const [exitingIds, setExitingIds] = useState<Set<string>>(new Set());
   const exitTimers = useRef<Record<string, number>>({});
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [minBlocker, setMinBlocker] = useState<number>(1);
   const [minDifficulty, setMinDifficulty] = useState<number>(1);
   const [minGenerality, setMinGenerality] = useState<number>(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
-  const [completionFilter, setCompletionFilter] = useState<'all' | 'incomplete' | 'implemented' | 'tuned' | 'completed'>('incomplete');
-  
+  const [completionFilter, setCompletionFilter] = useState<
+    "all" | "incomplete" | "implemented" | "tuned" | "completed"
+  >("incomplete");
+
   const [toast, setToast] = useState<ToastState>({
     open: false,
-    message: '',
+    message: "",
   });
-  
+
   // AI Cart Feature
   const [cartIds, setCartIds] = useState<string[]>([]);
   const [lastCartClickedId, setLastCartClickedId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/load')
+    fetch("/api/load")
       .then((res) => {
-        if (!res.ok) throw new Error('Data not found');
+        if (!res.ok) throw new Error("Data not found");
         return res.json();
       })
       .then((data: any[]) => {
         const normalized: RoadmapTask[] = data.map((t) => {
-          let status: TaskStatus = 'incomplete';
-          if (t.status === 'tuned' || t.status === 'implemented' || t.status === 'incomplete') {
+          let status: TaskStatus = "incomplete";
+          if (t.status === "tuned" || t.status === "implemented" || t.status === "incomplete") {
             status = t.status;
           } else if (t.completed) {
-            status = 'implemented';
+            status = "implemented";
           }
           return {
             ...t,
             status,
-            completed: status !== 'incomplete',
+            completed: status !== "incomplete",
           };
         });
         setTasks(normalized);
@@ -71,22 +73,22 @@ export function useRoadmap() {
       return;
     }
 
-    setSaveStatus('saving');
+    setSaveStatus("saving");
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch('/api/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const res = await fetch("/api/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(tasks),
         });
         if (res.ok) {
-          setSaveStatus('saved');
+          setSaveStatus("saved");
         } else {
-          setSaveStatus('error');
+          setSaveStatus("error");
         }
       } catch (err) {
         console.error(err);
-        setSaveStatus('error');
+        setSaveStatus("error");
       }
     }, 500);
 
@@ -110,7 +112,7 @@ export function useRoadmap() {
       setTasks(previous);
       setToast({
         open: true,
-        message: '直前の操作を元に戻しました (Undo)',
+        message: "直前の操作を元に戻しました (Undo)",
       });
       return { past: newPast, future: newFuture };
     });
@@ -125,7 +127,7 @@ export function useRoadmap() {
       setTasks(next);
       setToast({
         open: true,
-        message: '操作をやり直しました (Redo)',
+        message: "操作をやり直しました (Redo)",
       });
       return { past: newPast, future: newFuture };
     });
@@ -135,11 +137,11 @@ export function useRoadmap() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         if (e.shiftKey) {
           e.preventDefault();
           handleRedo();
@@ -147,20 +149,20 @@ export function useRoadmap() {
           e.preventDefault();
           handleUndo();
         }
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
         e.preventDefault();
         handleRedo();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [tasks, history]);
 
   const updateTaskStatus = (id: string, newStatus: TaskStatus, recordHistory = true) => {
     const targetTask = tasks.find((t) => t.id === id);
     if (!targetTask) return;
-    const oldStatus = targetTask.status || (targetTask.completed ? 'implemented' : 'incomplete');
+    const oldStatus = targetTask.status || (targetTask.completed ? "implemented" : "incomplete");
     if (oldStatus === newStatus) return;
 
     if (recordHistory) {
@@ -168,25 +170,25 @@ export function useRoadmap() {
     }
 
     const willBeFilteredOut =
-      (completionFilter === 'incomplete' && newStatus !== 'incomplete') ||
-      (completionFilter === 'implemented' && newStatus !== 'implemented') ||
-      (completionFilter === 'tuned' && newStatus !== 'tuned') ||
-      (completionFilter === 'completed' && newStatus === 'incomplete');
+      (completionFilter === "incomplete" && newStatus !== "incomplete") ||
+      (completionFilter === "implemented" && newStatus !== "implemented") ||
+      (completionFilter === "tuned" && newStatus !== "tuned") ||
+      (completionFilter === "completed" && newStatus === "incomplete");
 
     if (willBeFilteredOut) {
-      setGracePeriodIds(prev => new Set(prev).add(id));
-      
+      setGracePeriodIds((prev) => new Set(prev).add(id));
+
       if (exitTimers.current[id]) clearTimeout(exitTimers.current[id]);
-      
+
       exitTimers.current[id] = setTimeout(() => {
-        setGracePeriodIds(prev => {
+        setGracePeriodIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
           return next;
         });
-        setExitingIds(prev => new Set(prev).add(id));
+        setExitingIds((prev) => new Set(prev).add(id));
         setTimeout(() => {
-          setExitingIds(prev => {
+          setExitingIds((prev) => {
             const next = new Set(prev);
             next.delete(id);
             return next;
@@ -198,12 +200,12 @@ export function useRoadmap() {
         clearTimeout(exitTimers.current[id]);
         delete exitTimers.current[id];
       }
-      setGracePeriodIds(prev => {
+      setGracePeriodIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      setExitingIds(prev => {
+      setExitingIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
@@ -216,19 +218,19 @@ export function useRoadmap() {
           ? {
               ...t,
               status: newStatus,
-              completed: newStatus !== 'incomplete',
+              completed: newStatus !== "incomplete",
             }
-          : t
-      )
+          : t,
+      ),
     );
 
     const statusLabel =
-      newStatus === 'implemented' ? '🛠️ 実装完了' : newStatus === 'tuned' ? '⚡ パフォ完了' : '未完了';
+      newStatus === "implemented" ? "🛠️ 実装完了" : newStatus === "tuned" ? "⚡ パフォ完了" : "未完了";
 
     setToast({
       open: true,
       message: `「${targetTask.id}」を ${statusLabel} にしました`,
-      actionText: '元に戻す',
+      actionText: "元に戻す",
       onAction: () => {
         updateTaskStatus(id, oldStatus, true);
       },
@@ -236,9 +238,7 @@ export function useRoadmap() {
   };
 
   const toggleCart = (id: string) => {
-    setCartIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+    setCartIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
   const calculateTier = (score: number) => {
@@ -249,32 +249,37 @@ export function useRoadmap() {
   };
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((t) => {
-      const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.notes.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const taskStatus = t.status || (t.completed ? 'implemented' : 'incomplete');
-      const isExiting = exitingIds.has(t.id);
-      
-      const matchesCompletion = 
-        isExiting ||
-        gracePeriodIds.has(t.id) ||
-        completionFilter === 'all' || 
-        (completionFilter === 'incomplete' && taskStatus === 'incomplete') ||
-        (completionFilter === 'implemented' && taskStatus === 'implemented') ||
-        (completionFilter === 'tuned' && taskStatus === 'tuned') ||
-        (completionFilter === 'completed' && taskStatus !== 'incomplete');
+    return tasks
+      .filter((t) => {
+        const matchesSearch =
+          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.notes.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesSearch &&
-        matchesCompletion &&
-        t.blocker >= minBlocker &&
-        t.difficulty >= minDifficulty &&
-        t.generality >= minGenerality;
-    }).map(t => ({
-      ...t,
-      score: (t.blocker * 4) + ((6 - t.difficulty) * 3) + (t.generality * 2)
-    }));
+        const taskStatus = t.status || (t.completed ? "implemented" : "incomplete");
+        const isExiting = exitingIds.has(t.id);
+
+        const matchesCompletion =
+          isExiting ||
+          gracePeriodIds.has(t.id) ||
+          completionFilter === "all" ||
+          (completionFilter === "incomplete" && taskStatus === "incomplete") ||
+          (completionFilter === "implemented" && taskStatus === "implemented") ||
+          (completionFilter === "tuned" && taskStatus === "tuned") ||
+          (completionFilter === "completed" && taskStatus !== "incomplete");
+
+        return (
+          matchesSearch &&
+          matchesCompletion &&
+          t.blocker >= minBlocker &&
+          t.difficulty >= minDifficulty &&
+          t.generality >= minGenerality
+        );
+      })
+      .map((t) => ({
+        ...t,
+        score: t.blocker * 4 + (6 - t.difficulty) * 3 + t.generality * 2,
+      }));
   }, [tasks, searchQuery, minBlocker, minDifficulty, minGenerality, completionFilter, exitingIds, gracePeriodIds]);
 
   const tasksByTier = useMemo(() => {
@@ -313,7 +318,7 @@ export function useRoadmap() {
     const allInCart = tierIds.every((id) => cartIds.includes(id));
     if (allInCart) {
       setCartIds((prev) => prev.filter((id) => !tierIds.includes(id)));
-      setToast({ open: true, message: 'Tier内のタスクをカートから解除しました' });
+      setToast({ open: true, message: "Tier内のタスクをカートから解除しました" });
     } else {
       setCartIds((prev) => Array.from(new Set([...prev, ...tierIds])));
       setToast({ open: true, message: `Tier内の ${tierIds.length} 件をカートに追加しました！` });
@@ -338,14 +343,15 @@ ${jsonStr}
 1. \`AGENTS.md\` および \`.agents/skills/\` 以下のガイドライン（qa-testing-guidelines, gsharp-transpiler-guidelines）を熟読・参照してタスクの仕様を理解してください。
 2. まず初めに、タスクのレーン分け計画と、各タスクで「どのようなテストが必要になりそうか」の概要を提示してください。
 3. 計画についてユーザー（私）の承認を得たら、タスク（またはレーン）ごとに \`/jules.ja.prompt [対象ファイル・クラス名 / 実装したい仕様]\` を呼び出し、Julesへテストコードの設計と実装を依頼するIssueを起票してください。`;
-    
-    navigator.clipboard.writeText(prompt)
+
+    navigator.clipboard
+      .writeText(prompt)
       .then(() => {
         setToast({ open: true, message: `選択した ${cartIds.length} 件のJules依頼プロンプトをコピーしました！` });
       })
       .catch((err) => {
-        console.error('Failed to copy prompt to clipboard:', err);
-        setToast({ open: true, message: 'クリップボードへのコピーに失敗しました' });
+        console.error("Failed to copy prompt to clipboard:", err);
+        setToast({ open: true, message: "クリップボードへのコピーに失敗しました" });
       });
   };
 
