@@ -179,7 +179,7 @@ unsigned long long Flags;
 ;
 #endif
 extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* particles,float* totalMagnitude,bool* successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
-successFlag=false;
+(*successFlag)=false;
 float Gravity=9.8f;
 int tx=threadIdx.x;
 int ty=threadIdx.y;
@@ -251,8 +251,8 @@ dynamicCache[tx]=mag;
 __syncthreads();
 if((tx==0))
 {
-atomicAdd(totalMagnitude,dynamicCache[0]);
-successFlag=true;
+atomicAdd(&(*totalMagnitude),dynamicCache[0]);
+(*successFlag)=true;
 }
 DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec=DebugReduc_ComprehensiveSpecKernel_Vector8{};
 inlineVec[0]=123;
