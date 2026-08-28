@@ -337,10 +337,16 @@ ${jsonStr}
 指示:
 1. \`AGENTS.md\` および \`.agents/skills/\` 以下のガイドライン（qa-testing-guidelines, gsharp-transpiler-guidelines）を熟読・参照してタスクの仕様を理解してください。
 2. まず初めに、タスクのレーン分け計画と、各タスクで「どのようなテストが必要になりそうか」の概要を提示してください。
-3. 計画についてユーザー（私）の承認を得たら、タスク（またはレーン）ごとに \`/jules.ja.prompt [対象ファイル/実装したい仕様]\` を呼び出し、Julesへテストコードの設計と実装を依頼するIssueを起票してください。`;
+3. 計画についてユーザー（私）の承認を得たら、タスク（またはレーン）ごとに \`/jules.ja.prompt [対象ファイル・クラス名 / 実装したい仕様]\` を呼び出し、Julesへテストコードの設計と実装を依頼するIssueを起票してください。`;
     
-    navigator.clipboard.writeText(prompt);
-    setToast({ open: true, message: `選択した ${cartIds.length} 件のJules依頼プロンプトをコピーしました！` });
+    navigator.clipboard.writeText(prompt)
+      .then(() => {
+        setToast({ open: true, message: `選択した ${cartIds.length} 件のJules依頼プロンプトをコピーしました！` });
+      })
+      .catch((err) => {
+        console.error('Failed to copy prompt to clipboard:', err);
+        setToast({ open: true, message: 'クリップボードへのコピーに失敗しました' });
+      });
   };
 
   const updateNotes = (id: string, notes: string) => {
