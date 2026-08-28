@@ -82,7 +82,7 @@ public static class MethodTranspiler
         context.Writer.Append(method.Identifier.Text);
         using (context.Writer.Parentheses())
         {
-            WriteParameters(method.ParameterList.Parameters, ref context);
+            WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
         }
     }
 
@@ -172,7 +172,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
+    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice, ref TranspileContext context)
     {
         var validParameters = new List<ParameterSyntax>(parameters.Count);
         foreach (var p in parameters)
@@ -189,8 +189,8 @@ public static class MethodTranspiler
             var typeSymbol = context.SemanticModel.GetTypeInfo(p.Type!).Type;
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
-            var (cppType, isPointer) = CudaTypeMapper.GetParameterCppType(p, typeSymbol);
-            StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isPointer, ref context);
+            var (cppType, isRefPointer) = CudaTypeMapper.GetParameterCppType(p, typeSymbol);
+            StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
             if (paramSymbol != null &&
@@ -200,7 +200,15 @@ public static class MethodTranspiler
                 context.Writer.AppendSpace();
             }
 
+            var isPointerType = typeSymbol is IArrayTypeSymbol || typeSymbol is IPointerTypeSymbol || cppType.Contains("*");
+
             context.Writer.Append(cppType);
+            if (!isDevice && isPointerType && !cppType.Contains("__restrict__"))
+            {
+                context.Writer.AppendSpace();
+                context.Writer.AppendKeyword("__restrict__");
+            }
+
             context.Writer.AppendSpace();
             context.Writer.Append(p.Identifier.Text);
             if (i < validParameters.Count - 1)
