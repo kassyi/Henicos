@@ -81,9 +81,18 @@ internal static class ExpressionTranspilers
 
     public static void TranspileCastExpression(CastExpressionSyntax node, ref TranspileContext context)
     {
+        var targetType = context.SemanticModel.GetTypeInfo(node.Type).Type;
+        if (targetType != null && (targetType.TypeKind == TypeKind.Delegate ||
+            targetType.BaseType?.SpecialType == SpecialType.System_MulticastDelegate ||
+            targetType.SpecialType == SpecialType.System_Delegate))
+        {
+            context.Visitor.Visit(node.Expression);
+            return;
+        }
+
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append(CudaTypeMapper.MapType(context.SemanticModel.GetTypeInfo(node.Type).Type));
+            context.Writer.Append(CudaTypeMapper.MapType(targetType));
         }
 
         context.Visitor.Visit(node.Expression);

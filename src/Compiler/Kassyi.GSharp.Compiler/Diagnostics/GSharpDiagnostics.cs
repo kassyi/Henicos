@@ -119,4 +119,20 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor DelegateNotSupported = new(
+        id: "GSH0013",
+        title: "Delegates not supported in GPU kernels",
+        messageFormat: "Delegate type '{0}' is not supported in GPU kernels",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor HeapClosureNotSupported = new(
+        id: "GSH0014",
+        title: "Heap closure capture not supported in GPU kernels",
+        messageFormat: "Closure captures reference type variable '{0}' of type '{1}', requiring unsupported dynamic heap allocation",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

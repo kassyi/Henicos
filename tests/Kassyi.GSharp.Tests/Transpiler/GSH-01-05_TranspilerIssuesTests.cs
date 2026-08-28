@@ -17,11 +17,13 @@ public class GSH_01_05_TranspilerIssuesTests
     {
     }
 
-    [Fact(Skip = "未実装: GSH-03 (ローカル関数の非サポート)")]
+    [Fact]
     [Trait("FeatureId", "GSH-03")]
     [Trait("Category", "Transpiler")]
     public void Test_GSH03_LocalFunctionsSupport()
     {
+        var testInstance = new Syntax.SYN_07_08_LocalFunctionsAndLambdasTests();
+        testInstance.Test_GSH03_SYN07_LocalFunction_Transpilation_HappyPath();
     }
 
     [Fact(Skip = "未実装: GSH-04 (スタック固定長配列・stackallocの限定性)")]

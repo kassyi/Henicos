@@ -165,7 +165,231 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
         => DeclarationTranspilers.TranspileVariableDeclaration(node, ref Context);
 
+    public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
+    {
+        var methodSymbol = Context.SemanticModel.GetDeclaredSymbol(node) as IMethodSymbol;
+        var isRecursive = methodSymbol != null && CheckRecursionWalker.IsRecursive(node, methodSymbol, Context.SemanticModel);
+
+        var name = node.Identifier.Text;
+
+        if (isRecursive)
+        {
+            Context.Writer.Append($"struct __rec_{name}");
+            using (Context.Writer.Scope())
+            {
+                Context.Writer.Append("__device__ static ");
+                var returnTypeSymbol = methodSymbol?.ReturnType;
+                if (returnTypeSymbol != null && returnTypeSymbol.SpecialType != SpecialType.System_Void)
+                {
+                    Context.Writer.Append(CudaTypeMapper.MapType(returnTypeSymbol));
+                }
+                else
+                {
+                    Context.Writer.AppendKeyword("void");
+                }
+                Context.Writer.AppendSpace();
+                Context.Writer.Append("call");
+                using (Context.Writer.Parentheses())
+                {
+                    WriteLambdaParameters(node.ParameterList.Parameters, ref Context);
+                }
+                Context.Writer.AppendSpace();
+
+                Context.LocalVariableOverrides[name] = new OverrideValue($"__rec_{name}::call");
+                try
+                {
+                    if (node.Body != null)
+                    {
+                        VisitStatementOrBlock(node.Body);
+                    }
+                    else if (node.ExpressionBody != null)
+                    {
+                        using (Context.Writer.Scope())
+                        {
+                            Context.Writer.AppendKeyword("return");
+                            Context.Writer.AppendSpace();
+                            Visit(node.ExpressionBody.Expression);
+                            Context.Writer.AppendSemiColon();
+                        }
+                    }
+                }
+                finally
+                {
+                    Context.LocalVariableOverrides.Remove(name);
+                }
+            }
+            Context.Writer.AppendSemiColon();
+            Context.Writer.AppendLine();
+
+            Context.Writer.AppendKeyword("auto");
+            Context.Writer.AppendSpace();
+            Context.Writer.Append(name);
+            Context.Writer.AppendOperator("=");
+            Context.Writer.Append("[=] __device__ ");
+            using (Context.Writer.Parentheses())
+            {
+                WriteLambdaParameters(node.ParameterList.Parameters, ref Context);
+            }
+            using (Context.Writer.Scope())
+            {
+                var returnTypeSymbol = methodSymbol?.ReturnType;
+                if (returnTypeSymbol != null && returnTypeSymbol.SpecialType != SpecialType.System_Void)
+                {
+                    Context.Writer.AppendKeyword("return");
+                    Context.Writer.AppendSpace();
+                }
+                Context.Writer.Append($"__rec_{name}::call");
+                using (Context.Writer.Parentheses())
+                {
+                    for (var i = 0; i < node.ParameterList.Parameters.Count; i++)
+                    {
+                        Context.Writer.Append(node.ParameterList.Parameters[i].Identifier.Text);
+                        if (i < node.ParameterList.Parameters.Count - 1)
+                        {
+                            Context.Writer.AppendComma();
+                        }
+                    }
+                }
+                Context.Writer.AppendSemiColon();
+            }
+            Context.Writer.AppendSemiColon();
+        }
+        else
+        {
+            Context.Writer.AppendKeyword("auto");
+            Context.Writer.AppendSpace();
+            Context.Writer.Append(name);
+            Context.Writer.AppendOperator("=");
+            Context.Writer.Append("[=] __device__ ");
+            using (Context.Writer.Parentheses())
+            {
+                WriteLambdaParameters(node.ParameterList.Parameters, ref Context);
+            }
+
+            var returnTypeSymbol = methodSymbol?.ReturnType;
+            if (returnTypeSymbol != null && returnTypeSymbol.SpecialType != SpecialType.System_Void)
+            {
+                Context.Writer.Append(" -> ");
+                Context.Writer.Append(CudaTypeMapper.MapType(returnTypeSymbol));
+            }
+
+            Context.Writer.AppendSpace();
+            if (node.Body != null)
+            {
+                VisitStatementOrBlock(node.Body);
+            }
+            else if (node.ExpressionBody != null)
+            {
+                using (Context.Writer.Scope())
+                {
+                    Context.Writer.AppendKeyword("return");
+                    Context.Writer.AppendSpace();
+                    Visit(node.ExpressionBody.Expression);
+                    Context.Writer.AppendSemiColon();
+                }
+            }
+            Context.Writer.AppendSemiColon();
+        }
+    }
+
     // --- Expressions ---
+
+    public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
+    {
+        TranspileLambda(node.ParameterList.Parameters, node.Body);
+    }
+
+    public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
+    {
+        TranspileLambda(new[] { node.Parameter }, node.Body);
+    }
+
+    public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
+    {
+        TranspileLambda(node.ParameterList?.Parameters ?? Enumerable.Empty<ParameterSyntax>(), node.Block);
+    }
+
+    private void TranspileLambda(IEnumerable<ParameterSyntax> parameters, CSharpSyntaxNode? body)
+    {
+        Context.Writer.Append("[=] __device__ ");
+        using (Context.Writer.Parentheses())
+        {
+            WriteLambdaParameters(parameters, ref Context);
+        }
+        Context.Writer.AppendSpace();
+        if (body is BlockSyntax block)
+        {
+            VisitStatementOrBlock(block);
+        }
+        else if (body is ExpressionSyntax expr)
+        {
+            using (Context.Writer.Scope())
+            {
+                Context.Writer.AppendKeyword("return");
+                Context.Writer.AppendSpace();
+                Visit(expr);
+                Context.Writer.AppendSemiColon();
+            }
+        }
+    }
+
+    private static void WriteLambdaParameters(IEnumerable<ParameterSyntax> parameters, ref TranspileContext context)
+    {
+        var paramList = parameters as IList<ParameterSyntax> ?? parameters.ToList();
+        for (var i = 0; i < paramList.Count; i++)
+        {
+            var p = paramList[i];
+            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
+            var typeSymbol = paramSymbol?.Type ?? (p.Type != null ? context.SemanticModel.GetTypeInfo(p.Type).Type : null);
+
+            if (typeSymbol != null)
+            {
+                context.Writer.Append(CudaTypeMapper.MapType(typeSymbol));
+            }
+            else
+            {
+                context.Writer.Append("auto");
+            }
+
+            context.Writer.AppendSpace();
+            context.Writer.Append(p.Identifier.Text);
+            if (i < paramList.Count - 1)
+            {
+                context.Writer.AppendComma();
+            }
+        }
+    }
+
+    private class CheckRecursionWalker : CSharpSyntaxWalker
+    {
+        private readonly ISymbol _targetSymbol;
+        private readonly SemanticModel _model;
+        public bool FoundRecursion { get; private set; }
+
+        private CheckRecursionWalker(ISymbol targetSymbol, SemanticModel model)
+        {
+            _targetSymbol = targetSymbol;
+            _model = model;
+        }
+
+        public static bool IsRecursive(SyntaxNode node, ISymbol targetSymbol, SemanticModel model)
+        {
+            var walker = new CheckRecursionWalker(targetSymbol, model);
+            walker.Visit(node);
+            return walker.FoundRecursion;
+        }
+
+        public override void VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+            var symbol = _model.GetSymbolInfo(node).Symbol;
+            if (SymbolEqualityComparer.Default.Equals(symbol, _targetSymbol))
+            {
+                FoundRecursion = true;
+                return;
+            }
+            base.VisitInvocationExpression(node);
+        }
+    }
 
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
     {
