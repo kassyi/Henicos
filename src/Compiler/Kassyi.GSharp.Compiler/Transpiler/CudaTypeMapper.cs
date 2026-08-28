@@ -25,6 +25,11 @@ internal static class CudaTypeMapper
             return "unsigned int*";
         }
 
+        if (typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && typeSymbol is INamedTypeSymbol namedType)
+        {
+            return $"System_Nullable<{MapType(namedType.TypeArguments[0])}>";
+        }
+
         return typeSymbol.SpecialType switch
         {
             SpecialType.System_Void => "void",

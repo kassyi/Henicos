@@ -11,14 +11,7 @@ public static class SYN_01_09_ControlFlowKernels
     {
         int tid = ThreadIndex.X;
         // Implicit type conversion (int vs double)
-        if (a[tid] > b[tid])
-        {
-            result[tid] = a[tid];
-        }
-        else
-        {
-            result[tid] = b[tid] * 1.5;
-        }
+        result[tid] = a[tid] > b[tid] ? a[tid] : b[tid] * 1.5;
     }
 
     // GSH-01 / SYN-05: Deeply nested ternary logic via nested if-else
@@ -29,28 +22,10 @@ public static class SYN_01_09_ControlFlowKernels
         int x = a[tid];
         int y = b[tid];
         int z = c[tid];
-        if (x > y)
-        {
-            if (y > z)
-            {
-                result[tid] = 1;
-            }
-            else
-            {
-                result[tid] = 2;
-            }
-        }
-        else
-        {
-            if (x > z)
-            {
-                result[tid] = 3;
-            }
-            else
-            {
-                result[tid] = 4;
-            }
-        }
+        
+        result[tid] = x > y 
+            ? (y > z ? 1 : 2)
+            : (x > z ? 3 : 4);
     }
 
     // SYN-01: Switch statement pattern match logic
@@ -59,21 +34,13 @@ public static class SYN_01_09_ControlFlowKernels
     {
         int tid = ThreadIndex.X;
         int val = input[tid];
-        switch (val)
+        output[tid] = val switch
         {
-            case 1:
-                output[tid] = 10;
-                break;
-            case 2:
-                output[tid] = 20;
-                break;
-            case 3:
-                output[tid] = 30;
-                break;
-            default:
-                output[tid] = 99;
-                break;
-        }
+            1 => 10,
+            2 => 20,
+            3 => 30,
+            _ => 99
+        };
     }
 
     [GpuKernel]
@@ -96,14 +63,7 @@ public static class SYN_01_09_ControlFlowKernels
     {
         int tid = ThreadIndex.X;
         int? input = nullableInputs[tid];
-        if (input.HasValue)
-        {
-            results[tid] = input.Value;
-        }
-        else
-        {
-            results[tid] = fallbackValues[tid];
-        }
+        results[tid] = input ?? fallbackValues[tid];
     }
 
     // SYN-04 Edge Case: Null coalescing compound assignment (??=) logic with side-effect in LHS index
@@ -113,9 +73,7 @@ public static class SYN_01_09_ControlFlowKernels
         int tid = ThreadIndex.X;
         int idx = sideEffectTracker[tid];
         sideEffectTracker[tid] = idx + 1;
-        if (!targetArray[idx].HasValue)
-        {
-            targetArray[idx] = values[tid];
-        }
+        
+        targetArray[idx] ??= values[tid];
     }
 }

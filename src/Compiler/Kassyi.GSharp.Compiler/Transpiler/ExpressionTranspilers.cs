@@ -32,6 +32,20 @@ internal static class ExpressionTranspilers
             return;
         }
 
+        if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
+        {
+            context.Writer.Append("(!");
+            context.Visitor.Visit(node.Left);
+            context.Writer.Append(".HasValue ? (");
+            context.Visitor.Visit(node.Left);
+            context.Writer.Append(" = ");
+            context.Visitor.Visit(node.Right);
+            context.Writer.Append(").Value : ");
+            context.Visitor.Visit(node.Left);
+            context.Writer.Append(".Value)");
+            return;
+        }
+
         context.Visitor.Visit(node.Left);
         context.Writer.AppendOperator(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
@@ -39,6 +53,18 @@ internal static class ExpressionTranspilers
 
     public static void TranspileBinaryExpression(BinaryExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.IsKind(SyntaxKind.CoalesceExpression))
+        {
+            context.Writer.Append("(");
+            context.Visitor.Visit(node.Left);
+            context.Writer.Append(".HasValue ? ");
+            context.Visitor.Visit(node.Left);
+            context.Writer.Append(".Value : ");
+            context.Visitor.Visit(node.Right);
+            context.Writer.Append(")");
+            return;
+        }
+
         context.Visitor.Visit(node.Left);
         
         var opText = node.OperatorToken.Text;
@@ -54,6 +80,68 @@ internal static class ExpressionTranspilers
         }
         
         context.Visitor.Visit(node.Right);
+    }
+
+    public static void TranspileConditionalExpression(ConditionalExpressionSyntax node, ref TranspileContext context)
+    {
+        context.Writer.Append("(");
+        context.Visitor.Visit(node.Condition);
+        context.Writer.Append(" ? ");
+        
+        // Handle 'ref' conditionals if present
+        if (node.WhenTrue is RefExpressionSyntax refTrue)
+        {
+            context.Visitor.Visit(refTrue.Expression);
+        }
+        else
+        {
+            context.Visitor.Visit(node.WhenTrue);
+        }
+
+        context.Writer.Append(" : ");
+        
+        if (node.WhenFalse is RefExpressionSyntax refFalse)
+        {
+            context.Visitor.Visit(refFalse.Expression);
+        }
+        else
+        {
+            context.Visitor.Visit(node.WhenFalse);
+        }
+
+        context.Writer.Append(")");
+    }
+
+    public static void TranspileSwitchExpression(SwitchExpressionSyntax node, ref TranspileContext context)
+    {
+        context.Writer.Append("([&]() { switch(");
+        context.Visitor.Visit(node.GoverningExpression);
+        context.Writer.Append(") { ");
+        
+        foreach (var arm in node.Arms)
+        {
+            if (arm.Pattern is ConstantPatternSyntax constantPattern)
+            {
+                context.Writer.Append("case ");
+                context.Visitor.Visit(constantPattern.Expression);
+                context.Writer.Append(": return ");
+            }
+            else if (arm.Pattern is DiscardPatternSyntax)
+            {
+                context.Writer.Append("default: return ");
+            }
+            else
+            {
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, arm.Pattern.GetLocation(), "Switch expression patterns other than constant and discard are not supported"));
+                context.Writer.Append("default: return ");
+            }
+            
+            context.Visitor.Visit(arm.Expression);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendSpace();
+        }
+        
+        context.Writer.Append("} }())");
     }
 
     public static void TranspileElementAccessExpression(ElementAccessExpressionSyntax node,
