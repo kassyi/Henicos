@@ -16,7 +16,7 @@ interface TierSectionProps {
   toggleTierCart: (tierTasks: RoadmapTask[]) => void;
 }
 
-export const TierSection: React.FC<TierSectionProps> = ({
+export const TierSection: React.FC<TierSectionProps> = React.memo(({
   tier,
   title,
   tasks,
@@ -33,16 +33,25 @@ export const TierSection: React.FC<TierSectionProps> = ({
 
   return (
     <Box key={tier} sx={{ mb: 5 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, pb: 1, borderBottom: '1px solid #49454f' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 2,
+          pb: 1,
+          borderBottom: '1px solid #49454f',
+        }}
+      >
         <Typography variant="h6" sx={{ color: 'primary.light' }}>
           {title}
         </Typography>
-        
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Button
             size="small"
-            variant={allInTierInCart ? "contained" : "outlined"}
-            color={allInTierInCart ? "secondary" : "primary"}
+            variant={allInTierInCart ? 'contained' : 'outlined'}
+            color={allInTierInCart ? 'secondary' : 'primary'}
             startIcon={allInTierInCart ? <RemoveCartIcon /> : <AddCartIcon />}
             onClick={() => toggleTierCart(tasks)}
             sx={{
@@ -75,4 +84,4 @@ export const TierSection: React.FC<TierSectionProps> = ({
       </Box>
     </Box>
   );
-};
+});

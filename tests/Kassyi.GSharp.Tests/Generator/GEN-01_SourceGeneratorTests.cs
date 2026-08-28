@@ -13,7 +13,7 @@ public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
         string expectedSource = GEN_01_SourceGeneratorTestKernelsWrapper.MyTestKernel_CudaSource;
 
         Assert.Contains("extern \"C\" __global__ void MyTestKernel", expectedSource);
-        Assert.Contains("c[0]=(a[0]+b[0]);", expectedSource);
+        Assert.Contains("c[0]=a[0]+b[0];", expectedSource);
 
         int[] aArray = [10];
         int[] bArray = [20];
