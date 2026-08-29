@@ -114,6 +114,7 @@ public static class GridDimension
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
 [SuppressMessage("IDE", "IDE0051", Justification = "Public API exposed for library consumers")]
+/// <remarks><para>Implements: <b>GEN-52</b></para></remarks>
 public static class Gpu
 {
     /// <summary>

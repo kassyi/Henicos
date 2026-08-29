@@ -12,6 +12,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// <para><b>Thread Safety:</b> All public methods except <see cref="Shutdown"/> are safe for concurrent invocation from multiple threads.</para>
 /// </remarks>
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
+/// <remarks><para>Implements: <b>GEN-37, GEN-42, GEN-43</b></para></remarks>
 public sealed class JitEngine
 {
     private static volatile bool s_isGlobalInit;

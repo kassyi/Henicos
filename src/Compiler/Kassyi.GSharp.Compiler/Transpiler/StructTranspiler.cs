@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
+/// <remarks><para>Implements: <b>GEN-33</b></para></remarks>
 internal static class StructTranspiler
 {
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)

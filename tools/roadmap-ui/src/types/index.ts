@@ -1,16 +1,30 @@
 export type TaskStatus = 'incomplete' | 'implemented' | 'tuned';
 
-export interface RoadmapTask {
-  id: string;
-  title: string;
-  domain: string;
+export type ProgressFilter = 'incomplete' | 'implemented_plus' | 'tuned' | 'all';
+
+export interface TaskMetrics {
   blocker: number;
   difficulty: number;
   generality: number;
   score: number;
-  completed?: boolean;
-  status?: TaskStatus;
-  notes: string;
+}
+
+export interface TaskDetails {
+  csharp_example?: string;
+  current_behavior?: string;
+  target_cuda?: string;
+  strategy?: string;
+  notes?: string;
+}
+
+export interface RoadmapTask {
+  id: string;
+  title: string;
+  domain: string;
+  category?: string;
+  status: TaskStatus;
+  metrics: TaskMetrics;
+  details?: TaskDetails;
 }
 
 export interface ToastState {

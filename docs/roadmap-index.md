@@ -4,18 +4,29 @@
 
 ## 1. ドキュメント構成 & 詳細進捗表一覧
 
-ロードマップおよびタスクの進捗状況は、単一の JSON ファイルとしてデータ管理されており、人間用の Interactive UI または AI エージェントの自律更新を通じて管理されます。
+ロードマップおよびタスクの進捗状況は、データ実体（SSOT）としての JSON ファイルと、具体的な C# 記述例・CUDA 変換仕様・背景を記述した Markdown 詳細進捗表の 2 層構造で管理されています。
 
-| リソース               | 役割                                                                   | パス                           |
-| :--------------------- | :--------------------------------------------------------------------- | :----------------------------- |
-| **Data Source (SSOT)** | タスク一覧、優先度スコア、完了状態、実装メモのマスターデータ           | `docs/data/roadmap_tasks.json` |
-| **Interactive UI**     | 人間が直感的にタスク状況を確認・更新するための Web アプリ (React+Vite) | `tools/roadmap-ui/`            |
+### 1.1 マスターデータ & ツール
+
+| リソース | 役割 | パス |
+| :--- | :--- | :--- |
+| **Data Source (SSOT)** | タスク一覧、優先度スコア、完了状態、実装メモの機械可読マスターデータ | [`docs/data/roadmap_tasks.json`](file:///p:/Projects/Active/Henicos/docs/data/roadmap_tasks.json) |
+| **Interactive UI** | 人間が直感的にタスク状況を確認・更新するための Web アプリ (React+Vite) | [`tools/roadmap-ui/`](file:///p:/Projects/Active/Henicos/tools/roadmap-ui/) |
+
+### 1.2 領域別詳細進捗表 (仕様・変換方針・背景)
+
+| ドキュメント | 担当領域 | 主な対象タスク | パス |
+| :--- | :--- | :--- | :--- |
+| **ジェネレータ・コア基盤** | Roslyn Source Generator、PTX/JIT エンジン、Vector 型マッピング、マーシャリング | `GEN-01` 〜 `GEN-19` | [`docs/roadmaps/gsharp_generator_core.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gsharp_generator_core.md) |
+| **C# 構文・シンタックスシュガー** | 制御構文、型推論、パターンマッチ、演算子、永久非対応構文 (`UNS-01`〜`14`) | `SYN-01` 〜 `SYN-94` | [`docs/roadmaps/gsharp_syntax_support.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gsharp_syntax_support.md) |
+| **トランスパイラ & ランタイム課題** | AST 走査、型解決、JIT キャッシュ、プロセス制御、デバッグ行マッピング | `GSH-01` 〜 `GSH-09` | [`docs/roadmaps/gsharp_transpiler_issues.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gsharp_transpiler_issues.md) |
+| **GpuBigInt (GBI) 基盤** | 多倍長整数 GPU 演算、NTT 乗算、Lehmer's GCD、メモリプール、演算子 | `GBI-01` 〜 `GBI-28` | [`docs/roadmaps/gbi_roadmap.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gbi_roadmap.md) |
 
 ---
 
 ## 2. 優先度スコアリング基準 (Priority Scoring Criteria)
 
-タスクの優先度 (Tier) は、JSON に保存されている各指標に基づき、動的に（UI 上などで）算出されます。
+タスクの優先度 (Tier) は、JSON に保存されている各指標に基づき、動的（UI 上など）に算出されます。
 
 **指標定義 (1〜5点)**
 

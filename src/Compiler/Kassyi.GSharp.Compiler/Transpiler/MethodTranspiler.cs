@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# methods and GPU kernels into CUDA C++ function definitions or forward signatures.</summary>
+/// <remarks><para>Implements: <b>GEN-20</b></para></remarks>
 public static class MethodTranspiler
 {
     public static string GenerateCudaSource(MethodDeclarationSyntax method, SemanticModel semanticModel,

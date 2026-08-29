@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -5,64 +6,81 @@ import {
   Box,
   Typography,
   Card,
-  CircularProgress,
   Snackbar,
   Alert,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import { m3DarkTheme } from './theme';
 import { useRoadmap } from './hooks/useRoadmap';
 import { ControlsBar } from './components/ControlsBar';
-import { TierSection } from './components/TierSection';
 import { InfoAccordion } from './components/InfoAccordion';
-import { CartFab } from './components/CartFab';
+import { TierSection } from './components/TierSection';
+import { TaskDetailPanel } from './components/TaskDetailPanel';
 
 const TIER_DEFINITIONS = [
-  { tier: 1, title: 'Tier 1 (最優先 / Score >= 36)' },
-  { tier: 2, title: 'Tier 2 (優先 / Score >= 28)' },
-  { tier: 3, title: 'Tier 3 (通常タスク / Score >= 20)' },
-  { tier: 4, title: 'Tier 4 (後回し / Score < 20)' },
-] as const;
+  { tier: 1, title: 'Tier 1: 最優先基盤 (スコア 36以上)' },
+  { tier: 2, title: 'Tier 2: 優先構文 (スコア 28〜35)' },
+  { tier: 3, title: 'Tier 3: 通常構文 (スコア 20〜27)' },
+  { tier: 4, title: 'Tier 4: 後回し / 独自拡張 (スコア 19以下)' },
+];
 
-export default function App() {
+export const App: React.FC = () => {
   const {
+    tasks,
     loading,
     saveStatus,
-    exitingIds,
+    selectedTaskId,
+    setSelectedTaskId,
+    history,
+    handleUndo,
+    handleRedo,
     searchQuery,
     setSearchQuery,
+    progressFilter,
+    setProgressFilter,
+    showAdvancedFilters,
+    setShowAdvancedFilters,
     minBlocker,
     setMinBlocker,
     minDifficulty,
     setMinDifficulty,
     minGenerality,
     setMinGenerality,
-    showAdvancedFilters,
-    setShowAdvancedFilters,
-    statusFilters,
-    setStatusFilters,
     toast,
     setToast,
     cartIds,
     setCartIds,
-    handleUndo,
-    handleRedo,
-    history,
-    updateTaskStatus,
     handleCartClick,
+    updateTaskStatus,
+    updateNotes,
     toggleTierCart,
     copyJulesPrompt,
     copyCartIdsOnly,
-    updateNotes,
     filteredTasks,
     tasksByTier,
+    exitingIds,
   } = useRoadmap();
+
+  // Dynamically measured physical height of the bottom TaskDetailPanel
+  const [panelHeight, setPanelHeight] = useState<number>(64);
+
+  // Find currently selected task object
+  const selectedTask = selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) || null : null;
 
   if (loading) {
     return (
       <ThemeProvider theme={m3DarkTheme}>
         <CssBaseline />
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            minHeight: '100vh',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: '#141218',
+          }}
+        >
           <CircularProgress color="primary" />
         </Box>
       </ThemeProvider>
@@ -72,7 +90,14 @@ export default function App() {
   return (
     <ThemeProvider theme={m3DarkTheme}>
       <CssBaseline />
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container
+        maxWidth="xl"
+        sx={{
+          pt: 4,
+          pb: `${panelHeight + 32}px`, // Dynamically perfectly synced with bottom panel height
+          transition: 'padding-bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
         {/* Top App Header */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="h4" component="h1" sx={{ color: 'primary.main', mb: 1 }}>
@@ -86,8 +111,8 @@ export default function App() {
         <ControlsBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          statusFilters={statusFilters}
-          setStatusFilters={setStatusFilters}
+          progressFilter={progressFilter}
+          setProgressFilter={setProgressFilter}
           showAdvancedFilters={showAdvancedFilters}
           setShowAdvancedFilters={setShowAdvancedFilters}
           historyLengthPast={history.past.length}
@@ -119,10 +144,11 @@ export default function App() {
             title={title}
             tasks={tasksByTier[tier]}
             cartIds={cartIds}
+            selectedTaskId={selectedTaskId}
             exitingIds={exitingIds}
             onCartClick={handleCartClick}
             onStatusChange={updateTaskStatus}
-            onNotesChange={updateNotes}
+            onSelectTask={setSelectedTaskId}
             toggleTierCart={toggleTierCart}
           />
         ))}
@@ -135,67 +161,57 @@ export default function App() {
           </Card>
         )}
 
-        {/* AI Cart FAB Cluster */}
-        <CartFab
-          count={cartIds.length}
-          onCopyJulesPrompt={copyJulesPrompt}
-          onCopyIdsOnly={copyCartIdsOnly}
-        />
-
-        {/* Toast / Notification Alert */}
+        {/* Global Toast / Snackbar Notification */}
         <Snackbar
           open={toast.open}
-          autoHideDuration={4500}
-          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+          autoHideDuration={4000}
+          onClose={() => setToast({ ...toast, open: false })}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          sx={{ bottom: `${panelHeight + 16}px` }}
         >
           <Alert
-            severity={toast.severity || 'info'}
+            severity={toast.severity || 'success'}
             variant="filled"
             sx={{
-              borderRadius: 2,
-              fontWeight: 600,
-              bgcolor: '#2d2b33',
+              width: '100%',
+              bgcolor: '#332d41',
               color: '#f4effa',
-              border: '1px solid #49454f',
-              boxShadow: '0 6px 24px rgba(0,0,0,0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              py: 0.5,
-              px: 2,
-              '& .MuiAlert-icon': { color: 'primary.light', my: 'auto' },
-              '& .MuiAlert-message': { py: 0.5, fontSize: '0.85rem' },
+              borderRadius: 2,
+              '& .MuiAlert-icon': { color: 'primary.light' },
             }}
             action={
-              toast.onAction ? (
+              toast.actionText && toast.onAction ? (
                 <Button
                   color="inherit"
                   size="small"
                   onClick={() => {
                     toast.onAction?.();
-                    setToast((prev) => ({ ...prev, open: false }));
+                    setToast({ ...toast, open: false });
                   }}
-                  sx={{
-                    color: '#d0bcff',
-                    fontWeight: 800,
-                    textTransform: 'none',
-                    fontSize: '0.82rem',
-                    px: 1.5,
-                    py: 0.3,
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(208, 188, 255, 0.08)',
-                    '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.2)' },
-                  }}
+                  sx={{ color: 'primary.light', fontWeight: 800 }}
                 >
-                  {toast.actionText || '元に戻す'}
+                  {toast.actionText}
                 </Button>
-              ) : undefined
+              ) : null
             }
           >
             {toast.message}
           </Alert>
         </Snackbar>
+
+        {/* Fixed Bottom Task Detail Dock Panel with Height Observer */}
+        <TaskDetailPanel
+          task={selectedTask}
+          onStatusChange={updateTaskStatus}
+          onNotesChange={updateNotes}
+          onHeightChange={setPanelHeight}
+        />
+        
+        {/* Physical spacer to ensure enough scroll area at the bottom */}
+        <Box sx={{ height: `${panelHeight}px`, width: '100%', mt: 4 }} />
       </Container>
     </ThemeProvider>
   );
-}
+};
+
+export default App;
