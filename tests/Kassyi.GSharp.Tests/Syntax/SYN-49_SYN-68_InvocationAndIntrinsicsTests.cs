@@ -155,7 +155,6 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
     [InlineData(float.MinValue, double.MinValue)]
     [InlineData(float.Epsilon, double.Epsilon)]
     [InlineData(-0.0f, -0.0)]
-    [InlineData(1.401298E-45f, 4.94065645841247E-324)] // Subnormal pattern
     public void Test_SYN68_MathEdgeCases_SpecialValues(float fInput, double dInput)
     {
         float[] floatInputs = [fInput];
