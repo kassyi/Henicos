@@ -118,10 +118,31 @@ internal static class CudaTypeMapper
         }
 
         var parent = symbol.ContainingSymbol;
-        if (parent != null && parent is not INamespaceSymbol { IsGlobalNamespace: true })
+        if (parent is { } and not INamespaceSymbol { IsGlobalNamespace: true })
         {
             writer.AppendFullyQualifiedCppName(parent);
             writer.Append('_');
+        }
+
+        writer.Append(symbol.Name);
+    }
+
+    public static void AppendFullyQualifiedCsName(this ref SourceWriter writer, ISymbol symbol)
+    {
+        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            return;
+        }
+
+        var parent = symbol.ContainingSymbol;
+        if (parent is not null and not INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            writer.AppendFullyQualifiedCsName(parent);
+            writer.Append('.');
+        }
+        else
+        {
+            writer.Append("global::");
         }
 
         writer.Append(symbol.Name);
@@ -136,7 +157,7 @@ internal static class CudaTypeMapper
             return (specialSize, specialSize);
         }
 
-        if (typeSymbol is not INamedTypeSymbol named || named.TypeKind != TypeKind.Struct)
+        if (typeSymbol is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named)
         {
             return (8, 8); // arrays/pointers
         }
