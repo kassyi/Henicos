@@ -2,6 +2,7 @@
 global using System.Collections.Immutable;
 global using System.Diagnostics.CodeAnalysis;
 global using Kassyi.GSharp.Compiler.Diagnostics;
+global using Kassyi.GSharp.Compiler.Extensions;
 global using Microsoft.CodeAnalysis;
 global using Microsoft.CodeAnalysis.CSharp;
 global using Microsoft.CodeAnalysis.CSharp.Syntax;

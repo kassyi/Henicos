@@ -252,7 +252,7 @@ internal static class DeclarationTranspilers
     {
         var isVar = node.Type.IsVar;
         var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
-        var shouldSplit = node.Parent is LocalDeclarationStatementSyntax || node.Parent is FixedStatementSyntax;
+        var shouldSplit = node.Parent is LocalDeclarationStatementSyntax or FixedStatementSyntax;
 
         return new VariableMapping(typeSymbol, isVar, isPointer, shouldSplit);
     }
@@ -342,9 +342,7 @@ internal static class DeclarationTranspilers
             if (context.SkipLocalsInit)
             {
                 var val = variable.Initializer.Value;
-                if (val is ImplicitObjectCreationExpressionSyntax ||
-                    val is ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } ||
-                    val is DefaultExpressionSyntax ||
+                if (val is ImplicitObjectCreationExpressionSyntax or ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } or DefaultExpressionSyntax ||
                     val is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.DefaultLiteralExpression))
                 {
                     return; // Skip zero-initialization

@@ -4,11 +4,17 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>SYN-02, SYN-04, SYN-05, SYN-06, SYN-07, SYN-08, SYN-09, SYN-11, SYN-12, SYN-13, SYN-14, SYN-15, SYN-16, SYN-17, SYN-19, SYN-21, SYN-22, SYN-25, SYN-26, SYN-27, SYN-28, SYN-29, SYN-31, SYN-32, SYN-34, SYN-35, SYN-36, SYN-37, SYN-38, SYN-39, SYN-40, SYN-41, SYN-42, SYN-43, SYN-44, SYN-45, SYN-46, SYN-47, SYN-48, SYN-49, SYN-50, SYN-57, SYN-58, SYN-59, SYN-60, SYN-61, SYN-62, SYN-63, SYN-64, SYN-65, SYN-66, SYN-67, SYN-68, SYN-69, SYN-73, SYN-75, SYN-76, SYN-77, SYN-78, SYN-80, SYN-81, SYN-82, SYN-83, SYN-86, SYN-87, SYN-88, SYN-90, SYN-92, SYN-93, SYN-94</b></para></remarks>
 internal static class ExpressionTranspilers
 {
-    public static void TranspileSimpleLambdaExpression(SimpleLambdaExpressionSyntax node, ref TranspileContext context) => TranspileLambda(node.Parameter, node.Block, node.ExpressionBody, ref context);
+    public static void
+        TranspileSimpleLambdaExpression(SimpleLambdaExpressionSyntax node, ref TranspileContext context) =>
+        TranspileLambda(node.Parameter, node.Block, node.ExpressionBody, ref context);
 
-    public static void TranspileParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node, ref TranspileContext context) => TranspileLambda(node.ParameterList, node.Block, node.ExpressionBody, ref context);
+    public static void TranspileParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node,
+        ref TranspileContext context) =>
+        TranspileLambda(node.ParameterList, node.Block, node.ExpressionBody, ref context);
 
-    public static void TranspileAnonymousMethodExpression(AnonymousMethodExpressionSyntax node, ref TranspileContext context) => TranspileLambda(node.ParameterList, node.Block, node.ExpressionBody, ref context);
+    public static void TranspileAnonymousMethodExpression(AnonymousMethodExpressionSyntax node,
+        ref TranspileContext context) =>
+        TranspileLambda(node.ParameterList, node.Block, node.ExpressionBody, ref context);
 
     private static void TranspileLambda(
         SyntaxNode? parameterOrList,
@@ -17,7 +23,7 @@ internal static class ExpressionTranspilers
         ref TranspileContext context)
     {
         context.Writer.Append("[&]");
-        
+
         if (parameterOrList != null)
         {
             if (parameterOrList is ParameterSyntax parameter)
@@ -63,6 +69,7 @@ internal static class ExpressionTranspilers
             }
         }
     }
+
     public static void TranspileAssignmentExpression(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
@@ -72,6 +79,7 @@ internal static class ExpressionTranspilers
             {
                 context.Writer.Append("&");
             }
+
             context.Writer.AppendParentheses();
             using (context.Writer.Scope())
             {
@@ -102,6 +110,7 @@ internal static class ExpressionTranspilers
             {
                 context.Writer.Append("&");
             }
+
             context.Writer.AppendParentheses();
             context.Writer.AppendSpace();
             context.Writer.Append("-> decltype(auto) ");
@@ -160,6 +169,7 @@ internal static class ExpressionTranspilers
             {
                 context.Writer.Append("&");
             }
+
             context.Writer.AppendParentheses();
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
@@ -253,6 +263,7 @@ internal static class ExpressionTranspilers
             {
                 context.Writer.Append("&");
             }
+
             context.Writer.AppendParentheses();
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
@@ -371,11 +382,28 @@ internal static class ExpressionTranspilers
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
 
+        if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
+        {
+            symbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
+        }
+
         if (symbol != null)
         {
             if (CudaIntrinsicsMapper.TryMap(symbol, out var mappedName))
             {
                 context.Writer.Append(mappedName);
+                return;
+            }
+
+            if ((symbol.ContainingType?.Name is TypeConstants.MathType or TypeConstants.MathFType
+                    or TypeConstants.InterlockedType) &&
+                (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading()))
+            {
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    node.GetLocation(),
+                    $"{symbol.ContainingType.Name}.{symbol.Name}"));
+                context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
                 return;
             }
         }
@@ -424,9 +452,7 @@ internal static class ExpressionTranspilers
 
     public static void TranspileInvocationExpression(InvocationExpressionSyntax node, ref TranspileContext context)
     {
-        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
-
-        if (symbol != null)
+        if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
         {
             foreach (var rule in s_invocationRules)
             {

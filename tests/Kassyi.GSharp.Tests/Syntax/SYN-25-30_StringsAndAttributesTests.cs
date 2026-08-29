@@ -24,13 +24,6 @@ public class SYN_25_30_StringsAndAttributesTests
     {
     }
 
-    [Fact(Skip = "未実装: SYN-28 ([MethodImpl(AggressiveInlining)] マッピング)")]
-    [Trait("FeatureId", "SYN-28")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN28_AggressiveInlining_Transpilation()
-    {
-    }
-
     [Fact(Skip = "未実装: SYN-29 ([LoopUnroll(N)] 属性によるアンロール制御)")]
     [Trait("FeatureId", "SYN-29")]
     [Trait("Category", "Syntax")]
