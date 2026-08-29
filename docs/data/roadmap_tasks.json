@@ -837,7 +837,7 @@
     "title": "Type conversion and nesting of the ternary operator (? :)",
     "domain": "SYN",
     "category": "Control Syntax and Expression Level",
-    "status": "implemented",
+    "status": "rejected",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -847,7 +847,8 @@
     "details": {
       "csharp_example": "var result = condition ? a : b;",
       "current_behavior": "C++ type mismatch errors during nesting or type promotion.",
-      "target_cuda": "Strict parenthesis guarantee and explicit type casting."
+      "target_cuda": "Strict parenthesis guarantee and explicit type casting.",
+      "memo": "Merged into GSH-01 due to functional duplication (Ternary operator type conversion and nesting)."
     },
     "score": 36,
     "files": [
@@ -1158,7 +1159,7 @@
     "title": "Structured Binding / Tuple Declaration Deconstruction",
     "domain": "SYN",
     "category": "Structs, Type Definitions, and Object Syntax",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
@@ -1168,7 +1169,8 @@
     "details": {
       "csharp_example": "(int, float) GetData() => (1, 2.0f);\nvar (a, b) = GetData();",
       "current_behavior": "TupleElementSyntax variable declarations are unsupported.",
-      "target_cuda": "C++17 Structured Binding (auto [quotient, remainder] = ...) or temporary variable expansion."
+      "target_cuda": "C++17 Structured Binding (auto [quotient, remainder] = ...) or temporary variable expansion.",
+      "memo": "Merged into GSH-02 due to functional duplication (Tuple declaration deconstruction)."
     },
     "score": 33,
     "files": [
@@ -2508,7 +2510,7 @@
     "title": "Multi-loop breakout (named break)",
     "domain": "SYN",
     "category": "Loops, Jumps, and Flow Control",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
@@ -2615,7 +2617,7 @@
     "title": "Compile-time constant evaluation (constexpr propagation)",
     "domain": "SYN",
     "category": "Debug, Contracts, and PTX/Hardware Integration",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
@@ -2645,7 +2647,7 @@
     "title": "Inline PTX / C++ Embedding",
     "domain": "SYN",
     "category": "Debug, Contracts, and PTX/Hardware Integration",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
@@ -2852,7 +2854,7 @@
     "title": "foreach loops with tuple declaration deconstruction",
     "domain": "SYN",
     "category": "Bleeding-edge Edge Cases and Special Syntax",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
@@ -2862,7 +2864,8 @@
     "details": {
       "csharp_example": "// Error: NotSupportedException (ForEachStatementSyntax)\nforeach (var item in array) { }",
       "current_behavior": "ForEachVariableStatementSyntax is unsupported.",
-      "target_cuda": "Expanded to C++17 Structured Binding built-in range-based for: for(auto [x, y] : points)."
+      "target_cuda": "Expanded to C++17 Structured Binding built-in range-based for: for(auto [x, y] : points).",
+      "memo": "Merged into GSH-02 due to functional duplication (Tuple declaration deconstruction)."
     },
     "score": 21,
     "files": [
