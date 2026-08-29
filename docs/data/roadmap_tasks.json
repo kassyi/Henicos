@@ -1087,7 +1087,6 @@
     "domain": "SYN",
     "category": "Control Syntax and Expression Level",
     "status": "rejected",
-    "reject_reason": "Merged into SYN-08 as they share identical transpilation logic (C++ Lambdas).",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -1098,7 +1097,7 @@
       "csharp_example": "void Outer() {\n    void Inner() { }\n    Inner();\n}",
       "current_behavior": "Unsupported syntax (skipped or flagged as syntax error in AST).",
       "target_cuda": "Expanded to C++ lambdas with captures (auto Add = [&](int v) { sum += v; };).",
-      "memo": "Merged into syn07"
+      "memo": "Merged into SYN-08 as they share identical transpilation logic (C++ Lambdas)."
     },
     "score": 37,
     "files": [
@@ -1129,7 +1128,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
-    "depends_on": ["SYN-03", "SYN-07"]
+    "depends_on": ["SYN-03"]
   },
   {
     "id": "SYN-09",
