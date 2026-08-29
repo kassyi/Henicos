@@ -19,8 +19,9 @@ public class SYN_08_LambdaAndLocalFunctionsSadPathTests
         var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
-        // Verification: Roslyn / Transpiler / Generator reports diagnostic errors (e.g. GSH0001 or object/delegate creation diagnostics) without compiler crashing
+        // Verification: Roslyn / Transpiler / Generator reports specific diagnostic errors without compiler crashing
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0001"); // Reference type object creation
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003"); // Unsupported syntax (e.g. delegate escaping assignment)
     }
 }
