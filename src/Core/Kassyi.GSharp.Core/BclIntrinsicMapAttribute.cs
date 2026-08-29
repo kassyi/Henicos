@@ -7,8 +7,8 @@ namespace Kassyi.GSharp.Core;
 /// <para>This assembly-level attribute enables the GSharp Transpiler to translate standard .NET API calls (e.g., <c>BitOperations.PopCount</c>) into optimal GPU hardware instructions without runtime reflection.</para>
 /// <para><b>Target:</b> Assembly declaration.</para>
 /// </remarks>
-[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 /// <remarks><para>Implements: <b>GEN-39</b></para></remarks>
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
 public sealed class BclIntrinsicMapAttribute : Attribute
 {
     /// <summary>
