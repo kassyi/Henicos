@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Tests.Helpers;
+
 namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class GSH_00_03_GpuKernelAnalyzerTests
@@ -30,7 +32,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     public async Task Test_GSH01_Foreach_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-01_Foreach_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
+        diagnostics.AssertContainsError(GSharpDiagnostics.ForeachNotSupported.Id);
     }
 
     [Fact]
@@ -39,7 +41,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     public async Task Test_GSH01_StringTernary_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetGeneratorDiagnosticsFromTestNameAsync("GSH-01_StringTernary_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.StringNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
+        diagnostics.AssertContainsError(GSharpDiagnostics.StringNotSupported.Id);
     }
 
 
@@ -49,7 +51,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     public async Task Test_GSH02_LinqQuery_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-02_LinqQuery_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.LinqNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
+        diagnostics.AssertContainsError(GSharpDiagnostics.LinqNotSupported.Id);
     }
 
     [Fact]
@@ -58,7 +60,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     public async Task Test_GSH03_ImplicitVar_WithoutSuffix_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-03_ImplicitVar_WithoutSuffix_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ImplicitVarNeedsSuffix.Id && d.Severity == DiagnosticSeverity.Error);
+        diagnostics.AssertContainsError(GSharpDiagnostics.ImplicitVarNeedsSuffix.Id);
     }
 
     [Fact]

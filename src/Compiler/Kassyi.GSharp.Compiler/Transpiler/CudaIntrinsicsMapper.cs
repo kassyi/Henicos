@@ -8,7 +8,7 @@ internal static class CudaIntrinsicsMapper
         // 1. Check for CudaIntrinsicAttribute on the member itself
         var intrinsicAttr = symbol.GetAttributes()
             .FirstOrDefault(a => a.AttributeClass?.Name == KnownAttributes.CudaIntrinsicAttribute);
-        if (intrinsicAttr != null && intrinsicAttr.ConstructorArguments.Length > 0)
+        if (intrinsicAttr is { ConstructorArguments.Length: > 0 })
         {
             mappedName = intrinsicAttr.ConstructorArguments[0].Value?.ToString() ?? symbol.Name;
             return true;
@@ -19,18 +19,40 @@ internal static class CudaIntrinsicsMapper
         {
             var patternAttr = symbol.ContainingType.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == KnownAttributes.CudaIntrinsicPatternAttribute);
-            if (patternAttr != null && patternAttr.ConstructorArguments.Length > 0)
+            if (patternAttr is { ConstructorArguments.Length: > 0 })
             {
                 var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";
                 mappedName = string.Format(pattern, symbol.Name.ToLowerInvariant());
                 return true;
             }
 
-            // Hardcoded external mappings (like System.Math) which cannot be annotated
-            if (symbol.ContainingType.Name == TypeConstants.MathType)
+            if (symbol.ContainingNamespace.IsSystemNamespace() &&
+                symbol.ContainingType.Name is TypeConstants.MathType or TypeConstants.MathFType)
             {
-                mappedName = symbol.Name.ToLowerInvariant();
-                return true;
+                var pt = symbol is IMethodSymbol { Parameters.Length: > 0 } methodSymbol
+                    ? methodSymbol.Parameters[0].Type.SpecialType
+                    : SpecialType.None;
+
+                var isInteger = pt is >= SpecialType.System_SByte and <= SpecialType.System_UInt64;
+                var isSingle = pt == SpecialType.System_Single ||
+                               symbol.ContainingType.Name == TypeConstants.MathFType;
+
+                var matchedName = symbol.Name switch
+                {
+                    "Sin" => isSingle ? "sinf" : "sin",
+                    "Cos" => isSingle ? "cosf" : "cos",
+                    "Max" => isInteger ? "max" : (isSingle ? "fmaxf" : "fmax"),
+                    "Min" => isInteger ? "min" : (isSingle ? "fminf" : "fmin"),
+                    "Abs" => isInteger ? "abs" : (isSingle ? "fabsf" : "fabs"),
+                    "Clamp" => "__gsharp_clamp",
+                    _ => null
+                };
+
+                if (matchedName != null)
+                {
+                    mappedName = matchedName;
+                    return true;
+                }
             }
         }
 

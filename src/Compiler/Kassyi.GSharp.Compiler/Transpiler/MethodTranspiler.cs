@@ -127,7 +127,7 @@ public static class MethodTranspiler
         context.Writer.AppendSpace();
 
         var returnType = methodSymbol?.ReturnType;
-        if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+        if (returnType is { SpecialType: not SpecialType.System_Void })
         {
             context.Writer.AppendType(returnType);
         }
@@ -141,7 +141,7 @@ public static class MethodTranspiler
         ref TranspileContext context)
     {
         var returnType = methodSymbol?.ReturnType;
-        if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+        if (returnType is { SpecialType: not SpecialType.System_Void })
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
                 method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));

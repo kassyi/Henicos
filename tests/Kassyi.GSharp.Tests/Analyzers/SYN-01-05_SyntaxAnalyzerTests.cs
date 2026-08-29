@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Kassyi.GSharp.Compiler.Diagnostics;
 
+using Kassyi.GSharp.Tests.Helpers;
+
 namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class SYN_01_05_SyntaxAnalyzerTests
@@ -41,6 +43,6 @@ public class SYN_01_05_SyntaxAnalyzerTests
     public async Task Test_SYN04_ReferenceNullCoalescing_InGpuKernel_ReportsDiagnostic()
     {
         var diagnostics = await GetGeneratorDiagnosticsFromTestNameAsync("SYN-04_ReferenceNullCoalescing_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.StringNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
+        diagnostics.AssertContainsError(GSharpDiagnostics.StringNotSupported.Id);
     }
 }
