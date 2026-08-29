@@ -159,3 +159,7 @@ fix(ci): <失敗理由に応じた簡潔な修正タイトル>
 - **最終コミット**: `<commit-hash> - <commit-message>`
 - **確認したCI Run**: `<run-id> / <workflow-name>`
 ```
+
+
+## Markdownフォーマット (GFM)
+応答の可読性を高めるため、アラート（例：`> [!NOTE]`, `> [!WARNING]`）やテーブル、Mermaid図など、GitHub Flavored Markdown (GFM) の機能をエージェントの裁量で自由に使用してフォーマットしてください。
