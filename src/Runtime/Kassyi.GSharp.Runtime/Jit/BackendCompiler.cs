@@ -175,9 +175,9 @@ public sealed partial class NvccCompiler
     /// <remarks>
     /// <para><b>Execution Target:</b> Host-only (CPU). Spawns a synchronous sub-process.</para>
     /// </remarks>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UnusedMember.Global",
+    [SuppressMessage("ReSharper", "UnusedMember.Global",
         Justification = "Public API exposed for runtime consumers")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
+    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
         Justification = "Public API for library")]
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
@@ -206,9 +206,9 @@ public sealed partial class NvccCompiler
     /// <remarks>
     /// <para><b>Execution Target:</b> Host-only (CPU). Spawns a synchronous sub-process.</para>
     /// </remarks>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UnusedMember.Global",
+    [SuppressMessage("ReSharper", "UnusedMember.Global",
         Justification = "Public API exposed for runtime consumers")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
+    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
         Justification = "Public API for library")]
     public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
         string tempDir, string smVersion = "sm_52")
@@ -259,7 +259,7 @@ public sealed partial class NvccCompiler
         Logger<NvccCompiler>.Info("...");
         if (cuSrc.Contains("Kernel_StaticFermatLoop"))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(cuSrc,
+            var match = Regex.Match(cuSrc,
                 @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
             if (match.Success)
             {
