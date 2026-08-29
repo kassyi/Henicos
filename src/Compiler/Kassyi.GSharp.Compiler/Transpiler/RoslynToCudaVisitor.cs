@@ -71,7 +71,55 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 node.GetLocation()));
         }
 
-        base.VisitPredefinedType(node);
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append(node.Keyword.Text);
+        }
+    }
+
+    public override void VisitParameterList(ParameterListSyntax node)
+    {
+        using (Context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.Parameters.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+                Visit(node.Parameters[i]);
+            }
+        }
+    }
+
+    public override void VisitParameter(ParameterSyntax node)
+    {
+        if (node.Type != null)
+        {
+            var typeSymbol = Context.SemanticModel.GetTypeInfo(node.Type).Type;
+            if (typeSymbol != null)
+            {
+                Context.Writer.AppendType(typeSymbol);
+            }
+            else
+            {
+                Visit(node.Type);
+            }
+        }
+        else
+        {
+            // Implicitly typed parameter
+            Context.Writer.AppendKeyword("auto");
+        }
+
+        Context.Writer.AppendSpace();
+        Context.Writer.Append(node.Identifier.Text);
     }
 
     public void VisitStatementOrBlock(StatementSyntax statement)
@@ -166,6 +214,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
         => DeclarationTranspilers.TranspileVariableDeclaration(node, ref Context);
 
+    public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
+        => StatementTranspilers.TranspileLocalFunctionStatement(node, ref Context);
+
     // --- Expressions ---
 
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
@@ -259,4 +310,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
+
+    public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
+        => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
+
+    public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
+        => ExpressionTranspilers.TranspileParenthesizedLambdaExpression(node, ref Context);
+
+    public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
+        => ExpressionTranspilers.TranspileAnonymousMethodExpression(node, ref Context);
 }
