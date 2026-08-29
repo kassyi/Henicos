@@ -10,17 +10,17 @@
 
 | リソース | 役割 | パス |
 | :--- | :--- | :--- |
-| **Data Source (SSOT)** | タスク一覧、優先度スコア、完了状態、実装メモの機械可読マスターデータ | [`docs/data/roadmap_tasks.json`](file:///p:/Projects/Active/Henicos/docs/data/roadmap_tasks.json) |
-| **Interactive UI** | 人間が直感的にタスク状況を確認・更新するための Web アプリ (React+Vite) | [`tools/roadmap-ui/`](file:///p:/Projects/Active/Henicos/tools/roadmap-ui/) |
+| **Data Source (SSOT)** | タスク一覧、優先度スコア、完了状態、実装メモの機械可読マスターデータ | [`data/roadmap_tasks.json`](data/roadmap_tasks.json) |
+| **Interactive UI** | 人間が直感的にタスク状況を確認・更新するための Web アプリ (React+Vite) | [`tools/roadmap-ui/`](../tools/roadmap-ui/) |
 
 ### 1.2 領域別詳細進捗表 (仕様・変換方針・背景)
 
 | ドキュメント | 担当領域 | 主な対象タスク | パス |
 | :--- | :--- | :--- | :--- |
-| **ジェネレータ・コア基盤** | Roslyn Source Generator、PTX/JIT エンジン、Vector 型マッピング、マーシャリング | `GEN-01` 〜 `GEN-19` | [`docs/roadmaps/gsharp_generator_core.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gsharp_generator_core.md) |
-| **C# 構文・シンタックスシュガー** | 制御構文、型推論、パターンマッチ、演算子、永久非対応構文 (`UNS-01`〜`14`) | `SYN-01` 〜 `SYN-94` | [`docs/roadmaps/gsharp_syntax_support.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gsharp_syntax_support.md) |
-| **トランスパイラ & ランタイム課題** | AST 走査、型解決、JIT キャッシュ、プロセス制御、デバッグ行マッピング | `GSH-01` 〜 `GSH-09` | [`docs/roadmaps/gsharp_transpiler_issues.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gsharp_transpiler_issues.md) |
-| **GpuBigInt (GBI) 基盤** | 多倍長整数 GPU 演算、NTT 乗算、Lehmer's GCD、メモリプール、演算子 | `GBI-01` 〜 `GBI-28` | [`docs/roadmaps/gbi_roadmap.md`](file:///p:/Projects/Active/Henicos/docs/roadmaps/gbi_roadmap.md) |
+| **ジェネレータ・コア基盤** | Roslyn Source Generator、PTX/JIT エンジン、Vector 型マッピング、マーシャリング | `GEN-01` 〜 `GEN-19` | [`roadmaps/gsharp_generator_core.md`](roadmaps/gsharp_generator_core.md) |
+| **C# 構文・シンタックスシュガー** | 制御構文、型推論、パターンマッチ、演算子、永久非対応構文 (`UNS-01`〜`14`) | `SYN-01` 〜 `SYN-94` | [`roadmaps/gsharp_syntax_support.md`](roadmaps/gsharp_syntax_support.md) |
+| **トランスパイラ & ランタイム課題** | AST 走査、型解決、JIT キャッシュ、プロセス制御、デバッグ行マッピング | `GSH-01` 〜 `GSH-09` | [`roadmaps/gsharp_transpiler_issues.md`](roadmaps/gsharp_transpiler_issues.md) |
+| **GpuBigInt (GBI) 基盤** | 多倍長整数 GPU 演算、NTT 乗算、Lehmer's GCD、メモリプール、演算子 | `GBI-01` 〜 `GBI-28` | [`roadmaps/gbi_roadmap.md`](roadmaps/gbi_roadmap.md) |
 
 ---
 
