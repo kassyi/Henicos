@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -5,89 +6,149 @@ import {
   Box,
   Typography,
   Card,
-  CircularProgress,
   Snackbar,
   Alert,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import { m3DarkTheme } from './theme';
 import { useRoadmap } from './hooks/useRoadmap';
 import { ControlsBar } from './components/ControlsBar';
-import { TierSection } from './components/TierSection';
 import { InfoAccordion } from './components/InfoAccordion';
-import { CartFab } from './components/CartFab';
+import { TierSection } from './components/TierSection';
+import { TaskDetailPanel } from './components/TaskDetailPanel';
+import type { DockPosition } from './types';
 
 const TIER_DEFINITIONS = [
-  { tier: 1, title: 'Tier 1 (最優先 / Score >= 36)' },
-  { tier: 2, title: 'Tier 2 (優先 / Score >= 28)' },
-  { tier: 3, title: 'Tier 3 (通常タスク / Score >= 20)' },
-  { tier: 4, title: 'Tier 4 (後回し / Score < 20)' },
-] as const;
+  { tier: 1, title: 'Tier 1: 最優先基盤 (スコア 36以上)' },
+  { tier: 2, title: 'Tier 2: 優先構文 (スコア 28〜35)' },
+  { tier: 3, title: 'Tier 3: 通常構文 (スコア 20〜27)' },
+  { tier: 4, title: 'Tier 4: 後回し / 独自拡張 (スコア 19以下)' },
+];
 
-export default function App() {
+export const App: React.FC = () => {
   const {
+    tasks,
     loading,
     saveStatus,
-    exitingIds,
+    selectedTaskId,
+    setSelectedTaskId,
+    history,
+    handleUndo,
+    handleRedo,
     searchQuery,
     setSearchQuery,
+    progressFilter,
+    setProgressFilter,
+    showAdvancedFilters,
+    setShowAdvancedFilters,
     minBlocker,
     setMinBlocker,
     minDifficulty,
     setMinDifficulty,
     minGenerality,
     setMinGenerality,
-    showAdvancedFilters,
-    setShowAdvancedFilters,
-    statusFilters,
-    setStatusFilters,
     toast,
     setToast,
     cartIds,
     setCartIds,
-    handleUndo,
-    handleRedo,
-    history,
-    updateTaskStatus,
     handleCartClick,
+    updateTaskStatus,
+    updateNotes,
     toggleTierCart,
     copyJulesPrompt,
     copyCartIdsOnly,
-    updateNotes,
     filteredTasks,
     tasksByTier,
+    exitingIds,
+    statusCounts,
   } = useRoadmap();
+
+  // Dock position preference (bottom, left, right)
+  const [dockPosition, setDockPosition] = useState<DockPosition>(() => {
+    const saved = localStorage.getItem('roadmap_dock_position');
+    if (saved === 'left' || saved === 'right' || saved === 'bottom') return saved;
+    return 'bottom';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('roadmap_dock_position', dockPosition);
+  }, [dockPosition]);
+
+  // Dynamically measured physical height of the bottom TaskDetailPanel
+  const [panelHeight, setPanelHeight] = useState<number>(64);
+
+  // Find currently selected task object
+  const selectedTask = selectedTaskId ? tasks.find((t) => t.id === selectedTaskId) || null : null;
 
   if (loading) {
     return (
       <ThemeProvider theme={m3DarkTheme}>
         <CssBaseline />
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            minHeight: '100vh',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: '#141218',
+          }}
+        >
           <CircularProgress color="primary" />
         </Box>
       </ThemeProvider>
     );
   }
 
+  // Dynamic layout margins based on dock position
+  const mainWrapperStyles =
+    dockPosition === 'bottom'
+      ? {
+          width: '100%',
+          pb: `${panelHeight + 32}px`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }
+      : dockPosition === 'left'
+      ? {
+          width: { xs: '100%', md: 'calc(100% - 460px)' },
+          ml: { xs: 0, md: '460px' },
+          pb: 6,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }
+      : {
+          width: { xs: '100%', md: 'calc(100% - 460px)' },
+          mr: { xs: 0, md: '460px' },
+          pb: 6,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        };
+
   return (
     <ThemeProvider theme={m3DarkTheme}>
       <CssBaseline />
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#141218' }}>
+        <Box sx={mainWrapperStyles}>
+          <Container
+            maxWidth="xl"
+            sx={{
+              pt: 4,
+              px: { xs: 2, sm: 3 },
+            }}
+          >
         {/* Top App Header */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" component="h1" sx={{ color: 'primary.main', mb: 1 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" sx={{ color: 'primary.main', mb: 1, fontWeight: 800 }}>
             Henicos Roadmap Manager
           </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            インタラクティブ進捗管理システム
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            インタラクティブ進捗管理システム — 全 <strong>{tasks.length}</strong> 件中 <strong>{filteredTasks.length}</strong> 件表示
           </Typography>
         </Box>
 
         <ControlsBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          statusFilters={statusFilters}
-          setStatusFilters={setStatusFilters}
+          progressFilter={progressFilter}
+          setProgressFilter={setProgressFilter}
           showAdvancedFilters={showAdvancedFilters}
           setShowAdvancedFilters={setShowAdvancedFilters}
           historyLengthPast={history.past.length}
@@ -106,6 +167,7 @@ export default function App() {
           setMinDifficulty={setMinDifficulty}
           minGenerality={minGenerality}
           setMinGenerality={setMinGenerality}
+          statusCounts={statusCounts}
         />
 
         {/* Info Accordion */}
@@ -119,10 +181,11 @@ export default function App() {
             title={title}
             tasks={tasksByTier[tier]}
             cartIds={cartIds}
+            selectedTaskId={selectedTaskId}
             exitingIds={exitingIds}
             onCartClick={handleCartClick}
             onStatusChange={updateTaskStatus}
-            onNotesChange={updateNotes}
+            onSelectTask={setSelectedTaskId}
             toggleTierCart={toggleTierCart}
           />
         ))}
@@ -135,67 +198,68 @@ export default function App() {
           </Card>
         )}
 
-        {/* AI Cart FAB Cluster */}
-        <CartFab
-          count={cartIds.length}
-          onCopyJulesPrompt={copyJulesPrompt}
-          onCopyIdsOnly={copyCartIdsOnly}
-        />
-
-        {/* Toast / Notification Alert */}
+        {/* Global Toast / Snackbar Notification */}
         <Snackbar
           open={toast.open}
-          autoHideDuration={4500}
-          onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+          autoHideDuration={4000}
+          onClose={() => setToast({ ...toast, open: false })}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          sx={{
+            bottom: dockPosition === 'bottom' ? `${panelHeight + 16}px` : 24,
+            ...(dockPosition === 'left' && { left: { md: '540px' } }),
+            ...(dockPosition === 'right' && { right: { md: '540px' } }),
+          }}
         >
           <Alert
-            severity={toast.severity || 'info'}
+            severity={toast.severity || 'success'}
             variant="filled"
             sx={{
-              borderRadius: 2,
-              fontWeight: 600,
-              bgcolor: '#2d2b33',
+              width: '100%',
+              bgcolor: '#332d41',
               color: '#f4effa',
-              border: '1px solid #49454f',
-              boxShadow: '0 6px 24px rgba(0,0,0,0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              py: 0.5,
-              px: 2,
-              '& .MuiAlert-icon': { color: 'primary.light', my: 'auto' },
-              '& .MuiAlert-message': { py: 0.5, fontSize: '0.85rem' },
+              borderRadius: 2,
+              '& .MuiAlert-icon': { color: 'primary.light' },
             }}
             action={
-              toast.onAction ? (
+              toast.actionText && toast.onAction ? (
                 <Button
                   color="inherit"
                   size="small"
                   onClick={() => {
                     toast.onAction?.();
-                    setToast((prev) => ({ ...prev, open: false }));
+                    setToast({ ...toast, open: false });
                   }}
-                  sx={{
-                    color: '#d0bcff',
-                    fontWeight: 800,
-                    textTransform: 'none',
-                    fontSize: '0.82rem',
-                    px: 1.5,
-                    py: 0.3,
-                    borderRadius: 1.5,
-                    bgcolor: 'rgba(208, 188, 255, 0.08)',
-                    '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.2)' },
-                  }}
+                  sx={{ color: 'primary.light', fontWeight: 800 }}
                 >
-                  {toast.actionText || '元に戻す'}
+                  {toast.actionText}
                 </Button>
-              ) : undefined
+              ) : null
             }
           >
             {toast.message}
           </Alert>
         </Snackbar>
-      </Container>
+
+        {/* Physical spacer for bottom dock */}
+        {dockPosition === 'bottom' && (
+          <Box sx={{ height: `${panelHeight}px`, width: '100%', mt: 4 }} />
+        )}
+          </Container>
+        </Box>
+
+        {/* Dynamic Task Detail Panel (Bottom / Left / Right Dock) */}
+        <TaskDetailPanel
+          task={selectedTask}
+          dockPosition={dockPosition}
+          onDockPositionChange={setDockPosition}
+          onStatusChange={updateTaskStatus}
+          onNotesChange={updateNotes}
+          onClose={() => setSelectedTaskId(null)}
+          onHeightChange={setPanelHeight}
+        />
+      </Box>
     </ThemeProvider>
   );
-}
+};
+
+export default App;

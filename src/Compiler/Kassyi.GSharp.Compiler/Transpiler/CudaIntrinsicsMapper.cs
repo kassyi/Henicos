@@ -7,7 +7,7 @@ internal static class CudaIntrinsicsMapper
     {
         // 1. Check for CudaIntrinsicAttribute on the member itself
         var intrinsicAttr = symbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "CudaIntrinsicAttribute");
+            .FirstOrDefault(a => a.AttributeClass?.Name == KnownAttributes.CudaIntrinsicAttribute);
         if (intrinsicAttr != null && intrinsicAttr.ConstructorArguments.Length > 0)
         {
             mappedName = intrinsicAttr.ConstructorArguments[0].Value?.ToString() ?? symbol.Name;
@@ -18,7 +18,7 @@ internal static class CudaIntrinsicsMapper
         if (symbol.ContainingType != null)
         {
             var patternAttr = symbol.ContainingType.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.Name == "CudaIntrinsicPatternAttribute");
+                .FirstOrDefault(a => a.AttributeClass?.Name == KnownAttributes.CudaIntrinsicPatternAttribute);
             if (patternAttr != null && patternAttr.ConstructorArguments.Length > 0)
             {
                 var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";
@@ -27,7 +27,7 @@ internal static class CudaIntrinsicsMapper
             }
 
             // Hardcoded external mappings (like System.Math) which cannot be annotated
-            if (symbol.ContainingType.Name == "Math")
+            if (symbol.ContainingType.Name == TypeConstants.MathType)
             {
                 mappedName = symbol.Name.ToLowerInvariant();
                 return true;
