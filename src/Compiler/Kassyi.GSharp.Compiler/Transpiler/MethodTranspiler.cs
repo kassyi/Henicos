@@ -109,9 +109,21 @@ public static class MethodTranspiler
                 {
                     hasNoInlining = true;
                 }
-                else if (attr.IsAttribute(KnownAttributes.MethodImpl))
+                else if (attr.IsAttribute(KnownAttributes.MethodImpl) &&
+                         attr.AttributeClass?.ContainingNamespace is
+                         {
+                             Name: "CompilerServices",
+                             ContainingNamespace:
+                             {
+                                 Name: "Runtime",
+                                 ContainingNamespace:
+                                 {
+                                     Name: "System", ContainingNamespace.IsGlobalNamespace: true
+                                 }
+                             }
+                         })
                 {
-                    if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is not null)
+                    if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
                     {
                         var options = (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
                         if ((options & MethodImplOptions.AggressiveInlining) != 0)
@@ -128,7 +140,7 @@ public static class MethodTranspiler
                     {
                         foreach (var namedArg in attr.NamedArguments)
                         {
-                            if (namedArg.Key == "Value" && namedArg.Value.Value is not null)
+                            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
                             {
                                 var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
                                 if ((options & MethodImplOptions.AggressiveInlining) != 0)
