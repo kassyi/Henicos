@@ -62,6 +62,33 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
         }
     }
 
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-49")]
+    public void Test_SYN49_InterlockedEdgeCases_EmptyArray()
+    {
+        int[] emptyArray = [];
+        AtomicTestStruct[] emptyStructArray = [];
+
+        // Should be rejected or safely handled (we assert no exception is thrown when blockDimX is 0, or we catch exception)
+        var ex = Record.Exception(() => 
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedEdgeCasesKernel(
+                emptyArray, emptyStructArray, blockDimX: 0));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "SYN-49")]
+    public void Test_AtomicTestStruct_MemoryLayout()
+    {
+        Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());
+        Assert.Equal(0, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueI").ToInt32());
+        Assert.Equal(4, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueU").ToInt32());
+        Assert.Equal(8, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueL").ToInt32());
+    }
+
     // SYN-68 Happy Path
     [Theory]
     [Trait("Category", "Execution")]
@@ -71,6 +98,8 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
     [InlineData(-3.141592653589793, -3.1415927f)] // -pi
     [InlineData(12.34, 12.34f)]
     [InlineData(-5.67, -5.67f)]
+    [InlineData(1.0, 1.0f)]
+    [InlineData(-1.0, -1.0f)]
     public void Test_SYN68_MathAndMathF_DataDriven(double dVal, float fVal)
     {
         double[] doubleInputs = [dVal];
@@ -118,12 +147,11 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
         SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathEdgeCasesKernel(
             floatInputs, floatResults, doubleInputs, doubleResults, blockDimX: 1);
 
-        // Float NaN check or value check
         if (float.IsNaN(fInput))
         {
-            Assert.True(float.IsNaN(floatResults[0]));
-            Assert.True(float.IsNaN(floatResults[1]));
-            Assert.True(float.IsNaN(floatResults[2]));
+            Assert.True(float.IsNaN(floatResults[0])); // Abs(NaN) is NaN
+            Assert.Equal(0.0f, floatResults[1]); // fmaxf(NaN, 0) is 0
+            Assert.Equal(0.0f, floatResults[2]); // fminf(NaN, 0) is 0
         }
         else
         {
@@ -132,12 +160,11 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
             Assert.Equal(MathF.Min(fInput, 0.0f), floatResults[2]);
         }
 
-        // Double NaN check or value check
         if (double.IsNaN(dInput))
         {
-            Assert.True(double.IsNaN(doubleResults[0]));
-            Assert.True(double.IsNaN(doubleResults[1]));
-            Assert.True(double.IsNaN(doubleResults[2]));
+            Assert.True(double.IsNaN(doubleResults[0])); // Abs(NaN) is NaN
+            Assert.Equal(0.0, doubleResults[1]); // fmax(NaN, 0) is 0
+            Assert.Equal(0.0, doubleResults[2]); // fmin(NaN, 0) is 0
         }
         else
         {

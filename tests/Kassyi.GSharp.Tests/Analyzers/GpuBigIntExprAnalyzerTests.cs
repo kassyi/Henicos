@@ -23,7 +23,7 @@ public class GpuBigIntExprAnalyzerTests
     public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_LocalDeclaration");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+        diagnostics.AssertContains(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class GpuBigIntExprAnalyzerTests
     public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-27_Assignment");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+        diagnostics.AssertContains(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class GpuBigIntExprAnalyzerTests
     public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-28_LegacyNamespace");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+        diagnostics.AssertContains(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
@@ -56,6 +56,6 @@ public class GpuBigIntExprAnalyzerTests
     public async Task MalformedSyntax_ShouldNotCrash_SadPath()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_MalformedSyntax");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id && d.Severity == DiagnosticSeverity.Error); 
+        diagnostics.AssertContainsError(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id); 
     }
 }
