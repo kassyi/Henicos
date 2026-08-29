@@ -223,7 +223,7 @@ internal static class StructTranspiler
         {
             foreach (var member in structSym.GetMembers())
             {
-                if (!member.IsStatic && !member.IsImplicitlyDeclared)
+                if (member is { IsStatic: false, IsImplicitlyDeclared: false })
                 {
                     WriteStructMember(ref context, member);
                 }
