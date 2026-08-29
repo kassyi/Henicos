@@ -454,6 +454,77 @@ internal static class ExpressionTranspilers
     {
         if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
         {
+            if (symbol.ContainingType?.Name == "Gpu" && symbol.Name == "WarpShuffle")
+            {
+                context.Writer.Append("__shfl_sync");
+                using (context.Writer.Parentheses())
+                {
+                    if (node.ArgumentList.Arguments.Count == 2)
+                    {
+                        context.Writer.Append("0xFFFFFFFF");
+                        context.Writer.AppendComma();
+                        context.Visitor.Visit(node.ArgumentList.Arguments[0]);
+                        context.Writer.AppendComma();
+                        context.Visitor.Visit(node.ArgumentList.Arguments[1]);
+                    }
+                    else
+                    {
+                        for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                        {
+                            context.Visitor.Visit(node.ArgumentList.Arguments[i]);
+                            if (i < node.ArgumentList.Arguments.Count - 1)
+                            {
+                                context.Writer.AppendComma();
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (symbol.MethodKind == MethodKind.ReducedExtension)
+            {
+                var receiverType = symbol.ReceiverType;
+                if (receiverType != null && receiverType.TypeKind == TypeKind.Class)
+                {
+                    if (receiverType.SpecialType == SpecialType.System_String)
+                    {
+                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.GetLocation()));
+                    }
+                    else
+                    {
+                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), receiverType.ToDisplayString()));
+                    }
+                }
+
+                context.Writer.Append(symbol.Name);
+                using (context.Writer.Parentheses())
+                {
+                    if (node.Expression is MemberAccessExpressionSyntax memberAccess)
+                    {
+                        if (symbol.Parameters.Length > 0 && symbol.Parameters[0].RefKind is RefKind.Ref or RefKind.Out)
+                        {
+                            context.Writer.Append("&");
+                        }
+                        context.Visitor.Visit(memberAccess.Expression);
+                    }
+
+                    if (node.ArgumentList.Arguments.Count > 0)
+                    {
+                        context.Writer.AppendComma();
+                        for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                        {
+                            context.Visitor.Visit(node.ArgumentList.Arguments[i]);
+                            if (i < node.ArgumentList.Arguments.Count - 1)
+                            {
+                                context.Writer.AppendComma();
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
             foreach (var rule in s_invocationRules)
             {
                 if (rule.TryTranspile(node, ref context, symbol))

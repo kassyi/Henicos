@@ -45,4 +45,18 @@ public class SYN_01_05_SyntaxAnalyzerTests
         var diagnostics = await GetGeneratorDiagnosticsFromTestNameAsync("SYN-04_ReferenceNullCoalescing_InGpuKernel");
         diagnostics.AssertContainsError(GSharpDiagnostics.StringNotSupported.Id);
     }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-09")]
+    [Trait("Category", "SadPath")]
+    public async Task Test_SYN09_AmbiguousDefaultLiteral_ReportsDiagnostic()
+    {
+        var path = Path.GetFullPath(Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "SYN-09_AmbiguousDefaultLiteral.cs"));
+        var source = await File.ReadAllTextAsync(path);
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var compileDiagnostics = compilation.GetDiagnostics();
+
+        // CS8716: There is no target type for the default literal.
+        Assert.Contains(compileDiagnostics, d => d.Id == "CS8716" || d.Id == "CS0828");
+    }
 }
