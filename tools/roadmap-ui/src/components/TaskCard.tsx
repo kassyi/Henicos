@@ -83,8 +83,8 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
     >
       <CardContent sx={{ p: 2, flex: '1 0 auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
         {/* Header Tags Row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5 }}>
-          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'center', flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
             <Chip
               label={task.id}
               size="small"
@@ -94,6 +94,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
                 fontWeight: 700,
                 fontSize: '0.75rem',
                 height: 22,
+                flexShrink: 0,
               }}
             />
             <Chip
@@ -106,6 +107,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
                 color: 'text.secondary',
                 borderColor: '#49454f',
                 height: 22,
+                flexShrink: 0,
               }}
             />
             {task.category && (
@@ -113,11 +115,19 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
                 label={task.category}
                 size="small"
                 variant="outlined"
+                title={task.category}
                 sx={{
                   fontSize: '0.68rem',
                   color: '#d0bcff',
                   borderColor: 'rgba(208, 188, 255, 0.3)',
                   height: 22,
+                  maxWidth: 130,
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    px: 0.8,
+                  },
                 }}
               />
             )}
@@ -132,6 +142,8 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
             title={inCart ? 'カートから削除 (Shift+Clickで範囲選択)' : 'カートに追加 (Shift+Clickで範囲選択)'}
             sx={{
               color: inCart ? 'primary.light' : 'text.disabled',
+              flexShrink: 0,
+              p: 0.5,
               '&:hover': { color: 'primary.main' },
             }}
           >
@@ -144,24 +156,25 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
           variant="subtitle1"
           sx={{
             fontWeight: 600,
-            fontSize: '0.95rem',
+            fontSize: '0.92rem',
             color: isTuned ? '#f3e5f5' : isImplemented ? '#c4eed0' : 'text.primary',
             textDecoration: currentStatus !== 'incomplete' ? 'line-through' : 'none',
-            lineHeight: 1.3,
+            lineHeight: 1.35,
             mt: 0.5,
             mb: 0.5,
+            wordBreak: 'break-word',
           }}
         >
           {task.title}
         </Typography>
 
         {/* Metrics Score & Status Chips Row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 'auto', pt: 1 }}>
-          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.8, mt: 'auto', pt: 1 }}>
+          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
             Score: <span style={{ color: '#d0bcff', fontWeight: 700 }}>{metrics.score.toFixed(1)}</span> (B:{metrics.blocker} D:{metrics.difficulty} G:{metrics.generality})
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.4, flexShrink: 0 }}>
             {STATUS_CHIP_OPTIONS.map((s) => (
               <Chip
                 key={s.val}
@@ -178,7 +191,8 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
                   fontWeight: currentStatus === s.val ? 700 : 400,
                   fontSize: '0.68rem',
                   height: 20,
-                  px: 0.5,
+                  px: 0.4,
+                  '& .MuiChip-label': { px: 0.5 },
                   cursor: 'pointer',
                   opacity: currentStatus === s.val ? 1 : 0.6,
                   '&:hover': { opacity: 1, bgcolor: s.bg, color: s.color },
