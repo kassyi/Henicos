@@ -404,6 +404,7 @@ export function useRoadmap() {
   const copyJulesPrompt = () => {
     if (cartIds.length === 0) return;
     const selectedTasks = tasks.filter((t) => cartIds.includes(t.id));
+    const jsonStr = JSON.stringify(cartIds, null, 2);
     const taskDetails = selectedTasks
       .map((t) => {
         const details = t.details || {};
@@ -419,7 +420,9 @@ ${details.csharp_example || "// N/A"}
       })
       .join("\n\n");
 
-    const promptText = julesPromptTemplate.replace("{{TASK_DETAILS}}", taskDetails);
+    const promptText = julesPromptTemplate
+      .replace("{{TASK_IDS_JSON}}", jsonStr)
+      .replace("{{TASK_DETAILS}}", taskDetails);
     navigator.clipboard.writeText(promptText);
     setToast({ open: true, message: `Jules用プロンプトをクリップボードにコピーしました (${cartIds.length}件)` });
   };
