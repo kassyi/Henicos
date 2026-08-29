@@ -10,11 +10,14 @@ public class SampleRefClass
 
 public static class SYN08_DelegateEscapeSadPathCase
 {
+    public static Func<int, int>? EscapedDelegate;
+
     [GpuKernel]
     public static void DelegateEscapeKernel(int[] data)
     {
         // Sad Path: Escape delegate via Func/Action outside method or allocation
         Func<int, int> f = x => x + 1;
+        EscapedDelegate = f; // Escapes the kernel boundary
         data[0] = f(data[0]);
     }
 
