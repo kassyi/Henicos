@@ -127,4 +127,58 @@ describe("useRoadmap hook", () => {
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
+
+  it("replaces template placeholders when copying Jules prompt", async () => {
+    const mockData = [
+      {
+        id: "SYN-01",
+        title: "Switch Expression Support",
+        domain: "Syntax",
+        category: "Expression",
+        status: "incomplete",
+        metrics: { blocker: 4, difficulty: 2, generality: 4, score: 36 },
+        details: {
+          csharp_example: "var x = a switch { 1 => 10, _ => 0 };",
+          current_behavior: "Not supported",
+          target_cuda: "Ternary operator",
+          notes: "Important feature",
+        },
+      },
+    ];
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    const { result } = renderHook(() => useRoadmap());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    act(() => {
+      result.current.setCartIds(["SYN-01"]);
+    });
+
+    act(() => {
+      result.current.copyJulesPrompt();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledTimes(1);
+    const copiedText = writeTextMock.mock.calls[0][0];
+    expect(copiedText).not.toContain("{{TASK_IDS_JSON}}");
+    expect(copiedText).not.toContain("{{TASK_DETAILS}}");
+    expect(copiedText).toContain('"SYN-01"');
+    expect(copiedText).toContain("### 【SYN-01】Switch Expression Support");
+    expect(copiedText).toContain("var x = a switch { 1 => 10, _ => 0 };");
+  });
 });
+
