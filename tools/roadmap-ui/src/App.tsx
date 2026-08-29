@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -17,6 +17,7 @@ import { ControlsBar } from './components/ControlsBar';
 import { InfoAccordion } from './components/InfoAccordion';
 import { TierSection } from './components/TierSection';
 import { TaskDetailPanel } from './components/TaskDetailPanel';
+import type { DockPosition } from './types';
 
 const TIER_DEFINITIONS = [
   { tier: 1, title: 'Tier 1: 最優先基盤 (スコア 36以上)' },
@@ -63,6 +64,17 @@ export const App: React.FC = () => {
     statusCounts,
   } = useRoadmap();
 
+  // Dock position preference (bottom, left, right)
+  const [dockPosition, setDockPosition] = useState<DockPosition>(() => {
+    const saved = localStorage.getItem('roadmap_dock_position');
+    if (saved === 'left' || saved === 'right' || saved === 'bottom') return saved;
+    return 'bottom';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('roadmap_dock_position', dockPosition);
+  }, [dockPosition]);
+
   // Dynamically measured physical height of the bottom TaskDetailPanel
   const [panelHeight, setPanelHeight] = useState<number>(64);
 
@@ -88,17 +100,40 @@ export const App: React.FC = () => {
     );
   }
 
+  // Dynamic layout margins based on dock position
+  const mainWrapperStyles =
+    dockPosition === 'bottom'
+      ? {
+          width: '100%',
+          pb: `${panelHeight + 32}px`,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }
+      : dockPosition === 'left'
+      ? {
+          width: { xs: '100%', md: 'calc(100% - 460px)' },
+          ml: { xs: 0, md: '460px' },
+          pb: 6,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }
+      : {
+          width: { xs: '100%', md: 'calc(100% - 460px)' },
+          mr: { xs: 0, md: '460px' },
+          pb: 6,
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        };
+
   return (
     <ThemeProvider theme={m3DarkTheme}>
       <CssBaseline />
-      <Container
-        maxWidth="xl"
-        sx={{
-          pt: 4,
-          pb: `${panelHeight + 32}px`, // Dynamically perfectly synced with bottom panel height
-          transition: 'padding-bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
+      <Box sx={{ minHeight: '100vh', bgcolor: '#141218' }}>
+        <Box sx={mainWrapperStyles}>
+          <Container
+            maxWidth="xl"
+            sx={{
+              pt: 4,
+              px: { xs: 2, sm: 3 },
+            }}
+          >
         {/* Top App Header */}
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography variant="h4" component="h1" sx={{ color: 'primary.main', mb: 1, fontWeight: 800 }}>
@@ -169,7 +204,11 @@ export const App: React.FC = () => {
           autoHideDuration={4000}
           onClose={() => setToast({ ...toast, open: false })}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          sx={{ bottom: `${panelHeight + 16}px` }}
+          sx={{
+            bottom: dockPosition === 'bottom' ? `${panelHeight + 16}px` : 24,
+            ...(dockPosition === 'left' && { left: { md: '540px' } }),
+            ...(dockPosition === 'right' && { right: { md: '540px' } }),
+          }}
         >
           <Alert
             severity={toast.severity || 'success'}
@@ -201,17 +240,24 @@ export const App: React.FC = () => {
           </Alert>
         </Snackbar>
 
-        {/* Fixed Bottom Task Detail Dock Panel with Height Observer */}
+        {/* Physical spacer for bottom dock */}
+        {dockPosition === 'bottom' && (
+          <Box sx={{ height: `${panelHeight}px`, width: '100%', mt: 4 }} />
+        )}
+          </Container>
+        </Box>
+
+        {/* Dynamic Task Detail Panel (Bottom / Left / Right Dock) */}
         <TaskDetailPanel
           task={selectedTask}
+          dockPosition={dockPosition}
+          onDockPositionChange={setDockPosition}
           onStatusChange={updateTaskStatus}
           onNotesChange={updateNotes}
+          onClose={() => setSelectedTaskId(null)}
           onHeightChange={setPanelHeight}
         />
-        
-        {/* Physical spacer to ensure enough scroll area at the bottom */}
-        <Box sx={{ height: `${panelHeight}px`, width: '100%', mt: 4 }} />
-      </Container>
+      </Box>
     </ThemeProvider>
   );
 };

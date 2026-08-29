@@ -2,6 +2,8 @@ export type TaskStatus = 'incomplete' | 'implemented' | 'tuned';
 
 export type ProgressFilter = 'incomplete' | 'implemented_plus' | 'tuned' | 'all';
 
+export type DockPosition = 'bottom' | 'left' | 'right';
+
 export interface TaskMetrics {
   blocker: number;
   difficulty: number;
