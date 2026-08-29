@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler;
+namespace Kassyi.GSharp.Compiler.Extensions;
 
 /// <summary>Provides zero-allocation extension methods for Roslyn symbol inspections and namespace matching.</summary>
 internal static class SymbolExtensions
@@ -14,6 +14,14 @@ internal static class SymbolExtensions
                 ContainingNamespace:
                 { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             };
+
+    public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: TypeConstants.ThreadingNamespace,
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
 
     public static bool IsCoreNamespace(this INamespaceSymbol? ns) =>
         ns is
