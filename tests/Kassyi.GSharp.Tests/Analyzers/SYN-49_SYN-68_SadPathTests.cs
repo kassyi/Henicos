@@ -42,4 +42,32 @@ public class SYN_49_SYN_68_SadPathTests
         Assert.NotNull(compilation);
         diagnostics.AssertContainsError("GSH0003");
     }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-44")]
+    [Trait("Category", "SadPath")]
+    public async Task Test_SYN44_UnsupportedExtensionMethod_ReportsDiagnosticAndPreventsCrash()
+    {
+        var path = GetTestCasePath("SYN-44_UnsupportedExtensionMethod.cs");
+        var source = await File.ReadAllTextAsync(path);
+
+        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
+        Assert.NotNull(driver);
+        Assert.NotNull(compilation);
+        diagnostics.AssertContainsError("GSH0003");
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-46")]
+    [Trait("Category", "SadPath")]
+    public async Task Test_SYN46_UnsupportedWarpShuffleType_ReportsDiagnosticAndPreventsCrash()
+    {
+        var path = GetTestCasePath("SYN-46_UnsupportedWarpShuffleType.cs");
+        var source = await File.ReadAllTextAsync(path);
+
+        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
+        Assert.NotNull(driver);
+        Assert.NotNull(compilation);
+        diagnostics.AssertContainsError("GSH0002");
+    }
 }

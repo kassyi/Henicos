@@ -88,4 +88,22 @@ public static class SYN_46_50_ConcurrencyAndWarpKernels
         // globalState[1]: AtomicMax with the thread ID
         Gpu.AtomicMax(ref globalState[1], (uint)tid);
     }
+
+    // SYN-46: ワープシャッフル & 同期
+    [GpuKernel]
+    public static void WarpPrimitivesKernel(int[] input, int[] shuffleOut)
+    {
+        int tid = ThreadIndex.X;
+        int val = input[tid];
+
+        Gpu.SyncThreads();
+
+        // Broadcast lane 0 value to all threads in warp
+        int shuffled = Gpu.WarpShuffle(val, 0);
+
+        // Shuffle with explicit full mask
+        int shuffledExplicit = Gpu.WarpShuffle(0xFFFFFFFF, val, 1);
+
+        shuffleOut[tid] = shuffled * 1000 + shuffledExplicit;
+    }
 }
