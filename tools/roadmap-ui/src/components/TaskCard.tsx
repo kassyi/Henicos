@@ -18,6 +18,7 @@ const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: 
   { val: 'incomplete', label: '未完', color: 'text.secondary', bg: 'rgba(255, 255, 255, 0.05)', border: '#49454f' },
   { val: 'implemented', label: '🛠️ 実装', color: '#c4eed0', bg: '#1a2e22', border: '#386a4f' },
   { val: 'tuned', label: '⚡ パフォ', color: '#f3e5f5', bg: '#331b3f', border: '#ab47bc' },
+  { val: 'rejected', label: '❌ 却下', color: '#ffcdd2', bg: '#3e1a1d', border: '#ef5350' },
 ];
 
 export const TaskCard: React.FC<TaskCardProps> = React.memo(({
@@ -32,6 +33,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
   const currentStatus = task.status || 'incomplete';
   const isImplemented = currentStatus === 'implemented';
   const isTuned = currentStatus === 'tuned';
+  const isRejected = currentStatus === 'rejected';
   const metrics = task.metrics || { blocker: 3, difficulty: 2, generality: 3, score: 30 };
 
   const handleCardClick = () => {
@@ -50,6 +52,8 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
           ? 'rgba(45, 35, 65, 0.9)'
           : inCart
           ? '#262136'
+          : isRejected
+          ? '#241416'
           : isTuned
           ? '#281b33'
           : isImplemented
@@ -59,6 +63,8 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
           ? '#d0bcff'
           : inCart
           ? 'primary.main'
+          : isRejected
+          ? '#e57373'
           : isTuned
           ? '#ab47bc'
           : isImplemented
@@ -157,7 +163,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
           sx={{
             fontWeight: 600,
             fontSize: '0.92rem',
-            color: isTuned ? '#f3e5f5' : isImplemented ? '#c4eed0' : 'text.primary',
+            color: isRejected ? '#ef9a9a' : isTuned ? '#f3e5f5' : isImplemented ? '#c4eed0' : 'text.primary',
             textDecoration: currentStatus !== 'incomplete' ? 'line-through' : 'none',
             lineHeight: 1.35,
             mt: 0.5,
@@ -167,6 +173,24 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
         >
           {task.title}
         </Typography>
+
+        {task.details?.memo && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#ef9a9a',
+              bgcolor: 'rgba(239, 83, 80, 0.08)',
+              border: '1px solid rgba(239, 83, 80, 0.2)',
+              p: 0.5,
+              borderRadius: 1,
+              fontSize: '0.7rem',
+              display: 'block',
+              lineHeight: 1.25,
+            }}
+          >
+            💬 {task.details.memo}
+          </Typography>
+        )}
 
         {/* Metrics Score & Status Chips Row */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.8, mt: 'auto', pt: 1 }}>

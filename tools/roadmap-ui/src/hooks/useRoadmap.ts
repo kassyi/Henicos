@@ -54,7 +54,9 @@ export function useRoadmap() {
       .then((data: any[]) => {
         const normalized: RoadmapTask[] = data.map((t) => {
           const status: TaskStatus =
-            t.status === "tuned" || t.status === "implemented" ? t.status : "incomplete";
+            t.status === "tuned" || t.status === "implemented" || t.status === "rejected"
+              ? t.status
+              : "incomplete";
           const metrics = {
             blocker: t.metrics?.blocker ?? t.blocker ?? 3,
             difficulty: t.metrics?.difficulty ?? t.difficulty ?? 2,
@@ -325,6 +327,8 @@ export function useRoadmap() {
           matchesProgress = taskStatus === "implemented" || taskStatus === "tuned";
         } else if (deferredProgressFilter === "tuned") {
           matchesProgress = taskStatus === "tuned";
+        } else if (deferredProgressFilter === "rejected") {
+          matchesProgress = taskStatus === "rejected";
         }
 
         const matchesBlocker = t.metrics.blocker >= deferredMinBlocker;
@@ -431,9 +435,11 @@ ${details.csharp_example || "// N/A"}
     let incomplete = 0;
     let implemented = 0;
     let tuned = 0;
+    let rejected = 0;
     tasks.forEach((t) => {
       if (t.status === "tuned") tuned++;
       else if (t.status === "implemented") implemented++;
+      else if (t.status === "rejected") rejected++;
       else incomplete++;
     });
     return {
@@ -441,6 +447,7 @@ ${details.csharp_example || "// N/A"}
       incomplete,
       implemented_plus: implemented + tuned,
       tuned,
+      rejected,
     };
   }, [tasks]);
 

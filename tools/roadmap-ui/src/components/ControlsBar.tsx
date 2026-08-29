@@ -62,6 +62,14 @@ const PROGRESS_OPTIONS: FilterOption<ProgressFilter>[] = [
         selectedText: "#f3e5f5",
     },
     {
+        val: "rejected",
+        label: "却下済",
+        subLabel: "対象外・統合済",
+        color: "#ef9a9a",
+        selectedBg: "#c62828",
+        selectedText: "#ffebee",
+    },
+    {
         val: "all",
         label: "すべて",
         subLabel: "全件表示",
@@ -137,6 +145,7 @@ interface ControlsBarProps {
         incomplete: number;
         implemented_plus: number;
         tuned: number;
+        rejected: number;
     };
 }
 

@@ -42,6 +42,7 @@ const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: 
   { val: 'incomplete', label: '未完', color: '#9e9e9e', bg: 'rgba(255, 255, 255, 0.04)', border: 'rgba(255, 255, 255, 0.12)' },
   { val: 'implemented', label: '🛠️ 実装', color: '#81c784', bg: 'rgba(129, 199, 132, 0.12)', border: 'rgba(129, 199, 132, 0.3)' },
   { val: 'tuned', label: '⚡ パフォ', color: '#ce93d8', bg: 'rgba(206, 147, 216, 0.12)', border: 'rgba(206, 147, 216, 0.3)' },
+  { val: 'rejected', label: '❌ 却下', color: '#ef9a9a', bg: 'rgba(239, 83, 80, 0.12)', border: 'rgba(239, 83, 80, 0.3)' },
 ];
 
 const getTierInfo = (score: number) => {
@@ -451,6 +452,28 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             </Box>
           )}
 
+          {details.memo && (
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: 'rgba(239, 83, 80, 0.08)',
+                border: '1px solid rgba(239, 83, 80, 0.25)',
+                borderLeft: '3px solid #ef5350',
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ color: '#ef9a9a', fontWeight: 700, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.6, fontSize: '0.75rem' }}
+              >
+                💬 却下理由 / マージ先メモ
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#ffebee', lineHeight: 1.5, fontSize: '0.82rem' }}>
+                {details.memo}
+              </Typography>
+            </Box>
+          )}
+
           {/* Notes */}
           <Box>
             <Typography
@@ -573,6 +596,28 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#c8e6c9', lineHeight: 1.5, fontSize: '0.84rem' }}>
                     {details.target_cuda || details.strategy}
+                  </Typography>
+                </Box>
+              )}
+
+              {details.memo && (
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(239, 83, 80, 0.08)',
+                    border: '1px solid rgba(239, 83, 80, 0.25)',
+                    borderLeft: '3px solid #ef5350',
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#ef9a9a', fontWeight: 700, mb: 0.5, display: 'flex', alignItems: 'center', gap: 0.6, fontSize: '0.75rem' }}
+                  >
+                    💬 却下理由 / マージ先メモ
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#ffebee', lineHeight: 1.5, fontSize: '0.84rem' }}>
+                    {details.memo}
                   </Typography>
                 </Box>
               )}
