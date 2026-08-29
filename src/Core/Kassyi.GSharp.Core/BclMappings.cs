@@ -4,6 +4,21 @@ using Kassyi.GSharp.Core;
 
 // LeadingZeroCount
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "LeadingZeroCount", ["System.UInt32"], "__gsharp_lzc_32")]
+
+// SYN-49: Interlocked
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Add", ["System.Int32", "System.Int32"], "__gsharp_atomicAdd")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Add", ["System.Int64", "System.Int64"], "__gsharp_atomicAdd", CastFirstArgumentTo = "unsigned long long*")]
+
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Exchange", ["System.Int32", "System.Int32"], "atomicExch")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Exchange", ["System.UInt32", "System.UInt32"], "atomicExch")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Exchange", ["System.Int64", "System.Int64"], "atomicExch", CastFirstArgumentTo = "unsigned long long*")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "Exchange", ["System.UInt64", "System.UInt64"], "atomicExch", CastFirstArgumentTo = "unsigned long long*")]
+
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "CompareExchange", ["System.Int32", "System.Int32", "System.Int32"], "__gsharp_atomicCAS")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "CompareExchange", ["System.UInt32", "System.UInt32", "System.UInt32"], "__gsharp_atomicCAS")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "CompareExchange", ["System.Int64", "System.Int64", "System.Int64"], "__gsharp_atomicCAS", CastFirstArgumentTo = "unsigned long long*")]
+[assembly: BclIntrinsicMap("System.Threading.Interlocked", "CompareExchange", ["System.UInt64", "System.UInt64", "System.UInt64"], "__gsharp_atomicCAS", CastFirstArgumentTo = "unsigned long long*")]
+
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "LeadingZeroCount", ["System.UInt64"], "__gsharp_lzc_64")]
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "LeadingZeroCount", ["System.UIntPtr"], "__gsharp_lzc_64")]
 

@@ -15,6 +15,7 @@ data[tid]=tid;
 cg::this_grid().sync();
 }
 ";
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_CooperativePhysicsProcess(int[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (data.Length == 0)
@@ -29,7 +30,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
-int data_size = data.Length * sizeof(int);
+int data_size = data.Length * sizeof(global::System.Int32);
 if(data_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
@@ -74,6 +75,8 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 }
 }
 }
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_CooperativePhysicsProcess_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
@@ -98,5 +101,6 @@ finally
 }
 }
 }
+#pragma warning restore CS8500
 }
 }

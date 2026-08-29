@@ -149,6 +149,19 @@ __device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
     return value ? __clzll(value) : 64;
 }
 
+__forceinline__ __device__ int __gsharp_clamp(int value, int min_val, int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+__forceinline__ __device__ unsigned int __gsharp_clamp(unsigned int value, unsigned int min_val, unsigned int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+__forceinline__ __device__ float __gsharp_clamp(float value, float min_val, float max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+__forceinline__ __device__ double __gsharp_clamp(double value, double min_val, double max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
+
+__forceinline__ __device__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
+__forceinline__ __device__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
+__forceinline__ __device__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }
+
+__forceinline__ __device__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }
+__forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
+__forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
+
 struct DebugReduc_PhysicsVector;
 __forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
 
@@ -165,7 +178,7 @@ float Z;
 ;
 #endif
 __forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v){
-return (float)sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
+return (float)__gsharp_unsupported_Sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
 }
 
 __noinline__ __device__ bool IsPositive(float value){
