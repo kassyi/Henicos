@@ -8,14 +8,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "[GpuKernel] public static void Kernel(int[] data) { ... }",
       "current_behavior": "Analyzerが [GpuKernel] の正しいシグネチャ（public static void 等）や不正な型を静的に検証してエラー（GSH001等）を報告する。",
       "target_cuda": "N/A (Compile-time Analysis)"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GSH-01",
@@ -26,150 +26,150 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
-      "generality": 5,
-      "score": 42
+      "generality": 5
     },
     "details": {
       "current_behavior": "単純な代入等は変換可能だが、ネストした式や型変換が絡む三項演算子で AST 変換時に C++ 構文不一致となる場合がある。",
       "strategy": "`TranspileConditionalExpression` の型解決・括弧補完ロジックを強化。",
       "csharp_example": "result[tid] = x > y \n    ? (y > z ? 1 : 2)\n    : (x > z ? 3 : 4);"
-    }
+    },
+    "score": 42
   },
   {
     "id": "GSH-02",
     "title": "タプル構文の一般化",
     "domain": "GSH",
     "category": "構文解析",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 33
+      "generality": 4
     },
     "details": {
       "current_behavior": "現在はスワップ代入 `(a, b) = (b, a)` のみを即時実行ラムダ (IIFE) で限定サポート。タプル戻り値や宣言型分解 `var (a, b) = ...` は未対応。",
       "strategy": "C++11 `std::tuple` / `std::tie` またはローカル構造体へのマッピングを検討。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "GSH-03",
     "title": "ローカル関数の非サポート",
     "domain": "GSH",
     "category": "構文解析",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 4,
-      "score": 37
+      "generality": 4
     },
     "details": {
       "current_behavior": "カーネルメソッド内で定義されたローカル関数（`void Helper() { ... }`）が C++ に展開できずビルドエラーになる。",
       "strategy": "C++ キャプチャ付きラムダ（`auto Helper = [&] { ... };`）または `__device__` 補助関数への昇格処理を実装。"
-    }
+    },
+    "score": 37
   },
   {
     "id": "GSH-04",
     "title": "スタック固定長配列・stackalloc の限定性",
     "domain": "GSH",
     "category": "型システム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 4,
-      "score": 37
+      "generality": 4
     },
     "details": {
       "current_behavior": "`stackalloc byte[N]` や固定長配列構文の C++ スタック配列 (`T buf[N]`) への完全マッピングが未整備。",
       "strategy": "`StackAllocArrayCreationExpressionSyntax` を検出し、ネイティブスタック配列として宣言・初期化コードを出力。"
-    }
+    },
+    "score": 37
   },
   {
     "id": "GSH-05",
     "title": "ジェネリクス (<T>) の制約解決",
     "domain": "GSH",
     "category": "型システム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 5,
-      "generality": 3,
-      "score": 21
+      "generality": 3
     },
     "details": {
       "current_behavior": "C++ template への単純置換に留まっており、複雑な型制約やオーバーロード解決が限定的。",
       "strategy": "Roslyn SemanticModel を活用した具象型解決と C++ template 特殊化の自動生成。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "GSH-06",
     "title": "PTX / C++ コンパイルエラーの行番号マッピング",
     "domain": "GSH",
     "category": "ランタイム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 5,
-      "score": 27
+      "generality": 5
     },
     "details": {
       "current_behavior": "NVCC / NVRTC のコンパイルエラー発生時に、元の `.cu.cs` の行番号と一致せず、デバッグ時に生成コードの目視確認が必要。",
       "strategy": "`#line` ディレクティブを生成 CUDA C++ に埋め込み、C# ソース位置への直接マッピングを実現する。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "GSH-07",
     "title": "JIT ディスクキャッシュ機構",
     "domain": "GSH",
     "category": "ランタイム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 4,
-      "generality": 5,
-      "score": 20
+      "generality": 5
     },
     "details": {
       "current_behavior": "`%LOCALAPPDATA%\\Kassyi\\GSharp\\Cache\\Ptx` へのキャッシュによりテスト実行時間を34秒から1.5秒以内へ劇的高速化完了。",
       "strategy": "ソースハッシュとSMバージョンをキーとしたディスクキャッシュ（PTX）を導入完了。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GSH-08",
     "title": "Macro DSL と Intrinsics サポート",
     "domain": "GSH",
     "category": "トランスパイラ",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "current_behavior": "`[GpuMacro]` 等による AST レベルのインラインマクロ展開と、組み込み関数（Intrinsics）へのトランスパイル機構が不在だった。",
       "strategy": "実装完了。スナップショット・境界値・GPU実行テストを含む網羅的な検証を追加済み。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "GSH-09",
     "title": "コンパイルタイムアウト時のプロセスツリー終了",
     "domain": "GSH",
     "category": "ランタイム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 4,
-      "generality": 4,
-      "score": 30
+      "generality": 4
     },
     "details": {
       "current_behavior": "`JitEngine` でコンパイルがタイムアウトした際、子プロセスが残留してしまう問題があった。",
       "strategy": "実装完了。タイムアウト時にプロセスツリー全体を確実に終了（Terminate）する処理を追加完了。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-01",
@@ -180,99 +180,99 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "current_behavior": "`SourceGeneratorTestKernelsWrapper` などの自動生成を通じた基本的な JIT 呼び出し基盤は実装・検証済み。",
       "strategy": "アーキテクチャの根幹として実装完了済み。",
       "csharp_example": "[GpuKernel]\npublic static void MyTestKernel(int[] a, int[] b, int[] c)\n{\n    c[0] = a[0] + b[0];\n}\n\n// 呼び出し側 (自動生成された Wrapper を使用)\nGEN_01_SourceGeneratorTestKernelsWrapper.Launch_MyTestKernel(aArray, bArray, cArray);"
-    }
+    },
+    "score": 45
   },
   {
     "id": "GEN-02",
     "title": "NVRTC コンパイルエラーの例外ラップ",
     "domain": "GEN",
     "category": "ランタイム連携",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
-      "generality": 5,
-      "score": 41
+      "generality": 5
     },
     "details": {
       "current_behavior": "無効な C++ (CUDA) ソースが含まれる場合、`JitEngine` が `NVRTC Compilation Failed` を適切に検知・ラップして C# 側に通知できることを確認済み。",
       "strategy": "機能として実装完了済み。"
-    }
+    },
+    "score": 41
   },
   {
     "id": "GEN-03",
     "title": "ログ出力とフォーマットの非同期実行",
     "domain": "GEN",
     "category": "ロガー",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "Channel を用いた非同期・無停止のログ出力。",
       "strategy": "O(N)リアロケーション排除済み。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-04",
     "title": "MeasureScope による実行時間計測ログ",
     "domain": "GEN",
     "category": "ロガー",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "スコープの実行時間を計測し Channel へ出力。",
       "strategy": "パフォーマンス影響を最小化済み。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-05",
     "title": "異常系経路での診断情報出力",
     "domain": "GEN",
     "category": "ジェネレータ基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1.5,
-      "score": 20
+      "generality": 1.5
     },
     "details": {
       "current_behavior": "無効なカーネル等に対する診断。",
       "strategy": "動作はしているがアロケーション等最適化未検証。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GEN-06",
     "title": "包括的仕様カーネルの生成コード診断",
     "domain": "GEN",
     "category": "ジェネレータ基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1.5,
-      "score": 20
+      "generality": 1.5
     },
     "details": {
       "current_behavior": "正常なカーネルのソース生成検証。",
       "strategy": "同上。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GEN-07",
@@ -283,132 +283,132 @@
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1.5,
-      "score": 20
+      "generality": 1.5
     },
     "details": {
       "current_behavior": "GSharp未対応機能に対するエラー報告。",
       "strategy": "同上。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GEN-08",
     "title": "ジェネレータのスナップショット一貫性テスト",
     "domain": "GEN",
     "category": "テスト基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 4,
-      "generality": 0,
-      "score": 10
+      "generality": 3
     },
     "details": {
       "current_behavior": "ジェネレータが生成したコードとスナップショットの比較。",
       "strategy": "テスト基盤のためチューニングは対象外。"
-    }
+    },
+    "score": 16
   },
   {
     "id": "GEN-09",
     "title": "テストケースとスナップショットの整合性保証",
     "domain": "GEN",
     "category": "テスト基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 4,
-      "generality": 0,
-      "score": 10
+      "generality": 3
     },
     "details": {
       "current_behavior": "新規テストに対するスナップショット追加の強制。",
       "strategy": "同上。"
-    }
+    },
+    "score": 16
   },
   {
     "id": "GEN-10",
     "title": "異なるアーキテクチャ指定時のPTX生成差異",
     "domain": "GEN",
     "category": "ランタイム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "JIT エンジンのアーキテクチャ最適化フラグの検証。",
       "strategy": "JITのディスクキャッシュ実装済み、PTXの高速ロード可能。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-11",
     "title": "JitConstant とアンロールによるPTX出力最適化",
     "domain": "GEN",
     "category": "ランタイム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "定数展開による NVRTC オプティマイザの検証。",
       "strategy": "同上。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-12",
     "title": "インメモリでのPTX実行検証",
     "domain": "GEN",
     "category": "ランタイム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "生の PTX エンジンによるカーネル実行と検証。",
       "strategy": "ランタイム全体としてのチューニング余地あり。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-13",
     "title": "カーネル引数マーシャリングのヒープアロケーション完全排除",
     "domain": "GEN",
     "category": "ジェネレータ基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
-      "generality": 2,
-      "score": 35
+      "generality": 2
     },
     "details": {
       "current_behavior": "ジェネレータが生成するラッパー内で、`object[]` やテンポラリ配列確保によるGC圧迫があった。",
       "strategy": "構造体配列のポインタ渡しや安全なバッファ確保への切り替えによりゼロアロケーション化完了。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "GEN-14",
     "title": "ゼロ長配列 (`new T[0]`) 引数のエッジケース処理",
     "domain": "GEN",
     "category": "ジェネレータ基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 2,
-      "score": 25
+      "generality": 2
     },
     "details": {
       "current_behavior": "カーネル呼び出し時に空配列を渡すと、`cuMemAlloc` やマーシャリングで未定義動作を引き起こす恐れがあった。",
       "strategy": "長さゼロチェックによる明示的スキップや安全な `nullptr` パッシングにより解決完了。"
-    }
+    },
+    "score": 25
   },
   {
     "id": "GEN-15",
@@ -419,14 +419,14 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "current_behavior": "VisitorやWalkerなどのステートフルな再利用インスタンスにおける、スレッドセーフなRent/Returnおよび状態初期化の保証。",
       "strategy": "Interlocked.Exchange等を用いたプール制御の実装およびストレステストで検証済み。",
       "csharp_example": "using var visitor = RoslynToCudaVisitor.Rent(semanticModel, null);\n// ... visitor.Context.UsedStructs などを操作 ...\n// Dispose() によってプールへ安全に返却・リセットされる"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GEN-16",
@@ -437,15 +437,15 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "current_behavior": "ハードコードされたマッピングを排除し、外部ライブラリやBCL型のメソッドを宣言的に CUDA C++ / Intrinsics に置換可能にする。",
       "strategy": "`CudaIntrinsicsMapper` の属性解決およびゼロアロケーション走査により実装完了。",
       "notes": "CudaIntrinsicsMapper の属性解決による外部型・メソッドの宣言的置換",
       "csharp_example": "[CudaIntrinsicPattern(\"threadIdx.{0}\")]\npublic readonly struct ThreadIndex\n{\n    public static int X => 0; // Transpiled to threadIdx.x\n}\n\n[CudaIntrinsic(\"__syncthreads\")]\npublic static void SyncThreads() { }"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GEN-17",
@@ -456,15 +456,15 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "current_behavior": "デバイス関数呼び出し連鎖時における二重ポインタ（`T`）化の防止と、ポインタメンバーアクセスの `->` 変換保証。",
       "strategy": "`SemanticModel` によるポインタ型自動判定とカスケード演算子抑制により実装完了。",
       "notes": "デバイス関数呼び出し時の二重ポインタ(T**)化抑止とポインタアクセス変換",
       "csharp_example": "// メソッド呼び出し時のインライン out var 宣言\nbool ok = TrySquare(input[tid], out var res);\n\n// if文の条件式内での out var 宣言\nif (TrySquare(input[tid], out var val))\n{\n    output[tid] = val;\n}"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-18",
@@ -475,68 +475,68 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "current_behavior": "`System.Numerics` の Vector 型を CUDA C++ `float2/float3/float4` に透過マッピングし、フィールド (`X,Y,Z,W` -> `x,y,z,w`) および `new VectorN(...)` を生成。",
       "strategy": "`CudaTypeMapper` および `ExpressionTranspilers` にて実装・スナップショット検証完了。",
       "notes": "CUDA float2/3/4 へのマッピング、フィールド名小文字化、new VectorN(...) 生成",
       "csharp_example": "var va = a[tid];\nvar vb = b[tid];\n// System.Numerics.Vector3 の演算・初期化\nresult[tid] = new System.Numerics.Vector3(va.X + vb.X, va.Y + vb.Y, va.Z + vb.Z);"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-19",
     "title": "Vector型の演算子オーバーロードと数学関数の対応",
     "domain": "GEN",
     "category": "型システム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "`Vector2/3/4` 同士の四則演算子 (`+`, `-`, `*`, `/`) や、内積 (`Vector2.Dot`)・正規化・距離計算等の Prelude 定義・インライン展開。",
       "strategy": "Prelude.cu へのヘルパー演算子関数定義および Transpiler 側でのマッピング処理。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-01",
     "title": "Switch 式 (switch expression)",
     "domain": "SYN",
     "category": "制御構文・式レベル",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 4,
-      "score": 36
+      "generality": 4
     },
     "details": {
       "csharp_example": "var x = mode switch { 0 => a, 1 => b, _ => c };",
       "current_behavior": "文（statement）のみ対応。式構文はパース不能。",
       "target_cuda": "即時実行ラムダ（IIFE: `[&]() { switch(mode) { ... } }()`）または三項演算子の連鎖に展開。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "SYN-02",
     "title": "パターンマッチング (is / 結合 / リレーショナル)",
     "domain": "SYN",
     "category": "制御構文・式レベル",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 5,
-      "score": 35
+      "generality": 5
     },
     "details": {
       "csharp_example": "if (val is >= 0 and < 1024)\nif (state is State.Idle or State.Done)",
       "current_behavior": "`BinaryExpression` 以外はパースエラー。",
       "target_cuda": "単純な論理式 `(val >= 0 && val < 1024)` へ展開。型パターンは C++ `auto` 束縛へ。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "SYN-03",
@@ -547,14 +547,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.AddWithCarry(a, b, out var carry);",
       "current_behavior": "`DeclarationExpressionSyntax` 未対応。",
       "target_cuda": "C++ スコープ先頭に事前宣言を変数リフト（Variable Lifting）して渡す。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "SYN-04",
@@ -565,68 +565,68 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 5,
-      "score": 38
+      "generality": 5
     },
     "details": {
       "csharp_example": "ptr = ptr ?? defaultPtr;\ncount ??= 0;",
       "current_behavior": "演算子未解決エラー。",
       "target_cuda": "ポインタ/値の三項演算子 `(ptr != nullptr ? ptr : defaultPtr)` へ展開。"
-    }
+    },
+    "score": 38
   },
   {
     "id": "SYN-05",
     "title": "三項演算子 (`? :`) の型変換・ネスト",
     "domain": "SYN",
     "category": "制御構文・式レベル",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 4,
-      "score": 36
+      "generality": 4
     },
     "details": {
       "csharp_example": "var x = cond1 ? (cond2 ? 10u : 20u) : 30u;",
       "current_behavior": "ネストや型昇格時に C++ 型不一致エラー。",
       "target_cuda": "括弧の完全保証と型キャストの明示的付与。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "SYN-06",
     "title": "ref 条件式 (ref ternary)",
     "domain": "SYN",
     "category": "制御構文・式レベル",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "ref var x = ref (cond ? ref a : ref b);",
       "current_behavior": "`RefExpressionSyntax` 未対応。",
       "target_cuda": "C++ 参照束縛 `auto& x = (cond ? a : b);` へ展開。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-07",
     "title": "ローカル関数 (local functions)",
     "domain": "SYN",
     "category": "制御構文・式レベル",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 4,
-      "score": 37
+      "generality": 4
     },
     "details": {
       "csharp_example": "void Add(int v) { sum += v; }",
       "current_behavior": "構文未対応（AST でスキップまたは構文エラー）。",
       "target_cuda": "C++ キャプチャ付きラムダ（`auto Add = [&](int v) { sum += v; };`）へ展開。"
-    }
+    },
+    "score": 37
   },
   {
     "id": "SYN-08",
@@ -637,140 +637,140 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
-      "generality": 5,
-      "score": 36
+      "generality": 5
     },
     "details": {
       "csharp_example": "Transform(buf, x => x * 2);",
       "current_behavior": "デリゲート・ラムダ構文未対応。",
       "target_cuda": "C++ ジェネリックラムダ (`[&](auto x) { return x * 2; }`) または関数オブジェクトへ展開。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "SYN-09",
     "title": "デフォルトリテラル (default)",
     "domain": "SYN",
     "category": "制御構文・式レベル",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
-      "generality": 5,
-      "score": 41
+      "generality": 5
     },
     "details": {
       "csharp_example": "uint val = default;\nMyStruct s = default;",
       "current_behavior": "`LiteralExpression(DefaultLiteral)` の型推論欠落。",
       "target_cuda": "C++ ゼロ初期化 `{}` または `MyStruct{}` へマッピング。"
-    }
+    },
+    "score": 41
   },
   {
     "id": "SYN-11",
     "title": "Index & Range 構文 (^1, [1..5])",
     "domain": "SYN",
     "category": "コレクション・配列・メモリ操作",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 4,
-      "score": 29
+      "generality": 4
     },
     "details": {
       "csharp_example": "var last = buffer[^1];\nSpan<uint> slice = buffer[1..4];",
       "current_behavior": "`IndexExpressionSyntax` / `RangeExpressionSyntax` 未対応。",
       "target_cuda": "`buffer[length - 1]` へのオフセット計算やポインタオフセット（`buffer + 1`）へ展開。"
-    }
+    },
+    "score": 29
   },
   {
     "id": "SYN-12",
     "title": "コレクション式 ([1, 2, 3])",
     "domain": "SYN",
     "category": "コレクション・配列・メモリ操作",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "uint[] primes = [2, 3, 5, 7];",
       "current_behavior": "C# 12 `CollectionExpressionSyntax` 未対応。",
       "target_cuda": "C++ 初期化リスト `{ 2, 3, 5, 7 }` またはスタック配列初期化へ変換。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-13",
     "title": "stackalloc と固定長スタック配列",
     "domain": "SYN",
     "category": "コレクション・配列・メモリ操作",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 4,
-      "score": 37
+      "generality": 4
     },
     "details": {
       "csharp_example": "Span<uint> buf = stackalloc uint[32];",
       "current_behavior": "スタック確保の C++ 変換が未整備。",
       "target_cuda": "C++ ローカル配列 `uint32_t buf[32];` への宣言置換。"
-    }
+    },
+    "score": 37
   },
   {
     "id": "SYN-14",
     "title": "fixed バッファ・ポインタピン留め",
     "domain": "SYN",
     "category": "コレクション・配列・メモリ操作",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 3,
-      "score": 34
+      "generality": 3
     },
     "details": {
       "csharp_example": "fixed (uint* p = &array[0]) { ... }",
       "current_behavior": "一部構文で型解決が不十分。",
       "target_cuda": "C++ ネイティブポインタ宣言 `uint32_t* p = &array[0];` へ展開。"
-    }
+    },
+    "score": 34
   },
   {
     "id": "SYN-15",
     "title": "Span<T> / ReadOnlySpan<T> のカーネル内使用",
     "domain": "SYN",
     "category": "コレクション・配列・メモリ操作",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 5,
-      "generality": 5,
-      "score": 33
+      "generality": 5
     },
     "details": {
       "csharp_example": "void Process(ReadOnlySpan<uint> data)",
       "current_behavior": "構造体定義・参照渡しがネイティブ未マッピング。",
       "target_cuda": "ポインタと長さのペア、または C++20 `std::span` 相当の軽量構造体へマッピング。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "SYN-16",
     "title": "2次元インデクサ / 多次元配列",
     "domain": "SYN",
     "category": "コレクション・配列・メモリ操作",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 2,
-      "score": 25
+      "generality": 2
     },
     "details": {
       "csharp_example": "var v = grid[y, x];",
       "current_behavior": "多次元インデクサ未対応。",
       "target_cuda": "フラット化された 1D インデックス計算 `grid[y * width + x]` へ展開。"
-    }
+    },
+    "score": 25
   },
   {
     "id": "SYN-17",
@@ -781,320 +781,320 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 5,
-      "score": 38
+      "generality": 5
     },
     "details": {
       "csharp_example": "ctx = new() { Operands = new() { ... } };",
       "current_behavior": "ネストしたプロパティ初期化子で型推論が欠落。",
       "target_cuda": "C++11 Uniform Initialization `{ ... }` への完全フォールバック。"
-    }
+    },
+    "score": 38
   },
   {
     "id": "SYN-18",
     "title": "構造化束縛・タプル宣言分解",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 33
+      "generality": 4
     },
     "details": {
       "csharp_example": "var (quotient, remainder) = DivMod(a, b);",
       "current_behavior": "`TupleElementSyntax` の変数宣言未対応。",
       "target_cuda": "C++17 Structured Binding (`auto [quotient, remainder] = ...`) または一時変数展開。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "SYN-19",
     "title": "構造体のプライマリコンストラクタ",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "struct Point(int X, int Y);",
       "current_behavior": "C# 12 プライマリコンストラクタ構文未対応。",
       "target_cuda": "C++ コンストラクタ `Point(int X, int Y) : X(X), Y(Y) {}` の自動出力。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "SYN-20",
     "title": "record struct と with 式",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 3,
-      "score": 27
+      "generality": 3
     },
     "details": {
       "csharp_example": "var next = current with { Index = i + 1 };",
       "current_behavior": "`WithExpressionSyntax` 未対応。",
       "target_cuda": "コピー生成＋メンバー上書き `auto next = current; next.Index = i + 1;` へ展開。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-21",
     "title": "構造体内インデクサ (this[int index])",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 3,
-      "score": 27
+      "generality": 3
     },
     "details": {
       "csharp_example": "public uint this[int i] => Buffer[i];",
       "current_behavior": "`IndexerDeclarationSyntax` 未対応。",
       "target_cuda": "C++ `operator[](int i)` への変換。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-22",
     "title": "構造体内演算子オーバーロード",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 33
+      "generality": 4
     },
     "details": {
       "csharp_example": "public static Point operator +(Point a, Point b)",
       "current_behavior": "ユーザー定義演算子が C++ 演算子へ未マッピング。",
       "target_cuda": "C++ `Point operator+(const Point& a, const Point& b)` へ展開。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "SYN-23",
     "title": "readonly struct / readonly メソッド",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 1,
-      "generality": 3,
-      "score": 29
+      "generality": 3
     },
     "details": {
       "csharp_example": "readonly struct Vector3 { public readonly float Length() => ...; }",
       "current_behavior": "修飾子が C++ `const` へ完全反映されていない。",
       "target_cuda": "C++ `struct` メンバ関数の `const` 修飾子付与。"
-    }
+    },
+    "score": 29
   },
   {
     "id": "SYN-24",
     "title": "enum の基底型指定とビットフラグ",
     "domain": "SYN",
     "category": "構造体・型定義・オブジェクト構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "enum State : byte { None = 0, Active = 1 << 0 }",
       "current_behavior": "基底型やビット演算時の明示キャスト問題。",
       "target_cuda": "C++ `enum class State : uint8_t` またはスコープ付き enum への展開。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-25",
     "title": "文字列補間 ($\"\") のデバッグ出力化",
     "domain": "SYN",
     "category": "文字列・デバッグ・メタプログラミング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 5,
-      "score": 31
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.Print($\"Thread {ThreadIndex.X}: val={val}\");",
       "current_behavior": "文字列は GPU 禁止のためコンパイル不可。",
       "target_cuda": "CUDA `printf(\"Thread %d: val=%u\\n\", threadIdx.x, val);` へフォーマット自動分解。"
-    }
+    },
+    "score": 31
   },
   {
     "id": "SYN-26",
     "title": "UTF-8 文字列リテラル",
     "domain": "SYN",
     "category": "文字列・デバッグ・メタプログラミング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 2,
-      "score": 24
+      "generality": 2
     },
     "details": {
       "csharp_example": "ReadOnlySpan<byte> tag = \"KERNEL_V1\"u8;",
       "current_behavior": "`Utf8StringLiteralExpressionSyntax` 未対応。",
       "target_cuda": "C++ `const char*` / `const uint8_t[]` リテラルへマッピング。"
-    }
+    },
+    "score": 24
   },
   {
     "id": "SYN-27",
     "title": "nameof(...) 式の静的文字列解決",
     "domain": "SYN",
     "category": "文字列・デバッグ・メタプログラミング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "Gpu.Log(nameof(Device_Multiply));",
       "current_behavior": "構文木解決が未実装。",
       "target_cuda": "コンパイル時に Roslyn 側で識別子文字列へ定数畳み込み置換。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-28",
     "title": "[MethodImpl(AggressiveInlining)] マッピング",
     "domain": "SYN",
     "category": "文字列・デバッグ・メタプログラミング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
-      "generality": 5,
-      "score": 41
+      "generality": 5
     },
     "details": {
       "csharp_example": "[MethodImpl(MethodImplOptions.AggressiveInlining)]",
       "current_behavior": "属性が無視される。",
       "target_cuda": "CUDA `__forceinline__` 修飾子の自動付与。"
-    }
+    },
+    "score": 41
   },
   {
     "id": "SYN-29",
     "title": "[LoopUnroll(N)] 属性によるアンロール制御",
     "domain": "SYN",
     "category": "文字列・デバッグ・メタプログラミング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 1,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "csharp_example": "[LoopUnroll(4)] for (int i = 0; i < 16; i++)",
       "current_behavior": "一律 `#pragma unroll` が付与される。",
       "target_cuda": "指定された数値に応じた `#pragma unroll N` / `#pragma unroll 1`（無効化）の出力。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "SYN-30",
     "title": "ジェネリック構造体 (struct Vector<T>)",
     "domain": "SYN",
     "category": "文字列・デバッグ・メタプログラミング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 5,
-      "generality": 4,
-      "score": 27
+      "generality": 4
     },
     "details": {
       "csharp_example": "struct Vector2<T> where T : unmanaged { public T X, Y; }",
       "current_behavior": "C++ template への型パラメータバインド未対応。",
       "target_cuda": "C++ `template<typename T> struct Vector2 { ... };` への自動展開。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-31",
     "title": "アンマネージド関数ポインタ",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 4,
-      "generality": 1,
-      "score": 16
+      "generality": 1
     },
     "details": {
       "csharp_example": "delegate* unmanaged[Cdecl]<uint, uint, uint> fnPtr;",
       "current_behavior": "`FunctionPointerTypeSyntax` 未対応。",
       "target_cuda": "C++ ネイティブ関数ポインタ `uint32_t (*fnPtr)(uint32_t, uint32_t)` へ展開。"
-    }
+    },
+    "score": 16
   },
   {
     "id": "SYN-32",
     "title": "MemoryMarshal.Cast<TFrom, TTo>",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "var u64 = MemoryMarshal.Cast<uint, ulong>(u32Span);",
       "current_behavior": "BCL 呼び出しとして未解決エラー。",
       "target_cuda": "C++ `reinterpret_cast<uint64_t*>` へのインラインキャスト展開。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "SYN-33",
     "title": "ref フィールド / ref struct メンバ",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 4,
-      "generality": 3,
-      "score": 24
+      "generality": 3
     },
     "details": {
       "csharp_example": "ref struct Holder { public ref int Value; }",
       "current_behavior": "`RefTypeSyntax` のフィールド宣言未対応。",
       "target_cuda": "C++ 参照メンバ `int& Value;` またはポインタメンバへマッピング。"
-    }
+    },
+    "score": 24
   },
   {
     "id": "SYN-34",
     "title": "ハードウェア SIMD ベクトル (Vector128)",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 5,
-      "generality": 5,
-      "score": 29
+      "generality": 5
     },
     "details": {
       "csharp_example": "Vector128<uint> v = Vector128.Create(1u, 2u, 3u, 4u);",
       "current_behavior": "`System.Runtime.Intrinsics` 未マッピング。",
       "target_cuda": "CUDA ベクトル組込型 (`uint4`, `ulonglong2`, `int4`) への置換。"
-    }
+    },
+    "score": 29
   },
   {
     "id": "SYN-35",
@@ -1105,158 +1105,158 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "BitOperations.LeadingZeroCount(w);\nBitOperations.RotateLeft(w, 5);",
       "current_behavior": "実装完了。`Prelude.cu` に安全なヘルパー関数（`__gsharp_rotl64`, `__gsharp_tzc_32` 等）を追加し、C#仕様（0入力時の挙動）と完全互換を確保。",
       "target_cuda": "CUDA 組込関数 (`__clz`, `__popc`, `__funnelshift_l`, `__funnelshift_r`) への完全網羅置換。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "SYN-36",
     "title": "ポインタ後置増減",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
-      "generality": 4,
-      "score": 39
+      "generality": 4
     },
     "details": {
       "csharp_example": "*destPtr++ = *srcPtr++;",
       "current_behavior": "ポインタ式の順序・副作用の保証。",
       "target_cuda": "C++ ネイティブポインタ後置インクリメント演算として安全に出力。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "SYN-37",
     "title": "Unsafe クラスの低レベルポインタ演算",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "Unsafe.Add(ref basePtr, offset);\nUnsafe.ByteOffset(ref a, ref b);",
       "current_behavior": "`System.Runtime.CompilerServices.Unsafe` 未解決。",
       "target_cuda": "ネイティブ C++ ポインタ加算・アドレス差分計算へインライン展開。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-38",
     "title": "固定長バッファ (fixed uint buffer[64])",
     "domain": "SYN",
     "category": "高度なメモリ・ポインタ・アンセーフ機能",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 3,
-      "score": 31
+      "generality": 3
     },
     "details": {
       "csharp_example": "public fixed uint Buffer[64];",
       "current_behavior": "`FixedSizeBufferDeclarationSyntax` 未対応。",
       "target_cuda": "C++ 構造体内埋め込み配列 `uint32_t Buffer[64];` へ展開。"
-    }
+    },
+    "score": 31
   },
   {
     "id": "SYN-39",
     "title": "明示的 / 暗黙的型変換演算子",
     "domain": "SYN",
     "category": "C# 高度な演算子・プロパティ・インターフェース",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 4,
-      "score": 29
+      "generality": 4
     },
     "details": {
       "csharp_example": "public static implicit operator uint(Word w) => w.Val;",
       "current_behavior": "`ConversionOperatorDeclarationSyntax` 未対応。",
       "target_cuda": "C++ ユーザー定義型変換演算子 `operator uint32_t() const` への展開。"
-    }
+    },
+    "score": 29
   },
   {
     "id": "SYN-40",
     "title": "自動実装プロパティ",
     "domain": "SYN",
     "category": "C# 高度な演算子・プロパティ・インターフェース",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "public int Length { get; set; }",
       "current_behavior": "構造体内の自動プロパティが C++ 未展開。",
       "target_cuda": "C++ パブリックメンバ変数、またはインライン getter/setter へ展開。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-41",
     "title": "計算式プロパティ (=>)",
     "domain": "SYN",
     "category": "C# 高度な演算子・プロパティ・インターフェース",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "public int ByteCount => WordCount * 4;",
       "current_behavior": "`PropertyDeclarationSyntax` の式ボディ未対応。",
       "target_cuda": "C++ `const` メンバ関数 `int ByteCount() const { return WordCount * 4; }` へ展開。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-42",
     "title": "静的抽象メンバ (static abstract)",
     "domain": "SYN",
     "category": "C# 高度な演算子・プロパティ・インターフェース",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 5,
-      "generality": 2,
-      "score": 19
+      "generality": 2
     },
     "details": {
       "csharp_example": "interface IMonoid<T> { static abstract T Zero { get; } }",
       "current_behavior": "C# 11 抽象静的インターフェース未対応。",
       "target_cuda": "C++ テンプレート制約 (Concepts / CRTP パターン) への展開。"
-    }
+    },
+    "score": 19
   },
   {
     "id": "SYN-43",
     "title": "checked / unchecked ブロック・式",
     "domain": "SYN",
     "category": "C# 高度な演算子・プロパティ・インターフェース",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 3,
-      "score": 26
+      "generality": 3
     },
     "details": {
       "csharp_example": "unchecked { uint overflow = a + b; }",
       "current_behavior": "構文スキップまたは無視。",
       "target_cuda": "キャリー/オーバーフロー検査（PTX `add.cc`）またはデフォルト無視の明示的処理。"
-    }
+    },
+    "score": 26
   },
   {
     "id": "SYN-44",
@@ -1267,86 +1267,86 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 5,
-      "score": 38
+      "generality": 5
     },
     "details": {
       "csharp_example": "public static void Clear(this Span<uint> span)",
       "current_behavior": "拡張メソッド構文の解決。",
       "target_cuda": "通常の C++ 静的関数呼び出し `Clear(span)` へ展開。"
-    }
+    },
+    "score": 38
   },
   {
     "id": "SYN-45",
     "title": "Nullable 値型",
     "domain": "SYN",
     "category": "C# 高度な演算子・プロパティ・インターフェース",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 3,
-      "score": 27
+      "generality": 3
     },
     "details": {
       "csharp_example": "uint? maybeVal = null; if (maybeVal.HasValue) ...",
       "current_behavior": "`NullableTypeSyntax` 未解決。",
       "target_cuda": "C++ 軽量構造体 `struct { bool has_value; uint32_t value; }` への展開。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-46",
     "title": "ワープシャッフル・同期プリミティブ",
     "domain": "SYN",
     "category": "並列・同期・GPU 特化イディオム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 5,
-      "score": 38
+      "generality": 5
     },
     "details": {
       "csharp_example": "Warp.ShuffleDown(val, 1);\nWarp.Ballot(condition);",
       "current_behavior": "API 体系の未完全。",
       "target_cuda": "CUDA `__shfl_down_sync`, `__ballot_sync`, `__all_sync`, `__any_sync` への直接置換。"
-    }
+    },
+    "score": 38
   },
   {
     "id": "SYN-47",
     "title": "動的共有メモリ",
     "domain": "SYN",
     "category": "並列・同期・GPU 特化イディオム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 5,
-      "score": 35
+      "generality": 5
     },
     "details": {
       "csharp_example": "var shared = DynamicSharedMemory<uint>.Get();",
       "current_behavior": "動的共有メモリの型安全バインド未整備。",
       "target_cuda": "`extern __shared__ uint32_t shared[];` への自動宣言・参照バインド。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "SYN-48",
     "title": "グリッド協調グループ同期",
     "domain": "SYN",
     "category": "並列・同期・GPU 特化イディオム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 5,
-      "generality": 2,
-      "score": 15
+      "generality": 2
     },
     "details": {
       "csharp_example": "Gpu.GridSync();",
       "current_behavior": "協調カーネルディスパッチとの連携不足。",
       "target_cuda": "`cg::this_grid().sync()` への展開＋起動時 `cudaLaunchCooperativeKernel` 自動選択。"
-    }
+    },
+    "score": 15
   },
   {
     "id": "SYN-49",
@@ -1357,392 +1357,392 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 5,
-      "score": 38
+      "generality": 5
     },
     "details": {
       "csharp_example": "Interlocked.Add(ref counter, 1);\nInterlocked.CompareExchange(ref dest, val, comp);",
       "current_behavior": "一部アトミック演算のオーバーロード不足。",
       "target_cuda": "CUDA `atomicAdd`, `atomicCAS`, `atomicExch`, `atomicMin`, `atomicMax` への完全マップ。"
-    }
+    },
+    "score": 38
   },
   {
     "id": "SYN-50",
     "title": "非同期コピー / TMA",
     "domain": "SYN",
     "category": "並列・同期・GPU 特化イディオム",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 5,
-      "generality": 3,
-      "score": 13
+      "generality": 3
     },
     "details": {
       "csharp_example": "Gpu.AsyncCopy(destShared, srcGlobal, size);",
       "current_behavior": "Hopper/Blackwell 世代の非同期パイプライン未対応。",
       "target_cuda": "`cuda::memcpy_async` / PTX `cp.async` へのマッピング。"
-    }
+    },
+    "score": 13
   },
   {
     "id": "SYN-57",
     "title": "リストパターン",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 4,
-      "generality": 2,
-      "score": 18
+      "generality": 2
     },
     "details": {
       "csharp_example": "if (slice is [0, .., 0])",
       "current_behavior": "C# 11 `ListPatternSyntax` 未対応。",
       "target_cuda": "長さチェックと要素インデックス比較 `(len >= 2 && slice[0] == 0 && slice[len-1] == 0)` へ展開。"
-    }
+    },
+    "score": 18
   },
   {
     "id": "SYN-58",
     "title": "プロパティパターン",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "if (ctx is { NumberOfWords: > 0 })",
       "current_behavior": "`PropertyPatternClauseSyntax` 未対応。",
       "target_cuda": "メンバアクセス比較 `(ctx.NumberOfWords > 0)` へ展開。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-59",
     "title": "位置パターン",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "if (pos is (0, 0))",
       "current_behavior": "`PositionalPatternClauseSyntax` 未対応。",
       "target_cuda": "`(pos.Item1 == 0 && pos.Item2 == 0)` へ展開。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-60",
     "title": "ラムダ式のデフォルト引数",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 3,
-      "score": 26
+      "generality": 3
     },
     "details": {
       "csharp_example": "var f = (int a, int b = 10) => a + b;",
       "current_behavior": "ラムダ引数デフォルト値未対応。",
       "target_cuda": "C++ ラムダ引数デフォルト値 `[](int a, int b = 10) { return a + b; }` へマッピング。"
-    }
+    },
+    "score": 26
   },
   {
     "id": "SYN-61",
     "title": "ラムダ式の明示的戻り値型指定",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 3,
-      "score": 26
+      "generality": 3
     },
     "details": {
       "csharp_example": "var f = uint () => 10u;",
       "current_behavior": "`ParenthesizedLambdaExpressionSyntax` 戻り値未解決。",
       "target_cuda": "C++ ラムダ後置戻り値 `[]() -> uint32_t { return 10u; }` へ展開。"
-    }
+    },
+    "score": 26
   },
   {
     "id": "SYN-62",
     "title": "scoped ref / scoped Span<T>",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 2,
-      "score": 24
+      "generality": 2
     },
     "details": {
       "csharp_example": "void Process(scoped ref Context ctx)",
       "current_behavior": "`scoped` キーワード未対応。",
       "target_cuda": "C++ 参照修飾（スコープ内参照束縛）の保証。"
-    }
+    },
+    "score": 24
   },
   {
     "id": "SYN-63",
     "title": "Unsafe.NullRef<T>() / IsNullRef",
     "domain": "SYN",
     "category": "関数型・式・モダン制御構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "ref uint r = ref Unsafe.NullRef<uint>();",
       "current_behavior": "ヌル参照イディオム未解決。",
       "target_cuda": "C++ `nullptr` / ポインタ比較へインライン展開。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "SYN-64",
     "title": "半精度浮動小数点数 (Half)",
     "domain": "SYN",
     "category": "算術・数値型・ハードウェア数学",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "Half h = (Half)1.5f;",
       "current_behavior": "`System.Half` 未マッピング。",
       "target_cuda": "CUDA `__half`, `__half2` (FP16 テンソル/SIMD) へ置換。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-65",
     "title": "ネイティブ整数 (nint, nuint)",
     "domain": "SYN",
     "category": "算術・数値型・ハードウェア数学",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "nuint wordOffset = (nuint)i * 4;",
       "current_behavior": "プラットフォーム依存整数未対応。",
       "target_cuda": "CUDA `size_t` / `uintptr_t` へマッピング。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "SYN-66",
     "title": "128ビット整数",
     "domain": "SYN",
     "category": "算術・数値型・ハードウェア数学",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "UInt128 wide = (UInt128)a * b;",
       "current_behavior": ".NET 7 `UInt128` 未マッピング。",
       "target_cuda": "CUDA `unsigned __int128` (NVCC/GCC 拡張) へ展開。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-67",
     "title": "BFloat16 / FP8 型",
     "domain": "SYN",
     "category": "算術・数値型・ハードウェア数学",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 4,
-      "generality": 1,
-      "score": 12
+      "generality": 1
     },
     "details": {
       "csharp_example": "BFloat16 bf = (BFloat16)1.0f;",
       "current_behavior": ".NET 8 BFloat16 未マッピング。",
       "target_cuda": "CUDA `__nv_bfloat16`, `__nv_fp8_e4m3` へ置換。"
-    }
+    },
+    "score": 12
   },
   {
     "id": "SYN-68",
     "title": "Math / MathF / Math.Clamp 関数群",
     "domain": "SYN",
     "category": "算術・数値型・ハードウェア数学",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
-      "generality": 5,
-      "score": 41
+      "generality": 5
     },
     "details": {
       "csharp_example": "var clamped = Math.Clamp(v, min, max);\nvar fma = MathF.FusedMultiplyAdd(a, b, c);",
       "current_behavior": "BCL 呼び出し未解決。",
       "target_cuda": "CUDA 組込関数 (`__fmaf_rn`, `fminf`, `fmaxf`, `__sinf`, `__expf`) へ完全置換。"
-    }
+    },
+    "score": 41
   },
   {
     "id": "SYN-69",
     "title": "64ビット飽薄 / キャリー演算",
     "domain": "SYN",
     "category": "算術・数値型・ハードウェア数学",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 3,
-      "score": 27
+      "generality": 3
     },
     "details": {
       "csharp_example": "Gpu.AddWithCarry64(a, b, out var carry);",
       "current_behavior": "64ビット版キャリー Intrinsics 不足。",
       "target_cuda": "PTX `add.cc.u64`, `addc.cc.u64` インラインアセンブリへマッピング。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-70",
     "title": "foreach ループ on Span<T>",
     "domain": "SYN",
     "category": "ループ・ジャンプ・フロー制御",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 5,
-      "score": 35
+      "generality": 5
     },
     "details": {
       "csharp_example": "foreach (var item in buffer)",
       "current_behavior": "`ForEachStatementSyntax` 未対応。",
       "target_cuda": "C++ 範囲ベース `for (const auto& item : buffer)` またはインデックス `for` へ展開。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "SYN-71",
     "title": "switch 内の goto case",
     "domain": "SYN",
     "category": "ループ・ジャンプ・フロー制御",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1,
-      "score": 19
+      "generality": 1
     },
     "details": {
       "csharp_example": "goto case 0;",
       "current_behavior": "`GotoCaseStatementSyntax` 未対応。",
       "target_cuda": "C++ ラベルジャンプまたは fallthrough 展開。"
-    }
+    },
+    "score": 19
   },
   {
     "id": "SYN-72",
     "title": "多重ループ脱出 (名前付き break)",
     "domain": "SYN",
     "category": "ループ・ジャンプ・フロー制御",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 2,
-      "score": 24
+      "generality": 2
     },
     "details": {
       "csharp_example": "goto loop_exit;",
       "current_behavior": "`GotoStatementSyntax` 制限。",
       "target_cuda": "C++ `goto` ラベルジャンプへ安全に出力。"
-    }
+    },
+    "score": 24
   },
   {
     "id": "SYN-73",
     "title": "Debug.Assert / Trace.Assert",
     "domain": "SYN",
     "category": "デバッグ・契約・PTX/ハードウェア連携",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "Debug.Assert(threadIdx < 32);",
       "current_behavior": "デバッグアサート未解決。",
       "target_cuda": "デバッグビルド時のみ `assert(...)` を出力し、リリース時はゼロコスト除去。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-74",
     "title": "CallerMemberName / CallerLineNumber",
     "domain": "SYN",
     "category": "デバッグ・契約・PTX/ハードウェア連携",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 3,
-      "score": 27
+      "generality": 3
     },
     "details": {
       "csharp_example": "Gpu.Log(\"Check\", [CallerLineNumber] int line = 0);",
       "current_behavior": "呼び出し元情報属性の未解決。",
       "target_cuda": "C++ マクロ `__FILE__`, `__LINE__`, `__func__` への自動展開。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "SYN-75",
     "title": "[Conditional(\"DEBUG\")] 属性",
     "domain": "SYN",
     "category": "デバッグ・契約・PTX/ハードウェア連携",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "[Conditional(\"DEBUG\")] void Dump() { ... }",
       "current_behavior": "条件付きコンパイル属性未展開。",
       "target_cuda": "指定シンボルが非定義時にメソッド呼び出しを AST レベルで完全除去。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "SYN-76",
     "title": "コンパイル時定数評価 (constexpr 伝播)",
     "domain": "SYN",
     "category": "デバッグ・契約・PTX/ハードウェア連携",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "const int BlockSize = 256;",
       "current_behavior": "C# `const` の C++ `constexpr` 化。",
       "target_cuda": "C++ `constexpr int BlockSize = 256;` として出力し、静的配列長やアンロール回数へ伝播。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "SYN-77",
@@ -1753,194 +1753,194 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.InlinePtx(\"extern __shared__ uint32_t s[];\");\nGpu.InlinePtx($\"asm volatile(\\\"...\\\");\");",
       "current_behavior": "文字列リテラルおよび補間文字列による生 C++ / PTX の直接挿入に対応済み。",
       "target_cuda": "そのまま C++ ソースコードへ直埋め込み出力（補間部分は変数式を展開）。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "SYN-78",
     "title": "テンソルコア・WMMA",
     "domain": "SYN",
     "category": "デバッグ・契約・PTX/ハードウェア連携",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 4,
-      "generality": 2,
-      "score": 18
+      "generality": 2
     },
     "details": {
       "csharp_example": "Wmma.LoadMatrixSync(frag, ptr, stride);\nWmma.MmaSync(d, a, b, c);",
       "current_behavior": "Tensor Core API の C# 表現未整備。",
       "target_cuda": "CUDA `nvcuda::wmma` API への型安全 C# バインド。"
-    }
+    },
+    "score": 18
   },
   {
     "id": "SYN-79",
     "title": "ファイルローカル型 (file struct)",
     "domain": "SYN",
     "category": "最先端・微小な修飾子とスコープ",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 2,
-      "generality": 1,
-      "score": 18
+      "generality": 1
     },
     "details": {
       "csharp_example": "file struct InternalState { }",
       "current_behavior": "C# 11 アクセス修飾子未対応。",
       "target_cuda": "C++ 無名名前空間 `namespace { struct InternalState { }; }` へ隠蔽展開。"
-    }
+    },
+    "score": 18
   },
   {
     "id": "SYN-80",
     "title": "params Span<T>",
     "domain": "SYN",
     "category": "最先端・微小な修飾子とスコープ",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 3,
-      "score": 23
+      "generality": 3
     },
     "details": {
       "csharp_example": "void Calc(params ReadOnlySpan<int> vals)",
       "current_behavior": "C# 13 可変長 Span 引数未解決。",
       "target_cuda": "ヒープ確保なしのスタック配列初期化＋C++ 参照渡しへの自動展開。"
-    }
+    },
+    "score": 23
   },
   {
     "id": "SYN-81",
     "title": "ref readonly 戻り値",
     "domain": "SYN",
     "category": "最先端・微小な修飾子とスコープ",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 2,
-      "score": 24
+      "generality": 2
     },
     "details": {
       "csharp_example": "public ref readonly int GetRef()",
       "current_behavior": "戻り値の参照修飾未展開。",
       "target_cuda": "C++ `const int&` 戻り値への正確なマッピング。"
-    }
+    },
+    "score": 24
   },
   {
     "id": "SYN-82",
     "title": "volatile フィールド修飾子",
     "domain": "SYN",
     "category": "最先端・微小な修飾子とスコープ",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "volatile uint syncFlag;",
       "current_behavior": "スレッド間可視性修飾子が無視される。",
       "target_cuda": "CUDA C++ `volatile uint32_t` への付与、または `__threadfence()` 境界の自動挿入。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-83",
     "title": "[module: SkipLocalsInit] 属性",
     "domain": "SYN",
     "category": "最先端・微小な修飾子とスコープ",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 1,
-      "generality": 1,
-      "score": 21
+      "generality": 1
     },
     "details": {
       "csharp_example": "[module: SkipLocalsInit]",
       "current_behavior": "ローカル変数ゼロクリア省略の未評価。",
       "target_cuda": "（C++ ではデフォルトで未初期化のため、特に追加生成コードなしで完了とする設計）。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-84",
     "title": "タプル宣言分解の foreach ループ",
     "domain": "SYN",
     "category": "超エッジケース・特殊構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 2,
-      "score": 21
+      "generality": 2
     },
     "details": {
       "csharp_example": "foreach (var (x, y) in points)",
       "current_behavior": "`ForEachVariableStatementSyntax` 未対応。",
       "target_cuda": "C++17 Structured Binding 組み込みの range-based for `for(auto [x, y] : points)` へ展開。"
-    }
+    },
+    "score": 21
   },
   {
     "id": "SYN-86",
     "title": "関数ポインタの呼出規約",
     "domain": "SYN",
     "category": "超エッジケース・特殊構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 2,
-      "generality": 1,
-      "score": 18
+      "generality": 1
     },
     "details": {
       "csharp_example": "unmanaged[Stdcall, SuppressGCTransition]",
       "current_behavior": "修飾子属性の解決。",
       "target_cuda": "デバイス側では一律 `__device__` 呼び出し規約として扱うため無視（静的解析で許容）。"
-    }
+    },
+    "score": 18
   },
   {
     "id": "SYN-87",
     "title": "#line hidden / #line default",
     "domain": "SYN",
     "category": "超エッジケース・特殊構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 3,
-      "generality": 1,
-      "score": 15
+      "generality": 1
     },
     "details": {
       "csharp_example": "#line hidden",
       "current_behavior": "プリプロセッサディレクティブの無視。",
       "target_cuda": "CUDA デバッガ (cuda-gdb) のステップ実行除外指定へのマッピング。"
-    }
+    },
+    "score": 15
   },
   {
     "id": "SYN-88",
     "title": "暗黙のスタック配列 (stackalloc[])",
     "domain": "SYN",
     "category": "超エッジケース・特殊構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 2,
-      "score": 24
+      "generality": 2
     },
     "details": {
       "csharp_example": "Span<int> s = stackalloc[] { 1, 2 };",
       "current_behavior": "サイズ推論付き stackalloc の未対応。",
       "target_cuda": "C++ `int s[] = { 1, 2 };` のローカル配列へ展開。"
-    }
+    },
+    "score": 24
   },
   {
     "id": "SYN-90",
@@ -1951,14 +1951,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "for (...) { if (...) { ... } else { ... } }",
       "current_behavior": "正常にトランスパイル・実行完了。",
       "target_cuda": "C++ 制御構造へ完全マッピング。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "SYN-91",
@@ -1969,14 +1969,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "switch (tid)\n{\n    case 0:\n        data[tid] = 10;\n        break;\n    default:\n        data[tid] = 30;\n        break;\n}\n\nint count = 0;\ndo\n{\n    count = count + 1;\n} while (count < 3);\n\nif (tid == 0 && count == 3)\n{\n    data[tid] = data[tid] + 100;\n}",
       "current_behavior": "正常にトランスパイル・実行完了。",
       "target_cuda": "switch (tid) { case 0: ... break; default: ... break; }\ndo { ... } while (...);"
-    }
+    },
+    "score": 45
   },
   {
     "id": "SYN-92",
@@ -1987,14 +1987,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "public struct Vector2 { public float X, Y; }",
       "current_behavior": "正常にトランスパイル・実行完了。",
       "target_cuda": "C++ 構造体型宣言およびフィールドアクセスへマッピング。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "SYN-93",
@@ -2005,457 +2005,457 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "[GpuDeviceFunction] public static int Add(...)",
       "current_behavior": "正常にトランスパイル・実行完了。",
       "target_cuda": "C++ `__device__` 修飾子付き関数宣言およびインライン呼出へマッピング。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "SYN-94",
     "title": "Macro DSL (Gpu.GridStrideLoop, ForUnroll, SingleThread)",
     "domain": "SYN",
     "category": "基本実装済・検証済コア構文",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.GridStrideLoop(ref ctx, n, (ref C c, int i) => ...);",
       "current_behavior": "C# 上でラムダ構文を用いて AST レベルで CUDA イディオムを展開。C#仕様上 `ref` パラメータがラムダにキャプチャ不可（CS1628）な制約は、コンテキスト引数渡し用のジェネリックオーバーロード（`<TContext>`）で解決済。",
       "target_cuda": "CUDA の `for (int i = blockIdx.x * ...)` や `#pragma unroll` に完全に展開。"
-    }
+    },
+    "score": 45
   },
   {
     "id": "GBI-01",
     "title": "GSharpJitProvider メモリプールの実装",
     "domain": "GBI",
     "category": "メモリ管理",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 4,
-      "generality": 5,
-      "score": 28
+      "generality": 5
     },
     "details": {
       "current_behavior": "`ScopedGpuMemory` の導入により、確定的なゼロアロケーション・クリーンアップとメモリリークの解消を達成（Qodo指摘対応含む）。",
       "strategy": "実装およびチューニング完了。"
-    }
+    },
+    "score": 28
   },
   {
     "id": "GBI-02",
     "title": "Test_ModPow_Correctness の Skip 解除と検証",
     "domain": "GBI",
     "category": "テスト",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 1,
-      "generality": 2,
-      "score": 27
+      "generality": 2
     },
     "details": {
       "current_behavior": "`ModPow`（バイナリ累乗法）のアルゴリズム自体は実装済み。GBI-01 解決済みのため、次フェーズで `[Fact(Skip)]` の解除・検証・有効化を行う。",
       "strategy": "テストを実行して検証・有効化する。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "GBI-03",
     "title": "CPU-Fallback メソッドの GPU リダクション化",
     "domain": "GBI",
     "category": "パフォーマンス",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 4,
-      "score": 29
+      "generality": 4
     },
     "details": {
       "current_behavior": "`CompareTo`, `GetBitLength`, `IsZero`, `IsOne`, `IsEven` 等の判定について、CPU転送を廃止しGPU側での並列リダクション・専用カーネル処理へ移行完了。",
       "strategy": "GPU 側で並列リダクションカーネルを実行し、ホスト転送のオーバーヘッドを排除。実装完了。"
-    }
+    },
+    "score": 29
   },
   {
     "id": "GBI-04",
     "title": "Square 専用 JIT カーネルのディスパッチ",
     "domain": "GBI",
     "category": "演算最適化",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 4,
-      "score": 28
+      "generality": 4
     },
     "details": {
       "current_behavior": "現在 `GSharpJitProvider.Square` は汎用の `Mul(A, A, Result)` を呼び出して代用中。Native 側には存在する専用二乗ルーチン（`Device_NTT_PointwiseSquare`）が JIT 側でバイパスされている。",
       "strategy": "JIT 側でも二乗専用の Pointwise カーネルを直接ディスパッチし、NTT 変換回数および乗算計算量を半減させる。"
-    }
+    },
+    "score": 28
   },
   {
     "id": "GBI-05",
     "title": "Lehmer's GCD の大桁並列化",
     "domain": "GBI",
     "category": "演算最適化",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 5,
-      "generality": 2,
-      "score": 11
+      "generality": 2
     },
     "details": {
       "current_behavior": "現在の GCD 実装は単一ブロック/少数スレッドでの逐次商推定に依存しており、超巨大桁（数万〜数十万ワード）時のスケーラビリティに限界がある。",
       "strategy": "Half-GCD / Matrix-based GCD の並列 GPU 実装を検討。"
-    }
+    },
+    "score": 11
   },
   {
     "id": "GBI-06",
     "title": "式木の Kernel Fusion",
     "domain": "GBI",
     "category": "実行基盤",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 1,
       "difficulty": 5,
-      "generality": 4,
-      "score": 15
+      "generality": 4
     },
     "details": {
       "current_behavior": "現在の式木は個別カーネル（Add, Sub, Bitwise 等）を直列ディスパッチしており、中間バッファの VRAM 読み書き帯域を消費する。",
       "strategy": "複数の要素別演算を動的 JIT で 1 つの CUDA カーネルに融合（Kernel Fusion）してディスパッチする仕組みを導入。"
-    }
+    },
+    "score": 15
   },
   {
     "id": "GBI-10",
     "title": "加算・減算 (+, -)",
     "domain": "GBI",
     "category": "加算・減算",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "+, -",
       "current_behavior": "CarryBufferゼロアロケーション化・高速パス完了。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-11",
     "title": "乗算 (*)",
     "domain": "GBI",
     "category": "乗算",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 5,
-      "score": 35
+      "generality": 5
     },
     "details": {
       "csharp_example": "*",
       "current_behavior": "NTT / Karatsuba / Schoolbook 並列乗算チューニング完了。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "GBI-12",
     "title": "除算・剰余 (/, %)",
     "domain": "GBI",
     "category": "除算・剰余",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "csharp_example": "/, %",
       "current_behavior": "機能動作確認済み。内部 `DivRem` のテンポラリアロケーション削減（GBI-01）解決。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GBI-13",
     "title": "ビット論理演算 (&, |, ^, ~)",
     "domain": "GBI",
     "category": "ビット論理演算",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "&, \\",
       "current_behavior": "-"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-14",
     "title": "ビットシフト (<<, >>)",
     "domain": "GBI",
     "category": "ビットシフト",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "<<, >>",
       "current_behavior": "任意ビットシフトカーネルにて完全動作・最適化済み。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-15",
     "title": "比較演算 (==, !=, <, >, <=, >=)",
     "domain": "GBI",
     "category": "比較演算",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "csharp_example": "==, !=, <, >, <=, >=",
       "current_behavior": "判定自体は完全動作。全ワードのCPU転送を廃止し、GPUカーネル (`CompareToKernel` 等) による並列処理化（GBI-03）完了。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-16",
     "title": "インクリメント/デクリメント (++, --)",
     "domain": "GBI",
     "category": "インクリメント/デクリメント",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
-      "generality": 0,
-      "score": 20
+      "generality": 3
     },
     "details": {
       "csharp_example": "++, --",
       "current_behavior": "`a = a + 1` で代替可能だが専用オーバーロード未定義。"
-    }
+    },
+    "score": 26
   },
   {
     "id": "GBI-17",
     "title": "GpuBigInteger.DivRem",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "current_behavior": "除算・剰余の同時計算",
       "strategy": "動作完了。内部一時配列確保のプール化（GBI-01）解決。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GBI-18",
     "title": "GpuBigInteger.ModPow",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 2,
-      "score": 25
+      "generality": 2
     },
     "details": {
       "current_behavior": "べき剰余 ( $a^e \\bmod n$ )",
       "strategy": "アルゴリズム実装完了。GBI-01(メモリプール)解決まで保留（スキップ中）。"
-    }
+    },
+    "score": 25
   },
   {
     "id": "GBI-19",
     "title": "GpuBigInteger.Square",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 2,
-      "score": 28
+      "generality": 2
     },
     "details": {
       "current_behavior": "二乗 ( $a^2$ )",
       "strategy": "現在汎用乗算 `*` にフォールバック中。専用Pointwise二乗カーネル呼出（GBI-04）化待ち。"
-    }
+    },
+    "score": 28
   },
   {
     "id": "GBI-20",
     "title": "GpuBigInteger.GreatestCommonDivisor",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 32
+      "generality": 4
     },
     "details": {
       "current_behavior": "最大公約数 ( GCD )",
       "strategy": "Lehmer's GCDにて完全動作・最適化完了。（超大桁並列化GBI-05は将来検討）"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GBI-21",
     "title": "GpuBigInteger.ModInverse",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "モジュラ逆数",
       "strategy": "拡張ユークリッド互除法による実装が未作成。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-22",
     "title": "CompareTo / Equals",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "大小比較・等値判定",
       "strategy": "GPU並列リダクション・専用カーネル化（GBI-03）完了。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-23",
     "title": "GetBitLength / GetByteCount",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "有効ビット/バイト長",
       "strategy": "GPU並列リダクション・専用カーネル化（GBI-03）完了。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-24",
     "title": "IsZero / IsOne / IsEven",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "状態フラグ判定",
       "strategy": "GPU並列リダクション・専用カーネル化（GBI-03）完了。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GBI-25",
     "title": "GpuBigInteger.Sqrt",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
-      "generality": 2,
-      "score": 25
+      "generality": 2
     },
     "details": {
       "current_behavior": "平方根 ( $\\lfloor\\sqrt{a}\\rfloor$ )",
       "strategy": "ニュートン法または二分探索によるGPUカーネル実装が必要。"
-    }
+    },
+    "score": 25
   },
   {
     "id": "GBI-26",
     "title": "ローカル変数宣言時の GpuBigIntExpr 診断",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1.5,
-      "score": 20
+      "generality": 1.5
     },
     "details": {
       "current_behavior": "ローカル変数宣言時の GpuBigIntExpr 診断",
       "strategy": "ar local = expr; などの直接宣言に対する GSH0005 の報告。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GBI-27",
     "title": "代入時の GpuBigIntExpr 診断",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1.5,
-      "score": 20
+      "generality": 1.5
     },
     "details": {
       "current_behavior": "代入時の GpuBigIntExpr 診断",
       "strategy": "フィールド等への代入に対する GSH0005 の報告。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GBI-28",
     "title": "レガシー名前空間の宣言診断",
     "domain": "GBI",
     "category": "関数型演算子",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 3,
-      "generality": 1.5,
-      "score": 20
+      "generality": 1.5
     },
     "details": {
       "current_behavior": "レガシー名前空間の宣言診断",
       "strategy": "レガシー名前空間からの使用に対する診断。"
-    }
+    },
+    "score": 20
   },
   {
     "id": "GBI-30",
@@ -2466,14 +2466,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "int tid = ThreadIndex.X;",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "threadIdx.x, blockIdx.x 等の定義済み変数へ直接マッピング。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GBI-31",
@@ -2484,14 +2484,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.SyncThreads();",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "__syncthreads() 等へマッピング。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GBI-32",
@@ -2502,14 +2502,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.AtomicAdd(ref target, 1);",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "atomicAdd, atomicMax 等の組み込み関数へマッピング。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GBI-33",
@@ -2520,14 +2520,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.AddWithCarry(a, b, ref carry);",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "PTX レベルのキャリー・ボロー命令へマッピング。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GBI-34",
@@ -2538,14 +2538,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "Gpu.InlinePtx(\"asm volatile (\\\"bar.sync 0;\\\");\");",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "C++ のインラインアセンブリまたはマクロとしてそのまま出力される。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "BCL-01",
@@ -2556,14 +2556,14 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "BitOperations.PopCount(val)",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "__popc, __popcll 等の CUDA 組み込み関数へマッピング。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "BCL-02",
@@ -2574,32 +2574,32 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "BitOperations.Log2(val)",
       "current_behavior": "正常にトランスパイル・実行完了",
       "target_cuda": "BitOperations.Log2 は __gsharp_log2_32 等の定義済みマクロへマッピング。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "BCL-03",
     "title": "System.Math / System.MathF",
     "domain": "BCL",
     "category": "標準ライブラリ (BCL) マッピング",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 39
+      "generality": 5
     },
     "details": {
       "csharp_example": "MathF.Sin(x)",
       "current_behavior": "一部のみ対応、または未対応。",
       "target_cuda": "sinf(x), cosf(x) 等へのマッピング予定。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GEN-20",
@@ -2610,81 +2610,81 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 42
+      "generality": 5
     },
     "details": {
       "current_behavior": "C++ は使用前に宣言が必要なため、全ての __device__ 関数の前方宣言（シグネチャ）を生成し、共通の Prelude.cu ヘッダとともにソースの先頭に埋め込む。",
       "strategy": "Roslyn Generator の出力フェーズにて、本体ソースとは別にシグネチャ走査を先行させ結合出力するアーキテクチャ。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GEN-21",
     "title": "単一ステートメントの C++ 波括弧 {} 自動ラップ",
     "domain": "GEN",
     "category": "トランスパイラ基盤",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
-      "generality": 4,
-      "score": 38
+      "generality": 4
     },
     "details": {
       "current_behavior": "C# 上で {} を省略した if や for は、C++ に展開された際、内部でマクロ展開が起きるとスコープが崩壊し重大なバグになる。",
       "strategy": "RoslynToCudaVisitor 内で単一ステートメントを検知し、強制的に C++ 側の {} でラップする安全機構。"
-    }
+    },
+    "score": 40
   },
   {
     "id": "GEN-22",
     "title": "TranspileContext.OverrideValue による AST ノード単位のオーバーライド",
     "domain": "GEN",
     "category": "トランスパイラ基盤",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 4,
       "difficulty": 4,
-      "generality": 5,
-      "score": 40
+      "generality": 5
     },
     "details": {
       "current_behavior": "Gpu.ForUnroll 等でループ変数 i をコンパイル時定数（リテラル）に置換する際、既存の AST を破壊せずにノード評価時にオーバーライド値を出力する。",
       "strategy": "TranspileContext に OverrideValue ディクショナリを持たせ、Visitor がノード訪問時に優先出力する。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GEN-23",
     "title": "配列引数の __restrict__ ポインタマッピングとエイリアス解析最適化",
     "domain": "GEN",
     "category": "型システム",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
-      "generality": 5,
-      "score": 43
+      "generality": 5
     },
     "details": {
       "current_behavior": "C# の配列引数 (T[]) を、C++ のポインタ T* __restrict__ にマッピング。",
       "strategy": "__restrict__ キーワードの付与により、NVCC のエイリアス解析最適化を促進し、L1キャッシュおよびレジスタの利用効率を最大化する。"
-    }
+    },
+    "score": 42
   },
   {
     "id": "GEN-24",
     "title": "[SkipLocalsInit] 属性による C++ ローカル変数のゼロ初期化生成のスキップ",
     "domain": "GEN",
     "category": "トランスパイラ基盤",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 28
+      "generality": 3
     },
     "details": {
       "current_behavior": "通常 C# のローカル変数は C++ 側で = によるゼロ初期化コードが生成されるが、[SkipLocalsInit] 属性が付与されている場合はこれをスキップする。",
       "strategy": "メソッド・型・モジュールレベルの属性を検知し、TranspileContext.SkipLocalsInit フラグを介して生成を抑制。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GEN-25",
@@ -2695,47 +2695,47 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 1,
-      "generality": 4,
-      "score": 27
+      "generality": 4
     },
     "details": {
       "current_behavior": "C# メソッドに対する [GpuInline], [GpuNoInline] 属性を、CUDA の __forceinline__, __noinline__ コンパイラディレクティブへ直接マッピングする。",
       "strategy": "メソッドシグネチャ生成時に属性を走査して C++ プレフィックスを切り替える。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "GEN-26",
     "title": "タプル代入における値スワップ破壊防止用即時実行ラムダ (IIFE)",
     "domain": "GEN",
     "category": "トランスパイラ基盤",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 3,
-      "score": 32
+      "generality": 3
     },
     "details": {
       "current_behavior": "(a, b) = (b, a) のようなスワップ代入時、C++ に単純展開すると左辺の代入により右辺の値が破壊される。",
       "strategy": "即時実行ラムダ [&]() { auto _t0 = b; auto _t1 = a; a = _t0; b = _t1; }() を生成し、一時変数で値を保護する。"
-    }
+    },
+    "score": 31
   },
   {
     "id": "GEN-27",
     "title": "構造体生成 (new Struct) の即時実行ラムダ (IIFE) による初期化安全確保",
     "domain": "GEN",
     "category": "トランスパイラ基盤",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "current_behavior": "new Struct { A = 1 } のような初期化子を持つ生成式を C++ で安全に評価するため。",
       "strategy": "[&]() { Struct _tmp; _tmp.A = 1; return _tmp; }() のようなスコープ分離された即時実行ラムダを展開し、副作用と評価順序を C# に一致させる。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "GEN-28",
@@ -2746,13 +2746,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
-      "generality": 5,
-      "score": 44
+      "generality": 5
     },
     "details": {
       "current_behavior": "動的共有メモリ extern __shared__ char __gsharp_dynamic_smem[] に対し、複数の型を割り当てる際の Misaligned Access 違反（メモリアクセス例外）を防ぐ。",
       "strategy": "alignof(T) を用いた安全なバイトオフセット計算 __smem_offset = (__smem_offset + align - 1) & ~(align - 1); を自動生成するメモリアロケータ・アーキテクチャ。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-29",
@@ -2763,13 +2763,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 4,
-      "score": 33
+      "generality": 4
     },
     "details": {
       "current_behavior": "SharedMemory<T> smem = new(256); のように定数が渡された場合、静的サイズの共有メモリとして展開する。",
       "strategy": "__shared__ T smem[256]; の静的 C++ 宣言に変換し、実行時の動的オフセット計算を排除する。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-30",
@@ -2780,13 +2780,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 41
+      "generality": 5
     },
     "details": {
       "current_behavior": "[InlineArray] が付与された C# 構造体を、C++ の固定長配列フィールド (T field[N]) にマッピングする。",
       "strategy": "あわせて operator[](int index) と const operator[](int index) const を自動生成し、C++ でのシームレスなインデックスアクセスとメモリレイアウトの一致を実現する。"
-    }
+    },
+    "score": 39
   },
   {
     "id": "GEN-31",
@@ -2797,13 +2797,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "current_behavior": "C++ では未定義の構造体を値型のフィールドとして持てないため、C# のように順不同で構造体を宣言するとコンパイルエラーになる。",
       "strategy": "StructTranspiler.GetTopologicallySortedStructs によって使用構造体の依存関係グラフをトポロジカルソートし、正しい順序で C++ 宣言を生成する。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-32",
@@ -2814,13 +2814,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 3,
-      "score": 32
+      "generality": 3
     },
     "details": {
       "current_behavior": "構造体の暗黙的変換演算子 (implicit operator) を、C++ のネイティブキャスト仕様に合わせる。",
       "strategy": "対象構造体へのキャストであれば C++ の引数付きコンストラクタへ、別型へのキャストであれば operator T() const 変換演算子へ自動展開する。"
-    }
+    },
+    "score": 31
   },
   {
     "id": "GEN-33",
@@ -2831,13 +2831,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 4,
-      "score": 38
+      "generality": 4
     },
     "details": {
       "current_behavior": "参照型配列を含む構造体を CUDA に渡すため、レイアウト同等の __Native_StructName を StructLayout(Sequential) で自動生成する。",
       "strategy": "構造体を再帰的にスキャンし、参照型配列を IntPtr に置き換えたネイティブ構造体定義を展開する。"
-    }
+    },
+    "score": 37
   },
   {
     "id": "GEN-34",
@@ -2848,13 +2848,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
-      "generality": 5,
-      "score": 43
+      "generality": 5
     },
     "details": {
       "current_behavior": "マネージド配列を GPU に渡す際、GCHandleType.Pinned により GC 移動をロックし、cuMemAlloc_v2 と cuMemcpyHtoD_v2 で転送する。実行後に cuMemcpyDtoH_v2 で書き戻す。",
       "strategy": "ゼロコピー不可の場合の高速マーシャリングアーキテクチャ。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-35",
@@ -2865,13 +2865,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "current_behavior": "ホスト-デバイス間メモリコピーやアロケーションをバイパスするため、GPUのデバイスポインタ (IntPtr) を直接受け取る Launch_XXX_Device オーバーロードを生成する。",
       "strategy": "反復実行時等のパフォーマンス最大化パス。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "GEN-36",
@@ -2882,13 +2882,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 4,
-      "generality": 5,
-      "score": 41
+      "generality": 5
     },
     "details": {
       "current_behavior": "ref や out なカスタム構造体は、GC ピニングなしのポインタキャスト (IntPtr)(&native_Struct) (fixed コンテキスト相当) を用いてヒープアロケーションを完全排除し転送する。",
       "strategy": "構造体のボクシングとGC負荷をゼロにする最適化。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GEN-37",
@@ -2899,13 +2899,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "current_behavior": "IsJitConstant が付与された引数は CUDA カーネルシグネチャから除外され、__gsharp_jit_constants 辞書経由で JitEngine に渡され C++ マクロ (#define) として PTX 注入される。",
       "strategy": "動的なブロックサイズや反復回数のコンパイル時ループ展開を可能にする。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "GEN-38",
@@ -2916,13 +2916,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 3,
-      "score": 28
+      "generality": 3
     },
     "details": {
       "current_behavior": "カーネルがグリッド全体の同期を要する場合、カーネルラウンチ API が cuLaunchKernel から cuLaunchCooperativeKernel へ自動的に切り替わる。",
       "strategy": "Source Generator が属性をスキャンしてコード分岐を生成。"
-    }
+    },
+    "score": 34
   },
   {
     "id": "GEN-39",
@@ -2933,30 +2933,30 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
-      "generality": 5,
-      "score": 45
+      "generality": 5
     },
     "details": {
       "current_behavior": "[assembly: BclIntrinsicMap] 属性をスキャンし、Math.Sin 等の呼び出しを sinf 等の CUDA 組み込み関数へ透過的に置換する。",
       "strategy": "アセンブリメタデータからのキャッシュ構築と、AST 探索中の SymbolEqualityComparer による照合。"
-    }
+    },
+    "score": 36
   },
   {
     "id": "GEN-40",
     "title": "Gpu.InlinePtx における C# 文字列補間 ($) の AST 展開",
     "domain": "GEN",
     "category": "トランスパイラ基盤",
-    "status": "implemented",
+    "status": "incomplete",
     "metrics": {
       "blocker": 4,
       "difficulty": 4,
-      "generality": 5,
-      "score": 42
+      "generality": 5
     },
     "details": {
       "current_behavior": "InterpolatedStringExpressionSyntax を再帰的に走査し、プレーンテキスト部はそのまま出力し、式展開部 ({x + 1}) は C++ の AST 展開へフォールバックする。",
       "strategy": "C# の変数を安全に PTX インラインアセンブリに埋め込むためのハイブリッド展開。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GEN-41",
@@ -2967,13 +2967,13 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 3,
-      "score": 25
+      "generality": 3
     },
     "details": {
       "current_behavior": "Gpu.JitConstant 呼び出しを、PTX 側で #define される単なる識別子名 (Name) に置換し出力する。",
       "strategy": "JitEngine の __gsharp_jit_constants と組み合わせた静的展開。"
-    }
+    },
+    "score": 30
   },
   {
     "id": "GSH-0007",
@@ -2984,13 +2984,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
-      "generality": 4,
-      "score": 38
+      "generality": 4
     },
     "details": {
       "current_behavior": "ForEachStatementSyntax を検知しコンパイルエラーを出す。",
       "strategy": "GPU カーネル内でのゼロアロケーション制約。"
-    }
+    },
+    "score": 40
   },
   {
     "id": "GSH-0008",
@@ -3001,13 +3001,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
-      "generality": 4,
-      "score": 35
+      "generality": 4
     },
     "details": {
       "current_behavior": "QueryExpressionSyntax を検知しコンパイルエラーを出す。",
       "strategy": "デリゲートのヒープアロケーション防止のため。"
-    }
+    },
+    "score": 43
   },
   {
     "id": "GSH-0009",
@@ -3018,13 +3018,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
-      "generality": 3,
-      "score": 30
+      "generality": 3
     },
     "details": {
       "current_behavior": "var x = 10; のような記述は、C++での auto による 32-bit signed integer 誤推論を防ぐためエラーとする (10U 等を強制)。",
       "strategy": "型推論の安全性を担保する。"
-    }
+    },
+    "score": 34
   },
   {
     "id": "GSH-0012",
@@ -3035,13 +3035,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 4,
-      "score": 36
+      "generality": 4
     },
     "details": {
       "current_behavior": "Gpu.ForUnroll の引数は定数、Gpu.InlinePtx の引数は文字列リテラル/補間でなければならない。",
       "strategy": "AST 評価フェーズで確定できる値のみを許可する。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "GEN-42",
@@ -3052,13 +3052,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 5,
-      "generality": 5,
-      "score": 50
+      "generality": 5
     },
     "details": {
       "current_behavior": "JitEngine がソースハッシュに基づき、メモリ内 ConcurrentDictionary とディスク上の PTX ファイルの 2 段階キャッシュを行う。",
       "strategy": "NVRTC ランタイムコンパイルのオーバーヘッドを完全に隠蔽するアーキテクチャ。"
-    }
+    },
+    "score": 33
   },
   {
     "id": "GEN-43",
@@ -3069,13 +3069,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 5,
-      "score": 40
+      "generality": 5
     },
     "details": {
       "current_behavior": "初回コンパイル時の排他制御に Lazy<GpuModule> を用い、さらに CudaContextScope (IDisposable) でスレッド単位の CUDA コンテキストバインドと自動復元を行う。",
       "strategy": "マルチスレッド環境下での並行呼び出しを安全に処理する。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "GEN-44",
@@ -3086,13 +3086,13 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 4,
-      "generality": 4,
-      "score": 36
+      "generality": 4
     },
     "details": {
       "current_behavior": "BackendCompiler (NvccCompiler) が vswhere.exe を通じて vcvars64.bat を探索し、cmd.exe /c \"call vcvars && nvcc ...\" を自動実行する。",
       "strategy": "Windows 環境下で追加設定なしでネイティブビルドを可能にする。"
-    }
+    },
+    "score": 26
   },
   {
     "id": "GEN-45",
@@ -3103,13 +3103,13 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
-      "generality": 4,
-      "score": 30
+      "generality": 4
     },
     "details": {
       "current_behavior": "nvcc コンパイル時の ptxas 出力ログを正規表現で解析し、RegistersUsed, SharedMemoryBytes 等を CompilationResult として自動抽出する。",
       "strategy": "カーネルのチューニング指標をランタイムにフィードバックする。"
-    }
+    },
+    "score": 32
   },
   {
     "id": "GEN-46",
@@ -3120,13 +3120,13 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
-      "generality": 4,
-      "score": 42
+      "generality": 4
     },
     "details": {
       "current_behavior": "GpuBigInteger インスタンスに対する演算子 (+, -, *, /) を式木オブジェクト (GpuBigIntExpr) として生成し、.Value または .Evaluate() 呼び出し時に実体の GPU カーネルを発行する。",
       "strategy": "一時バッファの割り当てを最小限に抑え、式全体を一括で評価する仕組みの基盤。"
-    }
+    },
+    "score": 34
   },
   {
     "id": "GEN-47",
@@ -3137,13 +3137,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
-      "generality": 5,
-      "score": 40
+      "generality": 5
     },
     "details": {
       "current_behavior": "ref struct ScopedGpuMemory および IDisposable を用いて、GPU 上の一時 VRAM アロケーションを using ブロックを抜けた瞬間に同期的に解放 (cuMemFree) する。",
       "strategy": "GC によるファイナライザ実行の遅延を防ぎ、GPU の OutOfMemory を回避する。"
-    }
+    },
+    "score": 35
   },
   {
     "id": "GEN-48",
@@ -3154,13 +3154,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 5,
-      "generality": 3,
-      "score": 38
+      "generality": 3
     },
     "details": {
       "current_behavior": "Div/Rem 演算において、除数の逆数近似をニュートン・ラフソン反復を用いて GPU 上で計算し、乗算ベースで除算を解決する。",
       "strategy": "スレッドの分岐によるワープレベルのペナルティを防ぐ並列化適正アルゴリズム。"
-    }
+    },
+    "score": 25
   },
   {
     "id": "GEN-49",
@@ -3171,13 +3171,13 @@
     "metrics": {
       "blocker": 4,
       "difficulty": 5,
-      "generality": 4,
-      "score": 42
+      "generality": 4
     },
     "details": {
       "current_behavior": "巨大整数の乗算 (Mul) において NTT (数論変換) アルゴリズムを用い、CPU側で事前計算した原始根の回転因子 (Twiddle Factors) を GSharpJitProvider 内でキャッシュ・転送する。",
       "strategy": "O(N log N) の計算量による高速化と、デバイス転送オーバーヘッドの隠蔽。"
-    }
+    },
+    "score": 27
   },
   {
     "id": "GEN-50",
@@ -3188,13 +3188,13 @@
     "metrics": {
       "blocker": 3,
       "difficulty": 4,
-      "generality": 4,
-      "score": 36
+      "generality": 4
     },
     "details": {
       "current_behavior": "Add/Sub 時、データを ChunkSize (256等) ごとに分割処理 (ChunkKernel) した後、発生した繰り上がり・繰り下がり (Carry/Borrow) を一時バッファに書き出し、後段の ApplyKernel で再適用する。",
       "strategy": "スレッド間の依存関係を断ち切り GPU フル並列実行を実現するアーキテクチャ。"
-    }
+    },
+    "score": 26
   },
   {
     "id": "GEN-51",
@@ -3205,13 +3205,13 @@
     "metrics": {
       "blocker": 2,
       "difficulty": 4,
-      "generality": 2,
-      "score": 26
+      "generality": 2
     },
     "details": {
       "current_behavior": "CPU 側 (FermatRunner) が FermatContext と NTT バッファをセットアップし、JIT Engine を通じて StaticFermatLoop などのカーネルを呼び出し、同期 (SynchronizeDevice) して結果を受け取る。",
       "strategy": "ホスト・デバイス協調実行パターンのリファレンス実装。"
-    }
+    },
+    "score": 18
   },
   {
     "id": "GEN-52",
@@ -3222,12 +3222,12 @@
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
-      "generality": 5,
-      "score": 42
+      "generality": 5
     },
     "details": {
       "current_behavior": "Gpu.SyncThreads や ThreadIndex.X などの C# シグネチャに対し、属性を付与することで、トランスパイラ側がこれを __syncthreads() や threadIdx.x などの PTX/CUDA 構文へ透過的に置換する。",
       "strategy": "ユーザーコードの型安全性を保ちながらハードウェア固有命令を露出する。"
-    }
+    },
+    "score": 39
   }
 ]
