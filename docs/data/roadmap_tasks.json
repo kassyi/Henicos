@@ -215,9 +215,7 @@
       "csharp_example": "[DiagnosticAnalyzer(LanguageNames.CSharp)]\npublic class GpuKernelAnalyzer : DiagnosticAnalyzer\n{"
     },
     "score": 45,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"],
     "depends_on": ["GSH-00", "GSH-01", "GSH-03", "GSH-04"]
   },
   {
@@ -238,9 +236,7 @@
       "csharp_example": "[DiagnosticAnalyzer(LanguageNames.CSharp)]\npublic class GpuKernelAnalyzer : DiagnosticAnalyzer\n{"
     },
     "score": 30,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"],
     "depends_on": ["GSH-00", "GSH-01", "GSH-02", "GSH-03", "GSH-04", "GSH-08"]
   },
   {
@@ -362,8 +358,23 @@
       "tests/Kassyi.GSharp.Tests/Transpiler/GEN-05_StructTranspilerEdgeCasesTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-10", "GEN-11", "GEN-12", "GEN-13", "GEN-14", "GEN-17", "GEN-18",
-      "GEN-19", "GEN-25", "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-14",
+      "GEN-17",
+      "GEN-18",
+      "GEN-19",
+      "GEN-25",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -390,8 +401,24 @@
       "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-05", "GEN-10", "GEN-11", "GEN-12", "GEN-13", "GEN-14", "GEN-17",
-      "GEN-18", "GEN-19", "GEN-25", "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-05",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-14",
+      "GEN-17",
+      "GEN-18",
+      "GEN-19",
+      "GEN-25",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -412,9 +439,7 @@
       "csharp_example": "// Example for diagnostic reporting of unsupported features\n// Implements: GEN-07"
     },
     "score": 20,
-    "files": [
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs"
-    ],
+    "files": ["tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs"],
     "depends_on": ["GEN-05", "GEN-06"]
   },
   {
@@ -440,8 +465,25 @@
       "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-05", "GEN-06", "GEN-10", "GEN-11", "GEN-12", "GEN-13", "GEN-14",
-      "GEN-17", "GEN-18", "GEN-19", "GEN-25", "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-05",
+      "GEN-06",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-14",
+      "GEN-17",
+      "GEN-18",
+      "GEN-19",
+      "GEN-25",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -467,8 +509,26 @@
       "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-05", "GEN-06", "GEN-08", "GEN-10", "GEN-11", "GEN-12", "GEN-13",
-      "GEN-14", "GEN-17", "GEN-18", "GEN-19", "GEN-25", "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-05",
+      "GEN-06",
+      "GEN-08",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-14",
+      "GEN-17",
+      "GEN-18",
+      "GEN-19",
+      "GEN-25",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -494,7 +554,17 @@
       "tests/Kassyi.GSharp.Tests/Runtime/GEN-10_GEN-11_ArchitectureAndOptimizationTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-13",
+      "GEN-17",
+      "GEN-18",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -520,7 +590,17 @@
       "tests/Kassyi.GSharp.Tests/Runtime/GEN-10_GEN-11_ArchitectureAndOptimizationTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-10", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29", "GEN-31",
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-10",
+      "GEN-13",
+      "GEN-17",
+      "GEN-18",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
       "GEN-32"
     ]
   },
@@ -547,8 +627,19 @@
       "tests/Kassyi.GSharp.Tests/Runtime/GEN-12_PtxEngineExperimentTests.cs"
     ],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-10", "GEN-11", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29",
-      "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-10",
+      "GEN-11",
+      "GEN-13",
+      "GEN-17",
+      "GEN-18",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -594,12 +685,22 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 25,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-10", "GEN-11", "GEN-12", "GEN-13", "GEN-17", "GEN-18", "GEN-28",
-      "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-17",
+      "GEN-18",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -644,9 +745,7 @@
       "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
     },
     "score": 32,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
     "depends_on": ["BCL-01", "BCL-02", "BCL-03", "GEN-30", "GEN-39"]
   },
   {
@@ -668,9 +767,7 @@
       "csharp_example": "void Modify(ref int x) {\n    x = 10;\n}"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-28", "GEN-31"]
   },
   {
@@ -717,12 +814,23 @@
       "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 27,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-10", "GEN-11", "GEN-12", "GEN-13", "GEN-14", "GEN-17", "GEN-18",
-      "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-14",
+      "GEN-17",
+      "GEN-18",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -774,7 +882,17 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
-      "SYN-01", "SYN-03", "SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93",
+      "SYN-01",
+      "SYN-03",
+      "SYN-07",
+      "SYN-08",
+      "SYN-13",
+      "SYN-15",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
       "SYN-94"
     ]
   },
@@ -828,8 +946,23 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
-      "GSH-00", "GSH-01", "GSH-02", "GSH-03", "SYN-01", "SYN-02", "SYN-03", "SYN-07", "SYN-08", "SYN-13", "SYN-15",
-      "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "GSH-00",
+      "GSH-01",
+      "GSH-02",
+      "GSH-03",
+      "SYN-01",
+      "SYN-02",
+      "SYN-03",
+      "SYN-07",
+      "SYN-08",
+      "SYN-13",
+      "SYN-15",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -857,8 +990,21 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
-      "GSH-01", "SYN-01", "SYN-02", "SYN-03", "SYN-04", "SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "GSH-01",
+      "SYN-01",
+      "SYN-02",
+      "SYN-03",
+      "SYN-04",
+      "SYN-07",
+      "SYN-08",
+      "SYN-13",
+      "SYN-15",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -884,11 +1030,55 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
-      "SYN-01", "SYN-02", "SYN-03", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13",
-      "SYN-14", "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44",
-      "SYN-45", "SYN-46", "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-01",
+      "SYN-02",
+      "SYN-03",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -896,7 +1086,8 @@
     "title": "Local functions",
     "domain": "SYN",
     "category": "Control Syntax and Expression Level",
-    "status": "incomplete",
+    "status": "rejected",
+    "reject_reason": "Merged into SYN-08 as they share identical transpilation logic (C++ Lambdas).",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -906,7 +1097,8 @@
     "details": {
       "csharp_example": "void Outer() {\n    void Inner() { }\n    Inner();\n}",
       "current_behavior": "Unsupported syntax (skipped or flagged as syntax error in AST).",
-      "target_cuda": "Expanded to C++ lambdas with captures (auto Add = [&](int v) { sum += v; };)."
+      "target_cuda": "Expanded to C++ lambdas with captures (auto Add = [&](int v) { sum += v; };).",
+      "memo": "Merged into syn07"
     },
     "score": 37,
     "files": [
@@ -962,8 +1154,21 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
-      "SYN-01", "SYN-02", "SYN-03", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-01",
+      "SYN-02",
+      "SYN-03",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-13",
+      "SYN-15",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -989,9 +1194,32 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1017,9 +1245,33 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-13", "SYN-14", "SYN-15", "SYN-17",
-      "SYN-22", "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68",
-      "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1069,8 +1321,20 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-15", "SYN-35", "SYN-77", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-15",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1120,9 +1384,34 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-17", "SYN-22", "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49",
-      "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1150,8 +1439,21 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17_TargetTypedNewTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-35", "SYN-77",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1202,9 +1504,36 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-18", "SYN-22", "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-18",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1254,9 +1583,38 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-18", "SYN-19", "SYN-20", "SYN-22", "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38",
-      "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-18",
+      "SYN-19",
+      "SYN-20",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1282,8 +1640,23 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-18",
-      "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-18",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1309,7 +1682,17 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
-      "SYN-03", "SYN-17", "SYN-18", "SYN-19", "SYN-20", "SYN-21", "SYN-22", "SYN-24", "SYN-30", "SYN-33", "SYN-74"
+      "SYN-03",
+      "SYN-17",
+      "SYN-18",
+      "SYN-19",
+      "SYN-20",
+      "SYN-21",
+      "SYN-22",
+      "SYN-24",
+      "SYN-30",
+      "SYN-33",
+      "SYN-74"
     ]
   },
   {
@@ -1359,9 +1742,38 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-28", "SYN-30", "SYN-34", "SYN-35", "SYN-36", "SYN-38",
-      "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-28",
+      "SYN-30",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1387,11 +1799,55 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-30",
-      "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44",
-      "SYN-45", "SYN-46", "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-30",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1417,9 +1873,39 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-28", "SYN-30", "SYN-34", "SYN-35", "SYN-36",
-      "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-28",
+      "SYN-30",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1445,8 +1931,23 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1472,9 +1973,39 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-30", "SYN-34", "SYN-35",
-      "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93",
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-30",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
       "SYN-94"
     ]
   },
@@ -1525,11 +2056,56 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-32", "SYN-33", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75",
-      "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-33",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1555,9 +2131,39 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-34", "SYN-35",
-      "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93",
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
       "SYN-94"
     ]
   },
@@ -1608,8 +2214,24 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1630,9 +2252,7 @@
       "target_cuda": "Fully comprehensive replacement to CUDA built-in functions (__clz, __popc, __funnelshift_l, __funnelshift_r)."
     },
     "score": 45,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"],
     "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15"]
   },
   {
@@ -1658,8 +2278,25 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1685,10 +2322,42 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-33",
-      "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-33",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1714,8 +2383,26 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1741,10 +2428,42 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1770,10 +2489,43 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68", "SYN-77",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1799,10 +2551,44 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-68",
-      "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1828,10 +2614,45 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-44", "SYN-46", "SYN-47", "SYN-49",
-      "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1857,11 +2678,56 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75",
-      "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1887,8 +2753,27 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1914,10 +2799,46 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-46", "SYN-47",
-      "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1943,8 +2864,28 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -1971,8 +2912,28 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-77", "SYN-90", "SYN-92", "SYN-93",
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
       "SYN-94"
     ]
   },
@@ -1999,11 +2960,57 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73",
-      "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2030,9 +3037,30 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-77", "SYN-90", "SYN-92",
-      "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2058,12 +3086,71 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-78", "SYN-80", "SYN-81", "SYN-82", "SYN-88", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-88",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2089,11 +3176,58 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69",
-      "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2119,11 +3253,59 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-63", "SYN-65", "SYN-68",
-      "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2149,11 +3331,60 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-63", "SYN-65",
-      "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2179,11 +3410,61 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-63",
-      "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2209,11 +3490,61 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93",
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
       "SYN-94"
     ]
   },
@@ -2240,12 +3571,63 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90", "SYN-92",
-      "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2271,10 +3653,47 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-45", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2300,12 +3719,64 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2331,10 +3802,48 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-45", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-63", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2360,12 +3869,65 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76", "SYN-77",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2391,12 +3953,72 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-50", "SYN-57", "SYN-58", "SYN-59",
-      "SYN-60", "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-75",
-      "SYN-76", "SYN-77", "SYN-78", "SYN-80", "SYN-81", "SYN-82", "SYN-88", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-50",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-88",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2423,9 +4045,31 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-13", "SYN-14", "SYN-15", "SYN-17", "SYN-22",
-      "SYN-28", "SYN-34", "SYN-35", "SYN-36", "SYN-38", "SYN-44", "SYN-46", "SYN-47", "SYN-49", "SYN-77", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-17",
+      "SYN-22",
+      "SYN-28",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-38",
+      "SYN-44",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2451,10 +4095,49 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-45", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2552,10 +4235,50 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-45", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2605,11 +4328,52 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-45", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-74", "SYN-77", "SYN-90", "SYN-92",
-      "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-74",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2635,11 +4399,53 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14", "SYN-15",
-      "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-27", "SYN-28", "SYN-29", "SYN-32", "SYN-34",
-      "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42", "SYN-44", "SYN-45", "SYN-46",
-      "SYN-47", "SYN-49", "SYN-63", "SYN-65", "SYN-68", "SYN-69", "SYN-73", "SYN-74", "SYN-75", "SYN-77", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-49",
+      "SYN-63",
+      "SYN-65",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-74",
+      "SYN-75",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2689,12 +4495,67 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-74", "SYN-75",
-      "SYN-76", "SYN-77", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-74",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2720,8 +4581,19 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-03", "SYN-18", "SYN-20", "SYN-23", "SYN-24", "SYN-30", "SYN-33", "SYN-74", "SYN-80", "SYN-81", "SYN-82",
-      "SYN-84", "SYN-88"
+      "SYN-03",
+      "SYN-18",
+      "SYN-20",
+      "SYN-23",
+      "SYN-24",
+      "SYN-30",
+      "SYN-33",
+      "SYN-74",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-84",
+      "SYN-88"
     ]
   },
   {
@@ -2747,12 +4619,67 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-78", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2778,12 +4705,68 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-78", "SYN-80", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-80",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2809,12 +4792,69 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-78", "SYN-80", "SYN-81", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-80",
+      "SYN-81",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2840,13 +4880,75 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-50", "SYN-57", "SYN-58", "SYN-59",
-      "SYN-60", "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-67", "SYN-68", "SYN-69", "SYN-73",
-      "SYN-75", "SYN-76", "SYN-77", "SYN-78", "SYN-79", "SYN-80", "SYN-81", "SYN-82", "SYN-84", "SYN-88", "SYN-90",
-      "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-50",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-67",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-79",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-84",
+      "SYN-88",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2897,13 +4999,76 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-50", "SYN-57", "SYN-58", "SYN-59",
-      "SYN-60", "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-67", "SYN-68", "SYN-69", "SYN-73",
-      "SYN-75", "SYN-76", "SYN-77", "SYN-78", "SYN-79", "SYN-80", "SYN-81", "SYN-82", "SYN-83", "SYN-84", "SYN-88",
-      "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-50",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-67",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-79",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-83",
+      "SYN-84",
+      "SYN-88",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2929,13 +5094,77 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-50", "SYN-57", "SYN-58", "SYN-59",
-      "SYN-60", "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-67", "SYN-68", "SYN-69", "SYN-73",
-      "SYN-75", "SYN-76", "SYN-77", "SYN-78", "SYN-79", "SYN-80", "SYN-81", "SYN-82", "SYN-83", "SYN-84", "SYN-86",
-      "SYN-88", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-50",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-67",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-79",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-83",
+      "SYN-84",
+      "SYN-86",
+      "SYN-88",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -2961,12 +5190,71 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
-      "SYN-02", "SYN-04", "SYN-05", "SYN-06", "SYN-07", "SYN-08", "SYN-09", "SYN-11", "SYN-12", "SYN-13", "SYN-14",
-      "SYN-15", "SYN-16", "SYN-17", "SYN-19", "SYN-21", "SYN-22", "SYN-25", "SYN-26", "SYN-27", "SYN-28", "SYN-29",
-      "SYN-31", "SYN-32", "SYN-34", "SYN-35", "SYN-36", "SYN-37", "SYN-38", "SYN-39", "SYN-40", "SYN-41", "SYN-42",
-      "SYN-43", "SYN-44", "SYN-45", "SYN-46", "SYN-47", "SYN-48", "SYN-49", "SYN-57", "SYN-58", "SYN-59", "SYN-60",
-      "SYN-61", "SYN-62", "SYN-63", "SYN-64", "SYN-65", "SYN-66", "SYN-68", "SYN-69", "SYN-73", "SYN-75", "SYN-76",
-      "SYN-77", "SYN-78", "SYN-80", "SYN-81", "SYN-82", "SYN-84", "SYN-90", "SYN-92", "SYN-93", "SYN-94"
+      "SYN-02",
+      "SYN-04",
+      "SYN-05",
+      "SYN-06",
+      "SYN-07",
+      "SYN-08",
+      "SYN-09",
+      "SYN-11",
+      "SYN-12",
+      "SYN-13",
+      "SYN-14",
+      "SYN-15",
+      "SYN-16",
+      "SYN-17",
+      "SYN-19",
+      "SYN-21",
+      "SYN-22",
+      "SYN-25",
+      "SYN-26",
+      "SYN-27",
+      "SYN-28",
+      "SYN-29",
+      "SYN-31",
+      "SYN-32",
+      "SYN-34",
+      "SYN-35",
+      "SYN-36",
+      "SYN-37",
+      "SYN-38",
+      "SYN-39",
+      "SYN-40",
+      "SYN-41",
+      "SYN-42",
+      "SYN-43",
+      "SYN-44",
+      "SYN-45",
+      "SYN-46",
+      "SYN-47",
+      "SYN-48",
+      "SYN-49",
+      "SYN-57",
+      "SYN-58",
+      "SYN-59",
+      "SYN-60",
+      "SYN-61",
+      "SYN-62",
+      "SYN-63",
+      "SYN-64",
+      "SYN-65",
+      "SYN-66",
+      "SYN-68",
+      "SYN-69",
+      "SYN-73",
+      "SYN-75",
+      "SYN-76",
+      "SYN-77",
+      "SYN-78",
+      "SYN-80",
+      "SYN-81",
+      "SYN-82",
+      "SYN-84",
+      "SYN-90",
+      "SYN-92",
+      "SYN-93",
+      "SYN-94"
     ]
   },
   {
@@ -3087,9 +5375,7 @@
       "target_cuda": "Completely expanded to CUDA's for (int i = blockIdx.x * ...) or #pragma unroll."
     },
     "score": 45,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"],
     "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93"]
   },
   {
@@ -3134,13 +5420,32 @@
       "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
     },
     "score": 27,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-19",
-      "GBI-20", "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34",
-      "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-19",
+      "GBI-20",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3190,8 +5495,28 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-20",
-      "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46",
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-20",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
       "GEN-48"
     ]
   },
@@ -3218,9 +5543,32 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-16", "GBI-17", "GBI-18",
-      "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-26", "GBI-27", "GBI-28", "GBI-30", "GBI-31", "GBI-32",
-      "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-16",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-26",
+      "GBI-27",
+      "GBI-28",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3246,9 +5594,37 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-02", "GBI-03", "GBI-04", "GBI-05", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15",
-      "GBI-16", "GBI-17", "GBI-18", "GBI-19", "GBI-20", "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-26",
-      "GBI-27", "GBI-28", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-02",
+      "GBI-03",
+      "GBI-04",
+      "GBI-05",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-16",
+      "GBI-17",
+      "GBI-18",
+      "GBI-19",
+      "GBI-20",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-26",
+      "GBI-27",
+      "GBI-28",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3319,7 +5695,17 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3344,7 +5730,17 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46",
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
       "GEN-48"
     ]
   },
@@ -3370,8 +5766,19 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34",
-      "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3396,8 +5803,20 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-30", "GBI-31", "GBI-32", "GBI-33",
-      "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3422,8 +5841,28 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-21",
-      "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3449,8 +5888,21 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-30", "GBI-31", "GBI-32",
-      "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3471,12 +5923,24 @@
       "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
     },
     "score": 25,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-30", "GBI-31",
-      "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3502,8 +5966,24 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-04", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18",
-      "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-04",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3529,8 +6009,24 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-05", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18",
-      "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-05",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3556,8 +6052,23 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-30",
-      "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3583,8 +6094,24 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-21",
-      "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3610,8 +6137,25 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-21",
-      "GBI-22", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3637,8 +6181,26 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-21",
-      "GBI-22", "GBI-23", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3664,8 +6226,27 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-17", "GBI-18", "GBI-21",
-      "GBI-22", "GBI-23", "GBI-24", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3691,8 +6272,28 @@
       "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-16", "GBI-17", "GBI-18",
-      "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46",
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-16",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
       "GEN-48"
     ]
   },
@@ -3719,9 +6320,30 @@
       "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-16", "GBI-17", "GBI-18",
-      "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-26", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34",
-      "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-16",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-26",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3747,9 +6369,31 @@
       "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
-      "GBI-01", "GBI-03", "GBI-10", "GBI-11", "GBI-12", "GBI-13", "GBI-14", "GBI-15", "GBI-16", "GBI-17", "GBI-18",
-      "GBI-21", "GBI-22", "GBI-23", "GBI-24", "GBI-25", "GBI-26", "GBI-27", "GBI-30", "GBI-31", "GBI-32", "GBI-33",
-      "GBI-34", "GEN-46", "GEN-48"
+      "GBI-01",
+      "GBI-03",
+      "GBI-10",
+      "GBI-11",
+      "GBI-12",
+      "GBI-13",
+      "GBI-14",
+      "GBI-15",
+      "GBI-16",
+      "GBI-17",
+      "GBI-18",
+      "GBI-21",
+      "GBI-22",
+      "GBI-23",
+      "GBI-24",
+      "GBI-25",
+      "GBI-26",
+      "GBI-27",
+      "GBI-30",
+      "GBI-31",
+      "GBI-32",
+      "GBI-33",
+      "GBI-34",
+      "GEN-46",
+      "GEN-48"
     ]
   },
   {
@@ -3770,9 +6414,7 @@
       "target_cuda": "Direct mapping to predefined variables like threadIdx.x, blockIdx.x."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"]
   },
   {
     "id": "GBI-31",
@@ -3792,9 +6434,7 @@
       "target_cuda": "Mapped to __syncthreads() etc."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": ["GBI-30"]
   },
   {
@@ -3815,9 +6455,7 @@
       "target_cuda": "Mapped to built-in functions like atomicAdd, atomicMax, etc."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": ["GBI-30", "GBI-31"]
   },
   {
@@ -3838,9 +6476,7 @@
       "target_cuda": "Mapped to PTX level carry/borrow instructions."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": ["GBI-30", "GBI-31", "GBI-32"]
   },
   {
@@ -3861,9 +6497,7 @@
       "target_cuda": "Output directly as C++ inline assembly or macros."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": ["GBI-30", "GBI-31", "GBI-32", "GBI-33"]
   },
   {
@@ -3884,9 +6518,7 @@
       "target_cuda": "Mapped to CUDA built-in functions like __popc, __popcll."
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"]
   },
   {
     "id": "BCL-02",
@@ -3906,9 +6538,7 @@
       "target_cuda": "BitOperations.Log2 is mapped to predefined macros like __gsharp_log2_32."
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
     "depends_on": ["BCL-01"]
   },
   {
@@ -3929,9 +6559,7 @@
       "target_cuda": "Planned mapping to sinf(x), cosf(x), etc."
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
     "depends_on": ["BCL-01", "BCL-02"]
   },
   {
@@ -3952,9 +6580,7 @@
       "csharp_example": "public static class MethodTranspiler\n{"
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/MethodTranspiler.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/MethodTranspiler.cs"]
   },
   {
     "id": "GEN-21",
@@ -4054,12 +6680,24 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 35,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": [
-      "GEN-01", "GEN-02", "GEN-03", "GEN-04", "GEN-10", "GEN-11", "GEN-12", "GEN-13", "GEN-14", "GEN-17", "GEN-18",
-      "GEN-19", "GEN-28", "GEN-29", "GEN-31", "GEN-32"
+      "GEN-01",
+      "GEN-02",
+      "GEN-03",
+      "GEN-04",
+      "GEN-10",
+      "GEN-11",
+      "GEN-12",
+      "GEN-13",
+      "GEN-14",
+      "GEN-17",
+      "GEN-18",
+      "GEN-19",
+      "GEN-28",
+      "GEN-29",
+      "GEN-31",
+      "GEN-32"
     ]
   },
   {
@@ -4120,9 +6758,7 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": ["GEN-01"]
   },
   {
@@ -4143,9 +6779,7 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-31"]
   },
   {
@@ -4166,9 +6800,7 @@
       "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
     "depends_on": ["BCL-01", "BCL-02", "BCL-03"]
   },
   {
@@ -4189,9 +6821,7 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": ["GEN-01", "GEN-28"]
   },
   {
@@ -4212,9 +6842,7 @@
       "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 31,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29", "GEN-31"]
   },
   {
@@ -4235,9 +6863,7 @@
       "csharp_example": "internal static class StructTranspiler\n{"
     },
     "score": 37,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StructTranspiler.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StructTranspiler.cs"]
   },
   {
     "id": "GEN-34",
@@ -4257,9 +6883,7 @@
       "csharp_example": "internal static class MarshalingEmitter\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"]
   },
   {
     "id": "GEN-35",
@@ -4279,9 +6903,7 @@
       "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}"
     },
     "score": 33,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/WrapperEmitter.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/WrapperEmitter.cs"]
   },
   {
     "id": "GEN-36",
@@ -4301,9 +6923,7 @@
       "csharp_example": "void GetValue(out int x) {\n    x = 10;\n}"
     },
     "score": 32,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"],
     "depends_on": ["GEN-34"]
   },
   {
@@ -4348,9 +6968,7 @@
       "csharp_example": "[GpuKernel]\npublic static void RunKernel() { }"
     },
     "score": 34,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/GpuKernelAttribute.cs"
-    ]
+    "files": ["src/Core/Kassyi.GSharp.Core/GpuKernelAttribute.cs"]
   },
   {
     "id": "GEN-39",
@@ -4414,9 +7032,7 @@
       "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 30,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs"
-    ],
+    "files": ["src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs"],
     "depends_on": ["GEN-37"]
   },
   {
@@ -4517,9 +7133,7 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
     },
     "score": 33,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"
-    ]
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"]
   },
   {
     "id": "GEN-43",
@@ -4539,9 +7153,7 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
     },
     "score": 35,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"
-    ],
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"],
     "depends_on": ["GEN-37", "GEN-42"]
   },
   {
@@ -4562,9 +7174,7 @@
       "csharp_example": "public sealed partial class NvccCompiler\n{"
     },
     "score": 26,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"
-    ]
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"]
   },
   {
     "id": "GEN-45",
@@ -4584,9 +7194,7 @@
       "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 32,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"
-    ],
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"],
     "depends_on": ["GEN-44"]
   },
   {
@@ -4607,9 +7215,7 @@
       "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 34,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": ["GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34"]
   },
   {
@@ -4630,9 +7236,7 @@
       "csharp_example": "public ref struct ScopedGpuMemory\n{"
     },
     "score": 35,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/ScopedGpuMemory.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/ScopedGpuMemory.cs"]
   },
   {
     "id": "GEN-48",
@@ -4652,9 +7256,7 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 25,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": ["GBI-11", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46"]
   },
   {
@@ -4675,9 +7277,7 @@
       "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
     },
     "score": 27,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"]
   },
   {
     "id": "GEN-50",
@@ -4697,9 +7297,7 @@
       "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
     },
     "score": 26,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"],
     "depends_on": ["GEN-49"]
   },
   {
@@ -4720,9 +7318,7 @@
       "csharp_example": "public class FermatRunner\n{"
     },
     "score": 18,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/FermatRunner.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/FermatRunner.cs"]
   },
   {
     "id": "GEN-52",
@@ -4742,8 +7338,6 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"IDE\", \"IDE0051\", Justification = \"Public API exposed for library consumers\")]\npublic static class Gpu\n{"
     },
     "score": 39,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/Intrinsics.cs"
-    ]
+    "files": ["src/Core/Kassyi.GSharp.Core/Intrinsics.cs"]
   }
 ]
