@@ -54,4 +54,41 @@ internal static class SymbolExtensions
                 { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
             }
         };
+
+    /// <summary>
+    /// Checks if the attribute matches the specified short name (e.g. "GpuKernel" matches both "GpuKernel" and "GpuKernelAttribute").
+    /// Zero-allocation inspection using ReadOnlySpan.
+    /// </summary>
+    public static bool IsAttribute(this AttributeData attr, string shortName) =>
+        KnownAttributes.IsAttributeName(attr.AttributeClass?.Name, shortName);
+
+    /// <summary>
+    /// Determines whether the symbol has an attribute matching the specified short name.
+    /// </summary>
+    public static bool HasAttribute(this ISymbol symbol, string shortName)
+    {
+        foreach (var attr in symbol.GetAttributes())
+        {
+            if (attr.IsAttribute(shortName))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the first attribute matching the specified short name, or null if none found.
+    /// </summary>
+    public static AttributeData? GetAttribute(this ISymbol symbol, string shortName)
+    {
+        foreach (var attr in symbol.GetAttributes())
+        {
+            if (attr.IsAttribute(shortName))
+            {
+                return attr;
+            }
+        }
+        return null;
+    }
 }

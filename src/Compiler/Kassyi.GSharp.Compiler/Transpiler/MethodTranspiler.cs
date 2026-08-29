@@ -21,13 +21,15 @@ public static class MethodTranspiler
         if (methodSymbol != null)
         {
             if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
-                methodSymbol.ContainingType?.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
-                methodSymbol.ContainingModule?.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
+                methodSymbol.ContainingType?.GetAttributes()
+                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
+                methodSymbol.ContainingModule?.GetAttributes()
+                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
             {
                 context.SkipLocalsInit = true;
             }
         }
-        
+
         WriteMethodSignature(method, isDevice, ref context);
         WriteMethodBody(method, ref context);
 
@@ -99,16 +101,15 @@ public static class MethodTranspiler
         {
             foreach (var attr in methodSymbol.GetAttributes())
             {
-                var attrName = attr.AttributeClass?.Name;
-                if (attrName is KnownAttributes.GpuInlineAttribute or KnownAttributes.GpuInline)
+                if (attr.IsAttribute(KnownAttributes.GpuInline))
                 {
                     hasAggressiveInlining = true;
                 }
-                else if (attrName is KnownAttributes.GpuNoInlineAttribute or KnownAttributes.GpuNoInline)
+                else if (attr.IsAttribute(KnownAttributes.GpuNoInline))
                 {
                     hasNoInlining = true;
                 }
-                else if (attrName is "MethodImplAttribute" or "MethodImpl")
+                else if (attr.IsAttribute(KnownAttributes.MethodImpl))
                 {
                     if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is not null)
                     {
@@ -117,6 +118,7 @@ public static class MethodTranspiler
                         {
                             hasAggressiveInlining = true;
                         }
+
                         if ((options & MethodImplOptions.NoInlining) != 0)
                         {
                             hasNoInlining = true;
@@ -133,6 +135,7 @@ public static class MethodTranspiler
                                 {
                                     hasAggressiveInlining = true;
                                 }
+
                                 if ((options & MethodImplOptions.NoInlining) != 0)
                                 {
                                     hasNoInlining = true;
@@ -209,12 +212,15 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice, ref TranspileContext context)
+    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
+        ref TranspileContext context)
     {
         var validParameters = new List<ParameterSyntax>(parameters.Count);
         foreach (var p in parameters)
         {
-            if (!IsJitConstant(p, ref context))
+            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.JitConstant) ==
+                              true;
+            if (!paramSymbol)
             {
                 validParameters.Add(p);
             }
@@ -228,8 +234,7 @@ public static class MethodTranspiler
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-            if (paramSymbol != null &&
-                paramSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
+            if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuConst))
             {
                 context.Writer.AppendKeyword("const");
                 context.Writer.AppendSpace();
@@ -251,24 +256,5 @@ public static class MethodTranspiler
                 context.Writer.AppendComma();
             }
         }
-    }
-
-    private static bool IsJitConstant(ParameterSyntax p, ref TranspileContext context)
-    {
-        var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-        if (paramSymbol == null)
-        {
-            return false;
-        }
-
-        foreach (var attr in paramSymbol.GetAttributes())
-        {
-            if (KnownAttributes.IsJitConstant(attr.AttributeClass?.Name))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
