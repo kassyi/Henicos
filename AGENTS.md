@@ -21,6 +21,14 @@ Henicos (GSharp) is a framework that allows executing C# code directly on NVIDIA
 
 "G#" (GSharp) is the internal name for this custom framework . **It is not an officially existing programming language.** Rather, it is a C#-to-CUDA transpilation engine and runtime built entirely within this repository. It enables C# developers to write GPU kernels in C# syntax, which are then intercepted by Roslyn Source Generators and translated into `.cu` (CUDA C++) code. When working on this project, treat "G#" as the domain-specific transpiler defined by this repository, not as a general-purpose language.
 
+### G# Core Manifest: The 3 "YES" Tenets
+
+> **"Bringing C#'s existing mental model directly into the GPU realm delivers the ultimate developer experience (DX)."**
+
+1. **YES AST (Roslyn Syntax Nodes & Semantic Models)**: All code analysis, transpilation, and safety enforcement are performed strictly via Roslyn Abstract Syntax Trees and Semantic Models at compile-time.
+2. **YES Zero-Allocation**: GPU device-side execution fundamentally enforces a zero-allocation guarantee—prohibiting dynamic reference-type heap allocations while fully leveraging value types (`struct`) and stack/register memory.
+3. **YES Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection, NO LINQ, and NO Dynamic Dispatch**.
+
 ## 1. CRITICAL GUARDRAILS & PROHIBITED ACTIONS
 
 These rules are absolute. Any violation will directly induce runtime failures, Git history pollution, or development workflow disruption.
