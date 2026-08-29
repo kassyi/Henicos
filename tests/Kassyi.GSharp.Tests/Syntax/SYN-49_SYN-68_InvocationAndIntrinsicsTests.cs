@@ -35,6 +35,23 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
         Assert.Equal(800ul, ulongBuf[2]);
     }
 
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-49")]
+    public void Test_SYN49_InterlockedAtomicOperations_EmptyArray()
+    {
+        int[] intBuf = [];
+        uint[] uintBuf = [];
+        long[] longBuf = [];
+        ulong[] ulongBuf = [];
+
+        var ex = Record.Exception(() => 
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedKernel(
+                intBuf, uintBuf, longBuf, ulongBuf, blockDimX: 0));
+
+        Assert.Null(ex);
+    }
+
     // SYN-49 Edge Cases
     [Fact]
     [Trait("Category", "Execution")]
@@ -174,5 +191,22 @@ public class SYN_49_SYN_68_InvocationAndIntrinsicsTests
             Assert.Equal(Math.Max(dInput, 0.0), doubleResults[1]);
             Assert.Equal(Math.Min(dInput, 0.0), doubleResults[2]);
         }
+    }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-68")]
+    public void Test_SYN68_MathAndMathF_EmptyArray()
+    {
+        double[] doubleInputs = [];
+        double[] doubleOutputs = [];
+        float[] floatInputs = [];
+        float[] floatOutputs = [];
+
+        var ex = Record.Exception(() => 
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
+                doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 0));
+
+        Assert.Null(ex);
     }
 }
