@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# methods and GPU kernels into CUDA C++ function definitions or forward signatures.</summary>
+/// <remarks><para>Implements: <b>GEN-20</b></para></remarks>
 public static class MethodTranspiler
 {
     public static string GenerateCudaSource(MethodDeclarationSyntax method, SemanticModel semanticModel,
@@ -56,8 +57,9 @@ public static class MethodTranspiler
         context.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
-            var structName = CudaTypeMapper.GetFullyQualifiedCppName(structSym);
-            context.Writer.AppendLine($"struct {structName};");
+            context.Writer.Append("struct ");
+            context.Writer.AppendFullyQualifiedCppName(structSym);
+            context.Writer.AppendLine(";");
         }
 
         context.Writer.Append(sigWriter.ToString());
@@ -127,7 +129,7 @@ public static class MethodTranspiler
         var returnType = methodSymbol?.ReturnType;
         if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
         {
-            context.Writer.Append(CudaTypeMapper.MapType(returnType));
+            context.Writer.AppendType(returnType);
         }
         else
         {
@@ -189,8 +191,6 @@ public static class MethodTranspiler
             var typeSymbol = context.SemanticModel.GetTypeInfo(p.Type!).Type;
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
-            var (cppType, isRefPointer) = CudaTypeMapper.GetParameterCppType(p, typeSymbol);
-            StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
             if (paramSymbol != null &&
@@ -200,10 +200,10 @@ public static class MethodTranspiler
                 context.Writer.AppendSpace();
             }
 
-            var isPointerType = typeSymbol is IArrayTypeSymbol || typeSymbol is IPointerTypeSymbol || cppType.Contains("*");
+            var (isRefPointer, isPointerType, hasRestrict) = context.Writer.AppendParameterCppType(p, typeSymbol);
+            StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
-            context.Writer.Append(cppType);
-            if (!isDevice && isPointerType && !cppType.Contains("__restrict__"))
+            if (!isDevice && isPointerType && !hasRestrict)
             {
                 context.Writer.AppendSpace();
                 context.Writer.AppendKeyword("__restrict__");

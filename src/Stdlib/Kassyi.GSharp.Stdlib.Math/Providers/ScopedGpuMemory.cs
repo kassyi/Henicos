@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Providers;
 /// <remarks>
 /// Ensures deterministic deallocation of temporary GPU memory buffers upon exiting the using scope.
 /// </remarks>
+/// <remarks><para>Implements: <b>GEN-47</b></para></remarks>
 public ref struct ScopedGpuMemory
 {
     private readonly IGpuExecutionProvider _provider;
