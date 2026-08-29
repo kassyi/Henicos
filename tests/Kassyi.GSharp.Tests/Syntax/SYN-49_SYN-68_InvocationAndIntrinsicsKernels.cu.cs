@@ -1,10 +1,13 @@
 // ReSharper disable All
+
 using System;
 using System.Threading;
 using Kassyi.GSharp.Core;
+using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
+[StructLayout(LayoutKind.Sequential)]
 public struct AtomicTestStruct
 {
     public int ValueI;

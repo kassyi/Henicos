@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Xunit;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 
@@ -25,6 +26,7 @@ public class SYN_49_SYN_68_SadPathTests
         var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         Assert.NotNull(driver);
         Assert.NotNull(compilation);
+        diagnostics.AssertContainsError("GSH0003");
     }
 
     [Fact]
@@ -38,5 +40,6 @@ public class SYN_49_SYN_68_SadPathTests
         var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         Assert.NotNull(driver);
         Assert.NotNull(compilation);
+        diagnostics.AssertContainsError("GSH0003");
     }
 }
