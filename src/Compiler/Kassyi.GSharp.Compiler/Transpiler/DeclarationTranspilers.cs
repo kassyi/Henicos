@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# variable declarations and static/dynamic shared memory allocations to CUDA C++.</summary>
+/// <remarks><para>Implements: <b>SYN-03, SYN-18, SYN-20, SYN-23, SYN-24, SYN-30, SYN-33, SYN-74, SYN-79</b></para></remarks>
 internal static class DeclarationTranspilers
 {
     private readonly struct SharedMemoryAllocation(
