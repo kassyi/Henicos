@@ -16,9 +16,13 @@ As an architect, use your own judgment to analyze task dependencies and code int
 - Tasks that can be implemented completely independently should be separated into "different lanes".
 - Even if a feature is valid in C#, if it cannot be implemented due to CUDA C++ constraints, reject it and add a note to the specification document (`docs/spec/en/06_limitations.md`).
 
-### Target Task IDs
+### Target Tasks
 
+```json
 {{TASK_IDS_JSON}}
+```
+
+{{TASK_DETAILS}}
 
 ### Strict Test Design Requirements (MUST be included in instructions to Jules)
 
