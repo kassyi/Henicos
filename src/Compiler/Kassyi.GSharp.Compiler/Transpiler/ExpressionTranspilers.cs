@@ -505,6 +505,11 @@ internal static class ExpressionTranspilers
     {
         if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
         {
+            if (symbol.Name == "Malloc")
+            {
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.DynamicDeviceAllocationWarning, node.GetLocation()));
+            }
+
             foreach (var rule in s_invocationRules)
             {
                 if (rule.TryTranspile(node, ref context, symbol))

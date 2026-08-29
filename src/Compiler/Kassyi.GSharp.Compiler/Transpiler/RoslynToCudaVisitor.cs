@@ -30,6 +30,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         Volatile.Write(ref visitor._isRented, 1);
 
+        visitor._loopDepth = 0;
         visitor._usedStructs.Clear();
         visitor._localVariableOverrides.Clear();
 
@@ -175,14 +176,50 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitUnsafeStatement(UnsafeStatementSyntax node)
         => VisitStatementOrBlock(node.Block);
 
+    private int _loopDepth;
+
     public override void VisitForStatement(ForStatementSyntax node)
-        => StatementTranspilers.TranspileForStatement(node, ref Context);
+    {
+        _loopDepth++;
+        try { StatementTranspilers.TranspileForStatement(node, ref Context); }
+        finally { _loopDepth--; }
+    }
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
-        => StatementTranspilers.TranspileWhileStatement(node, ref Context);
+    {
+        _loopDepth++;
+        try { StatementTranspilers.TranspileWhileStatement(node, ref Context); }
+        finally { _loopDepth--; }
+    }
 
     public override void VisitDoStatement(DoStatementSyntax node)
-        => StatementTranspilers.TranspileDoStatement(node, ref Context);
+    {
+        _loopDepth++;
+        try { StatementTranspilers.TranspileDoStatement(node, ref Context); }
+        finally { _loopDepth--; }
+    }
+
+    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
+    {
+        if (_loopDepth > 0)
+        {
+            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Recursive stackalloc in loop causes instant VRAM overflow"));
+        }
+
+        if (node.Type is ArrayTypeSyntax arrayType)
+        {
+            Context.Writer.Append("(");
+            Visit(arrayType.ElementType);
+            Context.Writer.Append("*)alloca(sizeof(");
+            Visit(arrayType.ElementType);
+            Context.Writer.Append(") * (");
+            if (arrayType.RankSpecifiers.Count > 0 && arrayType.RankSpecifiers[0].Sizes.Count > 0)
+            {
+                Visit(arrayType.RankSpecifiers[0].Sizes[0]);
+            }
+            Context.Writer.Append("))");
+        }
+    }
 
     public override void VisitSwitchStatement(SwitchStatementSyntax node)
         => StatementTranspilers.TranspileSwitchStatement(node, ref Context);
