@@ -19,6 +19,8 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Expression-Bodied Members (`=>`)** | **Supported.** Transpiler automatically handles `void` and value-returning methods (injects `return` keyword). |
 | **Ternary Operator (`? :`)** | Standard conditional ternary operators are supported. |
 | **Braceless `if` Statements** | **Supported.** Transpiler automatically injects `{ }` block scoping into the C++ source for single-statement control flow branches. |
+| **Delegates & Lambda Expressions** | **Partially Supported.** Non-capturing lambdas and local functions, or those capturing only value types, are extracted and expanded as C++ `__device__` functions (or lambdas). Complex closures requiring managed heap allocations (e.g., capturing reference types) are not supported. |
+| **`ref switch` Expressions** | **Unsupported by C#.** C# does not currently support `ref switch` expressions (`ref var r = x switch { ... }`). Use `if/else` or `ref ? :` for conditional `ref` assignment. |
 
 ## 4.2 Standard Diagnostics and Warnings
 

@@ -19,7 +19,7 @@ internal static class MacroTranspiler
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
             symbol.ContainingType.Name != "Gpu" ||
-            symbol.ContainingNamespace.ToDisplayString() != TypeConstants.CoreNamespace)
+            !symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
         }
