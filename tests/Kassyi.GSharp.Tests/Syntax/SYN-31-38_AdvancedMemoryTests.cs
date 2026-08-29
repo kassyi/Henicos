@@ -29,6 +29,37 @@ public class SYN_31_38_AdvancedMemoryTests
         Assert.Equal(30u, dest[2]);
     }
 
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-36")]
+    public void TestPointerDecrementKernel()
+    {
+        uint[] src = [100, 200, 300];
+        uint[] dest = [0, 0, 0];
+
+        SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_PointerDecrementKernel(src, dest);
+
+        Assert.Equal(100u, dest[0]);
+        Assert.Equal(200u, dest[1]);
+        Assert.Equal(300u, dest[2]);
+    }
+
+    [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-36")]
+    [InlineData(new uint[] { 2, 0, 1 }, new uint[] { 5, 15, 25 }, new uint[] { 25, 35, 15 })]
+    [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 1, 2, 3 }, new uint[] { 11, 12, 13 })]
+    public void TestPointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] expectedDest)
+    {
+        uint[] dest = [0, 0, 0];
+
+        SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_PointerComplexAssignmentKernel(idx, val, dest);
+
+        Assert.Equal(expectedDest[0], dest[0]);
+        Assert.Equal(expectedDest[1], dest[1]);
+        Assert.Equal(expectedDest[2], dest[2]);
+    }
+
     [Fact(Skip = "未実装: SYN-31 (アンマネージド関数ポインタ delegate*)")]
     [Trait("FeatureId", "SYN-31")]
     [Trait("Category", "Syntax")]
