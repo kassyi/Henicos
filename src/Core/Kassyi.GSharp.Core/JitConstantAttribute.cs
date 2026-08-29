@@ -7,4 +7,5 @@ namespace Kassyi.GSharp.Core;
 /// <para>Enables aggressive compiler optimizations such as compile-time loop unrolling (<c>#pragma unroll</c>), dead-code elimination, and register pressure reduction.</para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Parameter)]
+/// <remarks><para>Implements: <b>GEN-37, GEN-41</b></para></remarks>
 public sealed class JitConstantAttribute : Attribute;

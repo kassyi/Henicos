@@ -8,6 +8,7 @@ namespace Kassyi.GSharp.Core;
 /// </remarks>
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [AttributeUsage(AttributeTargets.Method)]
+/// <remarks><para>Implements: <b>GEN-38</b></para></remarks>
 public class GpuKernelAttribute : Attribute
 {
     /// <summary>

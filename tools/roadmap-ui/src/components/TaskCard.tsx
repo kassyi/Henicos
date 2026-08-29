@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Box, Chip, IconButton, Typography, TextField } from '@mui/material';
+import { Card, CardContent, Box, Chip, IconButton, Typography } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, RadioButtonUnchecked as UncheckedIcon } from '@mui/icons-material';
 import { DOMAIN_LABELS } from '../types';
 import type { RoadmapTask, TaskStatus } from '../types';
@@ -7,10 +7,11 @@ import type { RoadmapTask, TaskStatus } from '../types';
 interface TaskCardProps {
   task: RoadmapTask;
   inCart: boolean;
+  isSelected?: boolean;
   isExiting: boolean;
   onCartClick: (id: string, shiftKey: boolean) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
-  onNotesChange: (id: string, notes: string) => void;
+  onSelectTask?: (id: string) => void;
 }
 
 const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: string; border: string }[] = [
@@ -22,104 +23,114 @@ const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: 
 export const TaskCard: React.FC<TaskCardProps> = React.memo(({
   task,
   inCart,
+  isSelected,
   isExiting,
   onCartClick,
   onStatusChange,
-  onNotesChange,
+  onSelectTask,
 }) => {
-  const currentStatus = task.status || (task.completed ? 'implemented' : 'incomplete');
+  const currentStatus = task.status || 'incomplete';
   const isImplemented = currentStatus === 'implemented';
   const isTuned = currentStatus === 'tuned';
+  const metrics = task.metrics || { blocker: 3, difficulty: 2, generality: 3, score: 30 };
+
+  const handleCardClick = () => {
+    onSelectTask?.(task.id);
+  };
 
   return (
     <Card
-      onClick={(e) => onCartClick(task.id, e.shiftKey)}
+      onClick={handleCardClick}
       sx={{
         height: isExiting ? 0 : '100%',
-        maxHeight: isExiting ? 0 : 600,
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: inCart ? '#262136' : isTuned ? '#281b33' : isImplemented ? '#1f2b24' : 'background.paper',
-        borderColor: inCart ? 'primary.main' : isTuned ? '#ab47bc' : isImplemented ? '#386a4f' : 'divider',
-        borderWidth: inCart ? 2 : 1,
+        bgcolor: isSelected
+          ? 'rgba(45, 35, 65, 0.9)'
+          : inCart
+          ? '#262136'
+          : isTuned
+          ? '#281b33'
+          : isImplemented
+          ? '#1f2b24'
+          : 'background.paper',
+        borderColor: isSelected
+          ? '#d0bcff'
+          : inCart
+          ? 'primary.main'
+          : isTuned
+          ? '#ab47bc'
+          : isImplemented
+          ? '#386a4f'
+          : 'divider',
+        borderWidth: isSelected || inCart ? 2 : 1,
         position: 'relative',
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: isExiting ? 'translateX(120px) scale(0.92)' : inCart ? 'translateY(-2px)' : 'none',
+        transform: isExiting ? 'translateX(120px) scale(0.92)' : isSelected || inCart ? 'translateY(-2px)' : 'none',
         opacity: isExiting ? 0 : 1,
         pointerEvents: isExiting ? 'none' : 'auto',
-        my: isExiting ? 0 : undefined,
-        boxShadow: inCart ? '0 4px 12px rgba(208, 188, 255, 0.15)' : 'none',
+        boxShadow: isSelected
+          ? '0 0 16px rgba(208, 188, 255, 0.35)'
+          : inCart
+          ? '0 4px 12px rgba(208, 188, 255, 0.15)'
+          : 'none',
         '&:hover': {
-          borderColor: inCart ? 'primary.light' : 'text.disabled',
-          '& .hover-actions': { opacity: 1, pointerEvents: 'auto' },
+          borderColor: isSelected ? '#d0bcff' : 'primary.light',
         },
       }}
     >
       <CardContent sx={{ p: 2, flex: '1 0 auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.5 }}>
-          <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Header Tags Row */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.8, alignItems: 'center' }}>
             <Chip
               label={task.id}
               size="small"
-              sx={{ bgcolor: 'primary.dark', color: 'primary.light', fontWeight: 700, fontSize: '0.72rem', height: 22 }}
+              sx={{
+                bgcolor: 'primary.dark',
+                color: 'primary.light',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                height: 22,
+              }}
             />
             <Chip
               label={task.domain}
               size="small"
               variant="outlined"
               title={DOMAIN_LABELS[task.domain] || task.domain}
-              sx={{ fontSize: '0.68rem', color: 'text.secondary', borderColor: '#49454f', height: 22 }}
-            />
-
-            <Box
-              className="hover-actions"
               sx={{
-                display: 'flex',
-                gap: 0.5,
-                opacity: 0,
-                pointerEvents: 'none',
-                transition: 'opacity 0.2s',
-                '@media (hover: none)': { opacity: 1, pointerEvents: 'auto' },
+                fontSize: '0.7rem',
+                color: 'text.secondary',
+                borderColor: '#49454f',
+                height: 22,
               }}
-            >
-              {STATUS_CHIP_OPTIONS.map((s) => (
-                <Chip
-                  key={s.val}
-                  label={s.label}
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStatusChange(task.id, s.val);
-                  }}
-                  sx={{
-                    bgcolor: currentStatus === s.val ? s.bg : 'transparent',
-                    color: currentStatus === s.val ? s.color : 'text.disabled',
-                    border: `1px solid ${currentStatus === s.val ? s.border : '#332d41'}`,
-                    fontWeight: currentStatus === s.val ? 700 : 500,
-                    fontSize: '0.65rem',
-                    height: 22,
-                    cursor: 'pointer',
-                    opacity: currentStatus === s.val ? 1 : 0.6,
-                    transition: 'all 0.2s',
-                    '&:hover': { opacity: 1, bgcolor: s.bg, color: s.color, borderColor: s.border },
-                  }}
-                />
-              ))}
-            </Box>
+            />
+            {task.category && (
+              <Chip
+                label={task.category}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontSize: '0.68rem',
+                  color: '#d0bcff',
+                  borderColor: 'rgba(208, 188, 255, 0.3)',
+                  height: 22,
+                }}
+              />
+            )}
           </Box>
 
           <IconButton
-            className={inCart ? '' : 'hover-actions'}
             size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCartClick(task.id, e.shiftKey);
+            }}
+            title={inCart ? 'カートから削除 (Shift+Clickで範囲選択)' : 'カートに追加 (Shift+Clickで範囲選択)'}
             sx={{
-              p: 0,
-              ml: 1,
-              opacity: inCart ? 1 : 0,
-              pointerEvents: inCart ? 'auto' : 'none',
-              transition: 'opacity 0.2s',
-              '@media (hover: none)': { opacity: 1, pointerEvents: 'auto' },
               color: inCart ? 'primary.light' : 'text.disabled',
               '&:hover': { color: 'primary.main' },
             }}
@@ -128,6 +139,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
           </IconButton>
         </Box>
 
+        {/* Task Title */}
         <Typography
           variant="subtitle1"
           sx={{
@@ -143,29 +155,38 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
           {task.title}
         </Typography>
 
-        <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-          Score: <span style={{ color: '#d0bcff', fontWeight: 700 }}>{task.score.toFixed(1)}</span> (B:{task.blocker} D:{task.difficulty} G:{task.generality})
-        </Typography>
+        {/* Metrics Score & Status Chips Row */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 'auto', pt: 1 }}>
+          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
+            Score: <span style={{ color: '#d0bcff', fontWeight: 700 }}>{metrics.score.toFixed(1)}</span> (B:{metrics.blocker} D:{metrics.difficulty} G:{metrics.generality})
+          </Typography>
 
-        <TextField
-          multiline
-          variant="standard"
-          placeholder="📝 メモを追加 (クリックで編集)..."
-          value={task.notes}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onNotesChange(task.id, e.target.value)}
-          sx={{
-            mt: 'auto',
-            pt: 1,
-            borderRadius: 1,
-            transition: 'background-color 0.2s',
-            '&:hover, &:focus-within': { bgcolor: 'rgba(255,255,255,0.03)', px: 0.5 },
-            '& .MuiInputBase-input': { fontSize: '0.78rem', color: 'text.secondary', lineHeight: 1.4 },
-            '& .MuiInput-underline:before': { borderBottom: 'none' },
-            '& .MuiInput-underline:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
-            '& .MuiInput-underline:after': { borderBottom: 'none' },
-          }}
-        />
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {STATUS_CHIP_OPTIONS.map((s) => (
+              <Chip
+                key={s.val}
+                label={s.label}
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(task.id, s.val);
+                }}
+                sx={{
+                  bgcolor: currentStatus === s.val ? s.bg : 'transparent',
+                  color: currentStatus === s.val ? s.color : 'text.disabled',
+                  border: `1px solid ${currentStatus === s.val ? s.border : 'transparent'}`,
+                  fontWeight: currentStatus === s.val ? 700 : 400,
+                  fontSize: '0.68rem',
+                  height: 20,
+                  px: 0.5,
+                  cursor: 'pointer',
+                  opacity: currentStatus === s.val ? 1 : 0.6,
+                  '&:hover': { opacity: 1, bgcolor: s.bg, color: s.color },
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );

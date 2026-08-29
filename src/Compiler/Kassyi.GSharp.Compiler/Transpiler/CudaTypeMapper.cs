@@ -197,11 +197,13 @@ internal static class CudaTypeMapper
                 isIn = true;
             }
 
-            if (m.IsKind(SyntaxKind.RefKeyword) || m.IsKind(SyntaxKind.OutKeyword))
+            if (!m.IsKind(SyntaxKind.RefKeyword) && !m.IsKind(SyntaxKind.OutKeyword))
             {
-                isRefPointer = true;
-                isRefOut = true;
+                continue;
             }
+
+            isRefPointer = true;
+            isRefOut = true;
         }
 
         if (isIn)

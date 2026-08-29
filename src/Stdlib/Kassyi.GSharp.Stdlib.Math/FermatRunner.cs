@@ -7,6 +7,7 @@ namespace Kassyi.GSharp.Stdlib.Math;
 /// <summary>
 /// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on the GPU.
 /// </summary>
+/// <remarks><para>Implements: <b>GEN-51</b></para></remarks>
 public class FermatRunner
 {
     /// <summary>Gets the Fermat exponent parameter <c>E</c> (testing <c>F_n = 2^(2^E) + 1</c>).</summary>

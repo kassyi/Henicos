@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Emits native P/Invoke marshaling code, pinned struct conversions, and CUDA parameter setup.</summary>
+/// <remarks><para>Implements: <b>GEN-34, GEN-36</b></para></remarks>
 internal static class MarshalingEmitter
 {
     internal static bool IsCustomStruct(ITypeSymbol type)
