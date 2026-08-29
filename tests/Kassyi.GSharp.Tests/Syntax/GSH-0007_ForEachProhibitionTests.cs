@@ -1,0 +1,36 @@
+namespace Kassyi.GSharp.Tests.Syntax;
+
+public class GSH_0007_ForEachProhibitionTests
+{
+    [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "GSH-0007")]
+    [InlineData(new[] { 1, 2, 3, 4 }, 4)]
+    [InlineData(new[] { 10 }, 1)]
+    [InlineData(new int[0], 0)]
+    public void TestStandardForLoopKernel_HappyPath(int[] input, int length)
+    {
+        if (length == 0)
+        {
+            int[] emptyInput = [];
+            int[] emptyOutput = [];
+            GSH_0007_ForEachProhibitionKernelsWrapper.Launch_StandardForLoopKernel(emptyInput, emptyOutput, 0, blockDimX: 1u);
+            Assert.Empty(emptyOutput);
+            return;
+        }
+
+        int[] output = new int[length];
+        int expectedSum = 0;
+        for (int i = 0; i < length; i++)
+        {
+            expectedSum += input[i];
+        }
+
+        GSH_0007_ForEachProhibitionKernelsWrapper.Launch_StandardForLoopKernel(input, output, length, blockDimX: (uint)length);
+
+        for (int i = 0; i < length; i++)
+        {
+            Assert.Equal(expectedSum + input[i], output[i]);
+        }
+    }
+}
