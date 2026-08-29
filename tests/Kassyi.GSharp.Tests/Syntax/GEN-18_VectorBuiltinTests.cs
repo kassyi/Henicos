@@ -10,7 +10,7 @@ public class GEN_18_VectorBuiltinTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
-    public void TestVector2AddKernel(int arrayLength)
+    public void GEN18_TestVector2AddKernel(int arrayLength)
     {
         System.Numerics.Vector2[] a = new System.Numerics.Vector2[arrayLength];
         System.Numerics.Vector2[] b = new System.Numerics.Vector2[arrayLength];
@@ -40,7 +40,7 @@ public class GEN_18_VectorBuiltinTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
-    public void TestVector3AddKernel(int arrayLength)
+    public void GEN18_TestVector3AddKernel(int arrayLength)
     {
         System.Numerics.Vector3[] a = new System.Numerics.Vector3[arrayLength];
         System.Numerics.Vector3[] b = new System.Numerics.Vector3[arrayLength];
@@ -71,7 +71,7 @@ public class GEN_18_VectorBuiltinTests
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
-    public void TestVector4AddKernel(int arrayLength)
+    public void GEN18_TestVector4AddKernel(int arrayLength)
     {
         System.Numerics.Vector4[] a = new System.Numerics.Vector4[arrayLength];
         System.Numerics.Vector4[] b = new System.Numerics.Vector4[arrayLength];
