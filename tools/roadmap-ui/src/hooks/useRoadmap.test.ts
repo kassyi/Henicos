@@ -17,7 +17,7 @@ describe("useRoadmap hook", () => {
       },
     ];
 
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockData,
     });
@@ -60,7 +60,7 @@ describe("useRoadmap hook", () => {
       },
     ];
 
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => mockData,
     });
@@ -100,7 +100,7 @@ describe("useRoadmap hook", () => {
 
   it("handles fetch errors gracefully", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
     const { result } = renderHook(() => useRoadmap());
 
