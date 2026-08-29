@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Pooled Roslyn syntax visitor that transpiles C# statements and expressions directly into CUDA C++.</summary>
+/// <remarks><para>Implements: <b>GEN-15</b></para></remarks>
 public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
     // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
