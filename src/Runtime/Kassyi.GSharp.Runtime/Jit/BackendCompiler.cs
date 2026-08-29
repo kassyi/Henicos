@@ -9,6 +9,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// <remarks>
 /// Automates discovery of MSVC build environment (<c>vcvars64.bat</c> via <c>vswhere</c>) and executes <c>nvcc</c> with optimized register budgets.
 /// </remarks>
+/// <remarks><para>Implements: <b>GEN-44, GEN-45</b></para></remarks>
 public sealed partial class NvccCompiler
 {
     /// <summary>Gets or sets the filesystem abstraction used for I/O operations.</summary>

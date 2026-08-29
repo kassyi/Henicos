@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Core;
 /// <remarks>
 /// <para>Kernel methods must return <see langword="void"/> and cannot use CPU-only constructs like reference heap allocations or standard interfaces.</para>
 /// </remarks>
+/// <remarks><para>Implements: <b>GEN-38</b></para></remarks>
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [AttributeUsage(AttributeTargets.Method)]
 public class GpuKernelAttribute : Attribute

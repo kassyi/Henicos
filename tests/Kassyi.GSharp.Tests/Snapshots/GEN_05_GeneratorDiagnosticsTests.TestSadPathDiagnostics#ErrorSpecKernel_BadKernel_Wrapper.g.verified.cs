@@ -11,7 +11,7 @@ public static partial class ErrorSpecKernelWrapper
 {
 public const string BadKernel_CudaSource = @"extern ""C"" __global__ void BadKernel(){
 System_String s=""hello"";
-System_Object obj=;
+System_Object obj=object;
 return 0;
 }
 ";

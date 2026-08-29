@@ -1,7 +1,6 @@
-
 namespace Kassyi.GSharp.Tests.Analyzers;
 
-public class GpuKernelAnalyzerTests
+public class GSH_00_03_GpuKernelAnalyzerTests
 {
     private static string GetTestCasePath(string testName, [CallerFilePath] string callerFilePath = "")
     {
@@ -17,6 +16,14 @@ public class GpuKernelAnalyzerTests
         return await Helpers.RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, analyzer);
     }
 
+    private static async Task<ImmutableArray<Diagnostic>> GetGeneratorDiagnosticsFromTestNameAsync(string testName)
+    {
+        var path = GetTestCasePath(testName);
+        var source = await File.ReadAllTextAsync(path);
+        var (_, _, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
+        return diagnostics;
+    }
+
     [Fact]
     [Trait("FeatureId", "GSH-01")]
     [Trait("Category", "SadPath")]
@@ -25,6 +32,16 @@ public class GpuKernelAnalyzerTests
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-01_Foreach_InGpuKernel");
         Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
     }
+
+    [Fact]
+    [Trait("FeatureId", "GSH-01")]
+    [Trait("Category", "SadPath")]
+    public async Task Test_GSH01_StringTernary_InGpuKernel_ReportsDiagnostic()
+    {
+        var diagnostics = await GetGeneratorDiagnosticsFromTestNameAsync("GSH-01_StringTernary_InGpuKernel");
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.StringNotSupported.Id && d.Severity == DiagnosticSeverity.Error);
+    }
+
 
     [Fact]
     [Trait("FeatureId", "GSH-02")]
