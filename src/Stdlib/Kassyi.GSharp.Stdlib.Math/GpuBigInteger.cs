@@ -9,10 +9,10 @@ namespace Kassyi.GSharp.Stdlib.Math;
 /// <para>All arithmetic and bitwise operations are executed on the GPU using SIMD/warp-level intrinsics.</para>
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to ensure deterministic GPU memory deallocation.</para>
 /// </remarks>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 /// <remarks><para>Implements: <b>GEN-46, GEN-48</b></para></remarks>
 /// <remarks><para>Implements: <b>GBI-01, GBI-02, GBI-03, GBI-04, GBI-05, GBI-06, GBI-10, GBI-11, GBI-12, GBI-13, GBI-14, GBI-15, GBI-16, GBI-17, GBI-18, GBI-19, GBI-20, GBI-21, GBI-22, GBI-23, GBI-24, GBI-25, GBI-26, GBI-27, GBI-28, GBI-30, GBI-31, GBI-32, GBI-33, GBI-34</b></para></remarks>
+[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 {
     /// <summary>
