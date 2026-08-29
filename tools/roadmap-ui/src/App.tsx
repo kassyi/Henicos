@@ -60,6 +60,7 @@ export const App: React.FC = () => {
     filteredTasks,
     tasksByTier,
     exitingIds,
+    statusCounts,
   } = useRoadmap();
 
   // Dynamically measured physical height of the bottom TaskDetailPanel
@@ -99,12 +100,12 @@ export const App: React.FC = () => {
         }}
       >
         {/* Top App Header */}
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h4" component="h1" sx={{ color: 'primary.main', mb: 1 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" sx={{ color: 'primary.main', mb: 1, fontWeight: 800 }}>
             Henicos Roadmap Manager
           </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            インタラクティブ進捗管理システム
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            インタラクティブ進捗管理システム — 全 <strong>{tasks.length}</strong> 件中 <strong>{filteredTasks.length}</strong> 件表示
           </Typography>
         </Box>
 
@@ -131,6 +132,7 @@ export const App: React.FC = () => {
           setMinDifficulty={setMinDifficulty}
           minGenerality={minGenerality}
           setMinGenerality={setMinGenerality}
+          statusCounts={statusCounts}
         />
 
         {/* Info Accordion */}

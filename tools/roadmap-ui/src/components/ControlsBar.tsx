@@ -90,6 +90,12 @@ interface ControlsBarProps {
   setMinDifficulty: (val: number) => void;
   minGenerality: number;
   setMinGenerality: (val: number) => void;
+  statusCounts?: {
+    all: number;
+    incomplete: number;
+    implemented_plus: number;
+    tuned: number;
+  };
 }
 
 export const ControlsBar: React.FC<ControlsBarProps> = ({
@@ -115,6 +121,7 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
   setMinDifficulty,
   minGenerality,
   setMinGenerality,
+  statusCounts,
 }) => {
   const currentProgressOpt =
     PROGRESS_OPTIONS.find((p) => p.val === progressFilter) || PROGRESS_OPTIONS[0];
@@ -360,22 +367,25 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
                   },
                 }}
               >
-                {PROGRESS_OPTIONS.map((opt) => (
-                  <ToggleButton
-                    key={opt.val}
-                    value={opt.val}
-                    title={opt.subLabel}
-                    sx={{
-                      '&.Mui-selected': {
-                        bgcolor: `${opt.selectedBg} !important`,
-                        color: `${opt.selectedText} !important`,
-                        fontWeight: 800,
-                      },
-                    }}
-                  >
-                    {opt.label}
-                  </ToggleButton>
-                ))}
+                {PROGRESS_OPTIONS.map((opt) => {
+                  const count = statusCounts ? statusCounts[opt.val] : undefined;
+                  return (
+                    <ToggleButton
+                      key={opt.val}
+                      value={opt.val}
+                      title={opt.subLabel}
+                      sx={{
+                        '&.Mui-selected': {
+                          bgcolor: `${opt.selectedBg} !important`,
+                          color: `${opt.selectedText} !important`,
+                          fontWeight: 800,
+                        },
+                      }}
+                    >
+                      {opt.label} {count !== undefined ? `(${count})` : ''}
+                    </ToggleButton>
+                  );
+                })}
               </ToggleButtonGroup>
             </Box>
 
