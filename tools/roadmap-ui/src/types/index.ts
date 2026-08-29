@@ -25,6 +25,7 @@ export interface RoadmapTask {
   status: TaskStatus;
   metrics: TaskMetrics;
   details?: TaskDetails;
+  files?: string[];
 }
 
 export interface ToastState {

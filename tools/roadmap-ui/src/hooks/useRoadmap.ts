@@ -27,7 +27,7 @@ export function useRoadmap() {
   const [minDifficulty, setMinDifficulty] = useState<number>(1);
   const [minGenerality, setMinGenerality] = useState<number>(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
-  const [progressFilter, setProgressFilter] = useState<ProgressFilter>("incomplete");
+  const [progressFilter, setProgressFilter] = useState<ProgressFilter>("all");
 
   const [toast, setToast] = useState<ToastState>({
     open: false,
@@ -427,6 +427,23 @@ ${details.csharp_example || "// N/A"}
     setToast({ open: true, message: `タスクID一覧をコピーしました (${cartIds.length}件)` });
   };
 
+  const statusCounts = useMemo(() => {
+    let incomplete = 0;
+    let implemented = 0;
+    let tuned = 0;
+    tasks.forEach((t) => {
+      if (t.status === "tuned") tuned++;
+      else if (t.status === "implemented") implemented++;
+      else incomplete++;
+    });
+    return {
+      all: tasks.length,
+      incomplete,
+      implemented_plus: implemented + tuned,
+      tuned,
+    };
+  }, [tasks]);
+
   return {
     tasks,
     loading,
@@ -461,5 +478,6 @@ ${details.csharp_example || "// N/A"}
     filteredTasks,
     tasksByTier,
     exitingIds,
+    statusCounts,
   };
 }
