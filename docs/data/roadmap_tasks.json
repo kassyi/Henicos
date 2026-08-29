@@ -1295,7 +1295,7 @@
     "id": "SYN-31",
     "title": "アンマネージド関数ポインタ",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 2,
@@ -1317,7 +1317,7 @@
     "id": "SYN-32",
     "title": "MemoryMarshal.Cast<TFrom, TTo>",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 3,
@@ -1339,7 +1339,7 @@
     "id": "SYN-33",
     "title": "ref フィールド / ref struct メンバ",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 3,
@@ -1361,7 +1361,7 @@
     "id": "SYN-34",
     "title": "ハードウェア SIMD ベクトル (Vector128)",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 4,
@@ -1383,7 +1383,7 @@
     "id": "SYN-35",
     "title": "ビット演算 Intrinsics (BitOperations)",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "tuned",
     "metrics": {
       "blocker": 5,
@@ -1404,7 +1404,7 @@
     "id": "SYN-36",
     "title": "ポインタ後置増減",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 4,
@@ -1426,7 +1426,7 @@
     "id": "SYN-37",
     "title": "Unsafe クラスの低レベルポインタ演算",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 3,
@@ -1448,7 +1448,7 @@
     "id": "SYN-38",
     "title": "固定長バッファ (fixed uint buffer[64])",
     "domain": "SYN",
-    "category": "高度なメモリ・ポインタ・アンセーフ機能",
+    "category": "メモリ・ポインタ・Unsafe",
     "status": "incomplete",
     "metrics": {
       "blocker": 4,
