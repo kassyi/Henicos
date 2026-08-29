@@ -6,36 +6,35 @@ namespace Kassyi.GSharp.Compiler;
 public static class KnownAttributes
 {
     public const string GpuKernel = "GpuKernel";
-    public const string GpuKernelAttribute = "GpuKernelAttribute";
-
     public const string GpuDeviceFunction = "GpuDeviceFunction";
-    public const string GpuDeviceFunctionAttribute = "GpuDeviceFunctionAttribute";
-
     public const string GpuConst = "GpuConst";
-    public const string GpuConstAttribute = "GpuConstAttribute";
-
     public const string GpuInline = "GpuInline";
-    public const string GpuInlineAttribute = "GpuInlineAttribute";
-
     public const string GpuNoInline = "GpuNoInline";
-    public const string GpuNoInlineAttribute = "GpuNoInlineAttribute";
-
     public const string JitConstant = "JitConstant";
-    public const string JitConstantAttribute = "JitConstantAttribute";
-
     public const string CudaIntrinsic = "CudaIntrinsic";
-    public const string CudaIntrinsicAttribute = "CudaIntrinsicAttribute";
-
     public const string CudaIntrinsicPattern = "CudaIntrinsicPattern";
-    public const string CudaIntrinsicPatternAttribute = "CudaIntrinsicPatternAttribute";
+    public const string MethodImpl = "MethodImpl";
 
-    // Check helper
-    public static bool IsGpuKernel(string? name) => name is GpuKernel or GpuKernelAttribute;
+    /// <summary>
+    /// Zero-allocation, reflection-free helper to match an attribute name against a short name or its Attribute-suffixed name.
+    /// </summary>
+    public static bool IsAttributeName(string? rawName, string shortName)
+    {
+        if (rawName is null)
+        {
+            return false;
+        }
 
-    public static bool IsGpuDeviceFunction(string? name) =>
-        name is GpuDeviceFunction or GpuDeviceFunctionAttribute;
+        var span = rawName.AsSpan();
+        var target = shortName.AsSpan();
 
-    public static bool IsGpuConst(string? name) => name is GpuConst or GpuConstAttribute;
+        if (span.SequenceEqual(target))
+        {
+            return true;
+        }
 
-    public static bool IsJitConstant(string? name) => name is JitConstant or JitConstantAttribute;
+        return span.Length == target.Length + 9 &&
+               span.StartsWith(target) &&
+               span.EndsWith("Attribute".AsSpan());
+    }
 }

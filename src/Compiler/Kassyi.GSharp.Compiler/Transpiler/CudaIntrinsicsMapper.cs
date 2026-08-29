@@ -6,8 +6,7 @@ internal static class CudaIntrinsicsMapper
     public static bool TryMap(ISymbol symbol, out string mappedName)
     {
         // 1. Check for CudaIntrinsicAttribute on the member itself
-        var intrinsicAttr = symbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == KnownAttributes.CudaIntrinsicAttribute);
+        var intrinsicAttr = symbol.GetAttribute(KnownAttributes.CudaIntrinsic);
         if (intrinsicAttr is { ConstructorArguments.Length: > 0 })
         {
             mappedName = intrinsicAttr.ConstructorArguments[0].Value?.ToString() ?? symbol.Name;
@@ -17,8 +16,7 @@ internal static class CudaIntrinsicsMapper
         // 2. Check for CudaIntrinsicPatternAttribute on the containing type
         if (symbol.ContainingType != null)
         {
-            var patternAttr = symbol.ContainingType.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.Name == KnownAttributes.CudaIntrinsicPatternAttribute);
+            var patternAttr = symbol.ContainingType.GetAttribute(KnownAttributes.CudaIntrinsicPattern);
             if (patternAttr is { ConstructorArguments.Length: > 0 })
             {
                 var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";

@@ -363,17 +363,7 @@ internal static class StructTranspiler
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,
         ref TranspileContext context)
     {
-        var isGpuConst = false;
-        foreach (var attr in memberSymbol.GetAttributes())
-        {
-            if (KnownAttributes.IsGpuConst(attr.AttributeClass?.Name))
-            {
-                isGpuConst = true;
-                break;
-            }
-        }
-
-        if (isGpuConst)
+        if (memberSymbol.HasAttribute(KnownAttributes.GpuConst))
         {
             context.Writer.AppendKeyword("const");
             context.Writer.AppendSpace();
