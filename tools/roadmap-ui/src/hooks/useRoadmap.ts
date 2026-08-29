@@ -55,11 +55,11 @@ export function useRoadmap() {
         const normalized: RoadmapTask[] = data.map((t) => {
           const status: TaskStatus =
             t.status === "tuned" || t.status === "implemented" ? t.status : "incomplete";
-          const metrics = t.metrics || {
-            blocker: t.blocker ?? 3,
-            difficulty: t.difficulty ?? 2,
-            generality: t.generality ?? 3,
-            score: t.score ?? 30,
+          const metrics = {
+            blocker: t.metrics?.blocker ?? t.blocker ?? 3,
+            difficulty: t.metrics?.difficulty ?? t.difficulty ?? 2,
+            generality: t.metrics?.generality ?? t.generality ?? 3,
+            score: t.metrics?.score ?? t.score ?? 30,
           };
           const details = t.details || (t.notes ? { notes: t.notes } : undefined);
           return {
