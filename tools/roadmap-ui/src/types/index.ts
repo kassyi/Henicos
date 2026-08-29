@@ -1,16 +1,34 @@
-export type TaskStatus = 'incomplete' | 'implemented' | 'tuned';
+export type TaskStatus = 'incomplete' | 'implemented' | 'tuned' | 'rejected';
+
+export type ProgressFilter = 'incomplete' | 'implemented_plus' | 'tuned' | 'rejected' | 'all';
+
+export type DockPosition = 'bottom' | 'left' | 'right';
+
+export interface TaskMetrics {
+  blocker: number;
+  difficulty: number;
+  generality: number;
+  score: number;
+}
+
+export interface TaskDetails {
+  csharp_example?: string;
+  current_behavior?: string;
+  target_cuda?: string;
+  strategy?: string;
+  notes?: string;
+  memo?: string;
+}
 
 export interface RoadmapTask {
   id: string;
   title: string;
   domain: string;
-  blocker: number;
-  difficulty: number;
-  generality: number;
-  score: number;
-  completed?: boolean;
-  status?: TaskStatus;
-  notes: string;
+  category?: string;
+  status: TaskStatus;
+  metrics: TaskMetrics;
+  details?: TaskDetails;
+  files?: string[];
 }
 
 export interface ToastState {

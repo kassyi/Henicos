@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>
+/// <remarks><para>Implements: <b>SYN-01, SYN-70, SYN-71, SYN-72, SYN-84, SYN-91</b></para></remarks>
 internal static class StatementTranspilers
 {
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
@@ -47,8 +48,14 @@ internal static class StatementTranspilers
         if (node.Declaration != null)
         {
             var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-            var type = CudaTypeMapper.MapType(typeSymbol);
-            context.Writer.Append(type);
+            if (node.Declaration.Type.IsVar)
+            {
+                context.Writer.AppendKeyword("auto");
+            }
+            else
+            {
+                context.Writer.AppendType(typeSymbol);
+            }
             context.Writer.AppendSpace();
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
             {
