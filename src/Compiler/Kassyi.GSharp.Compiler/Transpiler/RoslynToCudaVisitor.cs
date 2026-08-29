@@ -304,11 +304,52 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
         => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref Context);
 
+    public override void VisitWithExpression(WithExpressionSyntax node)
+        => ExpressionTranspilers.TranspileWithExpression(node, ref Context);
+
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);
 
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
+
+    public override void VisitParenthesizedVariableDesignation(ParenthesizedVariableDesignationSyntax node)
+    {
+        using (Context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.Variables.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+                Visit(node.Variables[i]);
+            }
+        }
+    }
+
+    public override void VisitDiscardDesignation(DiscardDesignationSyntax node)
+    {
+        Context.Writer.Append("__discard");
+    }
+
+    public override void VisitUsingStatement(UsingStatementSyntax node)
+    {
+        if (node.Declaration != null)
+        {
+            Visit(node.Declaration);
+            Context.Writer.AppendSemiColon();
+            Context.Writer.AppendLine();
+        }
+        else if (node.Expression != null)
+        {
+            Visit(node.Expression);
+            Context.Writer.AppendSemiColon();
+            Context.Writer.AppendLine();
+        }
+        VisitStatementOrBlock(node.Statement);
+    }
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
         => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
