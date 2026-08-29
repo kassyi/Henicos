@@ -8,6 +8,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Providers;
 /// <summary>
 /// Execution provider implementing arbitrary-precision BigInteger arithmetic via GSharp JIT transpiled GPU kernels.
 /// </summary>
+/// <remarks><para>Implements: <b>GEN-49, GEN-50</b></para></remarks>
 public sealed class GSharpJitProvider : IGpuExecutionProvider
 {
     /// <summary>Gets the singleton instance of the <see cref="GSharpJitProvider"/>.</summary>
