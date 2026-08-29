@@ -48,6 +48,14 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor DynamicDeviceAllocationWarning = new(
+        id: "GSW010",
+        title: "Dynamic Device-side Allocation Warning",
+        messageFormat: "Manual unmanaged memory allocation detected. Ensure corresponding Free is called.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
         id: "GSH1002",
         title: "Large struct passed by value",
