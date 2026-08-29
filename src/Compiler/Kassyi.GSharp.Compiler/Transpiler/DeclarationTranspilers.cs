@@ -223,9 +223,11 @@ internal static class DeclarationTranspilers
         }
 
         context.Writer.AppendOperator("*");
-        context.Writer.Append("sizeof(");
-        context.Writer.AppendType(typeArg);
-        context.Writer.Append(")");
+        context.Writer.AppendKeyword("sizeof");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.AppendType(typeArg);
+        }
         context.Writer.AppendSemiColon();
     }
 

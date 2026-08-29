@@ -256,9 +256,7 @@ internal static class StructTranspiler
             context.Writer.AppendFullyQualifiedCppName(structSym);
             context.Writer.AppendParentheses();
             context.Writer.AppendSpace();
-            using (context.Writer.Scope())
-            {
-            }
+            context.Writer.AppendEmptyScope();
 
             context.Writer.Append("__device__ inline ");
             context.Writer.AppendFullyQualifiedCppName(structSym);

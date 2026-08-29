@@ -9,7 +9,11 @@ internal static class ExpressionTranspilers
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
             // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
-            context.Writer.Append("[&]()");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append("&");
+            }
+            context.Writer.AppendParentheses();
             using (context.Writer.Scope())
             {
                 for (var i = 0; i < rightTuple.Arguments.Count; i++)
@@ -35,17 +39,36 @@ internal static class ExpressionTranspilers
 
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            using (context.Writer.Parentheses())
+            using (context.Writer.Brackets())
             {
-                context.Writer.AppendOperator("!");
+                context.Writer.Append("&");
+            }
+            context.Writer.AppendParentheses();
+            context.Writer.AppendSpace();
+            context.Writer.Append("-> decltype(auto) ");
+            using (context.Writer.Scope())
+            {
+                context.Writer.AppendKeyword("auto");
+                context.Writer.AppendOperator("&");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__coalesce_target");
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
                 context.Visitor.Visit(node.Left);
-                context.Writer.Append(".HasValue");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("!");
+                context.Writer.Append("__coalesce_target.HasValue");
                 context.Writer.AppendSpace();
                 context.Writer.AppendOperator("?");
                 context.Writer.AppendSpace();
                 using (context.Writer.Parentheses())
                 {
-                    context.Visitor.Visit(node.Left);
+                    context.Writer.Append("__coalesce_target");
                     context.Writer.AppendSpace();
                     context.Writer.AppendOperator("=");
                     context.Writer.AppendSpace();
@@ -55,9 +78,12 @@ internal static class ExpressionTranspilers
                 context.Writer.AppendSpace();
                 context.Writer.AppendOperator(":");
                 context.Writer.AppendSpace();
-                context.Visitor.Visit(node.Left);
-                context.Writer.Append(".Value");
+                context.Writer.Append("__coalesce_target.Value");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
             }
+
+            context.Writer.AppendParentheses();
 
             return;
         }
@@ -71,20 +97,40 @@ internal static class ExpressionTranspilers
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            using (context.Writer.Parentheses())
+            using (context.Writer.Brackets())
             {
+                context.Writer.Append("&");
+            }
+            context.Writer.AppendParentheses();
+            context.Writer.AppendSpace();
+            using (context.Writer.Scope())
+            {
+                context.Writer.AppendKeyword("auto");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__coalesce_tmp");
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
                 context.Visitor.Visit(node.Left);
-                context.Writer.Append(".HasValue");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__coalesce_tmp.HasValue");
                 context.Writer.AppendSpace();
                 context.Writer.AppendOperator("?");
                 context.Writer.AppendSpace();
-                context.Visitor.Visit(node.Left);
-                context.Writer.Append(".Value");
+                context.Writer.Append("__coalesce_tmp.Value");
                 context.Writer.AppendSpace();
                 context.Writer.AppendOperator(":");
                 context.Writer.AppendSpace();
                 context.Visitor.Visit(node.Right);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
             }
+
+            context.Writer.AppendParentheses();
 
             return;
         }
@@ -144,7 +190,12 @@ internal static class ExpressionTranspilers
     {
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append("[&]() ");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append("&");
+            }
+            context.Writer.AppendParentheses();
+            context.Writer.AppendSpace();
             using (context.Writer.Scope())
             {
                 context.Writer.AppendKeyword("switch");
@@ -158,6 +209,14 @@ internal static class ExpressionTranspilers
                 {
                     foreach (var arm in node.Arms)
                     {
+                        if (arm.WhenClause != null)
+                        {
+                            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax,
+                                arm.WhenClause.GetLocation(),
+                                "Switch expression arms with 'when' clauses are not supported"));
+                            return;
+                        }
+
                         switch (arm.Pattern)
                         {
                             case ConstantPatternSyntax constantPattern:

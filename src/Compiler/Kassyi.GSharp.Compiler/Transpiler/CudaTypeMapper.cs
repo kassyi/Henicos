@@ -217,7 +217,9 @@ internal static class CudaTypeMapper
         if (typeSymbol is { TypeKind: TypeKind.Array })
         {
             writer.AppendType(((IArrayTypeSymbol)typeSymbol).ElementType);
-            writer.Append("* __restrict__");
+            writer.AppendOperator("*");
+            writer.AppendSpace();
+            writer.AppendKeyword("__restrict__");
             isPointerType = true;
             hasRestrict = true;
         }
