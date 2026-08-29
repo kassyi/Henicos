@@ -111,6 +111,7 @@ public static class GridDimension
 /// <summary>
 /// Provides hardware intrinsics, synchronization primitives, atomic operations, and macro markers for GPU kernels.
 /// </summary>
+/// <remarks><para>Implements: <b>GEN-52</b></para></remarks>
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
 [SuppressMessage("IDE", "IDE0051", Justification = "Public API exposed for library consumers")]

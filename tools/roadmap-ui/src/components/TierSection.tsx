@@ -9,10 +9,11 @@ interface TierSectionProps {
   title: string;
   tasks: RoadmapTask[];
   cartIds: string[];
+  selectedTaskId?: string | null;
   exitingIds: Set<string>;
   onCartClick: (id: string, shiftKey: boolean) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
-  onNotesChange: (id: string, notes: string) => void;
+  onSelectTask?: (id: string) => void;
   toggleTierCart: (tierTasks: RoadmapTask[]) => void;
 }
 
@@ -21,10 +22,11 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
   title,
   tasks,
   cartIds,
+  selectedTaskId,
   exitingIds,
   onCartClick,
   onStatusChange,
-  onNotesChange,
+  onSelectTask,
   toggleTierCart,
 }) => {
   if (tasks.length === 0) return null;
@@ -59,26 +61,37 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
               py: 0.3,
               px: 1.5,
               borderRadius: 2,
-              bgcolor: allInTierInCart ? '#4a4458' : undefined,
-              color: allInTierInCart ? '#e8def8' : undefined,
+              textTransform: 'none',
             }}
           >
             {allInTierInCart ? 'Tier一括解除' : 'Tier一括追加'}
           </Button>
-          <Chip label={`${tasks.length} 件`} size="small" sx={{ bgcolor: 'background.paper', color: 'text.secondary' }} />
+
+          <Chip
+            label={`${tasks.length} 件`}
+            size="small"
+            sx={{ bgcolor: '#49454f', color: '#e6e0e9', fontWeight: 600 }}
+          />
         </Box>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(275px, 1fr))',
+          gap: 2,
+        }}
+      >
         {tasks.map((task) => (
           <TaskCard
             key={task.id}
             task={task}
             inCart={cartIds.includes(task.id)}
+            isSelected={selectedTaskId === task.id}
             isExiting={exitingIds.has(task.id)}
             onCartClick={onCartClick}
             onStatusChange={onStatusChange}
-            onNotesChange={onNotesChange}
+            onSelectTask={onSelectTask}
           />
         ))}
       </Box>
