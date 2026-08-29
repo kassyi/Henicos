@@ -35,3 +35,19 @@ public static class SYN28_MethodAttributesTestCases
         return x - 1;
     }
 }
+
+namespace CustomNamespace
+{
+    public class MethodImplAttribute : System.Attribute
+    {
+        public string CustomOption { get; }
+        public MethodImplAttribute(string customOption) => CustomOption = customOption;
+    }
+
+    public static class CustomKernelClass
+    {
+        [Kassyi.GSharp.Core.GpuDeviceFunction]
+        [MethodImpl("NonNumericValue")]
+        public static int CustomMethod(int x) => x + 1;
+    }
+}

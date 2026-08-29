@@ -9,6 +9,12 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_28_MethodAttributesTests
 {
+    private const string InlineDevice = "inline __device__";
+    private const string ForceinlineDevice = "__forceinline__ __device__";
+    private const string NoinlineDevice = "__noinline__ __device__";
+    private const string ForceinlineModifier = "__forceinline__";
+    private const string NoinlineModifier = "__noinline__";
+
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)
     {
         var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "SYN-28_MethodAttributes.cs");
@@ -49,6 +55,57 @@ public class SYN_28_MethodAttributesTests
     }
 
     [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-28")]
+    public void Test_SYN28_MethodAttributes_EmptyArray_Execution()
+    {
+        int[] input = [];
+        int[] result = [];
+
+        var exception = Record.Exception(() =>
+            SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 1));
+
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-28")]
+    public void Test_SYN28_MethodAttributes_SingleElement_Execution()
+    {
+        int[] input = [42];
+        int[] result = new int[1];
+
+        SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 1);
+
+        // (42 + 100) * 2 = 284
+        Assert.Equal(284, result[0]);
+    }
+
+    [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-28")]
+    [InlineData(0, (0 + 100) * 2)]
+    [InlineData(1, (1 + 100) * 2)]
+    [InlineData(-1, (-1 + 100) * 2)]
+    [InlineData(100, (100 + 100) * 2)]
+    [InlineData(-100, (-100 + 100) * 2)]
+    [InlineData(-500, (-500 + 100) * 2)]
+    [InlineData(0x5555, (0x5555 + 100) * 2)]
+    [InlineData(-0x5555, (-0x5555 + 100) * 2)]
+    [InlineData(1000000, (1000000 + 100) * 2)]
+    [InlineData(-1000000, (-1000000 + 100) * 2)]
+    public void Test_SYN28_AggressiveInlining_NumericBoundaries_Execution(int inputVal, int expectedVal)
+    {
+        int[] input = [inputVal];
+        int[] result = new int[1];
+
+        SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 1);
+
+        Assert.Equal(expectedVal, result[0]);
+    }
+
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice()
@@ -56,7 +113,7 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains("__forceinline__ __device__", cudaSource);
+        Assert.Contains(ForceinlineDevice, cudaSource);
     }
 
     [Fact]
@@ -67,7 +124,7 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains("__noinline__ __device__", cudaSource);
+        Assert.Contains(NoinlineDevice, cudaSource);
     }
 
     [Fact]
@@ -78,9 +135,9 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains("__forceinline__ __device__", cudaSource);
+        Assert.Contains(ForceinlineDevice, cudaSource);
 
-        var matches = Regex.Matches(cudaSource, @"__forceinline__");
+        var matches = Regex.Matches(cudaSource, ForceinlineModifier);
         Assert.Single(matches);
     }
 
@@ -92,8 +149,21 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains("inline __device__", cudaSource);
-        Assert.DoesNotContain("__forceinline__", cudaSource);
-        Assert.DoesNotContain("__noinline__", cudaSource);
+        Assert.Contains(InlineDevice, cudaSource);
+        Assert.DoesNotContain(ForceinlineModifier, cudaSource);
+        Assert.DoesNotContain(NoinlineModifier, cudaSource);
+    }
+
+    [Fact]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "SYN-28")]
+    public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()
+    {
+        var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
+
+        Assert.Empty(diagnostics);
+        Assert.Contains(InlineDevice, cudaSource);
+        Assert.DoesNotContain(ForceinlineModifier, cudaSource);
+        Assert.DoesNotContain(NoinlineModifier, cudaSource);
     }
 }
