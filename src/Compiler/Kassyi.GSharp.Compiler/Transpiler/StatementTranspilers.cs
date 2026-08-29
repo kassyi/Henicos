@@ -4,6 +4,45 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>SYN-01, SYN-70, SYN-71, SYN-72, SYN-84, SYN-91</b></para></remarks>
 internal static class StatementTranspilers
 {
+    public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
+    {
+        context.Writer.AppendKeyword("auto");
+        context.Writer.AppendSpace();
+        context.Writer.Append(node.Identifier.Text);
+        context.Writer.AppendSpace();
+        context.Writer.AppendOperator("=");
+        context.Writer.AppendSpace();
+
+        context.Writer.Append("[&]");
+        context.Visitor.Visit(node.ParameterList);
+        context.Writer.AppendSpace();
+
+        if (node.Body != null)
+        {
+            using (context.Writer.Scope())
+            {
+                foreach (var stmt in node.Body.Statements)
+                {
+                    context.Visitor.Visit(stmt);
+                    context.Writer.AppendLine();
+                }
+            }
+        }
+        else if (node.ExpressionBody != null)
+        {
+            using (context.Writer.Scope())
+            {
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+                context.Visitor.Visit(node.ExpressionBody.Expression);
+                context.Writer.AppendSemiColonLine();
+            }
+        }
+
+        context.Writer.AppendSemiColon();
+        context.Writer.AppendLine();
+    }
+
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
     {
         DeclarationTranspilers.HoistDeclarationExpressions(node.Condition, ref context);
@@ -56,6 +95,7 @@ internal static class StatementTranspilers
             {
                 context.Writer.AppendType(typeSymbol);
             }
+
             context.Writer.AppendSpace();
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
             {

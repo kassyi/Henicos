@@ -139,19 +139,6 @@ public class SYN_01_09_ControlFlowTests
     {
     }
 
-    [Fact(Skip = "未実装: SYN-07 (ローカル関数 / local functions)")]
-    [Trait("FeatureId", "SYN-07")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN07_LocalFunctions_Transpilation()
-    {
-    }
-
-    [Fact(Skip = "未実装: SYN-08 (ラムダ式・無名関数 / Lambdas / Anonymous Functions)")]
-    [Trait("FeatureId", "SYN-08")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN08_LambdaExpressions_Transpilation()
-    {
-    }
 
     [Fact(Skip = "未実装: SYN-09 (デフォルトリテラル default, default(T))")]
     [Trait("FeatureId", "SYN-09")]
