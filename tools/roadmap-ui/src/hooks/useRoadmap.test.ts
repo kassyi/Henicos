@@ -58,6 +58,13 @@ describe("useRoadmap hook", () => {
         section: "Group 1",
         metrics: { blocker: 1, difficulty: 1, generality: 1, score: 10 },
       },
+      {
+        id: "T4",
+        title: "Task 4",
+        status: "rejected",
+        section: "Group 1",
+        metrics: { blocker: 1, difficulty: 1, generality: 1, score: 10 },
+      },
     ];
 
     globalThis.fetch = vi.fn().mockResolvedValue({
@@ -92,10 +99,17 @@ describe("useRoadmap hook", () => {
     expect(result.current.filteredTasks[0].id).toBe("T2");
 
     act(() => {
+      result.current.setProgressFilter("rejected");
+    });
+
+    expect(result.current.filteredTasks.length).toBe(1);
+    expect(result.current.filteredTasks[0].id).toBe("T4");
+
+    act(() => {
       result.current.setProgressFilter("all");
     });
 
-    expect(result.current.filteredTasks.length).toBe(3);
+    expect(result.current.filteredTasks.length).toBe(4);
   });
 
   it("handles fetch errors gracefully", async () => {

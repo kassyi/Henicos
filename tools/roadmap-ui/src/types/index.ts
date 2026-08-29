@@ -1,6 +1,6 @@
-export type TaskStatus = 'incomplete' | 'implemented' | 'tuned';
+export type TaskStatus = 'incomplete' | 'implemented' | 'tuned' | 'rejected';
 
-export type ProgressFilter = 'incomplete' | 'implemented_plus' | 'tuned' | 'all';
+export type ProgressFilter = 'incomplete' | 'implemented_plus' | 'tuned' | 'rejected' | 'all';
 
 export type DockPosition = 'bottom' | 'left' | 'right';
 
@@ -17,6 +17,7 @@ export interface TaskDetails {
   target_cuda?: string;
   strategy?: string;
   notes?: string;
+  memo?: string;
 }
 
 export interface RoadmapTask {
