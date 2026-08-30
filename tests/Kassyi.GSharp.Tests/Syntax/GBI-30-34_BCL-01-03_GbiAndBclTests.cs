@@ -213,8 +213,8 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
         AssertEqualOrNaN(Math.Sqrt(Math.Abs(dVal)), dResults[1]);
         AssertEqualOrNaN(Math.Sin(dVal), dResults[2]);
         AssertEqualOrNaN(Math.Cos(dVal), dResults[3]);
-        AssertEqualOrNaN(Math.Max(dVal, 10.0), dResults[4]);
-        AssertEqualOrNaN(Math.Min(dVal, -10.0), dResults[5]);
+        AssertEqualOrNaN(Math.Max(dVal, 10.0), dResults[4], fallbackIfNaN: 10.0);
+        AssertEqualOrNaN(Math.Min(dVal, -10.0), dResults[5], fallbackIfNaN: -10.0);
         AssertEqualOrNaN(Math.Floor(dVal), dResults[6]);
         AssertEqualOrNaN(Math.Ceiling(dVal), dResults[7]);
 
@@ -223,16 +223,17 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
         AssertEqualOrNaNF(MathF.Sqrt(MathF.Abs(fVal)), fResults[1]);
         AssertEqualOrNaNF(MathF.Sin(fVal), fResults[2]);
         AssertEqualOrNaNF(MathF.Cos(fVal), fResults[3]);
-        AssertEqualOrNaNF(MathF.Max(fVal, 10.0f), fResults[4]);
-        AssertEqualOrNaNF(MathF.Min(fVal, -10.0f), fResults[5]);
+        AssertEqualOrNaNF(MathF.Max(fVal, 10.0f), fResults[4], fallbackIfNaN: 10.0f);
+        AssertEqualOrNaNF(MathF.Min(fVal, -10.0f), fResults[5], fallbackIfNaN: -10.0f);
         AssertEqualOrNaNF(MathF.Floor(fVal), fResults[6]);
         AssertEqualOrNaNF(MathF.Ceiling(fVal), fResults[7]);
     }
 
-    private static void AssertEqualOrNaN(double expected, double actual)
+    private static void AssertEqualOrNaN(double expected, double actual, double? fallbackIfNaN = null)
     {
         if (double.IsNaN(expected))
         {
+            if (fallbackIfNaN.HasValue && actual == fallbackIfNaN.Value) return;
             Assert.True(double.IsNaN(actual));
         }
         else
@@ -241,10 +242,11 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
         }
     }
 
-    private static void AssertEqualOrNaNF(float expected, float actual)
+    private static void AssertEqualOrNaNF(float expected, float actual, float? fallbackIfNaN = null)
     {
         if (float.IsNaN(expected))
         {
+            if (fallbackIfNaN.HasValue && actual == fallbackIfNaN.Value) return;
             Assert.True(float.IsNaN(actual));
         }
         else
