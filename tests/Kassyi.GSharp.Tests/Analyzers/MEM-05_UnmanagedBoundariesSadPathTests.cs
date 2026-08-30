@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Xunit;
 using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 
@@ -11,7 +12,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
 {
     private static string GetTestCasePath(string fileName)
     {
-        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
+        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
         return Path.Combine(testCasesDir, "Analyzers", fileName);
     }
 
@@ -23,7 +24,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_UnboundedPointer.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 
@@ -40,7 +41,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_MallocWarning.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 
@@ -57,7 +58,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_StackallocLoop.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 
@@ -74,7 +75,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_Finalizer.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 
@@ -91,7 +92,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_DynamicKeyword.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 
@@ -107,7 +108,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_TypedReference.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 
@@ -123,7 +124,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
         var path = GetTestCasePath("MEM-05_ComInteropPInvokeGCHandle.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var compileDiagnostics = compilation.GetDiagnostics();
         var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Xunit;
 using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 
@@ -11,7 +12,7 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
 {
     private static string GetTestCasePath(string fileName)
     {
-        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
+        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
         return Path.Combine(testCasesDir, "Analyzers", fileName);
     }
 
@@ -23,8 +24,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var path = GetTestCasePath("MEM-04_AdvancedSyntaxAndFunctionalPatternsSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var (_, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var analyzerDiagnostics = await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify diagnostic errors are emitted for object creation / syntax rules in tuple deconstruction & tuple field leaks
@@ -42,8 +43,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var path = GetTestCasePath("MEM-04_AdvancedSyntaxAndFunctionalPatternsSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var (_, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var analyzerDiagnostics = await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify errors reported for access after move / double dispose in record with expressions
@@ -60,8 +61,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var path = GetTestCasePath("MEM-04_AdvancedSyntaxAndFunctionalPatternsSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var (_, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var analyzerDiagnostics = await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify GSH0001 / GSH0003 errors for delegate escaping, local function captures, multicast delegate double dispose, expression trees
@@ -78,8 +79,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var path = GetTestCasePath("MEM-04_AdvancedSyntaxAndFunctionalPatternsSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var (_, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var analyzerDiagnostics = await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify diagnostic errors for ref reassignment leak, in/ref readonly mutation trap, and sync dispose on async resource
@@ -96,8 +97,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var path = GetTestCasePath("MEM-04_AdvancedSyntaxAndFunctionalPatternsSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var (_, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var analyzerDiagnostics = await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         var errors = allDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
