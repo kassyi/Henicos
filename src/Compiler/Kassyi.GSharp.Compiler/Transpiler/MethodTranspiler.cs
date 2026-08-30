@@ -77,6 +77,7 @@ public static class MethodTranspiler
                 return mainWriter.ToString() + fwd + sigWriter.ToString();
             }
         }
+
         return mainWriter.ToString() + sigWriter.ToString();
     }
 
@@ -84,9 +85,10 @@ public static class MethodTranspiler
         ref TranspileContext context)
     {
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
-        
+
         var returnType = methodSymbol?.ReturnType;
-        bool isIterator = returnType != null && returnType.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>";
+        bool isIterator = returnType != null && returnType.OriginalDefinition.ToDisplayString() ==
+            "System.Collections.Generic.IEnumerable<T>";
 
         if (isIterator)
         {
@@ -97,7 +99,7 @@ public static class MethodTranspiler
             else
             {
                 context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
-                    method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
+                    method.ReturnType.GetLocation(), method.Identifier.Text, returnType!.ToDisplayString()));
             }
 
             context.Writer.AppendSpace();
@@ -106,6 +108,7 @@ public static class MethodTranspiler
             {
                 WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
             }
+
             return;
         }
 
@@ -126,7 +129,8 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context, string? overrideReturnType = null)
+    private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context,
+        string? overrideReturnType = null)
     {
         AnalyzeInliningAttributes(methodSymbol, out var hasAggressiveInlining, out var hasNoInlining);
 
@@ -165,7 +169,8 @@ public static class MethodTranspiler
         }
     }
 
-    private static void AnalyzeInliningAttributes(IMethodSymbol? methodSymbol, out bool hasAggressiveInlining, out bool hasNoInlining)
+    private static void AnalyzeInliningAttributes(IMethodSymbol? methodSymbol, out bool hasAggressiveInlining,
+        out bool hasNoInlining)
     {
         hasAggressiveInlining = false;
         hasNoInlining = false;
@@ -206,7 +211,8 @@ public static class MethodTranspiler
                };
     }
 
-    private static void AnalyzeMethodImplAttribute(AttributeData attr, ref bool hasAggressiveInlining, ref bool hasNoInlining)
+    private static void AnalyzeMethodImplAttribute(AttributeData attr, ref bool hasAggressiveInlining,
+        ref bool hasNoInlining)
     {
         if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
         {
@@ -241,15 +247,17 @@ public static class MethodTranspiler
         context.Writer.AppendKeyword("extern \"C\" __global__ void");
     }
 
-    internal static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context, SourceWriter? mainWriter = null)
+    internal static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context,
+        SourceWriter? mainWriter = null)
     {
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
         var returnType = methodSymbol?.ReturnType;
-        bool isIterator = returnType != null && returnType.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.IEnumerable<T>";
+        bool isIterator = returnType != null && returnType.OriginalDefinition.ToDisplayString() ==
+            "System.Collections.Generic.IEnumerable<T>";
 
         if (isIterator && mainWriter != null)
         {
-            bool isDevice = methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
+            bool isDevice = methodSymbol!.HasAttribute(KnownAttributes.GpuDeviceFunction);
             WriteIteratorStateMachine(method, methodSymbol!, isDevice, ref context, mainWriter.Value);
             return;
         }
@@ -275,16 +283,18 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteIteratorStateMachine(MethodDeclarationSyntax method, IMethodSymbol methodSymbol, bool isDevice, ref TranspileContext context, SourceWriter mainWriter)
+    private static void WriteIteratorStateMachine(MethodDeclarationSyntax method, IMethodSymbol methodSymbol,
+        bool isDevice, ref TranspileContext context, SourceWriter mainWriter)
     {
         var stateMachineName = $"{method.Identifier.Text}_StateMachine";
         var elementType = ((INamedTypeSymbol)methodSymbol.ReturnType).TypeArguments[0];
 
         var originalWriter = context.Writer;
         var structWriter = mainWriter;
-        
-        WriteStateMachineStructDefinition(structWriter, method, methodSymbol, stateMachineName, elementType, ref context);
-        
+
+        WriteStateMachineStructDefinition(structWriter, method, methodSymbol, stateMachineName, elementType,
+            ref context);
+
         context.Writer = originalWriter;
 
         structWriter.AppendSemiColon();
@@ -299,11 +309,13 @@ public static class MethodTranspiler
                 context.Writer.Append(method.ParameterList.Parameters[i].Identifier.Text);
                 if (i < method.ParameterList.Parameters.Count - 1) context.Writer.Append(", ");
             }
+
             context.Writer.AppendLine(");");
         }
     }
 
-    private static void WriteStateMachineStructDefinition(SourceWriter structWriter, MethodDeclarationSyntax method, IMethodSymbol methodSymbol, string stateMachineName, ITypeSymbol elementType, ref TranspileContext context)
+    private static void WriteStateMachineStructDefinition(SourceWriter structWriter, MethodDeclarationSyntax method,
+        IMethodSymbol methodSymbol, string stateMachineName, ITypeSymbol elementType, ref TranspileContext context)
     {
         structWriter.Append($"struct {stateMachineName}");
         structWriter.AppendLine();
@@ -312,18 +324,20 @@ public static class MethodTranspiler
             structWriter.AppendLine("int _state;");
             structWriter.AppendType(elementType);
             structWriter.AppendLine(" _current;");
-            
+
             var parameters = method.ParameterList.Parameters;
             foreach (var p in parameters)
             {
                 var pSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-                if (pSymbol != null)
+                if (pSymbol == null)
                 {
-                    structWriter.AppendType(pSymbol.Type);
-                    structWriter.AppendSpace();
-                    structWriter.Append(p.Identifier.Text);
-                    structWriter.AppendLine(";");
+                    continue;
                 }
+
+                structWriter.AppendType(pSymbol.Type);
+                structWriter.AppendSpace();
+                structWriter.Append(p.Identifier.Text);
+                structWriter.AppendLine(";");
             }
 
             var hoistVisitor = new VariableHoistingVisitor(context.SemanticModel);
@@ -351,11 +365,13 @@ public static class MethodTranspiler
             structWriter.AppendLine();
             structWriter.AppendType(elementType);
             structWriter.AppendLine(" __device__ __forceinline__ get_Current() const { return _current; }");
-            structWriter.AppendLine($"__device__ __forceinline__ {stateMachineName} GetEnumerator() {{ return *this; }}");
+            structWriter.AppendLine(
+                $"__device__ __forceinline__ {stateMachineName} GetEnumerator() {{ return *this; }}");
         }
     }
 
-    private static void WriteStateMachineConstructor(SourceWriter structWriter, string stateMachineName, SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
+    private static void WriteStateMachineConstructor(SourceWriter structWriter, string stateMachineName,
+        SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
     {
         structWriter.AppendLine();
         structWriter.Append($"__device__ __forceinline__ {stateMachineName}(");
@@ -367,16 +383,19 @@ public static class MethodTranspiler
             structWriter.Append($" {p.Identifier.Text}");
             if (i < parameters.Count - 1) structWriter.Append(", ");
         }
+
         structWriter.Append(") : _state(0)");
         foreach (var p in parameters)
         {
             structWriter.Append($", {p.Identifier.Text}({p.Identifier.Text})");
         }
+
         structWriter.AppendLine(" {}");
         structWriter.AppendLine();
     }
 
-    private static void WriteStateMachineMoveNext(SourceWriter structWriter, MethodDeclarationSyntax method, VariableHoistingVisitor hoistVisitor, ref TranspileContext context)
+    private static void WriteStateMachineMoveNext(SourceWriter structWriter, MethodDeclarationSyntax method,
+        VariableHoistingVisitor hoistVisitor, ref TranspileContext context)
     {
         structWriter.AppendLine("__device__ __forceinline__ bool MoveNext()");
         using (structWriter.Scope())
@@ -387,6 +406,7 @@ public static class MethodTranspiler
             {
                 structWriter.AppendLine($"    case {i}: goto STATE_{i};");
             }
+
             structWriter.AppendLine("}");
             structWriter.AppendLine("STATE_0:;");
 
@@ -405,7 +425,7 @@ public static class MethodTranspiler
             }
 
             context.IsStateMachineContext = false;
-            
+
             structWriter.AppendLine("_state = -1;");
             structWriter.AppendLine("return false;");
         }
@@ -436,9 +456,11 @@ public static class MethodTranspiler
                     {
                         structWriter.AppendLine($"        __enum_{route.ForeachId}.Dispose();");
                     }
+
                     structWriter.AppendLine("        break;");
                 }
             }
+
             structWriter.AppendLine("}");
         }
     }
