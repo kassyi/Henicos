@@ -40,22 +40,6 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
-        id: "GSH1001",
-        title: "Excessive static shared memory usage",
-        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor DynamicDeviceAllocationWarning = new(
-        id: "GSW010",
-        title: "Dynamic Device-side Allocation Warning",
-        messageFormat: "Manual unmanaged memory allocation detected. Ensure corresponding Free is called.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
         id: "GSH1002",
         title: "Large struct passed by value",
@@ -134,5 +118,21 @@ public static class GSharpDiagnostics
         messageFormat: "GpuContext memory ownership violation on '{0}': {1}",
         category: "GSharpMemorySafety",
         defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
+        id: "GSH0013",
+        title: "Excessive static shared memory usage",
+        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor DynamicDeviceAllocationWarning = new(
+        id: "GSH0014",
+        title: "Dynamic Device-side Allocation Warning",
+        messageFormat: "Manual unmanaged memory allocation detected. Ensure corresponding Free is called.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 }

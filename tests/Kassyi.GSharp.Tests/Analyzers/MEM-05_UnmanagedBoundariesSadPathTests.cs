@@ -20,7 +20,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_UnboundedPointer_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_UnboundedPointer.cs");
+        var path = GetTestCasePath("MEM-05_UnboundedPointer.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
@@ -37,7 +37,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_MallocWarning_ReportsDiagnosticOrWarningAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_MallocWarning.cs");
+        var path = GetTestCasePath("MEM-05_MallocWarning.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
@@ -46,7 +46,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
 
         Assert.NotNull(driver);
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Id == "GSW010");
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0014");
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_StackallocLoop_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_StackallocLoop.cs");
+        var path = GetTestCasePath("MEM-05_StackallocLoop.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
@@ -71,7 +71,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_Finalizer_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_Finalizer.cs");
+        var path = GetTestCasePath("MEM-05_Finalizer.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
@@ -88,7 +88,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_DynamicKeyword_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_DynamicKeyword.cs");
+        var path = GetTestCasePath("MEM-05_DynamicKeyword.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
@@ -104,7 +104,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_TypedReference_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_TypedReference.cs");
+        var path = GetTestCasePath("MEM-05_TypedReference.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
@@ -120,7 +120,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_ComInteropPInvokeGCHandle_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_ComInteropPInvokeGCHandle.cs");
+        var path = GetTestCasePath("MEM-05_ComInteropPInvokeGCHandle.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
