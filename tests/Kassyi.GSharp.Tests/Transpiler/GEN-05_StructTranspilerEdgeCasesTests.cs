@@ -32,7 +32,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     """;
 
     [ModuleInitializer]
-    public static void Register() => MegaCompilationCache.RegisterSource(GEN05_Sources);
+    public static void Register() => MegaCompilationCache.RegisterSource("GEN-05_StructTranspilerEdgeCasesTests.cs", GEN05_Sources);
 
     [Fact]
     [Trait("FeatureId", "GEN-05")]

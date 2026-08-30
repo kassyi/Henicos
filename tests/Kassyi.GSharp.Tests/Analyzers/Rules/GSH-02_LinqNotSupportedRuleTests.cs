@@ -21,7 +21,7 @@ public class GSH_02_LinqNotSupportedRuleTests
     """;
 
     [ModuleInitializer]
-    public static void Register() => Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.RegisterSource(GSH02_Sources);
+    public static void Register() => Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.RegisterSource("GSH-02_LinqNotSupportedRuleTests.cs", GSH02_Sources);
 
     [Fact]
     [Trait("FeatureId", "GSH-02")]
@@ -46,3 +46,4 @@ public class GSH_02_LinqNotSupportedRuleTests
 
 
 }
+
