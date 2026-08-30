@@ -27,4 +27,27 @@ public class MEM_05_UnmanagedBoundariesTests
         Assert.Equal(30, output[2]);
         Assert.Equal(40, output[3]);
     }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "MEM-05")]
+    public void Test_MEM05_SafeMemoryPinningKernel_EmptyArray()
+    {
+        byte[] input = [];
+        int[] output = new int[0];
+        // Ensure no crash with empty arrays (pointers are null/invalid but length is 0)
+        MEM_05_UnmanagedBoundariesKernelsWrapper.Launch_SafeMemoryPinningKernel(input, output, blockDimX: 1);
+        Assert.Empty(output);
+    }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "MEM-05")]
+    public void Test_MEM05_SafeMemoryPinningKernel_SingleElement()
+    {
+        byte[] input = [42];
+        int[] output = new int[1];
+        MEM_05_UnmanagedBoundariesKernelsWrapper.Launch_SafeMemoryPinningKernel(input, output, blockDimX: 1);
+        Assert.Equal(42, output[0]);
+    }
 }

@@ -93,6 +93,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     {
         var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_DynamicKeywordTestCase");
         Assert.NotEmpty(allDiagnostics);
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003" && d.Severity == DiagnosticSeverity.Error && d.GetMessage().Contains("dynamic"));
     }
 
     [Fact]
@@ -102,6 +103,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     {
         var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_TypedReferenceTestCase");
         Assert.NotEmpty(allDiagnostics);
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003" && d.Severity == DiagnosticSeverity.Error && d.GetMessage().Contains("TypedReference"));
     }
 
     [Fact]
@@ -111,5 +113,6 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     {
         var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_ComInteropPInvokeGCHandleTestCase");
         Assert.NotEmpty(allDiagnostics);
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003" && d.Severity == DiagnosticSeverity.Error);
     }
 }

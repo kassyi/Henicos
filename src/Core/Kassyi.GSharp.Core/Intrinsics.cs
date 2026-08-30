@@ -257,6 +257,8 @@ public static class Gpu
         /// <param name="size">The number of bytes to allocate.</param>
         /// <returns>A raw pointer to the allocated device memory block.</returns>
         [CudaIntrinsic("malloc")]
+#pragma warning disable IDE0051 // Unused member
+        // ReSharper disable UnusedMember.Global
         public static unsafe void* Malloc(int size) => GpuOnlyException.Throw<nint>().ToPointer();
 
         /// <summary>
@@ -265,5 +267,7 @@ public static class Gpu
         /// <param name="ptr">A raw pointer to the allocated memory block to free.</param>
         [CudaIntrinsic("free")]
         public static unsafe void Free(void* ptr) => GpuOnlyException.Throw();
+        // ReSharper restore UnusedMember.Global
+#pragma warning restore IDE0051
     }
 }
