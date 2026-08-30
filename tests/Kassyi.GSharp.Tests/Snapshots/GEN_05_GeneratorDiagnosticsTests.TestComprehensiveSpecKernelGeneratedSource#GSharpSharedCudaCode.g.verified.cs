@@ -72,6 +72,7 @@ struct System_Collections_Generic_List {
         int _index;
         T _current;
 
+        __device__ Enumerator() : _list(nullptr), _index(0), _current() {}
         __device__ Enumerator(System_Collections_Generic_List* list) : _list(list), _index(0), _current() {}
 
         __device__ __forceinline__ bool MoveNext() {
