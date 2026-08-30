@@ -95,4 +95,18 @@ public class MEM_03_CollectionsAndGenericsTests
             Assert.Equal(expected[i], input[i]);
         }
     }
+    [Theory]
+    [Trait("FeatureId", "MEM-03")]
+    [InlineData(new int[] { 1, 2, 3 }, 3, new int[] { 16, 17, 18 })]
+    [InlineData(new int[] { 5, 15 }, 2, new int[] { 20, 30 })]
+    [InlineData(new int[] { -10 }, 1, new int[] { 5 })]
+    public void Test_MEM03_NestedForeachDeferredEnumeration(int[] input, int length, int[] expected)
+    {
+        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_NestedDeferredEnumerationKernel(input, length, blockDimX: (uint)length);
+
+        for (int i = 0; i < length; i++)
+        {
+            Assert.Equal(expected[i], input[i]);
+        }
+    }
 }
