@@ -200,6 +200,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         finally { ExitLoopScope(); }
     }
 
+    public override void VisitForEachStatement(ForEachStatementSyntax node)
+    {
+        EnterLoopScope();
+        try { base.VisitForEachStatement(node); }
+        finally { ExitLoopScope(); }
+    }
+
     public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
     {
         if (node.Initializer != null)

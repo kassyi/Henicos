@@ -46,6 +46,22 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         base.VisitForEachStatement(node);
     }
 
+    public override void VisitMakeRefExpression(MakeRefExpressionSyntax node)
+    {
+        _context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "TypedReference"));
+        base.VisitMakeRefExpression(node);
+    }
+
+    public override void VisitIdentifierName(IdentifierNameSyntax node)
+    {
+        var text = node.Identifier.Text;
+        if (text == "dynamic" || text == "TypedReference" || text == "GCHandle")
+        {
+            _context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), text));
+        }
+        base.VisitIdentifierName(node);
+    }
+
     public override void VisitQueryExpression(QueryExpressionSyntax node)
     {
         LinqNotSupportedRule.Instance.Analyze(node, ref _context);
