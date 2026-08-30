@@ -47,9 +47,7 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
       "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00"
-    ]
+    "depends_on": ["GSH-00"]
   },
   {
     "id": "GSH-02",
@@ -75,13 +73,7 @@
       "tests/Kassyi.GSharp.Tests/Analyzers/Rules/GSH-02_LinqNotSupportedRuleTests.cs",
       "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-03",
-      "GSH-04",
-      "GSH-08"
-    ]
+    "depends_on": ["GSH-00", "GSH-01", "GSH-03", "GSH-04", "GSH-08"]
   },
   {
     "id": "GSH-03",
@@ -107,10 +99,7 @@
       "tests/Kassyi.GSharp.Tests/Analyzers/Rules/GSH-03_ImplicitVarNeedsSuffixRuleTests.cs",
       "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01"
-    ]
+    "depends_on": ["GSH-00", "GSH-01"]
   },
   {
     "id": "GSH-04",
@@ -134,11 +123,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
       "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-03"
-    ]
+    "depends_on": ["GSH-00", "GSH-01", "GSH-03"]
   },
   {
     "id": "GSH-05",
@@ -162,15 +147,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
       "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-02",
-      "GSH-03",
-      "GSH-04",
-      "GSH-08",
-      "GSH-09"
-    ]
+    "depends_on": ["GSH-00", "GSH-01", "GSH-02", "GSH-03", "GSH-04", "GSH-08", "GSH-09"]
   },
   {
     "id": "GSH-06",
@@ -194,16 +171,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
       "tests/Kassyi.GSharp.Tests/Runtime/GSH-06_GSH-07_RuntimeIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-02",
-      "GSH-03",
-      "GSH-04",
-      "GSH-05",
-      "GSH-08",
-      "GSH-09"
-    ]
+    "depends_on": ["GSH-00", "GSH-01", "GSH-02", "GSH-03", "GSH-04", "GSH-05", "GSH-08", "GSH-09"]
   },
   {
     "id": "GSH-07",
@@ -227,17 +195,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
       "tests/Kassyi.GSharp.Tests/Runtime/GSH-06_GSH-07_RuntimeIssuesTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-02",
-      "GSH-03",
-      "GSH-04",
-      "GSH-05",
-      "GSH-06",
-      "GSH-08",
-      "GSH-09"
-    ]
+    "depends_on": ["GSH-00", "GSH-01", "GSH-02", "GSH-03", "GSH-04", "GSH-05", "GSH-06", "GSH-08", "GSH-09"]
   },
   {
     "id": "GSH-08",
@@ -257,15 +215,8 @@
       "csharp_example": "[DiagnosticAnalyzer(LanguageNames.CSharp)]\npublic class GpuKernelAnalyzer : DiagnosticAnalyzer\n{"
     },
     "score": 45,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"
-    ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-03",
-      "GSH-04"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"],
+    "depends_on": ["GSH-00", "GSH-01", "GSH-03", "GSH-04"]
   },
   {
     "id": "GSH-09",
@@ -285,17 +236,8 @@
       "csharp_example": "[DiagnosticAnalyzer(LanguageNames.CSharp)]\npublic class GpuKernelAnalyzer : DiagnosticAnalyzer\n{"
     },
     "score": 30,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"
-    ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-02",
-      "GSH-03",
-      "GSH-04",
-      "GSH-08"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs"],
+    "depends_on": ["GSH-00", "GSH-01", "GSH-02", "GSH-03", "GSH-04", "GSH-08"]
   },
   {
     "id": "GEN-01",
@@ -342,11 +284,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
       "tests/Kassyi.GSharp.Tests/Generator/GEN-01_SourceGeneratorTests.cs"
     ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-28",
-      "GEN-31"
-    ]
+    "depends_on": ["GEN-01", "GEN-28", "GEN-31"]
   },
   {
     "id": "GEN-03",
@@ -370,17 +308,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
       "tests/Kassyi.GSharp.Tests/Core/GEN-03_GEN-04_LoggerTests.cs"
     ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-13",
-      "GEN-17",
-      "GEN-18",
-      "GEN-28",
-      "GEN-29",
-      "GEN-31",
-      "GEN-32"
-    ]
+    "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29", "GEN-31", "GEN-32"]
   },
   {
     "id": "GEN-04",
@@ -404,18 +332,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
       "tests/Kassyi.GSharp.Tests/Core/GEN-03_GEN-04_LoggerTests.cs"
     ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-03",
-      "GEN-13",
-      "GEN-17",
-      "GEN-18",
-      "GEN-28",
-      "GEN-29",
-      "GEN-31",
-      "GEN-32"
-    ]
+    "depends_on": ["GEN-01", "GEN-02", "GEN-03", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29", "GEN-31", "GEN-32"]
   },
   {
     "id": "GEN-05",
@@ -522,13 +439,8 @@
       "csharp_example": "// Example for diagnostic reporting of unsupported features\n// Implements: GEN-07"
     },
     "score": 20,
-    "files": [
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs"
-    ],
-    "depends_on": [
-      "GEN-05",
-      "GEN-06"
-    ]
+    "files": ["tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs"],
+    "depends_on": ["GEN-05", "GEN-06"]
   },
   {
     "id": "GEN-08",
@@ -753,12 +665,7 @@
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GEN-13_GpuMacroTests.cs",
       "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-28",
-      "GEN-31"
-    ]
+    "depends_on": ["GEN-01", "GEN-02", "GEN-28", "GEN-31"]
   },
   {
     "id": "GEN-14",
@@ -778,9 +685,7 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 25,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": [
       "GEN-01",
       "GEN-02",
@@ -840,16 +745,8 @@
       "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
     },
     "score": 32,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
-    "depends_on": [
-      "BCL-01",
-      "BCL-02",
-      "BCL-03",
-      "GEN-30",
-      "GEN-39"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
+    "depends_on": ["BCL-01", "BCL-02", "BCL-03", "GEN-30", "GEN-39"]
   },
   {
     "id": "GEN-17",
@@ -870,16 +767,8 @@
       "csharp_example": "void Modify(ref int x) {\n    x = 10;\n}"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-13",
-      "GEN-28",
-      "GEN-31"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
+    "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-28", "GEN-31"]
   },
   {
     "id": "GEN-18",
@@ -905,14 +794,7 @@
       "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/GEN-18_VectorBuiltinTests.cs"
     ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-13",
-      "GEN-17",
-      "GEN-28",
-      "GEN-31"
-    ]
+    "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-17", "GEN-28", "GEN-31"]
   },
   {
     "id": "GEN-19",
@@ -932,9 +814,7 @@
       "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 27,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": [
       "GEN-01",
       "GEN-02",
@@ -977,16 +857,7 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
-    "depends_on": [
-      "GSH-00",
-      "GSH-01",
-      "GSH-02",
-      "GSH-03",
-      "SYN-03",
-      "SYN-07",
-      "SYN-08",
-      "SYN-91"
-    ]
+    "depends_on": ["GSH-00", "GSH-01", "GSH-02", "GSH-03", "SYN-03", "SYN-07", "SYN-08", "SYN-91"]
   },
   {
     "id": "SYN-02",
@@ -1233,9 +1104,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
-    "depends_on": [
-      "SYN-03"
-    ]
+    "depends_on": ["SYN-03"]
   },
   {
     "id": "SYN-08",
@@ -1259,9 +1128,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
-    "depends_on": [
-      "SYN-03"
-    ]
+    "depends_on": ["SYN-03"]
   },
   {
     "id": "SYN-09",
@@ -1428,10 +1295,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08"
-    ]
+    "depends_on": ["SYN-07", "SYN-08"]
   },
   {
     "id": "SYN-14",
@@ -1494,11 +1358,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13"
-    ]
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13"]
   },
   {
     "id": "SYN-16",
@@ -1618,10 +1478,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
-    "depends_on": [
-      "SYN-03",
-      "SYN-17"
-    ]
+    "depends_on": ["SYN-03", "SYN-17"]
   },
   {
     "id": "SYN-19",
@@ -1700,14 +1557,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
-    "depends_on": [
-      "SYN-03",
-      "SYN-17",
-      "SYN-18",
-      "SYN-19",
-      "SYN-22",
-      "SYN-30"
-    ]
+    "depends_on": ["SYN-03", "SYN-17", "SYN-18", "SYN-19", "SYN-22", "SYN-30"]
   },
   {
     "id": "SYN-21",
@@ -1866,16 +1716,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
-    "depends_on": [
-      "SYN-03",
-      "SYN-17",
-      "SYN-18",
-      "SYN-19",
-      "SYN-20",
-      "SYN-21",
-      "SYN-22",
-      "SYN-30"
-    ]
+    "depends_on": ["SYN-03", "SYN-17", "SYN-18", "SYN-19", "SYN-20", "SYN-21", "SYN-22", "SYN-30"]
   },
   {
     "id": "SYN-25",
@@ -2191,11 +2032,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
-    "depends_on": [
-      "SYN-03",
-      "SYN-18",
-      "SYN-28"
-    ]
+    "depends_on": ["SYN-03", "SYN-18", "SYN-28"]
   },
   {
     "id": "SYN-31",
@@ -2353,18 +2190,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
-    "depends_on": [
-      "SYN-03",
-      "SYN-14",
-      "SYN-18",
-      "SYN-20",
-      "SYN-24",
-      "SYN-30",
-      "SYN-32",
-      "SYN-34",
-      "SYN-36",
-      "SYN-38"
-    ]
+    "depends_on": ["SYN-03", "SYN-14", "SYN-18", "SYN-20", "SYN-24", "SYN-30", "SYN-32", "SYN-34", "SYN-36", "SYN-38"]
   },
   {
     "id": "SYN-34",
@@ -2427,15 +2253,8 @@
       "target_cuda": "Fully comprehensive replacement to CUDA built-in functions (__clz, __popc, __funnelshift_l, __funnelshift_r)."
     },
     "score": 45,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"
-    ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13",
-      "SYN-15"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"],
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15"]
   },
   {
     "id": "SYN-36",
@@ -4344,10 +4163,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
     ],
-    "depends_on": [
-      "SYN-01",
-      "SYN-91"
-    ]
+    "depends_on": ["SYN-01", "SYN-91"]
   },
   {
     "id": "SYN-71",
@@ -4371,11 +4187,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
     ],
-    "depends_on": [
-      "SYN-01",
-      "SYN-70",
-      "SYN-91"
-    ]
+    "depends_on": ["SYN-01", "SYN-70", "SYN-91"]
   },
   {
     "id": "SYN-72",
@@ -4399,12 +4211,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
     ],
-    "depends_on": [
-      "SYN-01",
-      "SYN-70",
-      "SYN-71",
-      "SYN-91"
-    ]
+    "depends_on": ["SYN-01", "SYN-70", "SYN-71", "SYN-91"]
   },
   {
     "id": "SYN-73",
@@ -4497,16 +4304,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
-    "depends_on": [
-      "SYN-03",
-      "SYN-18",
-      "SYN-20",
-      "SYN-24",
-      "SYN-30",
-      "SYN-33",
-      "SYN-73",
-      "SYN-77"
-    ]
+    "depends_on": ["SYN-03", "SYN-18", "SYN-20", "SYN-24", "SYN-30", "SYN-33", "SYN-73", "SYN-77"]
   },
   {
     "id": "SYN-75",
@@ -4673,13 +4471,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13",
-      "SYN-15",
-      "SYN-35"
-    ]
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35"]
   },
   {
     "id": "SYN-78",
@@ -5183,16 +4975,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
-    "depends_on": [
-      "SYN-01",
-      "SYN-70",
-      "SYN-71",
-      "SYN-72",
-      "SYN-80",
-      "SYN-81",
-      "SYN-82",
-      "SYN-91"
-    ]
+    "depends_on": ["SYN-01", "SYN-70", "SYN-71", "SYN-72", "SYN-80", "SYN-81", "SYN-82", "SYN-91"]
   },
   {
     "id": "SYN-86",
@@ -5498,14 +5281,7 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13",
-      "SYN-15",
-      "SYN-35",
-      "SYN-77"
-    ]
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77"]
   },
   {
     "id": "SYN-91",
@@ -5530,9 +5306,7 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
-    "depends_on": [
-      "SYN-90"
-    ]
+    "depends_on": ["SYN-90"]
   },
   {
     "id": "SYN-92",
@@ -5557,16 +5331,7 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13",
-      "SYN-15",
-      "SYN-35",
-      "SYN-77",
-      "SYN-90",
-      "SYN-91"
-    ]
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77", "SYN-90", "SYN-91"]
   },
   {
     "id": "SYN-93",
@@ -5591,17 +5356,7 @@
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
       "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13",
-      "SYN-15",
-      "SYN-35",
-      "SYN-77",
-      "SYN-90",
-      "SYN-91",
-      "SYN-92"
-    ]
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77", "SYN-90", "SYN-91", "SYN-92"]
   },
   {
     "id": "SYN-94",
@@ -5621,20 +5376,8 @@
       "target_cuda": "Completely expanded to CUDA's for (int i = blockIdx.x * ...) or #pragma unroll."
     },
     "score": 45,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"
-    ],
-    "depends_on": [
-      "SYN-07",
-      "SYN-08",
-      "SYN-13",
-      "SYN-15",
-      "SYN-35",
-      "SYN-77",
-      "SYN-90",
-      "SYN-92",
-      "SYN-93"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs"],
+    "depends_on": ["SYN-07", "SYN-08", "SYN-13", "SYN-15", "SYN-35", "SYN-77", "SYN-90", "SYN-92", "SYN-93"]
   },
   {
     "id": "GBI-01",
@@ -5658,16 +5401,7 @@
       "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
-    "depends_on": [
-      "GBI-11",
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34",
-      "GEN-46",
-      "GEN-48"
-    ]
+    "depends_on": ["GBI-11", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"]
   },
   {
     "id": "GBI-02",
@@ -5687,9 +5421,7 @@
       "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
     },
     "score": 27,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": [
       "GBI-01",
       "GBI-03",
@@ -5739,17 +5471,7 @@
       "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
-    "depends_on": [
-      "GBI-01",
-      "GBI-11",
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34",
-      "GEN-46",
-      "GEN-48"
-    ]
+    "depends_on": ["GBI-01", "GBI-11", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"]
   },
   {
     "id": "GBI-04",
@@ -5927,18 +5649,7 @@
       "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
-    "depends_on": [
-      "GBI-01",
-      "GBI-03",
-      "GBI-11",
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34",
-      "GEN-46",
-      "GEN-48"
-    ]
+    "depends_on": ["GBI-01", "GBI-03", "GBI-11", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46", "GEN-48"]
   },
   {
     "id": "GBI-11",
@@ -5961,14 +5672,7 @@
       "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
       "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
     ],
-    "depends_on": [
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34",
-      "GEN-46"
-    ]
+    "depends_on": ["GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46"]
   },
   {
     "id": "GBI-12",
@@ -6220,9 +5924,7 @@
       "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
     },
     "score": 25,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
     "depends_on": [
       "GBI-01",
       "GBI-03",
@@ -6713,9 +6415,7 @@
       "target_cuda": "Direct mapping to predefined variables like threadIdx.x, blockIdx.x."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"]
   },
   {
     "id": "GBI-31",
@@ -6735,12 +6435,8 @@
       "target_cuda": "Mapped to __syncthreads() etc."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-30"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
+    "depends_on": ["GBI-30"]
   },
   {
     "id": "GBI-32",
@@ -6760,13 +6456,8 @@
       "target_cuda": "Mapped to built-in functions like atomicAdd, atomicMax, etc."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-30",
-      "GBI-31"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
+    "depends_on": ["GBI-30", "GBI-31"]
   },
   {
     "id": "GBI-33",
@@ -6786,14 +6477,8 @@
       "target_cuda": "Mapped to PTX level carry/borrow instructions."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-30",
-      "GBI-31",
-      "GBI-32"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
+    "depends_on": ["GBI-30", "GBI-31", "GBI-32"]
   },
   {
     "id": "GBI-34",
@@ -6813,15 +6498,8 @@
       "target_cuda": "Output directly as C++ inline assembly or macros."
     },
     "score": 39,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
+    "depends_on": ["GBI-30", "GBI-31", "GBI-32", "GBI-33"]
   },
   {
     "id": "BCL-01",
@@ -6841,9 +6519,7 @@
       "target_cuda": "Mapped to CUDA built-in functions like __popc, __popcll."
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"]
   },
   {
     "id": "BCL-02",
@@ -6863,12 +6539,8 @@
       "target_cuda": "BitOperations.Log2 is mapped to predefined macros like __gsharp_log2_32."
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
-    "depends_on": [
-      "BCL-01"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
+    "depends_on": ["BCL-01"]
   },
   {
     "id": "BCL-03",
@@ -6888,13 +6560,8 @@
       "target_cuda": "Planned mapping to sinf(x), cosf(x), etc."
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
-    "depends_on": [
-      "BCL-01",
-      "BCL-02"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
+    "depends_on": ["BCL-01", "BCL-02"]
   },
   {
     "id": "GEN-20",
@@ -6914,9 +6581,7 @@
       "csharp_example": "public static class MethodTranspiler\n{"
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/MethodTranspiler.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/MethodTranspiler.cs"]
   },
   {
     "id": "GEN-21",
@@ -7016,9 +6681,7 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 35,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
     "depends_on": [
       "GEN-01",
       "GEN-02",
@@ -7096,12 +6759,8 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
-    "depends_on": [
-      "GEN-01"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
+    "depends_on": ["GEN-01"]
   },
   {
     "id": "GEN-29",
@@ -7121,18 +6780,8 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-13",
-      "GEN-17",
-      "GEN-18",
-      "GEN-28",
-      "GEN-31"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
+    "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-31"]
   },
   {
     "id": "GEN-30",
@@ -7152,14 +6801,8 @@
       "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
     },
     "score": 39,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"
-    ],
-    "depends_on": [
-      "BCL-01",
-      "BCL-02",
-      "BCL-03"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs"],
+    "depends_on": ["BCL-01", "BCL-02", "BCL-03"]
   },
   {
     "id": "GEN-31",
@@ -7179,13 +6822,8 @@
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-28"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
+    "depends_on": ["GEN-01", "GEN-28"]
   },
   {
     "id": "GEN-32",
@@ -7205,19 +6843,8 @@
       "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 31,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"
-    ],
-    "depends_on": [
-      "GEN-01",
-      "GEN-02",
-      "GEN-13",
-      "GEN-17",
-      "GEN-18",
-      "GEN-28",
-      "GEN-29",
-      "GEN-31"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs"],
+    "depends_on": ["GEN-01", "GEN-02", "GEN-13", "GEN-17", "GEN-18", "GEN-28", "GEN-29", "GEN-31"]
   },
   {
     "id": "GEN-33",
@@ -7237,9 +6864,7 @@
       "csharp_example": "internal static class StructTranspiler\n{"
     },
     "score": 37,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StructTranspiler.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StructTranspiler.cs"]
   },
   {
     "id": "GEN-34",
@@ -7259,9 +6884,7 @@
       "csharp_example": "internal static class MarshalingEmitter\n{"
     },
     "score": 36,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"]
   },
   {
     "id": "GEN-35",
@@ -7281,9 +6904,7 @@
       "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}"
     },
     "score": 33,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/WrapperEmitter.cs"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/WrapperEmitter.cs"]
   },
   {
     "id": "GEN-36",
@@ -7303,12 +6924,8 @@
       "csharp_example": "void GetValue(out int x) {\n    x = 10;\n}"
     },
     "score": 32,
-    "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"
-    ],
-    "depends_on": [
-      "GEN-34"
-    ]
+    "files": ["src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"],
+    "depends_on": ["GEN-34"]
   },
   {
     "id": "GEN-37",
@@ -7332,9 +6949,7 @@
       "src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs",
       "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"
     ],
-    "depends_on": [
-      "GEN-42"
-    ]
+    "depends_on": ["GEN-42"]
   },
   {
     "id": "GEN-38",
@@ -7354,9 +6969,7 @@
       "csharp_example": "[GpuKernel]\npublic static void RunKernel() { }"
     },
     "score": 34,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/GpuKernelAttribute.cs"
-    ]
+    "files": ["src/Core/Kassyi.GSharp.Core/GpuKernelAttribute.cs"]
   },
   {
     "id": "GEN-39",
@@ -7380,12 +6993,7 @@
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/BclIntrinsicMapBuilder.cs",
       "src/Core/Kassyi.GSharp.Core/BclIntrinsicMapAttribute.cs"
     ],
-    "depends_on": [
-      "BCL-01",
-      "BCL-02",
-      "BCL-03",
-      "GEN-30"
-    ]
+    "depends_on": ["BCL-01", "BCL-02", "BCL-03", "GEN-30"]
   },
   {
     "id": "GEN-40",
@@ -7425,12 +7033,8 @@
       "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 30,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs"
-    ],
-    "depends_on": [
-      "GEN-37"
-    ]
+    "files": ["src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs"],
+    "depends_on": ["GEN-37"]
   },
   {
     "id": "GSH-0007",
@@ -7530,9 +7134,7 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
     },
     "score": 33,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"
-    ]
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"]
   },
   {
     "id": "GEN-43",
@@ -7552,13 +7154,8 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
     },
     "score": 35,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"
-    ],
-    "depends_on": [
-      "GEN-37",
-      "GEN-42"
-    ]
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"],
+    "depends_on": ["GEN-37", "GEN-42"]
   },
   {
     "id": "GEN-44",
@@ -7578,9 +7175,7 @@
       "csharp_example": "public sealed partial class NvccCompiler\n{"
     },
     "score": 26,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"
-    ]
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"]
   },
   {
     "id": "GEN-45",
@@ -7600,12 +7195,8 @@
       "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 32,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"
-    ],
-    "depends_on": [
-      "GEN-44"
-    ]
+    "files": ["src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"],
+    "depends_on": ["GEN-44"]
   },
   {
     "id": "GEN-46",
@@ -7625,16 +7216,8 @@
       "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 34,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
+    "depends_on": ["GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34"]
   },
   {
     "id": "GEN-47",
@@ -7654,9 +7237,7 @@
       "csharp_example": "public ref struct ScopedGpuMemory\n{"
     },
     "score": 35,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/ScopedGpuMemory.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/ScopedGpuMemory.cs"]
   },
   {
     "id": "GEN-48",
@@ -7676,18 +7257,8 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 25,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-11",
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34",
-      "GEN-46"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"],
+    "depends_on": ["GBI-11", "GBI-30", "GBI-31", "GBI-32", "GBI-33", "GBI-34", "GEN-46"]
   },
   {
     "id": "GEN-49",
@@ -7707,9 +7278,7 @@
       "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
     },
     "score": 27,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"]
   },
   {
     "id": "GEN-50",
@@ -7729,12 +7298,8 @@
       "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
     },
     "score": 26,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
-    ],
-    "depends_on": [
-      "GEN-49"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"],
+    "depends_on": ["GEN-49"]
   },
   {
     "id": "GEN-51",
@@ -7754,9 +7319,7 @@
       "csharp_example": "public class FermatRunner\n{"
     },
     "score": 18,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/FermatRunner.cs"
-    ]
+    "files": ["src/Stdlib/Kassyi.GSharp.Stdlib.Math/FermatRunner.cs"]
   },
   {
     "id": "GEN-52",
@@ -7776,108 +7339,6 @@
       "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"IDE\", \"IDE0051\", Justification = \"Public API exposed for library consumers\")]\npublic static class Gpu\n{"
     },
     "score": 39,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/Intrinsics.cs"
-    ]
-  },
-  {
-    "id": "MEM-01",
-    "title": "Fundamental Ownership & Control Flow Analysis",
-    "domain": "MEM",
-    "category": "Category I: Fundamental Ownership",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 5,
-      "difficulty": 3,
-      "generality": 5,
-      "score": 39
-    },
-    "details": {
-      "current_behavior": "Currently, basic variable lifecycles, execution paths (CFG), and null safety are not strictly enforced for GPU resources.",
-      "strategy": "Implement diagnostics to ban discarded allocations, undisposed locals, control flow bypasses, and async void. Support out and return value ownership transfers.",
-      "csharp_example": "var ctx = new GpuContext();\nif (error) return; // Error: Leak detected on early return path\nctx.Dispose();"
-    },
-    "score": 39,
-    "files": []
-  },
-  {
-    "id": "MEM-02",
-    "title": "Object Lifecycle & Encapsulation Verification",
-    "domain": "MEM",
-    "category": "Category II: Object Lifecycle",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 5,
-      "difficulty": 4,
-      "generality": 4,
-      "score": 34
-    },
-    "details": {
-      "current_behavior": "Class/struct state management and object boundaries lack strict disposal chaining.",
-      "strategy": "Enforce missing IDisposable on fields. Ban property getter side-effects, implicit cast operators, and static lifecycle fields. Support Factory pattern and [TakesOwnership] dependency injection.",
-      "csharp_example": "class A : IDisposable { GpuContext _c = new GpuContext(); public void Dispose() { _c.Dispose(); } }"
-    },
-    "score": 34,
-    "files": []
-  },
-  {
-    "id": "MEM-03",
-    "title": "Collections, Iterators & Generics Zero-Allocation",
-    "domain": "MEM",
-    "category": "Category III: Collections & Iterators",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 4,
-      "difficulty": 4,
-      "generality": 4,
-      "score": 30
-    },
-    "details": {
-      "current_behavior": "Interfaces and collection structures cause hidden boxing allocations and potential leaks.",
-      "strategy": "Enforce zero-allocation generics (monomorphization) and safe collection ingestion/exhaustive loop disposal. Ban interface boxing, collection spread operator duplication, and unconsumed custom enumerators.",
-      "csharp_example": "Span<GpuContext> contexts = [ctx1, ctx2];\nSpan<GpuContext> newContexts = [..contexts]; // Error: Ambiguous ownership duplication"
-    },
-    "score": 30,
-    "files": []
-  },
-  {
-    "id": "MEM-04",
-    "title": "Advanced Syntax & Functional Patterns Safeguards",
-    "domain": "MEM",
-    "category": "Category IV: Advanced Syntax",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 4,
-      "difficulty": 5,
-      "generality": 3,
-      "score": 25
-    },
-    "details": {
-      "current_behavior": "Modern C# features like records, tuples, and closures can bypass linear typing.",
-      "strategy": "Support tuple return/deconstruction, record 'with' expressions (Move semantics), and duck-typed 'using' for ref struct. Ban undisposed deconstruction, multicast delegate double-disposal, and escaping borrowed closures.",
-      "csharp_example": "var a = new Holder(new GpuContext());\nvar b = a with { ID = 2 };\nb.Ctx.Dispose();"
-    },
-    "score": 25,
-    "files": []
-  },
-  {
-    "id": "MEM-05",
-    "title": "Unmanaged Boundaries & Low-Level Escape Hatches",
-    "domain": "MEM",
-    "category": "Category V: Unmanaged Boundaries",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 5,
-      "difficulty": 4,
-      "generality": 2,
-      "score": 30
-    },
-    "details": {
-      "current_behavior": "Low-level operations (pointers, dynamic, GCHandle) are uncontrolled and will crash the GPU environment.",
-      "strategy": "Support stackalloc and fixed blocks carefully. Warn on dynamic device-side allocation. Ban unbounded pointers, stackalloc loop exhaustion, finalizers, dynamic, TypedReference, and GCHandle.",
-      "csharp_example": "class GpuContext { ~GpuContext() { Free(); } } // Error: Finalizers are not supported on GPU."
-    },
-    "score": 30,
-    "files": []
+    "files": ["src/Core/Kassyi.GSharp.Core/Intrinsics.cs"]
   }
 ]

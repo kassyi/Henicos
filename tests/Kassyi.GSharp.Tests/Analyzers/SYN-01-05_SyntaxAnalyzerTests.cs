@@ -19,7 +19,7 @@ public class SYN_01_05_SyntaxAnalyzerTests
     {
         var path = GetTestCasePath(testName);
         var source = await File.ReadAllTextAsync(path);
-        var (_, _, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (_, _, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         return diagnostics;
     }
 
@@ -30,7 +30,7 @@ public class SYN_01_05_SyntaxAnalyzerTests
     {
         var path = GetTestCasePath("SYN-01_NonExhaustiveSwitch_InGpuKernel");
         var source = await File.ReadAllTextAsync(path);
-        var compilation = (GpuAnalyzerTestRunner.GetParsedModelAsync(source).Result).SemanticModel.Compilation;
+        var compilation = Helpers.RoslynTestUtility.CreateCompilation(source);
         var compileDiagnostics = compilation.GetDiagnostics();
 
         // CS8509: The switch expression does not handle all possible values of its input type (it is not exhaustive).
@@ -46,4 +46,3 @@ public class SYN_01_05_SyntaxAnalyzerTests
         diagnostics.AssertContainsError(GSharpDiagnostics.StringNotSupported.Id);
     }
 }
-

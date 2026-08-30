@@ -11,7 +11,7 @@ public class SYN_49_SYN_68_SadPathTests
 {
     private static string GetTestCasePath(string fileName)
     {
-        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
+        var testCasesDir = Helpers.RoslynTestUtility.GetTestCasesDirectory();
         return Path.Combine(testCasesDir, "Analyzers", fileName);
     }
 
@@ -23,7 +23,7 @@ public class SYN_49_SYN_68_SadPathTests
         var path = GetTestCasePath("SYN-49_UnsupportedInterlockedOverload.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         Assert.NotNull(driver);
         Assert.NotNull(compilation);
         diagnostics.AssertContainsError("GSH0003");
@@ -37,10 +37,9 @@ public class SYN_49_SYN_68_SadPathTests
         var path = GetTestCasePath("SYN-68_UnsupportedMathMethod.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         Assert.NotNull(driver);
         Assert.NotNull(compilation);
         diagnostics.AssertContainsError("GSH0003");
     }
 }
-
