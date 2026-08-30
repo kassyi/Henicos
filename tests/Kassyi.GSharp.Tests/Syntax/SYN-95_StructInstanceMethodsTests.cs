@@ -8,7 +8,7 @@ public class SYN_95_StructInstanceMethodsTests
     [InlineData(0, 0, 1, 2)]
     [InlineData(10, -5, 1, 2)]
     [InlineData(int.MinValue, int.MaxValue, 1, 2)]
-    public void TestImplicitFieldAccessKernel_BoundaryDataDriven(int startX, int startY, int expectedX, int expectedY)
+    public void Test_SYN95_ImplicitFieldAccessKernel_BoundaryDataDriven(int startX, int startY, int expectedX, int expectedY)
     {
         Point2D[] points = [new Point2D { X = startX, Y = startY }];
         SYN_95_StructInstanceMethodsKernelsWrapper.Launch_ImplicitFieldAccessKernel(points, blockDimX: 1);
@@ -20,7 +20,7 @@ public class SYN_95_StructInstanceMethodsTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-95")]
-    public void TestExplicitThisMethodCallKernel()
+    public void Test_SYN95_ExplicitThisMethodCallKernel()
     {
         Point2D[] points = [
             new Point2D { X = 5, Y = 10 },
@@ -43,7 +43,7 @@ public class SYN_95_StructInstanceMethodsTests
     [InlineData(-10, 20, 10)]
     [InlineData(0, 0, 0)]
     [InlineData(int.MaxValue - 100, 100, int.MaxValue)]
-    public void TestMethodWithArgsAndReturnKernel(int startX, int val, int expectedResult)
+    public void Test_SYN95_MethodWithArgsAndReturnKernel(int startX, int val, int expectedResult)
     {
         Point2D[] points = [new Point2D { X = startX, Y = 0 }];
         int[] results = [0];
@@ -56,7 +56,7 @@ public class SYN_95_StructInstanceMethodsTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-95")]
-    public void TestIntBoxMethodKernel()
+    public void Test_SYN95_IntBoxMethodKernel()
     {
         IntBox[] boxes = [
             new IntBox { Value = 10 },
@@ -72,7 +72,7 @@ public class SYN_95_StructInstanceMethodsTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-95")]
-    public void TestDirectCallKernel()
+    public void Test_SYN95_DirectCallKernel()
     {
         int[] results = new int[4];
 
@@ -91,7 +91,7 @@ public class SYN_95_StructInstanceMethodsTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-95")]
-    public void TestSameTypeParameterKernel()
+    public void Test_SYN95_SameTypeParameterKernel()
     {
         MergeableStruct[] items = [
             new MergeableStruct { Value = 100 },
@@ -99,13 +99,15 @@ public class SYN_95_StructInstanceMethodsTests
             new MergeableStruct { Value = 30 }
         ];
 
-        SYN_95_StructInstanceMethodsKernelsWrapper.Launch_SameTypeParameterKernel(items, blockDimX: 3);
+        MergeableStruct baseValue = new MergeableStruct { Value = 100 };
 
-        // tid 0: 100 + items[0].Value (100) = 200
+        SYN_95_StructInstanceMethodsKernelsWrapper.Launch_SameTypeParameterKernel(items, baseValue, blockDimX: 3);
+
+        // tid 0: 100 + baseValue (100) = 200
         Assert.Equal(200, items[0].Value);
-        // tid 1: 20 + items[0].Value (100) = 120
+        // tid 1: 20 + baseValue (100) = 120
         Assert.Equal(120, items[1].Value);
-        // tid 2: 30 + items[0].Value (100) = 130
+        // tid 2: 30 + baseValue (100) = 130
         Assert.Equal(130, items[2].Value);
     }
 }
