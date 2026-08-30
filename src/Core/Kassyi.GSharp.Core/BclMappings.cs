@@ -58,3 +58,21 @@ using Kassyi.GSharp.Core;
 [assembly:
     BclIntrinsicMap("System.Numerics.BitOperations", "RotateRight", ["System.UIntPtr", "System.Int32"],
         "__gsharp_rotr64")]
+
+// --- System.Math and System.MathF Mappings ---
+[assembly: BclIntrinsicMap("System.Math", "Abs", ["System.Double"], "fabs")]
+[assembly: BclIntrinsicMap("System.MathF", "Abs", ["System.Single"], "fabsf")]
+[assembly: BclIntrinsicMap("System.Math", "Sqrt", ["System.Double"], "sqrt")]
+[assembly: BclIntrinsicMap("System.MathF", "Sqrt", ["System.Single"], "sqrtf")]
+[assembly: BclIntrinsicMap("System.Math", "Sin", ["System.Double"], "sin")]
+[assembly: BclIntrinsicMap("System.MathF", "Sin", ["System.Single"], "sinf")]
+[assembly: BclIntrinsicMap("System.Math", "Cos", ["System.Double"], "cos")]
+[assembly: BclIntrinsicMap("System.MathF", "Cos", ["System.Single"], "cosf")]
+[assembly: BclIntrinsicMap("System.Math", "Max", ["System.Double", "System.Double"], "fmax")]
+[assembly: BclIntrinsicMap("System.MathF", "Max", ["System.Single", "System.Single"], "fmaxf")]
+[assembly: BclIntrinsicMap("System.Math", "Min", ["System.Double", "System.Double"], "fmin")]
+[assembly: BclIntrinsicMap("System.MathF", "Min", ["System.Single", "System.Single"], "fminf")]
+[assembly: BclIntrinsicMap("System.Math", "Floor", ["System.Double"], "floor")]
+[assembly: BclIntrinsicMap("System.MathF", "Floor", ["System.Single"], "floorf")]
+[assembly: BclIntrinsicMap("System.Math", "Ceiling", ["System.Double"], "ceil")]
+[assembly: BclIntrinsicMap("System.MathF", "Ceiling", ["System.Single"], "ceilf")]
