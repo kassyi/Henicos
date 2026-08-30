@@ -24,7 +24,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var source = await File.ReadAllTextAsync(path);
 
         var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify diagnostic errors are emitted for object creation / syntax rules in tuple deconstruction & tuple field leaks
         Assert.NotEmpty(allDiagnostics);
@@ -42,7 +43,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var source = await File.ReadAllTextAsync(path);
 
         var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify errors reported for access after move / double dispose in record with expressions
         var errors = allDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
@@ -59,7 +61,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var source = await File.ReadAllTextAsync(path);
 
         var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify GSH0001 / GSH0003 errors for delegate escaping, local function captures, multicast delegate double dispose, expression trees
         var errors = allDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
@@ -76,7 +79,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var source = await File.ReadAllTextAsync(path);
 
         var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         // Verify diagnostic errors for ref reassignment leak, in/ref readonly mutation trap, and sync dispose on async resource
         var errors = allDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
@@ -93,7 +97,8 @@ public class MEM_04_AdvancedSyntaxAndFunctionalPatternsSadPathTests
         var source = await File.ReadAllTextAsync(path);
 
         var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
-        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+        var analyzerDiagnostics = await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer());
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics()).AddRange(analyzerDiagnostics);
 
         var errors = allDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
 
