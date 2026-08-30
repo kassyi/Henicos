@@ -357,6 +357,27 @@ internal static class StructTranspiler
             case IPropertySymbol prop:
                 WriteMemberDeclaration(prop.Type, prop.Name, prop, ref context);
                 break;
+            case IMethodSymbol method:
+            {
+                if (method.MethodKind != MethodKind.Ordinary || method.IsStatic || method.IsImplicitlyDeclared)
+                {
+                    break;
+                }
+
+                var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+                if (syntaxRef?.GetSyntax() is MethodDeclarationSyntax methodSyntax)
+                {
+                    MethodTranspiler.WriteDeviceMethodPrefix(method, ref context);
+                    context.Writer.AppendSpace();
+                    context.Writer.Append(method.Name);
+                    using (context.Writer.Parentheses())
+                    {
+                        MethodTranspiler.WriteParameters(methodSyntax.ParameterList.Parameters, isDevice: true, ref context);
+                    }
+                    MethodTranspiler.WriteMethodBody(methodSyntax, ref context);
+                }
+                break;
+            }
         }
     }
 

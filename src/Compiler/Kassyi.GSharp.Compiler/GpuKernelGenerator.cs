@@ -9,6 +9,13 @@ namespace Kassyi.GSharp.Compiler;
 [Generator]
 public class GpuKernelGenerator : IIncrementalGenerator
 {
+    private static readonly SymbolDisplayFormat s_hintNameFormat = new(
+        globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
+        genericsOptions: SymbolDisplayGenericsOptions.None,
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.None
+    );
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var kernelMethods = context.SyntaxProvider
@@ -85,9 +92,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (sharedWriter.Scope())
             {
                 sharedWriter.Append("public const string Source = @\"");
-                for (var i = 0; i < sharedSource.Length; i++)
+                foreach (var c in sharedSource)
                 {
-                    var c = sharedSource[i];
                     if (c == '"')
                     {
                         sharedWriter.Append("\"\"");
@@ -97,35 +103,41 @@ public class GpuKernelGenerator : IIncrementalGenerator
                         sharedWriter.Append(c);
                     }
                 }
+
                 sharedWriter.AppendLine("\";");
             }
         }
 
         context.AddSource("GSharpSharedCudaCode.g.cs", SourceText.From(sharedWriter.ToString(), Encoding.UTF8));
 
-        foreach (var method in kernelMethods.OfType<IMethodSymbol>()
+        foreach (var (method, syntaxNode, semanticModel) in GetMethodContexts(compilation, kernelMethods))
+        {
+            var cppSource = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic,
+                isDevice: false);
+
+            // Generate the C# Wrapper Class
+            var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, cppSource);
+
+            var typeFullName = method.ContainingType.ToDisplayString(s_hintNameFormat);
+            context.AddSource($"{typeFullName}.{method.Name}_Wrapper.g.cs",
+                SourceText.From(wrapperSource, Encoding.UTF8));
+        }
+    }
+
+    private static IEnumerable<(IMethodSymbol Method, MethodDeclarationSyntax SyntaxNode, SemanticModel SemanticModel)>
+        GetMethodContexts(Compilation compilation, ImmutableArray<IMethodSymbol?> methods)
+    {
+        foreach (var method in methods.OfType<IMethodSymbol>()
                      .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
         {
             var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null)
-            {
-                continue;
-            }
-
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null)
+            if (syntaxRef?.GetSyntax() is not MethodDeclarationSyntax syntaxNode)
             {
                 continue;
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var cppSource = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: false);
-
-            // Generate the C# Wrapper Class
-            var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, cppSource);
-
-            context.AddSource($"{method.ContainingType.Name}_{method.Name}_Wrapper.g.cs",
-                SourceText.From(wrapperSource, Encoding.UTF8));
+            yield return (method, syntaxNode, semanticModel);
         }
     }
 
@@ -135,44 +147,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var deviceSourceBuilder = new StringBuilder();
 
         // Pass 1: Forward declarations
-        foreach (var method in deviceMethods.OfType<IMethodSymbol>()
-                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        foreach (var (_, syntaxNode, semanticModel) in GetMethodContexts(compilation, deviceMethods))
         {
-            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null)
-            {
-                continue;
-            }
-
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null)
-            {
-                continue;
-            }
-
-            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var signatureCode = MethodTranspiler.GenerateCudaSignature(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: true);
+            var signatureCode = MethodTranspiler.GenerateCudaSignature(syntaxNode, semanticModel,
+                context.ReportDiagnostic, isDevice: true);
             deviceSourceBuilder.AppendLine(signatureCode);
         }
 
         // Pass 2: Method bodies
-        foreach (var method in deviceMethods.OfType<IMethodSymbol>()
-                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        foreach (var (_, syntaxNode, semanticModel) in GetMethodContexts(compilation, deviceMethods))
         {
-            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null)
-            {
-                continue;
-            }
-
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null)
-            {
-                continue;
-            }
-
-            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var deviceCode = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: true);
+            var deviceCode =
+                MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic,
+                    isDevice: true);
             deviceSourceBuilder.AppendLine(deviceCode);
         }
 
