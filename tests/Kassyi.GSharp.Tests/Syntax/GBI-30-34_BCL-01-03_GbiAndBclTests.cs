@@ -71,26 +71,40 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
         }
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GBI-31")]
-    public void Test_GBI31_SharedMemory_SyncThreadsAcrossWarps()
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(128)]
+    public void Test_GBI31_SharedMemory_SyncThreadsAcrossWarps(int length)
     {
-        const int length = 128; // 4 warps
-        int[] input = new int[length];
-        int[] output = new int[length];
+        int[] input = new int[Math.Max(length, 1)]; 
+        int[] output = new int[Math.Max(length, 1)];
 
-        for (int i = 0; i < length; i++)
+        if (length > 0)
         {
-            input[i] = (i + 1) * 10;
+            input = new int[length];
+            output = new int[length];
+            for (int i = 0; i < length; i++)
+            {
+                input[i] = (i + 1) * 10;
+            }
         }
+        else
+        {
+            input = [];
+            output = [];
+        }
+
+        uint threadsToLaunch = (uint)Math.Max(length + 32, 64);
 
         GBI_30_34_BCL_01_03_GbiAndBclKernelsWrapper.Launch_SharedMemorySyncKernel(
             input,
             output,
             length,
-            blockDimX: (uint)length,
-            sharedMemBytes: (uint)(length * sizeof(int))
+            blockDimX: threadsToLaunch,
+            sharedMemBytes: (uint)(128 * sizeof(int))
         );
 
         for (int i = 0; i < length; i++)
@@ -123,23 +137,26 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
     [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GBI-33")]
-    [InlineData(0u, 0u, 0u, 0u)]
-    [InlineData(100u, 200u, 300u, 0u)]
-    [InlineData(0xFFFFFFFFu, 1u, 0u, 1u)]
-    [InlineData(0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFEu, 1u)]
-    [InlineData(0x80000000u, 0x80000000u, 0u, 1u)]
-    public void Test_GBI33_MultiDigitCarry_PtxReplacement(uint valA, uint valB, uint expectedResult, uint expectedCarry)
+    [InlineData(new uint[] { 0u }, new uint[] { 0u }, new uint[] { 0u }, 0u)]
+    [InlineData(new uint[] { 100u }, new uint[] { 200u }, new uint[] { 300u }, 0u)]
+    [InlineData(new uint[] { 0xFFFFFFFFu }, new uint[] { 1u }, new uint[] { 0u }, 1u)]
+    [InlineData(new uint[] { 0xFFFFFFFFu }, new uint[] { 0xFFFFFFFFu }, new uint[] { 0xFFFFFFFEu }, 1u)]
+    [InlineData(new uint[] { 0x80000000u }, new uint[] { 0x80000000u }, new uint[] { 0u }, 1u)]
+    [InlineData(new uint[] { 0xFFFFFFFFu, 0xFFFFFFFFu, 0u }, new uint[] { 1u, 0u, 0u }, new uint[] { 0u, 0u, 1u }, 0u)]
+    [InlineData(new uint[] { 0xFFFFFFFFu, 0xFFFFFFFFu }, new uint[] { 1u, 0u }, new uint[] { 0u, 0u }, 1u)]
+    public void Test_GBI33_MultiDigitCarry_PtxReplacement(uint[] a, uint[] b, uint[] expectedResult, uint expectedCarry)
     {
-        uint[] a = [valA];
-        uint[] b = [valB];
-        uint[] result = [0u];
+        uint[] result = new uint[a.Length];
         uint[] carries = [0u];
 
         GBI_30_34_BCL_01_03_GbiAndBclKernelsWrapper.Launch_MultiDigitAddKernel(
-            a, b, result, carries, blockDimX: 1
+            a, b, result, carries, a.Length, blockDimX: 1
         );
 
-        Assert.Equal(expectedResult, result[0]);
+        for (int i = 0; i < expectedResult.Length; i++)
+        {
+            Assert.Equal(expectedResult[i], result[i]);
+        }
         Assert.Equal(expectedCarry, carries[0]);
     }
 
@@ -151,7 +168,7 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
         uint[] data = [0u];
 
         GBI_30_34_BCL_01_03_GbiAndBclKernelsWrapper.Launch_InlinePtxExecutionKernel(
-            data, blockDimX: 1
+            data, blockDimX: 2 // Launch more than 1 thread to test the fallback 'tid != 0' path
         );
 
         Assert.Equal(7777u, data[0]);
@@ -197,6 +214,8 @@ public class GBI_30_34_BCL_01_03_GbiAndBclTests
     [InlineData(double.NaN, float.NaN)]
     [InlineData(double.PositiveInfinity, float.PositiveInfinity)]
     [InlineData(double.NegativeInfinity, float.NegativeInfinity)]
+    [InlineData(double.MinValue, float.MinValue)]
+    [InlineData(double.MaxValue, float.MaxValue)]
     public void Test_BCL03_MathAndMathF_EdgeCases(double dVal, float fVal)
     {
         double[] dInputs = [dVal];
