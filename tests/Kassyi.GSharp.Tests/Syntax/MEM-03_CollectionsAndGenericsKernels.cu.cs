@@ -102,7 +102,10 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            data[tid] = data[tid] * 2;
+            var list = new List<int>(64);
+            list.Add(data[tid]);
+            list.Add(data[tid]);
+            data[tid] = list[0] + list[1];
         }
     }
 
@@ -122,8 +125,20 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            data[tid] = data[tid] + 5;
+            var list = new List<int>(64);
+            list.Add(5);
+            foreach (var item in list)
+            {
+                data[tid] = data[tid] + item;
+            }
         }
+    }
+
+    [GpuDeviceFunction]
+    public static IEnumerable<int> GenerateData(int start)
+    {
+        yield return start;
+        yield return 10;
     }
 
     [GpuKernel]
@@ -132,7 +147,12 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            data[tid] = data[tid] + 10;
+            int sum = 0;
+            foreach (var item in GenerateData(data[tid]))
+            {
+                sum += item;
+            }
+            data[tid] = sum;
         }
     }
 }

@@ -26,14 +26,6 @@ public class GSH_00_03_GpuKernelAnalyzerTests
         return diagnostics;
     }
 
-    [Fact]
-    [Trait("FeatureId", "GSH-01")]
-    [Trait("Category", "SadPath")]
-    public async Task Test_GSH01_Foreach_InGpuKernel_ReportsDiagnostic()
-    {
-        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-01_Foreach_InGpuKernel");
-        diagnostics.AssertContainsError(GSharpDiagnostics.ForeachNotSupported.Id);
-    }
 
     [Fact]
     [Trait("FeatureId", "GSH-01")]
