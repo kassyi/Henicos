@@ -92,7 +92,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    internal static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var hasAggressiveInlining = false;
         var hasNoInlining = false;
@@ -200,7 +200,7 @@ public static class MethodTranspiler
         context.Writer.AppendKeyword("extern \"C\" __global__ void");
     }
 
-    private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
+    internal static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
     {
         using (context.Writer.Scope())
         {
@@ -224,7 +224,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
+    internal static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
         ref TranspileContext context)
     {
         var validParameters = new List<ParameterSyntax>(parameters.Count);
