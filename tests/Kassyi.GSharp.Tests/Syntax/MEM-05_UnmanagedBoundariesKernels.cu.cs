@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public static class MEM_05_UnmanagedBoundariesKernels
 {
-    // MEM-05: ⭕ Safe: Stack Allocation (stackalloc)
+    // MEM-05: Safe: Stack Allocation (stackalloc)
     [GpuKernel]
     public static void SafeStackallocKernel(int[] output)
     {
@@ -21,7 +21,7 @@ public static class MEM_05_UnmanagedBoundariesKernels
         }
     }
 
-    // MEM-05: ⭕ Safe: Memory Pinning (fixed)
+    // MEM-05: Safe: Memory Pinning (fixed)
     [GpuKernel]
     public static void SafeMemoryPinningKernel(byte[] input, int[] output)
     {

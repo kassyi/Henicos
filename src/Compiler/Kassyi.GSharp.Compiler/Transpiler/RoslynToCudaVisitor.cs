@@ -208,16 +208,33 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         if (node.Type is ArrayTypeSyntax arrayType)
         {
-            Context.Writer.Append("(");
-            Visit(arrayType.ElementType);
-            Context.Writer.Append("*)alloca(sizeof(");
-            Visit(arrayType.ElementType);
-            Context.Writer.Append(") * (");
-            if (arrayType.RankSpecifiers.Count > 0 && arrayType.RankSpecifiers[0].Sizes.Count > 0)
+            using (Context.Writer.Parentheses())
             {
-                Visit(arrayType.RankSpecifiers[0].Sizes[0]);
+                Visit(arrayType.ElementType);
+                Context.Writer.Append("*");
             }
-            Context.Writer.Append("))");
+
+            Context.Writer.Append("alloca");
+
+            using (Context.Writer.Parentheses())
+            {
+                Context.Writer.Append("sizeof");
+                using (Context.Writer.Parentheses())
+                {
+                    Visit(arrayType.ElementType);
+                }
+
+                if (arrayType.RankSpecifiers.Count > 0 && arrayType.RankSpecifiers[0].Sizes.Count > 0)
+                {
+                    Context.Writer.AppendSpace();
+                    Context.Writer.AppendOperator("*");
+                    Context.Writer.AppendSpace();
+                    using (Context.Writer.Parentheses())
+                    {
+                        Visit(arrayType.RankSpecifiers[0].Sizes[0]);
+                    }
+                }
+            }
         }
     }
 
