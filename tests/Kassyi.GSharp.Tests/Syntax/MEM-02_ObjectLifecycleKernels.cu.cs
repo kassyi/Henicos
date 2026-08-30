@@ -23,7 +23,7 @@ public static class MEM_02_ObjectLifecycleKernels
     [GpuKernel]
     public static void Kernel_LifecycleUpdate(LifecycleObjectState[] states, int length, int multiplier)
     {
-        int tid = ThreadIndex.X;
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid < length)
         {
             LifecycleObjectState s = states[tid];
@@ -34,7 +34,7 @@ public static class MEM_02_ObjectLifecycleKernels
     [GpuKernel]
     public static void Kernel_FactoryInitialization(int[] inputValues, LifecycleObjectState[] outputStates, int length)
     {
-        int tid = ThreadIndex.X;
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid < length)
         {
             LifecycleObjectState state = default;

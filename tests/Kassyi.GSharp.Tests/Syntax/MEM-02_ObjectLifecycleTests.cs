@@ -13,6 +13,9 @@ public class MEM_02_ObjectLifecycleTests
     [InlineData(-10, 3, -30, 0)]
     [InlineData(100, 1, 100, 0)]
     [InlineData(101, 1, 101, 1)]
+    [InlineData(99, 1, 99, 0)]
+    [InlineData(int.MaxValue, 1, int.MaxValue, 1)]
+    [InlineData(int.MinValue, 1, int.MinValue, 0)]
     public void Test_MEM02_LifecycleUpdateKernel_BoundaryDataDriven(int initialVal, int multiplier, int expectedVal, int expectedStatus)
     {
         LifecycleObjectState[] states = [
@@ -34,6 +37,31 @@ public class MEM_02_ObjectLifecycleTests
         LifecycleObjectState[] emptyStates = [];
         MEM_02_ObjectLifecycleKernelsWrapper.Launch_Kernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1);
         Assert.Empty(emptyStates);
+    }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "MEM-02")]
+    public void Test_MEM02_FactoryInitializationKernel_EmptyArrayEdgeCase()
+    {
+        int[] inputs = [];
+        LifecycleObjectState[] outputs = [];
+        MEM_02_ObjectLifecycleKernelsWrapper.Launch_Kernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1);
+        Assert.Empty(outputs);
+    }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "MEM-02")]
+    public void Test_MEM02_FactoryInitializationKernel_SingleElementEdgeCase()
+    {
+        int[] inputs = [42];
+        LifecycleObjectState[] outputs = new LifecycleObjectState[1];
+        MEM_02_ObjectLifecycleKernelsWrapper.Launch_Kernel_FactoryInitialization(inputs, outputs, 1, blockDimX: 1);
+        Assert.Single(outputs);
+        Assert.Equal(1, outputs[0].Id);
+        Assert.Equal(42, outputs[0].Value);
+        Assert.Equal(1, outputs[0].Status);
     }
 
     [Fact]
