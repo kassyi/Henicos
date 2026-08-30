@@ -43,6 +43,7 @@ public static class GpuAnalyzerTestRunner
         var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
         
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
-        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+        var allDiagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+        return allDiagnostics.Where(d => d.Location.SourceTree == syntaxTree).ToImmutableArray();
     }
 }
