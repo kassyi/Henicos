@@ -115,7 +115,16 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            data[tid] = data[tid] + 1;
+            var list = new List<int>(64);
+            list.Add(1);
+            list.Add(data[tid]);
+            int sum = 0;
+            foreach (var x in list)
+            {
+                sum += x;
+                if (x == data[tid]) break;
+            }
+            data[tid] = sum;
         }
     }
 
