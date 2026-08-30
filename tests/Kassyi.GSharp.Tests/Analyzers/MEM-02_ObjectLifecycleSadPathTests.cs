@@ -13,13 +13,13 @@ public class MEM_02_ObjectLifecycleSadPathTests
 {
     private static async Task<(SyntaxTree SyntaxTree, SemanticModel SemanticModel)> GetParsedModelAsync()
     {
-        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
+        var testCasesDir = Helpers.RoslynTestUtility.GetTestCasesDirectory();
         var path = Path.Combine(testCasesDir, "Analyzers", "MEM-02_ObjectLifecycleSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
+        var compilation = Helpers.MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
         var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
         return (syntaxTree, semanticModel);

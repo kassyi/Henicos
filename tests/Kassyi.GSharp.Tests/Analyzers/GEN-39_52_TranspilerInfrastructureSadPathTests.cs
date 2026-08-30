@@ -7,7 +7,7 @@ public class GEN_39_52_TranspilerInfrastructureSadPathTests
 {
     private static async Task<string> LoadTestCaseSourceAsync()
     {
-        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
+        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
         var path = Path.Combine(testCasesDir, "Analyzers", "GEN-39_52_InvalidMappingSadPath.cs");
         return await File.ReadAllTextAsync(path);
     }
@@ -20,7 +20,7 @@ public class GEN_39_52_TranspilerInfrastructureSadPathTests
         var source = await LoadTestCaseSourceAsync();
 
         // Execution of source generator with invalid BCL intrinsic mapping attribute must complete safely without throwing exceptions
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
 
         Assert.NotNull(driver);
         Assert.NotNull(compilation);
@@ -34,7 +34,7 @@ public class GEN_39_52_TranspilerInfrastructureSadPathTests
     {
         var source = await LoadTestCaseSourceAsync();
 
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
         Assert.NotNull(driver);
@@ -42,4 +42,3 @@ public class GEN_39_52_TranspilerInfrastructureSadPathTests
         Assert.Contains(allDiagnostics, d => d.Id == GSharpDiagnostics.ObjectCreationNotSupported.Id || d.Id == GSharpDiagnostics.UnsupportedSyntax.Id);
     }
 }
-
