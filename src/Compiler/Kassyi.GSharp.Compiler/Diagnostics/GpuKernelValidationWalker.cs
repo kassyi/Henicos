@@ -63,5 +63,17 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
         base.VisitInvocationExpression(node);
     }
+
+    public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
+    {
+        SharedMemoryForbiddenDisposableRule.Instance.Analyze(node, ref _context);
+        base.VisitObjectCreationExpression(node);
+    }
+
+    public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
+    {
+        SharedMemoryForbiddenDisposableRule.Instance.Analyze(node, ref _context);
+        base.VisitImplicitObjectCreationExpression(node);
+    }
 }
 

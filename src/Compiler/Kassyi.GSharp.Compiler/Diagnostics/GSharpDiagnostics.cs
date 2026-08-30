@@ -119,4 +119,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor SharedMemoryDisposableNotSupported = new(
+        id: "GSH025",
+        title: "IDisposable element type is forbidden in SharedMemory<T>",
+        messageFormat: "SharedMemory<T> element type '{0}' implements IDisposable or declares a Dispose method, which is forbidden to prevent double-dispose and data races",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
