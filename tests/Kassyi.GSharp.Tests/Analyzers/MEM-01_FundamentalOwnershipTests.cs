@@ -16,7 +16,7 @@ public class MEM_01_FundamentalOwnershipTests
     {
         var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
         var files = Directory.GetFiles(Path.Combine(testCasesDir, "Analyzers"), "MEM-01_*.cs");
-        foreach(var f in files)
+        foreach (var f in files)
         {
             MegaCompilationCache.RegisterSource(File.ReadAllText(f));
         }
@@ -29,14 +29,14 @@ public class MEM_01_FundamentalOwnershipTests
     {
         var (model, methodSymbol) = MegaCompilationCache.GetMethodContext("MEM_01_DiscardedAllocation", "Test");
         var method = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-        
-        var discardedAllocations = method.DescendantNodes()
-            .OfType<ExpressionStatementSyntax>()
-            .Where(e => e.Expression is ObjectCreationExpressionSyntax oce && 
-                        oce.Type is IdentifierNameSyntax id && id.Identifier.Text == "GpuContext")
-            .ToList();
-            
-        Assert.NotEmpty(discardedAllocations);
+
+        var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+        var context =
+            new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                reportedDiagnostics.Add);
+        Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+        Assert.Contains(reportedDiagnostics, d => d.Id == "MEM0001" && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -46,18 +46,14 @@ public class MEM_01_FundamentalOwnershipTests
     {
         var (model, methodSymbol) = MegaCompilationCache.GetMethodContext("MEM_01_UndisposedLocal", "Test");
         var method = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-        
-        var localDecl = method.DescendantNodes().OfType<VariableDeclaratorSyntax>().First(v => v.Identifier.Text == "ctx");
-        var allocations = localDecl.DescendantNodes().OfType<ObjectCreationExpressionSyntax>().ToList();
-        
-        var disposes = method.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(inv => inv.Expression is MemberAccessExpressionSyntax mae && 
-                          mae.Expression is IdentifierNameSyntax id && id.Identifier.Text == "ctx" && 
-                          mae.Name.Identifier.Text == "Dispose")
-            .ToList();
-            
-        Assert.NotEmpty(allocations);
-        Assert.Empty(disposes);
+
+        var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+        var context =
+            new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                reportedDiagnostics.Add);
+        Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+        Assert.Contains(reportedDiagnostics, d => d.Id == "MEM0001" && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -67,17 +63,14 @@ public class MEM_01_FundamentalOwnershipTests
     {
         var (model, methodSymbol) = MegaCompilationCache.GetMethodContext("MEM_01_ControlFlowBypass", "Test");
         var method = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-        
-        var returns = method.DescendantNodes().OfType<ReturnStatementSyntax>().ToList();
-        var disposes = method.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(inv => inv.Expression is MemberAccessExpressionSyntax mae && 
-                          mae.Expression is IdentifierNameSyntax id && id.Identifier.Text == "ctx" && 
-                          mae.Name.Identifier.Text == "Dispose")
-            .ToList();
-            
-        Assert.NotEmpty(returns);
-        Assert.NotEmpty(disposes);
-        Assert.True(returns.First().SpanStart < disposes.First().SpanStart, "Return statement bypasses disposal");
+
+        var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+        var context =
+            new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                reportedDiagnostics.Add);
+        Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+        Assert.Contains(reportedDiagnostics, d => d.Id == "MEM0001" && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -87,18 +80,14 @@ public class MEM_01_FundamentalOwnershipTests
     {
         var (model, methodSymbol) = MegaCompilationCache.GetMethodContext("MEM_01_AsyncVoid", "ProcessAndDispose");
         var method = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-        
-        var isAsync = method.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword));
-        var isVoid = method.ReturnType is PredefinedTypeSyntax pt && pt.Keyword.IsKind(SyntaxKind.VoidKeyword);
-        var parameterTypes = method.ParameterList.Parameters
-            .Select(p => p.Type)
-            .OfType<IdentifierNameSyntax>()
-            .Select(id => id.Identifier.Text)
-            .ToList();
-        
-        Assert.True(isAsync);
-        Assert.True(isVoid);
-        Assert.Contains(parameterTypes, t => t == "GpuContext");
+
+        var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+        var context =
+            new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                reportedDiagnostics.Add);
+        Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+        Assert.Contains(reportedDiagnostics, d => d.Id == "MEM0001" && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -107,9 +96,17 @@ public class MEM_01_FundamentalOwnershipTests
     public void Test_MEM01_UnsafeNullableDisposal()
     {
         var (model, methodSymbol) = MegaCompilationCache.GetMethodContext("MEM_01_UnsafeNullableDisposal", "Test");
-        
+        var method = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
+
+        var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+        var context =
+            new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                reportedDiagnostics.Add);
+        Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+        Assert.Contains(reportedDiagnostics, d => d.Id == "MEM0001" && d.Severity == DiagnosticSeverity.Error);
+
         var compileDiagnostics = model.Compilation.GetDiagnostics();
-        
         Assert.Contains(compileDiagnostics, d => d.Id == "CS8602");
     }
 
@@ -118,22 +115,17 @@ public class MEM_01_FundamentalOwnershipTests
     [Trait("Category", "SadPath")]
     public void Test_MEM01_NullAssignmentWithoutDisposal()
     {
-        var (model, methodSymbol) = MegaCompilationCache.GetMethodContext("MEM_01_NullAssignmentWithoutDisposal", "Test");
+        var (model, methodSymbol) =
+            MegaCompilationCache.GetMethodContext("MEM_01_NullAssignmentWithoutDisposal", "Test");
         var method = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
-        
-        var assignments = method.DescendantNodes().OfType<AssignmentExpressionSyntax>()
-            .Where(a => a.Left is IdentifierNameSyntax id && id.Identifier.Text == "ctx" && 
-                        a.Right.IsKind(SyntaxKind.NullLiteralExpression))
-            .ToList();
-            
-        var disposes = method.DescendantNodes().OfType<InvocationExpressionSyntax>()
-            .Where(inv => inv.Expression is MemberAccessExpressionSyntax mae && 
-                          mae.Expression is IdentifierNameSyntax id && id.Identifier.Text == "ctx" && 
-                          mae.Name.Identifier.Text == "Dispose")
-            .ToList();
-            
-        Assert.NotEmpty(assignments);
-        Assert.Empty(disposes);
+
+        var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+        var context =
+            new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                reportedDiagnostics.Add);
+        Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+        Assert.Contains(reportedDiagnostics, d => d.Id == "MEM0001" && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -142,21 +134,25 @@ public class MEM_01_FundamentalOwnershipTests
     public void Test_MEM01_FundamentalOwnershipValid()
     {
         var typeSymbol = MegaCompilationCache.GetNamedTypeSymbol("MEM_01_FundamentalOwnershipValid");
-        var model = MegaCompilationCache.BaseCompilation.GetSemanticModel(typeSymbol.DeclaringSyntaxReferences[0].SyntaxTree);
+        var model = MegaCompilationCache.BaseCompilation.GetSemanticModel(typeSymbol.DeclaringSyntaxReferences[0]
+            .SyntaxTree);
         var root = typeSymbol.DeclaringSyntaxReferences[0].SyntaxTree.GetRoot();
 
         var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
         Assert.True(methods.Count >= 6, "All valid paths should be parsed");
-        
-        var usingVar = methods.SelectMany(m => m.DescendantNodes().OfType<LocalDeclarationStatementSyntax>())
-            .Any(ld => ld.UsingKeyword.IsKind(SyntaxKind.UsingKeyword));
-            
-        Assert.True(usingVar, "using var path should be present");
-        
-        var diagnostics = model.Compilation.GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error && !d.Id.StartsWith("CS0246"))
-            .ToList();
-            
-        Assert.Empty(diagnostics);
+
+        foreach (var method in methods)
+        {
+            var methodSymbol = model.GetDeclaredSymbol(method);
+            if (methodSymbol == null) continue;
+
+            var reportedDiagnostics = new System.Collections.Generic.List<Diagnostic>();
+            var context =
+                new Kassyi.GSharp.Compiler.Diagnostics.Rules.ValidationContext(model, methodSymbol,
+                    reportedDiagnostics.Add);
+            Kassyi.GSharp.Compiler.Diagnostics.Rules.FundamentalOwnershipRule.Instance.Analyze(method, ref context);
+
+            Assert.Empty(reportedDiagnostics);
+        }
     }
 }
