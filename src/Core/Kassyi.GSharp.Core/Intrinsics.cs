@@ -245,4 +245,29 @@ public static class Gpu
     /// <param name="body">The action to execute on a single thread.</param>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static void SingleThread(Action body) => GpuOnlyException.Throw();
+
+    /// <summary>
+    /// Provides low-level unsafe device memory management intrinsics.
+    /// </summary>
+    public static class Unsafe
+    {
+        /// <summary>
+        /// Allocates unmanaged memory on the GPU device heap.
+        /// </summary>
+        /// <param name="size">The number of bytes to allocate.</param>
+        /// <returns>A raw pointer to the allocated device memory block.</returns>
+        [CudaIntrinsic("malloc")]
+#pragma warning disable IDE0051 // Unused member
+        // ReSharper disable UnusedMember.Global
+        public static unsafe void* Malloc(int size) => GpuOnlyException.Throw<nint>().ToPointer();
+
+        /// <summary>
+        /// Frees unmanaged memory on the GPU device heap.
+        /// </summary>
+        /// <param name="ptr">A raw pointer to the allocated memory block to free.</param>
+        [CudaIntrinsic("free")]
+        public static unsafe void Free(void* ptr) => GpuOnlyException.Throw();
+        // ReSharper restore UnusedMember.Global
+#pragma warning restore IDE0051
+    }
 }

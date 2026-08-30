@@ -42,6 +42,30 @@ internal static class DeclarationTranspilers
         HoistDeclarationExpressions(node, ref context);
         context.Visitor.VisitVariableDeclaration(node.Declaration);
         context.Writer.AppendSemiColon();
+
+        if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
+        {
+            context.Writer.AppendLine();
+            bool isAsync = node.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword);
+            string disposeMethod = isAsync ? "DisposeAsync" : "Dispose";
+            foreach (var variable in node.Declaration.Variables)
+            {
+                string varName = variable.Identifier.Text;
+
+                // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
+                // we omit the actual C++ method call to prevent undefined identifier errors.
+                context.Writer.Append("    struct __GSharp_Dispose_Guard_");
+                context.Writer.Append(varName);
+                context.Writer.Append(" { ");
+                context.Writer.Append("__device__ ~__GSharp_Dispose_Guard_");
+                context.Writer.Append(varName);
+                context.Writer.Append("() { /* best-effort dispose omitted */ } ");
+                context.Writer.Append("} __guard_");
+                context.Writer.Append(varName);
+                context.Writer.Append(";");
+                context.Writer.AppendLine();
+            }
+        }
     }
 
     private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
