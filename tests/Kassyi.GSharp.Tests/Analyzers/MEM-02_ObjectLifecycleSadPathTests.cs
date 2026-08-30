@@ -11,27 +11,32 @@ namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class MEM_02_ObjectLifecycleSadPathTests
 {
-    private static async Task<(SyntaxTree SyntaxTree, SemanticModel SemanticModel)> GetParsedModelAsync()
+    [System.Runtime.CompilerServices.ModuleInitializer]
+    public static void Register()
     {
-        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
-        var path = Path.Combine(testCasesDir, "Analyzers", "MEM-02_ObjectLifecycleSadPath.cs");
-        var source = await File.ReadAllTextAsync(path);
+        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
+        var files = Directory.GetFiles(Path.Combine(testCasesDir, "Analyzers"), "MEM-02_*.cs");
+        foreach (var f in files)
+        {
+            MegaCompilationCache.RegisterSource(File.ReadAllText(f));
+        }
+    }
 
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-
-        return (syntaxTree, semanticModel);
+    private static (SyntaxTree SyntaxTree, SemanticModel SemanticModel) GetParsedModel()
+    {
+        var typeSymbol = MegaCompilationCache.GetNamedTypeSymbol("ClassMissingIDisposable");
+        var tree = typeSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
+        var model = MegaCompilationCache.BaseCompilation.GetSemanticModel(tree);
+        return (tree, model);
     }
 
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_1_MissingIDisposableOnClass_Detected()
+    public void Test_MEM02_11_3_1_MissingIDisposableOnClass_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -55,10 +60,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_1_UndisposedFieldInDispose_Detected()
+    public void Test_MEM02_11_3_1_UndisposedFieldInDispose_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -80,10 +85,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
 
     [Fact]
     [Trait("FeatureId", "MEM-02")]
-    public async Task Test_MEM02_11_3_1_CleanChainedDisposal_Validated()
+    public void Test_MEM02_11_3_1_CleanChainedDisposal_Validated()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -107,10 +112,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_1_UnsafeFieldOverwrite_Detected()
+    public void Test_MEM02_11_3_1_UnsafeFieldOverwrite_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -140,10 +145,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_2_PropertyGetterSideEffects_Detected()
+    public void Test_MEM02_11_3_2_PropertyGetterSideEffects_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -163,10 +168,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_2_ImplicitCastOperators_Detected()
+    public void Test_MEM02_11_3_2_ImplicitCastOperators_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var wrapperClass = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -186,10 +191,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_3_UnguardedMultiAllocation_Detected()
+    public void Test_MEM02_11_3_3_UnguardedMultiAllocation_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -213,10 +218,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
 
     [Fact]
     [Trait("FeatureId", "MEM-02")]
-    public async Task Test_MEM02_11_3_3_FactoryPattern_Validated()
+    public void Test_MEM02_11_3_3_FactoryPattern_Validated()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -241,10 +246,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_3_StaticLifecycle_Detected()
+    public void Test_MEM02_11_3_3_StaticLifecycle_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -263,10 +268,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
 
     [Fact]
     [Trait("FeatureId", "MEM-02")]
-    public async Task Test_MEM02_11_3_4_StandardInjectionBorrowing_HazardDetected()
+    public void Test_MEM02_11_3_4_StandardInjectionBorrowing_HazardDetected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -297,10 +302,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
 
     [Fact]
     [Trait("FeatureId", "MEM-02")]
-    public async Task Test_MEM02_11_3_4_ExplicitOwnershipTransfer_Validated()
+    public void Test_MEM02_11_3_4_ExplicitOwnershipTransfer_Validated()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
@@ -323,10 +328,10 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [Fact]
     [Trait("FeatureId", "MEM-02")]
     [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_5_DefaultInterfaceMethods_Detected()
+    public void Test_MEM02_11_3_5_DefaultInterfaceMethods_Detected()
     {
-        var (tree, model) = await GetParsedModelAsync();
-        var root = await tree.GetRootAsync();
+        var (tree, model) = GetParsedModel();
+        var root = tree.GetRoot();
 
         var interfaceDecl = root.DescendantNodes()
             .OfType<InterfaceDeclarationSyntax>()
@@ -345,3 +350,4 @@ public class MEM_02_ObjectLifecycleSadPathTests
         Assert.True(disposesInDIM, "DIM taking ownership/disposing parameter must be detected");
     }
 }
+
