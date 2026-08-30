@@ -125,12 +125,11 @@ public static class SYN_95_StructInstanceMethodsKernels
 
     // Edge Case 3: Instance method receiving same struct type parameter
     [GpuKernel]
-    public static void SameTypeParameterKernel(MergeableStruct[] items)
+    public static void SameTypeParameterKernel(MergeableStruct[] items, MergeableStruct baseValue)
     {
         int tid = ThreadIndex.X;
-        MergeableStruct first = items[0];
         MergeableStruct current = items[tid];
-        current.Merge(first);
+        current.Merge(baseValue);
         items[tid] = current;
     }
 }
