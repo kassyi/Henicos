@@ -277,13 +277,34 @@ public static class MethodTranspiler
 
     private static void WriteIteratorStateMachine(MethodDeclarationSyntax method, IMethodSymbol methodSymbol, bool isDevice, ref TranspileContext context, SourceWriter mainWriter)
     {
-        // 1. We generate the struct definition before the method body
         var stateMachineName = $"{method.Identifier.Text}_StateMachine";
         var elementType = ((INamedTypeSymbol)methodSymbol.ReturnType).TypeArguments[0];
 
         var originalWriter = context.Writer;
         var structWriter = mainWriter;
         
+        WriteStateMachineStructDefinition(structWriter, method, methodSymbol, stateMachineName, elementType, ref context);
+        
+        context.Writer = originalWriter;
+
+        structWriter.AppendSemiColon();
+        structWriter.AppendLine();
+
+        context.Writer.AppendLine();
+        using (context.Writer.Scope())
+        {
+            context.Writer.Append($"return {stateMachineName}(");
+            for (int i = 0; i < method.ParameterList.Parameters.Count; i++)
+            {
+                context.Writer.Append(method.ParameterList.Parameters[i].Identifier.Text);
+                if (i < method.ParameterList.Parameters.Count - 1) context.Writer.Append(", ");
+            }
+            context.Writer.AppendLine(");");
+        }
+    }
+
+    private static void WriteStateMachineStructDefinition(SourceWriter structWriter, MethodDeclarationSyntax method, IMethodSymbol methodSymbol, string stateMachineName, ITypeSymbol elementType, ref TranspileContext context)
+    {
         structWriter.Append($"struct {stateMachineName}");
         structWriter.AppendLine();
         using (structWriter.Scope())
@@ -292,7 +313,6 @@ public static class MethodTranspiler
             structWriter.AppendType(elementType);
             structWriter.AppendLine(" _current;");
             
-            // Hoist parameters
             var parameters = method.ParameterList.Parameters;
             foreach (var p in parameters)
             {
@@ -306,7 +326,6 @@ public static class MethodTranspiler
                 }
             }
 
-            // Variable Hoisting Pass
             var hoistVisitor = new VariableHoistingVisitor(context.SemanticModel);
             if (method.Body != null)
             {
@@ -325,82 +344,102 @@ public static class MethodTranspiler
                 structWriter.AppendLine(";");
             }
 
-            // Constructor
-            structWriter.AppendLine();
-            structWriter.Append($"__device__ __forceinline__ {stateMachineName}(");
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                var p = parameters[i];
-                var pSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-                structWriter.AppendType(pSymbol!.Type);
-                structWriter.Append($" {p.Identifier.Text}");
-                if (i < parameters.Count - 1) structWriter.Append(", ");
-            }
-            structWriter.Append(") : _state(0)");
-            foreach (var p in parameters)
-            {
-                structWriter.Append($", {p.Identifier.Text}({p.Identifier.Text})");
-            }
-            structWriter.AppendLine(" {}");
-            structWriter.AppendLine();
+            WriteStateMachineConstructor(structWriter, stateMachineName, parameters, ref context);
+            WriteStateMachineMoveNext(structWriter, method, hoistVisitor, ref context);
+            WriteStateMachineDispose(structWriter, ref context);
 
-            // MoveNext
-            structWriter.AppendLine("__device__ __forceinline__ bool MoveNext()");
-            using (structWriter.Scope())
-            {
-                structWriter.AppendLine("switch (_state) {");
-                structWriter.AppendLine("    case 0: goto STATE_0;");
-                for (int i = 1; i <= hoistVisitor.YieldCount; i++)
-                {
-                    structWriter.AppendLine($"    case {i}: goto STATE_{i};");
-                }
-                structWriter.AppendLine("}");
-                structWriter.AppendLine("STATE_0:;");
-
-                // Transpile the body in StateMachine context
-                context.Writer = structWriter;
-                context.IsStateMachineContext = true;
-                context.StateMachineStateCount = 1;
-
-                if (method.Body != null)
-                {
-                    foreach (var stmt in method.Body.Statements)
-                    {
-                        context.Visitor.Visit(stmt);
-                    }
-                }
-
-                context.IsStateMachineContext = false;
-                
-                structWriter.AppendLine("_state = -1;");
-                structWriter.AppendLine("return false;");
-            }
-            
             structWriter.AppendLine();
             structWriter.AppendType(elementType);
             structWriter.AppendLine(" __device__ __forceinline__ get_Current() const { return _current; }");
-            structWriter.AppendLine("__device__ __forceinline__ void Dispose() {}");
             structWriter.AppendLine($"__device__ __forceinline__ {stateMachineName} GetEnumerator() {{ return *this; }}");
         }
-        
-        // Restore the context writer back to the body writer
-        context.Writer = originalWriter;
+    }
 
-        // The scope generates a closing brace. We must append a semicolon to close the struct definition in C++.
-        structWriter.AppendSemiColon();
+    private static void WriteStateMachineConstructor(SourceWriter structWriter, string stateMachineName, SeparatedSyntaxList<ParameterSyntax> parameters, ref TranspileContext context)
+    {
         structWriter.AppendLine();
-
-        // 2. Write the method body directly
-        context.Writer.AppendLine(); // Add newline after the signature emitted by WriteMethodSignature
-        using (context.Writer.Scope())
+        structWriter.Append($"__device__ __forceinline__ {stateMachineName}(");
+        for (int i = 0; i < parameters.Count; i++)
         {
-            context.Writer.Append($"return {stateMachineName}(");
-            for (int i = 0; i < method.ParameterList.Parameters.Count; i++)
+            var p = parameters[i];
+            var pSymbol = context.SemanticModel.GetDeclaredSymbol(p);
+            structWriter.AppendType(pSymbol!.Type);
+            structWriter.Append($" {p.Identifier.Text}");
+            if (i < parameters.Count - 1) structWriter.Append(", ");
+        }
+        structWriter.Append(") : _state(0)");
+        foreach (var p in parameters)
+        {
+            structWriter.Append($", {p.Identifier.Text}({p.Identifier.Text})");
+        }
+        structWriter.AppendLine(" {}");
+        structWriter.AppendLine();
+    }
+
+    private static void WriteStateMachineMoveNext(SourceWriter structWriter, MethodDeclarationSyntax method, VariableHoistingVisitor hoistVisitor, ref TranspileContext context)
+    {
+        structWriter.AppendLine("__device__ __forceinline__ bool MoveNext()");
+        using (structWriter.Scope())
+        {
+            structWriter.AppendLine("switch (_state) {");
+            structWriter.AppendLine("    case 0: goto STATE_0;");
+            for (int i = 1; i <= hoistVisitor.YieldCount; i++)
             {
-                context.Writer.Append(method.ParameterList.Parameters[i].Identifier.Text);
-                if (i < method.ParameterList.Parameters.Count - 1) context.Writer.Append(", ");
+                structWriter.AppendLine($"    case {i}: goto STATE_{i};");
             }
-            context.Writer.AppendLine(");");
+            structWriter.AppendLine("}");
+            structWriter.AppendLine("STATE_0:;");
+
+            context.Writer = structWriter;
+            context.IsStateMachineContext = true;
+            context.StateMachineStateCount = 1;
+            context.ForEachCounter = 0;
+            context.StateMachineDisposeRoutes = new();
+
+            if (method.Body != null)
+            {
+                foreach (var stmt in method.Body.Statements)
+                {
+                    context.Visitor.Visit(stmt);
+                }
+            }
+
+            context.IsStateMachineContext = false;
+            
+            structWriter.AppendLine("_state = -1;");
+            structWriter.AppendLine("return false;");
+        }
+    }
+
+    private static void WriteStateMachineDispose(SourceWriter structWriter, ref TranspileContext context)
+    {
+        structWriter.AppendLine("__device__ __forceinline__ void Dispose()");
+        using (structWriter.Scope())
+        {
+            if (context.StateMachineDisposeRoutes == null || context.StateMachineDisposeRoutes.Count == 0)
+            {
+                return;
+            }
+
+            structWriter.AppendLine("switch (_state) {");
+            for (int i = 1; i < context.StateMachineStateCount; i++)
+            {
+                var activeEnums = context.StateMachineDisposeRoutes
+                    .Where(r => r.StartState <= i && i <= r.EndState)
+                    .OrderByDescending(r => r.StartState)
+                    .ToList();
+
+                if (activeEnums.Count > 0)
+                {
+                    structWriter.AppendLine($"    case {i}:");
+                    foreach (var route in activeEnums)
+                    {
+                        structWriter.AppendLine($"        __enum_{route.ForeachId}.Dispose();");
+                    }
+                    structWriter.AppendLine("        break;");
+                }
+            }
+            structWriter.AppendLine("}");
         }
     }
 

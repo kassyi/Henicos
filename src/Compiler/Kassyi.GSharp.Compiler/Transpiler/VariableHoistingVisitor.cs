@@ -15,6 +15,7 @@ public class VariableHoistingVisitor : CSharpSyntaxWalker
     private readonly SemanticModel _semanticModel;
     public List<HoistedVariable> Variables { get; } = new();
     public int YieldCount { get; private set; } = 0;
+    public int ForEachCount { get; private set; } = 0;
 
     public VariableHoistingVisitor(SemanticModel semanticModel)
     {
@@ -36,6 +37,14 @@ public class VariableHoistingVisitor : CSharpSyntaxWalker
 
     public override void VisitForEachStatement(ForEachStatementSyntax node)
     {
+        var info = _semanticModel.GetForEachStatementInfo(node);
+        var enumeratorType = info.GetEnumeratorMethod?.ReturnType;
+        if (enumeratorType != null)
+        {
+            Variables.Add(new HoistedVariable { Type = enumeratorType, Name = $"__enum_{ForEachCount}" });
+            ForEachCount++;
+        }
+
         var symbol = _semanticModel.GetDeclaredSymbol(node) as ILocalSymbol;
         if (symbol != null)
         {
