@@ -7815,5 +7815,23 @@
       "strategy": "Implement GpuArc<T> in Kassyi.GSharp.Core and map it to a C++ template in Prelude.cu using atomicAdd/Sub. This enforces safe, atomic reference-counted disposal at the cost of performance.",
       "csharp_example": "using var arc = new GpuArc<GpuContext>(ctx);"
     }
+  },
+  {
+    "id": "SYN-95",
+    "title": "Struct instance methods and 'this' keyword mapping",
+    "domain": "SYN",
+    "category": "Structs, Type Definitions, and Object Syntax",
+    "status": "planned",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 40
+    },
+    "details": {
+      "current_behavior": "Struct instance methods and the 'this' expression are not properly transpiled. Instance methods are either omitted or emitted as free functions, and 'ctx.Dispose()' translates verbatim to C++ which causes 'has no member' errors.",
+      "strategy": "Update the transpiler to emit struct instance methods as inline member functions within the generated C++ struct definition, and rewrite ThisExpression to 'this->'. Alternatively, rewrite instance method invocations 'ctx.Method()' to free function calls 'Method(&ctx)'.",
+      "csharp_example": "struct S { public void M() { this.x = 1; } } ... var s = new S(); s.M();"
+    }
   }
 ]
