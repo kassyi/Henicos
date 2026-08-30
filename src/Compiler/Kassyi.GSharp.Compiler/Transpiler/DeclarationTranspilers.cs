@@ -233,26 +233,6 @@ internal static class DeclarationTranspilers
 
     public static void TranspileVariableDeclaration(VariableDeclarationSyntax node, ref TranspileContext context)
     {
-        if (context.IsStateMachineContext)
-        {
-            bool hasAnyOutput = false;
-            foreach (var v in node.Variables)
-            {
-                if (v.Initializer != null)
-                {
-                    if (hasAnyOutput)
-                    {
-                        context.Writer.AppendSemiColon();
-                        context.Writer.AppendLine();
-                    }
-                    context.Writer.Append(v.Identifier.Text);
-                    WriteDeclaratorInitializer(v, ref context);
-                    hasAnyOutput = true;
-                }
-            }
-            return;
-        }
-
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
 

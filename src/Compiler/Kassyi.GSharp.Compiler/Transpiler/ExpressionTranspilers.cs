@@ -516,8 +516,7 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        if (typeSymbol is { TypeKind: TypeKind.Struct } ||
-            (typeSymbol != null && typeSymbol.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>"))
+        if (typeSymbol is { TypeKind: TypeKind.Struct })
         {
             TranspileStructCreationCore(typeSymbol, initializer, argumentList, ref context);
             return;
@@ -556,53 +555,34 @@ internal static class ExpressionTranspilers
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
             {
-                if (typeSymbol.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>")
+                context.Writer.AppendType(typeSymbol);
+                context.Writer.AppendSpace();
+                context.Writer.Append("_tmp");
+
+                if (argumentList is { Arguments.Count: > 0 })
                 {
-                    var capacity = "64";
-                    if (argumentList != null && argumentList.Arguments.Count == 1)
+                    using (context.Writer.Braces())
                     {
-                        var arg = argumentList.Arguments[0].Expression;
-                        if (arg is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.NumericLiteralExpression))
+                        var first = true;
+                        foreach (var arg in argumentList.Arguments)
                         {
-                            capacity = literal.Token.ValueText;
+                            if (!first)
+                            {
+                                context.Writer.AppendComma();
+                                context.Writer.AppendSpace();
+                            }
+
+                            context.Visitor.Visit(arg);
+                            first = false;
                         }
                     }
-                    var namedType = (INamedTypeSymbol)typeSymbol;
-                    context.Writer.Append("System_Collections_Generic_List<");
-                    context.Writer.AppendType(namedType.TypeArguments[0]);
-                    context.Writer.Append($", {capacity}> _tmp;");
                 }
                 else
                 {
-                    context.Writer.AppendType(typeSymbol);
-                    context.Writer.AppendSpace();
-                    context.Writer.Append("_tmp");
-
-                    if (argumentList is { Arguments.Count: > 0 })
-                    {
-                        using (context.Writer.Braces())
-                        {
-                            var first = true;
-                            foreach (var arg in argumentList.Arguments)
-                            {
-                                if (!first)
-                                {
-                                    context.Writer.AppendComma();
-                                    context.Writer.AppendSpace();
-                                }
-
-                                context.Visitor.Visit(arg);
-                                first = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        context.Writer.AppendEmptyScope();
-                    }
-
-                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendEmptyScope();
                 }
+
+                context.Writer.AppendSemiColon();
                 context.Writer.AppendSpace();
 
                 foreach (var expr in initializer.Expressions)
@@ -637,26 +617,6 @@ internal static class ExpressionTranspilers
         ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
-        if (typeSymbol.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>")
-        {
-            var capacity = "64";
-            if (argumentList != null && argumentList.Arguments.Count == 1)
-            {
-                var arg = argumentList.Arguments[0].Expression;
-                if (arg is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.NumericLiteralExpression))
-                {
-                    capacity = literal.Token.ValueText;
-                }
-            }
-            
-            var namedType = (INamedTypeSymbol)typeSymbol;
-            context.Writer.Append("System_Collections_Generic_List<");
-            context.Writer.AppendType(namedType.TypeArguments[0]);
-            context.Writer.Append($", {capacity}>");
-            context.Writer.AppendEmptyScope();
-            return;
-        }
-
         context.Writer.AppendType(typeSymbol);
 
         if (argumentList is { Arguments.Count: > 0 })
