@@ -7803,7 +7803,7 @@
     "title": "Implement GpuArc<T> for Safe Shared Ownership",
     "domain": "MEM",
     "category": "Concurrency & Shared Memory Ownership",
-    "status": "planned",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 4,
@@ -7813,7 +7813,8 @@
     "details": {
       "current_behavior": "Dynamic shared ownership on the GPU is strictly prohibited to prevent massive atomic contention. However, there is no technically safe escape hatch for algorithms that absolutely require shared ownership.",
       "strategy": "Implement GpuArc<T> in Kassyi.GSharp.Core and map it to a C++ template in Prelude.cu using atomicAdd/Sub. This enforces safe, atomic reference-counted disposal at the cost of performance.",
-      "csharp_example": "using var arc = new GpuArc<GpuContext>(ctx);"
+      "csharp_example": "using var arc = new GpuArc<GpuContext>(ctx);",
+      "memo": "Rejected because dynamic shared ownership using Atomic Reference Counting (ARC) via GpuArc<T> is strictly prohibited by the specification (11.10.3) due to performance bottlenecks and data race hazards."
     }
   }
 ]

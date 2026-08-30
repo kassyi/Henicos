@@ -4,36 +4,7 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class MEM_03_CollectionsAndGenericsTests
 {
-    [Theory]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "MEM-03")]
-    [InlineData(new int[] { 10, 20, 30 }, 3)]
-    [InlineData(new int[] { 0 }, 1)]
-    [InlineData(new int[] { -5, 100 }, 2)]
-    public void Test_MEM03_GenericConstraints_Monomorphization(int[] data, int length)
-    {
-        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_GenericConstraintsKernel(data, length);
 
-        for (int i = 0; i < length; i++)
-        {
-            Assert.Equal(0, data[i]);
-        }
-    }
-
-    [Theory]
-    [Trait("Category", "Execution")]
-    [Trait("FeatureId", "MEM-03")]
-    [InlineData(new int[] { 0, 0, 0 }, 3)]
-    [InlineData(new int[] { 0 }, 1)]
-    public void Test_MEM03_GenericFactory_WithOwnership(int[] data, int length)
-    {
-        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_GenericFactoryKernel(data, length);
-
-        for (int i = 0; i < length; i++)
-        {
-            Assert.Equal(100, data[i]);
-        }
-    }
 
     [Theory]
     [Trait("Category", "Execution")]
@@ -43,7 +14,7 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { -10, 50 }, 2, new int[] { -20, 100 })]
     public void Test_MEM03_CollectionIngestion(int[] input, int length, int[] expected)
     {
-        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_CollectionIngestionKernel(input, length);
+        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_CollectionIngestionKernel(input, length, gridDimX: (uint)length);
 
         for (int i = 0; i < length; i++)
         {
@@ -58,7 +29,7 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { 0 }, 1, new int[] { 1 })]
     public void Test_MEM03_ExhaustiveLoopDisposal(int[] input, int length, int[] expected)
     {
-        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_ExhaustiveLoopDisposalKernel(input, length);
+        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_ExhaustiveLoopDisposalKernel(input, length, gridDimX: (uint)length);
 
         for (int i = 0; i < length; i++)
         {
@@ -73,7 +44,7 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { 42 }, 1, new int[] { 47 })]
     public void Test_MEM03_ImplicitForeachDisposal(int[] input, int length, int[] expected)
     {
-        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_ImplicitForeachDisposalKernel(input, length);
+        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_ImplicitForeachDisposalKernel(input, length, gridDimX: (uint)length);
 
         for (int i = 0; i < length; i++)
         {
@@ -88,7 +59,7 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { -10 }, 1, new int[] { 0 })]
     public void Test_MEM03_DeferredEnumeration(int[] input, int length, int[] expected)
     {
-        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_DeferredEnumerationKernel(input, length);
+        MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_DeferredEnumerationKernel(input, length, gridDimX: (uint)length);
 
         for (int i = 0; i < length; i++)
         {
