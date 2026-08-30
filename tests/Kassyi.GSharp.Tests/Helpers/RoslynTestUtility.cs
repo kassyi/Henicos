@@ -1,14 +1,8 @@
-using System.Collections.Immutable;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Helpers;
 
-public static class GpuAnalyzerTestRunner
+public static class RoslynTestUtility
 {
     public static string GetTestCasesDirectory([CallerFilePath] string callerFilePath = "")
     {
@@ -26,24 +20,34 @@ public static class GpuAnalyzerTestRunner
         return testCasesDir;
     }
 
-    public static async Task<(SyntaxTree SyntaxTree, SemanticModel SemanticModel)> GetParsedModelAsync(string source)
+    public static Compilation CreateCompilation(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
 
-        return await Task.FromResult((syntaxTree, semanticModel));
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
     }
 
     public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
-        
+        var compilation = CreateCompilation(source);
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
-        var allDiagnostics = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
-        return allDiagnostics.Where(d => d.Location.SourceTree == syntaxTree).ToImmutableArray();
+        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+    }
+
+    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics) RunGenerator(string source)
+    {
+        var compilation = CreateCompilation(source);
+
+        var generator = new Kassyi.GSharp.Compiler.GpuKernelGenerator();
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: new[] { generator.AsSourceGenerator() },
+            additionalTexts: null,
+            parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
+            optionsProvider: null);
+
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
+        return (driver, outputCompilation, diagnostics);
     }
 }

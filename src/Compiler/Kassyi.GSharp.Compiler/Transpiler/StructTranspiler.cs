@@ -314,43 +314,43 @@ internal static class StructTranspiler
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            {
+                VariableDeclaratorSyntax? syntax = null;
+                var syntaxRefs = field.DeclaringSyntaxReferences;
+                if (!syntaxRefs.IsEmpty)
                 {
-                    VariableDeclaratorSyntax? syntax = null;
-                    var syntaxRefs = field.DeclaringSyntaxReferences;
-                    if (!syntaxRefs.IsEmpty)
-                    {
-                        syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
-                    }
-
-                    ExpressionSyntax? sizeExp = null;
-                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                    {
-                        sizeExp = argList.Arguments[0].Expression;
-                    }
-
-                    if (sizeExp != null)
-                    {
-                        context.Writer.AppendType(ptrType.PointedAtType);
-                        context.Writer.AppendSpace();
-                        context.Writer.Append(field.Name);
-                        using (context.Writer.Brackets())
-                        {
-                            context.Visitor.Visit(sizeExp);
-                        }
-
-                        context.Writer.AppendSemiColon();
-                        context.Writer.AppendLine();
-                    }
-                    else
-                    {
-                        context.Writer.AppendType(ptrType.PointedAtType);
-                        context.Writer.AppendSpace();
-                        context.Writer.Append(field.Name);
-                        context.Writer.AppendLine("; // ERROR: fixed size not found");
-                    }
-
-                    break;
+                    syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
                 }
+
+                ExpressionSyntax? sizeExp = null;
+                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+                {
+                    sizeExp = argList.Arguments[0].Expression;
+                }
+
+                if (sizeExp != null)
+                {
+                    context.Writer.AppendType(ptrType.PointedAtType);
+                    context.Writer.AppendSpace();
+                    context.Writer.Append(field.Name);
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExp);
+                    }
+
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+                else
+                {
+                    context.Writer.AppendType(ptrType.PointedAtType);
+                    context.Writer.AppendSpace();
+                    context.Writer.Append(field.Name);
+                    context.Writer.AppendLine("; // ERROR: fixed size not found");
+                }
+
+                break;
+            }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, field.Name, field, ref context);
                 break;
