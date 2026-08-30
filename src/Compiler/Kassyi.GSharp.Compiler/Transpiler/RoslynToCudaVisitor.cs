@@ -243,6 +243,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
         => ExpressionTranspilers.TranspileConditionalExpression(node, ref Context);
 
+    public override void VisitThisExpression(ThisExpressionSyntax node)
+        => ExpressionTranspilers.TranspileThisExpression(node, ref Context);
+
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
         if (Context.LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
