@@ -72,30 +72,14 @@ internal static class StatementTranspilers
             TranspileForInitializers(node, ref context);
             context.Writer.AppendSemiColon();
 
-            context.Visitor.EnterLoopScope();
-            try
-            {
-                TranspileForCondition(node, ref context);
-                context.Writer.AppendSemiColon();
+            TranspileForCondition(node, ref context);
+            context.Writer.AppendSemiColon();
 
-                TranspileForIncrementors(node, ref context);
-            }
-            finally
-            {
-                context.Visitor.ExitLoopScope();
-            }
+            TranspileForIncrementors(node, ref context);
         }
 
-        context.Visitor.EnterLoopScope();
-        try
-        {
-            context.Writer.AppendLine();
-            context.Visitor.VisitStatementOrBlock(node.Statement);
-        }
-        finally
-        {
-            context.Visitor.ExitLoopScope();
-        }
+        context.Writer.AppendLine();
+        context.Visitor.VisitStatementOrBlock(node.Statement);
     }
 
     private static void TranspileForInitializers(ForStatementSyntax node, ref TranspileContext context)

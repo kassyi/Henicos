@@ -14,7 +14,7 @@ public class MEM_02_ObjectLifecycleSadPathTests
     [System.Runtime.CompilerServices.ModuleInitializer]
     public static void Register()
     {
-        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
+        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
         var files = Directory.GetFiles(Path.Combine(testCasesDir, "Analyzers"), "MEM-02_*.cs");
         foreach (var f in files)
         {

@@ -15,14 +15,14 @@ public class GSH_00_03_GpuKernelAnalyzerTests
         var path = GetTestCasePath(testName);
         var source = await File.ReadAllTextAsync(path);
         var analyzer = new GpuKernelAnalyzer();
-        return await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, analyzer);
+        return await Helpers.RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, analyzer);
     }
 
     private static async Task<ImmutableArray<Diagnostic>> GetGeneratorDiagnosticsFromTestNameAsync(string testName)
     {
         var path = GetTestCasePath(testName);
         var source = await File.ReadAllTextAsync(path);
-        var (_, _, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (_, _, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         return diagnostics;
     }
 
@@ -73,4 +73,3 @@ public class GSH_00_03_GpuKernelAnalyzerTests
                                             d.Id == GSharpDiagnostics.ImplicitVarNeedsSuffix.Id));
     }
 }
-
