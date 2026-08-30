@@ -20,7 +20,7 @@ public class SYN_95_StructInstanceMethodsSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_SYN95_UnsupportedClassAndDynamicDispatch_ReportsDiagnosticsAndPreventsCrash()
     {
-        var path = GetTestCasePath("SYN-95_StructInstanceMethodsSadPath.cs");
+        var path = GetTestCasePath("SYN-95_StructInstanceMethodsSadPathKernels.cu.cs");
         var source = await File.ReadAllTextAsync(path);
 
         var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
