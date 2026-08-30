@@ -120,8 +120,16 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor SyncThreadsNotAllowedInDivergentPath = new(
+        id: "GSH0013",
+        title: "Gpu.SyncThreads() not allowed in divergent path",
+        messageFormat: "Gpu.SyncThreads() must not be called inside a divergent control flow (like if/for/while)",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor SharedMemoryDisposableNotSupported = new(
-        id: "GSH025",
+        id: "GSH0014",
         title: "IDisposable element type is forbidden in SharedMemory<T>",
         messageFormat: "SharedMemory<T> element type '{0}' implements IDisposable or declares a Dispose method, which is forbidden to prevent double-dispose and data races",
         category: Category,

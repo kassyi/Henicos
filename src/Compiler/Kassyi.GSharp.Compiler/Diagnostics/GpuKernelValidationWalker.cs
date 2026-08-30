@@ -11,6 +11,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
 
     private ValidationContext _context;
     private int _isRented;
+    private int _divergenceDepth;
 
     private GpuKernelValidationWalker()
     {
@@ -37,13 +38,37 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         }
 
         _context = default;
+        _divergenceDepth = 0;
         s_pool.Add(this);
+    }
+
+    public override void VisitIfStatement(IfStatementSyntax node)
+    {
+        var isDivergent = false;
+        if (node.Condition is not LiteralExpressionSyntax)
+        {
+            var constantValue = _context.SemanticModel.GetConstantValue(node.Condition);
+            isDivergent = !constantValue.HasValue;
+        }
+
+        if (isDivergent)
+        {
+            _divergenceDepth++;
+        }
+
+        base.VisitIfStatement(node);
+        if (isDivergent)
+        {
+            _divergenceDepth--;
+        }
     }
 
     public override void VisitForEachStatement(ForEachStatementSyntax node)
     {
+        _divergenceDepth++;
         ForEachNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitForEachStatement(node);
+        _divergenceDepth--;
     }
 
     public override void VisitQueryExpression(QueryExpressionSyntax node)
@@ -61,6 +86,15 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
     {
         GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
+
+        var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+        if (symbol is { Name: "SyncThreads", ContainingType.Name: "Gpu" } && _divergenceDepth > 0)
+        {
+            _context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
+                node.GetLocation()));
+        }
+
         base.VisitInvocationExpression(node);
     }
 
@@ -74,6 +108,18 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
     {
         SharedMemoryForbiddenDisposableRule.Instance.Analyze(node, ref _context);
         base.VisitImplicitObjectCreationExpression(node);
+    }
+
+    public override void VisitIdentifierName(IdentifierNameSyntax node)
+    {
+        HostPropertyAccessRule.Instance.AnalyzeIdentifierName(node, ref _context);
+        base.VisitIdentifierName(node);
+    }
+
+    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+    {
+        HostPropertyAccessRule.Instance.AnalyzeMemberAccess(node, ref _context);
+        base.VisitMemberAccessExpression(node);
     }
 }
 
