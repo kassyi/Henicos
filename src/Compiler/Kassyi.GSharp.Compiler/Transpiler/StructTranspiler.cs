@@ -227,6 +227,11 @@ internal static class StructTranspiler
                 {
                     WriteStructMember(ref context, member);
                 }
+                
+                if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary, IsStatic: false } method)
+                {
+                    WriteStructMethod(ref context, method);
+                }
             }
 
             foreach (var member in structSym.GetMembers())
@@ -373,6 +378,42 @@ internal static class StructTranspiler
         context.Writer.AppendSpace();
         context.Writer.Append(name);
         context.Writer.AppendSemiColon();
+        context.Writer.AppendLine();
+    }
+
+    private static void WriteStructMethod(ref TranspileContext context, IMethodSymbol method)
+    {
+        var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+        if (syntaxRef?.GetSyntax() is not Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax methodSyntax)
+        {
+            return;
+        }
+
+        context.Writer.Append("__device__ inline ");
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            context.Writer.AppendType(method.ReturnType);
+        }
+        else
+        {
+            context.Writer.AppendKeyword("void");
+        }
+        
+        context.Writer.AppendSpace();
+        context.Writer.Append(method.Name);
+        
+        using (context.Writer.Parentheses())
+        {
+            MethodTranspiler.WriteParameters(methodSyntax.ParameterList.Parameters, isDevice: true, ref context);
+        }
+        
+        if (method.IsReadOnly)
+        {
+            context.Writer.Append(" const");
+        }
+        
+        context.Writer.AppendLine();
+        MethodTranspiler.WriteMethodBody(methodSyntax, ref context);
         context.Writer.AppendLine();
     }
 }

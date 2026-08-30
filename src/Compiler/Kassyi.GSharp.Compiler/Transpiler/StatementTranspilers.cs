@@ -4,6 +4,61 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>SYN-01, SYN-70, SYN-71, SYN-72, SYN-84, SYN-91</b></para></remarks>
 internal static class StatementTranspilers
 {
+    public static void TranspileLocalDeclarationStatement(LocalDeclarationStatementSyntax node,
+        ref TranspileContext context)
+    {
+        if (context.IsStateMachineContext)
+        {
+            // Just assignments, no declarations because they are hoisted
+            var first = true;
+            foreach (var variable in node.Declaration.Variables)
+            {
+                if (variable.Initializer != null)
+                {
+                    if (!first)
+                    {
+                        context.Writer.AppendLine();
+                    }
+                    context.Writer.Append(variable.Identifier.Text);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Visitor.Visit(variable.Initializer.Value);
+                    context.Writer.AppendSemiColon();
+                    first = false;
+                }
+            }
+            if (first == false)
+            {
+                context.Writer.AppendLine();
+            }
+            return;
+        }
+
+        context.Writer.AppendType(context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type);
+        context.Writer.AppendSpace();
+        for (var i = 0; i < node.Declaration.Variables.Count; i++)
+        {
+            var v = node.Declaration.Variables[i];
+            context.Writer.Append(v.Identifier.Text);
+            if (v.Initializer != null)
+            {
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
+                context.Visitor.Visit(v.Initializer.Value);
+            }
+
+            if (i < node.Declaration.Variables.Count - 1)
+            {
+                context.Writer.AppendComma();
+                context.Writer.AppendSpace();
+            }
+        }
+        context.Writer.AppendSemiColon();
+        context.Writer.AppendLine();
+    }
+
     public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("auto");
@@ -61,6 +116,88 @@ internal static class StatementTranspilers
             context.Writer.AppendKeyword("else");
             context.Writer.AppendLine();
             context.Visitor.VisitStatementOrBlock(node.Else.Statement);
+        }
+    }
+
+    public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
+    {
+        using (context.Writer.Scope())
+        {
+            context.Writer.Append("__gsharp_enumerator_scope");
+            context.Writer.AppendSpace();
+            context.Writer.Append("__scope");
+            using (context.Writer.Parentheses())
+            {
+                context.Visitor.Visit(node.Expression);
+                context.Writer.Append(".GetEnumerator()");
+            }
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+
+            context.Writer.AppendKeyword("while");
+            using (context.Writer.Parentheses())
+            {
+                context.Writer.Append("__scope.enumerator.MoveNext()");
+            }
+            context.Writer.AppendLine();
+
+            using (context.Writer.Scope())
+            {
+                if (!context.IsStateMachineContext)
+                {
+                    if (node.Type.IsVar)
+                    {
+                        context.Writer.AppendKeyword("auto");
+                    }
+                    else
+                    {
+                        context.Writer.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
+                    }
+                    context.Writer.AppendSpace();
+                }
+                context.Writer.Append(node.Identifier.Text);
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__scope.enumerator.get_Current()");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+
+                context.Visitor.VisitStatementOrBlock(node.Statement);
+            }
+        }
+    }
+
+    public static void TranspileYieldStatement(YieldStatementSyntax node, ref TranspileContext context)
+    {
+        if (node.IsKind(SyntaxKind.YieldReturnStatement))
+        {
+            context.Writer.Append("_current = ");
+            context.Visitor.Visit(node.Expression);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+
+            int stateId = context.StateMachineStateCount++;
+            context.Writer.Append($"_state = {stateId};");
+            context.Writer.AppendLine();
+            context.Writer.AppendKeyword("return");
+            context.Writer.AppendSpace();
+            context.Writer.AppendKeyword("true");
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+            
+            context.Writer.Append($"STATE_{stateId}:;");
+            context.Writer.AppendLine();
+        }
+        else if (node.IsKind(SyntaxKind.YieldBreakStatement))
+        {
+            context.Writer.Append("_state = -1;");
+            context.Writer.AppendLine();
+            context.Writer.AppendKeyword("return");
+            context.Writer.AppendSpace();
+            context.Writer.AppendKeyword("false");
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
         }
     }
 

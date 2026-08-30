@@ -62,6 +62,14 @@ internal static class CudaTypeMapper
                 return;
             }
 
+            if (namedType.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>")
+            {
+                writer.Append("System_Collections_Generic_List<");
+                writer.AppendType(namedType.TypeArguments[0]);
+                writer.Append(", 64>");
+                return;
+            }
+
             if (namedType.Name == TypeConstants.GpuBigIntRefType)
             {
                 writer.Append(TypeConstants.CudaTypes.UnsignedIntPtr);
