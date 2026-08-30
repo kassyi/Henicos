@@ -119,4 +119,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ManualEnumeratorNotSupported = new(
+        id: "GSH0013",
+        title: "Manual GetEnumerator calls are not supported",
+        messageFormat: "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead to ensure proper state machine dispose routing and memory safety.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
