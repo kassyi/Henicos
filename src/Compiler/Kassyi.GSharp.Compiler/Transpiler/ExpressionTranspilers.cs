@@ -221,6 +221,57 @@ internal static class ExpressionTranspilers
         context.Visitor.Visit(node.Right);
     }
 
+    public static void TranspileWithExpression(WithExpressionSyntax node, ref TranspileContext context)
+    {
+        using (context.Writer.Parentheses())
+        {
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append("&");
+            }
+
+            context.Writer.AppendParentheses();
+            context.Writer.AppendSpace();
+            using (context.Writer.Scope())
+            {
+                context.Writer.AppendKeyword("auto");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__gsharp_with_tmp");
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
+                context.Visitor.Visit(node.Expression);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+
+                foreach (var expr in node.Initializer.Expressions)
+                {
+                    if (expr is not AssignmentExpressionSyntax assignment)
+                    {
+                        continue;
+                    }
+
+                    context.Writer.Append("__gsharp_with_tmp.");
+                    context.Visitor.Visit(assignment.Left);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Visitor.Visit(assignment.Right);
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__gsharp_with_tmp");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+
+            context.Writer.AppendParentheses();
+        }
+    }
+
     public static void TranspileConditionalExpression(ConditionalExpressionSyntax node, ref TranspileContext context)
     {
         using (context.Writer.Parentheses())
