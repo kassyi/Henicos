@@ -10,6 +10,8 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { 10, 20, 30 }, 3)]
     [InlineData(new int[] { 0 }, 1)]
     [InlineData(new int[] { -5, 100 }, 2)]
+    [InlineData(new int[] { }, 0)]
+    [InlineData(new int[] { int.MinValue, int.MaxValue, 0x55555555 }, 3)]
     public void Test_MEM03_GenericConstraints_Monomorphization(int[] data, int length)
     {
         MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_GenericConstraintsKernel(data, length,
@@ -27,6 +29,8 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { 1, 2, 3 }, 3, new int[] { 2, 4, 6 })]
     [InlineData(new int[] { 0 }, 1, new int[] { 0 })]
     [InlineData(new int[] { -10, 50 }, 2, new int[] { -20, 100 })]
+    [InlineData(new int[] { }, 0, new int[] { })]
+    [InlineData(new int[] { int.MinValue, int.MaxValue, 0x55555555 }, 3, new int[] { 0, -2, unchecked((int)0xAAAAAAAA) })]
     public void Test_MEM03_CollectionIngestion(int[] input, int length, int[] expected)
     {
         MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_CollectionIngestionKernel(input, length,
@@ -43,6 +47,8 @@ public class MEM_03_CollectionsAndGenericsTests
     [Trait("FeatureId", "MEM-03")]
     [InlineData(new int[] { 5, 10 }, 2, new int[] { 6, 11 })]
     [InlineData(new int[] { 0 }, 1, new int[] { 1 })]
+    [InlineData(new int[] { }, 0, new int[] { })]
+    [InlineData(new int[] { int.MinValue, int.MaxValue }, 2, new int[] { int.MinValue + 1, unchecked(int.MaxValue + 1) })]
     public void Test_MEM03_ExhaustiveLoopDisposal(int[] input, int length, int[] expected)
     {
         MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_ExhaustiveLoopDisposalKernel(input, length,
@@ -59,6 +65,8 @@ public class MEM_03_CollectionsAndGenericsTests
     [Trait("FeatureId", "MEM-03")]
     [InlineData(new int[] { 1, 2, 3, 4 }, 4, new int[] { 6, 7, 8, 9 })]
     [InlineData(new int[] { 42 }, 1, new int[] { 47 })]
+    [InlineData(new int[] { }, 0, new int[] { })]
+    [InlineData(new int[] { int.MinValue, int.MaxValue }, 2, new int[] { int.MinValue + 5, unchecked(int.MaxValue + 5) })]
     public void Test_MEM03_ImplicitForeachDisposal(int[] input, int length, int[] expected)
     {
         MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_ImplicitForeachDisposalKernel(input, length,
@@ -75,6 +83,8 @@ public class MEM_03_CollectionsAndGenericsTests
     [Trait("FeatureId", "MEM-03")]
     [InlineData(new int[] { 5, 15 }, 2, new int[] { 15, 25 })]
     [InlineData(new int[] { -10 }, 1, new int[] { 0 })]
+    [InlineData(new int[] { }, 0, new int[] { })]
+    [InlineData(new int[] { int.MinValue, int.MaxValue }, 2, new int[] { unchecked(int.MinValue + 10), unchecked(int.MaxValue + 10) })]
     public void Test_MEM03_DeferredEnumeration(int[] input, int length, int[] expected)
     {
         MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_DeferredEnumerationKernel(input, length,
@@ -91,6 +101,8 @@ public class MEM_03_CollectionsAndGenericsTests
     [InlineData(new int[] { 1, 2, 3 }, 3, new int[] { 16, 17, 18 })]
     [InlineData(new int[] { 5, 15 }, 2, new int[] { 20, 30 })]
     [InlineData(new int[] { -10 }, 1, new int[] { 5 })]
+    [InlineData(new int[] { }, 0, new int[] { })]
+    [InlineData(new int[] { int.MinValue, int.MaxValue }, 2, new int[] { unchecked(int.MinValue + 15), unchecked(int.MaxValue + 15) })]
     public void Test_MEM03_NestedForeachDeferredEnumeration(int[] input, int length, int[] expected)
     {
         MEM_03_CollectionsAndGenericsKernelsWrapper.Launch_NestedDeferredEnumerationKernel(input, length,
