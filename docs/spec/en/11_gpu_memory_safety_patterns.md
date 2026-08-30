@@ -852,6 +852,51 @@ flowchart LR
 
 ---
 
+## 11.10 Category V: Concurrency & Shared Memory Ownership
+
+While Categories I-IV focus on single-threaded AST and Control Flow Graph (CFG) analysis, mapping C#'s single-threaded concepts (Ownership, Move, and Borrow) to the Massively Parallel Processor (MPP) architecture of the GPU introduces profound concurrency challenges. 
+
+### 11.10.1 Thread-Local Ownership (The Zero-Allocation Guarantee)
+
+In G#, **all allocations inside a kernel (e.g., `new List<T>()` or `new GpuContext()`) are strictly value-types (`struct`) allocated on the thread's local stack/registers.**
+The transpiler (e.g., in `Prelude.cu`) implements these collections as fixed-capacity stack structs (e.g., `T _items[Capacity]`).
+
+Because these objects never use heap allocation (`cudaMalloc`), they are completely **Thread-Local**.
+* **Zero Contention**: Thread A's `List<T>` and Thread B's `List<T>` are physically isolated. 
+* **Zero Race Conditions**: A simple `Dispose()` of a local variable does not cause double-free or race conditions across threads. The ownership lifecycle is safely contained within the single thread's execution path.
+
+### 11.10.2 Global Memory and Shared Memory Constraints
+
+When threads must cooperate (e.g., stencil operations, image blurring), they require shared access to memory.
+
+1. **Global Memory (Host-Allocated Arrays)**: CPU passes massive data buffers (e.g., `int[]` or `GpuSpan<T>`) into the kernel. The GPU kernel only **borrows** (`ref`) these pointers. The kernel is strictly forbidden from owning or disposing of Global Memory.
+2. **Shared Memory (`SharedMemory<T>`)**: Used as a high-speed L1 cache shared across all threads in a Block. 
+
+**Rule:** It is strictly prohibited to write an `IDisposable` (Owned Resource) into `SharedMemory<T>`.
+
+### 11.10.3 Why Not Atomic Reference Counting (ARC)?
+
+If multiple threads need to share ownership of a disposable resource, modern CPU languages (like Rust's `Arc<T>` or C++'s `std::shared_ptr`) use Atomic Reference Counting (ARC).
+
+**G# strictly rejects ARC (Dynamic Ownership) for the following reasons:**
+
+1. **The Performance Bottleneck**: Reference counting requires hardware atomic instructions (`Gpu.AtomicAdd`). If 1,024 threads in a GPU block simultaneously attempt to increment a shared reference counter, memory access is strictly **serialized**, creating a massive stall (bottleneck) that entirely defeats the purpose of using a massively parallel GPU.
+2. **Read-Modify-Write Hazards**: Using non-atomic operations for reference counting results in fatal Data Races (Read-Modify-Write hazards), leading to inevitable memory leaks (e.g., two threads subtract 1 simultaneously, but the count only decreases by 1).
+3. **The Zero-Cost Abstraction**: To preserve the GPU's extreme parallel execution speed, all ownership and lifetimes *must* be resolved statically at compile-time.
+
+Therefore, G# enforces **Strict Static Analysis (Lexical Scoping and RAII)**. The thread that acquires the resource (allocates it) is absolutely responsible for disposing it. If it moves the resource, the responsibility moves. Shared ownership is rejected in favor of static, zero-cost borrowing (`ref`).
+
+> [!NOTE]
+> **The Kindergarten Toy Analogy (Mental Model for RAII on GPU)**
+> To understand G#'s strict ownership rules, consider the fundamental rule of a kindergarten classroom:
+> 
+> * **Ownership (Allocation)**: If you take a toy out of the box (`new`), **you** are personally responsible for putting it back (`Dispose`). You cannot expect someone else to clean up after you.
+> * **Move (Transfer)**: If you give the toy entirely to a friend, it is no longer yours. The responsibility to put it back is transferred to them.
+> * **Borrow (`ref`)**: If you let a friend look at or touch the toy while you are still playing with it, they can use it, but **you** still retain the ultimate responsibility to put it back.
+> 
+> By forcing developers to strictly follow this "personal responsibility" rule at compile-time via Roslyn Analyzers, G# entirely avoids the need for a runtime "janitor" (Garbage Collector) or complex "sharing agreements" (ARC) that would stall the massively parallel GPU hardware.
+
+---
 ## Appendix: What about Runtime Code Generation (IL Weaving / Reflection.Emit)?
 
 A truly malicious or highly unconventional developer might attempt to bypass all of the above static analysis layers by generating code at runtime. Examples include:

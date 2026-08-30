@@ -7779,5 +7779,41 @@
     "files": [
       "src/Core/Kassyi.GSharp.Core/Intrinsics.cs"
     ]
+  },
+  {
+    "id": "MEM-04",
+    "title": "Analyzer Rule: Forbid IDisposable in SharedMemory<T>",
+    "domain": "MEM",
+    "category": "Concurrency & Shared Memory Ownership",
+    "status": "planned",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 2,
+      "generality": 4,
+      "score": 35
+    },
+    "details": {
+      "current_behavior": "Currently, SharedMemory<GpuContext> is allowed, which can lead to double-free and data races since all threads in a block can dispose the shared instance.",
+      "strategy": "Implement a diagnostic rule (e.g. GSH025) in GpuKernelValidationWalker to block SharedMemory<T> where T implements IDisposable or has a Dispose method.",
+      "csharp_example": "var shared = new SharedMemory<GpuContext>(64); // Error: GSH025"
+    }
+  },
+  {
+    "id": "MEM-05",
+    "title": "Implement GpuArc<T> for Safe Shared Ownership",
+    "domain": "MEM",
+    "category": "Concurrency & Shared Memory Ownership",
+    "status": "planned",
+    "metrics": {
+      "blocker": 3,
+      "difficulty": 4,
+      "generality": 3,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "Dynamic shared ownership on the GPU is strictly prohibited to prevent massive atomic contention. However, there is no technically safe escape hatch for algorithms that absolutely require shared ownership.",
+      "strategy": "Implement GpuArc<T> in Kassyi.GSharp.Core and map it to a C++ template in Prelude.cu using atomicAdd/Sub. This enforces safe, atomic reference-counted disposal at the cost of performance.",
+      "csharp_example": "using var arc = new GpuArc<GpuContext>(ctx);"
+    }
   }
 ]
