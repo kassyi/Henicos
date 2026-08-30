@@ -1,4 +1,5 @@
 // ReSharper disable All
+
 using System;
 using System.Collections.Generic;
 using Kassyi.GSharp.Core;
@@ -60,14 +61,6 @@ public static class MEM_03_CollectionsAndGenericsKernels
         yield return new GpuContext();
     }
 
-    public static void ImplicitForeachDemo()
-    {
-        foreach (var item in GpuQuery())
-        {
-            /* ... */
-        } // OK: Enumerator implicitly disposed by compiler-generated finally block
-    }
-
     // 11.4.3 Safe: Deferred Enumeration (yield)
     public static IEnumerable<GpuContext> Generate()
     {
@@ -124,6 +117,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
                 sum += x;
                 if (x == data[tid]) break;
             }
+
             data[tid] = sum;
         }
     }
@@ -161,9 +155,11 @@ public static class MEM_03_CollectionsAndGenericsKernels
             {
                 sum += item;
             }
+
             data[tid] = sum;
         }
     }
+
     [GpuDeviceFunction]
     public static IEnumerable<int> GenerateDataNested(int start)
     {
@@ -189,6 +185,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
             {
                 sum += item;
             }
+
             data[tid] = sum;
         }
     }
