@@ -4,7 +4,7 @@ public class SYN_08_LambdaAndLocalFunctionsSadPathTests
 {
     private static string GetTestCasePath(string fileName)
     {
-        var testCasesDir = Helpers.RoslynTestUtility.GetTestCasesDirectory();
+        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
         return Path.Combine(testCasesDir, "Analyzers", fileName);
     }
 
@@ -16,7 +16,7 @@ public class SYN_08_LambdaAndLocalFunctionsSadPathTests
         var path = GetTestCasePath("SYN-08_DelegateEscapeSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
+        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
         // Verification: Roslyn / Transpiler / Generator reports specific diagnostic errors without compiler crashing
@@ -25,3 +25,4 @@ public class SYN_08_LambdaAndLocalFunctionsSadPathTests
         Assert.Contains(allDiagnostics, d => d.Id == "GSH0003"); // Unsupported syntax (e.g. delegate escaping assignment)
     }
 }
+
