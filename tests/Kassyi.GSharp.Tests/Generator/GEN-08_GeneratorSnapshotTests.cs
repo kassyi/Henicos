@@ -183,6 +183,7 @@ public class GEN_08_GeneratorSnapshotTests
     [InlineData(@"..\Syntax\SYN-01-09_ControlFlowKernels.cu.cs")]
     [InlineData(@"..\Syntax\SYN-28_MethodAttributesKernels.cu.cs")]
     [InlineData(@"..\Syntax\MEM-04_AdvancedSyntaxAndFunctionalPatternsKernels.cu.cs")]
+    [InlineData(@"..\Syntax\MEM-05_UnmanagedBoundariesKernels.cu.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]
@@ -235,6 +236,7 @@ public class GEN_08_GeneratorSnapshotTests
         allNames.Add("SYN-01-09_ControlFlowKernels");
         allNames.Add("SYN-28_MethodAttributesKernels");
         allNames.Add("MEM-04_AdvancedSyntaxAndFunctionalPatternsKernels");
+        allNames.Add("MEM-05_UnmanagedBoundariesKernels");
 
         Assert.NotEmpty(allNames);
 
