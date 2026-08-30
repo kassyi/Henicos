@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,17 +19,42 @@ public class SYN_95_StructInstanceMethodsSadPathTests
     [Fact]
     [Trait("FeatureId", "SYN-95")]
     [Trait("Category", "SadPath")]
-    public async Task Test_SYN95_UnsupportedClassAndDynamicDispatch_ReportsDiagnosticsAndPreventsCrash()
+    public async Task Test_SYN95_UnsupportedClass_ReportsGSH0001()
     {
-        var path = GetTestCasePath("SYN-95_StructInstanceMethodsSadPathKernels.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var source = await File.ReadAllTextAsync(GetTestCasePath("SYN-95_StructInstanceMethodsSadPathKernels.cu.cs"));
+        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
-        // Verification: Roslyn / Transpiler / Generator reports diagnostics for object creation, unsupported syntax, or string usage
-        Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error);
-        Assert.Contains(allDiagnostics, d => d.Id == "GSH0001" || d.Id == "GSH0002" || d.Id == "GSH0003");
+        // KernelWithClassInstanceMethod: 'new SampleClass()'
+        var kernelDiagnostics = allDiagnostics.Where(d => d.Location.GetLineSpan().StartLinePosition.Line >= 34 && d.Location.GetLineSpan().StartLinePosition.Line <= 40).ToList();
+        Assert.Contains(kernelDiagnostics, d => d.Id == "GSH0001");
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-95")]
+    [Trait("Category", "SadPath")]
+    public async Task Test_SYN95_UnsupportedDynamicDispatch_ReportsGSH0001()
+    {
+        var source = await File.ReadAllTextAsync(GetTestCasePath("SYN-95_StructInstanceMethodsSadPathKernels.cu.cs"));
+        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+
+        // KernelWithDynamicDispatch: 'new DerivedClass()'
+        var kernelDiagnostics = allDiagnostics.Where(d => d.Location.GetLineSpan().StartLinePosition.Line >= 42 && d.Location.GetLineSpan().StartLinePosition.Line <= 47).ToList();
+        Assert.Contains(kernelDiagnostics, d => d.Id == "GSH0001");
+    }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-95")]
+    [Trait("Category", "SadPath")]
+    public async Task Test_SYN95_UnsupportedStringAndOverride_ReportsGSH0002()
+    {
+        var source = await File.ReadAllTextAsync(GetTestCasePath("SYN-95_StructInstanceMethodsSadPathKernels.cu.cs"));
+        var (_, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+
+        // KernelWithStructOverride: 'string str = s.ToString();'
+        var kernelDiagnostics = allDiagnostics.Where(d => d.Location.GetLineSpan().StartLinePosition.Line >= 49 && d.Location.GetLineSpan().StartLinePosition.Line <= 55).ToList();
+        Assert.Contains(kernelDiagnostics, d => d.Id == "GSH0002");
     }
 }
