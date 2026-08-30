@@ -1,4 +1,6 @@
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Compiler.Diagnostics", Justification = "Public API exposed for compiler usage")]
+[assembly:
+    SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
+        Target = "Kassyi.GSharp.Compiler.Diagnostics", Justification = "Public API exposed for compiler usage")]
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
@@ -11,7 +13,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ObjectCreationNotSupported = new(
         id: "GSH0001",
         title: "Object creation not supported in GPU kernels",
-        messageFormat: "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
+        messageFormat:
+        "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -40,26 +43,11 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
-        id: "GSH1001",
-        title: "Excessive static shared memory usage",
-        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
-        id: "GSH1002",
-        title: "Large struct passed by value",
-        messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public static readonly DiagnosticDescriptor GpuBigIntExprDirectAssignment = new(
         id: "GSH0005",
         title: "GpuBigIntExpr must be assigned via .Value",
-        messageFormat: "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
+        messageFormat:
+        "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -75,7 +63,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ForeachNotSupported = new(
         id: "GSH0007",
         title: "Foreach is not allowed in GPU kernels",
-        messageFormat: "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead.",
+        messageFormat:
+        "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -91,7 +80,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ImplicitVarNeedsSuffix = new(
         id: "GSH0009",
         title: "Implicit var with literal needs suffix",
-        messageFormat: "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'.",
+        messageFormat:
+        "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -131,8 +121,27 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor SharedMemoryDisposableNotSupported = new(
         id: "GSH0014",
         title: "IDisposable element type is forbidden in SharedMemory<T>",
-        messageFormat: "SharedMemory<T> element type '{0}' implements IDisposable or declares a Dispose method, which is forbidden to prevent double-dispose and data races",
+        messageFormat:
+        "SharedMemory<T> element type '{0}' implements IDisposable or declares a Dispose method, which is forbidden to prevent double-dispose and data races",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
+        id: "GSH0015",
+        title: "Excessive static shared memory usage",
+        messageFormat:
+        "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
+        id: "GSH0016",
+        title: "Large struct passed by value",
+        messageFormat:
+        "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 }
