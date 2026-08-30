@@ -7816,5 +7816,23 @@
       "csharp_example": "using var arc = new GpuArc<GpuContext>(ctx);",
       "memo": "Rejected because dynamic shared ownership using Atomic Reference Counting (ARC) via GpuArc<T> is strictly prohibited by the specification (11.10.3) due to performance bottlenecks and data race hazards."
     }
+  },
+  {
+    "id": "SYN-95",
+    "title": "Struct instance methods and 'this' keyword mapping",
+    "domain": "SYN",
+    "category": "Structs, Type Definitions, and Object Syntax",
+    "status": "planned",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 40
+    },
+    "details": {
+      "current_behavior": "Struct instance methods and the 'this' expression are not properly transpiled. Instance methods are either omitted or emitted as free functions, and 'ctx.Dispose()' translates verbatim to C++ which causes 'has no member' errors.",
+      "strategy": "Update the transpiler to emit struct instance methods as inline member functions within the generated C++ struct definition, and rewrite ThisExpression to 'this->'. Alternatively, rewrite instance method invocations 'ctx.Method()' to free function calls 'Method(&ctx)'.",
+      "csharp_example": "struct S { public void M() { this.x = 1; } } ... var s = new S(); s.M();"
+    }
   }
 ]
