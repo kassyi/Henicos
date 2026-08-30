@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-public ref struct GpuSpan
+public ref struct GpuSpan : IDisposable
 {
     public void Dispose() { }
 }
