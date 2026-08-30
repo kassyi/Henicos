@@ -24,7 +24,9 @@ internal sealed class SharedMemoryForbiddenDisposableRule
             return;
         }
 
-        if (namedTypeSymbol.Name != TypeConstants.SharedMemoryType || namedTypeSymbol.TypeArguments.Length != 1)
+        if (namedTypeSymbol.Name != TypeConstants.SharedMemoryType ||
+            namedTypeSymbol.ContainingNamespace?.ToDisplayString() != TypeConstants.CoreNamespace ||
+            namedTypeSymbol.TypeArguments.Length != 1)
         {
             return;
         }
@@ -43,6 +45,18 @@ internal sealed class SharedMemoryForbiddenDisposableRule
 
     private static bool IsForbiddenDisposableType(ITypeSymbol typeSymbol)
     {
+        if (typeSymbol is ITypeParameterSymbol typeParameter)
+        {
+            foreach (var constraint in typeParameter.ConstraintTypes)
+            {
+                if (IsForbiddenDisposableType(constraint))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         if (typeSymbol is not INamedTypeSymbol namedType)
         {
             return false;
