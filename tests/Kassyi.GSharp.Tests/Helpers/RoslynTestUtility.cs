@@ -1,4 +1,5 @@
-using Microsoft.CodeAnalysis.Diagnostics;
+using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Tests.Helpers;
 
@@ -18,36 +19,5 @@ public static class RoslynTestUtility
             throw new DirectoryNotFoundException($"TestCases directory not found at: {testCasesDir}");
         }
         return testCasesDir;
-    }
-
-    public static Compilation CreateCompilation(string source)
-    {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-
-        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
-    }
-
-    public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
-    {
-        var compilation = CreateCompilation(source);
-        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
-        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
-    }
-
-    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics) RunGenerator(string source)
-    {
-        var compilation = CreateCompilation(source);
-
-        var generator = new Kassyi.GSharp.Compiler.GpuKernelGenerator();
-
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            generators: new[] { generator.AsSourceGenerator() },
-            additionalTexts: null,
-            parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
-            optionsProvider: null);
-
-        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
-        return (driver, outputCompilation, diagnostics);
     }
 }
