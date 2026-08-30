@@ -155,4 +155,32 @@ public static class MEM_03_CollectionsAndGenericsKernels
             data[tid] = sum;
         }
     }
+    [GpuDeviceFunction]
+    public static IEnumerable<int> GenerateDataNested(int start)
+    {
+        var list = new List<int>(64);
+        list.Add(start);
+        list.Add(10);
+        list.Add(5);
+
+        foreach (var item in list)
+        {
+            yield return item;
+        }
+    }
+
+    [GpuKernel]
+    public static void NestedDeferredEnumerationKernel(int[] data, int length)
+    {
+        int tid = ThreadIndex.X;
+        if (tid < length)
+        {
+            int sum = 0;
+            foreach (var item in GenerateDataNested(data[tid]))
+            {
+                sum += item;
+            }
+            data[tid] = sum;
+        }
+    }
 }
