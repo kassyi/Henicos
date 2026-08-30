@@ -7779,5 +7779,105 @@
     "files": [
       "src/Core/Kassyi.GSharp.Core/Intrinsics.cs"
     ]
+  },
+  {
+    "id": "MEM-01",
+    "title": "Fundamental Ownership & Control Flow Analysis",
+    "domain": "MEM",
+    "category": "Category I: Fundamental Ownership",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 3,
+      "generality": 5,
+      "score": 39
+    },
+    "details": {
+      "current_behavior": "Currently, basic variable lifecycles, execution paths (CFG), and null safety are not strictly enforced for GPU resources.",
+      "strategy": "Implement diagnostics to ban discarded allocations, undisposed locals, control flow bypasses, and async void. Support out and return value ownership transfers.",
+      "csharp_example": "var ctx = new GpuContext();\nif (error) return; // Error: Leak detected on early return path\nctx.Dispose();"
+    },
+    "score": 39,
+    "files": []
+  },
+  {
+    "id": "MEM-02",
+    "title": "Object Lifecycle & Encapsulation Verification",
+    "domain": "MEM",
+    "category": "Category II: Object Lifecycle",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 34
+    },
+    "details": {
+      "current_behavior": "Class/struct state management and object boundaries lack strict disposal chaining.",
+      "strategy": "Enforce missing IDisposable on fields. Ban property getter side-effects, implicit cast operators, and static lifecycle fields. Support Factory pattern and [TakesOwnership] dependency injection.",
+      "csharp_example": "class A : IDisposable { GpuContext _c = new GpuContext(); public void Dispose() { _c.Dispose(); } }"
+    },
+    "score": 34,
+    "files": []
+  },
+  {
+    "id": "MEM-03",
+    "title": "Collections, Iterators & Generics Zero-Allocation",
+    "domain": "MEM",
+    "category": "Category III: Collections & Iterators",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 4,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "Interfaces and collection structures cause hidden boxing allocations and potential leaks.",
+      "strategy": "Enforce zero-allocation generics (monomorphization) and safe collection ingestion/exhaustive loop disposal. Ban interface boxing, collection spread operator duplication, and unconsumed custom enumerators.",
+      "csharp_example": "Span<GpuContext> contexts = [ctx1, ctx2];\nSpan<GpuContext> newContexts = [..contexts]; // Error: Ambiguous ownership duplication"
+    },
+    "score": 30,
+    "files": []
+  },
+  {
+    "id": "MEM-04",
+    "title": "Advanced Syntax & Functional Patterns Safeguards",
+    "domain": "MEM",
+    "category": "Category IV: Advanced Syntax",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 4,
+      "difficulty": 5,
+      "generality": 3,
+      "score": 25
+    },
+    "details": {
+      "current_behavior": "Modern C# features like records, tuples, and closures can bypass linear typing.",
+      "strategy": "Support tuple return/deconstruction, record 'with' expressions (Move semantics), and duck-typed 'using' for ref struct. Ban undisposed deconstruction, multicast delegate double-disposal, and escaping borrowed closures.",
+      "csharp_example": "var a = new Holder(new GpuContext());\nvar b = a with { ID = 2 };\nb.Ctx.Dispose();"
+    },
+    "score": 25,
+    "files": []
+  },
+  {
+    "id": "MEM-05",
+    "title": "Unmanaged Boundaries & Low-Level Escape Hatches",
+    "domain": "MEM",
+    "category": "Category V: Unmanaged Boundaries",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 2,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "Low-level operations (pointers, dynamic, GCHandle) are uncontrolled and will crash the GPU environment.",
+      "strategy": "Support stackalloc and fixed blocks carefully. Warn on dynamic device-side allocation. Ban unbounded pointers, stackalloc loop exhaustion, finalizers, dynamic, TypedReference, and GCHandle.",
+      "csharp_example": "class GpuContext { ~GpuContext() { Free(); } } // Error: Finalizers are not supported on GPU."
+    },
+    "score": 30,
+    "files": []
   }
 ]
