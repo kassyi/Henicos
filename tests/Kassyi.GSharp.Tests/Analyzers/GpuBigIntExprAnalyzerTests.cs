@@ -15,7 +15,7 @@ public class GpuBigIntExprAnalyzerTests
         var path = GetTestCasePath(testName);
         var source = await File.ReadAllTextAsync(path);
         var analyzer = new GpuBigIntExprAnalyzer();
-        return await Helpers.RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, analyzer);
+        return await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, analyzer);
     }
 
     [Fact]
@@ -59,3 +59,4 @@ public class GpuBigIntExprAnalyzerTests
         diagnostics.AssertContainsError(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id); 
     }
 }
+

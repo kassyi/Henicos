@@ -30,6 +30,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         Volatile.Write(ref visitor._isRented, 1);
 
+        visitor._loopDepth = 0;
         visitor._usedStructs.Clear();
         visitor._localVariableOverrides.Clear();
 
@@ -93,6 +94,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     Context.Writer.AppendComma();
                     Context.Writer.AppendSpace();
                 }
+
                 Visit(node.Parameters[i]);
             }
         }
@@ -174,14 +176,81 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitUnsafeStatement(UnsafeStatementSyntax node)
         => VisitStatementOrBlock(node.Block);
 
+    private int _loopDepth;
+
+    internal void EnterLoopScope() => _loopDepth++;
+    internal void ExitLoopScope() => _loopDepth--;
+
     public override void VisitForStatement(ForStatementSyntax node)
-        => StatementTranspilers.TranspileForStatement(node, ref Context);
+    {
+        StatementTranspilers.TranspileForStatement(node, ref Context);
+    }
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
-        => StatementTranspilers.TranspileWhileStatement(node, ref Context);
+    {
+        EnterLoopScope();
+        try { StatementTranspilers.TranspileWhileStatement(node, ref Context); }
+        finally { ExitLoopScope(); }
+    }
 
     public override void VisitDoStatement(DoStatementSyntax node)
-        => StatementTranspilers.TranspileDoStatement(node, ref Context);
+    {
+        EnterLoopScope();
+        try { StatementTranspilers.TranspileDoStatement(node, ref Context); }
+        finally { ExitLoopScope(); }
+    }
+
+    public override void VisitForEachStatement(ForEachStatementSyntax node)
+    {
+        EnterLoopScope();
+        try { base.VisitForEachStatement(node); }
+        finally { ExitLoopScope(); }
+    }
+
+    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
+    {
+        if (node.Initializer != null)
+        {
+            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Stackalloc with initializer"));
+            return;
+        }
+
+        if (_loopDepth > 0)
+        {
+            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Recursive stackalloc in loop causes instant VRAM overflow"));
+        }
+
+        if (node.Type is ArrayTypeSyntax arrayType)
+        {
+            using (Context.Writer.Parentheses())
+            {
+                Visit(arrayType.ElementType);
+                Context.Writer.Append("*");
+            }
+
+            Context.Writer.Append("alloca");
+
+            using (Context.Writer.Parentheses())
+            {
+                Context.Writer.Append("sizeof");
+                using (Context.Writer.Parentheses())
+                {
+                    Visit(arrayType.ElementType);
+                }
+
+                if (arrayType.RankSpecifiers.Count > 0 && arrayType.RankSpecifiers[0].Sizes.Count > 0)
+                {
+                    Context.Writer.AppendSpace();
+                    Context.Writer.AppendOperator("*");
+                    Context.Writer.AppendSpace();
+                    using (Context.Writer.Parentheses())
+                    {
+                        Visit(arrayType.RankSpecifiers[0].Sizes[0]);
+                    }
+                }
+            }
+        }
+    }
 
     public override void VisitSwitchStatement(SwitchStatementSyntax node)
         => StatementTranspilers.TranspileSwitchStatement(node, ref Context);
@@ -265,6 +334,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 Context.Writer.AppendOperator("*");
                 Context.Writer.Append(node.Identifier.Text);
             }
+
             return;
         }
 
@@ -304,11 +374,87 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
         => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref Context);
 
+    public override void VisitWithExpression(WithExpressionSyntax node)
+        => ExpressionTranspilers.TranspileWithExpression(node, ref Context);
+
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);
 
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
+
+    public override void VisitParenthesizedVariableDesignation(ParenthesizedVariableDesignationSyntax node)
+    {
+        using (Context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.Variables.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+
+                Visit(node.Variables[i]);
+            }
+        }
+    }
+
+    public override void VisitDiscardDesignation(DiscardDesignationSyntax node)
+    {
+        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Discard (_)"));
+        Context.Writer.Append("__discard");
+    }
+
+    public override void VisitUsingStatement(UsingStatementSyntax node)
+    {
+        Context.Writer.AppendLine("{");
+
+        bool isAsync = node.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword);
+        string disposeMethod = isAsync ? "DisposeAsync" : "Dispose";
+
+        if (node.Declaration != null)
+        {
+            Visit(node.Declaration);
+            Context.Writer.AppendSemiColon();
+            Context.Writer.AppendLine();
+
+            foreach (var variable in node.Declaration.Variables)
+            {
+                string varName = variable.Identifier.Text;
+
+                // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
+                // we omit the actual C++ method call to prevent undefined identifier errors.
+                Context.Writer.Append("    struct __GSharp_Dispose_Guard_");
+                Context.Writer.Append(varName);
+                Context.Writer.Append(" { ");
+                Context.Writer.Append("__device__ ~__GSharp_Dispose_Guard_");
+                Context.Writer.Append(varName);
+                Context.Writer.Append("() { /* best-effort dispose omitted */ } ");
+                Context.Writer.Append("} __guard_");
+                Context.Writer.Append(varName);
+                Context.Writer.Append(";");
+                Context.Writer.AppendLine();
+            }
+        }
+        else if (node.Expression != null)
+        {
+            Context.Writer.Append("auto __gsharp_using_expr = ");
+            Visit(node.Expression);
+            Context.Writer.AppendSemiColon();
+            Context.Writer.AppendLine();
+
+            // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
+            // we omit the actual C++ method call to prevent undefined identifier errors.
+            Context.Writer.Append("    struct __GSharp_Dispose_Guard_expr { ");
+            Context.Writer.Append("__device__ ~__GSharp_Dispose_Guard_expr() { /* best-effort dispose omitted */ } ");
+            Context.Writer.Append("} __guard_expr;");
+            Context.Writer.AppendLine();
+        }
+
+        VisitStatementOrBlock(node.Statement);
+        Context.Writer.AppendLine("}");
+    }
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
         => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
@@ -318,4 +464,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
         => ExpressionTranspilers.TranspileAnonymousMethodExpression(node, ref Context);
+
+    public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
+    {
+        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Finalizers are not supported in GPU kernels"));
+    }
 }
