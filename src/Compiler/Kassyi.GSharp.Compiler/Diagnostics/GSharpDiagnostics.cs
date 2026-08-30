@@ -119,4 +119,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor FundamentalOwnershipError = new(
+        id: "MEM0001",
+        title: "Fundamental Ownership Error",
+        messageFormat: "GpuContext memory ownership violation on '{0}': {1}",
+        category: "GSharpMemorySafety",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
