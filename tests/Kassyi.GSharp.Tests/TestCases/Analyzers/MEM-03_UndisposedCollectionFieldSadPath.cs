@@ -14,6 +14,15 @@ public class Container : IDisposable
     }
 }
 
+public static class UndisposedCollectionFieldTest
+{
+    [GpuKernel]
+    public static void KernelWithUndisposedCollection()
+    {
+        using var container = new Container();
+    }
+}
+
 public struct GpuDummyContext : IDisposable
 {
     public void Dispose() { }
