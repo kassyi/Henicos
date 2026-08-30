@@ -39,11 +39,15 @@ internal sealed class FundamentalOwnershipRule
 
         // 3. Control Flow Bypass
         var bypasses = from ret in node.DescendantNodes().OfType<ReturnStatementSyntax>()
-            from local in variableDeclaratorSyntaxes
-            where !IsUsing(local)
-            let firstDispose = GetFirstDisposeInvocation(node, local.Identifier.Text)
-            where firstDispose != null && ret.SpanStart < firstDispose.SpanStart
-            select new { Location = ret.GetLocation(), Name = local.Identifier.Text };
+                       from local in variableDeclaratorSyntaxes
+                       where !IsUsing(local)
+                       let firstDispose = GetFirstDisposeInvocation(node, local.Identifier.Text)
+                       where firstDispose != null && ret.SpanStart < firstDispose.SpanStart
+                       select new
+                       {
+                           Location = ret.GetLocation(),
+                           Name = local.Identifier.Text
+                       };
 
         ReportIf(bypasses, _ => true, b => b.Location, b => b.Name,
             "a return statement bypasses its disposal, causing a leak", ref context);
@@ -79,11 +83,15 @@ internal sealed class FundamentalOwnershipRule
 
         // 6. Null Assignment Without Disposal
         var nullAssignments = from a in node.DescendantNodes().OfType<AssignmentExpressionSyntax>()
-            where a.Left is IdentifierNameSyntax && a.Right.IsKind(SyntaxKind.NullLiteralExpression)
-            let name = ((IdentifierNameSyntax)a.Left).Identifier.Text
-            let firstDispose = GetFirstDisposeInvocation(node, name)
-            where firstDispose == null || a.SpanStart < firstDispose.SpanStart
-            select new { Location = a.GetLocation(), Name = name };
+                              where a.Left is IdentifierNameSyntax && a.Right.IsKind(SyntaxKind.NullLiteralExpression)
+                              let name = ((IdentifierNameSyntax)a.Left).Identifier.Text
+                              let firstDispose = GetFirstDisposeInvocation(node, name)
+                              where firstDispose == null || a.SpanStart < firstDispose.SpanStart
+                              select new
+                              {
+                                  Location = a.GetLocation(),
+                                  Name = name
+                              };
 
         ReportIf(nullAssignments, _ => true, a => a.Location, a => a.Name,
             "it is assigned to null before being properly disposed, causing a leak", ref context);

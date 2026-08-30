@@ -178,29 +178,36 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     private int _loopDepth;
 
+    internal void EnterLoopScope() => _loopDepth++;
+    internal void ExitLoopScope() => _loopDepth--;
+
     public override void VisitForStatement(ForStatementSyntax node)
     {
-        _loopDepth++;
-        try { StatementTranspilers.TranspileForStatement(node, ref Context); }
-        finally { _loopDepth--; }
+        StatementTranspilers.TranspileForStatement(node, ref Context);
     }
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
     {
-        _loopDepth++;
+        EnterLoopScope();
         try { StatementTranspilers.TranspileWhileStatement(node, ref Context); }
-        finally { _loopDepth--; }
+        finally { ExitLoopScope(); }
     }
 
     public override void VisitDoStatement(DoStatementSyntax node)
     {
-        _loopDepth++;
+        EnterLoopScope();
         try { StatementTranspilers.TranspileDoStatement(node, ref Context); }
-        finally { _loopDepth--; }
+        finally { ExitLoopScope(); }
     }
 
     public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
     {
+        if (node.Initializer != null)
+        {
+            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Stackalloc with initializer"));
+            return;
+        }
+
         if (_loopDepth > 0)
         {
             Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Recursive stackalloc in loop causes instant VRAM overflow"));
@@ -395,7 +402,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitUsingStatement(UsingStatementSyntax node)
     {
         Context.Writer.AppendLine("{");
-        
+
         bool isAsync = node.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword);
         string disposeMethod = isAsync ? "DisposeAsync" : "Dispose";
 
@@ -404,7 +411,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Visit(node.Declaration);
             Context.Writer.AppendSemiColon();
             Context.Writer.AppendLine();
-            
+
             foreach (var variable in node.Declaration.Variables)
             {
                 string varName = variable.Identifier.Text;
@@ -429,7 +436,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Visit(node.Expression);
             Context.Writer.AppendSemiColon();
             Context.Writer.AppendLine();
-            
+
             // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
             // we omit the actual C++ method call to prevent undefined identifier errors.
             Context.Writer.Append("    struct __GSharp_Dispose_Guard_expr { ");
@@ -450,4 +457,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
         => ExpressionTranspilers.TranspileAnonymousMethodExpression(node, ref Context);
+
+    public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
+    {
+        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Finalizers are not supported in GPU kernels"));
+    }
 }
