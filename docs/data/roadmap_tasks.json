@@ -7781,204 +7781,6 @@
     ]
   },
   {
-    "id": "GEN-45",
-    "title": "Profile extraction of registers and shared memory consumption via PTXAS log analysis",
-    "domain": "GEN",
-    "category": "JIT Infrastructure",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 3,
-      "difficulty": 2,
-      "generality": 4,
-      "score": 32
-    },
-    "details": {
-      "current_behavior": "Parses ptxas output logs during nvcc compilation with regular expressions to automatically extract RegistersUsed, SharedMemoryBytes, etc., as CompilationResult.",
-      "strategy": "Feeds back kernel tuning metrics to the runtime.",
-      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
-    },
-    "score": 32,
-    "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/BackendCompiler.cs"
-    ],
-    "depends_on": [
-      "GEN-44"
-    ]
-  },
-  {
-    "id": "GEN-46",
-    "title": "Lazy Expression Tree and operator overloading for GpuBigInteger",
-    "domain": "GEN",
-    "category": "Math Stdlib",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 5,
-      "difficulty": 4,
-      "generality": 4,
-      "score": 34
-    },
-    "details": {
-      "current_behavior": "Operators (+, -, *, /) for GpuBigInteger instances are generated as expression tree objects (GpuBigIntExpr), and the actual GPU kernels are issued upon calling .Value or .Evaluate().",
-      "strategy": "Foundation for a mechanism that minimizes temporary buffer allocation and evaluates the entire expression at once.",
-      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
-    },
-    "score": 34,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34"
-    ]
-  },
-  {
-    "id": "GEN-47",
-    "title": "Deterministic GPU memory management via ScopedGpuMemory and IDisposable",
-    "domain": "GEN",
-    "category": "Math Stdlib",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 4,
-      "difficulty": 3,
-      "generality": 5,
-      "score": 35
-    },
-    "details": {
-      "current_behavior": "Using ref struct ScopedGpuMemory and IDisposable, temporary VRAM allocation on the GPU is synchronously freed (cuMemFree) the moment it exits the using block.",
-      "strategy": "Prevents delayed execution of finalizers by the GC to avoid GPU OutOfMemory.",
-      "csharp_example": "public ref struct ScopedGpuMemory\n{"
-    },
-    "score": 35,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/ScopedGpuMemory.cs"
-    ]
-  },
-  {
-    "id": "GEN-48",
-    "title": "GPU multi-precision division (Reciprocal Approximation) via Newton-Raphson method",
-    "domain": "GEN",
-    "category": "Math Stdlib",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 4,
-      "difficulty": 5,
-      "generality": 3,
-      "score": 25
-    },
-    "details": {
-      "current_behavior": "For Div/Rem operations, calculates the reciprocal approximation of the divisor on the GPU using Newton-Raphson iteration, solving the division based on multiplication.",
-      "strategy": "Parallelization-appropriate algorithms to prevent warp-level penalties due to thread divergence.",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
-    },
-    "score": 25,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
-    ],
-    "depends_on": [
-      "GBI-11",
-      "GBI-30",
-      "GBI-31",
-      "GBI-32",
-      "GBI-33",
-      "GBI-34",
-      "GEN-46"
-    ]
-  },
-  {
-    "id": "GEN-49",
-    "title": "NTT (Number Theoretic Transform) based multi-precision multiplication and Twiddle Factor pool",
-    "domain": "GEN",
-    "category": "Math Stdlib",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 4,
-      "difficulty": 5,
-      "generality": 4,
-      "score": 27
-    },
-    "details": {
-      "current_behavior": "Uses the NTT (Number Theoretic Transform) algorithm for large integer multiplication (Mul), caching and transferring Twiddle Factors of primitive roots precomputed on the CPU side within the GSharpJitProvider.",
-      "strategy": "Speedup with O(N log N) complexity and hiding device transfer overhead.",
-      "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
-    },
-    "score": 27,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
-    ]
-  },
-  {
-    "id": "GEN-50",
-    "title": "Two-pass pipeline for chunk-split addition/subtraction kernels (Carry/Borrow propagation)",
-    "domain": "GEN",
-    "category": "Math Stdlib",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 3,
-      "difficulty": 4,
-      "generality": 4,
-      "score": 26
-    },
-    "details": {
-      "current_behavior": "During Add/Sub, data is split and processed in chunks (ChunkKernel, e.g., 256), and any generated Carry/Borrow is written to a temporary buffer and reapplied later by the ApplyKernel.",
-      "strategy": "Architecture that severs dependencies between threads to achieve full GPU parallel execution.",
-      "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
-    },
-    "score": 26,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
-    ],
-    "depends_on": [
-      "GEN-49"
-    ]
-  },
-  {
-    "id": "GEN-51",
-    "title": "GPU control of PRP (Probable Prime) tests by FermatRunner",
-    "domain": "GEN",
-    "category": "Math Stdlib",
-    "status": "incomplete",
-    "metrics": {
-      "blocker": 2,
-      "difficulty": 4,
-      "generality": 2,
-      "score": 18
-    },
-    "details": {
-      "current_behavior": "The CPU side (FermatRunner) sets up the FermatContext and NTT buffers, calls kernels such as StaticFermatLoop through the JIT Engine, synchronizes (SynchronizeDevice), and receives the result.",
-      "strategy": "Reference implementation of host-device cooperative execution pattern.",
-      "csharp_example": "public class FermatRunner\n{"
-    },
-    "score": 18,
-    "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/FermatRunner.cs"
-    ]
-  },
-  {
-    "id": "GEN-52",
-    "title": "CUDA proxy generation mechanism via [CudaIntrinsic] and [CudaIntrinsicPattern]",
-    "domain": "GEN",
-    "category": "Core API",
-    "status": "implemented",
-    "metrics": {
-      "blocker": 5,
-      "difficulty": 3,
-      "generality": 5,
-      "score": 39
-    },
-    "details": {
-      "current_behavior": "By attaching attributes to C# signatures like Gpu.SyncThreads or ThreadIndex.X, the transpiler transparently replaces them with PTX/CUDA syntaxes such as __syncthreads() or threadIdx.x.",
-      "strategy": "Exposes hardware-specific instructions while maintaining user code type safety.",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"IDE\", \"IDE0051\", Justification = \"Public API exposed for library consumers\")]\npublic static class Gpu\n{"
-    },
-    "score": 39,
-    "files": [
-      "src/Core/Kassyi.GSharp.Core/Intrinsics.cs"
-    ]
-  },
-  {
     "id": "MEM-01",
     "title": "Fundamental Ownership & Control Flow Analysis",
     "domain": "MEM",
@@ -7988,14 +7790,14 @@
       "blocker": 5,
       "difficulty": 3,
       "generality": 5,
-      "score": 38
+      "score": 39
     },
     "details": {
       "current_behavior": "Currently, basic variable lifecycles, execution paths (CFG), and null safety are not strictly enforced for GPU resources.",
       "strategy": "Implement diagnostics to ban discarded allocations, undisposed locals, control flow bypasses, and async void. Support out and return value ownership transfers.",
       "csharp_example": "var ctx = new GpuContext();\nif (error) return; // Error: Leak detected on early return path\nctx.Dispose();"
     },
-    "score": 38,
+    "score": 39,
     "files": []
   },
   {
@@ -8008,14 +7810,14 @@
       "blocker": 5,
       "difficulty": 4,
       "generality": 4,
-      "score": 37
+      "score": 34
     },
     "details": {
       "current_behavior": "Class/struct state management and object boundaries lack strict disposal chaining.",
       "strategy": "Enforce missing IDisposable on fields. Ban property getter side-effects, implicit cast operators, and static lifecycle fields. Support Factory pattern and [TakesOwnership] dependency injection.",
       "csharp_example": "class A : IDisposable { GpuContext _c = new GpuContext(); public void Dispose() { _c.Dispose(); } }"
     },
-    "score": 37,
+    "score": 34,
     "files": []
   },
   {
@@ -8028,14 +7830,14 @@
       "blocker": 4,
       "difficulty": 4,
       "generality": 4,
-      "score": 32
+      "score": 30
     },
     "details": {
       "current_behavior": "Interfaces and collection structures cause hidden boxing allocations and potential leaks.",
       "strategy": "Enforce zero-allocation generics (monomorphization) and safe collection ingestion/exhaustive loop disposal. Ban interface boxing, collection spread operator duplication, and unconsumed custom enumerators.",
       "csharp_example": "Span<GpuContext> contexts = [ctx1, ctx2];\nSpan<GpuContext> newContexts = [..contexts]; // Error: Ambiguous ownership duplication"
     },
-    "score": 32,
+    "score": 30,
     "files": []
   },
   {
@@ -8048,14 +7850,14 @@
       "blocker": 4,
       "difficulty": 5,
       "generality": 3,
-      "score": 31
+      "score": 25
     },
     "details": {
       "current_behavior": "Modern C# features like records, tuples, and closures can bypass linear typing.",
       "strategy": "Support tuple return/deconstruction, record 'with' expressions (Move semantics), and duck-typed 'using' for ref struct. Ban undisposed deconstruction, multicast delegate double-disposal, and escaping borrowed closures.",
       "csharp_example": "var a = new Holder(new GpuContext());\nvar b = a with { ID = 2 };\nb.Ctx.Dispose();"
     },
-    "score": 31,
+    "score": 25,
     "files": []
   },
   {
@@ -8068,14 +7870,14 @@
       "blocker": 5,
       "difficulty": 4,
       "generality": 2,
-      "score": 33
+      "score": 30
     },
     "details": {
       "current_behavior": "Low-level operations (pointers, dynamic, GCHandle) are uncontrolled and will crash the GPU environment.",
       "strategy": "Support stackalloc and fixed blocks carefully. Warn on dynamic device-side allocation. Ban unbounded pointers, stackalloc loop exhaustion, finalizers, dynamic, TypedReference, and GCHandle.",
       "csharp_example": "class GpuContext { ~GpuContext() { Free(); } } // Error: Finalizers are not supported on GPU."
     },
-    "score": 33,
+    "score": 30,
     "files": []
   }
 ]
