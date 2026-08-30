@@ -17,7 +17,7 @@ public class SYN_28_MethodAttributesTests
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)
     {
-        var testCasePath = Path.Combine(GpuAnalyzerTestRunner.GetTestCasesDirectory(), "Analyzers", "SYN-28_MethodAttributes.cs");
+        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "SYN-28_MethodAttributes.cs");
         var code = File.ReadAllText(testCasePath);
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
         var syntaxTree = CSharpSyntaxTree.ParseText(code, parseOptions);
@@ -169,4 +169,3 @@ public class SYN_28_MethodAttributesTests
         Assert.DoesNotContain(NoinlineModifier, cudaSource);
     }
 }
-
