@@ -89,12 +89,18 @@ public static class GBI_30_34_BCL_01_03_GbiAndBclKernels
 
     // [GBI-33] Multi-digit carry addition
     [GpuKernel]
-    public static void MultiDigitAddKernel(uint[] a, uint[] b, uint[] result, uint[] carries)
+    public static void MultiDigitAddKernel(uint[] a, uint[] b, uint[] result, uint[] carries, int numWords)
     {
         int tid = ThreadIndex.X;
-        ulong carry = 0;
-        result[tid] = Gpu.AddWithCarry(a[tid], b[tid], ref carry);
-        carries[tid] = (uint)carry;
+        if (tid == 0)
+        {
+            ulong carry = 0;
+            for (int i = 0; i < numWords; i++)
+            {
+                result[i] = Gpu.AddWithCarry(a[i], b[i], ref carry);
+            }
+            carries[0] = (uint)carry;
+        }
     }
 
     // [GBI-34] Inline PTX execution

@@ -23,7 +23,7 @@ public class GBI_30_34_BCL_01_03_GbiAndBclSadPathTests
     public void Test_GBI30_HostPropertyAccess_ReportsDiagnostic()
     {
         var diagnostics = GetAllDiagnosticsFromTestName("GBI-30_HostPropertyAccess_InGpuKernel");
-        Assert.NotEmpty(diagnostics);
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public class GBI_30_34_BCL_01_03_GbiAndBclSadPathTests
     public void Test_GBI31_DynamicWarpDivergentSync_ReportsDiagnostic()
     {
         var diagnostics = GetAllDiagnosticsFromTestName("GBI-31_DynamicWarpDivergentSync_InGpuKernel");
-        Assert.NotEmpty(diagnostics);
+        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath.Id && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -41,6 +41,6 @@ public class GBI_30_34_BCL_01_03_GbiAndBclSadPathTests
     public void Test_GBI34_DynamicStringInlinePtx_ReportsDiagnostic()
     {
         var diagnostics = GetAllDiagnosticsFromTestName("GBI-34_DynamicStringInlinePtx_InGpuKernel");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral.Id || d.Id == GSharpDiagnostics.StringNotSupported.Id);
+        Assert.Contains(diagnostics, d => (d.Id == GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral.Id || d.Id == GSharpDiagnostics.StringNotSupported.Id) && d.Severity == DiagnosticSeverity.Error);
     }
 }
