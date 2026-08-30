@@ -140,18 +140,20 @@ public static class MethodTranspiler
                     {
                         foreach (var namedArg in attr.NamedArguments)
                         {
-                            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
+                            if (namedArg is not { Key: "Value", Value.Value: int or short })
                             {
-                                var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-                                if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                                {
-                                    hasAggressiveInlining = true;
-                                }
+                                continue;
+                            }
 
-                                if ((options & MethodImplOptions.NoInlining) != 0)
-                                {
-                                    hasNoInlining = true;
-                                }
+                            var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+                            if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                            {
+                                hasAggressiveInlining = true;
+                            }
+
+                            if ((options & MethodImplOptions.NoInlining) != 0)
+                            {
+                                hasNoInlining = true;
                             }
                         }
                     }
