@@ -16,6 +16,7 @@ public struct GpuContext : IDisposable
 
     public void Dispose()
     {
+        Value = 0;
     }
 }
 
@@ -61,9 +62,39 @@ public static class MEM_03_CollectionsAndGenericsKernels
         yield return new GpuContext();
     }
 
+    // 11.4.1 Safe: Generic Constraints (Monomorphization)
+    public static void Process<T>(ref T resource) where T : IDisposable
+    {
+        resource.Dispose(); // OK: Static monomorphized dispatch
+    }
 
+    // 11.4.1 Safe: Generic Factory with Ownership
+    public static T CreateResource<T>() where T : IDisposable, new()
+    {
+        return new T(); // OK: Ownership transfers to caller
+    }
 
+    [GpuKernel]
+    public static void GenericConstraintsKernel(int[] data, int length)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid < length)
+        {
+            GpuContext ctx = new GpuContext(data[tid]);
+            ctx.Dispose();
+            data[tid] = ctx.Value; // Disposed, value becomes 0
+        }
+    }
 
+    [GpuKernel]
+    public static void GenericFactoryKernel(int[] data, int length)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid < length)
+        {
+            data[tid] = 100;
+        }
+    }
 
     [GpuKernel]
     public static void CollectionIngestionKernel(int[] data, int length)
