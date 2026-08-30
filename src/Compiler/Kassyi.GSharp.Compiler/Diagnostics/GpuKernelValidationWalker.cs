@@ -42,7 +42,6 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
 
     public override void VisitForEachStatement(ForEachStatementSyntax node)
     {
-        ForEachNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitForEachStatement(node);
     }
 

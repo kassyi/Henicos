@@ -15,6 +15,8 @@ public struct TranspileContext(
     public Dictionary<string, OverrideValue> LocalVariableOverrides = localVariableOverrides;
     public bool HasEmittedDynamicSmemBase = false;
     public bool SkipLocalsInit = false;
+    public bool IsStateMachineContext = false;
+    public int StateMachineStateCount = 0;
 
     public SemanticModel SemanticModel { get; } = semanticModel;
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
