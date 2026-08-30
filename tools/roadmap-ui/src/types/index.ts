@@ -44,4 +44,5 @@ export const DOMAIN_LABELS: Record<string, string> = {
   GBI: 'GBI (GPU基盤)',
   GSH: 'GSH (トランスパイラ)',
   GEN: 'GEN (ジェネレータ基盤)',
+  MEM: 'MEM (メモリ管理)',
 };
