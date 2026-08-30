@@ -505,7 +505,7 @@ internal static class ExpressionTranspilers
     {
         if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
         {
-            if (symbol.Name == "Malloc")
+            if (symbol.Name == "Malloc" && symbol.ContainingType?.ToDisplayString() == "Kassyi.GSharp.Core.Gpu.Unsafe")
             {
                 context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.DynamicDeviceAllocationWarning, node.GetLocation()));
             }

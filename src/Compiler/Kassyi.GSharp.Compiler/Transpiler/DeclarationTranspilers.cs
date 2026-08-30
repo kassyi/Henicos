@@ -42,7 +42,7 @@ internal static class DeclarationTranspilers
         HoistDeclarationExpressions(node, ref context);
         context.Visitor.VisitVariableDeclaration(node.Declaration);
         context.Writer.AppendSemiColon();
-        
+
         if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
         {
             context.Writer.AppendLine();
@@ -51,7 +51,7 @@ internal static class DeclarationTranspilers
             foreach (var variable in node.Declaration.Variables)
             {
                 string varName = variable.Identifier.Text;
-                
+
                 // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
                 // we omit the actual C++ method call to prevent undefined identifier errors.
                 context.Writer.Append("    struct __GSharp_Dispose_Guard_");
