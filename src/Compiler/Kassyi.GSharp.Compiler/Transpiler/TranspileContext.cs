@@ -17,6 +17,8 @@ public struct TranspileContext(
     public bool SkipLocalsInit = false;
     public bool IsStateMachineContext = false;
     public int StateMachineStateCount = 0;
+    public int ForEachCounter = 0;
+    public List<(int ForeachId, int StartState, int EndState)>? StateMachineDisposeRoutes = null;
 
     public SemanticModel SemanticModel { get; } = semanticModel;
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;

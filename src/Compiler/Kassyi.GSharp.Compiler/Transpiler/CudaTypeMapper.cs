@@ -70,6 +70,14 @@ internal static class CudaTypeMapper
                 return;
             }
 
+            if (namedType.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>.Enumerator")
+            {
+                writer.Append("System_Collections_Generic_List<");
+                writer.AppendType(namedType.ContainingType.TypeArguments[0]);
+                writer.Append(", 64>::Enumerator");
+                return;
+            }
+
             if (namedType.Name == TypeConstants.GpuBigIntRefType)
             {
                 writer.Append(TypeConstants.CudaTypes.UnsignedIntPtr);

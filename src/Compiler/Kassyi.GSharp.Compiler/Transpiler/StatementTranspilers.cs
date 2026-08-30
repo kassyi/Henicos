@@ -123,27 +123,66 @@ internal static class StatementTranspilers
     {
         using (context.Writer.Scope())
         {
-            context.Writer.Append("__gsharp_enumerator_scope");
-            context.Writer.AppendSpace();
-            context.Writer.Append("__scope");
-            using (context.Writer.Parentheses())
+            if (context.IsStateMachineContext)
             {
+                int foreachId = context.ForEachCounter++;
+                int startStateId = context.StateMachineStateCount;
+
+                context.Writer.Append($"__enum_{foreachId}");
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
                 context.Visitor.Visit(node.Expression);
-                context.Writer.Append(".GetEnumerator()");
-            }
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
+                context.Writer.Append(".GetEnumerator();");
+                context.Writer.AppendLine();
 
-            context.Writer.AppendKeyword("while");
-            using (context.Writer.Parentheses())
-            {
-                context.Writer.Append("__scope.enumerator.MoveNext()");
-            }
-            context.Writer.AppendLine();
+                context.Writer.AppendKeyword("while");
+                using (context.Writer.Parentheses())
+                {
+                    context.Writer.Append($"__enum_{foreachId}.MoveNext()");
+                }
+                context.Writer.AppendLine();
 
-            using (context.Writer.Scope())
+                using (context.Writer.Scope())
+                {
+                    context.Writer.Append(node.Identifier.Text);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Writer.Append($"__enum_{foreachId}.get_Current()");
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+
+                    context.Visitor.VisitStatementOrBlock(node.Statement);
+                }
+
+                int endStateId = context.StateMachineStateCount - 1;
+                if (context.StateMachineDisposeRoutes != null && endStateId >= startStateId)
+                {
+                    context.StateMachineDisposeRoutes.Add((foreachId, startStateId, endStateId));
+                }
+            }
+            else
             {
-                if (!context.IsStateMachineContext)
+                context.Writer.Append("__gsharp_enumerator_scope");
+                context.Writer.AppendSpace();
+                context.Writer.Append("__scope");
+                using (context.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(node.Expression);
+                    context.Writer.Append(".GetEnumerator()");
+                }
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+
+                context.Writer.AppendKeyword("while");
+                using (context.Writer.Parentheses())
+                {
+                    context.Writer.Append("__scope.enumerator.MoveNext()");
+                }
+                context.Writer.AppendLine();
+
+                using (context.Writer.Scope())
                 {
                     if (node.Type.IsVar)
                     {
@@ -154,16 +193,16 @@ internal static class StatementTranspilers
                         context.Writer.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
                     }
                     context.Writer.AppendSpace();
-                }
-                context.Writer.Append(node.Identifier.Text);
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("=");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__scope.enumerator.get_Current()");
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                    context.Writer.Append(node.Identifier.Text);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Writer.Append("__scope.enumerator.get_Current()");
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
 
-                context.Visitor.VisitStatementOrBlock(node.Statement);
+                    context.Visitor.VisitStatementOrBlock(node.Statement);
+                }
             }
         }
     }
