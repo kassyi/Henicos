@@ -20,8 +20,8 @@
 | **ジェネレータ・コア基盤** | Roslyn Source Generator、PTX/JIT エンジン、Vector 型マッピング、マーシャリング | `GEN-01` 〜 `GEN-19` | [`roadmaps/gsharp_generator_core.md`](roadmaps/gsharp_generator_core.md) |
 | **C# 構文・シンタックスシュガー** | 制御構文、型推論、パターンマッチ、演算子、永久非対応構文 (`UNS-01`〜`14`) | `SYN-01` 〜 `SYN-94` | [`roadmaps/gsharp_syntax_support.md`](roadmaps/gsharp_syntax_support.md) |
 | **トランスパイラ & ランタイム課題** | AST 走査、型解決、JIT キャッシュ、プロセス制御、デバッグ行マッピング | `GSH-01` 〜 `GSH-09` | [`roadmaps/gsharp_transpiler_issues.md`](roadmaps/gsharp_transpiler_issues.md) |
+| **メモリ・オブジェクトライフサイクル** | オブジェクト生存期間、エスケープ解析、`[TakesOwnership]` 検証、ポインタ安全性 | `MEM-01` 〜 `MEM-10` | [`roadmaps/gsharp_memory_lifecycle.md`](roadmaps/gsharp_memory_lifecycle.md) |
 | **GpuBigInt (GBI) 基盤** | 多倍長整数 GPU 演算、NTT 乗算、Lehmer's GCD、メモリプール、演算子 | `GBI-01` 〜 `GBI-28` | [`roadmaps/gbi_roadmap.md`](roadmaps/gbi_roadmap.md) |
-| **GPUメモリ管理・所有権 (MEM)** | GPUリソースのゼロリーク静的解析、IDisposable/using、所有権移動、コレクション | `MEM-01` 〜 `MEM-05` | [`spec/en/11_gpu_memory_safety_patterns.md`](spec/en/11_gpu_memory_safety_patterns.md) |
 
 ---
 

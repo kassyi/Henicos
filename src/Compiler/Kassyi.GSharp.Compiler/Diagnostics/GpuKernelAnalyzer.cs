@@ -9,24 +9,22 @@ namespace Kassyi.GSharp.Compiler.Diagnostics;
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-        GSharpDiagnostics.UnsupportedSyntax,
         GSharpDiagnostics.ForeachNotSupported,
         GSharpDiagnostics.LinqNotSupported,
         GSharpDiagnostics.ImplicitVarNeedsSuffix,
         GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
-        GSharpDiagnostics.MacroArgumentMustBeConstant,
-        GSharpDiagnostics.FundamentalOwnershipError);
+        GSharpDiagnostics.MacroArgumentMustBeConstant);
 
     public override void Initialize(AnalysisContext context)
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration, SyntaxKind.DestructorDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
-        var methodDeclaration = (BaseMethodDeclarationSyntax)context.Node;
+        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
         if (methodSymbol == null)
         {
@@ -44,13 +42,6 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
         var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, context.ReportDiagnostic);
-
-        // Analyze Fundamental Ownership
-        if (methodDeclaration is MethodDeclarationSyntax methodDeclSyntax)
-        {
-            FundamentalOwnershipRule.Instance.Analyze(methodDeclSyntax, ref validationContext);
-        }
-
         using var walker = GpuKernelValidationWalker.Rent(validationContext);
 
         walker.Visit(methodDeclaration);

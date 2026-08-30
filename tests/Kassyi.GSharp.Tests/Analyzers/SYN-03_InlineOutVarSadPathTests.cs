@@ -4,7 +4,7 @@ public class SYN_03_InlineOutVarSadPathTests
 {
     private static string GetTestCasePath(string fileName)
     {
-        var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
+        var testCasesDir = Helpers.RoslynTestUtility.GetTestCasesDirectory();
         return Path.Combine(testCasesDir, "Analyzers", fileName);
     }
 
@@ -16,7 +16,7 @@ public class SYN_03_InlineOutVarSadPathTests
         var path = GetTestCasePath("SYN-03_DuplicateOutVar.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
+        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
         // Verification: Roslyn/Generator catches duplicate variable name error (CS0128) without transpiler crash
@@ -24,4 +24,3 @@ public class SYN_03_InlineOutVarSadPathTests
         Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error && (d.Id == "CS0128" || d.Id == "CS0136"));
     }
 }
-
