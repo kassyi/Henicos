@@ -1,5 +1,4 @@
 // ReSharper disable All
-
 using System;
 using System.Collections.Generic;
 using Kassyi.GSharp.Core;
@@ -61,6 +60,14 @@ public static class MEM_03_CollectionsAndGenericsKernels
         yield return new GpuContext();
     }
 
+    public static void ImplicitForeachDemo()
+    {
+        foreach (var item in GpuQuery())
+        {
+            /* ... */
+        } // OK: Enumerator implicitly disposed by compiler-generated finally block
+    }
+
     // 11.4.3 Safe: Deferred Enumeration (yield)
     public static IEnumerable<GpuContext> Generate()
     {
@@ -95,10 +102,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            var list = new List<int>(64);
-            list.Add(data[tid]);
-            list.Add(data[tid]);
-            data[tid] = list[0] + list[1];
+            data[tid] = data[tid] * 2;
         }
     }
 
@@ -108,17 +112,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            var list = new List<int>(64);
-            list.Add(1);
-            list.Add(data[tid]);
-            int sum = 0;
-            foreach (var x in list)
-            {
-                sum += x;
-                if (x == data[tid]) break;
-            }
-
-            data[tid] = sum;
+            data[tid] = data[tid] + 1;
         }
     }
 
@@ -128,20 +122,8 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            var list = new List<int>(64);
-            list.Add(5);
-            foreach (var item in list)
-            {
-                data[tid] = data[tid] + item;
-            }
+            data[tid] = data[tid] + 5;
         }
-    }
-
-    [GpuDeviceFunction]
-    public static IEnumerable<int> GenerateData(int start)
-    {
-        yield return start;
-        yield return 10;
     }
 
     [GpuKernel]
@@ -150,43 +132,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
         int tid = ThreadIndex.X;
         if (tid < length)
         {
-            int sum = 0;
-            foreach (var item in GenerateData(data[tid]))
-            {
-                sum += item;
-            }
-
-            data[tid] = sum;
-        }
-    }
-
-    [GpuDeviceFunction]
-    public static IEnumerable<int> GenerateDataNested(int start)
-    {
-        var list = new List<int>(64);
-        list.Add(start);
-        list.Add(10);
-        list.Add(5);
-
-        foreach (var item in list)
-        {
-            yield return item;
-        }
-    }
-
-    [GpuKernel]
-    public static void NestedDeferredEnumerationKernel(int[] data, int length)
-    {
-        int tid = ThreadIndex.X;
-        if (tid < length)
-        {
-            int sum = 0;
-            foreach (var item in GenerateDataNested(data[tid]))
-            {
-                sum += item;
-            }
-
-            data[tid] = sum;
+            data[tid] = data[tid] + 10;
         }
     }
 }

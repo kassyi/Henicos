@@ -21,8 +21,6 @@ public static class MegaCompilationCache
             .Cast<MetadataReference>()
             .ToList();
 
-        references.Add(MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.GpuKernelAttribute).Assembly.Location));
-
         var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
             .AddReferences(references);

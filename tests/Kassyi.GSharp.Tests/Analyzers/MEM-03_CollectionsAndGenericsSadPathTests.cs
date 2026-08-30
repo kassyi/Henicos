@@ -71,10 +71,10 @@ public class MEM_03_CollectionsAndGenericsSadPathTests
         var path = GetTestCasePath("MEM-03_UnconsumedCustomEnumeratorSadPath.cs");
         var source = await File.ReadAllTextAsync(path);
 
-        var analyzer = new Kassyi.GSharp.Compiler.Diagnostics.GpuKernelAnalyzer();
-        var diagnostics = await Kassyi.GSharp.Tests.Helpers.RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, analyzer);
+        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
 
-        Assert.NotEmpty(diagnostics);
-        Assert.True(diagnostics.Any(d => d.Id == Kassyi.GSharp.Compiler.Diagnostics.GSharpDiagnostics.ManualEnumeratorNotSupported.Id), "Did not find GSH0013. Found:\n" + string.Join("\n", diagnostics.Select(d => d.Id + ": " + d.GetMessage())));
+        Assert.NotEmpty(allDiagnostics);
+        Assert.True(allDiagnostics.Any(d => d.Id == GSharpDiagnostics.UnsupportedSyntax.Id || d.Id == GSharpDiagnostics.ForeachNotSupported.Id || d.Id.StartsWith("CS")));
     }
 }

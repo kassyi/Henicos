@@ -269,8 +269,7 @@ public sealed class JitEngine
             addIncludePaths(cudaPath);
         }
 
-        var cuSource = PreprocessSource(cppSource, null);
-        return NvrtcCompiler.CompileToPtx(cuSource, kernelName, [.. options]);
+        return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
 
         void addIncludePaths(string baseDir)
         {
