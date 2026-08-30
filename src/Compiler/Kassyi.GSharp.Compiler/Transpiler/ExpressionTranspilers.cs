@@ -236,7 +236,7 @@ internal static class ExpressionTranspilers
             {
                 context.Writer.AppendKeyword("auto");
                 context.Writer.AppendSpace();
-                context.Writer.Append("_tmp");
+                context.Writer.Append("__gsharp_with_tmp");
                 context.Writer.AppendSpace();
                 context.Writer.AppendOperator("=");
                 context.Writer.AppendSpace();
@@ -244,27 +244,26 @@ internal static class ExpressionTranspilers
                 context.Writer.AppendSemiColon();
                 context.Writer.AppendLine();
 
-                if (node.Initializer != null)
+                foreach (var expr in node.Initializer.Expressions)
                 {
-                    foreach (var expr in node.Initializer.Expressions)
+                    if (expr is not AssignmentExpressionSyntax assignment)
                     {
-                        if (expr is AssignmentExpressionSyntax assignment)
-                        {
-                            context.Writer.Append("_tmp.");
-                            context.Visitor.Visit(assignment.Left);
-                            context.Writer.AppendSpace();
-                            context.Writer.AppendOperator("=");
-                            context.Writer.AppendSpace();
-                            context.Visitor.Visit(assignment.Right);
-                            context.Writer.AppendSemiColon();
-                            context.Writer.AppendLine();
-                        }
+                        continue;
                     }
+
+                    context.Writer.Append("__gsharp_with_tmp.");
+                    context.Visitor.Visit(assignment.Left);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Visitor.Visit(assignment.Right);
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
                 }
 
                 context.Writer.AppendKeyword("return");
                 context.Writer.AppendSpace();
-                context.Writer.Append("_tmp");
+                context.Writer.Append("__gsharp_with_tmp");
                 context.Writer.AppendSemiColon();
                 context.Writer.AppendLine();
             }

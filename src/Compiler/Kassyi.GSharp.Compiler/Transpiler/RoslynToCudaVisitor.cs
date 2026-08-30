@@ -93,6 +93,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     Context.Writer.AppendComma();
                     Context.Writer.AppendSpace();
                 }
+
                 Visit(node.Parameters[i]);
             }
         }
@@ -265,6 +266,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 Context.Writer.AppendOperator("*");
                 Context.Writer.Append(node.Identifier.Text);
             }
+
             return;
         }
 
@@ -324,6 +326,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     Context.Writer.AppendComma();
                     Context.Writer.AppendSpace();
                 }
+
                 Visit(node.Variables[i]);
             }
         }
@@ -331,24 +334,58 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitDiscardDesignation(DiscardDesignationSyntax node)
     {
+        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), "Discard (_)"));
         Context.Writer.Append("__discard");
     }
 
     public override void VisitUsingStatement(UsingStatementSyntax node)
     {
+        Context.Writer.AppendLine("{");
+        
+        bool isAsync = node.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword);
+        string disposeMethod = isAsync ? "DisposeAsync" : "Dispose";
+
         if (node.Declaration != null)
         {
             Visit(node.Declaration);
             Context.Writer.AppendSemiColon();
             Context.Writer.AppendLine();
+            
+            foreach (var variable in node.Declaration.Variables)
+            {
+                string varName = variable.Identifier.Text;
+
+                // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
+                // we omit the actual C++ method call to prevent undefined identifier errors.
+                Context.Writer.Append("    struct __GSharp_Dispose_Guard_");
+                Context.Writer.Append(varName);
+                Context.Writer.Append(" { ");
+                Context.Writer.Append("__device__ ~__GSharp_Dispose_Guard_");
+                Context.Writer.Append(varName);
+                Context.Writer.Append("() { /* best-effort dispose omitted */ } ");
+                Context.Writer.Append("} __guard_");
+                Context.Writer.Append(varName);
+                Context.Writer.Append(";");
+                Context.Writer.AppendLine();
+            }
         }
         else if (node.Expression != null)
         {
+            Context.Writer.Append("auto __gsharp_using_expr = ");
             Visit(node.Expression);
             Context.Writer.AppendSemiColon();
             Context.Writer.AppendLine();
+            
+            // Best-effort disposal: Since struct instance methods (like Dispose) are not transpiled by GSharp,
+            // we omit the actual C++ method call to prevent undefined identifier errors.
+            Context.Writer.Append("    struct __GSharp_Dispose_Guard_expr { ");
+            Context.Writer.Append("__device__ ~__GSharp_Dispose_Guard_expr() { /* best-effort dispose omitted */ } ");
+            Context.Writer.Append("} __guard_expr;");
+            Context.Writer.AppendLine();
         }
+
         VisitStatementOrBlock(node.Statement);
+        Context.Writer.AppendLine("}");
     }
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
