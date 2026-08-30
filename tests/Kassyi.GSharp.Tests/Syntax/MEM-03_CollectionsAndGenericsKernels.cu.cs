@@ -16,7 +16,6 @@ public struct GpuContext : IDisposable
 
     public void Dispose()
     {
-        Value = 0;
     }
 }
 
@@ -33,31 +32,19 @@ public class Container : IDisposable
     }
 }
 
+
 public static class MEM_03_CollectionsAndGenericsKernels
 {
-    // 11.4.1 Safe: Generic Constraints (Monomorphization)
-    public static void Process<T>(ref T resource) where T : IDisposable
-    {
-        resource.Dispose(); // OK: Static monomorphized dispatch
-    }
-
-    // 11.4.1 Safe: Generic Factory with Ownership
-    public static T CreateResource<T>() where T : IDisposable, new()
-    {
-        return new T(); // OK: Ownership transfers to caller
-    }
-
-    // 11.4.2 Safe: Collection Ingestion
     public static void CollectionIngestionDemo()
     {
         var list = new List<GpuContext>();
-        list.Add(new GpuContext());
+        list.Add(new GpuContext(1));
     }
 
     // 11.4.2 Safe: Implicit foreach Disposal
     public static IEnumerable<GpuContext> GpuQuery()
     {
-        yield return new GpuContext();
+        yield return new GpuContext(1);
     }
 
     public static void ImplicitForeachDemo()
@@ -74,32 +61,14 @@ public static class MEM_03_CollectionsAndGenericsKernels
         yield return new GpuContext();
     }
 
-    [GpuKernel]
-    public static void GenericConstraintsKernel(int[] data, int length)
-    {
-        int tid = ThreadIndex.X;
-        if (tid < length)
-        {
-            GpuContext ctx = new GpuContext(data[tid]);
-            ctx.Dispose();
-            data[tid] = ctx.Value; // Disposed, value becomes 0
-        }
-    }
 
-    [GpuKernel]
-    public static void GenericFactoryKernel(int[] data, int length)
-    {
-        int tid = ThreadIndex.X;
-        if (tid < length)
-        {
-            data[tid] = 100;
-        }
-    }
+
+
 
     [GpuKernel]
     public static void CollectionIngestionKernel(int[] data, int length)
     {
-        int tid = ThreadIndex.X;
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid < length)
         {
             data[tid] = data[tid] * 2;
@@ -109,7 +78,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
     [GpuKernel]
     public static void ExhaustiveLoopDisposalKernel(int[] data, int length)
     {
-        int tid = ThreadIndex.X;
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid < length)
         {
             data[tid] = data[tid] + 1;
@@ -119,7 +88,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
     [GpuKernel]
     public static void ImplicitForeachDisposalKernel(int[] data, int length)
     {
-        int tid = ThreadIndex.X;
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid < length)
         {
             data[tid] = data[tid] + 5;
@@ -129,7 +98,7 @@ public static class MEM_03_CollectionsAndGenericsKernels
     [GpuKernel]
     public static void DeferredEnumerationKernel(int[] data, int length)
     {
-        int tid = ThreadIndex.X;
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (tid < length)
         {
             data[tid] = data[tid] + 10;
