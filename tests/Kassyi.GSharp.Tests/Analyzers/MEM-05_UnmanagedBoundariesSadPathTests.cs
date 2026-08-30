@@ -10,10 +10,40 @@ namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class MEM_05_UnmanagedBoundariesSadPathTests
 {
-    private static string GetTestCasePath(string fileName)
+    private static readonly Lazy<(Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)> s_transpilerResult = new(() =>
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+        var generator = new Kassyi.GSharp.Compiler.GpuKernelGenerator();
+        var driver = Microsoft.CodeAnalysis.CSharp.CSharpGeneratorDriver.Create(
+            new[] { generator.AsSourceGenerator() },
+            parseOptions: parseOptions);
+        driver.RunGeneratorsAndUpdateCompilation(MegaCompilationCache.BaseCompilation, out var comp, out var diags);
+        return (comp, diags);
+    });
+
+    [System.Runtime.CompilerServices.ModuleInitializer]
+    public static void Register()
     {
         var testCasesDir = GpuAnalyzerTestRunner.GetTestCasesDirectory();
-        return Path.Combine(testCasesDir, "Analyzers", fileName);
+        var files = Directory.GetFiles(Path.Combine(testCasesDir, "Analyzers"), "MEM-05_*.cs");
+        foreach (var f in files)
+        {
+            MegaCompilationCache.RegisterSource(File.ReadAllText(f));
+        }
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> GetDiagnosticsForTestAsync(string typeName)
+    {
+        var typeSymbol = MegaCompilationCache.GetNamedTypeSymbol(typeName);
+        var syntaxTree = typeSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
+        var source = syntaxTree.ToString();
+        var analyzerDiagnostics = await GpuAnalyzerTestRunner.GetAnalyzerDiagnosticsAsync(source, new GpuKernelAnalyzer());
+        
+        var (compilation, diagnostics) = s_transpilerResult.Value;
+        var localDiagnostics = diagnostics.Where(d => d.Location.SourceTree == syntaxTree);
+        var localCompDiagnostics = compilation.GetDiagnostics().Where(d => d.Location.SourceTree == syntaxTree);
+
+        return localDiagnostics.Concat(localCompDiagnostics).Concat(analyzerDiagnostics).ToImmutableArray();
     }
 
     [Fact]
@@ -21,14 +51,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_UnboundedPointer_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_UnboundedPointer.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_UnboundedPointerTestCase");
         Assert.NotEmpty(allDiagnostics);
         Assert.Contains(allDiagnostics, d => d.Id == "CS0214" || d.Id == "GSH0003");
     }
@@ -38,14 +61,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_MallocWarning_ReportsDiagnosticOrWarningAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_MallocWarning.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_MallocWarningTestCase");
         Assert.NotEmpty(allDiagnostics);
         Assert.Contains(allDiagnostics, d => d.Id == "GSH0014");
     }
@@ -55,14 +71,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_StackallocLoop_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_StackallocLoop.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_StackallocLoopTestCase");
         Assert.NotEmpty(allDiagnostics);
         Assert.Contains(allDiagnostics, d => d.Id == "GSH0003");
     }
@@ -72,16 +81,9 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_Finalizer_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_Finalizer.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("FinalizerGpuContext");
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003");
+        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003" && d.GetMessage().Contains("Finalizers"));
     }
 
     [Fact]
@@ -89,14 +91,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_DynamicKeyword_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_DynamicKeyword.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_DynamicKeywordTestCase");
         Assert.NotEmpty(allDiagnostics);
     }
 
@@ -105,14 +100,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_TypedReference_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_TypedReference.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_TypedReferenceTestCase");
         Assert.NotEmpty(allDiagnostics);
     }
 
@@ -121,14 +109,7 @@ public class MEM_05_UnmanagedBoundariesSadPathTests
     [Trait("Category", "SadPath")]
     public async Task Test_MEM05_ComInteropPInvokeGCHandle_ReportsDiagnosticOrErrorAndPreventsCrash()
     {
-        var path = GetTestCasePath("MEM-05_ComInteropPInvokeGCHandle.cu.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var (driver, compilation, diagnostics) = GpuTranspilerTestRunner.RunTranspiler(source);
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var allDiagnostics = diagnostics.AddRange(compileDiagnostics);
-
-        Assert.NotNull(driver);
+        var allDiagnostics = await GetDiagnosticsForTestAsync("MEM05_ComInteropPInvokeGCHandleTestCase");
         Assert.NotEmpty(allDiagnostics);
     }
 }
