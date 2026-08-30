@@ -22,7 +22,7 @@ public class MEM_04_SharedMemoryForbiddenDisposableRuleTests
         using var stream = typeof(MEM_04_SharedMemoryForbiddenDisposableRuleTests).Assembly.GetManifestResourceStream("Kassyi.GSharp.Tests.TestCases.Analyzers.MEM-04_SharedMemoryDisposableTestCases.cs")
             ?? throw new System.IO.FileNotFoundException("Could not find embedded test cases resource.");
         using var reader = new System.IO.StreamReader(stream);
-        MegaCompilationCache.RegisterSource(reader.ReadToEnd());
+        MegaCompilationCache.RegisterSource("MEM-04_SharedMemoryForbiddenDisposableRuleTests.cs", reader.ReadToEnd());
     }
 
     [Theory]
@@ -70,3 +70,4 @@ public class MEM_04_SharedMemoryForbiddenDisposableRuleTests
         Assert.Empty(reportedDiagnostics);
     }
 }
+

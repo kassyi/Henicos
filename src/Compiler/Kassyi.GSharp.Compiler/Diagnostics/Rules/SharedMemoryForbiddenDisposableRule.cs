@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>
@@ -80,7 +77,7 @@ internal sealed class SharedMemoryForbiddenDisposableRule
         {
             foreach (var member in current.GetMembers("Dispose"))
             {
-                if (member is IMethodSymbol method && method.Parameters.Length == 0)
+                if (member is IMethodSymbol { Parameters.Length: 0 })
                 {
                     return true;
                 }

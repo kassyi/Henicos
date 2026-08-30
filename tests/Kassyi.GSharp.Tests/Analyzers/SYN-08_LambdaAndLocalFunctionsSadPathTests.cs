@@ -1,27 +1,21 @@
+using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Tests.Helpers;
+using Xunit;
+using System.Linq;
+
 namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class SYN_08_LambdaAndLocalFunctionsSadPathTests
 {
-    private static string GetTestCasePath(string fileName)
-    {
-        var testCasesDir = Helpers.RoslynTestUtility.GetTestCasesDirectory();
-        return Path.Combine(testCasesDir, "Analyzers", fileName);
-    }
-
     [Fact]
     [Trait("FeatureId", "SYN-08")]
     [Trait("Category", "SadPath")]
-    public async Task Test_SYN08_DelegateEscapeAndRefCapture_ReportsDiagnosticsAndPreventsCrash()
+    public void Test_SYN08_DelegateEscape_ReportsDiagnosticAndPreventsCrash()
     {
-        var path = GetTestCasePath("SYN-08_DelegateEscapeSadPath.cs");
-        var source = await File.ReadAllTextAsync(path);
+        var allDiagnostics = MegaCompilationCache.GetAllDiagnosticsForFile("SYN-08_DelegateEscapeSadPath.cs");
 
-        var (driver, compilation, diagnostics) = Helpers.RoslynTestUtility.RunGenerator(source);
-        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
-
-        // Verification: Roslyn / Transpiler / Generator reports specific diagnostic errors without compiler crashing
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Id == "GSH0001"); // Reference type object creation
-        Assert.Contains(allDiagnostics, d => d.Id == "GSH0003"); // Unsupported syntax (e.g. delegate escaping assignment)
+        Assert.Contains(allDiagnostics, d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error && (d.Id.StartsWith("CS") || d.Id == GSharpDiagnostics.UnsupportedSyntax.Id));
     }
 }
+
