@@ -44,8 +44,9 @@ internal static class SymbolExtensions
         };
 
     public static bool IsSystemValueTuple(this ITypeSymbol? typeSymbol) =>
-        typeSymbol is INamedTypeSymbol { OriginalDefinition.Name: "ValueTuple" } named &&
-        named.OriginalDefinition.ContainingNamespace.IsSystemNamespace();
+        typeSymbol is INamedTypeSymbol { IsTupleType: true } ||
+        (typeSymbol is INamedTypeSymbol { OriginalDefinition.Name: "ValueTuple" } named &&
+         named.OriginalDefinition.ContainingNamespace.IsSystemNamespace());
 
     public static bool IsGpuBigIntRef(this ITypeSymbol? typeSymbol) =>
         typeSymbol is
