@@ -16,6 +16,77 @@ struct System_Nullable {
 };
 
 /**
+ * @brief CUDA device-side representation of C# System.ValueTuple.
+ */
+template <typename T1>
+struct System_ValueTuple1 {
+    T1 Item1;
+};
+
+template <typename T1, typename T2>
+struct System_ValueTuple2 {
+    T1 Item1;
+    T2 Item2;
+};
+
+template <typename T1, typename T2, typename T3>
+struct System_ValueTuple3 {
+    T1 Item1;
+    T2 Item2;
+    T3 Item3;
+};
+
+template <typename T1, typename T2, typename T3, typename T4>
+struct System_ValueTuple4 {
+    T1 Item1;
+    T2 Item2;
+    T3 Item3;
+    T4 Item4;
+};
+
+template <typename T1, typename T2, typename T3, typename T4, typename T5>
+struct System_ValueTuple5 {
+    T1 Item1;
+    T2 Item2;
+    T3 Item3;
+    T4 Item4;
+    T5 Item5;
+};
+
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
+struct System_ValueTuple6 {
+    T1 Item1;
+    T2 Item2;
+    T3 Item3;
+    T4 Item4;
+    T5 Item5;
+    T6 Item6;
+};
+
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
+struct System_ValueTuple7 {
+    T1 Item1;
+    T2 Item2;
+    T3 Item3;
+    T4 Item4;
+    T5 Item5;
+    T6 Item6;
+    T7 Item7;
+};
+
+template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7, typename TRest>
+struct System_ValueTuple8 {
+    T1 Item1;
+    T2 Item2;
+    T3 Item3;
+    T4 Item4;
+    T5 Item5;
+    T6 Item6;
+    T7 Item7;
+    TRest Rest;
+};
+
+/**
  * @brief 32-bit unsigned addition with carry-in and carry-out (PTX add.cc / addc).
  * @param a First operand.
  * @param b Second operand.

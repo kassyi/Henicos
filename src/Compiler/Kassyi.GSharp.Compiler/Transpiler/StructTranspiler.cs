@@ -7,6 +7,15 @@ internal static class StructTranspiler
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
+        
+        if (structType is INamedTypeSymbol { TypeArguments.Length: > 0 } genericType)
+        {
+            foreach (var typeArg in genericType.TypeArguments)
+            {
+                RegisterUsedStructIfApplicable(typeArg, ref context);
+            }
+        }
+
         if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
             namedStruct.IsGpuBigIntRef() ||
             namedStruct.ContainingNamespace.IsSystemOrNumerics())

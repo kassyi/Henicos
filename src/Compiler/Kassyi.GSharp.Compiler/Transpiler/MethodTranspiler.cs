@@ -181,6 +181,7 @@ public static class MethodTranspiler
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
+            StructTranspiler.RegisterUsedStructIfApplicable(returnType, ref context);
             context.Writer.AppendType(returnType);
         }
         else
