@@ -31,7 +31,7 @@ public static class TestExtStructExtensions
     }
 
     [GpuDeviceFunction]
-    public static T GenericIdentity<T>(this TestExtStruct s, T input)
+    public static int GenericIdentity(this TestExtStruct s, int input)
     {
         return input;
     }

@@ -162,7 +162,7 @@ public class SYN_01_09_ControlFlowTests
     [Trait("FeatureId", "GEN-21")]
     [InlineData(10, 10, 115)] // condA=10 (>0, >5), condB=10 (>5) -> 10 + 100 + 3 + 2 = 115
     [InlineData(10, 2, 215)]  // condA=10 (>0, >5), condB=2 (<=5) -> 10 + 200 + 3 + 2 = 215
-    [InlineData(2, 10, 25)]    // condA=2 (>0, <=5), condB=10 -> 20 + 0 + 3 + 2 = 25
+    [InlineData(2, 10, 15)]    // condA=2 (>0, <=5), condB=10 -> 10 + 0 + 3 + 2 = 15
     [InlineData(-5, 10, 25)]   // condA=-5 (<=0, <=5), condB=10 -> 20 + 0 + 3 + 2 = 25
     public void Test_GEN21_SingleStatementWrapping_Transpilation(int ca, int cb, int expected)
     {
