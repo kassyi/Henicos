@@ -157,7 +157,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
 
     private void ValidateTupleType(SyntaxNode node)
     {
-        var typeSymbol = _context.SemanticModel.GetTypeInfo(node).Type 
+        var typeSymbol = _context.SemanticModel.GetTypeInfo(node).Type
                          ?? _context.SemanticModel.GetSymbolInfo(node).Symbol as ITypeSymbol;
 
         if (typeSymbol is INamedTypeSymbol { IsTupleType: true } named)
