@@ -1567,7 +1567,7 @@
     },
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Type inference is missing for nested property initializers.",
+      "current_behavior": "Implemented. Tuned: Hoisted inline declaration expressions (e.g., out var) before the return keyword to generate cleaner and valid C++ code, based on Qodo AI review.",
       "target_cuda": "Complete fallback to C++11 Uniform Initialization { ... }."
     },
     "score": 38,
@@ -2423,7 +2423,7 @@
     },
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Implementation complete. Added safe helper functions (__gsharp_rotl64, __gsharp_tzc_32, etc.) to Prelude.cu to ensure full compatibility with C# specifications (behavior with 0 input).",
+      "current_behavior": "Implementation complete. Tuned: Refactored AST token generation to use semantic source writer helpers (e.g., AppendKeyword, Parentheses) instead of embedding raw C++ cast strings, adhering to project coding standards.",
       "target_cuda": "Fully comprehensive replacement to CUDA built-in functions (__clz, __popc, __funnelshift_l, __funnelshift_r)."
     },
     "score": 45,
@@ -6207,7 +6207,7 @@
     "title": "GpuBigInteger.ModPow",
     "domain": "GBI",
     "category": "Functional operators",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
@@ -6215,8 +6215,8 @@
       "score": 25
     },
     "details": {
-      "current_behavior": "Modular exponentiation ($a^e \\bmod n$)",
-      "strategy": "Algorithm implementation complete. Pending (skipped) until GBI-01 (Memory Pool) is resolved.",
+      "current_behavior": "Modular exponentiation ($a^e \\bmod n$) is successfully implemented.",
+      "strategy": "Algorithm implementation and JIT provider integration complete via binary exponentiation.",
       "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
     },
     "score": 25,
@@ -7785,7 +7785,7 @@
     "title": "Analyzer Rule: Forbid IDisposable in SharedMemory<T>",
     "domain": "MEM",
     "category": "Concurrency & Shared Memory Ownership",
-    "status": "planned",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
@@ -7793,8 +7793,8 @@
       "score": 35
     },
     "details": {
-      "current_behavior": "Currently, SharedMemory<GpuContext> is allowed, which can lead to double-free and data races since all threads in a block can dispose the shared instance.",
-      "strategy": "Implement a diagnostic rule (e.g. GSH025) in GpuKernelValidationWalker to block SharedMemory<T> where T implements IDisposable or has a Dispose method.",
+      "current_behavior": "Diagnostic rule (GSH025) successfully blocks SharedMemory<T> where T implements IDisposable.",
+      "strategy": "Implemented and verified with unit tests to prevent double-free and data races.",
       "csharp_example": "var shared = new SharedMemory<GpuContext>(64); // Error: GSH025"
     }
   },
@@ -7822,7 +7822,7 @@
     "title": "Struct instance methods and 'this' keyword mapping",
     "domain": "SYN",
     "category": "Structs, Type Definitions, and Object Syntax",
-    "status": "planned",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
@@ -7830,8 +7830,8 @@
       "score": 40
     },
     "details": {
-      "current_behavior": "Struct instance methods and the 'this' expression are not properly transpiled. Instance methods are either omitted or emitted as free functions, and 'ctx.Dispose()' translates verbatim to C++ which causes 'has no member' errors.",
-      "strategy": "Update the transpiler to emit struct instance methods as inline member functions within the generated C++ struct definition, and rewrite ThisExpression to 'this->'. Alternatively, rewrite instance method invocations 'ctx.Method()' to free function calls 'Method(&ctx)'.",
+      "current_behavior": "Struct instance methods and the 'this' expression are properly transpiled to C++ inline member functions.",
+      "strategy": "Implemented and verified via snapshot and execution tests.",
       "csharp_example": "struct S { public void M() { this.x = 1; } } ... var s = new S(); s.M();"
     }
   }

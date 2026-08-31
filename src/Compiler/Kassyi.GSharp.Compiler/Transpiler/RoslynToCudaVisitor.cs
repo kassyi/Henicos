@@ -313,6 +313,28 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
 
+    public override void VisitParenthesizedVariableDesignation(ParenthesizedVariableDesignationSyntax node)
+    {
+        // Used as fallback if not handled by TranspileTupleDeconstructionAssignment
+        using (Context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.Variables.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+                Visit(node.Variables[i]);
+            }
+        }
+    }
+
+    public override void VisitDiscardDesignation(DiscardDesignationSyntax node) => Context.Writer.Append("__discard");
+
+    public override void VisitWithExpression(WithExpressionSyntax node)
+        => ExpressionTranspilers.TranspileWithExpression(node, ref Context);
+
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
         => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
 

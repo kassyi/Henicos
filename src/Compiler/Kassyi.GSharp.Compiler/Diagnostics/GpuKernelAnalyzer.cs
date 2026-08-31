@@ -16,7 +16,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.MacroArgumentMustBeConstant,
         GSharpDiagnostics.UnsupportedSyntax,
         GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
-        GSharpDiagnostics.SharedMemoryDisposableNotSupported);
+        GSharpDiagnostics.SharedMemoryDisposableNotSupported,
+        GSharpDiagnostics.ReservedIdentifierNotAllowed);
 
     public override void Initialize(AnalysisContext context)
     {
