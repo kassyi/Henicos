@@ -8,7 +8,7 @@ internal static class WrapperEmitter
     {
         var className = method.ContainingType.Name + "Wrapper";
         var namespaceName = method.ContainingNamespace.IsGlobalNamespace
-            ? "Kassyi.GSharp.Generated"
+            ? TypeConstants.GeneratedNamespace
             : method.ContainingNamespace.ToDisplayString();
 
         var writer = new SourceWriter();
@@ -48,6 +48,7 @@ internal static class WrapperEmitter
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
+        writer.AppendLine("#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
         WriteLaunchMethodSignature(writer, method, isDevicePtr);
         using (writer.Scope())
         {
@@ -86,6 +87,7 @@ internal static class WrapperEmitter
                 }
             }
         }
+        writer.AppendLine("#pragma warning restore CS8500");
     }
 
     private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
@@ -117,49 +119,47 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    internal static bool IsJitConstant(IParameterSymbol param)
-    {
-        var jitConstAttr = param.GetAttributes().FirstOrDefault(a => KnownAttributes.IsJitConstant(a.AttributeClass?.Name));
-        return jitConstAttr != null;
-    }
-
     private static void WriteKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
-        var jitConstants = method.Parameters.Where(IsJitConstant).ToList();
-        if (jitConstants.Any())
+        var hasJitConstants = false;
+        foreach (var p in method.Parameters)
+        {
+            if (p.HasAttribute(KnownAttributes.JitConstant))
+            {
+                hasJitConstants = true;
+                break;
+            }
+        }
+
+        if (hasJitConstants)
         {
             writer.AppendLine("var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
-            foreach (var jc in jitConstants)
+            foreach (var p in method.Parameters)
             {
-                writer.Append($"__gsharp_jit_constants.Add(\"{jc.Name}\", ");
-                using (writer.Parentheses())
+                if (p.HasAttribute(KnownAttributes.JitConstant))
                 {
-                    writer.Append(jc.Name);
+                    writer.Append("__gsharp_jit_constants.Add(\"");
+                    writer.Append(p.Name);
+                    writer.Append("\", (");
+                    writer.Append(p.Name);
+                    writer.AppendLine(").ToString());");
                 }
-                writer.AppendLine(".ToString());");
             }
-
-            writer.Append(
-                "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
-            using (writer.Parentheses())
-            {
-                writer.Append($"\"{method.Name}\", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + {method.Name}_CudaSource, __gsharp_jit_constants, macros");
-            }
-
-            writer.AppendLine(";");
         }
-        else
+
+        writer.Append("IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
+        using (writer.Parentheses())
         {
-            // We no longer need s_hfunc caching in the wrapper because JitEngine handles the caching natively!
-            writer.Append(
-                "IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
-            using (writer.Parentheses())
-            {
-                writer.Append($"\"{method.Name}\", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + {method.Name}_CudaSource, null, macros");
-            }
-            writer.AppendLine(";");
+            writer.Append("\"");
+            writer.Append(method.Name);
+            writer.Append("\", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ");
+            writer.Append(method.Name);
+            writer.Append("_CudaSource, ");
+            writer.Append(hasJitConstants ? "__gsharp_jit_constants" : "null");
+            writer.Append(", macros");
         }
 
+        writer.AppendLine(";");
         writer.AppendLine();
     }
 }

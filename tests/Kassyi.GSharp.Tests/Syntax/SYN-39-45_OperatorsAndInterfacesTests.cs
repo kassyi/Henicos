@@ -38,11 +38,25 @@ public class SYN_39_45_OperatorsAndInterfacesTests
     {
     }
 
-    [Fact(Skip = "未実装: SYN-44 (拡張メソッド this 引数)")]
+    [Theory]
+    [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-44")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN44_ExtensionMethods_Transpilation()
+    [InlineData(2, 51, 200)]
+    [InlineData(4, 57, 400)]
+    [InlineData(0, 45, 0)]
+    [InlineData(1, 48, 100)]
+    [InlineData(-1, 42, -100)]
+    [InlineData(-10, 15, -1000)]
+    public void Test_SYN44_ExtensionMethods_Transpilation(int input, int expectedMult, int expectedGeneric)
     {
+        int[] valIn = [input];
+        int[] multOut = [0];
+        int[] genericOut = [0];
+
+        SYN_39_45_OperatorsAndInterfacesKernelsWrapper.Launch_ExtensionMethodKernel(valIn, multOut, genericOut, blockDimX: 1);
+
+        Assert.Equal(expectedMult, multOut[0]);
+        Assert.Equal(expectedGeneric, genericOut[0]);
     }
 
     [Fact(Skip = "未実装: SYN-45 (Nullable 値型 uint?, Nullable<T>)")]

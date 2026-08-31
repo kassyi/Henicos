@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# methods and GPU kernels into CUDA C++ function definitions or forward signatures.</summary>
@@ -18,14 +20,14 @@ public static class MethodTranspiler
         var methodSymbol = semanticModel.GetDeclaredSymbol(method);
         if (methodSymbol != null)
         {
-            if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
-                methodSymbol.ContainingType?.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
-                methodSymbol.ContainingModule?.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
+            if (methodSymbol.HasAttribute("SkipLocalsInit") ||
+                methodSymbol.ContainingType.HasAttribute("SkipLocalsInit") ||
+                methodSymbol.ContainingModule.HasAttribute("SkipLocalsInit"))
             {
                 context.SkipLocalsInit = true;
             }
         }
-        
+
         WriteMethodSignature(method, isDevice, ref context);
         WriteMethodBody(method, ref context);
 
@@ -88,7 +90,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    internal static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var hasAggressiveInlining = false;
         var hasNoInlining = false;
@@ -97,14 +99,62 @@ public static class MethodTranspiler
         {
             foreach (var attr in methodSymbol.GetAttributes())
             {
-                switch (attr.AttributeClass?.Name)
+                if (attr.IsAttribute(KnownAttributes.GpuInline))
                 {
-                    case KnownAttributes.GpuInlineAttribute:
-                        hasAggressiveInlining = true;
-                        break;
-                    case KnownAttributes.GpuNoInlineAttribute:
-                        hasNoInlining = true;
-                        break;
+                    hasAggressiveInlining = true;
+                }
+                else if (attr.IsAttribute(KnownAttributes.GpuNoInline))
+                {
+                    hasNoInlining = true;
+                }
+                else if (attr.IsAttribute(KnownAttributes.MethodImpl) &&
+                         attr.AttributeClass?.ContainingNamespace is
+                         {
+                             Name: "CompilerServices",
+                             ContainingNamespace:
+                             {
+                                 Name: "Runtime",
+                                 ContainingNamespace:
+                                 {
+                                     Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true
+                                 }
+                             }
+                         })
+                {
+                    if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
+                    {
+                        var options = (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
+                        if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                        {
+                            hasAggressiveInlining = true;
+                        }
+
+                        if ((options & MethodImplOptions.NoInlining) != 0)
+                        {
+                            hasNoInlining = true;
+                        }
+                    }
+                    else if (attr.NamedArguments.Length > 0)
+                    {
+                        foreach (var namedArg in attr.NamedArguments)
+                        {
+                            if (namedArg is not { Key: "Value", Value.Value: int or short })
+                            {
+                                continue;
+                            }
+
+                            var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+                            if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                            {
+                                hasAggressiveInlining = true;
+                            }
+
+                            if ((options & MethodImplOptions.NoInlining) != 0)
+                            {
+                                hasNoInlining = true;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -127,8 +177,9 @@ public static class MethodTranspiler
         context.Writer.AppendSpace();
 
         var returnType = methodSymbol?.ReturnType;
-        if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+        if (returnType is { SpecialType: not SpecialType.System_Void })
         {
+            StructTranspiler.RegisterUsedStructIfApplicable(returnType, ref context);
             context.Writer.AppendType(returnType);
         }
         else
@@ -141,7 +192,7 @@ public static class MethodTranspiler
         ref TranspileContext context)
     {
         var returnType = methodSymbol?.ReturnType;
-        if (returnType != null && returnType.SpecialType != SpecialType.System_Void)
+        if (returnType is { SpecialType: not SpecialType.System_Void })
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
                 method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
@@ -150,7 +201,7 @@ public static class MethodTranspiler
         context.Writer.AppendKeyword("extern \"C\" __global__ void");
     }
 
-    private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
+    internal static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
     {
         using (context.Writer.Scope())
         {
@@ -174,12 +225,15 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice, ref TranspileContext context)
+    internal static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
+        ref TranspileContext context)
     {
         var validParameters = new List<ParameterSyntax>(parameters.Count);
         foreach (var p in parameters)
         {
-            if (!IsJitConstant(p, ref context))
+            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.JitConstant) ==
+                              true;
+            if (!paramSymbol)
             {
                 validParameters.Add(p);
             }
@@ -193,8 +247,7 @@ public static class MethodTranspiler
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-            if (paramSymbol != null &&
-                paramSymbol.GetAttributes().Any(a => KnownAttributes.IsGpuConst(a.AttributeClass?.Name)))
+            if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuConst))
             {
                 context.Writer.AppendKeyword("const");
                 context.Writer.AppendSpace();
@@ -216,24 +269,5 @@ public static class MethodTranspiler
                 context.Writer.AppendComma();
             }
         }
-    }
-
-    private static bool IsJitConstant(ParameterSyntax p, ref TranspileContext context)
-    {
-        var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-        if (paramSymbol == null)
-        {
-            return false;
-        }
-
-        foreach (var attr in paramSymbol.GetAttributes())
-        {
-            if (KnownAttributes.IsJitConstant(attr.AttributeClass?.Name))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

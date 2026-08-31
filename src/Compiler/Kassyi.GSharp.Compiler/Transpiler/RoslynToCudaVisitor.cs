@@ -93,6 +93,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     Context.Writer.AppendComma();
                     Context.Writer.AppendSpace();
                 }
+
                 Visit(node.Parameters[i]);
             }
         }
@@ -243,6 +244,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
         => ExpressionTranspilers.TranspileConditionalExpression(node, ref Context);
 
+    public override void VisitThisExpression(ThisExpressionSyntax node)
+        => ExpressionTranspilers.TranspileThisExpression(node, ref Context);
+
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
         if (Context.LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
@@ -258,22 +262,110 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        if (symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } || 
-            symbol is ILocalSymbol { IsRef: true })
+        if (symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true })
         {
             using (Context.Writer.Parentheses())
             {
                 Context.Writer.AppendOperator("*");
                 Context.Writer.Append(node.Identifier.Text);
             }
+
             return;
         }
 
         Context.Writer.Append(node.Identifier.Text);
     }
 
-    public override void VisitLiteralExpression(LiteralExpressionSyntax node) =>
+    private ITypeSymbol? GetExpectedType(SyntaxNode node)
+    {
+        var typeInfo = Context.SemanticModel.GetTypeInfo(node);
+        if (typeInfo.ConvertedType != null && typeInfo.ConvertedType.TypeKind != TypeKind.Error &&
+            typeInfo.ConvertedType.SpecialType != SpecialType.System_Object)
+        {
+            return typeInfo.ConvertedType;
+        }
+
+        if (typeInfo.Type != null && typeInfo.Type.TypeKind != TypeKind.Error &&
+            typeInfo.Type.SpecialType != SpecialType.System_Object)
+        {
+            return typeInfo.Type;
+        }
+
+        var parent = node.Parent;
+        if (parent is ConditionalExpressionSyntax conditional)
+        {
+            var otherBranch = (node == conditional.WhenTrue) ? conditional.WhenFalse : conditional.WhenTrue;
+            var otherType = Context.SemanticModel.GetTypeInfo(otherBranch);
+            if (otherType.Type != null && otherType.Type.TypeKind != TypeKind.Error)
+            {
+                return otherType.Type;
+            }
+
+            if (otherType.ConvertedType != null && otherType.ConvertedType.TypeKind != TypeKind.Error)
+            {
+                return otherType.ConvertedType;
+            }
+
+            parent = conditional.Parent;
+        }
+
+        while (parent != null)
+        {
+            switch (parent)
+            {
+                case AssignmentExpressionSyntax assignment when assignment.Right.Contains(node):
+                    return Context.SemanticModel.GetTypeInfo(assignment.Left).Type;
+                case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax varDecl }
+                    when Context.SemanticModel.GetDeclaredSymbol(varDecl) is ILocalSymbol
+                         && Context.SemanticModel.GetDeclaredSymbol(varDecl) is ILocalSymbol symbol:
+                    return symbol.Type;
+                case ReturnStatementSyntax:
+                {
+                    var method = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+                    if (method != null && Context.SemanticModel.GetDeclaredSymbol(method) is { } sym)
+                    {
+                        return sym.ReturnType;
+                    }
+
+                    break;
+                }
+                case StatementSyntax:
+                    break;
+            }
+
+            parent = parent.Parent;
+        }
+
+        return null;
+    }
+
+    public override void VisitDefaultExpression(DefaultExpressionSyntax node)
+    {
+        var typeSymbol = GetExpectedType(node);
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+
+        Context.Writer.AppendEmptyScope();
+    }
+
+    public override void VisitLiteralExpression(LiteralExpressionSyntax node)
+    {
+        if (node.IsKind(SyntaxKind.DefaultLiteralExpression))
+        {
+            var typeSymbol = GetExpectedType(node);
+            if (typeSymbol != null)
+            {
+                Context.Writer.AppendType(typeSymbol);
+            }
+
+            Context.Writer.AppendEmptyScope();
+            return;
+        }
+
         Context.Writer.Append(node.Token.Text);
+    }
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
         => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
@@ -310,6 +402,69 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
+
+    public override void VisitTupleExpression(TupleExpressionSyntax node)
+    {
+        // Transpile tuple literals like (a, b) into struct constructor calls in CUDA
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append("auto");
+        }
+
+        using (Context.Writer.Braces())
+        {
+            for (var i = 0; i < node.Arguments.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                }
+
+                Visit(node.Arguments[i].Expression);
+            }
+        }
+    }
+
+    public override void VisitTupleType(TupleTypeSyntax node)
+    {
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append("auto");
+        }
+    }
+
+    public override void VisitParenthesizedVariableDesignation(ParenthesizedVariableDesignationSyntax node)
+    {
+        // Used as fallback if not handled by TranspileTupleDeconstructionAssignment
+        using (Context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.Variables.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+
+                Visit(node.Variables[i]);
+            }
+        }
+    }
+
+    public override void VisitDiscardDesignation(DiscardDesignationSyntax node) => Context.Writer.Append("__discard");
+
+    public override void VisitWithExpression(WithExpressionSyntax node)
+        => ExpressionTranspilers.TranspileWithExpression(node, ref Context);
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
         => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
