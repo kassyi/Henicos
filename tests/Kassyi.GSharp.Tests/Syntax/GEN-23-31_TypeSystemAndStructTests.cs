@@ -99,16 +99,22 @@ public class GEN_23_31_TypeSystemAndStructTests
         PaddedByteDoubleStruct[] emptyItems = [];
         GEN_23_31_TypeSystemAndStructKernelsWrapper.Launch_PaddedByteDoubleKernel(emptyItems, 0, blockDimX: 1);
 
-        // 3. Single Element Data Validation
+        // 3. Multi-Element Data & Stride Validation
         PaddedByteDoubleStruct[] items = [
-            new PaddedByteDoubleStruct { Flag1 = 1, ValueD = 2.0, ValueI = 100, Flag2 = 10 }
+            new PaddedByteDoubleStruct { Flag1 = 1, ValueD = 2.0, ValueI = 100, Flag2 = 10 },
+            new PaddedByteDoubleStruct { Flag1 = 5, ValueD = 10.5, ValueI = 200, Flag2 = 20 }
         ];
 
-        GEN_23_31_TypeSystemAndStructKernelsWrapper.Launch_PaddedByteDoubleKernel(items, 1, blockDimX: 1);
+        GEN_23_31_TypeSystemAndStructKernelsWrapper.Launch_PaddedByteDoubleKernel(items, 2, blockDimX: 2);
 
         Assert.Equal((byte)2, items[0].Flag1);
         Assert.Equal(4.0, items[0].ValueD);
         Assert.Equal(110, items[0].ValueI);
         Assert.Equal((short)9, items[0].Flag2);
+
+        Assert.Equal((byte)6, items[1].Flag1);
+        Assert.Equal(21.0, items[1].ValueD);
+        Assert.Equal(210, items[1].ValueI);
+        Assert.Equal((short)19, items[1].Flag2);
     }
 }
