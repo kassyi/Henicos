@@ -185,6 +185,7 @@ public class GEN_08_GeneratorSnapshotTests
     [InlineData(@"..\Syntax\SYN-28_MethodAttributesKernels.cu.cs")]
     [InlineData(@"..\Syntax\MEM-04_AdvancedSyntaxAndFunctionalPatternsKernels.cu.cs")]
     [InlineData(@"..\Syntax\GEN-19_VectorMathKernels.cu.cs")]
+    [InlineData(@"Generator\GSH-02_TupleSnapshotTarget.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]

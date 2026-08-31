@@ -152,4 +152,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor TupleCannotContainReferenceTypes = new(
+        id: "GSH0018",
+        title: "Tuple cannot contain reference types in GPU kernels",
+        messageFormat: "Tuple element '{0}' is a reference type, which is forbidden in GPU kernels to prevent GC allocations",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

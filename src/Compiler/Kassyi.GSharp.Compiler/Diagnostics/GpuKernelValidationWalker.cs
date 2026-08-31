@@ -143,6 +143,39 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         base.VisitIdentifierName(node);
     }
 
+    public override void VisitTupleExpression(TupleExpressionSyntax node)
+    {
+        ValidateTupleType(node);
+        base.VisitTupleExpression(node);
+    }
+
+    public override void VisitTupleType(TupleTypeSyntax node)
+    {
+        ValidateTupleType(node);
+        base.VisitTupleType(node);
+    }
+
+    private void ValidateTupleType(SyntaxNode node)
+    {
+        var typeSymbol = _context.SemanticModel.GetTypeInfo(node).Type 
+                         ?? _context.SemanticModel.GetSymbolInfo(node).Symbol as ITypeSymbol;
+
+        if (typeSymbol is INamedTypeSymbol { IsTupleType: true } named)
+        {
+            foreach (var element in named.TupleElements)
+            {
+                if (element.Type.IsReferenceType)
+                {
+                    _context.ReportDiagnostic(Diagnostic.Create(
+                        GSharpDiagnostics.TupleCannotContainReferenceTypes,
+                        node.GetLocation(),
+                        element.Type.ToDisplayString()));
+                    break;
+                }
+            }
+        }
+    }
+
     public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {
         HostPropertyAccessRule.Instance.AnalyzeMemberAccess(node, ref _context);
