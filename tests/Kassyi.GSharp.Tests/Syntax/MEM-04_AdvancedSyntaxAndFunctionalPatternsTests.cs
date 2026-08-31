@@ -4,16 +4,114 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class MEM_04_AdvancedSyntaxAndFunctionalPatternsTests
 {
-    [Fact(Skip = "未実装: GSH-02 (Tuple Support)")]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "MEM-04")]
-    public void Test_MEM04_TupleAndDeconstructionKernel()
+    [Trait("FeatureId", "GSH-02")]
+    [InlineData(new int[0])]
+    [InlineData(new int[] { 0 })]
+    [InlineData(new int[] { -1 })]
+    [InlineData(new int[] { int.MinValue, int.MaxValue })]
+    [InlineData(new int[] { 5, 12 })]
+    public void Test_MEM04_TupleAndDeconstructionKernel(int[] data)
     {
-        /*
-        int[] data = { 5 };
-        MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_TupleAndDeconstructionKernel(data, blockDimX: 1U);
-        Assert.Equal(5, data[0]);
-        */
+        if (data.Length == 0)
+        {
+            MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_TupleAndDeconstructionKernel(data, blockDimX: 0U);
+            return;
+        }
+
+        int[] expected = new int[data.Length];
+        Array.Copy(data, expected, data.Length);
+
+        MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_TupleAndDeconstructionKernel(data, blockDimX: (uint)data.Length);
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            Assert.Equal(expected[i], data[i]);
+        }
+    }
+
+    [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "GSH-02")]
+    [InlineData(new int[0])]
+    [InlineData(new int[] { 0 })]
+    [InlineData(new int[] { -1 })]
+    [InlineData(new int[] { int.MinValue / 2, int.MaxValue / 2 })]
+    [InlineData(new int[] { 7, 15 })]
+    public void Test_GSH02_TupleReturnAndDeconstructionKernel(int[] data)
+    {
+        if (data.Length == 0)
+        {
+            MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_TupleReturnAndDeconstructionKernel(data, blockDimX: 0U);
+            return;
+        }
+
+        int[] expected = new int[data.Length];
+        Array.Copy(data, expected, data.Length);
+
+        MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_TupleReturnAndDeconstructionKernel(data, blockDimX: (uint)data.Length);
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            Assert.Equal(expected[i] + 10, data[i]);
+        }
+    }
+
+    [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "GSH-02")]
+    [InlineData(new int[0])]
+    [InlineData(new int[] { 0 })]
+    [InlineData(new int[] { -1 })]
+    [InlineData(new int[] { int.MinValue / 10, int.MaxValue / 10 })]
+    [InlineData(new int[] { 3, 8 })]
+    public void Test_GSH02_ReassignmentDeconstructionKernel(int[] data)
+    {
+        if (data.Length == 0)
+        {
+            MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_ReassignmentDeconstructionKernel(data, blockDimX: 0U);
+            return;
+        }
+
+        int[] expected = new int[data.Length];
+        Array.Copy(data, expected, data.Length);
+
+        MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_ReassignmentDeconstructionKernel(data, blockDimX: (uint)data.Length);
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            Assert.Equal(expected[i] * 5, data[i]);
+        }
+    }
+
+    [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "GSH-02")]
+    [InlineData(new int[0])]
+    [InlineData(new int[] { 0 })]
+    [InlineData(new int[] { -1 })]
+    [InlineData(new int[] { int.MinValue / 4, int.MaxValue / 4 })]
+    [InlineData(new int[] { 2, 9 })]
+    public void Test_GSH02_NestedTupleDeconstructionKernel(int[] data)
+    {
+        if (data.Length == 0)
+        {
+            MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_NestedTupleDeconstructionKernel(data, blockDimX: 0U);
+            return;
+        }
+
+        int[] expected = new int[data.Length];
+        Array.Copy(data, expected, data.Length);
+
+        MEM_04_AdvancedSyntaxAndFunctionalPatternsKernelsWrapper.Launch_NestedTupleDeconstructionKernel(data, blockDimX: (uint)data.Length);
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            // Formula in kernel: a + b + c = data[tid] + (data[tid] + 1) + (data[tid] + 2) = 3 * data[tid] + 3
+            Assert.Equal(3 * expected[i] + 3, data[i]);
+        }
     }
 
     [Fact]

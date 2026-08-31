@@ -54,6 +54,23 @@ internal static class CudaTypeMapper
         // 3. Named Types (Generics, Framework Types, Vectors, Structs)
         if (typeSymbol is INamedTypeSymbol namedType)
         {
+            if (namedType.IsSystemValueTuple())
+            {
+                writer.Append("System_ValueTuple");
+                writer.Append(namedType.TypeArguments.Length.ToString());
+                writer.Append("<");
+                for (var i = 0; i < namedType.TypeArguments.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        writer.Append(", ");
+                    }
+                    writer.AppendType(namedType.TypeArguments[i]);
+                }
+                writer.Append(">");
+                return;
+            }
+
             if (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
             {
                 writer.Append("System_Nullable<");
