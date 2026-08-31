@@ -164,6 +164,7 @@ __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long l
 
 // --- Vector Math Helpers ---
 // float2
+__device__ __forceinline__ float2 operator-(const float2& a) { return make_float2(-a.x, -a.y); }
 __device__ __forceinline__ float2 operator+(const float2& a, const float2& b) { return make_float2(a.x + b.x, a.y + b.y); }
 __device__ __forceinline__ float2 operator-(const float2& a, const float2& b) { return make_float2(a.x - b.x, a.y - b.y); }
 __device__ __forceinline__ float2 operator*(const float2& a, const float2& b) { return make_float2(a.x * b.x, a.y * b.y); }
@@ -171,6 +172,12 @@ __device__ __forceinline__ float2 operator/(const float2& a, const float2& b) { 
 __device__ __forceinline__ float2 operator*(const float2& a, float b) { return make_float2(a.x * b, a.y * b); }
 __device__ __forceinline__ float2 operator*(float b, const float2& a) { return make_float2(a.x * b, a.y * b); }
 __device__ __forceinline__ float2 operator/(const float2& a, float b) { return make_float2(a.x / b, a.y / b); }
+__device__ __forceinline__ float2& operator+=(float2& a, const float2& b) { a.x += b.x; a.y += b.y; return a; }
+__device__ __forceinline__ float2& operator-=(float2& a, const float2& b) { a.x -= b.x; a.y -= b.y; return a; }
+__device__ __forceinline__ float2& operator*=(float2& a, const float2& b) { a.x *= b.x; a.y *= b.y; return a; }
+__device__ __forceinline__ float2& operator*=(float2& a, float b) { a.x *= b; a.y *= b; return a; }
+__device__ __forceinline__ float2& operator/=(float2& a, const float2& b) { a.x /= b.x; a.y /= b.y; return a; }
+__device__ __forceinline__ float2& operator/=(float2& a, float b) { a.x /= b; a.y /= b; return a; }
 __device__ __forceinline__ float __gsharp_dot2(const float2& a, const float2& b) { return a.x * b.x + a.y * b.y; }
 __device__ __forceinline__ float __gsharp_length2(const float2& a) { return sqrtf(__gsharp_dot2(a, a)); }
 __device__ __forceinline__ float __gsharp_distance2(const float2& a, const float2& b) { return __gsharp_length2(a - b); }
@@ -178,6 +185,7 @@ __device__ __forceinline__ float2 __gsharp_normalize2(const float2& a) { float l
 __device__ __forceinline__ float2 __gsharp_sqrt2(const float2& a) { return make_float2(sqrtf(a.x), sqrtf(a.y)); }
 
 // float3
+__device__ __forceinline__ float3 operator-(const float3& a) { return make_float3(-a.x, -a.y, -a.z); }
 __device__ __forceinline__ float3 operator+(const float3& a, const float3& b) { return make_float3(a.x + b.x, a.y + b.y, a.z + b.z); }
 __device__ __forceinline__ float3 operator-(const float3& a, const float3& b) { return make_float3(a.x - b.x, a.y - b.y, a.z - b.z); }
 __device__ __forceinline__ float3 operator*(const float3& a, const float3& b) { return make_float3(a.x * b.x, a.y * b.y, a.z * b.z); }
@@ -185,6 +193,12 @@ __device__ __forceinline__ float3 operator/(const float3& a, const float3& b) { 
 __device__ __forceinline__ float3 operator*(const float3& a, float b) { return make_float3(a.x * b, a.y * b, a.z * b); }
 __device__ __forceinline__ float3 operator*(float b, const float3& a) { return make_float3(a.x * b, a.y * b, a.z * b); }
 __device__ __forceinline__ float3 operator/(const float3& a, float b) { return make_float3(a.x / b, a.y / b, a.z / b); }
+__device__ __forceinline__ float3& operator+=(float3& a, const float3& b) { a.x += b.x; a.y += b.y; a.z += b.z; return a; }
+__device__ __forceinline__ float3& operator-=(float3& a, const float3& b) { a.x -= b.x; a.y -= b.y; a.z -= b.z; return a; }
+__device__ __forceinline__ float3& operator*=(float3& a, const float3& b) { a.x *= b.x; a.y *= b.y; a.z *= b.z; return a; }
+__device__ __forceinline__ float3& operator*=(float3& a, float b) { a.x *= b; a.y *= b; a.z *= b; return a; }
+__device__ __forceinline__ float3& operator/=(float3& a, const float3& b) { a.x /= b.x; a.y /= b.y; a.z /= b.z; return a; }
+__device__ __forceinline__ float3& operator/=(float3& a, float b) { a.x /= b; a.y /= b; a.z /= b; return a; }
 __device__ __forceinline__ float __gsharp_dot3(const float3& a, const float3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 __device__ __forceinline__ float __gsharp_length3(const float3& a) { return sqrtf(__gsharp_dot3(a, a)); }
 __device__ __forceinline__ float __gsharp_distance3(const float3& a, const float3& b) { return __gsharp_length3(a - b); }
@@ -192,6 +206,7 @@ __device__ __forceinline__ float3 __gsharp_normalize3(const float3& a) { float l
 __device__ __forceinline__ float3 __gsharp_sqrt3(const float3& a) { return make_float3(sqrtf(a.x), sqrtf(a.y), sqrtf(a.z)); }
 
 // float4
+__device__ __forceinline__ float4 operator-(const float4& a) { return make_float4(-a.x, -a.y, -a.z, -a.w); }
 __device__ __forceinline__ float4 operator+(const float4& a, const float4& b) { return make_float4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w); }
 __device__ __forceinline__ float4 operator-(const float4& a, const float4& b) { return make_float4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w); }
 __device__ __forceinline__ float4 operator*(const float4& a, const float4& b) { return make_float4(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w); }
@@ -199,6 +214,12 @@ __device__ __forceinline__ float4 operator/(const float4& a, const float4& b) { 
 __device__ __forceinline__ float4 operator*(const float4& a, float b) { return make_float4(a.x * b, a.y * b, a.z * b, a.w * b); }
 __device__ __forceinline__ float4 operator*(float b, const float4& a) { return make_float4(a.x * b, a.y * b, a.z * b, a.w * b); }
 __device__ __forceinline__ float4 operator/(const float4& a, float b) { return make_float4(a.x / b, a.y / b, a.z / b, a.w / b); }
+__device__ __forceinline__ float4& operator+=(float4& a, const float4& b) { a.x += b.x; a.y += b.y; a.z += b.z; a.w += b.w; return a; }
+__device__ __forceinline__ float4& operator-=(float4& a, const float4& b) { a.x -= b.x; a.y -= b.y; a.z -= b.z; a.w -= b.w; return a; }
+__device__ __forceinline__ float4& operator*=(float4& a, const float4& b) { a.x *= b.x; a.y *= b.y; a.z *= b.z; a.w *= b.w; return a; }
+__device__ __forceinline__ float4& operator*=(float4& a, float b) { a.x *= b; a.y *= b; a.z *= b; a.w *= b; return a; }
+__device__ __forceinline__ float4& operator/=(float4& a, const float4& b) { a.x /= b.x; a.y /= b.y; a.z /= b.z; a.w /= b.w; return a; }
+__device__ __forceinline__ float4& operator/=(float4& a, float b) { a.x /= b; a.y /= b; a.z /= b; a.w /= b; return a; }
 __device__ __forceinline__ float __gsharp_dot4(const float4& a, const float4& b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
 __device__ __forceinline__ float __gsharp_length4(const float4& a) { return sqrtf(__gsharp_dot4(a, a)); }
 __device__ __forceinline__ float __gsharp_distance4(const float4& a, const float4& b) { return __gsharp_length4(a - b); }
