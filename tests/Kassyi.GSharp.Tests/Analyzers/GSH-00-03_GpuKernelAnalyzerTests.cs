@@ -38,10 +38,8 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     [Trait("Category", "SadPath")]
     public void Test_GSH02_TupleWithReferenceType_SadPath()
     {
-        var diagnostics = MegaCompilationCache.GetAllDiagnosticsForFile("GSH-02_TupleWithReferenceTypeSadPath.cs");
-
-        Assert.NotEmpty(diagnostics);
-        Assert.True(diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GSH-02_TupleWithReferenceTypeSadPath.cs");
+        diagnostics.AssertContainsError(GSharpDiagnostics.TupleCannotContainReferenceTypes.Id);
     }
 
     [Fact]
