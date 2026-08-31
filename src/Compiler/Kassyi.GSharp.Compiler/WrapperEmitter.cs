@@ -8,7 +8,7 @@ internal static class WrapperEmitter
     {
         var className = method.ContainingType.Name + "Wrapper";
         var namespaceName = method.ContainingNamespace.IsGlobalNamespace
-            ? "Kassyi.GSharp.Generated"
+            ? TypeConstants.GeneratedNamespace
             : method.ContainingNamespace.ToDisplayString();
 
         var writer = new SourceWriter();
