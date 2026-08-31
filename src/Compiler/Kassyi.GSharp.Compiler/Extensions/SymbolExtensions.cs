@@ -9,11 +9,11 @@ internal static class SymbolExtensions
     public static bool IsSystemOrNumerics(this INamespaceSymbol? ns) =>
         ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             or
-            {
-                Name: TypeConstants.NumericsNamespace,
-                ContainingNamespace:
-                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-            };
+        {
+            Name: TypeConstants.NumericsNamespace,
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
 
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
