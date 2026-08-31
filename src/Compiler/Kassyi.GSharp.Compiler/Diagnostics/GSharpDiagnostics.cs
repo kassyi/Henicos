@@ -144,4 +144,12 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ReservedIdentifierNotAllowed = new(
+        id: "GSH0017",
+        title: "Reserved identifier not allowed",
+        messageFormat: "The identifier '{0}' contains '__' which is reserved for GSharp compiler internals",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }
