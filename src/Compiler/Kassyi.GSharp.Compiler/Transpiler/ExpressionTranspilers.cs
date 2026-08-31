@@ -723,22 +723,19 @@ internal static class ExpressionTranspilers
                         }
                     }
                 }
+
                 return;
             }
 
             if (symbol.MethodKind == MethodKind.ReducedExtension)
             {
                 var receiverType = symbol.ReceiverType;
-                if (receiverType != null && receiverType.TypeKind == TypeKind.Class)
+                if (receiverType is { TypeKind: TypeKind.Class })
                 {
-                    if (receiverType.SpecialType == SpecialType.System_String)
-                    {
-                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.GetLocation()));
-                    }
-                    else
-                    {
-                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), receiverType.ToDisplayString()));
-                    }
+                    context.ReportDiagnostic?.Invoke(receiverType.SpecialType == SpecialType.System_String
+                        ? Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.GetLocation())
+                        : Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
+                            receiverType.ToDisplayString()));
                 }
 
                 context.Writer.Append(symbol.Name);
@@ -746,26 +743,31 @@ internal static class ExpressionTranspilers
                 {
                     if (node.Expression is MemberAccessExpressionSyntax memberAccess)
                     {
-                        if (symbol.Parameters.Length > 0 && symbol.Parameters[0].RefKind is RefKind.Ref or RefKind.Out)
+                        if (symbol.ReducedFrom?.Parameters.Length > 0 &&
+                            symbol.ReducedFrom.Parameters[0].RefKind is RefKind.Ref or RefKind.Out or RefKind.In)
                         {
                             context.Writer.Append("&");
                         }
+
                         context.Visitor.Visit(memberAccess.Expression);
                     }
 
-                    if (node.ArgumentList.Arguments.Count > 0)
+                    if (node.ArgumentList.Arguments.Count <= 0)
                     {
-                        context.Writer.AppendComma();
-                        for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                        return;
+                    }
+
+                    context.Writer.AppendComma();
+                    for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                    {
+                        context.Visitor.Visit(node.ArgumentList.Arguments[i]);
+                        if (i < node.ArgumentList.Arguments.Count - 1)
                         {
-                            context.Visitor.Visit(node.ArgumentList.Arguments[i]);
-                            if (i < node.ArgumentList.Arguments.Count - 1)
-                            {
-                                context.Writer.AppendComma();
-                            }
+                            context.Writer.AppendComma();
                         }
                     }
                 }
+
                 return;
             }
 
@@ -819,13 +821,15 @@ internal static class ExpressionTranspilers
             return null;
         }
 
-        if (arg.Parent is ArgumentListSyntax argList)
+        if (arg.Parent is not ArgumentListSyntax argList)
         {
-            var index = argList.Arguments.IndexOf(arg);
-            if (index >= 0 && index < methodSymbol.Parameters.Length)
-            {
-                return methodSymbol.Parameters[index];
-            }
+            return null;
+        }
+
+        var index = argList.Arguments.IndexOf(arg);
+        if (index >= 0 && index < methodSymbol.Parameters.Length)
+        {
+            return methodSymbol.Parameters[index];
         }
 
         return null;
