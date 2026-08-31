@@ -43,6 +43,10 @@ internal static class SymbolExtensions
             }
         };
 
+    public static bool IsSystemValueTuple(this ITypeSymbol? typeSymbol) =>
+        typeSymbol is INamedTypeSymbol { OriginalDefinition.Name: "ValueTuple" } named &&
+        named.OriginalDefinition.ContainingNamespace.IsSystemNamespace();
+
     public static bool IsGpuBigIntRef(this ITypeSymbol? typeSymbol) =>
         typeSymbol is
         {
@@ -74,6 +78,7 @@ internal static class SymbolExtensions
                 return true;
             }
         }
+
         return false;
     }
 
@@ -89,6 +94,7 @@ internal static class SymbolExtensions
                 return attr;
             }
         }
+
         return null;
     }
 }

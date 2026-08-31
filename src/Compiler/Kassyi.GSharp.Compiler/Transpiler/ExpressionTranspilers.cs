@@ -97,8 +97,9 @@ internal static class ExpressionTranspilers
         {
             if (node.Left is TupleExpressionSyntax tupleLeft)
             {
+                var isStatement = node.Parent is ExpressionStatementSyntax;
                 TranspileTupleDeconstructionAssignment(tupleLeft.Arguments.Select(a => (SyntaxNode)a.Expression),
-                    node.Right, ref context);
+                    node.Right, isDeclaration: isStatement, ref context);
                 return;
             }
 
@@ -107,7 +108,8 @@ internal static class ExpressionTranspilers
                     Designation: ParenthesizedVariableDesignationSyntax parenthesizedDesignation
                 })
             {
-                TranspileTupleDeconstructionAssignment(parenthesizedDesignation.Variables, node.Right, ref context);
+                TranspileTupleDeconstructionAssignment(parenthesizedDesignation.Variables, node.Right,
+                    isDeclaration: true, ref context);
                 return;
             }
         }
@@ -133,6 +135,7 @@ internal static class ExpressionTranspilers
                 return true;
             }
         }
+
         return false;
     }
 
@@ -172,6 +175,7 @@ internal static class ExpressionTranspilers
                 {
                     continue; // Skip unbound discard
                 }
+
                 if (leftExpr is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax })
                 {
                     continue; // Skip explicit discard
@@ -245,39 +249,78 @@ internal static class ExpressionTranspilers
     private static void TranspileTupleDeconstructionAssignment(
         IEnumerable<SyntaxNode> leftVariables,
         ExpressionSyntax rightNode,
+        bool isDeclaration,
         ref TranspileContext context)
     {
-        using (context.Writer.Brackets())
+        if (!isDeclaration)
         {
-            context.Writer.Append("&");
-        }
-
-        context.Writer.AppendParentheses();
-        using (context.Writer.Scope())
-        {
-            var tmpName = $"__tuple_tmp_{rightNode.SpanStart}";
-            context.Writer.AppendKeyword("auto");
-            context.Writer.AppendSpace();
-            context.Writer.Append(tmpName);
-            context.Writer.AppendSpace();
-            context.Writer.AppendOperator("=");
-            context.Writer.AppendSpace();
-            context.Visitor.Visit(rightNode);
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
-
-            var index = 1;
-            foreach (var varNode in leftVariables)
+            using (context.Writer.Brackets())
             {
-                EmitDeconstructionTarget(varNode, $"{tmpName}.Item{index}", ref context);
-                index++;
+                context.Writer.Append("&");
             }
+
+            context.Writer.AppendParentheses();
+            context.Writer.AppendLine();
+            using (context.Writer.Scope())
+            {
+                EmitTupleDeconstructionBody(leftVariables, rightNode, isInsideLambda: true, ref context);
+            }
+
+            context.Writer.Append("()");
         }
-        context.Writer.AppendParentheses();
+        else
+        {
+            EmitTupleDeconstructionBody(leftVariables, rightNode, isInsideLambda: false, ref context);
+        }
     }
 
-    private static void EmitDeconstructionTarget(SyntaxNode varNode, string sourceExpression, ref TranspileContext context)
+    private static void EmitTupleDeconstructionBody(
+        IEnumerable<SyntaxNode> leftVariables,
+        ExpressionSyntax rightNode,
+        bool isInsideLambda,
+        ref TranspileContext context)
     {
+        var tmpName = $"__tuple_tmp_{rightNode.SpanStart}";
+        context.Writer.AppendKeyword("auto");
+        context.Writer.AppendSpace();
+        context.Writer.Append(tmpName);
+        context.Writer.AppendSpace();
+        context.Writer.AppendOperator("=");
+        context.Writer.AppendSpace();
+        context.Visitor.Visit(rightNode);
+        context.Writer.AppendSemiColon();
+        context.Writer.AppendLine();
+
+        var index = 1;
+        foreach (var varNode in leftVariables)
+        {
+            EmitDeconstructionTarget(varNode, $"{tmpName}.Item{index}", ref context);
+            index++;
+        }
+
+        if (isInsideLambda)
+        {
+            context.Writer.AppendKeyword("return");
+            context.Writer.AppendSpace();
+            context.Writer.Append(tmpName);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+        }
+    }
+
+    private static void EmitDeconstructionTarget(SyntaxNode varNode, string sourceExpression,
+        ref TranspileContext context)
+    {
+        var isHoisted = false;
+        if (varNode is DeclarationExpressionSyntax declarationExpr)
+        {
+            varNode = declarationExpr.Designation;
+            if (varNode is SingleVariableDesignationSyntax)
+            {
+                isHoisted = true;
+            }
+        }
+
         if (varNode is IdentifierNameSyntax { Identifier.Text: "_" } identifier &&
             context.SemanticModel.GetSymbolInfo(identifier).Symbol == null)
         {
@@ -293,8 +336,12 @@ internal static class ExpressionTranspilers
 
         if (varNode is SingleVariableDesignationSyntax singleDesignation)
         {
-            context.Writer.AppendKeyword("auto");
-            context.Writer.AppendSpace();
+            if (!isHoisted)
+            {
+                context.Writer.AppendKeyword("auto");
+                context.Writer.AppendSpace();
+            }
+
             context.Writer.Append(singleDesignation.Identifier.Text);
             context.Writer.AppendSpace();
             context.Writer.AppendOperator("=");
@@ -321,6 +368,27 @@ internal static class ExpressionTranspilers
             foreach (var nestedVar in nestedDesignation.Variables)
             {
                 EmitDeconstructionTarget(nestedVar, $"{nestedTmp}.Item{index}", ref context);
+                index++;
+            }
+        }
+        else if (varNode is TupleExpressionSyntax nestedTupleExpr)
+        {
+            // Extract the nested tuple into a local tmp
+            var nestedTmp = $"__nested_tmp_{nestedTupleExpr.SpanStart}";
+            context.Writer.AppendKeyword("auto");
+            context.Writer.AppendSpace();
+            context.Writer.Append(nestedTmp);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
+            context.Writer.Append(sourceExpression);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+
+            var index = 1;
+            foreach (var arg in nestedTupleExpr.Arguments)
+            {
+                EmitDeconstructionTarget(arg.Expression, $"{nestedTmp}.Item{index}", ref context);
                 index++;
             }
         }
@@ -671,8 +739,12 @@ internal static class ExpressionTranspilers
             var name = arg.NameColon.Name.Identifier.Text;
             foreach (var p in methodSymbol.Parameters)
             {
-                if (p.Name == name) return p;
+                if (p.Name == name)
+                {
+                    return p;
+                }
             }
+
             return null;
         }
 
@@ -684,6 +756,7 @@ internal static class ExpressionTranspilers
                 return methodSymbol.Parameters[index];
             }
         }
+
         return null;
     }
 
@@ -768,6 +841,7 @@ internal static class ExpressionTranspilers
                         {
                             context.Visitor.Visit(arg.NameColon);
                         }
+
                         context.Writer.Append($"&__discard_{node.SpanStart}_{i}");
                     }
                     else
