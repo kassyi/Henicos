@@ -42,9 +42,11 @@ public ref struct GpuSpanMEM04
 
 public static class MEM_04_AdvancedSyntaxAndFunctionalPatternsKernels
 {
-    /* Tuple support for deconstruction (MEM-04) - Requires GSH-02
     [GpuDeviceFunction]
     public static (GpuContextMEM04, int) CreateTuple(int val) => new ValueTuple<GpuContextMEM04, int>(new GpuContextMEM04(val), 0);
+
+    [GpuDeviceFunction]
+    public static (int, int) CreateIntTuple(int a, int b) => (a, b);
 
     // 1 & 2. Safe: Tuple Return & Deconstruction with Discard
     [GpuKernel]
@@ -54,7 +56,35 @@ public static class MEM_04_AdvancedSyntaxAndFunctionalPatternsKernels
         var (ctx, _) = MEM_04_AdvancedSyntaxAndFunctionalPatternsKernels.CreateTuple(data[tid]);
         data[tid] = ctx.Value;
     }
-    */
+
+    [GpuKernel]
+    public static void TupleReturnAndDeconstructionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        var (a, b) = MEM_04_AdvancedSyntaxAndFunctionalPatternsKernels.CreateIntTuple(data[tid], 10);
+        data[tid] = a + b;
+    }
+
+    // Edge Case: Reassignment Deconstruction
+    [GpuKernel]
+    public static void ReassignmentDeconstructionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        int existingA = 0;
+        int existingB = 0;
+        (existingA, existingB) = MEM_04_AdvancedSyntaxAndFunctionalPatternsKernels.CreateIntTuple(data[tid], 5);
+        data[tid] = existingA * existingB;
+    }
+
+    // Edge Case: Nested Tuple Deconstruction
+    [GpuKernel]
+    public static void NestedTupleDeconstructionKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        var nestedTuple = ((data[tid], data[tid] + 1), data[tid] + 2);
+        ((int a, int b), int c) = nestedTuple;
+        data[tid] = a + b + c;
+    }
 
     [GpuDeviceFunction]
     private static void OutMethod(out int val)
