@@ -120,9 +120,8 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
                     GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
                     node.GetLocation()));
             }
-            else if (invokedMethod.Name == "WarpShuffle" &&
-                     invokedMethod.ContainingType?.Name == "Gpu" &&
-                     invokedMethod.ContainingNamespace?.ToDisplayString() == TypeConstants.CoreNamespace)
+            else if (invokedMethod is { Name: "WarpShuffle", ContainingType.Name: "Gpu" } &&
+                     invokedMethod.ContainingNamespace.IsCoreNamespace())
             {
                 if (invokedMethod.TypeArguments.Length > 0 && !invokedMethod.TypeArguments[0].IsUnmanagedType)
                 {
