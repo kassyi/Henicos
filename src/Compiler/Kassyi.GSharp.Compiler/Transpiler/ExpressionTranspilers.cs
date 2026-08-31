@@ -622,7 +622,11 @@ internal static class ExpressionTranspilers
                 if (symbol.ReducedFrom?.Parameters.Length > 0 &&
                     symbol.ReducedFrom.Parameters[0].IsByRef())
                 {
-                    context.Writer.Append("&");
+                    var receiverExprType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                    if (receiverExprType is not IPointerTypeSymbol)
+                    {
+                        context.Writer.Append("&");
+                    }
                 }
 
                 context.Visitor.Visit(memberAccess.Expression);
