@@ -69,14 +69,10 @@ public class GEN_23_31_TypeSystemAndStructTests
     [Fact]
     [Trait("FeatureId", "GEN-31")]
     [Trait("Category", "Syntax")]
-    public async Task Test_GEN31_ReversedStructDependencies_TopologicallySorted()
+    public void Test_GEN31_ReversedStructDependencies_TopologicallySorted()
     {
-        var path = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "GEN-31_ReversedStructDependencies.cs");
-        var source = await File.ReadAllTextAsync(path);
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
-        var parentSym = compilation.GetTypeByMetadataName("TestSpace.ParentStruct")!;
-        var childSym = compilation.GetTypeByMetadataName("TestSpace.ChildStruct")!;
+        var parentSym = MegaCompilationCache.GetNamedTypeSymbol("ParentStruct");
+        var childSym = MegaCompilationCache.GetNamedTypeSymbol("ChildStruct");
 
         // Pass ParentStruct first (reversed dependency order)
         var context = CreateTestContext(parentSym, childSym);
