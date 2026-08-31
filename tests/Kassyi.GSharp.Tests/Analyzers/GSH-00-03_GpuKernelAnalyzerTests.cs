@@ -34,11 +34,23 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GSH-02")]
+    [Trait("Category", "SadPath")]
+    public void Test_GSH02_TupleWithReferenceType_SadPath()
+    {
+        var diagnostics = MegaCompilationCache.GetAllDiagnosticsForFile("GSH-02_TupleWithReferenceTypeSadPath.cs");
+
+        Assert.NotEmpty(diagnostics);
+        Assert.True(diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error));
+    }
+
+    [Fact]
     [Trait("FeatureId", "GSH-03")]
     [Trait("Category", "SadPath")]
     public void Test_GSH03_ImplicitVar_WithoutSuffix_InGpuKernel_ReportsDiagnostic()
     {
-        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GSH-03_ImplicitVar_WithoutSuffix_InGpuKernel.cu.cs");
+        var diagnostics =
+            MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GSH-03_ImplicitVar_WithoutSuffix_InGpuKernel.cu.cs");
         diagnostics.AssertContainsError(GSharpDiagnostics.ImplicitVarNeedsSuffix.Id);
     }
 }
