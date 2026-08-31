@@ -56,7 +56,7 @@ internal sealed class GpuMacroArgumentRule
         }
 
         var constant = context.SemanticModel.GetConstantValue(expr);
-        if (constant.HasValue && constant.Value is string)
+        if (constant is { HasValue: true, Value: string })
         {
             return;
         }

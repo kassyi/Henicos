@@ -13,7 +13,12 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.LinqNotSupported,
         GSharpDiagnostics.ImplicitVarNeedsSuffix,
         GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
-        GSharpDiagnostics.MacroArgumentMustBeConstant);
+        GSharpDiagnostics.MacroArgumentMustBeConstant,
+        GSharpDiagnostics.UnsupportedSyntax,
+        GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
+        GSharpDiagnostics.SharedMemoryDisposableNotSupported,
+        GSharpDiagnostics.TupleCannotContainReferenceTypes,
+        GSharpDiagnostics.ReservedIdentifierNotAllowed);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -32,9 +37,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         }
 
         // Check if the method is a GPU kernel or device method
-        var isGpuKernel = methodSymbol.GetAttributes().Any(a =>
-            KnownAttributes.IsGpuKernel(a.AttributeClass?.Name) ||
-            KnownAttributes.IsGpuDeviceFunction(a.AttributeClass?.Name));
+        var isGpuKernel = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
+                          methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
 
         if (!isGpuKernel)
         {

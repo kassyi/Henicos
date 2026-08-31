@@ -26,6 +26,18 @@ internal static class CudaTypeMapper
             s_specialTypes[(int)type] = (cudaName, size);
     }
 
+    public static void AppendTypeOrAuto(this ref SourceWriter writer, ITypeSymbol? typeSymbol, bool forceAuto = false)
+    {
+        if (forceAuto || typeSymbol == null)
+        {
+            writer.AppendKeyword("auto");
+        }
+        else
+        {
+            writer.AppendType(typeSymbol);
+        }
+    }
+
     public static void AppendType(this ref SourceWriter writer, ITypeSymbol? typeSymbol)
     {
         switch (typeSymbol)
@@ -54,7 +66,24 @@ internal static class CudaTypeMapper
         // 3. Named Types (Generics, Framework Types, Vectors, Structs)
         if (typeSymbol is INamedTypeSymbol namedType)
         {
-            if (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            if (namedType.IsSystemValueTuple())
+            {
+                writer.Append("System_ValueTuple");
+                writer.Append(namedType.TypeArguments.Length.ToString());
+                writer.Append("<");
+                for (var i = 0; i < namedType.TypeArguments.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        writer.Append(", ");
+                    }
+                    writer.AppendType(namedType.TypeArguments[i]);
+                }
+                writer.Append(">");
+                return;
+            }
+
+            if (namedType.IsSystemNullable())
             {
                 writer.Append("System_Nullable<");
                 writer.AppendType(namedType.TypeArguments[0]);
@@ -62,7 +91,7 @@ internal static class CudaTypeMapper
                 return;
             }
 
-            if (namedType.Name == TypeConstants.GpuBigIntRefType)
+            if (namedType.IsGpuBigIntRef())
             {
                 writer.Append(TypeConstants.CudaTypes.UnsignedIntPtr);
                 return;
@@ -118,10 +147,31 @@ internal static class CudaTypeMapper
         }
 
         var parent = symbol.ContainingSymbol;
-        if (parent != null && parent is not INamespaceSymbol { IsGlobalNamespace: true })
+        if (parent is { } and not INamespaceSymbol { IsGlobalNamespace: true })
         {
             writer.AppendFullyQualifiedCppName(parent);
             writer.Append('_');
+        }
+
+        writer.Append(symbol.Name);
+    }
+
+    public static void AppendFullyQualifiedCsName(this ref SourceWriter writer, ISymbol symbol)
+    {
+        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            return;
+        }
+
+        var parent = symbol.ContainingSymbol;
+        if (parent is not null and not INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            writer.AppendFullyQualifiedCsName(parent);
+            writer.Append('.');
+        }
+        else
+        {
+            writer.Append("global::");
         }
 
         writer.Append(symbol.Name);
@@ -136,7 +186,7 @@ internal static class CudaTypeMapper
             return (specialSize, specialSize);
         }
 
-        if (typeSymbol is not INamedTypeSymbol named || named.TypeKind != TypeKind.Struct)
+        if (typeSymbol is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named)
         {
             return (8, 8); // arrays/pointers
         }
@@ -186,25 +236,9 @@ internal static class CudaTypeMapper
     public static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameterCppType(
         this ref SourceWriter writer, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {
-        var isRefPointer = false;
-        var isIn = false;
-        var isRefOut = false;
-
-        foreach (var m in p.Modifiers)
-        {
-            if (m.IsKind(SyntaxKind.InKeyword))
-            {
-                isIn = true;
-            }
-
-            if (!m.IsKind(SyntaxKind.RefKeyword) && !m.IsKind(SyntaxKind.OutKeyword))
-            {
-                continue;
-            }
-
-            isRefPointer = true;
-            isRefOut = true;
-        }
+        var isIn = p.IsIn();
+        var isRefOut = p.IsByRefOrOut();
+        var isRefPointer = isRefOut;
 
         if (isIn)
         {

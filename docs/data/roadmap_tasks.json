@@ -56,7 +56,7 @@
     "title": "Generalization of tuple syntax",
     "domain": "GSH",
     "category": "Parsing / Syntax Analysis",
-    "status": "incomplete",
+    "status": "in_progress",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
@@ -1567,7 +1567,7 @@
     },
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Type inference is missing for nested property initializers.",
+      "current_behavior": "Implemented. Tuned: Hoisted inline declaration expressions (e.g., out var) before the return keyword to generate cleaner and valid C++ code, based on Qodo AI review.",
       "target_cuda": "Complete fallback to C++11 Uniform Initialization { ... }."
     },
     "score": 38,
@@ -2071,7 +2071,7 @@
     "title": "[MethodImpl(AggressiveInlining)] mapping",
     "domain": "SYN",
     "category": "Strings, Debugging, and Metaprogramming",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
@@ -2079,14 +2079,16 @@
       "score": 41
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Attributes are ignored.",
+      "csharp_example": "[MethodImpl(MethodImplOptions.AggressiveInlining)]\npublic static int Func(int x) => x + 1;",
+      "current_behavior": "Transpiled with __forceinline__ / __noinline__ / inline __device__ and zero-allocation symbol checks.",
       "target_cuda": "Automatic appending of the CUDA __forceinline__ modifier."
     },
     "score": 41,
     "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
+      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/MethodTranspiler.cs",
+      "tests/Kassyi.GSharp.Tests/Syntax/SYN-28_MethodAttributesKernels.cu.cs",
+      "tests/Kassyi.GSharp.Tests/Syntax/SYN-28_MethodAttributesTests.cs",
+      "tests/Kassyi.GSharp.Tests/TestCases/Analyzers/SYN-28_MethodAttributes.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2421,7 +2423,7 @@
     },
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Implementation complete. Added safe helper functions (__gsharp_rotl64, __gsharp_tzc_32, etc.) to Prelude.cu to ensure full compatibility with C# specifications (behavior with 0 input).",
+      "current_behavior": "Implementation complete. Tuned: Refactored AST token generation to use semantic source writer helpers (e.g., AppendKeyword, Parentheses) instead of embedding raw C++ cast strings, adhering to project coding standards.",
       "target_cuda": "Fully comprehensive replacement to CUDA built-in functions (__clz, __popc, __funnelshift_l, __funnelshift_r)."
     },
     "score": 45,
@@ -6205,7 +6207,7 @@
     "title": "GpuBigInteger.ModPow",
     "domain": "GBI",
     "category": "Functional operators",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
@@ -6213,8 +6215,8 @@
       "score": 25
     },
     "details": {
-      "current_behavior": "Modular exponentiation ($a^e \\bmod n$)",
-      "strategy": "Algorithm implementation complete. Pending (skipped) until GBI-01 (Memory Pool) is resolved.",
+      "current_behavior": "Modular exponentiation ($a^e \\bmod n$) is successfully implemented.",
+      "strategy": "Algorithm implementation and JIT provider integration complete via binary exponentiation.",
       "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
     },
     "score": 25,
@@ -6698,7 +6700,7 @@
     "title": "Dim3 (ThreadIndex, BlockIndex, BlockDimension, GridDimension)",
     "domain": "GBI",
     "category": "GPU Built-in Types and Variables",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6720,7 +6722,7 @@
     "title": "Gpu.SyncThreads / Gpu.SyncGrid",
     "domain": "GBI",
     "category": "GPU synchronization primitives",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6745,7 +6747,7 @@
     "title": "Gpu.AtomicAdd / AtomicSub / AtomicOr / AtomicMax",
     "domain": "GBI",
     "category": "GPU Atomic Operations",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6771,7 +6773,7 @@
     "title": "Gpu.AddWithCarry / SubWithBorrow / MultiplyWide",
     "domain": "GBI",
     "category": "GPU hardware arithmetic (carry, wide multiplication)",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6798,7 +6800,7 @@
     "title": "Gpu.InlinePtx",
     "domain": "GBI",
     "category": "Insertion of inline PTX assembly",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6826,7 +6828,7 @@
     "title": "System.Numerics.BitOperations (LeadingZeroCount, PopCount, TrailingZeroCount)",
     "domain": "BCL",
     "category": "Base Class Library (BCL) Mapping",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6848,7 +6850,7 @@
     "title": "System.Numerics.BitOperations (Log2, RotateLeft, RotateRight)",
     "domain": "BCL",
     "category": "Base Class Library (BCL) Mapping",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6873,7 +6875,7 @@
     "title": "System.Math / System.MathF",
     "domain": "BCL",
     "category": "Base Class Library (BCL) Mapping",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6899,7 +6901,7 @@
     "title": "Generation of forward declarations for all kernel signatures and automatic appending of the Prelude header",
     "domain": "GEN",
     "category": "Generator Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -6961,7 +6963,7 @@
     "title": "__restrict__ pointer mapping for array arguments and alias analysis optimization",
     "domain": "GEN",
     "category": "Type System",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
@@ -7081,7 +7083,7 @@
     "title": "Automatic generation of alignof(T) boundary alignment macros for dynamic SharedMemory<T>",
     "domain": "GEN",
     "category": "Runtime and Type System",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
@@ -7137,7 +7139,7 @@
     "title": "Transpiling C# 12 [InlineArray] attribute to C++ fixed-length arrays",
     "domain": "GEN",
     "category": "Type System",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -7164,7 +7166,7 @@
     "title": "Topological sorting of C++ struct forward declarations considering dependencies",
     "domain": "GEN",
     "category": "Generator Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
@@ -7244,7 +7246,7 @@
     "title": "GPU memory transfer (marshaling) and automatic array pinning (Pinned Object)",
     "domain": "GEN",
     "category": "Interoperability Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
@@ -7361,7 +7363,7 @@
     "title": "CUDA Intrinsic transparent replacement mechanism for BCL (.NET) static method calls",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 4,
@@ -7761,7 +7763,7 @@
     "title": "CUDA proxy generation mechanism via [CudaIntrinsic] and [CudaIntrinsicPattern]",
     "domain": "GEN",
     "category": "Core API",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -7777,5 +7779,60 @@
     "files": [
       "src/Core/Kassyi.GSharp.Core/Intrinsics.cs"
     ]
+  },
+  {
+    "id": "MEM-04",
+    "title": "Analyzer Rule: Forbid IDisposable in SharedMemory<T>",
+    "domain": "MEM",
+    "category": "Concurrency & Shared Memory Ownership",
+    "status": "implemented",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 2,
+      "generality": 4,
+      "score": 35
+    },
+    "details": {
+      "current_behavior": "Diagnostic rule (GSH025) successfully blocks SharedMemory<T> where T implements IDisposable.",
+      "strategy": "Implemented and verified with unit tests to prevent double-free and data races.",
+      "csharp_example": "var shared = new SharedMemory<GpuContext>(64); // Error: GSH025"
+    }
+  },
+  {
+    "id": "MEM-05",
+    "title": "Implement GpuArc<T> for Safe Shared Ownership",
+    "domain": "MEM",
+    "category": "Concurrency & Shared Memory Ownership",
+    "status": "rejected",
+    "metrics": {
+      "blocker": 3,
+      "difficulty": 4,
+      "generality": 3,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "Dynamic shared ownership on the GPU is strictly prohibited to prevent massive atomic contention. However, there is no technically safe escape hatch for algorithms that absolutely require shared ownership.",
+      "strategy": "Implement GpuArc<T> in Kassyi.GSharp.Core and map it to a C++ template in Prelude.cu using atomicAdd/Sub. This enforces safe, atomic reference-counted disposal at the cost of performance.",
+      "csharp_example": "using var arc = new GpuArc<GpuContext>(ctx);",
+      "memo": "Rejected because dynamic shared ownership using Atomic Reference Counting (ARC) via GpuArc<T> is strictly prohibited by the specification (11.10.3) due to performance bottlenecks and data race hazards."
+    }
+  },
+  {
+    "id": "SYN-95",
+    "title": "Struct instance methods and 'this' keyword mapping",
+    "domain": "SYN",
+    "category": "Structs, Type Definitions, and Object Syntax",
+    "status": "implemented",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 40
+    },
+    "details": {
+      "current_behavior": "Struct instance methods and the 'this' expression are properly transpiled to C++ inline member functions.",
+      "strategy": "Implemented and verified via snapshot and execution tests.",
+      "csharp_example": "struct S { public void M() { this.x = 1; } } ... var s = new S(); s.M();"
+    }
   }
 ]

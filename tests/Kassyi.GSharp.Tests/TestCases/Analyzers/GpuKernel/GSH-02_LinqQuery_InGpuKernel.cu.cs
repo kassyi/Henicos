@@ -1,4 +1,6 @@
 // ReSharper disable All
+namespace Kassyi.GSharp.Tests.TestCases.Analyzers.GSH_02_LinqQuery_InGpuKernel;
+
 using Kassyi.GSharp.Core;
 using System.Linq;
 
