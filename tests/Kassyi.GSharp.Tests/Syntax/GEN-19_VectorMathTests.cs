@@ -336,4 +336,62 @@ public class GEN_19_VectorMathTests
             Assert.Equal(expected.Y, output[i].Y, 4);
         }
     }
+
+    [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "GEN-19")]
+    public void Test_GEN19_VectorUnaryAndCompoundOperators()
+    {
+        int length = 8;
+        var v2In = new System.Numerics.Vector2[length];
+        var v2Neg = new System.Numerics.Vector2[length];
+        var v2Compound = new System.Numerics.Vector2[length];
+        var v3In = new System.Numerics.Vector3[length];
+        var v3Neg = new System.Numerics.Vector3[length];
+        var v3Compound = new System.Numerics.Vector3[length];
+        var v4In = new System.Numerics.Vector4[length];
+        var v4Neg = new System.Numerics.Vector4[length];
+        var v4Compound = new System.Numerics.Vector4[length];
+
+        for (int i = 0; i < length; i++)
+        {
+            v2In[i] = new System.Numerics.Vector2(i + 1.0f, (i + 1.0f) * 2.0f);
+            v3In[i] = new System.Numerics.Vector3(i + 1.0f, (i + 1.0f) * 2.0f, (i + 1.0f) * 3.0f);
+            v4In[i] = new System.Numerics.Vector4(i + 1.0f, (i + 1.0f) * 2.0f, (i + 1.0f) * 3.0f, (i + 1.0f) * 4.0f);
+        }
+
+        GEN_19_VectorMathKernelsWrapper.Launch_VectorUnaryAndCompoundKernel(
+            v2In, v2Neg, v2Compound,
+            v3In, v3Neg, v3Compound,
+            v4In, v4Neg, v4Compound,
+            length, blockDimX: 32);
+
+        for (int i = 0; i < length; i++)
+        {
+            Assert.Equal(-v2In[i].X, v2Neg[i].X, 4);
+            Assert.Equal(-v2In[i].Y, v2Neg[i].Y, 4);
+            var expectedV2 = ((v2In[i] + new System.Numerics.Vector2(1.0f, 2.0f)) * 2.0f - v2In[i]) / 2.0f;
+            Assert.Equal(expectedV2.X, v2Compound[i].X, 4);
+            Assert.Equal(expectedV2.Y, v2Compound[i].Y, 4);
+
+            Assert.Equal(-v3In[i].X, v3Neg[i].X, 4);
+            Assert.Equal(-v3In[i].Y, v3Neg[i].Y, 4);
+            Assert.Equal(-v3In[i].Z, v3Neg[i].Z, 4);
+            var expectedV3 = ((v3In[i] + new System.Numerics.Vector3(1.0f, 2.0f, 3.0f)) * 2.0f - v3In[i]) / 2.0f;
+            Assert.Equal(expectedV3.X, v3Compound[i].X, 4);
+            Assert.Equal(expectedV3.Y, v3Compound[i].Y, 4);
+            Assert.Equal(expectedV3.Z, v3Compound[i].Z, 4);
+
+            Assert.Equal(-v4In[i].X, v4Neg[i].X, 4);
+            Assert.Equal(-v4In[i].Y, v4Neg[i].Y, 4);
+            Assert.Equal(-v4In[i].Z, v4Neg[i].Z, 4);
+            Assert.Equal(-v4In[i].W, v4Neg[i].W, 4);
+            var expectedV4 = ((v4In[i] + new System.Numerics.Vector4(1.0f, 2.0f, 3.0f, 4.0f)) * 2.0f - v4In[i]) / 2.0f;
+            Assert.Equal(expectedV4.X, v4Compound[i].X, 4);
+            Assert.Equal(expectedV4.Y, v4Compound[i].Y, 4);
+            Assert.Equal(expectedV4.Z, v4Compound[i].Z, 4);
+            Assert.Equal(expectedV4.W, v4Compound[i].W, 4);
+        }
+    }
 }
+
