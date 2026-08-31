@@ -23,5 +23,16 @@ public class SYN_01_05_SyntaxAnalyzerTests
         var diagnostics = MegaCompilationCache.GetGeneratorDiagnosticsForFile("SYN-04_ReferenceNullCoalescing_InGpuKernel.cu.cs");
         diagnostics.AssertContainsError(GSharpDiagnostics.StringNotSupported.Id);
     }
+
+    [Fact]
+    [Trait("FeatureId", "SYN-09")]
+    [Trait("Category", "SadPath")]
+    public void Test_SYN09_AmbiguousDefaultLiteral_ReportsDiagnostic()
+    {
+        var compileDiagnostics = MegaCompilationCache.GetCompilerDiagnosticsForFile("SYN-09_AmbiguousDefaultLiteral.cs");
+
+        // CS8716: There is no target type for the default literal.
+        Assert.Contains(compileDiagnostics, d => d.Id == "CS8716" || d.Id == "CS0828");
+    }
 }
 

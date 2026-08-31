@@ -183,6 +183,7 @@ public class GEN_08_GeneratorSnapshotTests
     [InlineData(@"Analyzers\GEN-19_VectorMath.cs")]
     [InlineData(@"..\Syntax\SYN-01-09_ControlFlowKernels.cu.cs")]
     [InlineData(@"..\Syntax\SYN-28_MethodAttributesKernels.cu.cs")]
+    [InlineData(@"..\Syntax\SYN-46-50_ConcurrencyAndWarpKernels.cu.cs")]
     [InlineData(@"..\Syntax\MEM-04_AdvancedSyntaxAndFunctionalPatternsKernels.cu.cs")]
     [InlineData(@"..\Syntax\GEN-19_VectorMathKernels.cu.cs")]
     [InlineData(@"Generator\GSH-02_TupleSnapshotTarget.cs")]

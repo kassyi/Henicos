@@ -22,7 +22,7 @@ internal sealed class SharedMemoryForbiddenDisposableRule
         }
 
         if (namedTypeSymbol.Name != TypeConstants.SharedMemoryType ||
-            namedTypeSymbol.ContainingNamespace?.ToDisplayString() != TypeConstants.CoreNamespace ||
+            !namedTypeSymbol.ContainingNamespace.IsCoreNamespace() ||
             namedTypeSymbol.TypeArguments.Length != 1)
         {
             return;
@@ -88,9 +88,6 @@ internal sealed class SharedMemoryForbiddenDisposableRule
         return false;
     }
 
-    private static bool IsIDisposableInterface(INamedTypeSymbol type)
-    {
-        return type.ToDisplayString() == "System.IDisposable" ||
-               (type.Name == "IDisposable" && type.ContainingNamespace?.ToDisplayString() == "System");
-    }
+    private static bool IsIDisposableInterface(INamedTypeSymbol type) =>
+        type.Name == "IDisposable" && type.ContainingNamespace.IsSystemNamespace();
 }

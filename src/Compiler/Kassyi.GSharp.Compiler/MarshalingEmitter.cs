@@ -9,7 +9,7 @@ internal static class MarshalingEmitter
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
         return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
-               named.ContainingNamespace.Name != "System";
+               named.ContainingNamespace.Name != TypeConstants.SystemNamespace;
     }
 
     internal static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)

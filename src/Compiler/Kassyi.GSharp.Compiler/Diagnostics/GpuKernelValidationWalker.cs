@@ -112,14 +112,25 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
     {
         GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
 
-        if (_context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol
-            {
-                Name: "SyncThreads", ContainingType.Name: "Gpu"
-            } && _divergenceDepth > 0)
+        if (_context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol invokedMethod)
         {
-            _context.ReportDiagnostic(Diagnostic.Create(
-                GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
-                node.GetLocation()));
+            if (invokedMethod is { Name: "SyncThreads", ContainingType.Name: "Gpu" } && _divergenceDepth > 0)
+            {
+                _context.ReportDiagnostic(Diagnostic.Create(
+                    GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
+                    node.GetLocation()));
+            }
+            else if (invokedMethod is { Name: "WarpShuffle", ContainingType.Name: "Gpu" } &&
+                     invokedMethod.ContainingNamespace.IsCoreNamespace())
+            {
+                if (invokedMethod.TypeArguments.Length > 0 && !invokedMethod.TypeArguments[0].IsUnmanagedType)
+                {
+                    _context.ReportDiagnostic(Diagnostic.Create(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        node.GetLocation(),
+                        invokedMethod.TypeArguments[0].ToDisplayString()));
+                }
+            }
         }
 
         base.VisitInvocationExpression(node);
@@ -157,7 +168,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
 
     private void ValidateTupleType(SyntaxNode node)
     {
-        var typeSymbol = _context.SemanticModel.GetTypeInfo(node).Type 
+        var typeSymbol = _context.SemanticModel.GetTypeInfo(node).Type
                          ?? _context.SemanticModel.GetSymbolInfo(node).Symbol as ITypeSymbol;
 
         if (typeSymbol is INamedTypeSymbol { IsTupleType: true } named)
