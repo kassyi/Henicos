@@ -333,7 +333,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 if (i > 0)
                 {
                     Context.Writer.AppendComma();
-                    Context.Writer.AppendSpace();
                 }
                 Visit(node.Arguments[i].Expression);
             }
