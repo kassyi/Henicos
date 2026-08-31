@@ -698,76 +698,13 @@ internal static class ExpressionTranspilers
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
         if (symbol != null)
         {
-            if (symbol.ContainingType?.Name == "Gpu" && symbol.Name == "WarpShuffle")
+            if (TryTranspileWarpShuffle(node, symbol, ref context))
             {
-                context.Writer.Append("__shfl_sync");
-                using (context.Writer.Parentheses())
-                {
-                    if (node.ArgumentList.Arguments.Count == 2)
-                    {
-                        context.Writer.Append("0xFFFFFFFF");
-                        context.Writer.AppendComma();
-                        context.Visitor.Visit(node.ArgumentList.Arguments[0]);
-                        context.Writer.AppendComma();
-                        context.Visitor.Visit(node.ArgumentList.Arguments[1]);
-                    }
-                    else
-                    {
-                        for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
-                        {
-                            context.Visitor.Visit(node.ArgumentList.Arguments[i]);
-                            if (i < node.ArgumentList.Arguments.Count - 1)
-                            {
-                                context.Writer.AppendComma();
-                            }
-                        }
-                    }
-                }
-
                 return;
             }
 
-            if (symbol.MethodKind == MethodKind.ReducedExtension)
+            if (TryTranspileReducedExtension(node, symbol, ref context))
             {
-                var receiverType = symbol.ReceiverType;
-                if (receiverType is { TypeKind: TypeKind.Class })
-                {
-                    context.ReportDiagnostic?.Invoke(receiverType.SpecialType == SpecialType.System_String
-                        ? Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.GetLocation())
-                        : Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
-                            receiverType.ToDisplayString()));
-                }
-
-                context.Writer.Append(symbol.Name);
-                using (context.Writer.Parentheses())
-                {
-                    if (node.Expression is MemberAccessExpressionSyntax memberAccess)
-                    {
-                        if (symbol.ReducedFrom?.Parameters.Length > 0 &&
-                            symbol.ReducedFrom.Parameters[0].RefKind is RefKind.Ref or RefKind.Out or RefKind.In)
-                        {
-                            context.Writer.Append("&");
-                        }
-
-                        context.Visitor.Visit(memberAccess.Expression);
-                    }
-
-                    if (node.ArgumentList.Arguments.Count <= 0)
-                    {
-                        return;
-                    }
-
-                    context.Writer.AppendComma();
-                    for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
-                    {
-                        context.Visitor.Visit(node.ArgumentList.Arguments[i]);
-                        if (i < node.ArgumentList.Arguments.Count - 1)
-                        {
-                            context.Writer.AppendComma();
-                        }
-                    }
-                }
-
                 return;
             }
 
@@ -780,12 +717,7 @@ internal static class ExpressionTranspilers
             }
         }
 
-        var hasOutDiscard = node.ArgumentList.Arguments.Any(a =>
-            a.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
-            (a.Expression is IdentifierNameSyntax { Identifier.Text: "_" } ||
-             a.Expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }));
-
-        if (hasOutDiscard)
+        if (HasOutDiscard(node))
         {
             TranspileInvocationWithOutDiscard(node, symbol, ref context);
             return;
@@ -794,16 +726,112 @@ internal static class ExpressionTranspilers
         context.Visitor.Visit(node.Expression);
         using (context.Writer.Parentheses())
         {
-            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            TranspileArgumentList(node.ArgumentList.Arguments, ref context);
+        }
+    }
+
+    private static bool TryTranspileWarpShuffle(InvocationExpressionSyntax node, IMethodSymbol symbol, ref TranspileContext context)
+    {
+        if (symbol is not { Name: "WarpShuffle", ContainingType.Name: "Gpu" } ||
+            symbol.ContainingNamespace?.ToDisplayString() != TypeConstants.CoreNamespace)
+        {
+            return false;
+        }
+
+        context.Writer.Append("__shfl_sync");
+        using (context.Writer.Parentheses())
+        {
+            var args = node.ArgumentList.Arguments;
+            switch (args.Count)
             {
-                context.Visitor.Visit(node.ArgumentList.Arguments[i]);
-                if (i < node.ArgumentList.Arguments.Count - 1)
-                {
+                case 2:
+                    context.Writer.Append("0xFFFFFFFF");
                     context.Writer.AppendComma();
+                    context.Visitor.Visit(args[0]);
+                    context.Writer.AppendComma();
+                    context.Visitor.Visit(args[1]);
+                    break;
+                case 3 when symbol.Parameters.Length > 0 && symbol.Parameters[0].Name == "mask":
+                    context.Visitor.Visit(args[0]);
+                    context.Writer.AppendComma();
+                    context.Visitor.Visit(args[1]);
+                    context.Writer.AppendComma();
+                    context.Visitor.Visit(args[2]);
+                    break;
+                case 3:
+                    context.Visitor.Visit(args[2]);
+                    context.Writer.AppendComma();
+                    context.Visitor.Visit(args[0]);
+                    context.Writer.AppendComma();
+                    context.Visitor.Visit(args[1]);
+                    break;
+                default:
+                    TranspileArgumentList(args, ref context);
+                    break;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryTranspileReducedExtension(InvocationExpressionSyntax node, IMethodSymbol symbol, ref TranspileContext context)
+    {
+        if (symbol.MethodKind != MethodKind.ReducedExtension)
+        {
+            return false;
+        }
+
+        var receiverType = symbol.ReceiverType;
+        if (receiverType is { TypeKind: TypeKind.Class })
+        {
+            context.ReportDiagnostic?.Invoke(receiverType.SpecialType == SpecialType.System_String
+                ? Diagnostic.Create(GSharpDiagnostics.StringNotSupported, node.GetLocation())
+                : Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(), receiverType.ToDisplayString()));
+        }
+
+        context.Writer.Append(symbol.Name);
+        using (context.Writer.Parentheses())
+        {
+            if (node.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                if (symbol.ReducedFrom?.Parameters.Length > 0 &&
+                    symbol.ReducedFrom.Parameters[0].RefKind is RefKind.Ref or RefKind.Out or RefKind.In)
+                {
+                    context.Writer.Append("&");
                 }
+
+                context.Visitor.Visit(memberAccess.Expression);
+            }
+
+            if (node.ArgumentList.Arguments.Count <= 0)
+            {
+                return true;
+            }
+
+            context.Writer.AppendComma();
+            TranspileArgumentList(node.ArgumentList.Arguments, ref context);
+        }
+
+        return true;
+    }
+
+    private static void TranspileArgumentList(SeparatedSyntaxList<ArgumentSyntax> arguments, ref TranspileContext context)
+    {
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            context.Visitor.Visit(arguments[i]);
+            if (i < arguments.Count - 1)
+            {
+                context.Writer.AppendComma();
             }
         }
     }
+
+    private static bool HasOutDiscard(InvocationExpressionSyntax node) =>
+        node.ArgumentList.Arguments.Any(a =>
+            a.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
+            (a.Expression is IdentifierNameSyntax { Identifier.Text: "_" } ||
+             a.Expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }));
 
     private static IParameterSymbol? DetermineParameter(ArgumentSyntax arg, IMethodSymbol methodSymbol)
     {
