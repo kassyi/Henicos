@@ -56,7 +56,7 @@
     "title": "Generalization of tuple syntax",
     "domain": "GSH",
     "category": "Parsing / Syntax Analysis",
-    "status": "incomplete",
+    "status": "in_progress",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
