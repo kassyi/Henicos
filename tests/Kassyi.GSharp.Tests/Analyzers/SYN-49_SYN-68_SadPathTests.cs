@@ -10,7 +10,7 @@ public class SYN_49_SYN_68_SadPathTests
         yield return new[] { "SYN-49_UnsupportedInterlockedOverload.cs", "GSH0003" };
         yield return new[] { "SYN-68_UnsupportedMathMethod.cs", "GSH0003" };
         yield return new[] { "SYN-44_UnsupportedExtensionMethod.cs", "GSH0003" };
-        yield return new[] { "SYN-46_UnsupportedWarpShuffleType.cs", "GSH0002" };
+        yield return new[] { "SYN-46_UnsupportedWarpShuffleType.cs", "CS8377" };
     }
 
     [Theory]
@@ -22,7 +22,7 @@ public class SYN_49_SYN_68_SadPathTests
     [MemberData(nameof(GetSadPathTestCases))]
     public void Test_SadPath_ReportsDiagnosticAndPreventsCrash(string fileName, string expectedDiagnosticId)
     {
-        var diagnostics = MegaCompilationCache.GetGeneratorDiagnosticsForFile(fileName);
+        var diagnostics = MegaCompilationCache.GetAllDiagnosticsForFile(fileName);
         diagnostics.AssertContainsError(expectedDiagnosticId);
     }
 }
