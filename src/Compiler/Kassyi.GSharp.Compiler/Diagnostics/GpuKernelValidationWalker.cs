@@ -84,6 +84,12 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         base.VisitVariableDeclarator(node);
     }
 
+    public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
+    {
+        ReservedIdentifierRule.Validate(node.Identifier.Text, node.Identifier.GetLocation(), _context.ReportDiagnostic);
+        base.VisitSingleVariableDesignation(node);
+    }
+
     public override void VisitParameter(ParameterSyntax node)
     {
         ReservedIdentifierRule.Validate(node.Identifier.Text, node.Identifier.GetLocation(), _context.ReportDiagnostic);
