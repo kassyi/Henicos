@@ -14,9 +14,11 @@ public class SYN_17_ReservedIdentifierSadPathTests
     {
         var diagnostics = MegaCompilationCache.GetAllDiagnosticsForFile("SYN-17_ReservedIdentifierSadPath.cs");
 
-        var gsh0017Diagnostics = diagnostics.Where(d => d.Id == GSharpDiagnostics.ReservedIdentifierNotAllowed.Id).ToList();
+        var gsh0017Diagnostics =
+            diagnostics.Where(d => d.Id == GSharpDiagnostics.ReservedIdentifierNotAllowed.Id).ToList();
 
         // Expecting 4 errors for __invalid_var, hoge__boo, __param, and __InvalidMethod
         Assert.Equal(4, gsh0017Diagnostics.Count);
+        Assert.All(gsh0017Diagnostics, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
     }
 }

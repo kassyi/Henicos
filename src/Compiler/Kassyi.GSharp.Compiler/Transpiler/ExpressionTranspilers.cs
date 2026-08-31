@@ -87,7 +87,7 @@ internal static class ExpressionTranspilers
             return;
         }
 
-        if (IsDiscardAssignment(node))
+        if (IsDiscardAssignment(node, ref context))
         {
             context.Visitor.Visit(node.Right);
             return;
@@ -117,10 +117,23 @@ internal static class ExpressionTranspilers
         context.Visitor.Visit(node.Right);
     }
 
-    private static bool IsDiscardAssignment(AssignmentExpressionSyntax node)
+    private static bool IsDiscardAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
-        return node.Left is IdentifierNameSyntax { Identifier.Text: "_" } ||
-               node.Left is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax };
+        if (node.Left is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax })
+        {
+            return true;
+        }
+
+        if (node.Left is IdentifierNameSyntax { Identifier.Text: "_" } identifier)
+        {
+            var symbol = context.SemanticModel.GetSymbolInfo(identifier).Symbol;
+            if (symbol == null)
+            {
+                // Unbound "_" identifier indicates a discard.
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void TranspileTupleToTupleAssignment(
@@ -140,7 +153,12 @@ internal static class ExpressionTranspilers
         {
             for (var i = 0; i < rightTuple.Arguments.Count; i++)
             {
-                context.Writer.Append($"auto _t_{spanStart}_{i} = ");
+                context.Writer.AppendKeyword("auto");
+                context.Writer.AppendSpace();
+                context.Writer.Append($"_t_{spanStart}_{i}");
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
                 context.Visitor.Visit(rightTuple.Arguments[i].Expression);
                 context.Writer.AppendSemiColon();
                 context.Writer.AppendLine();
@@ -148,8 +166,22 @@ internal static class ExpressionTranspilers
 
             for (var i = 0; i < leftTuple.Arguments.Count; i++)
             {
-                context.Visitor.Visit(leftTuple.Arguments[i].Expression);
-                context.Writer.Append($" = _t_{spanStart}_{i}");
+                var leftExpr = leftTuple.Arguments[i].Expression;
+                if (leftExpr is IdentifierNameSyntax { Identifier.Text: "_" } identifier &&
+                    context.SemanticModel.GetSymbolInfo(identifier).Symbol == null)
+                {
+                    continue; // Skip unbound discard
+                }
+                if (leftExpr is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax })
+                {
+                    continue; // Skip explicit discard
+                }
+
+                context.Visitor.Visit(leftExpr);
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
+                context.Writer.Append($"_t_{spanStart}_{i}");
                 context.Writer.AppendSemiColon();
                 context.Writer.AppendLine();
             }
@@ -215,8 +247,6 @@ internal static class ExpressionTranspilers
         ExpressionSyntax rightNode,
         ref TranspileContext context)
     {
-        var variables = leftVariables.ToList();
-
         using (context.Writer.Brackets())
         {
             context.Writer.Append("&");
@@ -226,40 +256,84 @@ internal static class ExpressionTranspilers
         using (context.Writer.Scope())
         {
             var tmpName = $"__tuple_tmp_{rightNode.SpanStart}";
-            context.Writer.Append($"auto {tmpName} = ");
+            context.Writer.AppendKeyword("auto");
+            context.Writer.AppendSpace();
+            context.Writer.Append(tmpName);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
             context.Visitor.Visit(rightNode);
             context.Writer.AppendSemiColon();
             context.Writer.AppendLine();
 
-            for (var i = 0; i < variables.Count; i++)
+            var index = 1;
+            foreach (var varNode in leftVariables)
             {
-                var varNode = variables[i];
-
-                if (varNode is IdentifierNameSyntax { Identifier.Text: "_" } ||
-                    varNode is DiscardDesignationSyntax ||
-                    varNode is OmittedTypeArgumentSyntax)
-                {
-                    // Skip discard
-                    continue;
-                }
-
-                if (varNode is SingleVariableDesignationSyntax singleDesignation)
-                {
-                    context.Writer.Append("auto ");
-                    context.Writer.Append(singleDesignation.Identifier.Text);
-                }
-                else
-                {
-                    context.Visitor.Visit(varNode);
-                }
-
-                context.Writer.Append($" = {tmpName}.Item{i + 1}");
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                EmitDeconstructionTarget(varNode, $"{tmpName}.Item{index}", ref context);
+                index++;
             }
         }
-
         context.Writer.AppendParentheses();
+    }
+
+    private static void EmitDeconstructionTarget(SyntaxNode varNode, string sourceExpression, ref TranspileContext context)
+    {
+        if (varNode is IdentifierNameSyntax { Identifier.Text: "_" } identifier &&
+            context.SemanticModel.GetSymbolInfo(identifier).Symbol == null)
+        {
+            // Skip unbound discard
+            return;
+        }
+
+        if (varNode is DiscardDesignationSyntax || varNode is OmittedTypeArgumentSyntax)
+        {
+            // Skip discard
+            return;
+        }
+
+        if (varNode is SingleVariableDesignationSyntax singleDesignation)
+        {
+            context.Writer.AppendKeyword("auto");
+            context.Writer.AppendSpace();
+            context.Writer.Append(singleDesignation.Identifier.Text);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
+            context.Writer.Append(sourceExpression);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+        }
+        else if (varNode is ParenthesizedVariableDesignationSyntax nestedDesignation)
+        {
+            // Extract the nested tuple into a local tmp
+            var nestedTmp = $"__nested_tmp_{nestedDesignation.SpanStart}";
+            context.Writer.AppendKeyword("auto");
+            context.Writer.AppendSpace();
+            context.Writer.Append(nestedTmp);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
+            context.Writer.Append(sourceExpression);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+
+            var index = 1;
+            foreach (var nestedVar in nestedDesignation.Variables)
+            {
+                EmitDeconstructionTarget(nestedVar, $"{nestedTmp}.Item{index}", ref context);
+                index++;
+            }
+        }
+        else
+        {
+            context.Visitor.Visit(varNode);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
+            context.Writer.Append(sourceExpression);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+        }
     }
 
     public static void TranspileBinaryExpression(BinaryExpressionSyntax node, ref TranspileContext context)
@@ -590,6 +664,29 @@ internal static class ExpressionTranspilers
         }
     }
 
+    private static IParameterSymbol? DetermineParameter(ArgumentSyntax arg, IMethodSymbol methodSymbol)
+    {
+        if (arg.NameColon != null)
+        {
+            var name = arg.NameColon.Name.Identifier.Text;
+            foreach (var p in methodSymbol.Parameters)
+            {
+                if (p.Name == name) return p;
+            }
+            return null;
+        }
+
+        if (arg.Parent is ArgumentListSyntax argList)
+        {
+            var index = argList.Arguments.IndexOf(arg);
+            if (index >= 0 && index < methodSymbol.Parameters.Length)
+            {
+                return methodSymbol.Parameters[index];
+            }
+        }
+        return null;
+    }
+
     private static void TranspileInvocationWithOutDiscard(InvocationExpressionSyntax node, IMethodSymbol? symbol,
         ref TranspileContext context)
     {
@@ -602,34 +699,52 @@ internal static class ExpressionTranspilers
         context.Writer.AppendSpace();
         using (context.Writer.Scope())
         {
-            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            if (symbol != null)
             {
-                var arg = node.ArgumentList.Arguments[i];
-                if (!arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) ||
-                    (arg.Expression is not IdentifierNameSyntax { Identifier.Text: "_" } &&
-                     arg.Expression is not DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }))
+                // We must use semantic model to map arguments to parameters (handles named/optional)
+                for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
                 {
-                    continue;
-                }
+                    var arg = node.ArgumentList.Arguments[i];
+                    if (!arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) ||
+                        (arg.Expression is not IdentifierNameSyntax { Identifier.Text: "_" } &&
+                         arg.Expression is not DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }))
+                    {
+                        continue;
+                    }
 
-                ITypeSymbol? type = null;
-                if (symbol != null && i < symbol.Parameters.Length)
-                {
-                    type = symbol.Parameters[i].Type;
-                }
+                    // Look up corresponding parameter
+                    var param = DetermineParameter(arg, symbol);
+                    ITypeSymbol? type = param?.Type;
 
-                if (type != null)
-                {
-                    context.Writer.AppendType(type);
-                }
-                else
-                {
-                    context.Writer.Append("int"); // Fallback
-                }
+                    if (type != null)
+                    {
+                        context.Writer.AppendType(type);
+                    }
+                    else
+                    {
+                        context.Writer.Append("int"); // Fallback
+                    }
 
-                context.Writer.Append($" __discard_{node.SpanStart}_{i}");
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                    context.Writer.Append($" __discard_{node.SpanStart}_{i}");
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+            }
+            else
+            {
+                // Fallback for unresolved methods (e.g., dynamic or unbindable)
+                for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                {
+                    var arg = node.ArgumentList.Arguments[i];
+                    if (arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
+                        (arg.Expression is IdentifierNameSyntax { Identifier.Text: "_" } ||
+                         arg.Expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }))
+                    {
+                        context.Writer.Append($"int __discard_{node.SpanStart}_{i}");
+                        context.Writer.AppendSemiColon();
+                        context.Writer.AppendLine();
+                    }
+                }
             }
 
             var isVoid = symbol?.ReturnsVoid ?? false;
@@ -649,6 +764,10 @@ internal static class ExpressionTranspilers
                         (arg.Expression is IdentifierNameSyntax { Identifier.Text: "_" } ||
                          arg.Expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }))
                     {
+                        if (arg.NameColon != null)
+                        {
+                            context.Visitor.Visit(arg.NameColon);
+                        }
                         context.Writer.Append($"&__discard_{node.SpanStart}_{i}");
                     }
                     else
