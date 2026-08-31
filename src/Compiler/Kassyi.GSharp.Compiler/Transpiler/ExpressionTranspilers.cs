@@ -77,91 +77,189 @@ internal static class ExpressionTranspilers
     {
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
-            // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append("&");
-            }
-
-            context.Writer.AppendParentheses();
-            using (context.Writer.Scope())
-            {
-                for (var i = 0; i < rightTuple.Arguments.Count; i++)
-                {
-                    context.Writer.Append($"auto _t{i} = ");
-                    context.Visitor.Visit(rightTuple.Arguments[i].Expression);
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
-                }
-
-                for (var i = 0; i < leftTuple.Arguments.Count; i++)
-                {
-                    context.Visitor.Visit(leftTuple.Arguments[i].Expression);
-                    context.Writer.Append($" = _t{i}");
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
-                }
-            }
-
-            context.Writer.AppendParentheses();
+            TranspileTupleToTupleAssignment(leftTuple, rightTuple, node.SpanStart, ref context);
             return;
         }
 
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append("&");
-            }
-
-            context.Writer.AppendParentheses();
-            context.Writer.AppendSpace();
-            context.Writer.Append("-> decltype(auto) ");
-            using (context.Writer.Scope())
-            {
-                context.Writer.AppendKeyword("auto");
-                context.Writer.AppendOperator("&");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_target");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("=");
-                context.Writer.AppendSpace();
-                context.Visitor.Visit(node.Left);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
-
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("!");
-                context.Writer.Append("__coalesce_target.HasValue");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("?");
-                context.Writer.AppendSpace();
-                using (context.Writer.Parentheses())
-                {
-                    context.Writer.Append("__coalesce_target");
-                    context.Writer.AppendSpace();
-                    context.Writer.AppendOperator("=");
-                    context.Writer.AppendSpace();
-                    context.Visitor.Visit(node.Right);
-                }
-
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator(":");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_target.Value");
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
-            }
-
-            context.Writer.AppendParentheses();
-
+            TranspileCoalesceAssignment(node, ref context);
             return;
+        }
+
+        if (IsDiscardAssignment(node))
+        {
+            context.Visitor.Visit(node.Right);
+            return;
+        }
+
+        if (node.OperatorToken.IsKind(SyntaxKind.EqualsToken))
+        {
+            if (node.Left is TupleExpressionSyntax tupleLeft)
+            {
+                TranspileTupleDeconstructionAssignment(tupleLeft.Arguments.Select(a => (SyntaxNode)a.Expression),
+                    node.Right, ref context);
+                return;
+            }
+
+            if (node.Left is DeclarationExpressionSyntax
+                {
+                    Designation: ParenthesizedVariableDesignationSyntax parenthesizedDesignation
+                })
+            {
+                TranspileTupleDeconstructionAssignment(parenthesizedDesignation.Variables, node.Right, ref context);
+                return;
+            }
         }
 
         context.Visitor.Visit(node.Left);
         context.Writer.AppendOperator(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
+    }
+
+    private static bool IsDiscardAssignment(AssignmentExpressionSyntax node)
+    {
+        return node.Left is IdentifierNameSyntax { Identifier.Text: "_" } ||
+               node.Left is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax };
+    }
+
+    private static void TranspileTupleToTupleAssignment(
+        TupleExpressionSyntax leftTuple,
+        TupleExpressionSyntax rightTuple,
+        int spanStart,
+        ref TranspileContext context)
+    {
+        // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
+        using (context.Writer.Brackets())
+        {
+            context.Writer.Append("&");
+        }
+
+        context.Writer.AppendParentheses();
+        using (context.Writer.Scope())
+        {
+            for (var i = 0; i < rightTuple.Arguments.Count; i++)
+            {
+                context.Writer.Append($"auto _t_{spanStart}_{i} = ");
+                context.Visitor.Visit(rightTuple.Arguments[i].Expression);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+
+            for (var i = 0; i < leftTuple.Arguments.Count; i++)
+            {
+                context.Visitor.Visit(leftTuple.Arguments[i].Expression);
+                context.Writer.Append($" = _t_{spanStart}_{i}");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+        }
+
+        context.Writer.AppendParentheses();
+    }
+
+    private static void TranspileCoalesceAssignment(AssignmentExpressionSyntax node, ref TranspileContext context)
+    {
+        var targetVar = $"__coalesce_target_{node.SpanStart}";
+
+        using (context.Writer.Brackets())
+        {
+            context.Writer.Append("&");
+        }
+
+        context.Writer.AppendParentheses();
+        context.Writer.AppendSpace();
+        context.Writer.Append("-> decltype(auto) ");
+        using (context.Writer.Scope())
+        {
+            context.Writer.AppendKeyword("auto");
+            context.Writer.AppendOperator("&");
+            context.Writer.AppendSpace();
+            context.Writer.Append(targetVar);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
+            context.Visitor.Visit(node.Left);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+
+            context.Writer.AppendKeyword("return");
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("!");
+            context.Writer.Append($"{targetVar}.HasValue");
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("?");
+            context.Writer.AppendSpace();
+            using (context.Writer.Parentheses())
+            {
+                context.Writer.Append(targetVar);
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
+                context.Visitor.Visit(node.Right);
+            }
+
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator(":");
+            context.Writer.AppendSpace();
+            context.Writer.Append($"{targetVar}.Value");
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+        }
+
+        context.Writer.AppendParentheses();
+    }
+
+    private static void TranspileTupleDeconstructionAssignment(
+        IEnumerable<SyntaxNode> leftVariables,
+        ExpressionSyntax rightNode,
+        ref TranspileContext context)
+    {
+        var variables = leftVariables.ToList();
+
+        using (context.Writer.Brackets())
+        {
+            context.Writer.Append("&");
+        }
+
+        context.Writer.AppendParentheses();
+        using (context.Writer.Scope())
+        {
+            var tmpName = $"__tuple_tmp_{rightNode.SpanStart}";
+            context.Writer.Append($"auto {tmpName} = ");
+            context.Visitor.Visit(rightNode);
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+
+            for (var i = 0; i < variables.Count; i++)
+            {
+                var varNode = variables[i];
+
+                if (varNode is IdentifierNameSyntax { Identifier.Text: "_" } ||
+                    varNode is DiscardDesignationSyntax ||
+                    varNode is OmittedTypeArgumentSyntax)
+                {
+                    // Skip discard
+                    continue;
+                }
+
+                if (varNode is SingleVariableDesignationSyntax singleDesignation)
+                {
+                    context.Writer.Append("auto ");
+                    context.Writer.Append(singleDesignation.Identifier.Text);
+                }
+                else
+                {
+                    context.Visitor.Visit(varNode);
+                }
+
+                context.Writer.Append($" = {tmpName}.Item{i + 1}");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+        }
+
+        context.Writer.AppendParentheses();
     }
 
     public static void TranspileBinaryExpression(BinaryExpressionSyntax node, ref TranspileContext context)
@@ -455,7 +553,8 @@ internal static class ExpressionTranspilers
 
     public static void TranspileInvocationExpression(InvocationExpressionSyntax node, ref TranspileContext context)
     {
-        if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
+        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+        if (symbol != null)
         {
             foreach (var rule in s_invocationRules)
             {
@@ -464,6 +563,17 @@ internal static class ExpressionTranspilers
                     return;
                 }
             }
+        }
+
+        var hasOutDiscard = node.ArgumentList.Arguments.Any(a =>
+            a.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
+            (a.Expression is IdentifierNameSyntax { Identifier.Text: "_" } ||
+             a.Expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }));
+
+        if (hasOutDiscard)
+        {
+            TranspileInvocationWithOutDiscard(node, symbol, ref context);
+            return;
         }
 
         context.Visitor.Visit(node.Expression);
@@ -478,6 +588,89 @@ internal static class ExpressionTranspilers
                 }
             }
         }
+    }
+
+    private static void TranspileInvocationWithOutDiscard(InvocationExpressionSyntax node, IMethodSymbol? symbol,
+        ref TranspileContext context)
+    {
+        using (context.Writer.Brackets())
+        {
+            context.Writer.Append("&");
+        }
+
+        context.Writer.AppendParentheses();
+        context.Writer.AppendSpace();
+        using (context.Writer.Scope())
+        {
+            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            {
+                var arg = node.ArgumentList.Arguments[i];
+                if (!arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) ||
+                    (arg.Expression is not IdentifierNameSyntax { Identifier.Text: "_" } &&
+                     arg.Expression is not DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }))
+                {
+                    continue;
+                }
+
+                ITypeSymbol? type = null;
+                if (symbol != null && i < symbol.Parameters.Length)
+                {
+                    type = symbol.Parameters[i].Type;
+                }
+
+                if (type != null)
+                {
+                    context.Writer.AppendType(type);
+                }
+                else
+                {
+                    context.Writer.Append("int"); // Fallback
+                }
+
+                context.Writer.Append($" __discard_{node.SpanStart}_{i}");
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+
+            var isVoid = symbol?.ReturnsVoid ?? false;
+            if (!isVoid)
+            {
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+            }
+
+            context.Visitor.Visit(node.Expression);
+            using (context.Writer.Parentheses())
+            {
+                for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                {
+                    var arg = node.ArgumentList.Arguments[i];
+                    if (arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) &&
+                        (arg.Expression is IdentifierNameSyntax { Identifier.Text: "_" } ||
+                         arg.Expression is DeclarationExpressionSyntax { Designation: DiscardDesignationSyntax }))
+                    {
+                        context.Writer.Append($"&__discard_{node.SpanStart}_{i}");
+                    }
+                    else
+                    {
+                        context.Visitor.Visit(arg);
+                    }
+
+                    if (i >= node.ArgumentList.Arguments.Count - 1)
+                    {
+                        continue;
+                    }
+
+                    context.Writer.AppendComma();
+                    context.Writer.AppendSpace();
+                }
+            }
+
+            context.Writer.AppendSemiColon();
+            context.Writer.AppendLine();
+        }
+
+        context.Writer.AppendParentheses();
     }
 
 
@@ -549,6 +742,8 @@ internal static class ExpressionTranspilers
         InitializerExpressionSyntax initializer,
         ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
+        var tmpVar = $"_tmp_{initializer.SpanStart}";
+
         using (context.Writer.Parentheses())
         {
             using (context.Writer.Brackets())
@@ -562,24 +757,13 @@ internal static class ExpressionTranspilers
             {
                 context.Writer.AppendType(typeSymbol);
                 context.Writer.AppendSpace();
-                context.Writer.Append("_tmp");
+                context.Writer.Append(tmpVar);
 
                 if (argumentList is { Arguments.Count: > 0 })
                 {
                     using (context.Writer.Braces())
                     {
-                        var first = true;
-                        foreach (var arg in argumentList.Arguments)
-                        {
-                            if (!first)
-                            {
-                                context.Writer.AppendComma();
-                                context.Writer.AppendSpace();
-                            }
-
-                            context.Visitor.Visit(arg);
-                            first = false;
-                        }
+                        AppendArgumentList(argumentList.Arguments, ref context);
                     }
                 }
                 else
@@ -588,7 +772,7 @@ internal static class ExpressionTranspilers
                 }
 
                 context.Writer.AppendSemiColon();
-                context.Writer.AppendSpace();
+                context.Writer.AppendLine();
 
                 foreach (var expr in initializer.Expressions)
                 {
@@ -597,21 +781,21 @@ internal static class ExpressionTranspilers
                         continue;
                     }
 
-                    context.Writer.Append("_tmp.");
+                    context.Writer.Append($"{tmpVar}.");
                     context.Visitor.Visit(assignment.Left);
                     context.Writer.AppendSpace();
                     context.Writer.AppendOperator("=");
                     context.Writer.AppendSpace();
                     context.Visitor.Visit(assignment.Right);
                     context.Writer.AppendSemiColon();
-                    context.Writer.AppendSpace();
+                    context.Writer.AppendLine();
                 }
 
                 context.Writer.AppendKeyword("return");
                 context.Writer.AppendSpace();
-                context.Writer.Append("_tmp");
+                context.Writer.Append(tmpVar);
                 context.Writer.AppendSemiColon();
-                context.Writer.AppendSpace();
+                context.Writer.AppendLine();
             }
 
             context.Writer.AppendParentheses();
@@ -628,18 +812,7 @@ internal static class ExpressionTranspilers
         {
             using (context.Writer.Scope())
             {
-                var first = true;
-                foreach (var arg in argumentList.Arguments)
-                {
-                    if (!first)
-                    {
-                        context.Writer.AppendComma();
-                        context.Writer.AppendSpace();
-                    }
-
-                    context.Visitor.Visit(arg);
-                    first = false;
-                }
+                AppendArgumentList(argumentList.Arguments, ref context);
             }
         }
         else
@@ -647,10 +820,69 @@ internal static class ExpressionTranspilers
             context.Writer.AppendEmptyScope();
         }
     }
+
+    private static void AppendArgumentList(SeparatedSyntaxList<ArgumentSyntax> arguments, ref TranspileContext context)
+    {
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            if (i > 0)
+            {
+                context.Writer.AppendComma();
+                context.Writer.AppendSpace();
+            }
+
+            context.Visitor.Visit(arguments[i]);
+        }
+    }
+
+    public static void TranspileWithExpression(WithExpressionSyntax node, ref TranspileContext context)
+    {
+        using (context.Writer.Parentheses())
+        {
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append("&");
+            }
+
+            context.Writer.AppendParentheses();
+            context.Writer.AppendSpace();
+            using (context.Writer.Scope())
+            {
+                var tmpName = $"__gsharp_with_tmp_{node.SpanStart}";
+                context.Writer.AppendKeyword("auto");
+                context.Writer.AppendSpace();
+                context.Writer.Append(tmpName);
+                context.Writer.AppendSpace();
+                context.Writer.AppendOperator("=");
+                context.Writer.AppendSpace();
+                context.Visitor.Visit(node.Expression);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+                foreach (var expr in node.Initializer.Expressions)
+                {
+                    if (expr is not AssignmentExpressionSyntax assignment)
+                    {
+                        continue;
+                    }
+
+                    context.Writer.Append($"{tmpName}.");
+                    context.Visitor.Visit(assignment.Left);
+                    context.Writer.AppendSpace();
+                    context.Writer.AppendOperator("=");
+                    context.Writer.AppendSpace();
+                    context.Visitor.Visit(assignment.Right);
+                    context.Writer.AppendSemiColon();
+                    context.Writer.AppendLine();
+                }
+
+                context.Writer.AppendKeyword("return");
+                context.Writer.AppendSpace();
+                context.Writer.Append(tmpName);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
+            }
+
+            context.Writer.AppendParentheses();
+        }
+    }
 }
-
-
-
-
-
-
