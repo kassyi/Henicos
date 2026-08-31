@@ -8,7 +8,6 @@ public static class SYN_46_UnsupportedWarpShuffleType
     public static void Kernel(int[] output)
     {
         int tid = ThreadIndex.X;
-        string str = "invalid";
-        Gpu.WarpShuffle(str, 0);
+        Gpu.WarpShuffle(default(string), 0);
     }
 }

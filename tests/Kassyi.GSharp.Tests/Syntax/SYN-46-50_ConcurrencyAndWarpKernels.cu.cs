@@ -101,9 +101,12 @@ public static class SYN_46_50_ConcurrencyAndWarpKernels
         // Broadcast lane 0 value to all threads in warp
         int shuffled = Gpu.WarpShuffle(val, 0);
 
-        // Shuffle with explicit full mask
+        // Shuffle with explicit full mask (uint mask, T val, int srcLane)
         int shuffledExplicit = Gpu.WarpShuffle(0xFFFFFFFF, val, 1);
 
-        shuffleOut[tid] = shuffled * 1000 + shuffledExplicit;
+        // Shuffle with explicit mask as 3rd param (T val, int srcLane, uint mask)
+        int shuffledMask3rd = Gpu.WarpShuffle(val, 1, 0xFFFFFFFF);
+
+        shuffleOut[tid] = shuffled * 1000 + (shuffledExplicit + shuffledMask3rd) / 2;
     }
 }
