@@ -79,16 +79,37 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
 
     public override void VisitVariableDeclarator(VariableDeclaratorSyntax node)
     {
+        ReservedIdentifierRule.Validate(node.Identifier.Text, node.Identifier.GetLocation(), _context.ReportDiagnostic);
         ImplicitVarNeedsSuffixRule.Instance.Analyze(node, ref _context);
         base.VisitVariableDeclarator(node);
+    }
+
+    public override void VisitParameter(ParameterSyntax node)
+    {
+        ReservedIdentifierRule.Validate(node.Identifier.Text, node.Identifier.GetLocation(), _context.ReportDiagnostic);
+        base.VisitParameter(node);
+    }
+
+    public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
+    {
+        ReservedIdentifierRule.Validate(node.Identifier.Text, node.Identifier.GetLocation(), _context.ReportDiagnostic);
+        base.VisitMethodDeclaration(node);
+    }
+
+    public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
+    {
+        ReservedIdentifierRule.Validate(node.Identifier.Text, node.Identifier.GetLocation(), _context.ReportDiagnostic);
+        base.VisitLocalFunctionStatement(node);
     }
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
     {
         GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
 
-        var symbol = _context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
-        if (symbol is { Name: "SyncThreads", ContainingType.Name: "Gpu" } && _divergenceDepth > 0)
+        if (_context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol
+            {
+                Name: "SyncThreads", ContainingType.Name: "Gpu"
+            } && _divergenceDepth > 0)
         {
             _context.ReportDiagnostic(Diagnostic.Create(
                 GSharpDiagnostics.SyncThreadsNotAllowedInDivergentPath,
