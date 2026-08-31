@@ -23,6 +23,6 @@ public class GEN_23_31_TypeSystemAndStructSadPathTests
         var allDiagnostics = MegaCompilationCache.GetAllDiagnosticsForFile(fileName);
 
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error && (d.Id == expectedErrorId || d.Id.StartsWith("GSH")));
+        Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error && d.Id == expectedErrorId);
     }
 }
