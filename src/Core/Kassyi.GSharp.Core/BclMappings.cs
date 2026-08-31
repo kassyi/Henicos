@@ -76,3 +76,22 @@ using Kassyi.GSharp.Core;
 [assembly: BclIntrinsicMap("System.MathF", "Floor", ["System.Single"], "floorf")]
 [assembly: BclIntrinsicMap("System.Math", "Ceiling", ["System.Double"], "ceil")]
 [assembly: BclIntrinsicMap("System.MathF", "Ceiling", ["System.Single"], "ceilf")]
+
+// --- System.Numerics.Vector2,3,4 Mappings ---
+[assembly: BclIntrinsicMap("System.Numerics.Vector2", "Dot", ["System.Numerics.Vector2", "System.Numerics.Vector2"], "__gsharp_dot2")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector2", "Distance", ["System.Numerics.Vector2", "System.Numerics.Vector2"], "__gsharp_distance2")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector2", "Normalize", ["System.Numerics.Vector2"], "__gsharp_normalize2")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector2", "SquareRoot", ["System.Numerics.Vector2"], "__gsharp_sqrt2")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector2", "Length", [], "__gsharp_length2")]
+
+[assembly: BclIntrinsicMap("System.Numerics.Vector3", "Dot", ["System.Numerics.Vector3", "System.Numerics.Vector3"], "__gsharp_dot3")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector3", "Distance", ["System.Numerics.Vector3", "System.Numerics.Vector3"], "__gsharp_distance3")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector3", "Normalize", ["System.Numerics.Vector3"], "__gsharp_normalize3")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector3", "SquareRoot", ["System.Numerics.Vector3"], "__gsharp_sqrt3")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector3", "Length", [], "__gsharp_length3")]
+
+[assembly: BclIntrinsicMap("System.Numerics.Vector4", "Dot", ["System.Numerics.Vector4", "System.Numerics.Vector4"], "__gsharp_dot4")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector4", "Distance", ["System.Numerics.Vector4", "System.Numerics.Vector4"], "__gsharp_distance4")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector4", "Normalize", ["System.Numerics.Vector4"], "__gsharp_normalize4")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector4", "SquareRoot", ["System.Numerics.Vector4"], "__gsharp_sqrt4")]
+[assembly: BclIntrinsicMap("System.Numerics.Vector4", "Length", [], "__gsharp_length4")]
