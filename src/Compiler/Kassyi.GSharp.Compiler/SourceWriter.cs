@@ -192,6 +192,13 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
 
+    /// <summary>
+    /// Opens an immediately invoked C++ lambda scope (<c>([&]() { ... }())</c>).
+    /// </summary>
+    /// <param name="returnType">Optional explicit trailing return type (e.g. <c>decltype(auto)</c>).</param>
+    public ImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string returnType = "") =>
+        new(this, returnType);
+
     public void AppendParentheses() => Append("()");
     public void AppendBrackets() => Append("[]");
     public void AppendEmptyScope() => Append("{}");
@@ -199,6 +206,30 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public static bool operator ==(SourceWriter left, SourceWriter right) => left.Equals(right);
 
     public static bool operator !=(SourceWriter left, SourceWriter right) => !(left == right);
+}
+
+/// <summary>A zero-allocation scope that emits an immediately invoked C++ lambda expression.</summary>
+public readonly ref struct ImmediatelyInvokedLambdaScope
+{
+    private readonly SourceWriter _writer;
+
+    public ImmediatelyInvokedLambdaScope(SourceWriter writer, string returnType = "")
+    {
+        _writer = writer;
+        _writer.Append("([&]() ");
+        if (!string.IsNullOrEmpty(returnType))
+        {
+            _writer.Append($"-> {returnType} ");
+        }
+
+        _writer.AppendLine("{");
+    }
+
+    public void Dispose()
+    {
+        _writer.AppendLine("}");
+        _writer.Append("())");
+    }
 }
 
 /// <summary>A zero-allocation scope that appends an opening string on creation and a closing string on disposal.</summary>

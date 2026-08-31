@@ -104,11 +104,22 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads - 1, globalState[1]);
     }
 
-    [Fact(Skip = "未実装: SYN-46 (ワープシャッフル・同期プリミティブ)")]
+    [Fact]
+    [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-46")]
-    [Trait("Category", "Syntax")]
     public void Test_SYN46_WarpPrimitives_Transpilation()
     {
+        int[] input = [10, 20, 30, 40];
+        int[] shuffleOut = new int[4];
+
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_WarpPrimitivesKernel(input, shuffleOut, blockDimX: 4);
+
+        // All threads receive lane 0 value (10) for first shuffle, lane 1 value (20) for second shuffle
+        // Expected: 10 * 1000 + 20 = 10020
+        for (int i = 0; i < 4; i++)
+        {
+            Assert.Equal(10020, shuffleOut[i]);
+        }
     }
 
     [Fact(Skip = "未実装: SYN-48 (グリッド協調グループ同期 CooperativeGroups)")]
