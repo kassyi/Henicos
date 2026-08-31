@@ -313,6 +313,46 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
 
+    public override void VisitTupleExpression(TupleExpressionSyntax node)
+    {
+        // Transpile tuple literals like (a, b) into struct constructor calls in CUDA
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append("auto");
+        }
+
+        using (Context.Writer.Braces())
+        {
+            for (var i = 0; i < node.Arguments.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+                Visit(node.Arguments[i].Expression);
+            }
+        }
+    }
+
+    public override void VisitTupleType(TupleTypeSyntax node)
+    {
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append("auto");
+        }
+    }
+
     public override void VisitParenthesizedVariableDesignation(ParenthesizedVariableDesignationSyntax node)
     {
         // Used as fallback if not handled by TranspileTupleDeconstructionAssignment
