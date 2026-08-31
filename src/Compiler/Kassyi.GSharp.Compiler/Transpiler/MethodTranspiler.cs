@@ -92,7 +92,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    internal static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var hasAggressiveInlining = false;
         var hasNoInlining = false;
@@ -140,18 +140,20 @@ public static class MethodTranspiler
                     {
                         foreach (var namedArg in attr.NamedArguments)
                         {
-                            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
+                            if (namedArg is not { Key: "Value", Value.Value: int or short })
                             {
-                                var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-                                if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                                {
-                                    hasAggressiveInlining = true;
-                                }
+                                continue;
+                            }
 
-                                if ((options & MethodImplOptions.NoInlining) != 0)
-                                {
-                                    hasNoInlining = true;
-                                }
+                            var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+                            if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                            {
+                                hasAggressiveInlining = true;
+                            }
+
+                            if ((options & MethodImplOptions.NoInlining) != 0)
+                            {
+                                hasNoInlining = true;
                             }
                         }
                     }
@@ -179,6 +181,7 @@ public static class MethodTranspiler
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
+            StructTranspiler.RegisterUsedStructIfApplicable(returnType, ref context);
             context.Writer.AppendType(returnType);
         }
         else
@@ -200,7 +203,7 @@ public static class MethodTranspiler
         context.Writer.AppendKeyword("extern \"C\" __global__ void");
     }
 
-    private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
+    internal static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
     {
         using (context.Writer.Scope())
         {
@@ -224,7 +227,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
+    internal static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
         ref TranspileContext context)
     {
         var validParameters = new List<ParameterSyntax>(parameters.Count);

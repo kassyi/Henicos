@@ -243,6 +243,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
         => ExpressionTranspilers.TranspileConditionalExpression(node, ref Context);
 
+    public override void VisitThisExpression(ThisExpressionSyntax node)
+        => ExpressionTranspilers.TranspileThisExpression(node, ref Context);
+
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
         if (Context.LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
@@ -322,6 +325,67 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Writer.Append(node.Identifier.Text);
+
+    public override void VisitTupleExpression(TupleExpressionSyntax node)
+    {
+        // Transpile tuple literals like (a, b) into struct constructor calls in CUDA
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append("auto");
+        }
+
+        using (Context.Writer.Braces())
+        {
+            for (var i = 0; i < node.Arguments.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                }
+                Visit(node.Arguments[i].Expression);
+            }
+        }
+    }
+
+    public override void VisitTupleType(TupleTypeSyntax node)
+    {
+        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        if (typeSymbol != null)
+        {
+            Context.Writer.AppendType(typeSymbol);
+        }
+        else
+        {
+            Context.Writer.Append("auto");
+        }
+    }
+
+    public override void VisitParenthesizedVariableDesignation(ParenthesizedVariableDesignationSyntax node)
+    {
+        // Used as fallback if not handled by TranspileTupleDeconstructionAssignment
+        using (Context.Writer.Parentheses())
+        {
+            for (var i = 0; i < node.Variables.Count; i++)
+            {
+                if (i > 0)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+                Visit(node.Variables[i]);
+            }
+        }
+    }
+
+    public override void VisitDiscardDesignation(DiscardDesignationSyntax node) => Context.Writer.Append("__discard");
+
+    public override void VisitWithExpression(WithExpressionSyntax node)
+        => ExpressionTranspilers.TranspileWithExpression(node, ref Context);
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
         => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
