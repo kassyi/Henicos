@@ -180,9 +180,11 @@ public class GEN_08_GeneratorSnapshotTests
     [InlineData("GEN-06_ComprehensiveSpecKernel.cu.cs")]
     [InlineData("GEN-13_MacroExpansion.cu.cs")]
     [InlineData(@"Analyzers\GEN-18_VectorBuiltins.cs")]
+    [InlineData(@"Analyzers\GEN-19_VectorMath.cs")]
     [InlineData(@"..\Syntax\SYN-01-09_ControlFlowKernels.cu.cs")]
     [InlineData(@"..\Syntax\SYN-28_MethodAttributesKernels.cu.cs")]
     [InlineData(@"..\Syntax\MEM-04_AdvancedSyntaxAndFunctionalPatternsKernels.cu.cs")]
+    [InlineData(@"..\Syntax\GEN-19_VectorMathKernels.cu.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]
