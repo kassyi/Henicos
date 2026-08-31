@@ -26,6 +26,18 @@ internal static class CudaTypeMapper
             s_specialTypes[(int)type] = (cudaName, size);
     }
 
+    public static void AppendTypeOrAuto(this ref SourceWriter writer, ITypeSymbol? typeSymbol, bool forceAuto = false)
+    {
+        if (forceAuto || typeSymbol == null)
+        {
+            writer.AppendKeyword("auto");
+        }
+        else
+        {
+            writer.AppendType(typeSymbol);
+        }
+    }
+
     public static void AppendType(this ref SourceWriter writer, ITypeSymbol? typeSymbol)
     {
         switch (typeSymbol)
@@ -71,7 +83,7 @@ internal static class CudaTypeMapper
                 return;
             }
 
-            if (namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            if (namedType.IsSystemNullable())
             {
                 writer.Append("System_Nullable<");
                 writer.AppendType(namedType.TypeArguments[0]);
@@ -79,7 +91,7 @@ internal static class CudaTypeMapper
                 return;
             }
 
-            if (namedType.Name == TypeConstants.GpuBigIntRefType)
+            if (namedType.IsGpuBigIntRef())
             {
                 writer.Append(TypeConstants.CudaTypes.UnsignedIntPtr);
                 return;
@@ -224,25 +236,9 @@ internal static class CudaTypeMapper
     public static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameterCppType(
         this ref SourceWriter writer, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {
-        var isRefPointer = false;
-        var isIn = false;
-        var isRefOut = false;
-
-        foreach (var m in p.Modifiers)
-        {
-            if (m.IsKind(SyntaxKind.InKeyword))
-            {
-                isIn = true;
-            }
-
-            if (!m.IsKind(SyntaxKind.RefKeyword) && !m.IsKind(SyntaxKind.OutKeyword))
-            {
-                continue;
-            }
-
-            isRefPointer = true;
-            isRefOut = true;
-        }
+        var isIn = p.IsIn();
+        var isRefOut = p.IsByRefOrOut();
+        var isRefPointer = isRefOut;
 
         if (isIn)
         {

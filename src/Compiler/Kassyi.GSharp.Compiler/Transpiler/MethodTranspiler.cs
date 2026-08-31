@@ -20,11 +20,9 @@ public static class MethodTranspiler
         var methodSymbol = semanticModel.GetDeclaredSymbol(method);
         if (methodSymbol != null)
         {
-            if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
-                methodSymbol.ContainingType?.GetAttributes()
-                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
-                methodSymbol.ContainingModule?.GetAttributes()
-                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
+            if (methodSymbol.HasAttribute("SkipLocalsInit") ||
+                methodSymbol.ContainingType.HasAttribute("SkipLocalsInit") ||
+                methodSymbol.ContainingModule.HasAttribute("SkipLocalsInit"))
             {
                 context.SkipLocalsInit = true;
             }
@@ -118,7 +116,7 @@ public static class MethodTranspiler
                                  Name: "Runtime",
                                  ContainingNamespace:
                                  {
-                                     Name: "System", ContainingNamespace.IsGlobalNamespace: true
+                                     Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true
                                  }
                              }
                          })

@@ -110,15 +110,7 @@ internal static class StructTranspiler
 
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        AttributeData? inlineArrayAttr = null;
-        foreach (var attr in structSym.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "InlineArrayAttribute")
-            {
-                inlineArrayAttr = attr;
-                break;
-            }
-        }
+        var inlineArrayAttr = structSym.GetAttribute("InlineArray");
 
         if (inlineArrayAttr != null)
         {
