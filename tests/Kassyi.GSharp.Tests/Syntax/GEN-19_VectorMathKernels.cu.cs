@@ -115,4 +115,40 @@ public static partial class GEN_19_VectorMathKernels
             output[tid] = local;
         }
     }
+
+    [GpuKernel]
+    public static void VectorUnaryAndCompoundKernel(System.Numerics.Vector2[] v2In, System.Numerics.Vector2[] v2Neg, System.Numerics.Vector2[] v2Compound, System.Numerics.Vector3[] v3In, System.Numerics.Vector3[] v3Neg, System.Numerics.Vector3[] v3Compound, System.Numerics.Vector4[] v4In, System.Numerics.Vector4[] v4Neg, System.Numerics.Vector4[] v4Compound, int length)
+    {
+        var tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+        if (tid < length)
+        {
+            var a2 = v2In[tid];
+            v2Neg[tid] = -a2;
+            var c2 = a2;
+            c2 += new System.Numerics.Vector2(1.0f, 2.0f);
+            c2 *= 2.0f;
+            c2 -= a2;
+            c2 /= 2.0f;
+            v2Compound[tid] = c2;
+
+            var a3 = v3In[tid];
+            v3Neg[tid] = -a3;
+            var c3 = a3;
+            c3 += new System.Numerics.Vector3(1.0f, 2.0f, 3.0f);
+            c3 *= 2.0f;
+            c3 -= a3;
+            c3 /= 2.0f;
+            v3Compound[tid] = c3;
+
+            var a4 = v4In[tid];
+            v4Neg[tid] = -a4;
+            var c4 = a4;
+            c4 += new System.Numerics.Vector4(1.0f, 2.0f, 3.0f, 4.0f);
+            c4 *= 2.0f;
+            c4 -= a4;
+            c4 /= 2.0f;
+            v4Compound[tid] = c4;
+        }
+    }
 }
+
