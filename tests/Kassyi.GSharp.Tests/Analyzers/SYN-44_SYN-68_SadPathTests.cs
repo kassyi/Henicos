@@ -3,7 +3,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 
-public class SYN_49_SYN_68_SadPathTests
+public class SYN_44_SYN_68_SadPathTests
 {
     public static IEnumerable<string[]> GetSadPathTestCases()
     {
