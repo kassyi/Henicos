@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Compiler;
 
