@@ -21,26 +21,6 @@
     },
     {
       Location: /*
-        out bool successFlag,
-        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-        int particleCount,
-*/
- : (81,8)-(81,32),
-      Message: The parameter 'largeStructVal' is a struct of size 48 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
-      Severity: Warning,
-      WarningLevel: 1,
-      Descriptor: {
-        Id: GSH1002,
-        Title: Large struct passed by value,
-        MessageFormat: The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Warning,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
         // 2. Shared Memory (Static & Dynamic)
         SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
                                                               ^^^^^

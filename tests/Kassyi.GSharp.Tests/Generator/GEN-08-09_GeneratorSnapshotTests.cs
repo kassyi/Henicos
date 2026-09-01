@@ -190,6 +190,7 @@ public class GEN_08_GeneratorSnapshotTests
     [InlineData(@"Analyzers\GEN-18_VectorBuiltins.cs")]
     [InlineData(@"..\Syntax\SYN-01-09_ControlFlowKernels.cu.cs")]
     [InlineData(@"..\Syntax\SYN-28_MethodAttributesKernels.cu.cs")]
+    [InlineData(@"..\Syntax\SYN-49_SYN-68_InvocationAndIntrinsicsKernels.cu.cs")]
     // src/Stdlib/.../Kernels/
     [InlineData("GpuBigIntScalarKernels.cu.cs")]
     [InlineData("GpuBigIntMulKernels.cu.cs")]
@@ -247,6 +248,7 @@ public class GEN_08_GeneratorSnapshotTests
         allNames.Add("GEN-18_VectorBuiltins");
         allNames.Add("SYN-01-09_ControlFlowKernels");
         allNames.Add("SYN-28_MethodAttributesKernels");
+        allNames.Add("SYN-49_SYN-68_InvocationAndIntrinsicsKernels");
 
         Assert.NotEmpty(allNames);
 
