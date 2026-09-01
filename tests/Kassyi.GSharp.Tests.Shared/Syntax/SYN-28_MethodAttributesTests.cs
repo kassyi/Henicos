@@ -90,7 +90,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(284, result[0]);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-28")]
     [InlineData(0, (0 + 100) * 2)]

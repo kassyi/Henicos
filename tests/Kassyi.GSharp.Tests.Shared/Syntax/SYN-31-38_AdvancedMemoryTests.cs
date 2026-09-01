@@ -62,7 +62,7 @@ public class SYN_31_38_AdvancedMemoryTests
         Assert.Equal(300u, dest[2]);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-36")]
     [InlineData(new uint[] { 2, 0, 1 }, new uint[] { 5, 15, 25 }, new uint[] { 25, 35, 15 })]

@@ -2,7 +2,7 @@
 
 public class SYN_01_09_ControlFlowTests
 :  TranspilerTestBase{
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-01")]
     [InlineData(1, 10)]
@@ -56,7 +56,7 @@ public class SYN_01_09_ControlFlowTests
         // Verified by SYN_03_InlineOutVarTests
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-04")]
     [InlineData(42, 100, 42)]
@@ -93,7 +93,7 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(10, targetArray[1]); // 10 ??= 99 -> 10
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-05")]
     [InlineData(10, 5, 10.0)]
@@ -113,7 +113,7 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(expectedResult, result[0], precision: 4);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-05")]
     [InlineData(10, 5, 2, 1)] // 10 > 5 and 5 > 2 -> 1
