@@ -9,16 +9,22 @@ public class GEN_33_NativeStructGenerationTests
     [Trait("FeatureId", "GEN-33")]
     public async Task Test_GEN33_NativeStructGeneration_ArrayFieldsAndNestedStructs()
     {
-        var driver = await RoslynTestUtility.TestGenerator("Analyzers/GEN-33_NativeStructGeneration.cs")
-                                            .GetDriverAsync();
+        var testConfig = RoslynTestUtility.TestGenerator("Analyzers/GEN-33_NativeStructGeneration.cs");
 
+        // 0. Verify that generator execution and compilation produced no errors
+        await testConfig.HasNoErrorsAsync();
+
+        var driver = await testConfig.GetDriverAsync();
         Assert.NotNull(driver);
 
         var runResult = driver.GetRunResult();
         var generatedSources = runResult.GeneratedTrees.Select(t => t.ToString()).ToList();
         var allCode = string.Join("\n", generatedSources);
 
-        // 1. Check native struct declaration for ChildStruct where float[] is replaced by IntPtr
+        // 1. Check native struct declaration and layout for ChildStruct where float[] is replaced by IntPtr
+        Assert.Contains(
+            "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]",
+            allCode);
         Assert.Contains("struct __Native_Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct", allCode);
         Assert.Contains("IntPtr Values;", allCode);
         Assert.Contains("int Scale;", allCode);

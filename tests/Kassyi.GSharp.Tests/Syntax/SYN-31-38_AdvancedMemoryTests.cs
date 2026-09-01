@@ -6,7 +6,7 @@ public class SYN_31_38_AdvancedMemoryTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-14")]
-    public void TestFixedBufferKernel()
+    public void Test_SYN14_FixedBufferKernel()
     {
         uint[] dataArray = [5, 0];
         SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_FixedBufferKernel(dataArray);
@@ -17,7 +17,7 @@ public class SYN_31_38_AdvancedMemoryTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-36")]
-    public void TestPointerIncrementKernel()
+    public void Test_SYN36_PointerIncrementKernel()
     {
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
@@ -32,7 +32,7 @@ public class SYN_31_38_AdvancedMemoryTests
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-36")]
-    public void TestPointerDecrementKernel()
+    public void Test_SYN36_PointerDecrementKernel()
     {
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
@@ -49,7 +49,10 @@ public class SYN_31_38_AdvancedMemoryTests
     [Trait("FeatureId", "SYN-36")]
     [InlineData(new uint[] { 2, 0, 1 }, new uint[] { 5, 15, 25 }, new uint[] { 25, 35, 15 })]
     [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 1, 2, 3 }, new uint[] { 11, 12, 13 })]
-    public void TestPointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] expectedDest)
+    [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 0, 1, uint.MaxValue }, new uint[] { 10, 11, 9 })]
+    [InlineData(new uint[] { 1, 2, 0 }, new uint[] { 0x55555555u, 0xAAAAAAAAu, 0x12345678u }, new uint[] { 0x12345682u, 0x5555555Fu, 0xAAAAAAB4u })]
+    [InlineData(new uint[] { 2, 1, 0 }, new uint[] { 0, 0, 0 }, new uint[] { 10, 10, 10 })]
+    public void Test_SYN36_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] expectedDest)
     {
         uint[] dest = [0, 0, 0];
 
