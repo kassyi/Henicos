@@ -1,10 +1,10 @@
-// SKIP_SNAPSHOT_CONSISTENCY: Tested in separate suites or WIP
 // ReSharper disable All
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 [SuppressMessage("ReSharper", "NotAccessedVariable", Justification = "Variables are accessed within inline PTX assembly blocks")]
 [SuppressMessage("ReSharper", "RedundantAssignment", Justification = "Assignments are consumed by inline PTX assembly blocks")]
 [SuppressMessage("GSharp", "GSH1002", Justification = "Lambda capture limitations in source generation prevent passing context by reference.")]
+[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntCmpKernels
 {
     [GpuKernel]

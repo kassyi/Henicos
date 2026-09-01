@@ -13,6 +13,7 @@ public static class SYN08_DelegateEscapeSadPathCase
     public static Func<int, int>? EscapedDelegate;
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void DelegateEscapeKernel(int[] data)
     {
         // Sad Path: Escape delegate via Func/Action outside method or allocation
@@ -22,6 +23,7 @@ public static class SYN08_DelegateEscapeSadPathCase
     }
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void ReferenceTypeCaptureKernel(int[] data)
     {
         SampleRefClass obj = new SampleRefClass { Value = 42 };

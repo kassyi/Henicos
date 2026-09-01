@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 public static class SYN13_DynamicStackAllocSadPathCase
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void DynamicStackAllocKernel(int dynamicSize, int[] result)
     {
         // Sad Path: stackalloc with a dynamic variable size is not supported in CUDA C++ stack arrays

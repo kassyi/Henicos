@@ -23,11 +23,13 @@ public struct StructWithArrayOfStructs
 public static class GEN_33_TestKernels
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithArrayStruct(ParentStruct parent)
     {
     }
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithStructArray(StructWithArrayOfStructs container)
     {
     }

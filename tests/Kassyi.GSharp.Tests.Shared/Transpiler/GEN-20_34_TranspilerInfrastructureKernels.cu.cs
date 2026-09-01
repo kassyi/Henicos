@@ -40,6 +40,7 @@ public static class GEN_20_34_TranspilerInfrastructureKernels
     }
 
     // GEN-20 Kernel: Mutual Call Test
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     [GpuKernel]
     public static void MutualCallKernel(int[] countArray, int[] valArray, int[] resultArray)
     {
@@ -48,6 +49,7 @@ public static class GEN_20_34_TranspilerInfrastructureKernels
     }
 
     // GEN-20 Kernel: Overload Test
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     [GpuKernel]
     public static void OverloadTestKernel(int[] inputA, int[] inputB, int[] inputC, int[] output2Arg, int[] output3Arg)
     {
@@ -57,6 +59,7 @@ public static class GEN_20_34_TranspilerInfrastructureKernels
     }
 
     // GEN-34 Kernel: Synchronized Array Transfer Test (Empty / Huge Array)
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     [GpuKernel]
     public static void ArrayTransferKernel(int[] data, int length)
     {

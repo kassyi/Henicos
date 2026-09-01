@@ -1,4 +1,3 @@
-// SKIP_SNAPSHOT_CONSISTENCY: Tested in separate suites or WIP
 using System;
 using Kassyi.GSharp.Core;
 using System.Numerics;

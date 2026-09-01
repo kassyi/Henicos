@@ -5,6 +5,7 @@ namespace TestSpace
     public static class ErrorSpecKernel
     {
         [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
         public static int BadKernel()
         {
             string s = "hello";
