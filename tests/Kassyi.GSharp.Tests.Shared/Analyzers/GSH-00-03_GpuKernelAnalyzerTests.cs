@@ -5,7 +5,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
 :  TranspilerTestBase{
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
-    [Fact]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("GSH-01", "Analyzers/GpuKernel/GSH-01_Foreach_InGpuKernel.cu.cs", "GSH0007")]
     [InlineData("GSH-02", "Analyzers/GpuKernel/GSH-02_LinqQuery_InGpuKernel.cu.cs", "GSH0008")]
@@ -16,7 +16,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("GSH-00", "Analyzers/GpuKernel/GSH-00_ValidSyntax_InGpuKernel.cu.cs")]
     public async Task Test_GpuKernelAnalyzer_HasNoErrors(string featureId, string testCasePath)
