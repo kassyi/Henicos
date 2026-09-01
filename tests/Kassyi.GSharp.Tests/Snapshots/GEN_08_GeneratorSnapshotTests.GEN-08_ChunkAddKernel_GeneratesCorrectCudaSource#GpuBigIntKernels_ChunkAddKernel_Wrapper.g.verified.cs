@@ -9,106 +9,37 @@ namespace Kassyi.GSharp.Stdlib.Math
 {
 public static partial class GpuBigIntKernelsWrapper
 {
-public const string ChunkAddKernel_CudaSource = @"// GSharp Prelude
-#include <cooperative_groups.h>
-namespace cg=cooperative_groups;
-
-__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
-unsigned int res;
-unsigned int c_in=(unsigned int)*carry;
-unsigned int c_out;
-asm volatile(
-""add.cc.u32 %0, %2, -1;\n\t""
-""addc.cc.u32 %0, %3, %4;\n\t""
-""addc.u32 %1, 0, 0;""
-:""=&r""(res),""=r""(c_out)
-:""r""(c_in),""r""(a),""r""(b)
-);
-*carry=c_out;
-return res;
-}
-__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
-unsigned int res;
-unsigned int dummy;
-unsigned int b_in=(unsigned int)*borrow;
-unsigned int b_out;
-asm volatile(
-""sub.cc.u32 %1, 0, %3;\n\t""
-""subc.cc.u32 %0, %4, %5;\n\t""
-""subc.u32 %2, 0, 0;""
-:""=&r""(res),""=&r""(dummy),""=r""(b_out)
-:""r""(b_in),""r""(a),""r""(b)
-);
-*borrow=b_out&1;
-return res;
-}
-
-__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_l(value, value, offset);
-}
-__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_r(value, value, offset);
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value << offset) | (value >> (64 - offset)) : value;
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value >> offset) | (value << (64 - offset)) : value;
-}
-__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
-    return value ? __ffs(value) - 1 : 32;
-}
-__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
-    return value ? __ffsll(value) - 1 : 64;
-}
-__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
-    return value ? 31 - __clz(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
-    return value ? 63 - __clzll(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
-    return value ? __clz(value) : 32;
-}
-__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
-    return value ? __clzll(value) : 64;
-}
-
-extern ""C"" __global__ void ChunkAddKernel(unsigned int* dA,unsigned int* dB,unsigned int* dResult,long long* carryBuffer,int numWords,int chunkSize){
-int chunkIdx=((blockIdx.x*blockDim.x)+threadIdx.x);
-int start=(chunkIdx*chunkSize);
-if((start>=numWords))
+public const string ChunkAddKernel_CudaSource = @"extern ""C"" __global__ void ChunkAddKernel(unsigned int* __restrict__ dA,unsigned int* __restrict__ dB,unsigned int* __restrict__ dResult,long long* __restrict__ carryBuffer,int numWords,int chunkSize){
+int chunkIdx=blockIdx.x*blockDim.x+threadIdx.x;
+int start=chunkIdx*chunkSize;
+if(start>=numWords)
 {
 return;
 }
-int end=(start+chunkSize);
-if((end>numWords))
+int end=start+chunkSize;
+if(end>numWords)
 {
 end=numWords;
 }
 unsigned long long localCarry=0;
-for(int i=start;(i<end);i++)
+for(int i=start;i<end;i++)
 {
-unsigned long long current=(((unsigned long long)dA[i]+(unsigned long long)dB[i])+localCarry);
-dResult[i]=(unsigned int)((current&0xFFFFFFFF));
-localCarry=(current>>32);
+unsigned long long current=(unsigned long long)dA[i]+(unsigned long long)dB[i]+localCarry;
+dResult[i]=(unsigned int)(current&0xFFFFFFFF);
+localCarry=current>>32;
 }
-carryBuffer[(chunkIdx+1)]=(long long)localCarry;
+carryBuffer[chunkIdx+1]=(long long)localCarry;
 }
 ";
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0)
-{
+if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", ChunkAddKernel_CudaSource, null, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ChunkAddKernel_CudaSource, null, macros);
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -200,7 +131,7 @@ IntPtr.Zero // Extra
 // Copy back array: dA
 if(dA_size>0&&d_dA!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dA = System.Runtime.InteropServices.GCHandle.Alloc(dA, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dA=System.Runtime.InteropServices.GCHandle.Alloc(dA,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dA = handleBack_dA.AddrOfPinnedObject();
@@ -214,7 +145,7 @@ handleBack_dA.Free();
 // Copy back array: dB
 if(dB_size>0&&d_dB!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dB = System.Runtime.InteropServices.GCHandle.Alloc(dB, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dB=System.Runtime.InteropServices.GCHandle.Alloc(dB,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dB = handleBack_dB.AddrOfPinnedObject();
@@ -228,7 +159,7 @@ handleBack_dB.Free();
 // Copy back array: dResult
 if(dResult_size>0&&d_dResult!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dResult = System.Runtime.InteropServices.GCHandle.Alloc(dResult, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dResult=System.Runtime.InteropServices.GCHandle.Alloc(dResult,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dResult = handleBack_dResult.AddrOfPinnedObject();
@@ -242,7 +173,7 @@ handleBack_dResult.Free();
 // Copy back array: carryBuffer
 if(carryBuffer_size>0&&d_carryBuffer!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_carryBuffer = System.Runtime.InteropServices.GCHandle.Alloc(carryBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_carryBuffer=System.Runtime.InteropServices.GCHandle.Alloc(carryBuffer,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_carryBuffer = handleBack_carryBuffer.AddrOfPinnedObject();
@@ -263,11 +194,13 @@ if (d_carryBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_carryBuffer);
 }
 }
 }
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ChunkAddKernel_Device(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", ChunkAddKernel_CudaSource, null, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ChunkAddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ChunkAddKernel_CudaSource, null, macros);
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -298,5 +231,6 @@ finally
 }
 }
 }
+#pragma warning restore CS8500
 }
 }

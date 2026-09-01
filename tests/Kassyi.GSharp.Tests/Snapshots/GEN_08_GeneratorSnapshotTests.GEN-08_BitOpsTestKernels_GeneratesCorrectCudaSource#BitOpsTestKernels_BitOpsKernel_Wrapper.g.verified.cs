@@ -9,76 +9,7 @@ namespace Kassyi.GSharp.Tests
 {
 public static partial class BitOpsTestKernelsWrapper
 {
-public const string BitOpsKernel_CudaSource = @"// GSharp Prelude
-#include <cooperative_groups.h>
-namespace cg=cooperative_groups;
-
-__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
-unsigned int res;
-unsigned int c_in=(unsigned int)*carry;
-unsigned int c_out;
-asm volatile(
-""add.cc.u32 %0, %2, -1;\n\t""
-""addc.cc.u32 %0, %3, %4;\n\t""
-""addc.u32 %1, 0, 0;""
-:""=&r""(res),""=r""(c_out)
-:""r""(c_in),""r""(a),""r""(b)
-);
-*carry=c_out;
-return res;
-}
-__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
-unsigned int res;
-unsigned int dummy;
-unsigned int b_in=(unsigned int)*borrow;
-unsigned int b_out;
-asm volatile(
-""sub.cc.u32 %1, 0, %3;\n\t""
-""subc.cc.u32 %0, %4, %5;\n\t""
-""subc.u32 %2, 0, 0;""
-:""=&r""(res),""=&r""(dummy),""=r""(b_out)
-:""r""(b_in),""r""(a),""r""(b)
-);
-*borrow=b_out&1;
-return res;
-}
-
-__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_l(value, value, offset);
-}
-__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_r(value, value, offset);
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value << offset) | (value >> (64 - offset)) : value;
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value >> offset) | (value << (64 - offset)) : value;
-}
-__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
-    return value ? __ffs(value) - 1 : 32;
-}
-__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
-    return value ? __ffsll(value) - 1 : 64;
-}
-__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
-    return value ? 31 - __clz(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
-    return value ? 63 - __clzll(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
-    return value ? __clz(value) : 32;
-}
-__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
-    return value ? __clzll(value) : 64;
-}
-
-extern ""C"" __global__ void BitOpsKernel(unsigned int* u32Data,unsigned long long* u64Data){
+public const string BitOpsKernel_CudaSource = @"extern ""C"" __global__ void BitOpsKernel(unsigned int* __restrict__ u32Data,unsigned long long* __restrict__ u64Data){
 unsigned int u32Val=u32Data[0];
 u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
 u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
@@ -88,22 +19,22 @@ u32Data[5]=__gsharp_rotl32(u32Val,5);
 u32Data[6]=__gsharp_rotr32(u32Val,3);
 unsigned long long u64Val=u64Data[0];
 u64Data[1]=(unsigned long long)__gsharp_lzc_64(u64Val);
-u64Data[2]=(unsigned long long)__popcll((unsigned long long)(u64Val));
+u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(u64Val));
 u64Data[3]=(unsigned long long)__gsharp_tzc_64(u64Val);
 u64Data[4]=(unsigned long long)__gsharp_log2_64(u64Val);
 u64Data[5]=__gsharp_rotl64(u64Val,10);
 u64Data[6]=__gsharp_rotr64(u64Val,7);
 }
 ";
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_BitOpsKernel(uint[] u32Data, ulong[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-if (u32Data.Length == 0 || u64Data.Length == 0)
-{
+if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", BitOpsKernel_CudaSource, null, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + BitOpsKernel_CudaSource, null, macros);
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
 try
@@ -155,7 +86,7 @@ IntPtr.Zero // Extra
 // Copy back array: u32Data
 if(u32Data_size>0&&d_u32Data!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_u32Data = System.Runtime.InteropServices.GCHandle.Alloc(u32Data, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_u32Data=System.Runtime.InteropServices.GCHandle.Alloc(u32Data,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_u32Data = handleBack_u32Data.AddrOfPinnedObject();
@@ -169,7 +100,7 @@ handleBack_u32Data.Free();
 // Copy back array: u64Data
 if(u64Data_size>0&&d_u64Data!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_u64Data = System.Runtime.InteropServices.GCHandle.Alloc(u64Data, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_u64Data=System.Runtime.InteropServices.GCHandle.Alloc(u64Data,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_u64Data = handleBack_u64Data.AddrOfPinnedObject();
@@ -188,11 +119,13 @@ if (d_u64Data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_u64Data);
 }
 }
 }
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_BitOpsKernel_Device(IntPtr u32Data, IntPtr u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", BitOpsKernel_CudaSource, null, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BitOpsKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + BitOpsKernel_CudaSource, null, macros);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -215,5 +148,6 @@ finally
 }
 }
 }
+#pragma warning restore CS8500
 }
 }

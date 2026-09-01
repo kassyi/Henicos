@@ -9,88 +9,19 @@ namespace TestNamespace
 {
 public static partial class TestKernelsWrapper
 {
-public const string AddKernel_CudaSource = @"// GSharp Prelude
-#include <cooperative_groups.h>
-namespace cg=cooperative_groups;
-
-__device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a,unsigned int b,unsigned long long*carry){
-unsigned int res;
-unsigned int c_in=(unsigned int)*carry;
-unsigned int c_out;
-asm volatile(
-""add.cc.u32 %0, %2, -1;\n\t""
-""addc.cc.u32 %0, %3, %4;\n\t""
-""addc.u32 %1, 0, 0;""
-:""=&r""(res),""=r""(c_out)
-:""r""(c_in),""r""(a),""r""(b)
-);
-*carry=c_out;
-return res;
-}
-__device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a,unsigned int b,long long*borrow){
-unsigned int res;
-unsigned int dummy;
-unsigned int b_in=(unsigned int)*borrow;
-unsigned int b_out;
-asm volatile(
-""sub.cc.u32 %1, 0, %3;\n\t""
-""subc.cc.u32 %0, %4, %5;\n\t""
-""subc.u32 %2, 0, 0;""
-:""=&r""(res),""=&r""(dummy),""=r""(b_out)
-:""r""(b_in),""r""(a),""r""(b)
-);
-*borrow=b_out&1;
-return res;
-}
-
-__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_l(value, value, offset);
-}
-__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_r(value, value, offset);
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value << offset) | (value >> (64 - offset)) : value;
-}
-__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value >> offset) | (value << (64 - offset)) : value;
-}
-__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
-    return value ? __ffs(value) - 1 : 32;
-}
-__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
-    return value ? __ffsll(value) - 1 : 64;
-}
-__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
-    return value ? 31 - __clz(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
-    return value ? 63 - __clzll(value) : 0;
-}
-__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
-    return value ? __clz(value) : 32;
-}
-__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
-    return value ? __clzll(value) : 64;
-}
-
-extern ""C"" __global__ void AddKernel(int* a,int* b,int* c){
-c[0]=(a[0]+b[0]);
+public const string AddKernel_CudaSource = @"extern ""C"" __global__ void AddKernel(int* __restrict__ a,int* __restrict__ b,int* __restrict__ c){
+c[0]=a[0]+b[0];
 }
 ";
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AddKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-if (a.Length == 0 || b.Length == 0 || c.Length == 0)
-{
+if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", AddKernel_CudaSource, null, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AddKernel_CudaSource, null, macros);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -160,7 +91,7 @@ IntPtr.Zero // Extra
 // Copy back array: a
 if(a_size>0&&d_a!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_a=System.Runtime.InteropServices.GCHandle.Alloc(a,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_a = handleBack_a.AddrOfPinnedObject();
@@ -174,7 +105,7 @@ handleBack_a.Free();
 // Copy back array: b
 if(b_size>0&&d_b!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_b=System.Runtime.InteropServices.GCHandle.Alloc(b,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_b = handleBack_b.AddrOfPinnedObject();
@@ -188,7 +119,7 @@ handleBack_b.Free();
 // Copy back array: c
 if(c_size>0&&d_c!=IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_c = System.Runtime.InteropServices.GCHandle.Alloc(c, System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_c=System.Runtime.InteropServices.GCHandle.Alloc(c,System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_c = handleBack_c.AddrOfPinnedObject();
@@ -208,11 +139,13 @@ if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
 }
 }
 }
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AddKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", AddKernel_CudaSource, null, macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AddKernel_CudaSource, null, macros);
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -237,5 +170,6 @@ finally
 }
 }
 }
+#pragma warning restore CS8500
 }
 }
