@@ -558,29 +558,7 @@ internal static class ExpressionTranspilers
                 context.Writer.AppendType(typeSymbol);
                 context.Writer.AppendSpace();
                 context.Writer.Append("_tmp");
-
-                if (argumentList is { Arguments.Count: > 0 })
-                {
-                    using (context.Writer.Braces())
-                    {
-                        var first = true;
-                        foreach (var arg in argumentList.Arguments)
-                        {
-                            if (!first)
-                            {
-                                context.Writer.AppendComma();
-                                context.Writer.AppendSpace();
-                            }
-
-                            context.Visitor.Visit(arg);
-                            first = false;
-                        }
-                    }
-                }
-                else
-                {
-                    context.Writer.AppendEmptyScope();
-                }
+                TranspileArgumentListAsBraces(argumentList, ref context);
 
                 context.Writer.AppendSemiColon();
                 context.Writer.AppendSpace();
@@ -618,10 +596,14 @@ internal static class ExpressionTranspilers
         ref TranspileContext context)
     {
         context.Writer.AppendType(typeSymbol);
+        TranspileArgumentListAsBraces(argumentList, ref context);
+    }
 
+    private static void TranspileArgumentListAsBraces(ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
         if (argumentList is { Arguments.Count: > 0 })
         {
-            using (context.Writer.Scope())
+            using (context.Writer.Braces())
             {
                 var first = true;
                 foreach (var arg in argumentList.Arguments)
