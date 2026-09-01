@@ -6,12 +6,13 @@ internal static class StatementTranspilers
 {
     public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
     {
-        context.Writer.AppendKeyword("auto");
-        context.Writer.AppendSpace();
-        context.Writer.Append(node.Identifier.Text);
-        context.Writer.AppendSpace();
-        context.Writer.AppendOperator("=");
-        context.Writer.AppendSpace();
+        context.Writer
+            .AppendKeyword("auto")
+            .AppendSpace()
+            .Append(node.Identifier.Text)
+            .AppendSpace()
+            .AppendOperator("=")
+            .AppendSpace();
 
         context.Writer.Append("[&]");
         context.Visitor.Visit(node.ParameterList);
@@ -32,15 +33,15 @@ internal static class StatementTranspilers
         {
             using (context.Writer.Scope())
             {
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
+                context.Writer
+                    .AppendKeyword("return")
+                    .AppendSpace();
                 context.Visitor.Visit(node.ExpressionBody.Expression);
                 context.Writer.AppendSemiColonLine();
             }
         }
 
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
+        context.Writer.AppendSemiColonLine();
     }
 
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
@@ -58,8 +59,9 @@ internal static class StatementTranspilers
 
         if (node.Else != null)
         {
-            context.Writer.AppendKeyword("else");
-            context.Writer.AppendLine();
+            context.Writer
+                .AppendKeyword("else")
+                .AppendLine();
             context.Visitor.VisitStatementOrBlock(node.Else.Statement);
         }
     }
@@ -89,14 +91,17 @@ internal static class StatementTranspilers
             var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
             if (node.Declaration.Type.IsVar)
             {
-                context.Writer.AppendKeyword("auto");
+                context.Writer
+                    .AppendKeyword("auto")
+                    .AppendSpace();
             }
             else
             {
-                context.Writer.AppendType(typeSymbol);
+                context.Writer
+                    .AppendType(typeSymbol)
+                    .AppendSpace();
             }
 
-            context.Writer.AppendSpace();
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
             {
                 var v = node.Declaration.Variables[i];
@@ -161,8 +166,9 @@ internal static class StatementTranspilers
 
     public static void TranspileDoStatement(DoStatementSyntax node, ref TranspileContext context)
     {
-        context.Writer.AppendKeyword("do");
-        context.Writer.AppendLine();
+        context.Writer
+            .AppendKeyword("do")
+            .AppendLine();
         context.Visitor.VisitStatementOrBlock(node.Statement);
         context.Writer.AppendKeyword("while");
         using (context.Writer.Parentheses())
@@ -170,8 +176,7 @@ internal static class StatementTranspilers
             context.Visitor.Visit(node.Condition);
         }
 
-        context.Writer.Append(";");
-        context.Writer.AppendLine();
+        context.Writer.AppendSemiColonLine();
     }
 
     public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
@@ -209,14 +214,16 @@ internal static class StatementTranspilers
 
     public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context)
     {
-        context.Writer.AppendKeyword("break");
-        context.Writer.AppendSemiColon();
+        context.Writer
+            .AppendKeyword("break")
+            .AppendSemiColon();
     }
 
     public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context)
     {
-        context.Writer.AppendKeyword("continue");
-        context.Writer.AppendSemiColon();
+        context.Writer
+            .AppendKeyword("continue")
+            .AppendSemiColon();
     }
 
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
@@ -224,8 +231,9 @@ internal static class StatementTranspilers
         if (node.Expression != null)
         {
             DeclarationTranspilers.HoistDeclarationExpressions(node.Expression, ref context);
-            context.Writer.AppendKeyword("return");
-            context.Writer.AppendSpace();
+            context.Writer
+                .AppendKeyword("return")
+                .AppendSpace();
             context.Visitor.Visit(node.Expression);
         }
         else
