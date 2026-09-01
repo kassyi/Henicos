@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_90_93_CoreSyntaxTests
 :  TranspilerTestBase{
-    [Theory]
+    [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-90")]
     [InlineData(5, 2, 10)]       // 5 <= 10 -> else branch 5 times: 5 * 2 = 10

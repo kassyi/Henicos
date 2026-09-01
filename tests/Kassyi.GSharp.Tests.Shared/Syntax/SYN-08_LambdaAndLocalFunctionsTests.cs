@@ -15,7 +15,7 @@ public class SYN_08_LambdaAndLocalFunctionsTests
         Assert.Equal(40, data[2]);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-08")]
     [InlineData(2, 5, 10)]
