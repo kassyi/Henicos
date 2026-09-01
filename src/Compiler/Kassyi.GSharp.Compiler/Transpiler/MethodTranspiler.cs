@@ -1,23 +1,27 @@
 
+using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Transpiler.Dialects;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# methods and GPU kernels into CUDA C++ function definitions or forward signatures.</summary>
 /// <remarks><para>Implements: <b>GEN-20</b></para></remarks>
 public static class MethodTranspiler
 {
-    public static string GenerateCudaSource(MethodDeclarationSyntax method, SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = false)
+    public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
+        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
+        ITranspilerDialect? dialect = null)
     {
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        var dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+        dialect ??= new GSharpCudaDialect();
         using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         context.Writer = bodyWriter;
-        var methodSymbol = semanticModel.GetDeclaredSymbol(method);
+        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
         if (methodSymbol != null)
         {
             if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
@@ -28,8 +32,8 @@ public static class MethodTranspiler
             }
         }
 
-        WriteMethodSignature(method, isDevice, ref context);
-        WriteMethodBody(method, ref context);
+        WriteMethodSignature(methodDecl, isDevice, ref context);
+        WriteMethodBody(methodDecl, ref context);
 
         context.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
@@ -41,19 +45,20 @@ public static class MethodTranspiler
         return mainWriter + bodyWriter.ToString();
     }
 
-    public static string GenerateCudaSignature(MethodDeclarationSyntax method, SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = false)
+    public static string GenerateCudaSignature(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
+        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
+        ITranspilerDialect? dialect = null)
     {
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        var dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+        dialect ??= new GSharpCudaDialect();
         using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         context.Writer = sigWriter;
-        WriteMethodSignature(method, isDevice, ref context);
+        WriteMethodSignature(methodDecl, isDevice, ref context);
         context.Writer.AppendSemiColonLine();
 
         context.Writer = mainWriter;
@@ -149,7 +154,7 @@ public static class MethodTranspiler
 
         foreach (var namedArg in attr.NamedArguments)
         {
-            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
+            if (namedArg is { Key: "Value", Value.Value: int or short })
             {
                 return (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
             }

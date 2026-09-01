@@ -18,6 +18,12 @@
     <PackageReference Include="YamlDotNet" Version="18.1.0" GeneratePathProperty="true" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\InterpolatedStringHandlerAttribute.cs" Link="InterpolatedStringHandlerAttribute.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\UnscopedRefAttribute.cs" Link="UnscopedRefAttribute.cs" />
+  </ItemGroup>
+
   <PropertyGroup>
     <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
   </PropertyGroup>
