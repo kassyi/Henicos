@@ -299,6 +299,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
             writer.AppendLine("__forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }");
             writer.AppendLine("__forceinline__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }");
             writer.AppendLine();
+            writer.AppendLine("namespace cg {");
+            writer.AppendLine("    struct grid_group {");
+            writer.AppendLine("        void sync() {}");
+            writer.AppendLine("    };");
+            writer.AppendLine("    inline grid_group this_grid() { return grid_group(); }");
+            writer.AppendLine("}");
+            writer.AppendLine();
             writer.AppendLine("__forceinline__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }");
             writer.AppendLine("__forceinline__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }");
             writer.AppendLine("__forceinline__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }");
