@@ -34,11 +34,29 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         if (node is MethodDeclarationSyntax { AttributeLists.Count: > 0 } m)
         {
-            return m.AttributeLists.Any(al => al.Attributes.Any(a => a.Name.ToString().Contains(attributeName)));
+            foreach (var attributeList in m.AttributeLists)
+            {
+                foreach (var attribute in attributeList.Attributes)
+                {
+                    var simpleName = GetSimpleName(attribute.Name);
+                    if (simpleName != null && KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, attributeName))
+                    {
+                        return true;
+                    }
+                }
+            }
         }
 
         return false;
     }
+
+    private static SimpleNameSyntax? GetSimpleName(NameSyntax name) => name switch
+    {
+        SimpleNameSyntax simple => simple,
+        QualifiedNameSyntax qualified => qualified.Right,
+        AliasQualifiedNameSyntax alias => alias.Name,
+        _ => null
+    };
 
     private static IMethodSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context, string attributeName)
     {
@@ -50,14 +68,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return null;
         }
 
-        if (Enumerable.Any(methodSymbol.GetAttributes(), attribute =>
-                attribute.AttributeClass?.Name == $"{attributeName}Attribute" ||
-                attribute.AttributeClass?.Name == attributeName))
-        {
-            return methodSymbol;
-        }
-
-        return null;
+        return methodSymbol.HasAttribute(attributeName) ? methodSymbol : null;
     }
 
     private static void Execute(Compilation compilation, ImmutableArray<IMethodSymbol?> kernelMethods,
