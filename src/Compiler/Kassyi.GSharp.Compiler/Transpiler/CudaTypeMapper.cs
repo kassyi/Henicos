@@ -26,29 +26,29 @@ internal static class CudaTypeMapper
             s_specialTypes[(int)type] = (cudaName, size);
     }
 
-    public static void AppendType(this ref SourceWriter writer, ITypeSymbol? typeSymbol)
+    public static ref readonly SourceWriter AppendType(this in SourceWriter writer, ITypeSymbol? typeSymbol)
     {
         switch (typeSymbol)
         {
             case null:
                 writer.Append(TypeConstants.CudaTypes.Void);
-                return;
+                return ref writer;
             // 1. Indirection Types (Arrays & Pointers)
             case IArrayTypeSymbol array:
                 writer.AppendType(array.ElementType);
                 writer.Append("*");
-                return;
+                return ref writer;
             case IPointerTypeSymbol pointer:
                 writer.AppendType(pointer.PointedAtType);
                 writer.Append("*");
-                return;
+                return ref writer;
         }
 
         // 2. Primitive / Special Types (O(1) table lookup)
         if (TryGetSpecialTypeName(typeSymbol.SpecialType, out var specialName))
         {
             writer.Append(specialName);
-            return;
+            return ref writer;
         }
 
         // 3. Named Types (Generics, Framework Types, Vectors, Structs)
@@ -59,24 +59,25 @@ internal static class CudaTypeMapper
                 writer.Append("System_Nullable<");
                 writer.AppendType(namedType.TypeArguments[0]);
                 writer.Append(">");
-                return;
+                return ref writer;
             }
 
             if (namedType.Name == TypeConstants.GpuBigIntRefType)
             {
                 writer.Append(TypeConstants.CudaTypes.UnsignedIntPtr);
-                return;
+                return ref writer;
             }
 
             if (TryGetVectorTypeName(namedType, out var vectorName))
             {
                 writer.Append(vectorName);
-                return;
+                return ref writer;
             }
         }
 
         // 4. Fallback: User Defined Structs / Custom Types
         writer.AppendFullyQualifiedCppName(typeSymbol);
+        return ref writer;
     }
 
     private static bool TryGetSpecialTypeName(SpecialType specialType, out string cudaName)
@@ -110,11 +111,11 @@ internal static class CudaTypeMapper
         return false;
     }
 
-    public static void AppendFullyQualifiedCppName(this ref SourceWriter writer, ISymbol symbol)
+    public static ref readonly SourceWriter AppendFullyQualifiedCppName(this in SourceWriter writer, ISymbol symbol)
     {
         if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
         {
-            return;
+            return ref writer;
         }
 
         var parent = symbol.ContainingSymbol;
@@ -125,13 +126,14 @@ internal static class CudaTypeMapper
         }
 
         writer.Append(symbol.Name);
+        return ref writer;
     }
 
-    public static void AppendFullyQualifiedCsName(this ref SourceWriter writer, ISymbol symbol)
+    public static ref readonly SourceWriter AppendFullyQualifiedCsName(this in SourceWriter writer, ISymbol symbol)
     {
         if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
         {
-            return;
+            return ref writer;
         }
 
         var parent = symbol.ContainingSymbol;
@@ -146,6 +148,7 @@ internal static class CudaTypeMapper
         }
 
         writer.Append(symbol.Name);
+        return ref writer;
     }
 
     public static int GetApproximateSize(ITypeSymbol typeSymbol) => GetSizeAndAlignment(typeSymbol).Size;
@@ -205,7 +208,7 @@ internal static class CudaTypeMapper
     }
 
     public static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameterCppType(
-        this ref SourceWriter writer, ParameterSyntax p, ITypeSymbol? typeSymbol)
+        this in SourceWriter writer, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {
         var isRefPointer = false;
         var isIn = false;
