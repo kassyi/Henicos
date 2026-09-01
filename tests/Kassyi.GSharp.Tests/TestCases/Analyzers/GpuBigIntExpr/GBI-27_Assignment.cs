@@ -1,5 +1,3 @@
-namespace Kassyi.GSharp.Tests.TestCases.Analyzers.GBI_27_Assignment;
-
 using Kassyi.GSharp.Stdlib.Math.Expressions;
 
 public class TestClass

@@ -20,7 +20,7 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
     """;
 
     [ModuleInitializer]
-    public static void Register() => MegaCompilationCache.RegisterSource("GSH-03_ImplicitVarNeedsSuffixRuleTests.cs", GSH03_Sources);
+    public static void Register() => MegaCompilationCache.RegisterSource(GSH03_Sources);
 
     [Fact]
     [Trait("FeatureId", "GSH-03")]
@@ -64,4 +64,3 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
         Assert.Empty(reportedDiagnostics);
     }
 }
-

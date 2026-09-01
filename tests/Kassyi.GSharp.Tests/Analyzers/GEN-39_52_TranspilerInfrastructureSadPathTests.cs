@@ -1,28 +1,44 @@
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Tests.Helpers;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class GEN_39_52_TranspilerInfrastructureSadPathTests
 {
+    private static async Task<string> LoadTestCaseSourceAsync()
+    {
+        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
+        var path = Path.Combine(testCasesDir, "Analyzers", "GEN-39_52_InvalidMappingSadPath.cs");
+        return await File.ReadAllTextAsync(path);
+    }
+
     [Fact]
     [Trait("Category", "SadPath")]
     [Trait("FeatureId", "GEN-39")]
-    public void Test_GEN39_InvalidBclIntrinsicMapping_DoesNotCrash()
+    public async Task Test_GEN39_InvalidBclIntrinsicMapping_DoesNotCrash()
     {
-        var diagnostics = MegaCompilationCache.GetGeneratorDiagnosticsForFile("GEN-39_52_InvalidMappingSadPath.cs");
-        // No specific assertion, just that we can get diagnostics without crashing
-        Assert.NotNull(diagnostics);
+        var source = await LoadTestCaseSourceAsync();
+
+        // Execution of source generator with invalid BCL intrinsic mapping attribute must complete safely without throwing exceptions
+        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+
+        Assert.NotNull(driver);
+        Assert.NotNull(compilation);
+        // Ensure compilation/generator didn't crash
     }
 
     [Fact]
     [Trait("Category", "SadPath")]
     [Trait("FeatureId", "GEN-52")]
-    public void Test_GEN52_UnknownAttributesAndInvalidIntrinsics_ReportsDiagnostics()
+    public async Task Test_GEN52_UnknownAttributesAndInvalidIntrinsics_ReportsDiagnostics()
     {
-        var diagnostics = MegaCompilationCache.GetGeneratorDiagnosticsForFile("GEN-39_52_InvalidMappingSadPath.cs");
-        Assert.Contains(diagnostics, d => d.Id == GSharpDiagnostics.ObjectCreationNotSupported.Id || d.Id == GSharpDiagnostics.UnsupportedSyntax.Id);
+        var source = await LoadTestCaseSourceAsync();
+
+        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
+
+        Assert.NotNull(driver);
+        // Verification: Roslyn / Transpiler / Generator reports specific diagnostic errors (GSH0001 for object creation) without compiler crashing
+        Assert.Contains(allDiagnostics, d => d.Id == GSharpDiagnostics.ObjectCreationNotSupported.Id || d.Id == GSharpDiagnostics.UnsupportedSyntax.Id);
     }
 }
-
