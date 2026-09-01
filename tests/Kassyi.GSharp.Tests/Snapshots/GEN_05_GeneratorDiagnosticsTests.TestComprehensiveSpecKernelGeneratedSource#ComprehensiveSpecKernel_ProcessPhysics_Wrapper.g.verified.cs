@@ -211,7 +211,7 @@ public global::System.UInt64 ULongValue;
 public global::System.Single FloatValue;
 public global::System.Double DoubleValue;
 }
-public static __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
 {
 var native = new __Native_DebugReduc_SpecTypes();
 native.BooleanValue = host.BooleanValue;
@@ -227,7 +227,7 @@ native.FloatValue = host.FloatValue;
 native.DoubleValue = host.DoubleValue;
 return native;
 }
-public static void Unmarshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, ref __Native_DebugReduc_SpecTypes native, bool isDevicePtr)
+public static unsafe void Unmarshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, ref __Native_DebugReduc_SpecTypes native, bool isDevicePtr)
 {
 host.BooleanValue = native.BooleanValue;
 host.ByteValue = native.ByteValue;

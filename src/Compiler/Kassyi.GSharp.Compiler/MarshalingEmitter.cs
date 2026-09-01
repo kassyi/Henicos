@@ -85,7 +85,7 @@ internal static class MarshalingEmitter
 
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)
     {
-        writer.Append("public static __Native_");
+        writer.Append("public static unsafe __Native_");
         writer.AppendFullyQualifiedCppName(s);
         writer.Append(" Marshal_");
         writer.AppendFullyQualifiedCppName(s);
@@ -114,9 +114,19 @@ internal static class MarshalingEmitter
                         writer.AppendLine("else");
                         using (writer.Scope())
                         {
-                            writer.Append($"int size = host.{member.Name}.Length * sizeof(");
-                            writer.AppendFullyQualifiedCsName(arrayType.ElementType);
-                            writer.AppendLine(");");
+                            if (IsCustomStruct(arrayType.ElementType))
+                            {
+                                writer.Append($"int size = host.{member.Name}.Length * sizeof(__Native_");
+                                writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+                                writer.AppendLine(");");
+                            }
+                            else
+                            {
+                                writer.Append($"int size = host.{member.Name}.Length * sizeof(");
+                                writer.AppendFullyQualifiedCsName(arrayType.ElementType);
+                                writer.AppendLine(");");
+                            }
+
                             writer.AppendKeyword("if");
                             using (writer.Parentheses())
                             {
@@ -169,7 +179,7 @@ internal static class MarshalingEmitter
 
     private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s)
     {
-        writer.Append("public static void Unmarshal_");
+        writer.Append("public static unsafe void Unmarshal_");
         writer.AppendFullyQualifiedCppName(s);
         writer.Append("(ref ");
         writer.AppendFullyQualifiedCsName(s);
@@ -186,9 +196,19 @@ internal static class MarshalingEmitter
                         $"if (host.{member.Name} != null && !isDevicePtr && native.{member.Name} != IntPtr.Zero)");
                     using (writer.Scope())
                     {
-                        writer.Append($"int size = host.{member.Name}.Length * sizeof(");
-                        writer.AppendFullyQualifiedCsName(arrayType.ElementType);
-                        writer.AppendLine(");");
+                        if (IsCustomStruct(arrayType.ElementType))
+                        {
+                            writer.Append($"int size = host.{member.Name}.Length * sizeof(__Native_");
+                            writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+                            writer.AppendLine(");");
+                        }
+                        else
+                        {
+                            writer.Append($"int size = host.{member.Name}.Length * sizeof(");
+                            writer.AppendFullyQualifiedCsName(arrayType.ElementType);
+                            writer.AppendLine(");");
+                        }
+
                         writer.AppendKeyword("if");
                         using (writer.Parentheses())
                         {
