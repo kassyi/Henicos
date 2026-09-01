@@ -226,7 +226,7 @@ public class GEN_08_GeneratorSnapshotTests
         await VerifyGeneratorAsync(source, testName, sourceDir);
     }
 
-    [Fact(Skip = "WIP: G# メモリアーキテクチャ移行中のため、スナップショット検証と共に一時的にオミット")]
+    [Fact]
     [Trait("FeatureId", "GEN-09")]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
