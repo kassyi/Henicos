@@ -3,17 +3,10 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 internal static class TestHelpers
 {
-    private const string ID = nameof(TestHelpers);
-
-    public static readonly string TestHelpers_Sources = $$"""
-    class Dummy_{{ID}} { public void M() {} }
-    """;
-
-    [ModuleInitializer]
-    public static void Register() => MegaCompilationCache.RegisterSource(TestHelpers_Sources);
-
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) CreateDummyContext()
     {
-        return MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "M");
+        return MegaCompilationCache.GetMethodContext<Dummy_TestHelpers>("M");
     }
 }
+
+class Dummy_TestHelpers { public void M() {} }

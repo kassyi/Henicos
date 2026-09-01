@@ -1,34 +1,14 @@
-
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 {
-    private const string ID = nameof(GSH_03_ImplicitVarNeedsSuffixRuleTests);
-
-    public static readonly string GSH03_Sources = $$"""
-    using System.Collections.Generic;
-
-    class Dummy_{{ID}} { 
-        public void WithoutSuffix() {
-            var x = 1;
-        }
-
-        public void WithSuffix() {
-            var x = 1U;
-        }
-    }
-    """;
-
-    [ModuleInitializer]
-    public static void Register() => MegaCompilationCache.RegisterSource(GSH03_Sources);
-
     [Fact]
     [Trait("FeatureId", "GSH-03")]
     public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix()
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var (model, method) = MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "WithoutSuffix");
+        var (model, method) = MegaCompilationCache.GetMethodContext<Dummy_GSH03>("WithoutSuffix");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
             .First();
 
@@ -50,7 +30,7 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var (model, method) = MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "WithSuffix");
+        var (model, method) = MegaCompilationCache.GetMethodContext<Dummy_GSH03>("WithSuffix");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
             .First();
 
@@ -62,5 +42,18 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 
         // Assert
         Assert.Empty(reportedDiagnostics);
+    }
+}
+
+class Dummy_GSH03
+{
+    public void WithoutSuffix()
+    {
+        var x = 1;
+    }
+
+    public void WithSuffix()
+    {
+        var x = 1U;
     }
 }
