@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
@@ -31,7 +31,7 @@ public class SYN_64_69_NumericsAndHwMathTests
     public void Test_SYN67_BFloat16Fp8_Transpilation()
     {
     }
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-68")]
     [InlineData(0u, 0ul)]
@@ -68,7 +68,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Equal(BitOperations.RotateRight(u64Val, 7), u64Data[6]);
     }
 
-        [Fact]
+        [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-68")]
     [InlineData(0.0, 0.0f)]
@@ -105,7 +105,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Equal(MathF.Abs(fVal), floatOutputs[5]);
     }
 
-        [Fact]
+        [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-68")]
     [InlineData(float.NaN, double.NaN)]

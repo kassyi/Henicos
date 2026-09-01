@@ -1,8 +1,8 @@
-﻿namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_03_InlineOutVarTests
 :  TranspilerTestBase{
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(5, 25, 1)]
@@ -22,7 +22,7 @@ public class SYN_03_InlineOutVarTests
         Assert.Equal(expectedSuccess, success[0]);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(4, 26)]  // 4 > 0 -> 16 + 10 = 26
@@ -40,7 +40,7 @@ public class SYN_03_InlineOutVarTests
         Assert.Equal(expectedOutput, output[0]);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(4, 6)] // 4 -> steps: 3, 2, 1 -> sum = 6

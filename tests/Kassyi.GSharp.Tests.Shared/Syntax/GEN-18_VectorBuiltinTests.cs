@@ -1,10 +1,10 @@
-﻿using System.Numerics;
+using System.Numerics;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class GEN_18_VectorBuiltinTests
 :  TranspilerTestBase{
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]
     [InlineData(0)]
@@ -34,7 +34,7 @@ public class GEN_18_VectorBuiltinTests
         }
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]
     [InlineData(0)]
@@ -65,7 +65,7 @@ public class GEN_18_VectorBuiltinTests
         }
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]
     [InlineData(0)]

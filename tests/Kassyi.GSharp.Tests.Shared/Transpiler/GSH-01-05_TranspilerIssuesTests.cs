@@ -1,8 +1,8 @@
-﻿namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GSH_01_05_TranspilerIssuesTests
 :  TranspilerTestBase{
-    [Fact]
+    [Theory]
     [Trait("FeatureId", "GSH-01")]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Execution")]
