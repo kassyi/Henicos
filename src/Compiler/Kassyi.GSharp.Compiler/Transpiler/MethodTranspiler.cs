@@ -12,7 +12,7 @@ public static class MethodTranspiler
         using var bodyWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        var dialect = Kassyi.GSharp.Compiler.Dialects.DynamicYamlDialect.Load("GSharpCuda");
+        var dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
         using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
@@ -48,7 +48,7 @@ public static class MethodTranspiler
         using var sigWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        var dialect = Kassyi.GSharp.Compiler.Dialects.DynamicYamlDialect.Load("GSharpCuda");
+        var dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
         using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
