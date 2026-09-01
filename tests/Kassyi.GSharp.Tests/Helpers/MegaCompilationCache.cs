@@ -1,4 +1,7 @@
+#nullable enable
 using System.Collections.Concurrent;
+using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Tests.Helpers;
 
@@ -34,6 +37,54 @@ public static class MegaCompilationCache
     });
 
     public static CSharpCompilation BaseCompilation => s_baseCompilation.Value;
+
+    private static CSharpCompilation? s_dynamicCompilation;
+    private static readonly object s_compilationLock = new();
+    private static readonly ConcurrentDictionary<string, bool> s_cachedFiles = new();
+
+    public static CSharpCompilation GetDynamicCompilation([CallerFilePath] string callerFilePath = "")
+    {
+        lock (s_compilationLock)
+        {
+            s_dynamicCompilation ??= BaseCompilation;
+
+            if (!string.IsNullOrEmpty(callerFilePath) && s_cachedFiles.TryAdd(callerFilePath, true))
+            {
+                var text = File.ReadAllText(callerFilePath);
+                var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+                var syntaxTree = CSharpSyntaxTree.ParseText(text, parseOptions, path: callerFilePath);
+                s_dynamicCompilation = s_dynamicCompilation.AddSyntaxTrees(syntaxTree);
+            }
+
+            return s_dynamicCompilation;
+        }
+    }
+
+    public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(
+        Type targetType,
+        string methodName,
+        [CallerFilePath] string callerFilePath = "")
+    {
+        var compilation = GetDynamicCompilation(callerFilePath);
+
+        var typeSymbol = compilation.GetTypeByMetadataName(targetType.FullName ?? targetType.Name) 
+                         ?? compilation.GetSymbolsWithName(targetType.Name, SymbolFilter.Type).OfType<INamedTypeSymbol>().FirstOrDefault()
+                         ?? throw new InvalidOperationException($"Type {targetType.FullName} not found in the dynamic compilation.");
+
+        var methodSymbol = typeSymbol.GetMembers(methodName).OfType<IMethodSymbol>().FirstOrDefault()
+                           ?? throw new InvalidOperationException($"Method {methodName} not found in {typeSymbol.Name}.");
+
+        var syntaxTree = methodSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
+        var model = compilation.GetSemanticModel(syntaxTree);
+        return (model, methodSymbol);
+    }
+
+    public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext<TTarget>(
+        string methodName,
+        [CallerFilePath] string callerFilePath = "")
+    {
+        return GetMethodContext(typeof(TTarget), methodName, callerFilePath);
+    }
 
     public static INamedTypeSymbol GetNamedTypeSymbol(string typeName)
     {
