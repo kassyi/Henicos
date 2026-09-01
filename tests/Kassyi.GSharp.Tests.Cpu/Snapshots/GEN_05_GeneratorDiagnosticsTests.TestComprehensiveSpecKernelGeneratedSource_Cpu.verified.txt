@@ -7,7 +7,7 @@
                       ^^^^^^^^^
     }
 */
- : (53,22)-(53,31),
+ : (52,22)-(52,31),
       Message: The syntax 'Math.Sqrt' is not supported in GSharp GPU kernels,
       Severity: Error,
       Descriptor: {
@@ -26,7 +26,7 @@
                                                               ^^^^^
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
 */
- : (110,62)-(110,67),
+ : (109,62)-(109,67),
       Message: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.,
       Severity: Warning,
       WarningLevel: 1,
