@@ -75,6 +75,7 @@ public static partial class ComprehensiveSpecKernel
     }
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Has intentional diagnostics errors")]
     public static void ProcessPhysics(
         PhysicsVector[] particles,
         ref float totalMagnitude,

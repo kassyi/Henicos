@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
