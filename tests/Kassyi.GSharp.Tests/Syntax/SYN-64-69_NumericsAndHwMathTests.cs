@@ -4,6 +4,33 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_64_69_NumericsAndHwMathTests
 {
+    [Fact(Skip = "未実装: SYN-64 (Half 半精度浮動小数点数 fp16)")]
+    [Trait("FeatureId", "SYN-64")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN64_HalfPrecision_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-65 (nint / nuint ネイティブサイズ整数)")]
+    [Trait("FeatureId", "SYN-65")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN65_NativeInt_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-66 (Int128 / UInt128 128ビット整数)")]
+    [Trait("FeatureId", "SYN-66")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN66_Int128UInt128_Transpilation()
+    {
+    }
+
+    [Fact(Skip = "未実装: SYN-67 (bfloat16 / fp8 次世代AI浮動小数点数)")]
+    [Trait("FeatureId", "SYN-67")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN67_BFloat16Fp8_Transpilation()
+    {
+    }
     [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-68")]
@@ -41,32 +68,105 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Equal(BitOperations.RotateRight(u64Val, 7), u64Data[6]);
     }
 
-    [Fact(Skip = "未実装: SYN-64 (Half 半精度浮動小数点数 fp16)")]
-    [Trait("FeatureId", "SYN-64")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN64_HalfPrecision_Transpilation()
+        [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-68")]
+    [InlineData(0.0, 0.0f)]
+    [InlineData(1.5707963267948966, 1.5707963f)] // pi / 2
+    [InlineData(-3.141592653589793, -3.1415927f)] // -pi
+    [InlineData(12.34, 12.34f)]
+    [InlineData(-5.67, -5.67f)]
+    [InlineData(1.0, 1.0f)]
+    [InlineData(-1.0, -1.0f)]
+    public void Test_SYN68_MathAndMathF_DataDriven(double dVal, float fVal)
     {
+        double[] doubleInputs = [dVal];
+        double[] doubleOutputs = new double[6];
+        float[] floatInputs = [fVal];
+        float[] floatOutputs = new float[6];
+
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
+            doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 1);
+
+        // Double assertions
+        Assert.Equal(Math.Sin(dVal), doubleOutputs[0], precision: 5);
+        Assert.Equal(Math.Cos(dVal), doubleOutputs[1], precision: 5);
+        Assert.Equal(Math.Clamp(dVal, 0.0, 10.0), doubleOutputs[2]);
+        Assert.Equal(Math.Max(dVal, 5.0), doubleOutputs[3]);
+        Assert.Equal(Math.Min(dVal, 5.0), doubleOutputs[4]);
+        Assert.Equal(Math.Abs(dVal), doubleOutputs[5]);
+
+        // Float assertions
+        Assert.Equal(MathF.Sin(fVal), floatOutputs[0], precision: 4);
+        Assert.Equal(MathF.Cos(fVal), floatOutputs[1], precision: 4);
+        Assert.Equal(Math.Clamp(fVal, 0.0f, 10.0f), floatOutputs[2]);
+        Assert.Equal(MathF.Max(fVal, 5.0f), floatOutputs[3]);
+        Assert.Equal(MathF.Min(fVal, 5.0f), floatOutputs[4]);
+        Assert.Equal(MathF.Abs(fVal), floatOutputs[5]);
     }
 
-    [Fact(Skip = "未実装: SYN-65 (nint / nuint ネイティブサイズ整数)")]
-    [Trait("FeatureId", "SYN-65")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN65_NativeInt_Transpilation()
+        [Theory]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-68")]
+    [InlineData(float.NaN, double.NaN)]
+    [InlineData(float.PositiveInfinity, double.PositiveInfinity)]
+    [InlineData(float.NegativeInfinity, double.NegativeInfinity)]
+    [InlineData(float.MaxValue, double.MaxValue)]
+    [InlineData(float.MinValue, double.MinValue)]
+    [InlineData(float.Epsilon, double.Epsilon)]
+    [InlineData(-0.0f, -0.0)]
+    public void Test_SYN68_MathEdgeCases_SpecialValues(float fInput, double dInput)
     {
+        float[] floatInputs = [fInput];
+        float[] floatResults = new float[3];
+        double[] doubleInputs = [dInput];
+        double[] doubleResults = new double[3];
+
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathEdgeCasesKernel(
+            floatInputs, floatResults, doubleInputs, doubleResults, blockDimX: 1);
+
+        if (float.IsNaN(fInput))
+        {
+            Assert.True(float.IsNaN(floatResults[0])); // Abs(NaN) is NaN
+            Assert.Equal(0.0f, floatResults[1]); // fmaxf(NaN, 0) is 0
+            Assert.Equal(0.0f, floatResults[2]); // fminf(NaN, 0) is 0
+        }
+        else
+        {
+            Assert.Equal(MathF.Abs(fInput), floatResults[0]);
+            Assert.Equal(MathF.Max(fInput, 0.0f), floatResults[1]);
+            Assert.Equal(MathF.Min(fInput, 0.0f), floatResults[2]);
+        }
+
+        if (double.IsNaN(dInput))
+        {
+            Assert.True(double.IsNaN(doubleResults[0])); // Abs(NaN) is NaN
+            Assert.Equal(0.0, doubleResults[1]); // fmax(NaN, 0) is 0
+            Assert.Equal(0.0, doubleResults[2]); // fmin(NaN, 0) is 0
+        }
+        else
+        {
+            Assert.Equal(Math.Abs(dInput), doubleResults[0]);
+            Assert.Equal(Math.Max(dInput, 0.0), doubleResults[1]);
+            Assert.Equal(Math.Min(dInput, 0.0), doubleResults[2]);
+        }
     }
 
-    [Fact(Skip = "未実装: SYN-66 (Int128 / UInt128 128ビット整数)")]
-    [Trait("FeatureId", "SYN-66")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN66_Int128UInt128_Transpilation()
+        [Fact]
+    [Trait("Category", "Execution")]
+    [Trait("FeatureId", "SYN-68")]
+    public void Test_SYN68_MathAndMathF_EmptyArray()
     {
-    }
+        double[] doubleInputs = [];
+        double[] doubleOutputs = [];
+        float[] floatInputs = [];
+        float[] floatOutputs = [];
 
-    [Fact(Skip = "未実装: SYN-67 (bfloat16 / fp8 次世代AI浮動小数点数)")]
-    [Trait("FeatureId", "SYN-67")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN67_BFloat16Fp8_Transpilation()
-    {
+        var ex = Record.Exception(() => 
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
+                doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 0));
+
+        Assert.Null(ex);
     }
 
     [Fact(Skip = "未実装: SYN-69 (AddWithCarry / MultiplyExtended 64ビットHW演算)")]

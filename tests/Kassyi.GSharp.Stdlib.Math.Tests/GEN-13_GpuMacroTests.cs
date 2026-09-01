@@ -20,11 +20,11 @@ public class GEN_13_GpuMacroTests
     {
         // Edge cases and stress testing for macro kernels
         using var scope = new JitEngine.CudaContextScope();
-        
+
         var actualLength = System.Math.Max(0, length);
         var output = new uint[actualLength];
         // Fill with random noise to ensure it gets overwritten
-        for(int i = 0; i < output.Length; i++) output[i] = 0xDEADBEEF;
+        for (int i = 0; i < output.Length; i++) output[i] = 0xDEADBEEF;
 
         uint fillValue = 0x55555555;
         uint singleValue = 0x12345678;
@@ -33,7 +33,7 @@ public class GEN_13_GpuMacroTests
         // so we use a fixed block size and enough grids, or even fewer grids to force the loop.
         uint blockSize = 256;
         uint gridSize = (uint)System.Math.Max(1, (length + blockSize - 1) / blockSize);
-        
+
         // Force loop to execute multiple times per thread for small grid
         if (length > 1024)
         {
@@ -56,7 +56,7 @@ public class GEN_13_GpuMacroTests
                 Assert.Equal(fillValue, output[i]);
             }
         }
-        
+
         // For actualLength == 0, output array is length 0 and shouldn't be touched.
         // The fact that it didn't throw an AccessViolationException verifies empty array handling.
     }
