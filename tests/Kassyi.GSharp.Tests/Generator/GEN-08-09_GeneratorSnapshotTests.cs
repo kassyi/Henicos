@@ -92,6 +92,7 @@ public class GEN_08_GeneratorSnapshotTests
 
     private static async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
     {
+#pragma warning disable RS0030
         var syntaxTrees = new List<SyntaxTree>();
         syntaxTrees.Add(CSharpSyntaxTree.ParseText(source, path: $"{testName}.cs"));
 
@@ -134,6 +135,7 @@ public class GEN_08_GeneratorSnapshotTests
                 }
             }
         }
+#pragma warning restore RS0030
 
         var compilation = Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.BaseCompilation;
         if (isStdlibKernel)
