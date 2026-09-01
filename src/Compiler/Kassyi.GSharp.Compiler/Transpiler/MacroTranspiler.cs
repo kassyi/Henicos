@@ -73,7 +73,13 @@ internal static class MacroTranspiler
             context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
         }
 
-        context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
+        context.Writer.Append("// [GpuUnroll] start=");
+        context.Writer.Append(start);
+        context.Writer.AppendComma();
+        context.Writer.AppendSpace();
+        context.Writer.Append("count=");
+        context.Writer.Append(count);
+        context.Writer.AppendLine();
 
         // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
         for (var i = start; i < start + count; i++)
@@ -124,7 +130,13 @@ internal static class MacroTranspiler
         context.Writer.Append("for");
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append($"int {paramName} = blockIdx.x * blockDim.x + threadIdx.x");
+            context.Writer.AppendKeyword("int");
+            context.Writer.AppendSpace();
+            context.Writer.Append(paramName);
+            context.Writer.AppendSpace();
+            context.Writer.AppendOperator("=");
+            context.Writer.AppendSpace();
+            context.Writer.Append("blockIdx.x * blockDim.x + threadIdx.x");
             context.Writer.AppendSemiColon();
             context.Writer.AppendSpace();
             context.Writer.Append(paramName);
