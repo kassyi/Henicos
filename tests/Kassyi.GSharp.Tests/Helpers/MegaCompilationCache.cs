@@ -29,9 +29,11 @@ public static class MegaCompilationCache
             .AddReferences(references);
 
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+#pragma warning disable RS0030
         var trees = s_registeredSources
             .Select((src, i) => CSharpSyntaxTree.ParseText(src, parseOptions, path: $"MegaTestSources_{i}.cs"))
             .ToArray();
+#pragma warning restore RS0030
 
         return baseComp.AddSyntaxTrees(trees);
     });
@@ -43,13 +45,19 @@ public static class MegaCompilationCache
     private static readonly ConcurrentDictionary<string, Lazy<SyntaxTree>> s_cachedSyntaxTrees = new();
     private static readonly HashSet<string> s_includedFiles = new();
 
+    private static CSharpCompilation GetOrCreateDynamicCompilationLocked()
+    {
+        s_dynamicCompilation ??= BaseCompilation;
+        return s_dynamicCompilation;
+    }
+
     public static CSharpCompilation GetDynamicCompilation([CallerFilePath] string callerFilePath = "")
     {
         if (string.IsNullOrEmpty(callerFilePath))
         {
             lock (s_compilationLock)
             {
-                return s_dynamicCompilation ?? BaseCompilation;
+                return GetOrCreateDynamicCompilationLocked();
             }
         }
 
@@ -57,21 +65,24 @@ public static class MegaCompilationCache
         {
             var text = File.ReadAllText(path);
             var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+#pragma warning disable RS0030
             return CSharpSyntaxTree.ParseText(text, parseOptions, path: path);
+#pragma warning restore RS0030
         }, LazyThreadSafetyMode.ExecutionAndPublication));
 
         var syntaxTree = lazyTree.Value;
 
         lock (s_compilationLock)
         {
-            s_dynamicCompilation ??= BaseCompilation;
+            var current = GetOrCreateDynamicCompilationLocked();
 
             if (s_includedFiles.Add(callerFilePath))
             {
-                s_dynamicCompilation = s_dynamicCompilation.AddSyntaxTrees(syntaxTree);
+                current = current.AddSyntaxTrees(syntaxTree);
+                s_dynamicCompilation = current;
             }
 
-            return s_dynamicCompilation;
+            return current;
         }
     }
 
