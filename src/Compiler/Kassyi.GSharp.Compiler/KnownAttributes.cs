@@ -5,15 +5,17 @@ namespace Kassyi.GSharp.Compiler;
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public constants for compiler internals")]
 public static class KnownAttributes
 {
-    public const string GpuKernel = "GpuKernel";
-    public const string GpuDeviceFunction = "GpuDeviceFunction";
-    public const string GpuConst = "GpuConst";
-    public const string GpuInline = "GpuInline";
-    public const string GpuNoInline = "GpuNoInline";
-    public const string JitConstant = "JitConstant";
-    public const string CudaIntrinsic = "CudaIntrinsic";
-    public const string CudaIntrinsicPattern = "CudaIntrinsicPattern";
-    public const string MethodImpl = "MethodImpl";
+    public const string GpuKernel = nameof(GpuKernel);
+    public const string GpuDeviceFunction = nameof(GpuDeviceFunction);
+    public const string GpuConst = nameof(GpuConst);
+    public const string GpuInline = nameof(GpuInline);
+    public const string GpuNoInline = nameof(GpuNoInline);
+    public const string JitConstant = nameof(JitConstant);
+    public const string CudaIntrinsic = nameof(CudaIntrinsic);
+    public const string CudaIntrinsicPattern = nameof(CudaIntrinsicPattern);
+    public const string MethodImpl = nameof(MethodImpl);
+    public const string SkipLocalsInit = nameof(SkipLocalsInit);
+    public const string InlineArray = nameof(InlineArray);
 
     /// <summary>
     /// Zero-allocation, reflection-free helper to match an attribute name against a short name or its Attribute-suffixed name.
