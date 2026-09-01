@@ -25,7 +25,7 @@ public class GSH_0007_ForEachProhibitionSadPathTests
         var foreachDiagnostics = diagnostics.Where(d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id).ToList();
 
         // Expect diagnostics for: Basic foreach (1), Nested foreach (2), Foreach over Span (1), Foreach in local function (1) -> total 5 foreach statements
-        Assert.True(foreachDiagnostics.Count >= 4, $"Expected at least 4 GSH0007 diagnostics, but got {foreachDiagnostics.Count}");
+        Assert.Equal(5, foreachDiagnostics.Count);
         foreach (var diag in foreachDiagnostics)
         {
             Assert.Equal(GSharpDiagnostics.ForeachNotSupported.Id, diag.Id);
