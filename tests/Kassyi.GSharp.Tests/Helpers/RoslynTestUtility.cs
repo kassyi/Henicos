@@ -1,9 +1,15 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Tests.Helpers;
 
+/// <summary>Provides utility methods and fluent helpers for Roslyn compilation, generator, analyzer, and transpiler testing.</summary>
 public static class RoslynTestUtility
 {
+    /// <summary>Resolves the absolute path to the TestCases directory relative to the caller test file.</summary>
     public static string GetTestCasesDirectory([CallerFilePath] string callerFilePath = "")
     {
         var fileDir = Path.GetDirectoryName(callerFilePath);
@@ -20,6 +26,7 @@ public static class RoslynTestUtility
         return testCasesDir;
     }
 
+    /// <summary>Creates a Roslyn compilation by parsing source text and adding it to the mega compilation cache.</summary>
     public static Compilation CreateCompilation(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
@@ -28,6 +35,45 @@ public static class RoslynTestUtility
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
     }
 
+    /// <summary>Transpiles a method declared in the mega compilation by type and method name into CUDA C++ source.</summary>
+    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
+        string typeName,
+        string methodName,
+        bool isDevice = true)
+    {
+        var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(typeName, methodName);
+        var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
+
+        var diagnostics = new List<Diagnostic>();
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+        return (cudaSource, diagnostics);
+    }
+
+    /// <summary>Transpiles a method from dynamic compilation inferred from the caller file into CUDA C++ source.</summary>
+    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
+        Type targetType,
+        string methodName,
+        [CallerFilePath] string callerFilePath = "",
+        bool isDevice = true)
+    {
+        var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(targetType, methodName, callerFilePath);
+        var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
+
+        var diagnostics = new List<Diagnostic>();
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+        return (cudaSource, diagnostics);
+    }
+
+    /// <summary>Transpiles a method declared on <typeparamref name="TTarget"/> into CUDA C++ source with type safety.</summary>
+    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod<TTarget>(
+        string methodName,
+        [CallerFilePath] string callerFilePath = "",
+        bool isDevice = true)
+    {
+        return TranspileMethod(typeof(TTarget), methodName, callerFilePath, isDevice);
+    }
+
+    /// <summary>Runs a DiagnosticAnalyzer on the given source text and returns reported diagnostics.</summary>
     public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
     {
         var compilation = CreateCompilation(source);
@@ -35,6 +81,7 @@ public static class RoslynTestUtility
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }
 
+    /// <summary>Executes the GpuKernelGenerator on the given source text and produces the output compilation and diagnostics.</summary>
     public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics) RunGenerator(string source)
     {
         var compilation = CreateCompilation(source);
@@ -51,12 +98,14 @@ public static class RoslynTestUtility
         return (driver, outputCompilation, diagnostics);
     }
 
+    /// <summary>Initiates a fluent test assertion builder for Source Generator verification on a test case file.</summary>
     public static GeneratorTestConfig TestGenerator(string relativePathToTestCases, [CallerFilePath] string callerFilePath = "")
     {
         var testCasesDir = GetTestCasesDirectory(callerFilePath);
         return new GeneratorTestConfig(Path.Combine(testCasesDir, relativePathToTestCases));
     }
 
+    /// <summary>Initiates a fluent test assertion builder for Diagnostic Analyzer verification on a test case file.</summary>
     public static AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases, DiagnosticAnalyzer analyzer, [CallerFilePath] string callerFilePath = "")
     {
         var testCasesDir = GetTestCasesDirectory(callerFilePath);
@@ -64,6 +113,7 @@ public static class RoslynTestUtility
     }
 }
 
+/// <summary>Fluent assertion helper for Source Generator testing against source files.</summary>
 public class GeneratorTestConfig
 {
     private readonly string _fullPath;
@@ -73,6 +123,7 @@ public class GeneratorTestConfig
         _fullPath = fullPath;
     }
 
+    /// <summary>Asserts that running the generator reports all specified diagnostic error IDs.</summary>
     public async Task ReportsErrorsAsync(params string[] expectedDiagnosticIds)
     {
         var source = await File.ReadAllTextAsync(_fullPath);
@@ -84,6 +135,7 @@ public class GeneratorTestConfig
         }
     }
 
+    /// <summary>Asserts that running the generator reports all specified diagnostic IDs regardless of severity.</summary>
     public async Task ReportsDiagnosticsAsync(params string[] expectedDiagnosticIds)
     {
         var source = await File.ReadAllTextAsync(_fullPath);
@@ -95,6 +147,7 @@ public class GeneratorTestConfig
         }
     }
 
+    /// <summary>Runs the generator and returns the underlying GeneratorDriver.</summary>
     public async Task<GeneratorDriver> GetDriverAsync()
     {
         var source = await File.ReadAllTextAsync(_fullPath);
@@ -102,6 +155,7 @@ public class GeneratorTestConfig
         return driver;
     }
 
+    /// <summary>Runs the generator and retrieves all combined compilation and generator diagnostics.</summary>
     public async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync()
     {
         var source = await File.ReadAllTextAsync(_fullPath);
@@ -109,12 +163,14 @@ public class GeneratorTestConfig
         return diagnostics.AddRange(outputCompilation.GetDiagnostics());
     }
 
+    /// <summary>Asserts that running the generator produces at least one error-level diagnostic.</summary>
     public async Task HasErrorsAsync()
     {
         var allDiagnostics = await GetDiagnosticsAsync();
         Assert.Contains(allDiagnostics, d => d.Severity == DiagnosticSeverity.Error);
     }
 
+    /// <summary>Asserts that running the generator produces zero error-level diagnostics.</summary>
     public async Task HasNoErrorsAsync()
     {
         var allDiagnostics = await GetDiagnosticsAsync();
@@ -122,6 +178,7 @@ public class GeneratorTestConfig
     }
 }
 
+/// <summary>Fluent assertion helper for Roslyn Diagnostic Analyzer testing against source files.</summary>
 public class AnalyzerTestConfig
 {
     private readonly string _fullPath;
@@ -133,6 +190,7 @@ public class AnalyzerTestConfig
         _analyzer = analyzer;
     }
 
+    /// <summary>Asserts that running the analyzer reports all specified diagnostic error IDs.</summary>
     public async Task ReportsErrorsAsync(params string[] expectedDiagnosticIds)
     {
         var diagnostics = await GetDiagnosticsAsync();
@@ -142,6 +200,7 @@ public class AnalyzerTestConfig
         }
     }
 
+    /// <summary>Asserts that running the analyzer reports all specified diagnostic IDs.</summary>
     public async Task ReportsDiagnosticsAsync(params string[] expectedDiagnosticIds)
     {
         var diagnostics = await GetDiagnosticsAsync();
@@ -151,21 +210,25 @@ public class AnalyzerTestConfig
         }
     }
 
+    /// <summary>Runs the analyzer and retrieves all reported diagnostics.</summary>
     public async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync()
     {
         var source = await File.ReadAllTextAsync(_fullPath);
         return await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, _analyzer);
     }
 
+    /// <summary>Asserts that the analyzer produces at least one error-level diagnostic.</summary>
     public async Task HasErrorsAsync()
     {
         var diagnostics = await GetDiagnosticsAsync();
         Assert.Contains(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
     }
 
+    /// <summary>Asserts that the analyzer produces zero error-level diagnostics.</summary>
     public async Task HasNoErrorsAsync()
     {
         var diagnostics = await GetDiagnosticsAsync();
         Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
     }
 }
+
