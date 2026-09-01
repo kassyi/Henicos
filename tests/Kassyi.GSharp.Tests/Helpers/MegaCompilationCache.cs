@@ -40,19 +40,29 @@ public static class MegaCompilationCache
 
     private static CSharpCompilation? s_dynamicCompilation;
     private static readonly object s_compilationLock = new();
-    private static readonly ConcurrentDictionary<string, bool> s_cachedFiles = new();
+    private static readonly ConcurrentDictionary<string, SyntaxTree> s_cachedSyntaxTrees = new();
+    private static readonly HashSet<string> s_includedFiles = new();
 
     public static CSharpCompilation GetDynamicCompilation([CallerFilePath] string callerFilePath = "")
     {
+        if (string.IsNullOrEmpty(callerFilePath))
+        {
+            return s_dynamicCompilation ?? BaseCompilation;
+        }
+
+        var syntaxTree = s_cachedSyntaxTrees.GetOrAdd(callerFilePath, static path =>
+        {
+            var text = File.ReadAllText(path);
+            var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+            return CSharpSyntaxTree.ParseText(text, parseOptions, path: path);
+        });
+
         lock (s_compilationLock)
         {
             s_dynamicCompilation ??= BaseCompilation;
 
-            if (!string.IsNullOrEmpty(callerFilePath) && s_cachedFiles.TryAdd(callerFilePath, true))
+            if (s_includedFiles.Add(callerFilePath))
             {
-                var text = File.ReadAllText(callerFilePath);
-                var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-                var syntaxTree = CSharpSyntaxTree.ParseText(text, parseOptions, path: callerFilePath);
                 s_dynamicCompilation = s_dynamicCompilation.AddSyntaxTrees(syntaxTree);
             }
 
