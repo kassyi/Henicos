@@ -25,7 +25,7 @@ public partial class SYN_91_92_ParenthesesSuppressionTests
     [GeneratedRegex(@"bool\s+r1\s*=\s*\(a\s*&\s*b\)\s*==\s*c;")]
     private static partial Regex BoolAssignmentRegex();
 
-    [GeneratedRegex(@"int\s+r2\s*=\s*a\s*\*\s*\(b\s*\+\s*c\);")]
+    [GeneratedRegex(@"(int32_t|int)\s+r2\s*=\s*a\s*\*\s*\(b\s*\+\s*c\);")]
     private static partial Regex IntAssignmentRegex();
 
     [Fact]

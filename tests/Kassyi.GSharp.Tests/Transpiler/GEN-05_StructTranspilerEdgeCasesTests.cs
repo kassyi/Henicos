@@ -1,5 +1,6 @@
-
+using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Compiler.Transpiler.Dialects;
+using Kassyi.GSharp.Compiler.Dialects;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
@@ -16,7 +17,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
             null,
             null!,
             ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
-            new GSharpCudaDialect());
+            DynamicYamlDialect.Load("GSharpCuda"));
     }
 
 
@@ -31,13 +32,13 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_EmptyStruct()
     {
-        var structSym = GetLocalTypeSymbol("EmptyStruct_GEN05");
+        var structSym = GetLocalTypeSymbol("EmptyStruct");
         var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
         Assert.Single(sorted);
-        Assert.Equal("EmptyStruct_GEN05", sorted[0].Name);
+        Assert.Equal("EmptyStruct", sorted[0].Name);
     }
 
     [Fact]
@@ -45,10 +46,10 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
     {
-        var symA = GetLocalTypeSymbol("StructA_GEN05");
-        var symB = GetLocalTypeSymbol("StructB_GEN05");
-        var symC = GetLocalTypeSymbol("StructC_GEN05");
-        var symD = GetLocalTypeSymbol("StructD_GEN05");
+        var symA = GetLocalTypeSymbol("StructA");
+        var symB = GetLocalTypeSymbol("StructB");
+        var symC = GetLocalTypeSymbol("StructC");
+        var symD = GetLocalTypeSymbol("StructD");
 
         var context = CreateTestContext(symA, symB, symC, symD);
 
@@ -56,10 +57,10 @@ public class GEN_05_StructTranspilerEdgeCasesTests
 
         Assert.Equal(4, sorted.Count);
         // Order must be D -> C -> B -> A (dependents last)
-        Assert.Equal("StructD_GEN05", sorted[0].Name);
-        Assert.Equal("StructC_GEN05", sorted[1].Name);
-        Assert.Equal("StructB_GEN05", sorted[2].Name);
-        Assert.Equal("StructA_GEN05", sorted[3].Name);
+        Assert.Equal("StructD", sorted[0].Name);
+        Assert.Equal("StructC", sorted[1].Name);
+        Assert.Equal("StructB", sorted[2].Name);
+        Assert.Equal("StructA", sorted[3].Name);
     }
 
     [Fact]
@@ -67,41 +68,41 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes()
     {
-        var structSym = GetLocalTypeSymbol("MyStruct_GEN05");
+        var structSym = GetLocalTypeSymbol("MyStruct");
         var context = CreateTestContext(structSym);
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
 
         Assert.Single(sorted);
-        Assert.Equal("MyStruct_GEN05", sorted[0].Name);
+        Assert.Equal("MyStruct", sorted[0].Name);
     }
 }
 
-struct EmptyStruct_GEN05
+struct EmptyStruct
 {
 }
 
-struct StructA_GEN05
+struct StructA
 {
-    public StructB_GEN05 b;
+    public StructB b;
 }
 
-struct StructB_GEN05
+struct StructB
 {
-    public StructC_GEN05 c;
+    public StructC c;
 }
 
-struct StructC_GEN05
+struct StructC
 {
-    public StructD_GEN05 d;
+    public StructD d;
 }
 
-struct StructD_GEN05
+struct StructD
 {
     public int val;
 }
 
-struct MyStruct_GEN05
+struct MyStruct
 {
     public System.DateTime time;
 }

@@ -1,5 +1,7 @@
-
 using Kassyi.GSharp.Compiler.Transpiler.Dialects;
+using Kassyi.GSharp.Compiler.Dialects;
+using System.Collections.Concurrent;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
@@ -10,7 +12,7 @@ public class GEN_15_PoolStressTests
     [Trait("Category", "Stress")]
     public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = MegaCompilationCache.GetMethodContext<Dummy_GEN15>("M");
+        var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
         var semanticModel = context.Model;
 
         var exceptions = new ConcurrentBag<Exception>();
@@ -20,7 +22,7 @@ public class GEN_15_PoolStressTests
         {
             try
             {
-                using var visitor = RoslynToCudaVisitor.Rent(new GSharpCudaDialect(), semanticModel, null);
+                using var visitor = RoslynToCudaVisitor.Rent(DynamicYamlDialect.Load("GSharpCuda"), semanticModel, null);
 
                 Assert.Empty(visitor.Context.UsedStructs);
                 Assert.Empty(visitor.Context.LocalVariableOverrides);
@@ -42,7 +44,7 @@ public class GEN_15_PoolStressTests
     [Trait("Category", "Stress")]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = MegaCompilationCache.GetMethodContext<Dummy_GEN15>("M");
+        var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
         var semanticModel = context.Model;
         var methodSymbol = context.MethodSymbol;
         var methodDecl =
@@ -76,7 +78,7 @@ public class GEN_15_PoolStressTests
     }
 }
 
-class Dummy_GEN15
+class Dummy
 {
     public void M()
     {
