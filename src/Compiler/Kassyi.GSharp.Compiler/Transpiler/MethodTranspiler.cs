@@ -57,10 +57,7 @@ public static class MethodTranspiler
         context.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
-            context.Writer
-                .Append("struct ")
-                .AppendFullyQualifiedCppName(structSym)
-                .AppendLine(";");
+            context.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
 
         context.Writer.Append(sigWriter.ToString());
@@ -81,9 +78,7 @@ public static class MethodTranspiler
             WriteKernelMethodPrefix(method, methodSymbol, ref context);
         }
 
-        context.Writer
-            .AppendSpace()
-            .Append(method.Identifier.Text);
+        context.Writer.Append($" {method.Identifier.Text}");
         using (context.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
@@ -93,11 +88,7 @@ public static class MethodTranspiler
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var inlineKeyword = GetInliningKeyword(methodSymbol);
-        context.Writer
-            .AppendKeyword(inlineKeyword)
-            .AppendSpace()
-            .AppendKeyword("__device__")
-            .AppendSpace();
+        context.Writer.Append($"{inlineKeyword} __device__ ");
 
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
@@ -191,9 +182,7 @@ public static class MethodTranspiler
                 var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
                 if (methodSymbol is { ReturnsVoid: false })
                 {
-                    context.Writer
-                        .AppendKeyword("return")
-                        .AppendSpace();
+                    context.Writer.Append("return ");
                 }
 
                 context.Visitor.Visit(method.ExpressionBody.Expression);
@@ -226,9 +215,7 @@ public static class MethodTranspiler
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
             if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuConst))
             {
-                context.Writer
-                    .AppendKeyword("const")
-                    .AppendSpace();
+                context.Writer.Append("const ");
             }
 
             var (isRefPointer, isPointerType, hasRestrict) = context.Writer.AppendParameterCppType(p, typeSymbol);
@@ -236,14 +223,10 @@ public static class MethodTranspiler
 
             if (!isDevice && isPointerType && !hasRestrict)
             {
-                context.Writer
-                    .AppendSpace()
-                    .AppendKeyword("__restrict__");
+                context.Writer.Append(" __restrict__");
             }
 
-            context.Writer
-                .AppendSpace()
-                .Append(p.Identifier.Text);
+            context.Writer.Append($" {p.Identifier.Text}");
             if (i < validParameters.Count - 1)
             {
                 context.Writer.AppendComma();
