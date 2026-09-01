@@ -9,21 +9,24 @@ namespace Kassyi.GSharp.Tests.DialectTests
         [Fact]
         public void CanLoadStandardCpp()
         {
-            var dialect = DynamicYamlDialect.Load("StandardCpp");
+            var dialect = new Kassyi.GSharp.Compiler.Dialects.StandardCppDialect();
             Assert.NotNull(dialect);
             
-            // Try to map System.Int32 using reflection or just checking the property
-            var defField = typeof(DynamicYamlDialect).GetField("_def", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var def = (DialectDefinition)defField.GetValue(dialect)!;
+            string mappedType;
+            // Check that it mapped int correctly using reflection since the method is protected
+            var method = typeof(Kassyi.GSharp.Compiler.Dialects.StandardCppDialect).GetMethod("TryMapType", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var args = new object[] { "System.Int32", null };
+            var result = (bool)method.Invoke(dialect, args);
+            mappedType = (string)args[1];
             
-            Assert.True(def.Types.ContainsKey("System.Int32"));
-            Assert.Equal("int", def.Types["System.Int32"]);
+            Assert.True(result);
+            Assert.Equal("int", mappedType);
         }
 
         [Fact]
         public void CanLoadGSharpCuda()
         {
-            var dialect = DynamicYamlDialect.Load("GSharpCuda");
+            var dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
             Assert.NotNull(dialect);
             
             // Check MethodPrefix

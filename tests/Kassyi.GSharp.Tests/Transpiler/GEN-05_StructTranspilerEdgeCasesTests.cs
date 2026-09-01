@@ -17,7 +17,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
             null,
             null!,
             ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
-            DynamicYamlDialect.Load("GSharpCuda"));
+            new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect());
     }
 
 
