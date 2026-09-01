@@ -25,7 +25,7 @@ struct DebugReduc_SpecTypes
 {
 bool BooleanValue;
 unsigned char ByteValue;
-char SByteValue;
+signed char SByteValue;
 short ShortValue;
 unsigned short UShortValue;
 int IntValue;
@@ -80,7 +80,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles,float* __restrict__ totalMagnitude,bool* __restrict__ successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
+extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles,float* __restrict__  totalMagnitude,bool* __restrict__  successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
 (*successFlag)=false;
 float Gravity=9.8f;
 int tx=threadIdx.x;
