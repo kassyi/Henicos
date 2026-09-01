@@ -130,10 +130,10 @@ internal static class StructTranspiler
             context.Writer.Append(firstField.Name);
             using (context.Writer.Brackets())
             {
-                context.Writer.Append($"{length}");
+                context.Writer.Append(length);
             }
 
-            context.Writer.AppendLine(";");
+            context.Writer.AppendSemiColonLine();
 
             WriteInlineArrayIndexer(ref context, firstField, isConst: false);
             WriteInlineArrayIndexer(ref context, firstField, isConst: true);
