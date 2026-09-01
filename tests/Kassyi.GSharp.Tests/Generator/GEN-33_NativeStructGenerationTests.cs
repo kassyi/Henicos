@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Generator;
 

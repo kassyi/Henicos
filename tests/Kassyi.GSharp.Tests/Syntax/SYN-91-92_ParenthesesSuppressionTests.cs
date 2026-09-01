@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
