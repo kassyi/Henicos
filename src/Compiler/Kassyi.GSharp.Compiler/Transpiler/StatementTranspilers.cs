@@ -32,10 +32,7 @@ internal static class StatementTranspilers
         {
             using (context.Writer.Scope())
             {
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
-                context.Visitor.Visit(node.ExpressionBody.Expression);
-                context.Writer.AppendSemiColonLine();
+                context.EmitReturn(node.ExpressionBody.Expression);
             }
         }
 
@@ -86,15 +83,8 @@ internal static class StatementTranspilers
     {
         if (node.Declaration != null)
         {
-            var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-            if (node.Declaration.Type.IsVar)
-            {
-                context.Writer.AppendKeyword("auto");
-            }
-            else
-            {
-                context.Writer.AppendType(typeSymbol);
-            }
+            var typeSymbol = node.Declaration.Type.GetTypeSymbol(context.SemanticModel);
+            context.Writer.AppendTypeOrAuto(typeSymbol, node.Declaration.Type.IsVar);
 
             context.Writer.AppendSpace();
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
@@ -115,14 +105,7 @@ internal static class StatementTranspilers
         }
         else
         {
-            for (var i = 0; i < node.Initializers.Count; i++)
-            {
-                context.Visitor.Visit(node.Initializers[i]);
-                if (i < node.Initializers.Count - 1)
-                {
-                    context.Writer.AppendComma();
-                }
-            }
+            context.TranspileSeparatedList(node.Initializers);
         }
     }
 
@@ -134,17 +117,8 @@ internal static class StatementTranspilers
         }
     }
 
-    private static void TranspileForIncrementors(ForStatementSyntax node, ref TranspileContext context)
-    {
-        for (var i = 0; i < node.Incrementors.Count; i++)
-        {
-            context.Visitor.Visit(node.Incrementors[i]);
-            if (i < node.Incrementors.Count - 1)
-            {
-                context.Writer.AppendComma();
-            }
-        }
-    }
+    private static void TranspileForIncrementors(ForStatementSyntax node, ref TranspileContext context) =>
+        context.TranspileSeparatedList(node.Incrementors);
 
     public static void TranspileWhileStatement(WhileStatementSyntax node, ref TranspileContext context)
     {

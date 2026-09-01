@@ -1,4 +1,6 @@
 // ReSharper disable All
+namespace Kassyi.GSharp.Tests.TestCases.Analyzers.GSH_03_ImplicitVar_WithoutSuffix_InGpuKernel;
+
 using Kassyi.GSharp.Core;
 
 public class TestClass

@@ -8,18 +8,21 @@ internal static class TypeConstants
     public const string SystemThreadingNamespace = "System.Threading";
     public const string NumericsNamespace = "Numerics";
     public const string ThreadingNamespace = "Threading";
-    
+
     public const string SharedMemoryType = "SharedMemory";
     public const string CoreNamespace = "Kassyi.GSharp.Core";
+    public const string GeneratedNamespace = "Kassyi.GSharp.Generated";
 
     public const string MathType = "Math";
     public const string MathFType = "MathF";
     public const string InterlockedType = "Interlocked";
-    
+
     public const string Vector2Type = "Vector2";
     public const string Vector3Type = "Vector3";
     public const string Vector4Type = "Vector4";
     public const string GpuBigIntRefType = "GpuBigIntRef";
+
+    public const string BclIntrinsicMapAttributeFullName = "Kassyi.GSharp.Core.BclIntrinsicMapAttribute";
 
     public static class CudaTypes
     {
