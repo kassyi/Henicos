@@ -90,8 +90,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             {
                 if (i > 0)
                 {
-                    Context.Writer.AppendComma();
-                    Context.Writer.AppendSpace();
+                    Context.Writer
+                        .AppendComma()
+                        .AppendSpace();
                 }
                 Visit(node.Parameters[i]);
             }
@@ -118,8 +119,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Context.Writer.AppendKeyword("auto");
         }
 
-        Context.Writer.AppendSpace();
-        Context.Writer.Append(node.Identifier.Text);
+        Context.Writer
+            .AppendSpace()
+            .Append(node.Identifier.Text);
     }
 
     public void VisitStatementOrBlock(StatementSyntax statement)
@@ -166,8 +168,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitFixedStatement(FixedStatementSyntax node)
     {
         Visit(node.Declaration);
-        Context.Writer.AppendSemiColon();
-        Context.Writer.AppendLine();
+        Context.Writer.AppendSemiColonLine();
         VisitStatementOrBlock(node.Statement);
     }
 
@@ -191,8 +192,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
     {
-        Context.Writer.AppendKeyword("case");
-        Context.Writer.AppendSpace();
+        Context.Writer
+            .AppendKeyword("case")
+            .AppendSpace();
         Visit(node.Value);
         Context.Writer.Append(":");
     }
@@ -262,8 +264,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             using (Context.Writer.Parentheses())
             {
-                Context.Writer.AppendOperator("*");
-                Context.Writer.Append(node.Identifier.Text);
+                Context.Writer
+                    .AppendOperator("*")
+                    .Append(node.Identifier.Text);
             }
             return;
         }
