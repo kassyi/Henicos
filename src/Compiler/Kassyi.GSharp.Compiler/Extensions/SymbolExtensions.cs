@@ -43,17 +43,29 @@ internal static class SymbolExtensions
             }
         };
 
+    public static bool IsSystemValueTuple(this ITypeSymbol? typeSymbol) =>
+        typeSymbol is INamedTypeSymbol { IsTupleType: true } ||
+        (typeSymbol is INamedTypeSymbol { OriginalDefinition.Name: "ValueTuple" } named &&
+         named.OriginalDefinition.ContainingNamespace.IsSystemNamespace());
+
+    public static bool IsSystemNullable(this ITypeSymbol? typeSymbol) =>
+        typeSymbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
+
     public static bool IsGpuBigIntRef(this ITypeSymbol? typeSymbol) =>
-        typeSymbol is
-        {
-            Name: TypeConstants.GpuBigIntRefType,
-            ContainingNamespace:
-            {
-                Name: "Core",
-                ContainingNamespace:
-                { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
-            }
-        };
+        typeSymbol is { Name: TypeConstants.GpuBigIntRefType } &&
+        typeSymbol.ContainingNamespace.IsCoreNamespace();
+
+    /// <summary>
+    /// Determines whether the parameter has <c>ref</c> or <c>out</c> passing semantics.
+    /// </summary>
+    public static bool IsByRefOrOut(this IParameterSymbol? param) =>
+        param is { RefKind: RefKind.Ref or RefKind.Out };
+
+    /// <summary>
+    /// Determines whether the parameter has <c>ref</c>, <c>out</c>, or <c>in</c> passing semantics.
+    /// </summary>
+    public static bool IsByRef(this IParameterSymbol? param) =>
+        param is { RefKind: RefKind.Ref or RefKind.Out or RefKind.In };
 
     /// <summary>
     /// Checks if the attribute matches the specified short name (e.g. "GpuKernel" matches both "GpuKernel" and "GpuKernelAttribute").
@@ -65,8 +77,13 @@ internal static class SymbolExtensions
     /// <summary>
     /// Determines whether the symbol has an attribute matching the specified short name.
     /// </summary>
-    public static bool HasAttribute(this ISymbol symbol, string shortName)
+    public static bool HasAttribute(this ISymbol? symbol, string shortName)
     {
+        if (symbol == null)
+        {
+            return false;
+        }
+
         foreach (var attr in symbol.GetAttributes())
         {
             if (attr.IsAttribute(shortName))
@@ -74,14 +91,20 @@ internal static class SymbolExtensions
                 return true;
             }
         }
+
         return false;
     }
 
     /// <summary>
     /// Gets the first attribute matching the specified short name, or null if none found.
     /// </summary>
-    public static AttributeData? GetAttribute(this ISymbol symbol, string shortName)
+    public static AttributeData? GetAttribute(this ISymbol? symbol, string shortName)
     {
+        if (symbol == null)
+        {
+            return null;
+        }
+
         foreach (var attr in symbol.GetAttributes())
         {
             if (attr.IsAttribute(shortName))
@@ -89,6 +112,7 @@ internal static class SymbolExtensions
                 return attr;
             }
         }
+
         return null;
     }
 }
