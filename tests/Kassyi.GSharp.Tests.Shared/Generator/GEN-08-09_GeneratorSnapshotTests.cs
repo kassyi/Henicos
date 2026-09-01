@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System.Text;
 using Kassyi.GSharp.Compiler;
 
@@ -164,7 +164,11 @@ public class GEN_08_GeneratorSnapshotTests
         }
 
         var generator = new GpuKernelGenerator();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator).WithUpdatedParseOptions(parseOptions);
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: new[] { generator.AsSourceGenerator() },
+            additionalTexts: null,
+            parseOptions: parseOptions,
+            optionsProvider: new Kassyi.GSharp.Tests.Helpers.TestAnalyzerConfigOptionsProvider());
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
@@ -180,7 +184,7 @@ public class GEN_08_GeneratorSnapshotTests
             .UseMethodName($"{testName}_GeneratesCorrectCudaSource");
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     // TestCases/
     [InlineData("GEN-08_AddKernel.cu.cs")]
     [InlineData("GEN-08_BitOpsTestKernels.cu.cs")]

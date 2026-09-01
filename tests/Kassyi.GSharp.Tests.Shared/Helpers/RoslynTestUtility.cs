@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Helpers;
@@ -81,7 +81,8 @@ public static class RoslynTestUtility
     public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
     {
         var compilation = CreateCompilation(source);
-        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer));
+        var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, new TestAnalyzerConfigOptionsProvider());
+        var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer), analyzerOptions);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }
 
@@ -96,7 +97,7 @@ public static class RoslynTestUtility
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
-            optionsProvider: null);
+            optionsProvider: new TestAnalyzerConfigOptionsProvider());
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
         return (driver, outputCompilation, diagnostics);
@@ -236,3 +237,31 @@ public class AnalyzerTestConfig
     }
 }
 
+#nullable enable
+internal class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+{
+    public override AnalyzerConfigOptions GlobalOptions { get; } = new TestAnalyzerConfigOptions();
+    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
+    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
+}
+
+internal class TestAnalyzerConfigOptions : AnalyzerConfigOptions
+{
+    public override bool TryGetValue(string key, out string? value)
+    {
+        if (key == "build_property.GSharpTargetDialect")
+        {
+#if GSHARP_CPU
+            value = "Cpu";
+#elif GSHARP_CUDA
+            value = "Cuda";
+#else
+            value = "Cuda"; // Default fallback for tests
+#endif
+            return true;
+        }
+        value = null;
+        return false;
+    }
+}
+#nullable restore
