@@ -5,13 +5,6 @@ namespace Kassyi.GSharp.Tests.Helpers;
 
 public static class MegaCompilationCache
 {
-    private static readonly ConcurrentBag<string> s_registeredSources = new();
-
-    public static void RegisterSource(string source)
-    {
-        s_registeredSources.Add(source);
-    }
-
     private static readonly Lazy<CSharpCompilation> s_baseCompilation = new(() =>
     {
         var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
@@ -26,14 +19,7 @@ public static class MegaCompilationCache
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
             .AddReferences(references);
 
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-#pragma warning disable RS0030
-        var trees = s_registeredSources
-            .Select((src, i) => CSharpSyntaxTree.ParseText(src, parseOptions, path: $"MegaTestSources_{i}.cs"))
-            .ToArray();
-#pragma warning restore RS0030
-
-        return baseComp.AddSyntaxTrees(trees);
+        return baseComp;
     });
 
     public static CSharpCompilation BaseCompilation => s_baseCompilation.Value;
@@ -91,12 +77,15 @@ public static class MegaCompilationCache
     {
         var compilation = GetDynamicCompilation(callerFilePath);
 
-        var typeSymbol = compilation.GetTypeByMetadataName(targetType.FullName ?? targetType.Name) 
-                         ?? compilation.GetSymbolsWithName(targetType.Name, SymbolFilter.Type).OfType<INamedTypeSymbol>().FirstOrDefault()
-                         ?? throw new InvalidOperationException($"Type {targetType.FullName} not found in the dynamic compilation.");
+        var typeSymbol = compilation.GetTypeByMetadataName(targetType.FullName ?? targetType.Name)
+                         ?? compilation.GetSymbolsWithName(targetType.Name, SymbolFilter.Type)
+                             .OfType<INamedTypeSymbol>().FirstOrDefault()
+                         ?? throw new InvalidOperationException(
+                             $"Type {targetType.FullName} not found in the dynamic compilation.");
 
         var methodSymbol = typeSymbol.GetMembers(methodName).OfType<IMethodSymbol>().FirstOrDefault()
-                           ?? throw new InvalidOperationException($"Method {methodName} not found in {typeSymbol.Name}.");
+                           ?? throw new InvalidOperationException(
+                               $"Method {methodName} not found in {typeSymbol.Name}.");
 
         var syntaxTree = methodSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
         var model = compilation.GetSemanticModel(syntaxTree);
