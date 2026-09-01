@@ -100,7 +100,9 @@ internal static class DeclarationTranspilers
     {
         CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
 
-        context.Writer.Append("__shared__ ").AppendType(typeArg).Append($" {alloc.Declarator.Identifier.Text}");
+        context.Writer.Append("__shared__ ");
+        context.AppendType(typeArg);
+        context.Writer.Append($" {alloc.Declarator.Identifier.Text}");
         using (context.Writer.Brackets())
         {
             context.Visitor.Visit(alloc.SizeArgument);
@@ -116,7 +118,7 @@ internal static class DeclarationTranspilers
     private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        var elemSize = CudaTypeMapper.GetApproximateSize(typeArg);
+        var elemSize = context.Dialect.GetApproximateSize(typeArg);
         var byteSize = elementCount * elemSize;
         if (byteSize > 32768)
         {
@@ -129,7 +131,7 @@ internal static class DeclarationTranspilers
         LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
     {
         EnsureDynamicSharedMemoryBase(ref context);
-        AlignDynamicSharedMemoryOffset(typeArg, ref context.Writer);
+        AlignDynamicSharedMemoryOffset(typeArg, ref context);
         EmitDynamicSharedMemoryPointerAndAdvance(alloc, typeArg, ref context);
 
         if (index < node.Declaration.Variables.Count - 1)
@@ -152,52 +154,53 @@ internal static class DeclarationTranspilers
         context.HasEmittedDynamicSmemBase = true;
     }
 
-    private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref SourceWriter writer)
+    private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        writer
+        context.Writer
             .Append("__smem_offset")
             .AppendOperator("=");
-        using (writer.Parentheses())
+        using (context.Writer.Parentheses())
         {
-            writer
+            context.Writer
                 .Append("__smem_offset")
                 .AppendOperator("+")
                 .Append("alignof");
-            using (writer.Parentheses())
+            using (context.Writer.Parentheses())
             {
-                writer.AppendType(typeArg);
+                context.AppendType(typeArg);
             }
 
-            writer.AppendOperator("-");
-            writer.Append("1");
+            context.Writer.AppendOperator("-");
+            context.Writer.Append("1");
         }
 
-        writer
+        context.Writer
             .AppendOperator("&")
             .Append("~");
-        using (writer.Parentheses())
+        using (context.Writer.Parentheses())
         {
-            writer.Append("alignof");
-            using (writer.Parentheses())
+            context.Writer.Append("alignof");
+            using (context.Writer.Parentheses())
             {
-                writer.AppendType(typeArg);
+                context.AppendType(typeArg);
             }
 
-            writer.AppendOperator("-");
-            writer.Append("1");
+            context.Writer.AppendOperator("-");
+            context.Writer.Append("1");
         }
 
-        writer.AppendSemiColonLine();
+        context.Writer.AppendSemiColonLine();
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        context.Writer.AppendType(typeArg).Append($"* {alloc.Declarator.Identifier.Text} = ");
+        context.AppendType(typeArg);
+        context.Writer.Append($"* {alloc.Declarator.Identifier.Text} = ");
         using (context.Writer.Parentheses())
         {
-            context.Writer.AppendType(typeArg);
+            context.AppendType(typeArg);
             context.Writer.Append("*");
         }
 
@@ -213,7 +216,7 @@ internal static class DeclarationTranspilers
         context.Writer.Append(" * sizeof");
         using (context.Writer.Parentheses())
         {
-            context.Writer.AppendType(typeArg);
+            context.AppendType(typeArg);
         }
         context.Writer.AppendSemiColon();
     }
@@ -268,7 +271,8 @@ internal static class DeclarationTranspilers
             }
             else
             {
-                context.Writer.AppendType(typeSymbol).Append($" {v.Identifier.Text}");
+                context.AppendType(typeSymbol);
+                context.Writer.Append($" {v.Identifier.Text}");
             }
             WriteDeclaratorInitializer(v, ref context);
 
@@ -292,11 +296,11 @@ internal static class DeclarationTranspilers
         {
             if (isPointer && typeSymbol is IPointerTypeSymbol pointerType)
             {
-                context.Writer.AppendType(pointerType.PointedAtType);
+                context.AppendType(pointerType.PointedAtType);
             }
             else
             {
-                context.Writer.AppendType(typeSymbol);
+                context.AppendType(typeSymbol);
             }
         }
         context.Writer.Append(" ");
@@ -347,7 +351,7 @@ internal static class DeclarationTranspilers
                 var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
                 if (typeSymbol != null)
                 {
-                    context.Writer.AppendType(typeSymbol);
+                    context.AppendType(typeSymbol);
                 }
                 else
                 {

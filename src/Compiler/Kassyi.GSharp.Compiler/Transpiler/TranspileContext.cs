@@ -8,7 +8,8 @@ public struct TranspileContext(
     SemanticModel semanticModel,
     Action<Diagnostic>? reportDiagnostic,
     RoslynToCudaVisitor visitor,
-    ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> bclIntrinsicMap)
+    ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> bclIntrinsicMap,
+    Dialects.ITranspilerDialect dialect)
 {
     public SourceWriter Writer = writer;
     public HashSet<INamedTypeSymbol> UsedStructs = usedStructs;
@@ -19,8 +20,12 @@ public struct TranspileContext(
     public SemanticModel SemanticModel { get; } = semanticModel;
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
     public ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> BclIntrinsicMap { get; } = bclIntrinsicMap;
+    public Dialects.ITranspilerDialect Dialect { get; } = dialect;
 
     public RoslynToCudaVisitor Visitor { get; } = visitor;
+
+    public void AppendType(ITypeSymbol? typeSymbol) => Dialect.AppendType(ref this, typeSymbol);
+    public (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameterCppType(ParameterSyntax p, ITypeSymbol? typeSymbol) => Dialect.AppendParameter(ref this, p, typeSymbol);
 }
 
 /// <summary>Represents an overridden variable substitution value (literal string or AST node) for macro expansions.</summary>

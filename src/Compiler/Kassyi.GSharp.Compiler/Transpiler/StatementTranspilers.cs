@@ -85,7 +85,8 @@ internal static class StatementTranspilers
             }
             else
             {
-                context.Writer.AppendType(typeSymbol).AppendSpace();
+                context.AppendType(typeSymbol);
+                context.Writer.AppendSpace();
             }
 
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
@@ -198,15 +199,9 @@ internal static class StatementTranspilers
         }
     }
 
-    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context)
-    {
-        context.Writer.Append("break;");
-    }
+    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context) => context.Writer.Append("break;");
 
-    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context)
-    {
-        context.Writer.Append("continue;");
-    }
+    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context) => context.Writer.Append("continue;");
 
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
