@@ -22,7 +22,7 @@ public class GEN_15_PoolStressTests
         {
             try
             {
-                using var visitor = RoslynToCudaVisitor.Rent(DynamicYamlDialect.Load("GSharpCuda"), semanticModel, null);
+                using var visitor = RoslynToCudaVisitor.Rent(new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect(), semanticModel, null);
 
                 Assert.Empty(visitor.Context.UsedStructs);
                 Assert.Empty(visitor.Context.LocalVariableOverrides);
