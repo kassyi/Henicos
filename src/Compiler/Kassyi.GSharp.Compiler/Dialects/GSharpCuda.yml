@@ -1,0 +1,10 @@
+Dialect: GSharpCuda
+Inherits: StandardCpp
+RequiredHeaders:
+  - "<cuda_runtime.h>"
+StructPrefix: "__device__ "
+MethodPrefix: "__device__ inline "
+Types:
+  System.Numerics.Vector2: "float2"
+  System.Numerics.Vector3: "float3"
+  System.Numerics.Vector4: "float4"
