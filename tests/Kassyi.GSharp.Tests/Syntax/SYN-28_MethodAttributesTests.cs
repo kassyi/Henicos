@@ -7,13 +7,28 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class SYN_28_MethodAttributesTests
+public partial class SYN_28_MethodAttributesTests
 {
     private const string InlineDevice = "inline __device__";
     private const string ForceinlineDevice = "__forceinline__ __device__";
     private const string NoinlineDevice = "__noinline__ __device__";
     private const string ForceinlineModifier = "__forceinline__";
     private const string NoinlineModifier = "__noinline__";
+
+    [GeneratedRegex($@"{ForceinlineDevice}\s+\w+\s+AggressiveInlinedFunc")]
+    private static partial Regex AggressiveInlinedRegex();
+
+    [GeneratedRegex($@"{NoinlineDevice}\s+\w+\s+NoInlinedFunc")]
+    private static partial Regex NoInlinedRegex();
+
+    [GeneratedRegex($@"{ForceinlineDevice}\s+\w+\s+MultipleAttributesFunc")]
+    private static partial Regex MultipleAttributesRegex();
+
+    [GeneratedRegex($@"{InlineDevice}\s+\w+\s+NoOptimizationFunc")]
+    private static partial Regex NoOptimizationRegex();
+
+    [GeneratedRegex($@"{InlineDevice}\s+\w+\s+CustomMethod")]
+    private static partial Regex CustomMethodRegex();
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)
     {
@@ -115,7 +130,7 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains(ForceinlineDevice, cudaSource);
+        Assert.Matches(AggressiveInlinedRegex(), cudaSource);
     }
 
     [Fact]
@@ -126,7 +141,7 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains(NoinlineDevice, cudaSource);
+        Assert.Matches(NoInlinedRegex(), cudaSource);
     }
 
     [Fact]
@@ -137,7 +152,7 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains(ForceinlineDevice, cudaSource);
+        Assert.Matches(MultipleAttributesRegex(), cudaSource);
 
         var matches = Regex.Matches(cudaSource, ForceinlineModifier);
         Assert.Single(matches);
@@ -151,9 +166,9 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
         Assert.Empty(diagnostics);
-        Assert.Contains(InlineDevice, cudaSource);
-        Assert.DoesNotContain(ForceinlineModifier, cudaSource);
-        Assert.DoesNotContain(NoinlineModifier, cudaSource);
+        Assert.Matches(NoOptimizationRegex(), cudaSource);
+        Assert.DoesNotMatch(ForceinlineModifier, cudaSource);
+        Assert.DoesNotMatch(NoinlineModifier, cudaSource);
     }
 
     [Fact]
@@ -164,8 +179,8 @@ public class SYN_28_MethodAttributesTests
         var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
 
         Assert.Empty(diagnostics);
-        Assert.Contains(InlineDevice, cudaSource);
-        Assert.DoesNotContain(ForceinlineModifier, cudaSource);
-        Assert.DoesNotContain(NoinlineModifier, cudaSource);
+        Assert.Matches(CustomMethodRegex(), cudaSource);
+        Assert.DoesNotMatch(ForceinlineModifier, cudaSource);
+        Assert.DoesNotMatch(NoinlineModifier, cudaSource);
     }
 }

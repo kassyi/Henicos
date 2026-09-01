@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
@@ -18,8 +19,17 @@ public class TestClass_SYN91_92
     }
 }
 
-public class SYN_91_92_ParenthesesSuppressionTests
+public partial class SYN_91_92_ParenthesesSuppressionTests
 {
+    [GeneratedRegex(@"if\s*\(\s*a\s*<\s*b\s*\)")]
+    private static partial Regex IfConditionRegex();
+
+    [GeneratedRegex(@"bool\s+r1\s*=\s*\(a\s*&\s*b\)\s*==\s*c;")]
+    private static partial Regex BoolAssignmentRegex();
+
+    [GeneratedRegex(@"int\s+r2\s*=\s*a\s*\*\s*\(b\s*\+\s*c\);")]
+    private static partial Regex IntAssignmentRegex();
+
     [Fact]
     [Trait("FeatureId", "SYN-91")]
     [Trait("Category", "Syntax")]
@@ -28,9 +38,7 @@ public class SYN_91_92_ParenthesesSuppressionTests
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
 
         Assert.Empty(diagnostics);
-        Assert.Contains("if", cudaSource);
-        Assert.Contains("a", cudaSource);
-        Assert.Contains("b", cudaSource);
+        Assert.Matches(IfConditionRegex(), cudaSource);
     }
 
     [Fact]
@@ -41,8 +49,8 @@ public class SYN_91_92_ParenthesesSuppressionTests
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
 
         Assert.Empty(diagnostics);
-        Assert.Contains("r1", cudaSource);
-        Assert.Contains("r2", cudaSource);
+        Assert.Matches(BoolAssignmentRegex(), cudaSource);
+        Assert.Matches(IntAssignmentRegex(), cudaSource);
     }
 }
 
