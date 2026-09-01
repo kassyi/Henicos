@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_17_TargetTypedNewTests
 :  TranspilerTestBase{
@@ -15,7 +15,7 @@ public class SYN_17_TargetTypedNewTests
         Assert.Equal(300, output[0]);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-17")]
     [InlineData(0, 0)]  // tid 0: p.Id = 0, p.Child.Value = 0 -> 0

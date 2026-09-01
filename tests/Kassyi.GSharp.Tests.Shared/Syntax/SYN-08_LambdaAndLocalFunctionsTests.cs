@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_08_LambdaAndLocalFunctionsTests
 :  TranspilerTestBase{
@@ -15,7 +15,7 @@ public class SYN_08_LambdaAndLocalFunctionsTests
         Assert.Equal(40, data[2]);
     }
 
-    [Fact]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-08")]
     [InlineData(2, 5, 10)]
