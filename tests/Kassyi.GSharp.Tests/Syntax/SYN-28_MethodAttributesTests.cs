@@ -33,14 +33,12 @@ public partial class SYN_28_MethodAttributesTests
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)
     {
         var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "SYN-28_MethodAttributes.cs");
-        var code = File.ReadAllText(testCasePath);
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-        var syntaxTree = CSharpSyntaxTree.ParseText(code, parseOptions);
-        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
 
-        var root = syntaxTree.GetRoot();
-        var methodDecl = root.DescendantNodes()
+        var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
+        var semanticModel = compilation.GetSemanticModel(tree);
+
+        var methodDecl = tree.GetRoot().DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .First(m => m.Identifier.Text == methodName);
 
