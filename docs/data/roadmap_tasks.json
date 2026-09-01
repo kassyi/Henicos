@@ -5637,6 +5637,38 @@
     ]
   },
   {
+    "id": "SYN-95",
+    "title": "Foreach Loop Lowering to For Loop with Array Fat Pointer (Length & Bounds Check)",
+    "domain": "SYN",
+    "category": "Collections, Arrays, and Memory Operations",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 3,
+      "difficulty": 4,
+      "generality": 5,
+      "score": 35
+    },
+    "details": {
+      "csharp_example": "[GpuKernel]\npublic static void SumKernel(int[] input, int[] output)\n{\n    int sum = 0;\n    foreach (var item in input)\n    {\n        sum += item;\n    }\n    output[ThreadIndex.X] = sum;\n}",
+      "current_behavior": "Currently prohibited by GSH-0007 (ForEachNotSupportedRule) because array arguments (T[]) are lowered to raw pointers (T*) in CUDA C++, losing length metadata and triggering allocations if using standard enumerators.",
+      "strategy": "1. Pass array arguments as slice structures (Fat Pointers: struct { T* data; int length; }) across the kernel ABI boundary.\n2. In the Roslyn transpiler, lower ForEachStatementSyntax on array and Span types into indexed for loops (for (int i = 0; i < array.length; ++i)) with zero allocation and compile-time determinism.\n3. Add optional bounds check assertions for indexer accesses.",
+      "target_cuda": "struct GpuArray_int { int* data; int length; };\n// Lowered to:\nfor (int __i = 0; __i < input.length; ++__i) {\n    int item = input.data[__i];\n    ...\n}"
+    },
+    "score": 35,
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/CudaTypeMapper.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Rules/ForEachNotSupportedRule.cs",
+      "tests/Kassyi.GSharp.Tests/Syntax/SYN-95_ForEachLoweringTests.cs"
+    ],
+    "depends_on": [
+      "SYN-01",
+      "SYN-15",
+      "SYN-35"
+    ]
+  },
+  {
     "id": "GBI-01",
     "title": "Implementation of GSharpJitProvider memory pool",
     "domain": "GBI",
