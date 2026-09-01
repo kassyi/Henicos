@@ -100,11 +100,12 @@ internal static class DeclarationTranspilers
     {
         CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
 
-        context.Writer.AppendKeyword("__shared__");
-        context.Writer.AppendSpace();
-        context.Writer.AppendType(typeArg);
-        context.Writer.AppendSpace();
-        context.Writer.Append(alloc.Declarator.Identifier.Text);
+        context.Writer
+            .AppendKeyword("__shared__")
+            .AppendSpace()
+            .AppendType(typeArg)
+            .AppendSpace()
+            .Append(alloc.Declarator.Identifier.Text);
         using (context.Writer.Brackets())
         {
             context.Visitor.Visit(alloc.SizeArgument);
@@ -149,22 +150,40 @@ internal static class DeclarationTranspilers
             return;
         }
 
-        context.Writer.Append("extern __shared__ char __gsharp_dynamic_smem");
-        context.Writer.AppendBrackets();
-        context.Writer.AppendLine(";");
-        context.Writer.AppendLine("size_t __smem_offset = 0;");
+        context.Writer
+            .Append("extern __shared__ char __gsharp_dynamic_smem")
+            .AppendBrackets()
+            .AppendLine(";")
+            .AppendLine("size_t __smem_offset = 0;");
         context.HasEmittedDynamicSmemBase = true;
     }
 
     private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref SourceWriter writer)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        writer.Append("__smem_offset");
-        writer.AppendOperator("=");
+        writer
+            .Append("__smem_offset")
+            .AppendOperator("=");
         using (writer.Parentheses())
         {
-            writer.Append("__smem_offset");
-            writer.AppendOperator("+");
+            writer
+                .Append("__smem_offset")
+                .AppendOperator("+")
+                .Append("alignof");
+            using (writer.Parentheses())
+            {
+                writer.AppendType(typeArg);
+            }
+
+            writer.AppendOperator("-");
+            writer.Append("1");
+        }
+
+        writer
+            .AppendOperator("&")
+            .Append("~");
+        using (writer.Parentheses())
+        {
             writer.Append("alignof");
             using (writer.Parentheses())
             {
@@ -175,31 +194,17 @@ internal static class DeclarationTranspilers
             writer.Append("1");
         }
 
-        writer.AppendOperator("&");
-        writer.Append("~");
-        using (writer.Parentheses())
-        {
-            writer.Append("alignof");
-            using (writer.Parentheses())
-            {
-                writer.AppendType(typeArg);
-            }
-
-            writer.AppendOperator("-");
-            writer.Append("1");
-        }
-
-        writer.AppendSemiColon();
-        writer.AppendLine();
+        writer.AppendSemiColonLine();
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        context.Writer.AppendType(typeArg);
-        context.Writer.Append("* ");
-        context.Writer.Append(alloc.Declarator.Identifier.Text);
-        context.Writer.AppendOperator("=");
+        context.Writer
+            .AppendType(typeArg)
+            .Append("* ")
+            .Append(alloc.Declarator.Identifier.Text)
+            .AppendOperator("=");
         using (context.Writer.Parentheses())
         {
             context.Writer.AppendType(typeArg);
@@ -208,22 +213,24 @@ internal static class DeclarationTranspilers
 
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append("__gsharp_dynamic_smem");
-            context.Writer.AppendOperator("+");
-            context.Writer.Append("__smem_offset");
+            context.Writer
+                .Append("__gsharp_dynamic_smem")
+                .AppendOperator("+")
+                .Append("__smem_offset");
         }
 
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
-        context.Writer.Append("__smem_offset");
-        context.Writer.AppendOperator("+=");
+        context.Writer
+            .AppendSemiColonLine()
+            .Append("__smem_offset")
+            .AppendOperator("+=");
         using (context.Writer.Parentheses())
         {
             context.Visitor.Visit(alloc.SizeArgument);
         }
 
-        context.Writer.AppendOperator("*");
-        context.Writer.AppendKeyword("sizeof");
+        context.Writer
+            .AppendOperator("*")
+            .AppendKeyword("sizeof");
         using (context.Writer.Parentheses())
         {
             context.Writer.AppendType(typeArg);
@@ -277,14 +284,18 @@ internal static class DeclarationTranspilers
             var v = variables[i];
             if (isVar)
             {
-                context.Writer.AppendKeyword("auto");
+                context.Writer
+                    .AppendKeyword("auto")
+                    .AppendSpace()
+                    .Append(v.Identifier.Text);
             }
             else
             {
-                context.Writer.AppendType(typeSymbol);
+                context.Writer
+                    .AppendType(typeSymbol)
+                    .AppendSpace()
+                    .Append(v.Identifier.Text);
             }
-            context.Writer.AppendSpace();
-            context.Writer.Append(v.Identifier.Text);
             WriteDeclaratorInitializer(v, ref context);
 
             if (i >= variables.Count - 1)
@@ -292,8 +303,7 @@ internal static class DeclarationTranspilers
                 continue;
             }
 
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
+            context.Writer.AppendSemiColonLine();
         }
     }
 
@@ -369,10 +379,10 @@ internal static class DeclarationTranspilers
                 {
                     context.Writer.AppendKeyword("auto");
                 }
-                context.Writer.AppendSpace();
-                context.Writer.Append(singleVar.Identifier.Text);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer
+                    .AppendSpace()
+                    .Append(singleVar.Identifier.Text)
+                    .AppendSemiColonLine();
             }
         }
     }
