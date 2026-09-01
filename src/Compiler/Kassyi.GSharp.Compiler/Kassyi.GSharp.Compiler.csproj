@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests" />
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
   </ItemGroup>
 
   <ItemGroup>

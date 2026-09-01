@@ -95,7 +95,15 @@ public static class MethodTranspiler
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var inlineKeyword = GetInliningKeyword(methodSymbol);
-        context.Writer.Append($"{inlineKeyword} __device__ ");
+        
+        if (context.Dialect.IsCuda)
+        {
+            context.Writer.Append($"{inlineKeyword} __device__ ");
+        }
+        else
+        {
+            context.Writer.Append($"{inlineKeyword} ");
+        }
 
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
@@ -173,7 +181,14 @@ public static class MethodTranspiler
                 method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
         }
 
-        context.Writer.AppendKeyword("extern \"C\" __global__ void");
+        if (context.Dialect.IsCuda)
+        {
+            context.Writer.AppendKeyword("extern \"C\" __global__ void");
+        }
+        else
+        {
+            context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
+        }
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)

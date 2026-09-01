@@ -16,6 +16,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
     public virtual string StructPrefix => string.Empty;
     public virtual string MethodPrefix => string.Empty;
     public virtual bool IsCuda => this.GetType().Name.Contains("Cuda");
+    public virtual DialectCapabilities Capabilities => IsCuda ? DialectCapabilities.AllGpuFeatures : DialectCapabilities.None;
 
     public virtual void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
