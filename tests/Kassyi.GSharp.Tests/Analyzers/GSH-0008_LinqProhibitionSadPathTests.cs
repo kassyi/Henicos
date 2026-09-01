@@ -48,6 +48,6 @@ public class GSH_0008_LinqProhibitionSadPathTests
         // LINQ query expressions or method chaining in kernel emit error diagnostics (e.g., GSH0008 or GSH0003)
         var allDiagnostics = diagnostics.AddRange(compilation.GetDiagnostics());
         Assert.NotEmpty(allDiagnostics);
-        Assert.Contains(allDiagnostics, d => d.Id == GSharpDiagnostics.LinqNotSupported.Id || d.Severity == DiagnosticSeverity.Error);
+        Assert.Contains(allDiagnostics, d => d.Id == GSharpDiagnostics.LinqNotSupported.Id || d.Id == GSharpDiagnostics.UnsupportedSyntax.Id);
     }
 }
