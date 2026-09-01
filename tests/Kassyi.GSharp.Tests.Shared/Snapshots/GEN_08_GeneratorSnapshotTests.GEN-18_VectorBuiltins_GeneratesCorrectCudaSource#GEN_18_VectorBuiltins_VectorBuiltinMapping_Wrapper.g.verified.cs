@@ -18,15 +18,6 @@ auto z=v4[0].z+v4[0].w;
 result[0]=x+y+z;
 }
 ";
-public const string VectorBuiltinMapping_Source = @"extern ""C"" __declspec(dllexport) void VectorBuiltinMapping(System_Numerics_Vector2* __restrict__ v2,System_Numerics_Vector3* __restrict__ v3,System_Numerics_Vector4* __restrict__ v4,float* __restrict__ result){
-auto localV2=System_Numerics_Vector2{1f, 2f};
-auto localV3={};
-auto x=v2[0].x+localV2.y;
-auto y=v3[0].y+localV3.z;
-auto z=v4[0].z+v4[0].w;
-result[0]=x+y+z;
-}
-";
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_VectorBuiltinMapping(global::System.Numerics.Vector2[] v2, global::System.Numerics.Vector3[] v3, global::System.Numerics.Vector4[] v4, float[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
@@ -216,34 +207,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500
-[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void VectorBuiltinMapping_Delegate(global::System.Numerics.Vector2* v2, global::System.Numerics.Vector3* v3, global::System.Numerics.Vector4* v4, float* result);
-public static unsafe void Launch_VectorBuiltinMapping_Cpu(global::System.Numerics.Vector2[] v2, global::System.Numerics.Vector3[] v3, global::System.Numerics.Vector4[] v4, float[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
-{
-if (v2.Length == 0 || v3.Length == 0 || v4.Length == 0 || result.Length == 0){
-return;
-}
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<VectorBuiltinMapping_Delegate>("VectorBuiltinMapping", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + VectorBuiltinMapping_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + VectorBuiltinMapping_Source, null, macros);
-fixed (global::System.Numerics.Vector2* p_v2 = v2)
-fixed (global::System.Numerics.Vector3* p_v3 = v3)
-fixed (global::System.Numerics.Vector4* p_v4 = v4)
-fixed (float* p_result = result)
-{
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_v2, p_v3, p_v4, p_result);
 }
 }
 }

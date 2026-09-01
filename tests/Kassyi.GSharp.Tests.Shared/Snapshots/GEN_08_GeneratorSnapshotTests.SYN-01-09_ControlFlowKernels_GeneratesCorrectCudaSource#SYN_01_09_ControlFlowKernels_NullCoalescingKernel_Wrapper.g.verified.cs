@@ -19,16 +19,6 @@ return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
 ();
 }
 ";
-public const string NullCoalescingKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs,int* __restrict__ fallbackValues,int* __restrict__ results){
-int tid=threadIdx.x;
-System_Nullable<int> input=nullableInputs[tid];
-results[tid]=[&]() {
-auto __coalesce_tmp = input;
-return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
-}
-();
-}
-";
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NullCoalescingKernel(int?[] nullableInputs, int[] fallbackValues, int[] results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
@@ -183,33 +173,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500
-[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void NullCoalescingKernel_Delegate(int?* nullableInputs, int* fallbackValues, int* results);
-public static unsafe void Launch_NullCoalescingKernel_Cpu(int?[] nullableInputs, int[] fallbackValues, int[] results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
-{
-if (nullableInputs.Length == 0 || fallbackValues.Length == 0 || results.Length == 0){
-return;
-}
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NullCoalescingKernel_Delegate>("NullCoalescingKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingKernel_Source, null, macros);
-fixed (int?* p_nullableInputs = nullableInputs)
-fixed (int* p_fallbackValues = fallbackValues)
-fixed (int* p_results = results)
-{
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_nullableInputs, p_fallbackValues, p_results);
 }
 }
 }
