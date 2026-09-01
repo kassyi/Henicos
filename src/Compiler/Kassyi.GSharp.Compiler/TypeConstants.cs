@@ -10,6 +10,7 @@ internal static class TypeConstants
     public const string ThreadingNamespace = "Threading";
 
     public const string SharedMemoryType = "SharedMemory";
+    public const string GpuType = "Gpu";
     public const string CoreNamespace = "Kassyi.GSharp.Core";
 
     public const string MathType = "Math";
