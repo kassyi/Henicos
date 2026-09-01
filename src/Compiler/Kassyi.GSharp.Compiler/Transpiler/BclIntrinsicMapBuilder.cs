@@ -13,10 +13,6 @@ internal static class BclIntrinsicMapBuilder
         s_cache =
             new();
 
-    private static readonly SymbolDisplayFormat s_typeDisplayFormat = new(
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.None);
-
     public static ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> GetOrBuildMap(Compilation compilation) =>
         s_cache.GetValue(compilation, static c => BuildMap(c));
 
@@ -68,7 +64,7 @@ internal static class BclIntrinsicMapBuilder
 
                 foreach (var member in bclType.GetMembers(methodName))
                 {
-                    if (member is not IMethodSymbol method || !IsMatch(method, parameterTypesArray))
+                    if (member is not IMethodSymbol method || !IsMatch(compilation, typeCache, method, parameterTypesArray))
                     {
                         continue;
                     }
@@ -146,7 +142,8 @@ internal static class BclIntrinsicMapBuilder
         return false;
     }
 
-    private static bool IsMatch(IMethodSymbol method, ImmutableArray<TypedConstant> expectedParameterTypes)
+    private static bool IsMatch(Compilation compilation, Dictionary<string, INamedTypeSymbol?> typeCache,
+        IMethodSymbol method, ImmutableArray<TypedConstant> expectedParameterTypes)
     {
         if (method.Parameters.Length != expectedParameterTypes.Length)
         {
@@ -160,11 +157,18 @@ internal static class BclIntrinsicMapBuilder
                 return false;
             }
 
-            var actualType = method.Parameters[i].Type;
-            var actualTypeName = actualType.ToDisplayString(s_typeDisplayFormat);
+            if (!typeCache.TryGetValue(expectedTypeName, out var expectedType))
+            {
+                expectedType = compilation.GetTypeByMetadataName(expectedTypeName);
+                typeCache[expectedTypeName] = expectedType;
+            }
 
-            if (!string.Equals(actualTypeName, expectedTypeName, StringComparison.Ordinal) &&
-                !string.Equals(actualType.ToDisplayString(), expectedTypeName, StringComparison.Ordinal))
+            if (expectedType == null)
+            {
+                return false;
+            }
+
+            if (!SymbolEqualityComparer.Default.Equals(method.Parameters[i].Type, expectedType))
             {
                 return false;
             }
