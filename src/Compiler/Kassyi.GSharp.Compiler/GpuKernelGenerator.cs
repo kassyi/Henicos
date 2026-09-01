@@ -135,7 +135,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             // Generate the C# Wrapper Class
             var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, cppSource);
 
-            context.AddSource($"{method.ContainingType.Name}_{method.Name}_Wrapper.g.cs",
+            context.AddSource(method.ContainingType.Name + "_" + method.Name + "_Wrapper.g.cs",
                 SourceText.From(wrapperSource, Encoding.UTF8));
         }
     }

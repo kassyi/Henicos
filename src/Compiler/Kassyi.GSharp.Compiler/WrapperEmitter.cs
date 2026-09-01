@@ -22,10 +22,12 @@ internal static class WrapperEmitter
             """);
 
         writer.AppendLine();
-        writer.AppendLine($"namespace {namespaceName}");
+        writer.Append("namespace ");
+        writer.AppendLine(namespaceName);
         using (writer.Scope())
         {
-            writer.AppendLine($"public static partial class {className}");
+            writer.Append("public static partial class ");
+            writer.AppendLine(className);
             using (writer.Scope())
             {
                 WriteKernelSource(writer, method, cppSource);
@@ -41,14 +43,19 @@ internal static class WrapperEmitter
     private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string cppSource)
     {
         var escapedSource = cppSource.Replace("\"", "\"\"");
-        writer.AppendLine($"""public const string {method.Name}_CudaSource = @"{escapedSource}";""");
+        writer.Append("public const string ");
+        writer.Append(method.Name);
+        writer.Append("_CudaSource = @\"");
+        writer.Append(escapedSource);
+        writer.AppendLine("\";");
         writer.AppendLine();
     }
 
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        writer.AppendLine("#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
+        writer.AppendLine(
+            "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
         WriteLaunchMethodSignature(writer, method, isDevicePtr);
         using (writer.Scope())
         {
@@ -57,8 +64,21 @@ internal static class WrapperEmitter
                 var arrayParams = method.Parameters.Where(p => p.Type is IArrayTypeSymbol).ToList();
                 if (arrayParams.Count > 0)
                 {
-                    var condition = string.Join(" || ", arrayParams.Select(p => $"{p.Name}.Length == 0"));
-                    writer.AppendLine($"if ({condition})");
+                    writer.Append("if ");
+                    using (writer.Parentheses())
+                    {
+                        for (var i = 0; i < arrayParams.Count; i++)
+                        {
+                            if (i > 0)
+                            {
+                                writer.Append(" || ");
+                            }
+
+                            writer.Append(arrayParams[i].Name);
+                            writer.Append(".Length == 0");
+                        }
+                    }
+
                     using (writer.Scope())
                     {
                         writer.AppendLine("return;");
@@ -68,7 +88,8 @@ internal static class WrapperEmitter
                 }
             }
 
-            writer.AppendLine("using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())");
+            writer.AppendLine(
+                "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())");
             using (writer.Scope())
             {
                 WriteKernelCompilationCall(writer, method);
@@ -87,33 +108,53 @@ internal static class WrapperEmitter
                 }
             }
         }
+
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
     private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        var paramList = string.Join(", ", method.Parameters.Select(p =>
+        writer.Append("public static unsafe void Launch_");
+        writer.Append(method.Name);
+        if (isDevicePtr)
         {
-            if (isDevicePtr && p.Type is IArrayTypeSymbol)
-            {
-                return $"IntPtr {p.Name}";
-            }
-
-            return $"{p.Type.ToDisplayString()} {p.Name}";
-        }));
-        if (!string.IsNullOrEmpty(paramList))
-        {
-            paramList += ", ";
+            writer.Append("_Device");
         }
 
-        paramList +=
-            "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null";
-
-        var methodName = isDevicePtr ? $"Launch_{method.Name}_Device" : $"Launch_{method.Name}";
-        writer.Append($"public static unsafe void {methodName}");
         using (writer.Parentheses())
         {
-            writer.Append(paramList);
+            var first = true;
+            foreach (var p in method.Parameters)
+            {
+                if (!first)
+                {
+                    writer.AppendComma();
+                    writer.AppendSpace();
+                }
+
+                if (isDevicePtr && p.Type is IArrayTypeSymbol)
+                {
+                    writer.Append("IntPtr ");
+                    writer.Append(p.Name);
+                }
+                else
+                {
+                    writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                    writer.AppendSpace();
+                    writer.Append(p.Name);
+                }
+
+                first = false;
+            }
+
+            if (!first)
+            {
+                writer.AppendComma();
+                writer.AppendSpace();
+            }
+
+            writer.Append(
+                "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null");
         }
 
         writer.AppendLine();
@@ -133,7 +174,8 @@ internal static class WrapperEmitter
 
         if (hasJitConstants)
         {
-            writer.AppendLine("var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
+            writer.AppendLine(
+                "var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
             foreach (var p in method.Parameters)
             {
                 if (p.HasAttribute(KnownAttributes.JitConstant))
