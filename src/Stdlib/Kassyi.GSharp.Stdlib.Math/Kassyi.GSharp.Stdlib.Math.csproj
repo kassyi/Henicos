@@ -5,7 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
   </PropertyGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="GSharpTargetDialect" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll" Condition="Exists('..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll')">

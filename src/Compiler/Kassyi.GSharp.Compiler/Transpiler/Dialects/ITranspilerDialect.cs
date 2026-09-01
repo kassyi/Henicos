@@ -11,6 +11,9 @@ public interface ITranspilerDialect
     /// <summary>Gets a value indicating whether this dialect targets CUDA, enabling GPU execution tests.</summary>
     bool IsCuda { get; }
 
+    /// <summary>Gets the capabilities (features) supported by this dialect.</summary>
+    DialectCapabilities Capabilities { get; }
+
     /// <summary>Prefix applied to all generated struct definitions (e.g. `__device__ ` for CUDA).</summary>
     string StructPrefix { get; }
 
