@@ -7,6 +7,15 @@ internal static class StructTranspiler
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
+
+        if (structType is INamedTypeSymbol { TypeArguments.Length: > 0 } genericType)
+        {
+            foreach (var typeArg in genericType.TypeArguments)
+            {
+                RegisterUsedStructIfApplicable(typeArg, ref context);
+            }
+        }
+
         if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
             namedStruct.IsGpuBigIntRef() ||
             namedStruct.ContainingNamespace.IsSystemOrNumerics())
@@ -101,15 +110,7 @@ internal static class StructTranspiler
 
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        AttributeData? inlineArrayAttr = null;
-        foreach (var attr in structSym.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "InlineArrayAttribute")
-            {
-                inlineArrayAttr = attr;
-                break;
-            }
-        }
+        var inlineArrayAttr = structSym.GetAttribute("InlineArray");
 
         if (inlineArrayAttr != null)
         {
@@ -314,49 +315,70 @@ internal static class StructTranspiler
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
-            {
-                VariableDeclaratorSyntax? syntax = null;
-                var syntaxRefs = field.DeclaringSyntaxReferences;
-                if (!syntaxRefs.IsEmpty)
                 {
-                    syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
-                }
-
-                ExpressionSyntax? sizeExp = null;
-                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                {
-                    sizeExp = argList.Arguments[0].Expression;
-                }
-
-                if (sizeExp != null)
-                {
-                    context.Writer.AppendType(ptrType.PointedAtType);
-                    context.Writer.AppendSpace();
-                    context.Writer.Append(field.Name);
-                    using (context.Writer.Brackets())
+                    VariableDeclaratorSyntax? syntax = null;
+                    var syntaxRefs = field.DeclaringSyntaxReferences;
+                    if (!syntaxRefs.IsEmpty)
                     {
-                        context.Visitor.Visit(sizeExp);
+                        syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
                     }
 
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
-                }
-                else
-                {
-                    context.Writer.AppendType(ptrType.PointedAtType);
-                    context.Writer.AppendSpace();
-                    context.Writer.Append(field.Name);
-                    context.Writer.AppendLine("; // ERROR: fixed size not found");
-                }
+                    ExpressionSyntax? sizeExp = null;
+                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+                    {
+                        sizeExp = argList.Arguments[0].Expression;
+                    }
 
-                break;
-            }
+                    if (sizeExp != null)
+                    {
+                        context.Writer.AppendType(ptrType.PointedAtType);
+                        context.Writer.AppendSpace();
+                        context.Writer.Append(field.Name);
+                        using (context.Writer.Brackets())
+                        {
+                            context.Visitor.Visit(sizeExp);
+                        }
+
+                        context.Writer.AppendSemiColon();
+                        context.Writer.AppendLine();
+                    }
+                    else
+                    {
+                        context.Writer.AppendType(ptrType.PointedAtType);
+                        context.Writer.AppendSpace();
+                        context.Writer.Append(field.Name);
+                        context.Writer.AppendLine("; // ERROR: fixed size not found");
+                    }
+
+                    break;
+                }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, field.Name, field, ref context);
                 break;
             case IPropertySymbol prop:
                 WriteMemberDeclaration(prop.Type, prop.Name, prop, ref context);
                 break;
+            case IMethodSymbol method:
+                {
+                    if (method.MethodKind != MethodKind.Ordinary || method.IsStatic || method.IsImplicitlyDeclared)
+                    {
+                        break;
+                    }
+
+                    var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
+                    if (syntaxRef?.GetSyntax() is MethodDeclarationSyntax methodSyntax)
+                    {
+                        MethodTranspiler.WriteDeviceMethodPrefix(method, ref context);
+                        context.Writer.AppendSpace();
+                        context.Writer.Append(method.Name);
+                        using (context.Writer.Parentheses())
+                        {
+                            MethodTranspiler.WriteParameters(methodSyntax.ParameterList.Parameters, isDevice: true, ref context);
+                        }
+                        MethodTranspiler.WriteMethodBody(methodSyntax, ref context);
+                    }
+                    break;
+                }
         }
     }
 

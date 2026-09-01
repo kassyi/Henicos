@@ -38,12 +38,6 @@ public class SYN_79_88_MicroModifiersTests
     {
     }
 
-    [Fact(Skip = "未実装: SYN-84 (タプル宣言分解の foreach ループ)")]
-    [Trait("FeatureId", "SYN-84")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN84_ForeachTupleDeconstruction_Transpilation()
-    {
-    }
 
     [Fact(Skip = "未実装: SYN-86 (関数ポインタの呼出規約・GC遷移修飾)")]
     [Trait("FeatureId", "SYN-86")]

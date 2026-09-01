@@ -1,0 +1,3 @@
+M:Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseStatement(System.String,System.Int32,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.Boolean);Don't use ParseStatement. Use MegaCompilationCache.ParseStatement() instead.
+M:Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseExpression(System.String,System.Int32,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.Boolean);Don't use ParseExpression. Use MegaCompilationCache.ParseExpression() instead.
+T:Microsoft.CodeAnalysis.CSharp.SyntaxFactory;SyntaxFactory parsing methods (ParseStatement, ParseExpression) are banned in test project to enforce MegaCompilationCache usage.
