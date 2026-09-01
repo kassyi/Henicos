@@ -18,8 +18,7 @@ cg::this_grid().sync();
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_CooperativePhysicsProcess(int[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-if (data.Length == 0)
-{
+if (data.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
@@ -30,7 +29,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
-int data_size = data.Length * sizeof(global::System.Int32);
+int data_size = data.Length * sizeof(int);
 if(data_size>0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
