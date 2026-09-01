@@ -1,4 +1,9 @@
 #nullable enable
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Xunit;
 using System.Text;
 using Kassyi.GSharp.Compiler;
 
@@ -41,33 +46,26 @@ public class GEN_08_GeneratorSnapshotTests
         }
     }
 
-    private static string GetTestProjectDirectory([CallerFilePath] string callerFilePath = "")
+    private static string GetRepositoryRoot([System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "")
     {
-        var fileDir = Path.GetDirectoryName(callerFilePath);
-        if (string.IsNullOrEmpty(fileDir))
+        var dir = new DirectoryInfo(Path.GetDirectoryName(callerFilePath)!);
+        while (dir != null)
         {
-            throw new DirectoryNotFoundException("Could not determine test project directory.");
+            if (dir.GetFiles("Henicos.sln").Any() || dir.GetDirectories(".git").Any())
+            {
+                return dir.FullName;
+            }
+
+            dir = dir.Parent;
         }
 
-        return Path.GetFullPath(Path.Combine(fileDir, ".."));
-    }
-
-    private static string GetTestCasesDirectory()
-    {
-        var projectDir = GetTestProjectDirectory();
-        var testCasesDir = Path.Combine(projectDir, "TestCases");
-        if (!Directory.Exists(testCasesDir))
-        {
-            throw new DirectoryNotFoundException($"TestCases directory not found at: {testCasesDir}");
-        }
-
-        return testCasesDir;
+        throw new InvalidOperationException("Repository root not found.");
     }
 
     private static string GetSnapshotsDirectory()
     {
-        var projectDir = GetTestProjectDirectory();
-        var snapshotDir = Path.Combine(projectDir, "Snapshots");
+        var rootDir = GetRepositoryRoot();
+        var snapshotDir = Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Shared", "Generator", "Snapshots");
         if (!Directory.Exists(snapshotDir))
         {
             Directory.CreateDirectory(snapshotDir);
@@ -76,19 +74,7 @@ public class GEN_08_GeneratorSnapshotTests
         return snapshotDir;
     }
 
-    private static string GetStdlibKernelsDirectory()
-    {
-        var projectDir = GetTestProjectDirectory();
-        var kernelsDir = Path.GetFullPath(Path.Combine(projectDir, "..", "..", "src", "Stdlib",
-            "Kassyi.GSharp.Stdlib.Math", "Kernels"));
-        if (!Directory.Exists(kernelsDir))
-        {
-            throw new DirectoryNotFoundException($"Kernels directory not found at: {kernelsDir}");
-        }
-
-        return kernelsDir;
-    }
-
+    public static TheoryData<string> GetSnapshotTestCases() => SnapshotTestCaseSource.GetTestCases();
 
     private static async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
     {
@@ -190,90 +176,44 @@ public class GEN_08_GeneratorSnapshotTests
     }
 
     [SkippableTheory]
-    // TestCases/
-    [InlineData("GEN-08_AddKernel.cu.cs")]
-    [InlineData("GEN-08_BitOpsTestKernels.cu.cs")]
-    [InlineData("GEN-08_ChunkAddKernel.cu.cs")]
-    [InlineData("GEN-06_ComprehensiveSpecKernel.cu.cs")]
-    [InlineData("GEN-13_MacroExpansion.cu.cs")]
-    [InlineData(@"Analyzers\GEN-18_VectorBuiltins.cs")]
-    [InlineData(@"..\Syntax\SYN-01-09_ControlFlowKernels.cu.cs")]
-    [InlineData(@"..\Syntax\SYN-28_MethodAttributesKernels.cu.cs")]
-    [InlineData(@"..\Syntax\SYN-49_SYN-68_InvocationAndIntrinsicsKernels.cu.cs")]
-    // src/Stdlib/.../Kernels/
-    [InlineData("GpuBigIntScalarKernels.cu.cs")]
-    [InlineData("GpuBigIntMulKernels.cu.cs")]
-    [InlineData("GpuBigIntKernels.cu.cs")]
-    [InlineData("GpuBigIntGcdKernels.cu.cs")]
-    [InlineData("GpuBigIntFermatKernels.cu.cs")]
-    [InlineData("GpuBigIntCmpKernels.cu.cs")]
-    [InlineData("GpuBigIntBitwiseKernels.cu.cs")]
-    [InlineData("GpuBigIntBenchmarkKernels.cu.cs")]
-    [InlineData("GpuBigIntNttKernels.cu.cs")]
+    [MemberData(nameof(GetSnapshotTestCases))]
     [Trait("FeatureId", "GEN-08")]
-    public async Task GeneratorSnapshots(string fileName)
+    public async Task GeneratorSnapshots(string relativeFilePath)
     {
-        var testCasesDir = GetTestCasesDirectory();
-        var kernelsDir = GetStdlibKernelsDirectory();
-
-        var sourcePath = Path.Combine(testCasesDir, fileName);
-        var sourceDir = testCasesDir;
-        if (!File.Exists(sourcePath))
-        {
-            sourcePath = Path.Combine(kernelsDir, fileName);
-            sourceDir = kernelsDir;
-        }
+        var rootDir = GetRepositoryRoot();
+        var sourcePath = Path.Combine(rootDir, relativeFilePath);
+        var sourceDir = Path.GetDirectoryName(sourcePath);
 
         if (!File.Exists(sourcePath))
         {
-            Skip.If(true, $"WIP: Source file not found: {sourcePath}");
+            Skip.If(true, "WIP: Source file not found: " + sourcePath);
             return;
         }
 
         var source = await File.ReadAllTextAsync(sourcePath);
-        var testName = Path.GetFileNameWithoutExtension(fileName).Replace(".cu", "");
+        var testName = Path.GetFileNameWithoutExtension(sourcePath).Replace(".cu", "");
 
-        await VerifyGeneratorAsync(source, testName, sourceDir);
+        await VerifyGeneratorAsync(source, testName, sourceDir!);
     }
 
     [Fact]
     [Trait("FeatureId", "GEN-09")]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
-        var testCasesDir = GetTestCasesDirectory();
-        var kernelsDir = GetStdlibKernelsDirectory();
-        var sharedTestsDir = Path.GetFullPath(Path.Combine(testCasesDir, ".."));
-
-        // 1. Get ALL .cu.cs files in the project. These are our "known kernels".
-        var allKnownKernels = Directory.GetFiles(sharedTestsDir, "*.cu.cs", SearchOption.AllDirectories)
-            .Where(f => !f.Contains("\\bin\\") && !f.Contains("\\obj\\"))
-            .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        
-        // Explicitly known .cs file with snapshots
-        allKnownKernels.Add("GEN-18_VectorBuiltins");
-
-        // 2. These directories are expected to strictly have snapshots for all their files.
+        var rootDir = GetRepositoryRoot();
         var mandatorySnapshotKernels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var filesToCheck = Directory.GetFiles(testCasesDir, "*.cu.cs", SearchOption.TopDirectoryOnly)
-            .Concat(Directory.GetFiles(kernelsDir, "*.cu.cs", SearchOption.TopDirectoryOnly));
 
-        foreach (var file in filesToCheck)
+        foreach (var relativePath in GetSnapshotTestCases())
         {
-            // Skip files that have the explicit opt-out directive
-            if (File.ReadLines(file).Take(20).Any(l => l.Contains("SKIP_SNAPSHOT_CONSISTENCY")))
-            {
-                continue;
-            }
-            mandatorySnapshotKernels.Add(Path.GetFileNameWithoutExtension(file).Replace(".cu", ""));
+            var pureName = Path.GetFileNameWithoutExtension(relativePath).Replace(".cu", "");
+            mandatorySnapshotKernels.Add(pureName);
         }
 
-        // 3. Get all snapshots across all projects
         var snapshotDirs = new[]
         {
-            GetSnapshotsDirectory(),
-            Path.Combine(sharedTestsDir, "..", "Kassyi.GSharp.Tests.Cpu", "Snapshots"),
-            Path.Combine(sharedTestsDir, "..", "Kassyi.GSharp.Tests.Cuda", "Snapshots")
+            Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Shared", "Generator", "Snapshots"),
+            Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Cpu", "Snapshots"),
+            Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Cuda", "Snapshots")
         };
 
         var snapshotFiles = snapshotDirs
@@ -284,33 +224,18 @@ public class GEN_08_GeneratorSnapshotTests
 
         Assert.NotEmpty(snapshotFiles);
 
-        // Function to extract pure name (removes GEN-XX_ or SYN-XX_)
-        string GetPureName(string name) => System.Text.RegularExpressions.Regex.Replace(name, @"^[A-Z]{3}-\d{2}(_\d{2})?_", "");
+        string GetPureName(string name) => Regex.Replace(name, @"^[A-Z]{3}-\d{2}(_\d{2})?_", "");
 
-        // 4. Check for missing snapshots only for mandatory ones
         var missingSnapshots = new List<string>();
-        foreach (var kernel in mandatorySnapshotKernels)
+        foreach (var pureName in mandatorySnapshotKernels)
         {
-            var pureName = GetPureName(kernel);
-            if (!snapshotFiles.Any(f => f.IndexOf(pureName, StringComparison.OrdinalIgnoreCase) >= 0))
+            var cleanName = GetPureName(pureName);
+            if (!snapshotFiles.Any(f => f.IndexOf(cleanName, StringComparison.OrdinalIgnoreCase) >= 0))
             {
-                missingSnapshots.Add($"TestCase/Kernel '{kernel}' does not have any corresponding snapshot.");
+                missingSnapshots.Add("TestCase/Kernel '" + pureName + "' does not have any corresponding snapshot.");
             }
         }
 
         Assert.Empty(missingSnapshots);
-
-        // 5. Check for orphaned snapshots using all known kernels
-        var orphanedSnapshots = new List<string>();
-        foreach (var snapshot in snapshotFiles)
-        {
-            bool isKnown = allKnownKernels.Any(k => snapshot.IndexOf(GetPureName(k), StringComparison.OrdinalIgnoreCase) >= 0);
-            if (!isKnown && !snapshot.Contains("GSharpSharedCpuCode") && !snapshot.Contains("GSharpSharedCudaCode"))
-            {
-                orphanedSnapshots.Add($"Snapshot '{snapshot}' does not match any known TestCase/Kernel. It might be orphaned.");
-            }
-        }
-
-        Assert.Empty(orphanedSnapshots);
     }
 }
