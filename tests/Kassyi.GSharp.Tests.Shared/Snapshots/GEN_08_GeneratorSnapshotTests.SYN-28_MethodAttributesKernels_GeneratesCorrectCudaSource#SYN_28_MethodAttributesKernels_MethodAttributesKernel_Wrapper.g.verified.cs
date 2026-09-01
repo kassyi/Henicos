@@ -9,131 +9,34 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_28_MethodAttributesKernelsWrapper
 {
-public const string MethodAttributesKernel_Source = @"extern ""C"" __global__ void MethodAttributesKernel(int* __restrict__ input,int* __restrict__ result){
+public const string MethodAttributesKernel_Source = @"extern ""C"" __declspec(dllexport) void MethodAttributesKernel(int* __restrict__ input,int* __restrict__ result){
 int tid=threadIdx.x;
 int sum=InlinedAdd(input[tid],100);
 result[tid]=MultiAttributeMultiply(sum,2);
 }
 ";
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void MethodAttributesKernel_Delegate(int* input, int* result);
 public static unsafe void Launch_MethodAttributesKernel(int[] input, int[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (input.Length == 0 || result.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MethodAttributesKernel_Delegate>("MethodAttributesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MethodAttributesKernel_Source, null, macros);
+var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MethodAttributesKernel_Source, null, macros);
+fixed (int* p_input = input)
+fixed (int* p_result = result)
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MethodAttributesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MethodAttributesKernel_Source, null, macros);
-IntPtr d_input = IntPtr.Zero;
-IntPtr d_result = IntPtr.Zero;
-try
+for (uint bz = 0; bz < gridDimZ; bz++)
+for (uint by = 0; by < gridDimY; by++)
+for (uint bx = 0; bx < gridDimX; bx++)
+for (uint tz = 0; tz < blockDimZ; tz++)
+for (uint ty = 0; ty < blockDimY; ty++)
+for (uint tx = 0; tx < blockDimX; tx++)
 {
-void** kernelParams = stackalloc void*[2];
-// Marshal array: input
-int input_size = input.Length * sizeof(int);
-if(input_size>0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_input, input_size));
-System.Runtime.InteropServices.GCHandle handle_input = System.Runtime.InteropServices.GCHandle.Alloc(input, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_input = handle_input.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_input, p_input, input_size));
-}
-finally
-{
-handle_input.Free();
-}
-}
-kernelParams[0] = &d_input;
-// Marshal array: result
-int result_size = result.Length * sizeof(int);
-if(result_size>0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_result, result_size));
-System.Runtime.InteropServices.GCHandle handle_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_result = handle_result.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_result, p_result, result_size));
-}
-finally
-{
-handle_result.Free();
-}
-}
-kernelParams[1] = &d_result;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: input
-if(input_size>0&&d_input!=IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_input=System.Runtime.InteropServices.GCHandle.Alloc(input,System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_input = handleBack_input.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_input, d_input, input_size));
-}
-finally
-{
-handleBack_input.Free();
-}
-}
-// Copy back array: result
-if(result_size>0&&d_result!=IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_result=System.Runtime.InteropServices.GCHandle.Alloc(result,System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_result = handleBack_result.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_result, d_result, result_size));
-}
-finally
-{
-handleBack_result.Free();
-}
-}
-}
-finally
-{
-if (d_input != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_input);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_result);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MethodAttributesKernel_Device(IntPtr input, IntPtr result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
-{
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MethodAttributesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MethodAttributesKernel_Source, null, macros);
-try
-{
-void** kernelParams = stackalloc void*[2];
-// Marshal device array: input
-kernelParams[0] = &input;
-// Marshal device array: result
-kernelParams[1] = &result;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
+hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+hfunc(p_input, p_result);
 }
 }
 }

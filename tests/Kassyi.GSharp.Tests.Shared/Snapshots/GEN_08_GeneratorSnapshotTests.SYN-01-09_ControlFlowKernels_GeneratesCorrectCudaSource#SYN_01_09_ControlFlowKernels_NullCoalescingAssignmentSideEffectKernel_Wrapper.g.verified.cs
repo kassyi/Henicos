@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __global__ void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray,int* __restrict__ sideEffectTracker,int* __restrict__ values){
+public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray,int* __restrict__ sideEffectTracker,int* __restrict__ values){
 int tid=threadIdx.x;
 int idx=sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
@@ -20,160 +20,29 @@ return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coale
 ();
 }
 ";
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void NullCoalescingAssignmentSideEffectKernel_Delegate(int?* targetArray, int* sideEffectTracker, int* values);
 public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(int?[] targetArray, int[] sideEffectTracker, int[] values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("NullCoalescingAssignmentSideEffectKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
+var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
+fixed (int?* p_targetArray = targetArray)
+fixed (int* p_sideEffectTracker = sideEffectTracker)
+fixed (int* p_values = values)
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingAssignmentSideEffectKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
-IntPtr d_targetArray = IntPtr.Zero;
-IntPtr d_sideEffectTracker = IntPtr.Zero;
-IntPtr d_values = IntPtr.Zero;
-try
+for (uint bz = 0; bz < gridDimZ; bz++)
+for (uint by = 0; by < gridDimY; by++)
+for (uint bx = 0; bx < gridDimX; bx++)
+for (uint tz = 0; tz < blockDimZ; tz++)
+for (uint ty = 0; ty < blockDimY; ty++)
+for (uint tx = 0; tx < blockDimX; tx++)
 {
-void** kernelParams = stackalloc void*[3];
-// Marshal array: targetArray
-int targetArray_size = targetArray.Length * sizeof(int?);
-if(targetArray_size>0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_targetArray, targetArray_size));
-System.Runtime.InteropServices.GCHandle handle_targetArray = System.Runtime.InteropServices.GCHandle.Alloc(targetArray, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_targetArray = handle_targetArray.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_targetArray, p_targetArray, targetArray_size));
-}
-finally
-{
-handle_targetArray.Free();
-}
-}
-kernelParams[0] = &d_targetArray;
-// Marshal array: sideEffectTracker
-int sideEffectTracker_size = sideEffectTracker.Length * sizeof(int);
-if(sideEffectTracker_size>0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_sideEffectTracker, sideEffectTracker_size));
-System.Runtime.InteropServices.GCHandle handle_sideEffectTracker = System.Runtime.InteropServices.GCHandle.Alloc(sideEffectTracker, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_sideEffectTracker = handle_sideEffectTracker.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_sideEffectTracker, p_sideEffectTracker, sideEffectTracker_size));
-}
-finally
-{
-handle_sideEffectTracker.Free();
-}
-}
-kernelParams[1] = &d_sideEffectTracker;
-// Marshal array: values
-int values_size = values.Length * sizeof(int);
-if(values_size>0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_values, values_size));
-System.Runtime.InteropServices.GCHandle handle_values = System.Runtime.InteropServices.GCHandle.Alloc(values, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_values = handle_values.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_values, p_values, values_size));
-}
-finally
-{
-handle_values.Free();
-}
-}
-kernelParams[2] = &d_values;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: targetArray
-if(targetArray_size>0&&d_targetArray!=IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_targetArray=System.Runtime.InteropServices.GCHandle.Alloc(targetArray,System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_targetArray = handleBack_targetArray.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_targetArray, d_targetArray, targetArray_size));
-}
-finally
-{
-handleBack_targetArray.Free();
-}
-}
-// Copy back array: sideEffectTracker
-if(sideEffectTracker_size>0&&d_sideEffectTracker!=IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_sideEffectTracker=System.Runtime.InteropServices.GCHandle.Alloc(sideEffectTracker,System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_sideEffectTracker = handleBack_sideEffectTracker.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_sideEffectTracker, d_sideEffectTracker, sideEffectTracker_size));
-}
-finally
-{
-handleBack_sideEffectTracker.Free();
-}
-}
-// Copy back array: values
-if(values_size>0&&d_values!=IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_values=System.Runtime.InteropServices.GCHandle.Alloc(values,System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_values = handleBack_values.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_values, d_values, values_size));
-}
-finally
-{
-handleBack_values.Free();
-}
-}
-}
-finally
-{
-if (d_targetArray != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_targetArray);
-if (d_sideEffectTracker != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_sideEffectTracker);
-if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_values);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel_Device(IntPtr targetArray, IntPtr sideEffectTracker, IntPtr values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
-{
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingAssignmentSideEffectKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
-try
-{
-void** kernelParams = stackalloc void*[3];
-// Marshal device array: targetArray
-kernelParams[0] = &targetArray;
-// Marshal device array: sideEffectTracker
-kernelParams[1] = &sideEffectTracker;
-// Marshal device array: values
-kernelParams[2] = &values;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
+hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+hfunc(p_targetArray, p_sideEffectTracker, p_values);
 }
 }
 }

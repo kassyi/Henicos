@@ -41,6 +41,7 @@ public class GEN_01_09_GeneratorSadPathTests
     [Trait("Category", "SadPath")]
     [InlineData("GEN-29", "Analyzers/GEN-29_DynamicSharedMemorySadPath.cs")]
     [InlineData("SYN-90", "Analyzers/SYN-90_UnsupportedMethodInStructInit.cs")]
+    [InlineData("GEN-17", "Analyzers/GEN-17_RefOutReassignmentSadPath.cs")]
     public async Task Test_GeneratorSadPath_HasNoErrors(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
@@ -50,7 +51,6 @@ public class GEN_01_09_GeneratorSadPathTests
     [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("GEN-33", "Analyzers/GEN-33_UnsupportedStructFieldsSadPath.cs")]
-    [InlineData("GEN-17", "Analyzers/GEN-17_RefOutReassignmentSadPath.cs")]
     [InlineData("SYN-91_92", "Analyzers/SYN-91_92_InvalidParenthesesSadPath.cs")]
     public async Task Test_GeneratorSadPath_HasErrors(string featureId, string testCasePath)
     {
