@@ -27,6 +27,9 @@ Types:
   ulong: "unsigned long long"
   float: "float"
   double: "double"
+  System.Numerics.Vector2: "float2"
+  System.Numerics.Vector3: "float3"
+  System.Numerics.Vector4: "float4"
 Intrinsics:
   System.Math.Abs(float): "fabsf"
   System.Math.Abs(double): "fabs"
