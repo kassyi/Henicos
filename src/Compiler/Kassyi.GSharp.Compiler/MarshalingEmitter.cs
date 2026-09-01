@@ -9,13 +9,13 @@ internal static class MarshalingEmitter
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
         return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
-               named.ContainingNamespace.Name != "System";
+               !named.ContainingNamespace.IsSystemOrNumerics();
     }
 
     internal static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
-            named.ContainingNamespace.Name == TypeConstants.SystemNamespace)
+            named.ContainingNamespace.IsSystemOrNumerics())
         {
             return;
         }
@@ -99,82 +99,81 @@ internal static class MarshalingEmitter
             writer.AppendLine("();");
             foreach (var member in s.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
             {
-                if (member.Type is IArrayTypeSymbol arrayType)
-                {
-                    writer.AppendLine($"if (host.{member.Name} != null)");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("if (isDevicePtr)");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine(
-                                "throw new System.NotSupportedException(\"Passing a struct with arrays is not supported when isDevicePtr is true.\");");
-                        }
-
-                        writer.AppendLine("else");
-                        using (writer.Scope())
-                        {
-                            if (IsCustomStruct(arrayType.ElementType))
-                            {
-                                writer.Append($"int size = host.{member.Name}.Length * sizeof(__Native_");
-                                writer.AppendFullyQualifiedCppName(arrayType.ElementType);
-                                writer.AppendLine(");");
-                            }
-                            else
-                            {
-                                writer.Append($"int size = host.{member.Name}.Length * sizeof(");
-                                writer.AppendFullyQualifiedCsName(arrayType.ElementType);
-                                writer.AppendLine(");");
-                            }
-
-                            writer.AppendKeyword("if");
-                            using (writer.Parentheses())
-                            {
-                                writer.Append("size");
-                                writer.AppendOperator(">");
-                                writer.Append("0");
-                            }
-
-                            writer.AppendLine();
-                            using (writer.Scope())
-                            {
-                                writer.AppendLine(
-                                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.{member.Name}, size));");
-                                writer.AppendLine($"allocatedPtrs.Add(native.{member.Name});");
-                                writer.AppendLine(
-                                    $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                                writer.AppendLine("try");
-                                using (writer.Scope())
-                                {
-                                    writer.AppendLine(
-                                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.{member.Name}, handle.AddrOfPinnedObject(), size));");
-                                }
-
-                                writer.AppendLine("finally");
-                                using (writer.Scope())
-                                {
-                                    writer.AppendLine("handle.Free();");
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (IsCustomStruct(member.Type))
-                {
-                    writer.Append($"native.{member.Name} = Marshal_");
-                    writer.AppendFullyQualifiedCppName(member.Type);
-                    writer.AppendLine($"(ref host.{member.Name}, isDevicePtr, allocatedPtrs);");
-                }
-                else
-                {
-                    writer.AppendLine($"native.{member.Name} = host.{member.Name};");
-                }
+                WriteMarshalMember(writer, member);
             }
 
             writer.AppendLine("return native;");
         }
 
         writer.AppendLine();
+    }
+
+    private static void WriteMarshalMember(SourceWriter writer, IFieldSymbol member)
+    {
+        if (member.Type is IArrayTypeSymbol arrayType)
+        {
+            WriteMarshalArrayMember(writer, member, arrayType);
+        }
+        else if (IsCustomStruct(member.Type))
+        {
+            writer.Append($"native.{member.Name} = Marshal_");
+            writer.AppendFullyQualifiedCppName(member.Type);
+            writer.AppendLine($"(ref host.{member.Name}, isDevicePtr, allocatedPtrs);");
+        }
+        else
+        {
+            writer.AppendLine($"native.{member.Name} = host.{member.Name};");
+        }
+    }
+
+    private static void WriteMarshalArrayMember(SourceWriter writer, IFieldSymbol member, IArrayTypeSymbol arrayType)
+    {
+        writer.AppendLine($"if (host.{member.Name} != null)");
+        using (writer.Scope())
+        {
+            writer.AppendLine("if (isDevicePtr)");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    "throw new System.NotSupportedException(\"Passing a struct with arrays is not supported when isDevicePtr is true.\");");
+            }
+
+            writer.AppendLine("else");
+            using (writer.Scope())
+            {
+                WriteArrayElementSize(writer, $"host.{member.Name}", arrayType);
+
+                writer.AppendKeyword("if");
+                using (writer.Parentheses())
+                {
+                    writer.Append("size");
+                    writer.AppendOperator(">");
+                    writer.Append("0");
+                }
+
+                writer.AppendLine();
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.{member.Name}, size));");
+                    writer.AppendLine($"allocatedPtrs.Add(native.{member.Name});");
+                    writer.AppendLine(
+                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                    writer.AppendLine("try");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine(
+                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.{member.Name}, handle.AddrOfPinnedObject(), size));");
+                    }
+
+                    writer.AppendLine("finally");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("handle.Free();");
+                    }
+                }
+            }
+        }
     }
 
     private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s)
@@ -190,67 +189,86 @@ internal static class MarshalingEmitter
         {
             foreach (var member in s.GetMembers().OfType<IFieldSymbol>().Where(f => !f.IsStatic))
             {
-                if (member.Type is IArrayTypeSymbol arrayType)
-                {
-                    writer.AppendLine(
-                        $"if (host.{member.Name} != null && !isDevicePtr && native.{member.Name} != IntPtr.Zero)");
-                    using (writer.Scope())
-                    {
-                        if (IsCustomStruct(arrayType.ElementType))
-                        {
-                            writer.Append($"int size = host.{member.Name}.Length * sizeof(__Native_");
-                            writer.AppendFullyQualifiedCppName(arrayType.ElementType);
-                            writer.AppendLine(");");
-                        }
-                        else
-                        {
-                            writer.Append($"int size = host.{member.Name}.Length * sizeof(");
-                            writer.AppendFullyQualifiedCsName(arrayType.ElementType);
-                            writer.AppendLine(");");
-                        }
-
-                        writer.AppendKeyword("if");
-                        using (writer.Parentheses())
-                        {
-                            writer.Append("size");
-                            writer.AppendOperator(">");
-                            writer.Append("0");
-                        }
-
-                        writer.AppendLine();
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine(
-                                $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                            writer.AppendLine("try");
-                            using (writer.Scope())
-                            {
-                                writer.AppendLine(
-                                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.{member.Name}, size));");
-                            }
-
-                            writer.AppendLine("finally");
-                            using (writer.Scope())
-                            {
-                                writer.AppendLine("handle.Free();");
-                            }
-                        }
-                    }
-                }
-                else if (IsCustomStruct(member.Type))
-                {
-                    writer.Append("Unmarshal_");
-                    writer.AppendFullyQualifiedCppName(member.Type);
-                    writer.AppendLine($"(ref host.{member.Name}, ref native.{member.Name}, isDevicePtr);");
-                }
-                else
-                {
-                    writer.AppendLine($"host.{member.Name} = native.{member.Name};");
-                }
+                WriteUnmarshalMember(writer, member);
             }
         }
 
         writer.AppendLine();
+    }
+
+    private static void WriteUnmarshalMember(SourceWriter writer, IFieldSymbol member)
+    {
+        if (member.Type is IArrayTypeSymbol arrayType)
+        {
+            WriteUnmarshalArrayMember(writer, member, arrayType);
+        }
+        else if (IsCustomStruct(member.Type))
+        {
+            writer.Append("Unmarshal_");
+            writer.AppendFullyQualifiedCppName(member.Type);
+            writer.AppendLine($"(ref host.{member.Name}, ref native.{member.Name}, isDevicePtr);");
+        }
+        else
+        {
+            writer.AppendLine($"host.{member.Name} = native.{member.Name};");
+        }
+    }
+
+    private static void WriteUnmarshalArrayMember(SourceWriter writer, IFieldSymbol member, IArrayTypeSymbol arrayType)
+    {
+        writer.AppendLine(
+            $"if (host.{member.Name} != null && !isDevicePtr && native.{member.Name} != IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            WriteArrayElementSize(writer, $"host.{member.Name}", arrayType);
+
+            writer.AppendKeyword("if");
+            using (writer.Parentheses())
+            {
+                writer.Append("size");
+                writer.AppendOperator(">");
+                writer.Append("0");
+            }
+
+            writer.AppendLine();
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                writer.AppendLine("try");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(
+                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.{member.Name}, size));");
+                }
+
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    writer.AppendLine("handle.Free();");
+                }
+            }
+        }
+    }
+
+    private static void WriteArrayElementSize(SourceWriter writer, string hostMemberExpr, IArrayTypeSymbol arrayType)
+    {
+        if (IsCustomStruct(arrayType.ElementType))
+        {
+            writer.Append("int size = ");
+            writer.Append(hostMemberExpr);
+            writer.Append(".Length * sizeof(__Native_");
+            writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+            writer.AppendLine(");");
+        }
+        else
+        {
+            writer.Append("int size = ");
+            writer.Append(hostMemberExpr);
+            writer.Append(".Length * sizeof(");
+            writer.AppendFullyQualifiedCsName(arrayType.ElementType);
+            writer.AppendLine(");");
+        }
     }
 
     internal static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
