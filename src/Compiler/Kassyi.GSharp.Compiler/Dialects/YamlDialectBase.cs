@@ -15,6 +15,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
     public virtual IEnumerable<string> RequiredHeaders => Enumerable.Empty<string>();
     public virtual string StructPrefix => string.Empty;
     public virtual string MethodPrefix => string.Empty;
+    public virtual bool IsCuda => this.GetType().Name.Contains("Cuda");
 
     public virtual void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {

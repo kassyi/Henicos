@@ -8,6 +8,9 @@ public interface ITranspilerDialect
     /// <summary>Headers required for the generated C++ file.</summary>
     IEnumerable<string> RequiredHeaders { get; }
 
+    /// <summary>Gets a value indicating whether this dialect targets CUDA, enabling GPU execution tests.</summary>
+    bool IsCuda { get; }
+
     /// <summary>Prefix applied to all generated struct definitions (e.g. `__device__ ` for CUDA).</summary>
     string StructPrefix { get; }
 
