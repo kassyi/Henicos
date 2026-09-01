@@ -30,7 +30,9 @@ public static class RoslynTestUtility
     public static Compilation CreateCompilation(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+#pragma warning disable RS0030
         var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+#pragma warning restore RS0030
 
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
     }
