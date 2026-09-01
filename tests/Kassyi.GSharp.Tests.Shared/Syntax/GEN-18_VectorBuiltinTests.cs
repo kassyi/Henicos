@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class GEN_18_VectorBuiltinTests
 :  TranspilerTestBase{
-    [Theory]
+    [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]
     [InlineData(0)]
@@ -34,7 +34,7 @@ public class GEN_18_VectorBuiltinTests
         }
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]
     [InlineData(0)]
@@ -65,7 +65,7 @@ public class GEN_18_VectorBuiltinTests
         }
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]
     [InlineData(0)]
