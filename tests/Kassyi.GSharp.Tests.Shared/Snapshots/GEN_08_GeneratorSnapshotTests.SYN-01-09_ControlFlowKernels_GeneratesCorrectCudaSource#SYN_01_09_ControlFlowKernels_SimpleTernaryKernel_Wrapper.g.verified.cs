@@ -14,11 +14,6 @@ int tid=threadIdx.x;
 result[tid]=(a[tid]>b[tid] ? a[tid] : b[tid]*1.5);
 }
 ";
-public const string SimpleTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void SimpleTernaryKernel(int* __restrict__ a,int* __restrict__ b,double* __restrict__ result){
-int tid=threadIdx.x;
-result[tid]=(a[tid]>b[tid] ? a[tid] : b[tid]*1.5);
-}
-";
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_SimpleTernaryKernel(int[] a, int[] b, double[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
@@ -173,33 +168,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500
-[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void SimpleTernaryKernel_Delegate(int* a, int* b, double* result);
-public static unsafe void Launch_SimpleTernaryKernel_Cpu(int[] a, int[] b, double[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
-{
-if (a.Length == 0 || b.Length == 0 || result.Length == 0){
-return;
-}
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SimpleTernaryKernel_Delegate>("SimpleTernaryKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SimpleTernaryKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SimpleTernaryKernel_Source, null, macros);
-fixed (int* p_a = a)
-fixed (int* p_b = b)
-fixed (double* p_result = result)
-{
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_a, p_b, p_result);
 }
 }
 }

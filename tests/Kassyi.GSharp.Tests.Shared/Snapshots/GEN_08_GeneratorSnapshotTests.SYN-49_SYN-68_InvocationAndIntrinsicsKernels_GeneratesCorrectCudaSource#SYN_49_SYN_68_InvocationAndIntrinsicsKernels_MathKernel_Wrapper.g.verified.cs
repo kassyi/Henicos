@@ -27,24 +27,6 @@ floatOutputs[4]=fminf(fVal,5.0f);
 floatOutputs[5]=fabsf(fVal);
 }
 ";
-public const string MathKernel_Source = @"extern ""C"" __declspec(dllexport) void MathKernel(double* __restrict__ doubleInputs,double* __restrict__ doubleOutputs,float* __restrict__ floatInputs,float* __restrict__ floatOutputs){
-int tid=threadIdx.x;
-double dVal=doubleInputs[tid];
-doubleOutputs[0]=sin(dVal);
-doubleOutputs[1]=cos(dVal);
-doubleOutputs[2]=__gsharp_clamp(dVal,0.0,10.0);
-doubleOutputs[3]=fmax(dVal,5.0);
-doubleOutputs[4]=fmin(dVal,5.0);
-doubleOutputs[5]=fabs(dVal);
-float fVal=floatInputs[tid];
-floatOutputs[0]=sinf(fVal);
-floatOutputs[1]=cosf(fVal);
-floatOutputs[2]=__gsharp_clamp(fVal,0.0f,10.0f);
-floatOutputs[3]=fmaxf(fVal,5.0f);
-floatOutputs[4]=fminf(fVal,5.0f);
-floatOutputs[5]=fabsf(fVal);
-}
-";
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MathKernel(double[] doubleInputs, double[] doubleOutputs, float[] floatInputs, float[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
@@ -234,34 +216,6 @@ IntPtr.Zero // Extra
 }
 finally
 {
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500
-[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MathKernel_Delegate(double* doubleInputs, double* doubleOutputs, float* floatInputs, float* floatOutputs);
-public static unsafe void Launch_MathKernel_Cpu(double[] doubleInputs, double[] doubleOutputs, float[] floatInputs, float[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
-{
-if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
-return;
-}
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathKernel_Delegate>("MathKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MathKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MathKernel_Source, null, macros);
-fixed (double* p_doubleInputs = doubleInputs)
-fixed (double* p_doubleOutputs = doubleOutputs)
-fixed (float* p_floatInputs = floatInputs)
-fixed (float* p_floatOutputs = floatOutputs)
-{
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_doubleInputs, p_doubleOutputs, p_floatInputs, p_floatOutputs);
 }
 }
 }
