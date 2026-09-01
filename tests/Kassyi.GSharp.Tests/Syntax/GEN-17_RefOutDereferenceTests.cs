@@ -34,7 +34,7 @@ public partial class GEN_17_RefOutDereferenceTests
     [GeneratedRegex(@"\(\*refArg\)\.Field\s*=\s*5;")]
     private static partial Regex RefArgFieldRegex();
 
-    [GeneratedRegex(@"\(\*a\)\s*=\s*\(?\s*\(\*b\)\s*=\s*\(?\s*\(\*refArg\)\s*=\s*10\s*\)?\s*\)?;")]
+    [GeneratedRegex(@"\(\*a\)\s*=\s*\(\*b\)\s*=\s*\(\*refArg\)\s*=\s*10;")]
     private static partial Regex ChainedRefRegex();
 
     [Fact]
