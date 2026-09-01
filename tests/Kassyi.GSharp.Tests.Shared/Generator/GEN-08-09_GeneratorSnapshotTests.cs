@@ -79,7 +79,7 @@ public class GEN_08_GeneratorSnapshotTests
     private static async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
     {
 #pragma warning disable RS0030
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var syntaxTrees = new List<SyntaxTree>();
         syntaxTrees.Add(CSharpSyntaxTree.ParseText(source, options: parseOptions, path: $"{testName}.cs"));
 
@@ -146,7 +146,7 @@ public class GEN_08_GeneratorSnapshotTests
         if (errors.Any())
         {
             var errorMessages = string.Join(Environment.NewLine, errors.Select(e => e.ToString()));
-            Skip.If(true, $"WIP: C# Compilation failed with errors:\n{errorMessages}");
+            Assert.Fail($"C# Compilation failed with errors:\n{errorMessages}");
         }
 
         var generator = new GpuKernelGenerator();
@@ -186,7 +186,7 @@ public class GEN_08_GeneratorSnapshotTests
 
         if (!File.Exists(sourcePath))
         {
-            Skip.If(true, "WIP: Source file not found: " + sourcePath);
+            Assert.Fail("Source file not found: " + sourcePath);
             return;
         }
 
