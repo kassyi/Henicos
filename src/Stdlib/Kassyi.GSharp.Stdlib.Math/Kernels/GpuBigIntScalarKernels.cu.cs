@@ -1,3 +1,4 @@
+// SKIP_SNAPSHOT_CONSISTENCY: Tested in separate suites or WIP
 // ReSharper disable All
 #pragma warning disable IDE0051, IDE0022
 

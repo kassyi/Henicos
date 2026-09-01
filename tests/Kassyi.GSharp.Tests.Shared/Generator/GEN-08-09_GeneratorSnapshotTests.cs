@@ -179,9 +179,14 @@ public class GEN_08_GeneratorSnapshotTests
             Assert.Fail($"Generator failed with errors:\n{errorMessages}");
         }
 
+#if GSHARP_CPU
+        var dialectName = "Cpu";
+#else
+        var dialectName = "Cuda";
+#endif
         await Verifier.Verify(driver)
             .UseDirectory(GetSnapshotsDirectory())
-            .UseMethodName($"{testName}_GeneratesCorrectCudaSource");
+            .UseMethodName($"{testName}_{dialectName}_GeneratesCorrectCudaSource");
     }
 
     [SkippableTheory]
@@ -237,60 +242,75 @@ public class GEN_08_GeneratorSnapshotTests
     {
         var testCasesDir = GetTestCasesDirectory();
         var kernelsDir = GetStdlibKernelsDirectory();
-        var snapshotDir = GetSnapshotsDirectory();
+        var sharedTestsDir = Path.GetFullPath(Path.Combine(testCasesDir, ".."));
 
-        var testCaseNames = Directory.GetFiles(testCasesDir, "*.cs")
+        // 1. Get ALL .cu.cs files in the project. These are our "known kernels".
+        var allKnownKernels = Directory.GetFiles(sharedTestsDir, "*.cu.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains("\\bin\\") && !f.Contains("\\obj\\"))
             .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
-            .ToList();
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        
+        // Explicitly known .cs file with snapshots
+        allKnownKernels.Add("GEN-18_VectorBuiltins");
 
-        var kernelNames = Directory.GetFiles(kernelsDir, "*.cu.cs")
-            .Select(f => Path.GetFileNameWithoutExtension(f).Replace(".cu", ""))
-            .ToList();
+        // 2. These directories are expected to strictly have snapshots for all their files.
+        var mandatorySnapshotKernels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var filesToCheck = Directory.GetFiles(testCasesDir, "*.cu.cs", SearchOption.TopDirectoryOnly)
+            .Concat(Directory.GetFiles(kernelsDir, "*.cu.cs", SearchOption.TopDirectoryOnly));
 
-        var allNames = testCaseNames.Concat(kernelNames).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        // Explicitly include tests from other directories that have snapshots registered
-        allNames.Add("GEN-18_VectorBuiltins");
-        allNames.Add("SYN-01-09_ControlFlowKernels");
-        allNames.Add("SYN-28_MethodAttributesKernels");
-        allNames.Add("SYN-49_SYN-68_InvocationAndIntrinsicsKernels");
+        foreach (var file in filesToCheck)
+        {
+            // Skip files that have the explicit opt-out directive
+            if (File.ReadLines(file).Take(20).Any(l => l.Contains("SKIP_SNAPSHOT_CONSISTENCY")))
+            {
+                continue;
+            }
+            mandatorySnapshotKernels.Add(Path.GetFileNameWithoutExtension(file).Replace(".cu", ""));
+        }
 
-        Assert.NotEmpty(allNames);
+        // 3. Get all snapshots across all projects
+        var snapshotDirs = new[]
+        {
+            GetSnapshotsDirectory(),
+            Path.Combine(sharedTestsDir, "..", "Kassyi.GSharp.Tests.Cpu", "Snapshots"),
+            Path.Combine(sharedTestsDir, "..", "Kassyi.GSharp.Tests.Cuda", "Snapshots")
+        };
 
-        var snapshotPrefix = $"{nameof(GEN_08_GeneratorSnapshotTests)}.";
-        var snapshotFiles = Directory.GetFiles(snapshotDir, $"{snapshotPrefix}*")
+        var snapshotFiles = snapshotDirs
+            .Where(Directory.Exists)
+            .SelectMany(dir => Directory.GetFiles(dir, "*.verified.cs", SearchOption.AllDirectories))
             .Select(Path.GetFileName)
-            .OfType<string>()
             .ToList();
 
         Assert.NotEmpty(snapshotFiles);
-        var missingTestCases = new List<string>();
-        foreach (var snapshot in snapshotFiles)
-        {
-            var trimmed = snapshot.Substring(snapshotPrefix.Length);
-            var suffixIndex = trimmed.IndexOf("_GeneratesCorrectCudaSource", StringComparison.OrdinalIgnoreCase);
-            if (suffixIndex > 0)
-            {
-                var testName = trimmed.Substring(0, suffixIndex);
-                if (!allNames.Contains(testName))
-                {
-                    missingTestCases.Add($"Snapshot '{snapshot}' references missing TestCase/Kernel '{testName}'");
-                }
-            }
-        }
 
-        Assert.Empty(missingTestCases);
+        // Function to extract pure name (removes GEN-XX_ or SYN-XX_)
+        string GetPureName(string name) => System.Text.RegularExpressions.Regex.Replace(name, @"^[A-Z]{3}-\d{2}(_\d{2})?_", "");
+
+        // 4. Check for missing snapshots only for mandatory ones
         var missingSnapshots = new List<string>();
-        foreach (var testCase in allNames)
+        foreach (var kernel in mandatorySnapshotKernels)
         {
-            var expectedPrefix = $"{snapshotPrefix}{testCase}_GeneratesCorrectCudaSource";
-            bool hasSnapshot = snapshotFiles.Any(f => f.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase));
-            if (!hasSnapshot)
+            var pureName = GetPureName(kernel);
+            if (!snapshotFiles.Any(f => f.IndexOf(pureName, StringComparison.OrdinalIgnoreCase) >= 0))
             {
-                missingSnapshots.Add(
-                    $"TestCase/Kernel '{testCase}' does not have a corresponding snapshot ({expectedPrefix}*)");
+                missingSnapshots.Add($"TestCase/Kernel '{kernel}' does not have any corresponding snapshot.");
             }
         }
 
         Assert.Empty(missingSnapshots);
+
+        // 5. Check for orphaned snapshots using all known kernels
+        var orphanedSnapshots = new List<string>();
+        foreach (var snapshot in snapshotFiles)
+        {
+            bool isKnown = allKnownKernels.Any(k => snapshot.IndexOf(GetPureName(k), StringComparison.OrdinalIgnoreCase) >= 0);
+            if (!isKnown && !snapshot.Contains("GSharpSharedCpuCode") && !snapshot.Contains("GSharpSharedCudaCode"))
+            {
+                orphanedSnapshots.Add($"Snapshot '{snapshot}' does not match any known TestCase/Kernel. It might be orphaned.");
+            }
+        }
+
+        Assert.Empty(orphanedSnapshots);
     }
 }

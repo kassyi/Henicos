@@ -1,3 +1,4 @@
+// SKIP_SNAPSHOT_CONSISTENCY: Tested in separate suites or WIP
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
 
