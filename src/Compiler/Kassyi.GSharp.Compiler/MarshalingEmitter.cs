@@ -334,8 +334,8 @@ internal static class MarshalingEmitter
                     writer.AppendLine(" = IntPtr.Zero;");
                 }
             }
-            else if (!isDevicePtr &&
-                     (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
+            else if ((!isDevicePtr && p.Type is IArrayTypeSymbol) || 
+                     p.RefKind is RefKind.Ref or RefKind.Out)
             {
                 writer.Append("IntPtr d_");
                 writer.Append(p.Name);

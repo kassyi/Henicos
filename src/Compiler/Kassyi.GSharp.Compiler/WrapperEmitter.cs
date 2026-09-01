@@ -146,6 +146,15 @@ internal static class WrapperEmitter
                 }
                 else
                 {
+                    if (p.RefKind == RefKind.Ref)
+                    {
+                        writer.Append("ref ");
+                    }
+                    else if (p.RefKind == RefKind.Out)
+                    {
+                        writer.Append("out ");
+                    }
+                    
                     writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                     writer.AppendSpace();
                     writer.Append(p.Name);
@@ -244,6 +253,10 @@ internal static class WrapperEmitter
                 else
                 {
                     writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                    if (p.RefKind is RefKind.Ref or RefKind.Out)
+                    {
+                        writer.Append("*");
+                    }
                     writer.AppendSpace();
                     writer.Append(p.Name);
                 }
@@ -315,8 +328,17 @@ internal static class WrapperEmitter
             writer.AppendLine(", macros);");
             
             // Generate fixed blocks
-            if (arrayParams.Count > 0)
+            var refOutParams = method.Parameters.Where(p => p.RefKind is RefKind.Ref or RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
+            if (arrayParams.Count > 0 || refOutParams.Count > 0)
             {
+                foreach (var p in refOutParams)
+                {
+                    if (p.RefKind == RefKind.Out)
+                    {
+                        writer.Append(p.Name);
+                        writer.AppendLine(" = default;");
+                    }
+                }
                 foreach (var p in arrayParams)
                 {
                     writer.Append("fixed (");
@@ -324,6 +346,16 @@ internal static class WrapperEmitter
                     writer.Append("* p_");
                     writer.Append(p.Name);
                     writer.Append(" = ");
+                    writer.Append(p.Name);
+                    writer.AppendLine(")");
+                }
+                foreach (var p in refOutParams)
+                {
+                    writer.Append("fixed (");
+                    writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                    writer.Append("* p_");
+                    writer.Append(p.Name);
+                    writer.Append(" = &");
                     writer.Append(p.Name);
                     writer.AppendLine(")");
                 }
@@ -364,7 +396,7 @@ internal static class WrapperEmitter
                         writer.AppendSpace();
                     }
                     
-                    if (p.Type is IArrayTypeSymbol)
+                    if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
                     {
                         writer.Append("p_");
                         writer.Append(p.Name);

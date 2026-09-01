@@ -217,7 +217,7 @@ public class FermatRunner
 
         // Dispatch to GSharp JIT
         GpuBigIntFermatKernelsWrapper.Launch_Kernel_StaticFermatLoop(
-            _context,
+            ref _context,
             E.ToString(),
             (E - 4).ToString(),
             gridDimX: (uint)_maxGrid,
@@ -246,7 +246,7 @@ public class FermatRunner
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
         GpuBigIntBenchmarkKernelsWrapper.Launch_Kernel_BenchmarkSquareChunk(
-            _context,
+            ref _context,
             chunkSize,
             gridDimX: (uint)_maxGrid,
             blockDimX: (uint)_maxBlock,
