@@ -1,7 +1,7 @@
-// SKIP_SNAPSHOT_CONSISTENCY: Tested in separate suites or WIP
 // ReSharper disable All
 namespace Kassyi.GSharp.Stdlib.Math.Kernels;
 
+[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntBenchmarkKernels
 {
     [GpuKernel(Cooperative = true)]

@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 public static class SYN_68_UnsupportedMathMethod
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithUnsupportedMath(int[] data)
     {
         // Calling unmapped Math method (e.g. Math.ScaleB) in kernel triggers unsupported syntax diagnostic

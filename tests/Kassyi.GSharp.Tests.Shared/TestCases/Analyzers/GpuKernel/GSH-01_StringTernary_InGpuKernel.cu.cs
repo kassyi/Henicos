@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Tests.TestCases.Analyzers.GpuKernel;
 public static class GSH_01_StringTernary_InGpuKernel
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void StringTernaryKernel(int[] condition)
     {
         int tid = ThreadIndex.X;

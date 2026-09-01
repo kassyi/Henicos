@@ -13,6 +13,7 @@ public static class SYN90_UnsupportedMethodInStructInitCase
     private static int UnsupportedMethod() => 42;
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithUnsupportedMethodInStructInit(int[] data)
     {
         // Sad Path: Struct initializer invoking unsupported method

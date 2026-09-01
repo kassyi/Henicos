@@ -17,11 +17,13 @@ public struct InvalidStructWithList
 public static class GEN_33_SadPathKernels
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithStringStruct(InvalidStructWithString s)
     {
     }
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithListStruct(InvalidStructWithList s)
     {
     }

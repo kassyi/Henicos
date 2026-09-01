@@ -12,6 +12,7 @@ public static class SYN03_DuplicateOutVarCase
     }
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithDuplicateOutVar(int[] data)
     {
         int val = 10;

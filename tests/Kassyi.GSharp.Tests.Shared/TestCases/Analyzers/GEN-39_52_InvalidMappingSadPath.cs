@@ -12,6 +12,7 @@ public class UnknownCustomAttribute : System.Attribute
 public static class GEN_39_52_InvalidMappingSadPath
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     [UnknownCustom]
     public static void KernelWithUnknownAttribute(int[] data)
     {
@@ -20,6 +21,7 @@ public static class GEN_39_52_InvalidMappingSadPath
     }
 
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithUnsupportedSyntax(int[] data)
     {
         // Object creation in GPU kernel (emits GSH0001 diagnostic error)

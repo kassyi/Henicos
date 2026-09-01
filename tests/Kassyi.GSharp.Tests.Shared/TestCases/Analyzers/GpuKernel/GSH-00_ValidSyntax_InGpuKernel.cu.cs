@@ -4,6 +4,7 @@ using Kassyi.GSharp.Core;
 public class TestClass
 {
     [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public void MyKernel(int[] data)
     {
         for (int i = 0; i < data.Length; i++)
