@@ -1,30 +1,18 @@
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Kassyi.GSharp.Tests.Helpers;
-using Microsoft.CodeAnalysis;
 
 namespace Kassyi.GSharp.Tests.Generator;
 
 public class GEN_33_NativeStructGenerationTests
 {
-    private static async Task<string> LoadTestCaseSourceAsync()
-    {
-        var testCasesDir = RoslynTestUtility.GetTestCasesDirectory();
-        var path = Path.Combine(testCasesDir, "Analyzers", "GEN-33_NativeStructGeneration.cs");
-        return await File.ReadAllTextAsync(path);
-    }
-
     [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-33")]
     public async Task Test_GEN33_NativeStructGeneration_ArrayFieldsAndNestedStructs()
     {
-        var source = await LoadTestCaseSourceAsync();
-        var (driver, compilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var driver = await RoslynTestUtility.TestGenerator("Analyzers/GEN-33_NativeStructGeneration.cs")
+                                            .GetDriverAsync();
 
         Assert.NotNull(driver);
-        Assert.NotNull(compilation);
 
         var runResult = driver.GetRunResult();
         var generatedSources = runResult.GeneratedTrees.Select(t => t.ToString()).ToList();
