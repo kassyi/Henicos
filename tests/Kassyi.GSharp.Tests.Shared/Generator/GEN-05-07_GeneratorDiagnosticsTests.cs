@@ -10,7 +10,12 @@ public class GEN_05_GeneratorDiagnosticsTests
         var driver = await RoslynTestUtility.TestGenerator("Generator/GEN-05_SadPathDiagnostics.cu.cs")
                                             .GetDriverAsync();
 
-        await Verifier.Verify(driver).UseMethodName("TestSadPathDiagnostics");
+#if GSHARP_CPU
+        var dialectName = "Cpu";
+#else
+        var dialectName = "Cuda";
+#endif
+        await Verifier.Verify(driver).UseMethodName($"TestSadPathDiagnostics_{dialectName}");
     }
 
     [Fact]
@@ -20,7 +25,12 @@ public class GEN_05_GeneratorDiagnosticsTests
         var driver = await RoslynTestUtility.TestGenerator("GEN-06_ComprehensiveSpecKernel.cu.cs")
                                             .GetDriverAsync();
 
-        await Verifier.Verify(driver).UseMethodName("TestComprehensiveSpecKernelGeneratedSource");
+#if GSHARP_CPU
+        var dialectName = "Cpu";
+#else
+        var dialectName = "Cuda";
+#endif
+        await Verifier.Verify(driver).UseMethodName($"TestComprehensiveSpecKernelGeneratedSource_{dialectName}");
     }
 
     [Fact]
@@ -31,6 +41,11 @@ public class GEN_05_GeneratorDiagnosticsTests
         var driver = await RoslynTestUtility.TestGenerator("Generator/GEN-07_UnsupportedFeatures.cu.cs")
                                             .GetDriverAsync();
 
-        await Verifier.Verify(driver).UseMethodName("Test_UnsupportedFeatures_ReportsDiagnostics");
+#if GSHARP_CPU
+        var dialectName = "Cpu";
+#else
+        var dialectName = "Cuda";
+#endif
+        await Verifier.Verify(driver).UseMethodName($"Test_UnsupportedFeatures_ReportsDiagnostics_{dialectName}");
     }
 }
