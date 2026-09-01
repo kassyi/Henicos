@@ -1,49 +1,38 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class GEN_17_RefOutDereferenceTests
+public struct DummyStruct_GEN17
 {
-    private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(string code, string methodName)
+    public int Field;
+}
+
+public class TestClass_GEN17
+{
+    public static void ModifyRef(ref bool successFlag)
     {
-        var parseOptions = new CSharpParseOptions(LanguageVersion.CSharp11);
-        var syntaxTree = CSharpSyntaxTree.ParseText(code, parseOptions);
-        var compilation = MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
-        var semanticModel = compilation.GetSemanticModel(syntaxTree);
-
-        var root = syntaxTree.GetRoot();
-        var methodDecl = root.DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First(m => m.Identifier.Text == methodName);
-
-        var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: true);
-        return (cudaSource, diagnostics);
+        successFlag = false;
     }
 
+    public static void MemberAccessRef(ref DummyStruct_GEN17 refArg)
+    {
+        refArg.Field = 5;
+    }
+
+    public static void ChainedRefAssignment(ref int refArg, out int a, out int b)
+    {
+        a = b = refArg = 10;
+    }
+}
+
+public class GEN_17_RefOutDereferenceTests
+{
     [Fact]
     [Trait("FeatureId", "GEN-17")]
     [Trait("Category", "Syntax")]
     public void Test_GEN17_RefOutDereferencing_HappyPath_ModifyingRefArgument()
     {
-        const string code = """
-        using Kassyi.GSharp.Core;
-
-        public static class TestClass
-        {
-            [GpuDeviceFunction]
-            public static void ModifyRef(ref bool successFlag)
-            {
-                successFlag = false;
-            }
-        }
-        """;
-
-        var (cudaSource, diagnostics) = TranspileMethod(code, "ModifyRef");
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
 
         Assert.Empty(diagnostics);
         Assert.Contains("(*successFlag)", cudaSource);
@@ -54,35 +43,11 @@ public class GEN_17_RefOutDereferenceTests
     [Trait("Category", "Syntax")]
     public void Test_GEN17_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments()
     {
-        const string code = """
-        using Kassyi.GSharp.Core;
-
-        public struct DummyStruct
-        {
-            public int Field;
-        }
-
-        public static class TestClass
-        {
-            [GpuDeviceFunction]
-            public static void MemberAccessRef(ref DummyStruct refArg)
-            {
-                refArg.Field = 5;
-            }
-
-            [GpuDeviceFunction]
-            public static void ChainedRefAssignment(ref int refArg, out int a, out int b)
-            {
-                a = b = refArg = 10;
-            }
-        }
-        """;
-
-        var (cudaSourceMember, diagnosticsMember) = TranspileMethod(code, "MemberAccessRef");
+        var (cudaSourceMember, diagnosticsMember) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
         Assert.Empty(diagnosticsMember);
         Assert.Contains("(*refArg).Field", cudaSourceMember);
 
-        var (cudaSourceChained, diagnosticsChained) = TranspileMethod(code, "ChainedRefAssignment");
+        var (cudaSourceChained, diagnosticsChained) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
         Assert.Empty(diagnosticsChained);
         Assert.Contains("(*refArg)", cudaSourceChained);
         Assert.Contains("(*a)", cudaSourceChained);
