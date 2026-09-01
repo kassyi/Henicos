@@ -1,5 +1,4 @@
 using System.Text;
-using Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Compiler;
