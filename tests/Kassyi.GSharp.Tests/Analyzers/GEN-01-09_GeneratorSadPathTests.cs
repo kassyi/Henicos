@@ -3,7 +3,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Analyzers;
 
-public class GeneratorSadPathTests
+public class GEN_01_09_GeneratorSadPathTests
 {
     [Theory]
     [Trait("Category", "SadPath")]

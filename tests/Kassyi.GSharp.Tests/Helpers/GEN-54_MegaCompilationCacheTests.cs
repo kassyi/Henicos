@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Helpers;
 
-public class MegaCompilationCacheTests
+public class GEN_54_MegaCompilationCacheTests
 {
     [Fact]
     [Trait("Category", "Stress")]

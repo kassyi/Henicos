@@ -75,31 +75,6 @@ public class LoggerTests
     }
 
     [Fact]
-    [Trait("FeatureId", "GEN-04")]
-    public async Task MeasureScope_ShouldLogDuration()
-    {
-        Logger.ActiveLogLevel = LogLevel.Trace;
-
-        using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", LogLevel.Info))
-        {
-            await Task.Delay(10);
-        }
-
-        var marker = $"Marker-{Guid.NewGuid()}";
-        // Cannot use logger because we need it to use the static Log internally maybe?
-        // Wait, we can just use the static Logger method indirectly or create a new logger.
-        var logger = new TestLogger();
-        logger.LogInformation(marker);
-
-        var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker));
-
-        Assert.Contains("[Start Scope] TestOperation", content);
-        Assert.Contains("[End Scope] TestOperation took", content);
-        Assert.Contains("ms", content);
-    }
-
-    [Fact]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
@@ -182,5 +157,30 @@ public class LoggerTests
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
         var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker));
         Assert.DoesNotContain(uniqueGuid, content);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GEN-04")]
+    public async Task MeasureScope_ShouldLogDuration()
+    {
+        Logger.ActiveLogLevel = LogLevel.Trace;
+
+        using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", LogLevel.Info))
+        {
+            await Task.Delay(10);
+        }
+
+        var marker = $"Marker-{Guid.NewGuid()}";
+        // Cannot use logger because we need it to use the static Log internally maybe?
+        // Wait, we can just use the static Logger method indirectly or create a new logger.
+        var logger = new TestLogger();
+        logger.LogInformation(marker);
+
+        var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker));
+
+        Assert.Contains("[Start Scope] TestOperation", content);
+        Assert.Contains("[End Scope] TestOperation took", content);
+        Assert.Contains("ms", content);
     }
 }
