@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
@@ -31,8 +32,14 @@ public class TestClass_SYN90
     }
 }
 
-public class SYN_90_StructAggregateInitTests
+public partial class SYN_90_StructAggregateInitTests
 {
+    [GeneratedRegex(@"MyStruct_SYN90\s+_tmp\{\};\s*_tmp\.A\s*=\s*1;\s*_tmp\.B\s*=\s*2;")]
+    private static partial Regex MyStructInitRegex();
+
+    [GeneratedRegex(@"AStruct_SYN90\s+_tmp\{\};\s*_tmp\.B\s*=\s*\(\[\&\]\(\)\s*\{[\s\S]*?BStruct_SYN90\s+_tmp\{\};\s*_tmp\.X\s*=\s*1;\s*return\s*_tmp;\s*\}")]
+    private static partial Regex NestedStructInitRegex();
+
     [Fact]
     [Trait("FeatureId", "SYN-90")]
     [Trait("Category", "Syntax")]
@@ -41,9 +48,7 @@ public class SYN_90_StructAggregateInitTests
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
 
         Assert.Empty(diagnostics);
-        Assert.Contains("MyStruct_SYN90 _tmp", cudaSource);
-        Assert.Contains("_tmp.A = 1;", cudaSource);
-        Assert.Contains("_tmp.B = 2;", cudaSource);
+        Assert.Matches(MyStructInitRegex(), cudaSource);
     }
 
     [Fact]
@@ -54,10 +59,7 @@ public class SYN_90_StructAggregateInitTests
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
 
         Assert.Empty(diagnostics);
-        Assert.Contains("AStruct_SYN90 _tmp", cudaSource);
-        Assert.Contains("_tmp.B =", cudaSource);
-        Assert.Contains("BStruct_SYN90 _tmp", cudaSource);
-        Assert.Contains("_tmp.X = 1;", cudaSource);
+        Assert.Matches(NestedStructInitRegex(), cudaSource);
     }
 }
 

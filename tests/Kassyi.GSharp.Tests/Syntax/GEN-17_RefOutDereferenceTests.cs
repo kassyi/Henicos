@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
@@ -25,8 +26,17 @@ public class TestClass_GEN17
     }
 }
 
-public class GEN_17_RefOutDereferenceTests
+public partial class GEN_17_RefOutDereferenceTests
 {
+    [GeneratedRegex(@"\(\*successFlag\)\s*=\s*false;")]
+    private static partial Regex SuccessFlagRegex();
+
+    [GeneratedRegex(@"\(\*refArg\)\.Field\s*=\s*5;")]
+    private static partial Regex RefArgFieldRegex();
+
+    [GeneratedRegex(@"\(\*a\)\s*=\s*\(?\s*\(\*b\)\s*=\s*\(?\s*\(\*refArg\)\s*=\s*10\s*\)?\s*\)?;")]
+    private static partial Regex ChainedRefRegex();
+
     [Fact]
     [Trait("FeatureId", "GEN-17")]
     [Trait("Category", "Syntax")]
@@ -35,7 +45,7 @@ public class GEN_17_RefOutDereferenceTests
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
 
         Assert.Empty(diagnostics);
-        Assert.Contains("(*successFlag)", cudaSource);
+        Assert.Matches(SuccessFlagRegex(), cudaSource);
     }
 
     [Fact]
@@ -45,12 +55,10 @@ public class GEN_17_RefOutDereferenceTests
     {
         var (cudaSourceMember, diagnosticsMember) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
         Assert.Empty(diagnosticsMember);
-        Assert.Contains("(*refArg).Field", cudaSourceMember);
+        Assert.Matches(RefArgFieldRegex(), cudaSourceMember);
 
         var (cudaSourceChained, diagnosticsChained) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
         Assert.Empty(diagnosticsChained);
-        Assert.Contains("(*refArg)", cudaSourceChained);
-        Assert.Contains("(*a)", cudaSourceChained);
-        Assert.Contains("(*b)", cudaSourceChained);
+        Assert.Matches(ChainedRefRegex(), cudaSourceChained);
     }
 }
