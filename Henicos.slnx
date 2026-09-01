@@ -11,5 +11,6 @@
     <Project Path="tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj" />
     <Project Path="tests/Kassyi.GSharp.Stdlib.Math.Tests/Kassyi.GSharp.Stdlib.Math.Tests.csproj" />
+    <Project Path="tests/Kassyi.GSharp.Tests.Generators/Kassyi.GSharp.Tests.Generators.csproj" />
   </Folder>
 </Solution>
