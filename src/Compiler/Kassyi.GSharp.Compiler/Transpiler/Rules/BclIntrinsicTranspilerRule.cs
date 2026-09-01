@@ -19,8 +19,21 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
         context.Writer.Append(mappingInfo.CudaIntrinsicName);
         using (context.Writer.Parentheses())
         {
+            bool isFirst = true;
+
+            if (!symbol.IsStatic && node.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                context.Visitor.Visit(memberAccess.Expression);
+                isFirst = false;
+            }
+
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
             {
+                if (!isFirst)
+                {
+                    context.Writer.AppendComma();
+                }
+
                 if (i == 0 && mappingInfo.CastFirstArgumentTo != null)
                 {
                     using (context.Writer.Parentheses())
@@ -36,10 +49,7 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                     context.Visitor.Visit(node.ArgumentList.Arguments[i]);
                 }
 
-                if (i < node.ArgumentList.Arguments.Count - 1)
-                {
-                    context.Writer.AppendComma();
-                }
+                isFirst = false;
             }
         }
 

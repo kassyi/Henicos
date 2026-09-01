@@ -132,6 +132,18 @@ public static class Gpu
     public static void SyncGrid() => GpuOnlyException.Throw();
 
     /// <summary>
+    /// Shuffles a value across threads in a warp using CUDA <c>__shfl_sync</c>.
+    /// </summary>
+    [CudaIntrinsic("__shfl_sync")]
+    public static T WarpShuffle<T>(T val, int srcLane, uint mask = 0xFFFFFFFF) where T : unmanaged => GpuOnlyException.Throw<T>();
+
+    /// <summary>
+    /// Shuffles a value across threads in a warp using CUDA <c>__shfl_sync</c> with explicit active mask.
+    /// </summary>
+    [CudaIntrinsic("__shfl_sync")]
+    public static T WarpShuffle<T>(uint mask, T val, int srcLane) where T : unmanaged => GpuOnlyException.Throw<T>();
+
+    /// <summary>
     /// Marker method for JIT Constant Folding. Replaced with the literal macro value during runtime compilation.
     /// </summary>
     /// <param name="macroName">The name of the JIT macro parameter.</param>

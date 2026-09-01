@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using Kassyi.GSharp.Tests.Helpers;
+using Microsoft.CodeAnalysis;
 
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
@@ -10,10 +13,11 @@ internal static class TestHelpers
     """;
 
     [ModuleInitializer]
-    public static void Register() => MegaCompilationCache.RegisterSource(TestHelpers_Sources);
+    public static void Register() => MegaCompilationCache.RegisterSource("TestHelpers.cs", TestHelpers_Sources);
 
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) CreateDummyContext()
     {
         return MegaCompilationCache.GetMethodContext($"Dummy_{ID}", "M");
     }
 }
+

@@ -12,7 +12,7 @@ public class GEN_15_PoolStressTests
     """;
 
     [ModuleInitializer]
-    public static void Register() => Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.RegisterSource(GEN15_Sources);
+    public static void Register() => Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.RegisterSource("GEN-15_PoolStressTests.cs", GEN15_Sources);
 
     [Fact]
     [Trait("FeatureId", "GEN-15")]
