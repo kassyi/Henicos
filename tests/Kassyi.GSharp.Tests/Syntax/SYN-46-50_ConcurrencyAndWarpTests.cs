@@ -3,6 +3,12 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_46_50_ConcurrencyAndWarpTests
 {
+    [Fact(Skip = "未実装: SYN-46 (ワープシャッフル・同期プリミティブ)")]
+    [Trait("FeatureId", "SYN-46")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN46_WarpPrimitives_Transpilation()
+    {
+    }
     [Fact]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-47")]
@@ -41,6 +47,13 @@ public class SYN_46_50_ConcurrencyAndWarpTests
             int expected = (size - 1 - i) * 3 + 1;
             Assert.Equal(expected, dataArray[i]);
         }
+    }
+
+    [Fact(Skip = "未実装: SYN-48 (グリッド協調グループ同期 CooperativeGroups)")]
+    [Trait("FeatureId", "SYN-48")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN48_CooperativeGroups_Transpilation()
+    {
     }
 
     [Fact]
@@ -102,20 +115,6 @@ public class SYN_46_50_ConcurrencyAndWarpTests
 
         // Max thread ID will be 4095
         Assert.Equal(expectedTotalThreads - 1, globalState[1]);
-    }
-
-    [Fact(Skip = "未実装: SYN-46 (ワープシャッフル・同期プリミティブ)")]
-    [Trait("FeatureId", "SYN-46")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN46_WarpPrimitives_Transpilation()
-    {
-    }
-
-    [Fact(Skip = "未実装: SYN-48 (グリッド協調グループ同期 CooperativeGroups)")]
-    [Trait("FeatureId", "SYN-48")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN48_CooperativeGroups_Transpilation()
-    {
     }
 
     [Fact(Skip = "未実装: SYN-50 (非同期コピー / TMA Tensor Memory Accelerator)")]
