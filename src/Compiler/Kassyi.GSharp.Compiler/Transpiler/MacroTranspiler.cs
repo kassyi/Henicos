@@ -73,14 +73,7 @@ internal static class MacroTranspiler
             context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
         }
 
-        context.Writer
-            .Append("// [GpuUnroll] start=")
-            .Append(start)
-            .AppendComma()
-            .AppendSpace()
-            .Append("count=")
-            .Append(count)
-            .AppendLine();
+        context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
         for (var i = start; i < start + count; i++)
@@ -128,29 +121,10 @@ internal static class MacroTranspiler
             context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
         }
 
-        context.Writer.Append("for");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer
-                .AppendKeyword("int")
-                .AppendSpace()
-                .Append(paramName)
-                .AppendSpace()
-                .AppendOperator("=")
-                .AppendSpace()
-                .Append("blockIdx.x * blockDim.x + threadIdx.x")
-                .AppendSemiColon()
-                .AppendSpace()
-                .Append(paramName)
-                .AppendOperator("<");
-            context.Visitor.Visit(args[offset].Expression);
-            context.Writer
-                .AppendSemiColon()
-                .AppendSpace()
-                .Append(paramName)
-                .AppendOperator("+=")
-                .Append("gridDim.x * blockDim.x");
-        }
+        // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
+        context.Writer.Append($"for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < ");
+        context.Visitor.Visit(args[offset].Expression);
+        context.Writer.Append($"; {paramName} += gridDim.x * blockDim.x)");
 
         context.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
@@ -171,11 +145,7 @@ internal static class MacroTranspiler
             return false;
         }
 
-        context.Writer.Append("if");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
-        }
+        context.Writer.Append("if (threadIdx.x == 0 && blockIdx.x == 0)");
 
         context.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
@@ -288,9 +258,7 @@ internal static class MacroTranspiler
     {
         using (context.Writer.Scope())
         {
-            context.Writer
-                .Append("Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _macroCtx")
-                .AppendSemiColonLine();
+            context.Writer.AppendLine("Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _macroCtx;");
 
             if (rightNode is BinaryExpressionSyntax binaryExpr)
             {
@@ -310,17 +278,9 @@ internal static class MacroTranspiler
             EmitAssignment(ref context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
 
             // Context buffers propagation (standard in Henicos BigInt kernels)
-            context.Writer
-                .Append("_macroCtx.Operands.CarryBuffer")
-                .AppendOperator("=")
-                .Append("ctx->Buffers.CarryBuffer")
-                .AppendSemiColonLine();
+            context.Writer.AppendLine("_macroCtx.Operands.CarryBuffer = ctx->Buffers.CarryBuffer;");
 
-            context.Writer
-                .Append("_macroCtx.NumberOfWords")
-                .AppendOperator("=")
-                .Append("ctx->Dimensions.NumberOfWordsExtended")
-                .AppendSemiColonLine();
+            context.Writer.AppendLine("_macroCtx.NumberOfWords = ctx->Dimensions.NumberOfWordsExtended;");
 
             EmitDeviceFunctionCall(ref context, rightNode);
         }
@@ -328,9 +288,7 @@ internal static class MacroTranspiler
 
     private static void EmitAssignment(ref TranspileContext context, string target, ExpressionSyntax value)
     {
-        context.Writer
-            .Append(target)
-            .AppendOperator("=");
+        context.Writer.Append($"{target} = ");
         context.Visitor.Visit(value);
         context.Writer.AppendSemiColonLine();
     }

@@ -100,8 +100,8 @@ __shared__ int staticCache[10000];
 extern __shared__ char __gsharp_dynamic_smem[];
 size_t __smem_offset = 0;
 __smem_offset=(__smem_offset+alignof(float)-1)&~(alignof(float)-1);
-float* dynamicCache=(float*)(__gsharp_dynamic_smem+__smem_offset);
-__smem_offset+=(particleCount)*sizeof(float);
+float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
+__smem_offset += (particleCount) * sizeof(float);
 __shared__ int targetTypedCache[256];
 if(tid<particleCount)
 {

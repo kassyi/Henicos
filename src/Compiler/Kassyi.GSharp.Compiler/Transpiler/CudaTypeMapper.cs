@@ -129,28 +129,6 @@ internal static class CudaTypeMapper
         return ref writer;
     }
 
-    public static ref readonly SourceWriter AppendFullyQualifiedCsName(this in SourceWriter writer, ISymbol symbol)
-    {
-        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            return ref writer;
-        }
-
-        var parent = symbol.ContainingSymbol;
-        if (parent is not null and not INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            writer.AppendFullyQualifiedCsName(parent);
-            writer.Append('.');
-        }
-        else
-        {
-            writer.Append("global::");
-        }
-
-        writer.Append(symbol.Name);
-        return ref writer;
-    }
-
     public static int GetApproximateSize(ITypeSymbol typeSymbol) => GetSizeAndAlignment(typeSymbol).Size;
 
     private static (int Size, int Alignment) GetSizeAndAlignment(ITypeSymbol typeSymbol)

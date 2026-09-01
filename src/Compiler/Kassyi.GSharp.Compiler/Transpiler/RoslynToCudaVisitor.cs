@@ -90,9 +90,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             {
                 if (i > 0)
                 {
-                    Context.Writer
-                        .AppendComma()
-                        .AppendSpace();
+                    Context.Writer.Append(", ");
                 }
                 Visit(node.Parameters[i]);
             }
@@ -119,9 +117,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Context.Writer.AppendKeyword("auto");
         }
 
-        Context.Writer
-            .AppendSpace()
-            .Append(node.Identifier.Text);
+        Context.Writer.Append($" {node.Identifier.Text}");
     }
 
     public void VisitStatementOrBlock(StatementSyntax statement)
@@ -192,9 +188,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
     {
-        Context.Writer
-            .AppendKeyword("case")
-            .AppendSpace();
+        Context.Writer.Append("case ");
         Visit(node.Value);
         Context.Writer.Append(":");
     }
@@ -264,9 +258,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             using (Context.Writer.Parentheses())
             {
-                Context.Writer
-                    .AppendOperator("*")
-                    .Append(node.Identifier.Text);
+                Context.Writer.Append($"*{node.Identifier.Text}");
             }
             return;
         }
