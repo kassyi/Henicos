@@ -303,7 +303,7 @@ internal static class ExpressionTranspilers
     {
         using (context.Writer.Parentheses())
         {
-            context.Writer.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
+            context.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
         }
 
         context.Visitor.Visit(node.Expression);
@@ -335,23 +335,26 @@ internal static class ExpressionTranspilers
 
         if (symbol != null)
         {
-            if (CudaIntrinsicsMapper.TryMap(symbol, out var mappedName))
+            if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
             {
                 context.Writer.Append(mappedName);
                 return;
             }
+        }
 
-            if ((symbol.ContainingType?.Name is TypeConstants.MathType or TypeConstants.MathFType
-                    or TypeConstants.InterlockedType) &&
-                (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading()))
+        if (symbol is
             {
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                    GSharpDiagnostics.UnsupportedSyntax,
-                    node.GetLocation(),
-                    $"{symbol.ContainingType.Name}.{symbol.Name}"));
-                context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
-                return;
-            }
+                ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
+                or TypeConstants.InterlockedType
+            } &&
+            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading()))
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node.GetLocation(),
+                $"{symbol.ContainingType.Name}.{symbol.Name}"));
+            context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
+            return;
         }
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
@@ -500,9 +503,8 @@ internal static class ExpressionTranspilers
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
             {
-                context.Writer
-                    .AppendType(typeSymbol)
-                    .Append(" _tmp");
+                context.AppendType(typeSymbol);
+                context.Writer.Append(" _tmp");
                 TranspileArgumentListAsBraces(argumentList, ref context);
 
                 context.Writer.AppendSemiColon();
@@ -533,7 +535,7 @@ internal static class ExpressionTranspilers
         ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
-        context.Writer.AppendType(typeSymbol);
+        context.AppendType(typeSymbol);
         TranspileArgumentListAsBraces(argumentList, ref context);
     }
 

@@ -12,7 +12,8 @@ public static class MethodTranspiler
         using var bodyWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic, bclIntrinsicMap);
+        var dialect = new Dialects.GSharpCudaDialect();
+        using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         context.Writer = bodyWriter;
@@ -47,7 +48,8 @@ public static class MethodTranspiler
         using var sigWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic, bclIntrinsicMap);
+        var dialect = new Dialects.GSharpCudaDialect();
+        using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         context.Writer = sigWriter;
@@ -93,7 +95,7 @@ public static class MethodTranspiler
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
-            context.Writer.AppendType(returnType);
+            context.AppendType(returnType);
         }
         else
         {
@@ -218,7 +220,7 @@ public static class MethodTranspiler
                 context.Writer.Append("const ");
             }
 
-            var (isRefPointer, isPointerType, hasRestrict) = context.Writer.AppendParameterCppType(p, typeSymbol);
+            var (isRefPointer, isPointerType, hasRestrict) = context.AppendParameterCppType(p, typeSymbol);
             StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)

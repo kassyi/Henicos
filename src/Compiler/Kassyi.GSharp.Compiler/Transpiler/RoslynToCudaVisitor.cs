@@ -20,7 +20,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
     }
 
-    public static RoslynToCudaVisitor Rent(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
+    public static RoslynToCudaVisitor Rent(
+        Dialects.ITranspilerDialect dialect,
+        SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
         ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (!s_pool.TryTake(out var visitor))
@@ -40,7 +42,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             semanticModel,
             reportDiagnostic,
             visitor,
-            bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty);
+            bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
+            dialect);
 
         return visitor;
     }
@@ -54,6 +57,21 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         Context = default;
         s_pool.Add(this);
+    }
+
+    public override void Visit(SyntaxNode? node)
+    {
+        if (node == null) return;
+
+        var interceptor = Context.Dialect.GetInterceptorVisitor(ref Context);
+        bool handledByDialect = interceptor.Visit(node);
+
+        if (handledByDialect)
+        {
+            return;
+        }
+
+        base.Visit(node);
     }
 
     public override void DefaultVisit(SyntaxNode node)
@@ -74,7 +92,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
         if (typeSymbol != null)
         {
-            Context.Writer.AppendType(typeSymbol);
+            Context.AppendType(typeSymbol);
         }
         else
         {
@@ -104,7 +122,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             var typeSymbol = Context.SemanticModel.GetTypeInfo(node.Type).Type;
             if (typeSymbol != null)
             {
-                Context.Writer.AppendType(typeSymbol);
+                Context.AppendType(typeSymbol);
             }
             else
             {
@@ -266,8 +284,21 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Writer.Append(node.Identifier.Text);
     }
 
-    public override void VisitLiteralExpression(LiteralExpressionSyntax node) =>
+    public override void VisitLiteralExpression(LiteralExpressionSyntax node)
+    {
+        if (node.IsKind(SyntaxKind.DefaultLiteralExpression))
+        {
+            Context.Writer.AppendEmptyScope();
+            return;
+        }
+
         Context.Writer.Append(node.Token.Text);
+    }
+
+    public override void VisitDefaultExpression(DefaultExpressionSyntax node)
+    {
+        Context.Writer.AppendEmptyScope();
+    }
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
         => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
