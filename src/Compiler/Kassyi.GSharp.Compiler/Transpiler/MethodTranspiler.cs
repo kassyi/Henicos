@@ -20,9 +20,11 @@ public static class MethodTranspiler
         var methodSymbol = semanticModel.GetDeclaredSymbol(method);
         if (methodSymbol != null)
         {
-            if (methodSymbol.HasAttribute("SkipLocalsInit") ||
-                methodSymbol.ContainingType.HasAttribute("SkipLocalsInit") ||
-                methodSymbol.ContainingModule.HasAttribute("SkipLocalsInit"))
+            if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
+                methodSymbol.ContainingType?.GetAttributes()
+                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
+                methodSymbol.ContainingModule?.GetAttributes()
+                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
             {
                 context.SkipLocalsInit = true;
             }
@@ -90,7 +92,7 @@ public static class MethodTranspiler
         }
     }
 
-    internal static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var hasAggressiveInlining = false;
         var hasNoInlining = false;
@@ -116,7 +118,7 @@ public static class MethodTranspiler
                                  Name: "Runtime",
                                  ContainingNamespace:
                                  {
-                                     Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true
+                                     Name: "System", ContainingNamespace.IsGlobalNamespace: true
                                  }
                              }
                          })
@@ -138,20 +140,18 @@ public static class MethodTranspiler
                     {
                         foreach (var namedArg in attr.NamedArguments)
                         {
-                            if (namedArg is not { Key: "Value", Value.Value: int or short })
+                            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
                             {
-                                continue;
-                            }
+                                var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+                                if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                                {
+                                    hasAggressiveInlining = true;
+                                }
 
-                            var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-                            if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                            {
-                                hasAggressiveInlining = true;
-                            }
-
-                            if ((options & MethodImplOptions.NoInlining) != 0)
-                            {
-                                hasNoInlining = true;
+                                if ((options & MethodImplOptions.NoInlining) != 0)
+                                {
+                                    hasNoInlining = true;
+                                }
                             }
                         }
                     }
@@ -179,7 +179,6 @@ public static class MethodTranspiler
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
-            StructTranspiler.RegisterUsedStructIfApplicable(returnType, ref context);
             context.Writer.AppendType(returnType);
         }
         else
@@ -201,7 +200,7 @@ public static class MethodTranspiler
         context.Writer.AppendKeyword("extern \"C\" __global__ void");
     }
 
-    internal static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
+    private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
     {
         using (context.Writer.Scope())
         {
@@ -225,7 +224,7 @@ public static class MethodTranspiler
         }
     }
 
-    internal static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
+    private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
         ref TranspileContext context)
     {
         var validParameters = new List<ParameterSyntax>(parameters.Count);

@@ -11,6 +11,12 @@ public class SYN_17_24_TypesAndStructsTests
         // Verified by SYN_17_TargetTypedNewTests
     }
 
+    [Fact(Skip = "未実装: SYN-18 (構造化束縛・タプル宣言分解)")]
+    [Trait("FeatureId", "SYN-18")]
+    [Trait("Category", "Syntax")]
+    public void Test_SYN18_TupleDeconstruction_Transpilation()
+    {
+    }
 
     [Fact(Skip = "未実装: SYN-19 (構造体のプライマリコンストラクタ)")]
     [Trait("FeatureId", "SYN-19")]
