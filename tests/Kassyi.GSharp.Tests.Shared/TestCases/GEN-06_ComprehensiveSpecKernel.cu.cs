@@ -1,3 +1,4 @@
+// SKIP_SNAPSHOT_CONSISTENCY: Tested in separate suites or WIP
 // ReSharper disable All
 using System;
 using Kassyi.GSharp.Core;
