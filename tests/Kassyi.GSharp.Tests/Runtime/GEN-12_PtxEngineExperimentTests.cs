@@ -10,11 +10,12 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Execution")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         var (context, smVersion) = InitializeCuda();
         try
         {
@@ -104,12 +105,13 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         }
     }
     [MemberData(nameof(TranspilerTestBase.Dialects))]
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
     public void ExecutePtxInMemory_InvalidPtx_ThrowsException(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         var (context, _) = InitializeCuda();
         try
         {
@@ -128,12 +130,13 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Stress")]
     [Trait("Category", "Execution")]
     public void ExecutePtxInMemory_ConcurrentExecution_StressTest(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         var (context, smVersion) = InitializeCuda();
         try
         {

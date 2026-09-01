@@ -4,18 +4,20 @@ namespace Kassyi.GSharp.Tests.Syntax;
 public class SYN_46_50_ConcurrencyAndWarpTests
 :  TranspilerTestBase{
     [MemberData(nameof(TranspilerTestBase.Dialects))]
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "SYN-46")]
     [Trait("Category", "Syntax")]
     public void Test_SYN46_WarpPrimitives_Transpilation(ITranspilerDialect dialect)
     {
+    Skip.IfNot(dialect.IsCuda, "Syntax Test: Transpiles to CUDA-specific intrinsics/macros.");
     }
     [MemberData(nameof(TranspilerTestBase.Dialects))]
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-47")]
     public void TestSharedMemoryKernel(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         int[] dataArray = [1, 2, 3, 4];
 
         SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_SharedMemoryKernel(dataArray, 4, blockDimX: 4, sharedMemBytes: 32);
@@ -28,11 +30,12 @@ public class SYN_46_50_ConcurrencyAndWarpTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-47")]
     public void TestSharedMemory_WarpSyncAcross256Threads(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         const int size = 256;
         int[] dataArray = new int[size];
         for (int i = 0; i < size; i++)
@@ -55,11 +58,12 @@ public class SYN_46_50_ConcurrencyAndWarpTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "SYN-48")]
     [Trait("Category", "Syntax")]
     public void Test_SYN48_CooperativeGroups_Transpilation(ITranspilerDialect dialect)
     {
+    Skip.IfNot(dialect.IsCuda, "Syntax Test: Transpiles to CUDA-specific intrinsics/macros.");
     }
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
@@ -131,10 +135,11 @@ public class SYN_46_50_ConcurrencyAndWarpTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "SYN-50")]
     [Trait("Category", "Syntax")]
     public void Test_SYN50_AsyncCopyTma_Transpilation(ITranspilerDialect dialect)
     {
+    Skip.IfNot(dialect.IsCuda, "Syntax Test: Transpiles to CUDA-specific intrinsics/macros.");
     }
 }

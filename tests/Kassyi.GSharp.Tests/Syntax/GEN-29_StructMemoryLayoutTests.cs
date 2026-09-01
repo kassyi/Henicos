@@ -5,11 +5,12 @@ public class GEN29_StructMemoryLayoutTests:  TranspilerTestBase{
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-29")]
     [Trait("Category", "Execution")]
     public void Test_GEN29_SharedMemory_StaticExpansion_And_MultipleTypes(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         int[] intOutput = [0];
         float[] floatOutput = [0.0f];
         CustomPoint[] pointOutput = [new CustomPoint()];

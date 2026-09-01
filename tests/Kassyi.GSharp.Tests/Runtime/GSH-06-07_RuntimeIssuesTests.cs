@@ -15,12 +15,13 @@ public partial class Gsh06_07_RuntimeIssuesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "Execution")]
     public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         const string kernelName = "CacheTestKernel";
         const string kernelSource = @"extern ""C"" __global__ void CacheTestKernel(int* a) { *a = 42; }";
 
@@ -50,13 +51,15 @@ public partial class Gsh06_07_RuntimeIssuesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Stress")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
     public void Test_Runtime_OutOfMemory_SadPath(ITranspilerDialect dialect)
     {
+        // Require CUDA context for allocation
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         // Require CUDA context for allocation
         using var scope = new JitEngine.CudaContextScope();
         var allocatedPointers = new System.Collections.Generic.List<IntPtr>();
