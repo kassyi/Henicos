@@ -47,15 +47,17 @@ public class LoggerCollectionDefinition : ICollectionFixture<LoggerFixture>;
 
 [Collection("LoggerCollection")]
 public class LoggerTests
-{
+:  TranspilerTestBase{
     private class TestLogger : Logger
     {
         protected override string GetTag() => "TestLogger";
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-03")]
-    public async Task Log_ShouldFormatAndWriteMessagesAsync()
+    public async Task Log_ShouldFormatAndWriteMessagesAsync(ITranspilerDialect dialect)
     {
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Trace;
@@ -74,10 +76,12 @@ public class LoggerTests
         Assert.Contains("[ERROR]", content);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "GEN-03")]
-    public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
+    public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest(ITranspilerDialect dialect)
     {
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
@@ -119,9 +123,11 @@ public class LoggerTests
         }
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-03")]
-    public async Task Log_ExtremeMessageSize_EdgeCase()
+    public async Task Log_ExtremeMessageSize_EdgeCase(ITranspilerDialect dialect)
     {
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
@@ -139,9 +145,11 @@ public class LoggerTests
         Assert.Contains(giantString, content);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-03")]
-    public async Task Log_LogLevelNone_EdgeCase()
+    public async Task Log_LogLevelNone_EdgeCase(ITranspilerDialect dialect)
     {
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.None;
@@ -159,9 +167,11 @@ public class LoggerTests
         Assert.DoesNotContain(uniqueGuid, content);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-04")]
-    public async Task MeasureScope_ShouldLogDuration()
+    public async Task MeasureScope_ShouldLogDuration(ITranspilerDialect dialect)
     {
         Logger.ActiveLogLevel = LogLevel.Trace;
 

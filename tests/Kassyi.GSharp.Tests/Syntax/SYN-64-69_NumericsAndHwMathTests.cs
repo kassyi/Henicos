@@ -3,32 +3,39 @@ using System.Numerics;
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_64_69_NumericsAndHwMathTests
-{
-    [Fact(Skip = "未実装: SYN-64 (Half 半精度浮動小数点数 fp16)")]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "SYN-64")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN64_HalfPrecision_Transpilation()
+    public void Test_SYN64_HalfPrecision_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-65 (nint / nuint ネイティブサイズ整数)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-65")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN65_NativeInt_Transpilation()
+    public void Test_SYN65_NativeInt_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-66 (Int128 / UInt128 128ビット整数)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-66")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN66_Int128UInt128_Transpilation()
+    public void Test_SYN66_Int128UInt128_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-67 (bfloat16 / fp8 次世代AI浮動小数点数)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-67")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN67_BFloat16Fp8_Transpilation()
+    public void Test_SYN67_BFloat16Fp8_Transpilation(ITranspilerDialect dialect)
     {
     }
     [Theory]
@@ -152,10 +159,12 @@ public class SYN_64_69_NumericsAndHwMathTests
         }
     }
 
-        [Fact]
+        [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+        [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-68")]
-    public void Test_SYN68_MathAndMathF_EmptyArray()
+    public void Test_SYN68_MathAndMathF_EmptyArray(ITranspilerDialect dialect)
     {
         double[] doubleInputs = [];
         double[] doubleOutputs = [];
@@ -169,10 +178,12 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Null(ex);
     }
 
-    [Fact(Skip = "未実装: SYN-69 (AddWithCarry / MultiplyExtended 64ビットHW演算)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-69")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN69_AddWithCarry64_Transpilation()
+    public void Test_SYN69_AddWithCarry64_Transpilation(ITranspilerDialect dialect)
     {
     }
 }

@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Tests;
 
 public class ArchitectureAndOptimizationTests
-{
+:  TranspilerTestBase{
     private readonly ITestOutputHelper _output;
 
     public ArchitectureAndOptimizationTests(ITestOutputHelper output)
@@ -10,11 +10,13 @@ public class ArchitectureAndOptimizationTests
         _output = output;
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "Execution")]
-    public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
+    public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes(ITranspilerDialect dialect)
     {
         var source = @"
 extern ""C"" __global__ void TestKernel(int* data) {
@@ -28,11 +30,12 @@ extern ""C"" __global__ void TestKernel(int* data) {
         Assert.True(ptx89.Length > 0);
         Assert.True(ptx86.Length > 0);
     }
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
-    public void CompileToPtx_InvalidArchitecture_ThrowsException()
+    public void CompileToPtx_InvalidArchitecture_ThrowsException(ITranspilerDialect dialect)
     {
         var source = @"
 extern ""C"" __global__ void TestKernel(int* data) {
@@ -49,11 +52,13 @@ extern ""C"" __global__ void TestKernel(int* data) {
         Assert.Contains("nvrtc: error", ex.Message);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "Execution")]
-    public void JitConstant_Unroll_AltersPtxOutput()
+    public void JitConstant_Unroll_AltersPtxOutput(ITranspilerDialect dialect)
     {
         var srcDynamic = @"
 extern ""C"" __global__ void TestKernelDynamic(int* data, int limit) {

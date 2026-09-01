@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_01_09_ControlFlowTests
-{
+:  TranspilerTestBase{
     [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-01")]
@@ -24,9 +24,11 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(expectedVal, output[0]);
     }
 
-    [Fact(Skip = "C# は ref switch 式を未サポートのためスキップ (代わりにif/else等を利用)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-01")]
-    public void Test_SYN01_RefSwitchExpression_Transpilation()
+    public void Test_SYN01_RefSwitchExpression_Transpilation(ITranspilerDialect dialect)
     {
         int[] a = [10, 20];
         int[] b = [100, 200];
@@ -41,17 +43,21 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(888, b[1]); // b[1] updated
     }
 
-    [Fact(Skip = "未実装: SYN-02 (パターンマッチング is / 結合 / リレーショナル)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-02")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN02_PatternMatching_Transpilation()
+    public void Test_SYN02_PatternMatching_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-03")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN03_InlineOutVarDeclaration_Transpilation()
+    public void Test_SYN03_InlineOutVarDeclaration_Transpilation(ITranspilerDialect dialect)
     {
         // Verified by SYN_03_InlineOutVarTests
     }
@@ -73,10 +79,12 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(expectedVal, results[0]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-04")]
-    public void Test_SYN04_NullCoalescingAssignment_SideEffect_Transpilation()
+    public void Test_SYN04_NullCoalescingAssignment_SideEffect_Transpilation(ITranspilerDialect dialect)
     {
         int?[] targetArray = [null, 10]; // target[0] is null (will be assigned), target[1] is 10 (will NOT be assigned)
         int[] sideEffectTracker = [0, 1]; // starting indices for side effect
@@ -132,18 +140,23 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(expectedResult, result[0]);
     }
 
-    [Fact(Skip = "未実装: SYN-06 (ref 条件式 / ref ternary)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-06")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN06_RefConditionalExpression_Transpilation()
+    public void Test_SYN06_RefConditionalExpression_Transpilation(ITranspilerDialect dialect)
     {
     }
 
 
-    [Fact(Skip = "未実装: SYN-09 (デフォルトリテラル default, default(T))")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+
+    [Theory]
     [Trait("FeatureId", "SYN-09")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN09_DefaultLiteral_Transpilation()
+    public void Test_SYN09_DefaultLiteral_Transpilation(ITranspilerDialect dialect)
     {
     }
 }

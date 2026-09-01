@@ -1,11 +1,9 @@
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
-using Kassyi.GSharp.Compiler.Dialects;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_05_StructTranspilerEdgeCasesTests
-{
+:  TranspilerTestBase{
     private static TranspileContext CreateTestContext(params INamedTypeSymbol[] usedStructsArray)
     {
         var usedStructs = new HashSet<INamedTypeSymbol>(usedStructsArray, SymbolEqualityComparer.Default);
@@ -27,10 +25,12 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         return comp.GetSymbolsWithName(name, SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
-    public void Test_GEN05_TopologicallySortedStructs_EmptyStruct()
+    public void Test_GEN05_TopologicallySortedStructs_EmptyStruct(ITranspilerDialect dialect)
     {
         var structSym = GetLocalTypeSymbol("EmptyStruct");
         var context = CreateTestContext(structSym);
@@ -41,10 +41,12 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         Assert.Equal("EmptyStruct", sorted[0].Name);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
-    public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
+    public void Test_GEN05_TopologicallySortedStructs_DeepNesting(ITranspilerDialect dialect)
     {
         var symA = GetLocalTypeSymbol("StructA");
         var symB = GetLocalTypeSymbol("StructB");
@@ -63,10 +65,12 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         Assert.Equal("StructA", sorted[3].Name);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
-    public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes()
+    public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes(ITranspilerDialect dialect)
     {
         var structSym = GetLocalTypeSymbol("MyStruct");
         var context = CreateTestContext(structSym);

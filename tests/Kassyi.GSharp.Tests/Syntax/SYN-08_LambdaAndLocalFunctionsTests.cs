@@ -1,11 +1,12 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_08_LambdaAndLocalFunctionsTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-08")]
-    public void Test_SYN08_NonCapturingLambdaKernel()
+    public void Test_SYN08_NonCapturingLambdaKernel(ITranspilerDialect dialect)
     {
         // Happy Path: キャプチャを持たない、あるいは単純な値型のみをキャプチャするラムダ式 (() => { }) が、C++側で一意な名前（決定的かつ競合しない名前）を持つ抽出された device 関数（またはC++ラムダ）として正しく展開され実行されること。
         int[] data = [1, 5, 20];
@@ -28,10 +29,12 @@ public class SYN_08_LambdaAndLocalFunctionsTests
         Assert.Equal(expected, data[0]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-08")]
-    public void Test_SYN08_ImmediatelyEvaluatedLambdaKernel()
+    public void Test_SYN08_ImmediatelyEvaluatedLambdaKernel(ITranspilerDialect dialect)
     {
         // Edge Cases: メソッド引数内で即時評価されるラムダや、ネストされたラムダ式におけるキャプチャスコープの解決
         int[] data = [2, 4, 7];
@@ -41,10 +44,12 @@ public class SYN_08_LambdaAndLocalFunctionsTests
         Assert.Equal(107, data[2]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-08")]
-    public void Test_SYN08_ShadowedVariableCaptureKernel()
+    public void Test_SYN08_ShadowedVariableCaptureKernel(ITranspilerDialect dialect)
     {
         // Edge Cases: 同名変数のキャプチャ時の名前衝突回避が正しく行われること。
         int[] data = [100];

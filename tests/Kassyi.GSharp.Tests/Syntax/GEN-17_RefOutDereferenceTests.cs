@@ -25,7 +25,7 @@ public class TestClass_GEN17
 }
 
 public partial class GEN_17_RefOutDereferenceTests
-{
+:  TranspilerTestBase{
     [GeneratedRegex(@"\(\*successFlag\)\s*=\s*false;")]
     private static partial Regex SuccessFlagRegex();
 
@@ -35,27 +35,31 @@ public partial class GEN_17_RefOutDereferenceTests
     [GeneratedRegex(@"\(\*a\)\s*=\s*\(\*b\)\s*=\s*\(\*refArg\)\s*=\s*10;")]
     private static partial Regex ChainedRefRegex();
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-17")]
     [Trait("Category", "Syntax")]
-    public void Test_GEN17_RefOutDereferencing_HappyPath_ModifyingRefArgument()
+    public void Test_GEN17_RefOutDereferencing_HappyPath_ModifyingRefArgument(ITranspilerDialect dialect)
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef),dialect:dialect);
 
         Assert.Empty(diagnostics);
         Assert.Matches(SuccessFlagRegex(), cudaSource);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-17")]
     [Trait("Category", "Syntax")]
-    public void Test_GEN17_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments()
+    public void Test_GEN17_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments(ITranspilerDialect dialect)
     {
-        var (cudaSourceMember, diagnosticsMember) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
+        var (cudaSourceMember, diagnosticsMember) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef),dialect:dialect);
         Assert.Empty(diagnosticsMember);
         Assert.Matches(RefArgFieldRegex(), cudaSourceMember);
 
-        var (cudaSourceChained, diagnosticsChained) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
+        var (cudaSourceChained, diagnosticsChained) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment),dialect:dialect);
         Assert.Empty(diagnosticsChained);
         Assert.Matches(ChainedRefRegex(), cudaSourceChained);
     }

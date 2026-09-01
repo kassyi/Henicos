@@ -1,6 +1,6 @@
 using System;
-using Xunit;
 using Kassyi.GSharp.Compiler.Dialects;
+using Xunit;
 
 namespace Kassyi.GSharp.Tests.DialectTests
 {
@@ -9,16 +9,11 @@ namespace Kassyi.GSharp.Tests.DialectTests
         [Fact]
         public void CanLoadStandardCpp()
         {
-            var dialect = new Kassyi.GSharp.Compiler.Dialects.StandardCppDialect();
+            var dialect = new StandardCppDialect();
             Assert.NotNull(dialect);
-            
-            string mappedType;
-            // Check that it mapped int correctly using reflection since the method is protected
-            var method = typeof(Kassyi.GSharp.Compiler.Dialects.StandardCppDialect).GetMethod("TryMapType", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var args = new object[] { "System.Int32", null };
-            var result = (bool)method.Invoke(dialect, args);
-            mappedType = (string)args[1];
-            
+
+            bool result = dialect.TryMapType("System.Int32", out string mappedType);
+
             Assert.True(result);
             Assert.Equal("int", mappedType);
         }
@@ -26,9 +21,9 @@ namespace Kassyi.GSharp.Tests.DialectTests
         [Fact]
         public void CanLoadGSharpCuda()
         {
-            var dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+            var dialect = new GSharpCudaDialect();
             Assert.NotNull(dialect);
-            
+
             // Check MethodPrefix
             Assert.Equal("__device__ inline ", dialect.MethodPrefix);
         }

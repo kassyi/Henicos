@@ -3,7 +3,7 @@ using System.Numerics;
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class GEN_18_VectorBuiltinTests
-{
+:  TranspilerTestBase{
     [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-18")]

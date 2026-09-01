@@ -1,16 +1,14 @@
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
-using Kassyi.GSharp.Compiler.Dialects;
 using System.Collections.Concurrent;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_15_PoolStressTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "GEN-15")]
     [Trait("Category", "Stress")]
-    public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
+    public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly(ITranspilerDialect dialect)
     {
         var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
         var semanticModel = context.Model;
@@ -39,10 +37,12 @@ public class GEN_15_PoolStressTests
         Assert.Empty(exceptions);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-15")]
     [Trait("Category", "Stress")]
-    public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
+    public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly(ITranspilerDialect dialect)
     {
         var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
         var semanticModel = context.Model;

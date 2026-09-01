@@ -2,12 +2,15 @@
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_02_LinqNotSupportedRuleTests
-{
+:  TranspilerTestBase{
 
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+
+    [Theory]
     [Trait("FeatureId", "GSH-02")]
-    public void Validate_GSH02_ReportsDiagnostic_OnQueryExpression()
+    public void Validate_GSH02_ReportsDiagnostic_OnQueryExpression(ITranspilerDialect dialect)
     {
         // Arrange
         var rule = LinqNotSupportedRule.Instance;

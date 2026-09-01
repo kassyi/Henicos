@@ -3,12 +3,14 @@ using System.Threading;
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_49_InvocationTests
-{
+:  TranspilerTestBase{
     // SYN-49 Happy Path
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    // SYN-49 Happy Path
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-49")]
-    public void Test_SYN49_InterlockedAtomicOperations()
+    public void Test_SYN49_InterlockedAtomicOperations(ITranspilerDialect dialect)
     {
         int[] intBuf = new int[3];
         uint[] uintBuf = new uint[3];
@@ -33,10 +35,12 @@ public class SYN_49_InvocationTests
         Assert.Equal(800ul, ulongBuf[2]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-49")]
-    public void Test_SYN49_InterlockedAtomicOperations_EmptyArray()
+    public void Test_SYN49_InterlockedAtomicOperations_EmptyArray(ITranspilerDialect dialect)
     {
         int[] intBuf = [];
         uint[] uintBuf = [];
@@ -51,10 +55,13 @@ public class SYN_49_InvocationTests
     }
 
     // SYN-49 Edge Cases
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    // SYN-49 Edge Cases
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-49")]
-    public void Test_SYN49_InterlockedEdgeCases_ArrayElementsAndStructFields()
+    public void Test_SYN49_InterlockedEdgeCases_ArrayElementsAndStructFields(ITranspilerDialect dialect)
     {
         int[] array = new int[4] { 1, 2, 3, 4 };
         AtomicTestStruct[] structArray = new AtomicTestStruct[4]
@@ -77,10 +84,12 @@ public class SYN_49_InvocationTests
         }
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-49")]
-    public void Test_SYN49_InterlockedEdgeCases_EmptyArray()
+    public void Test_SYN49_InterlockedEdgeCases_EmptyArray(ITranspilerDialect dialect)
     {
         int[] emptyArray = [];
         AtomicTestStruct[] emptyStructArray = [];
@@ -93,10 +102,12 @@ public class SYN_49_InvocationTests
         Assert.Null(ex);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-49")]
-    public void Test_AtomicTestStruct_MemoryLayout()
+    public void Test_AtomicTestStruct_MemoryLayout(ITranspilerDialect dialect)
     {
         Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());
         Assert.Equal(0, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueI").ToInt32());

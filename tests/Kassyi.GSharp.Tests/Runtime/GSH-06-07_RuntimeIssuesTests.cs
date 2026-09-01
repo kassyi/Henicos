@@ -4,19 +4,22 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Runtime;
 
 public partial class Gsh06_07_RuntimeIssuesTests
-{
-    [Fact(Skip = "未実装: GSH-06 (PTX / C++ コンパイルエラーの行番号マッピング)")]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "GSH-06")]
     [Trait("Category", "Runtime")]
-    public void Test_GSH06_LineNumberMappingInDiagnostics()
+    public void Test_GSH06_LineNumberMappingInDiagnostics(ITranspilerDialect dialect)
     {
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "Execution")]
-    public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache()
+    public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache(ITranspilerDialect dialect)
     {
         const string kernelName = "CacheTestKernel";
         const string kernelSource = @"extern ""C"" __global__ void CacheTestKernel(int* a) { *a = 42; }";
@@ -45,12 +48,14 @@ public partial class Gsh06_07_RuntimeIssuesTests
         });
     }
 
-    [Fact(Skip = "負荷が高すぎるため通常はスキップ。")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Stress")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
-    public void Test_Runtime_OutOfMemory_SadPath()
+    public void Test_Runtime_OutOfMemory_SadPath(ITranspilerDialect dialect)
     {
         // Require CUDA context for allocation
         using var scope = new JitEngine.CudaContextScope();
@@ -85,10 +90,12 @@ public partial class Gsh06_07_RuntimeIssuesTests
         }
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "SadPath")]
-    public void Test_Runtime_MissingCudaToolkit_GracefulDegradation()
+    public void Test_Runtime_MissingCudaToolkit_GracefulDegradation(ITranspilerDialect dialect)
     {
         var originalEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
         try

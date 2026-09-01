@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_03_InlineOutVarTests
-{
+:  TranspilerTestBase{
     [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-03")]

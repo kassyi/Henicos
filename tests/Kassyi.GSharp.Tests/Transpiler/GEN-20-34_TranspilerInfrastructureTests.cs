@@ -1,11 +1,12 @@
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_20_34_TranspilerInfrastructureTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-20")]
-    public void Test_GEN20_ForwardDeclarations_And_MutualCalls()
+    public void Test_GEN20_ForwardDeclarations_And_MutualCalls(ITranspilerDialect dialect)
     {
         int[] counts = [1, 2, 3];
         int[] vals = [5, 5, 5];
@@ -21,10 +22,12 @@ public class GEN_20_34_TranspilerInfrastructureTests
         Assert.Equal(45, results[2]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-20")]
-    public void Test_GEN20_OverloadedFunctions_DeduplicationAndForwardDecl()
+    public void Test_GEN20_OverloadedFunctions_DeduplicationAndForwardDecl(ITranspilerDialect dialect)
     {
         int[] inputA = [3, 4];
         int[] inputB = [5, 6];
@@ -44,10 +47,12 @@ public class GEN_20_34_TranspilerInfrastructureTests
         Assert.Equal(32, output3Arg[1]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "GEN-34")]
-    public void Test_GEN34_PinnedArrayTransfer_EmptyAndHugeArrays()
+    public void Test_GEN34_PinnedArrayTransfer_EmptyAndHugeArrays(ITranspilerDialect dialect)
     {
         // 1. Empty array transfer
         int[] emptyData = [];

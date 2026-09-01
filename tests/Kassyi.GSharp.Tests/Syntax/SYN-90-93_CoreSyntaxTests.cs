@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_90_93_CoreSyntaxTests
-{
+:  TranspilerTestBase{
     [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-90")]
@@ -26,10 +26,13 @@ public class SYN_90_93_CoreSyntaxTests
     }
 
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-91")]
-    public void TestControlFlowKernel()
+    public void TestControlFlowKernel(ITranspilerDialect dialect)
     {
         // Test with 8 threads across multiple warps/lanes
         int[] dataArray = new int[8];
@@ -49,10 +52,12 @@ public class SYN_90_93_CoreSyntaxTests
         }
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-92")]
-    public void TestStructKernel()
+    public void TestStructKernel(ITranspilerDialect dialect)
     {
         // Empty array edge case
         Vector2[] emptyVectors = [];
@@ -79,11 +84,13 @@ public class SYN_90_93_CoreSyntaxTests
         Assert.Equal(5.0f, vectors[1].Y);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Alignment")]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-92")]
-    public void TestStruct_MixedPaddingAndAlignment()
+    public void TestStruct_MixedPaddingAndAlignment(ITranspilerDialect dialect)
     {
         // Empty array edge case
         MixedPaddingStruct[] emptyItems = [];
@@ -121,10 +128,12 @@ public class SYN_90_93_CoreSyntaxTests
         Assert.Equal((short)95, items[1].Flag2);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-93")]
-    public void TestDeviceMethodKernel()
+    public void TestDeviceMethodKernel(ITranspilerDialect dialect)
     {
         // Single-element edge case
         int[] singleData = [42];
