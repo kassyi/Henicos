@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class GEN_01_09_GeneratorSadPathTests
 :  TranspilerTestBase{
-    [Theory]
+    [Fact]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-13", "Analyzers/SYN-13_DynamicStackAllocSadPath.cs", "GSH0003")]
     [InlineData("SYN-49", "Analyzers/SYN-49_UnsupportedInterlockedOverload.cs", "GSH0003")]
@@ -19,7 +19,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-01", "Analyzers/GpuKernel/SYN-01_NonExhaustiveSwitch_InGpuKernel.cu.cs", "CS8509")]
     public async Task Test_GeneratorSadPath_ReportsExpectedDiagnostic(string featureId, string testCasePath, string expectedDiagnosticId)
@@ -28,7 +28,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .ReportsDiagnosticsAsync(expectedDiagnosticId);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-08", "Analyzers/SYN-08_DelegateEscapeSadPath.cs", new[] { "GSH0001", "GSH0003" })]
     public async Task Test_GeneratorSadPath_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expectedErrorIds)
@@ -37,7 +37,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .ReportsErrorsAsync(expectedErrorIds);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "SadPath")]
     [InlineData("GEN-29", "Analyzers/GEN-29_DynamicSharedMemorySadPath.cs")]
     [InlineData("SYN-90", "Analyzers/SYN-90_UnsupportedMethodInStructInit.cs")]
@@ -47,7 +47,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .HasNoErrorsAsync();
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "SadPath")]
     [InlineData("GEN-33", "Analyzers/GEN-33_UnsupportedStructFieldsSadPath.cs")]
     [InlineData("GEN-17", "Analyzers/GEN-17_RefOutReassignmentSadPath.cs")]
