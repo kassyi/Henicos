@@ -38,7 +38,7 @@ public static class RoslynTestUtility
     public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics) RunGenerator(string source)
     {
         var compilation = CreateCompilation(source);
-        
+
         var generator = new Kassyi.GSharp.Compiler.GpuKernelGenerator();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(

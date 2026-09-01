@@ -68,8 +68,8 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     public async Task Test_GSH00_ValidSyntax_InGpuKernel_DoesNotReportDiagnostic()
     {
         var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GSH-00_ValidSyntax_InGpuKernel");
-        Assert.Empty(diagnostics.Where(d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id || 
-                                            d.Id == GSharpDiagnostics.LinqNotSupported.Id || 
+        Assert.Empty(diagnostics.Where(d => d.Id == GSharpDiagnostics.ForeachNotSupported.Id ||
+                                            d.Id == GSharpDiagnostics.LinqNotSupported.Id ||
                                             d.Id == GSharpDiagnostics.ImplicitVarNeedsSuffix.Id));
     }
 }
