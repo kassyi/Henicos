@@ -100,7 +100,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 sharedWriter.AppendLine("\";");
             }
         }
-        
+
         context.AddSource("GSharpSharedCudaCode.g.cs", SourceText.From(sharedWriter.ToString(), Encoding.UTF8));
 
         foreach (var method in kernelMethods.OfType<IMethodSymbol>()
