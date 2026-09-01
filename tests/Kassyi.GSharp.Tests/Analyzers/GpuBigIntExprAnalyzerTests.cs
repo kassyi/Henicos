@@ -1,50 +1,61 @@
-using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Tests.Helpers;
-using Xunit;
+using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Kassyi.GSharp.Tests.Analyzers;
+namespace Kassyi.GSharp.Tests;
 
 public class GpuBigIntExprAnalyzerTests
 {
+    private static string GetTestCasePath(string testName, [CallerFilePath] string callerFilePath = "")
+    {
+        var projectDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(callerFilePath)!, ".."));
+        return Path.Combine(projectDir, "TestCases", "Analyzers", "GpuBigIntExpr", $"{testName}.cs");
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsFromTestNameAsync(string testName)
+    {
+        var path = GetTestCasePath(testName);
+        var source = await File.ReadAllTextAsync(path);
+        var analyzer = new GpuBigIntExprAnalyzer();
+        return await Helpers.RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, analyzer);
+    }
+
     [Fact]
     [Trait("FeatureId", "GBI-26")]
-    public void LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
+    public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
-        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GBI-26_LocalDeclaration.cs");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_LocalDeclaration");
         diagnostics.AssertContains(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-27")]
-    public void Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
+    public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
-        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GBI-27_Assignment.cs");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-27_Assignment");
         diagnostics.AssertContains(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-28")]
-    public void LegacyNamespace_Declaration_ReportsDiagnostic()
+    public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {
-        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GBI-28_LegacyNamespace.cs");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-28_LegacyNamespace");
         diagnostics.AssertContains(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-26")]
-    public void MultipleDeclarations_InSingleStatement_EdgeCase()
+    public async Task MultipleDeclarations_InSingleStatement_EdgeCase()
     {
-        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GBI-26_MultipleDeclarations.cs");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_MultipleDeclarations");
         var count = diagnostics.Count(d => d.Id == GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
         Assert.Equal(2, count);
     }
 
     [Fact]
     [Trait("FeatureId", "GBI-26")]
-    public void MalformedSyntax_ShouldNotCrash_SadPath()
+    public async Task MalformedSyntax_ShouldNotCrash_SadPath()
     {
-        var diagnostics = MegaCompilationCache.GetAnalyzerDiagnosticsForFile("GBI-26_MalformedSyntax.cs");
+        var diagnostics = await GetAnalyzerDiagnosticsFromTestNameAsync("GBI-26_MalformedSyntax");
         diagnostics.AssertContainsError(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id); 
     }
 }
-

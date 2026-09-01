@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>GEN-16, BCL-01, BCL-02, BCL-03, GEN-30</b></para></remarks>
 internal static class BclIntrinsicMapBuilder
 {
-    private const string BclIntrinsicMapAttributeFullName = TypeConstants.BclIntrinsicMapAttributeFullName;
+    private const string BclIntrinsicMapAttributeFullName = "Kassyi.GSharp.Core.BclIntrinsicMapAttribute";
 
     private static readonly ConditionalWeakTable<Compilation, ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>>
         s_cache =

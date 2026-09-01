@@ -228,7 +228,6 @@ internal static class DeclarationTranspilers
         {
             context.Writer.AppendType(typeArg);
         }
-
         context.Writer.AppendSemiColon();
     }
 
@@ -245,8 +244,7 @@ internal static class DeclarationTranspilers
         }
         else
         {
-            TranspileCombinedVariableDeclarations(node.Variables, mapping.TypeSymbol, mapping.IsVar, mapping.IsPointer,
-                ref context);
+            TranspileCombinedVariableDeclarations(node.Variables, mapping.TypeSymbol, mapping.IsVar, mapping.IsPointer, ref context);
         }
     }
 
@@ -277,8 +275,14 @@ internal static class DeclarationTranspilers
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
-            context.Writer.AppendTypeOrAuto(typeSymbol, isVar);
-
+            if (isVar)
+            {
+                context.Writer.AppendKeyword("auto");
+            }
+            else
+            {
+                context.Writer.AppendType(typeSymbol);
+            }
             context.Writer.AppendSpace();
             context.Writer.Append(v.Identifier.Text);
             WriteDeclaratorInitializer(v, ref context);
@@ -311,7 +315,6 @@ internal static class DeclarationTranspilers
                 context.Writer.AppendType(typeSymbol);
             }
         }
-
         context.Writer.AppendSpace();
 
         for (var i = 0; i < variables.Count; i++)
@@ -336,9 +339,14 @@ internal static class DeclarationTranspilers
     {
         if (variable.Initializer != null)
         {
-            if (context.SkipLocalsInit && variable.Initializer.Value.IsDefaultValueExpression())
+            if (context.SkipLocalsInit)
             {
-                return; // Skip zero-initialization
+                var val = variable.Initializer.Value;
+                if (val is ImplicitObjectCreationExpressionSyntax or ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } or DefaultExpressionSyntax ||
+                    val is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.DefaultLiteralExpression))
+                {
+                    return; // Skip zero-initialization
+                }
             }
 
             context.Writer.AppendOperator("=");
@@ -350,21 +358,22 @@ internal static class DeclarationTranspilers
     {
         foreach (var desc in node.DescendantNodes(n => n == node || n is not BlockSyntax))
         {
-            if (desc is not DeclarationExpressionSyntax
-                {
-                    Designation: SingleVariableDesignationSyntax singleVar
-                } declExpr)
+            if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
-                continue;
+                var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
+                if (typeSymbol != null)
+                {
+                    context.Writer.AppendType(typeSymbol);
+                }
+                else
+                {
+                    context.Writer.AppendKeyword("auto");
+                }
+                context.Writer.AppendSpace();
+                context.Writer.Append(singleVar.Identifier.Text);
+                context.Writer.AppendSemiColon();
+                context.Writer.AppendLine();
             }
-
-            var typeSymbol = declExpr.GetTypeSymbol(context.SemanticModel);
-            context.Writer.AppendTypeOrAuto(typeSymbol);
-
-            context.Writer.AppendSpace();
-            context.Writer.Append(singleVar.Identifier.Text);
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
         }
     }
 }

@@ -43,9 +43,6 @@ internal static class CudaIntrinsicsMapper
                     "Min" => isInteger ? "min" : (isSingle ? "fminf" : "fmin"),
                     "Abs" => isInteger ? "abs" : (isSingle ? "fabsf" : "fabs"),
                     "Clamp" => "__gsharp_clamp",
-                    "Sqrt" => isSingle ? "sqrtf" : "sqrt",
-                    "Floor" => isSingle ? "floorf" : "floor",
-                    "Ceiling" => isSingle ? "ceilf" : "ceil",
                     _ => null
                 };
 
