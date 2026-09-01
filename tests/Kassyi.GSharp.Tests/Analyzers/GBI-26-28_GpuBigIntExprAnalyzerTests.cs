@@ -2,20 +2,24 @@
 namespace Kassyi.GSharp.Tests;
 
 public class GpuBigIntExprAnalyzerTests
-{
+:  TranspilerTestBase{
     private static readonly GpuBigIntExprAnalyzer s_analyzer = new();
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GBI-26")]
-    public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
+    public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic(ITranspilerDialect dialect)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/GBI-26_LocalDeclaration.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GBI-26")]
-    public async Task MultipleDeclarations_InSingleStatement_EdgeCase()
+    public async Task MultipleDeclarations_InSingleStatement_EdgeCase(ITranspilerDialect dialect)
     {
         var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/GBI-26_MultipleDeclarations.cs", s_analyzer)
                                                 .GetDiagnosticsAsync();
@@ -23,25 +27,31 @@ public class GpuBigIntExprAnalyzerTests
         Assert.Equal(2, count);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GBI-26")]
-    public async Task MalformedSyntax_ShouldNotCrash_SadPath()
+    public async Task MalformedSyntax_ShouldNotCrash_SadPath(ITranspilerDialect dialect)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/GBI-26_MalformedSyntax.cs", s_analyzer)
                                .ReportsErrorsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GBI-27")]
-    public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
+    public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic(ITranspilerDialect dialect)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/GBI-27_Assignment.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GBI-28")]
-    public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
+    public async Task LegacyNamespace_Declaration_ReportsDiagnostic(ITranspilerDialect dialect)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/GBI-28_LegacyNamespace.cs", s_analyzer)
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);

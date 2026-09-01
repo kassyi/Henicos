@@ -1,10 +1,9 @@
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public partial class SYN_28_MethodAttributesTests
-{
+:  TranspilerTestBase{
     private const string InlineDevice = "inline __device__";
     private const string ForceinlineDevice = "__forceinline__ __device__";
     private const string NoinlineDevice = "__noinline__ __device__";
@@ -43,10 +42,12 @@ public partial class SYN_28_MethodAttributesTests
         return (cudaSource, diagnostics);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_AggressiveInlining_Execution()
+    public void Test_SYN28_AggressiveInlining_Execution(ITranspilerDialect dialect)
     {
         int[] input = [0, 5, 10, 20];
         int[] result = new int[4];
@@ -63,10 +64,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(240, result[3]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_MethodAttributes_EmptyArray_Execution()
+    public void Test_SYN28_MethodAttributes_EmptyArray_Execution(ITranspilerDialect dialect)
     {
         int[] input = [];
         int[] result = [];
@@ -77,10 +80,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Null(exception);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_MethodAttributes_SingleElement_Execution()
+    public void Test_SYN28_MethodAttributes_SingleElement_Execution(ITranspilerDialect dialect)
     {
         int[] input = [42];
         int[] result = new int[1];
@@ -116,10 +121,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(expectedVal, result[0]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice()
+    public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice(ITranspilerDialect dialect)
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
@@ -127,10 +134,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Matches(AggressiveInlinedRegex(), cudaSource);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_NoInlining_TranspilesWithNoinlineDevice()
+    public void Test_SYN28_NoInlining_TranspilesWithNoinlineDevice(ITranspilerDialect dialect)
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
@@ -138,10 +147,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Matches(NoInlinedRegex(), cudaSource);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates()
+    public void Test_SYN28_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates(ITranspilerDialect dialect)
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
@@ -152,10 +163,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Single(matches);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError()
+    public void Test_SYN28_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError(ITranspilerDialect dialect)
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
@@ -165,10 +178,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.DoesNotMatch(NoinlineModifier, cudaSource);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
-    public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()
+    public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl(ITranspilerDialect dialect)
     {
         var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
 

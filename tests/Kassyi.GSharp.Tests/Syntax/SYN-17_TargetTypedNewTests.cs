@@ -1,11 +1,12 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_17_TargetTypedNewTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-17")]
-    public void Test_SYN17_HappyPath_TargetTypedNew()
+    public void Test_SYN17_HappyPath_TargetTypedNew(ITranspilerDialect dialect)
     {
         int[] output = [0];
 

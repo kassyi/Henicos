@@ -2,12 +2,14 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_13_14_MemoryAndFixedArraysTests
-{
+:  TranspilerTestBase{
 
-        [Fact]
+        [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+        [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-14")]
-    public void Test_SYN14_FixedBufferKernel()
+    public void Test_SYN14_FixedBufferKernel(ITranspilerDialect dialect)
     {
         uint[] dataArray = [5, 0];
         SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_FixedBufferKernel(dataArray);

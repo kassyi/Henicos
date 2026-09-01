@@ -2,17 +2,19 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_46_50_ConcurrencyAndWarpTests
-{
-    [Fact(Skip = "未実装: SYN-46 (ワープシャッフル・同期プリミティブ)")]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "SYN-46")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN46_WarpPrimitives_Transpilation()
+    public void Test_SYN46_WarpPrimitives_Transpilation(ITranspilerDialect dialect)
     {
     }
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-47")]
-    public void TestSharedMemoryKernel()
+    public void TestSharedMemoryKernel(ITranspilerDialect dialect)
     {
         int[] dataArray = [1, 2, 3, 4];
 
@@ -24,10 +26,12 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(12, dataArray[3]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-47")]
-    public void TestSharedMemory_WarpSyncAcross256Threads()
+    public void TestSharedMemory_WarpSyncAcross256Threads(ITranspilerDialect dialect)
     {
         const int size = 256;
         int[] dataArray = new int[size];
@@ -49,18 +53,22 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         }
     }
 
-    [Fact(Skip = "未実装: SYN-48 (グリッド協調グループ同期 CooperativeGroups)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-48")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN48_CooperativeGroups_Transpilation()
+    public void Test_SYN48_CooperativeGroups_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-49")]
     [Trait("FeatureId", "SYN-68")]
-    public void TestIntrinsicsKernel()
+    public void TestIntrinsicsKernel(ITranspilerDialect dialect)
     {
         int[] dataArray = new int[2];
         dataArray[0] = 0; // atomic sum
@@ -72,11 +80,13 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(100, dataArray[1]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "SYN-49")]
-    public void TestAtomicAddStress_HighContention()
+    public void TestAtomicAddStress_HighContention(ITranspilerDialect dialect)
     {
         int[] globalSum = [0];
         uint threadsPerBlock = 256;
@@ -92,11 +102,13 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads, globalSum[0]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "SYN-49")]
-    public void TestAtomicOrMaxStress_HighContention()
+    public void TestAtomicOrMaxStress_HighContention(ITranspilerDialect dialect)
     {
         uint[] globalState = [0, 0];
         uint threadsPerBlock = 256;
@@ -117,10 +129,12 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads - 1, globalState[1]);
     }
 
-    [Fact(Skip = "未実装: SYN-50 (非同期コピー / TMA Tensor Memory Accelerator)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-50")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN50_AsyncCopyTma_Transpilation()
+    public void Test_SYN50_AsyncCopyTma_Transpilation(ITranspilerDialect dialect)
     {
     }
 }

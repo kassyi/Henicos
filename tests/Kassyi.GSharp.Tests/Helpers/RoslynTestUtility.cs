@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Helpers;
@@ -39,13 +38,15 @@ public static class RoslynTestUtility
     public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
         string typeName,
         string methodName,
-        bool isDevice = true)
+        bool isDevice = true,
+        Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect? dialect = null)
     {
         var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(typeName, methodName);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+        dialect ??= new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice, dialect: dialect);
         return (cudaSource, diagnostics);
     }
 
@@ -54,13 +55,15 @@ public static class RoslynTestUtility
         Type targetType,
         string methodName,
         [CallerFilePath] string callerFilePath = "",
-        bool isDevice = true)
+        bool isDevice = true,
+        Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect? dialect = null)
     {
         var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(targetType, methodName, callerFilePath);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+        dialect ??= new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice, dialect: dialect);
         return (cudaSource, diagnostics);
     }
 
@@ -68,9 +71,10 @@ public static class RoslynTestUtility
     public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod<TTarget>(
         string methodName,
         [CallerFilePath] string callerFilePath = "",
-        bool isDevice = true)
+        bool isDevice = true,
+        Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect? dialect = null)
     {
-        return TranspileMethod(typeof(TTarget), methodName, callerFilePath, isDevice);
+        return TranspileMethod(typeof(TTarget), methodName, callerFilePath, isDevice, dialect);
     }
 
     /// <summary>Runs a DiagnosticAnalyzer on the given source text and returns reported diagnostics.</summary>

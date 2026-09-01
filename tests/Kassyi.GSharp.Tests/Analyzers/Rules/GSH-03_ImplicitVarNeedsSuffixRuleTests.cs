@@ -1,10 +1,11 @@
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "GSH-03")]
-    public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix()
+    public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix(ITranspilerDialect dialect)
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
@@ -24,9 +25,11 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GSH-03")]
-    public void Validate_GSH03_DoesNotReportDiagnostic_OnVarWithSuffix()
+    public void Validate_GSH03_DoesNotReportDiagnostic_OnVarWithSuffix(ITranspilerDialect dialect)
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;

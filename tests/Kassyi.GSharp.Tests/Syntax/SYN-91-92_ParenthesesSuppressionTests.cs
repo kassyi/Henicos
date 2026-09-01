@@ -18,7 +18,7 @@ public class TestClass_SYN91_92
 }
 
 public partial class SYN_91_92_ParenthesesSuppressionTests
-{
+:  TranspilerTestBase{
     [GeneratedRegex(@"if\s*\(\s*a\s*<\s*b\s*\)")]
     private static partial Regex IfConditionRegex();
 
@@ -28,23 +28,27 @@ public partial class SYN_91_92_ParenthesesSuppressionTests
     [GeneratedRegex(@"(int32_t|int)\s+r2\s*=\s*a\s*\*\s*\(b\s*\+\s*c\);")]
     private static partial Regex IntAssignmentRegex();
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-91")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN91_RedundantParenthesesSuppression_HappyPath()
+    public void Test_SYN91_RedundantParenthesesSuppression_HappyPath(ITranspilerDialect dialect)
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition),dialect:dialect);
 
         Assert.Empty(diagnostics);
         Assert.Matches(IfConditionRegex(), cudaSource);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-92")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN92_ParenthesesPreservation_EdgeCases_PrecedenceAndMixedOperators()
+    public void Test_SYN92_ParenthesesPreservation_EdgeCases_PrecedenceAndMixedOperators(ITranspilerDialect dialect)
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators),dialect:dialect);
 
         Assert.Empty(diagnostics);
         Assert.Matches(BoolAssignmentRegex(), cudaSource);

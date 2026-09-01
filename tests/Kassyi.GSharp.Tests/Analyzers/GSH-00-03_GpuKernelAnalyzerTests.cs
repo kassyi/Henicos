@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class GSH_00_03_GpuKernelAnalyzerTests
-{
+:  TranspilerTestBase{
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
     [Theory]

@@ -5,13 +5,15 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests;
 
 public class PtxEngineExperimentTests(ITestOutputHelper output)
-{
+:  TranspilerTestBase{
     private readonly ITestOutputHelper _output = output;
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Execution")]
-    public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
+    public void ExecutePtxInMemory_ShouldAddNumbersOnGpu(ITranspilerDialect dialect)
     {
         var (context, smVersion) = InitializeCuda();
         try
@@ -101,11 +103,12 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             if (module != IntPtr.Zero) CudaDriverApi.cuModuleUnload(module);
         }
     }
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
-    public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
+    public void ExecutePtxInMemory_InvalidPtx_ThrowsException(ITranspilerDialect dialect)
     {
         var (context, _) = InitializeCuda();
         try
@@ -123,11 +126,13 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         }
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Stress")]
     [Trait("Category", "Execution")]
-    public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
+    public void ExecutePtxInMemory_ConcurrentExecution_StressTest(ITranspilerDialect dialect)
     {
         var (context, smVersion) = InitializeCuda();
         try

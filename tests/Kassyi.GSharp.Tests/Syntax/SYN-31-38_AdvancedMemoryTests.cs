@@ -2,40 +2,50 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_31_38_AdvancedMemoryTests
-{
+:  TranspilerTestBase{
 
-    [Fact(Skip = "未実装: SYN-31 (アンマネージド関数ポインタ delegate*)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-31")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN31_UnsafeAsPointer_Transpilation()
+    public void Test_SYN31_UnsafeAsPointer_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-32 (MemoryMarshal.Cast<TFrom, TTo> による型昇格・再解釈)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-32")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN32_MemoryMarshalCast_Transpilation()
+    public void Test_SYN32_MemoryMarshalCast_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-33 (ref フィールド ref struct かつ ref int Field C# 11)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-33")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN33_RefFields_Transpilation()
+    public void Test_SYN33_RefFields_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-34 (Vector128<T> / Vector256<T> SIMD 型)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-34")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN34_SimdVector128_Transpilation()
+    public void Test_SYN34_SimdVector128_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-36")]
-    public void Test_SYN36_PointerIncrementKernel()
+    public void Test_SYN36_PointerIncrementKernel(ITranspilerDialect dialect)
     {
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
@@ -47,10 +57,12 @@ public class SYN_31_38_AdvancedMemoryTests
         Assert.Equal(30u, dest[2]);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-36")]
-    public void Test_SYN36_PointerDecrementKernel()
+    public void Test_SYN36_PointerDecrementKernel(ITranspilerDialect dialect)
     {
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
@@ -81,17 +93,21 @@ public class SYN_31_38_AdvancedMemoryTests
         Assert.Equal(expectedDest[2], dest[2]);
     }
 
-    [Fact(Skip = "未実装: SYN-37 (Unsafe クラスの低レベルポインタ演算)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-37")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN37_UnsafePointerArithmetic_Transpilation()
+    public void Test_SYN37_UnsafePointerArithmetic_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-38 (fixed int Buffer[32] 固定サイズバッファフィールド)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-38")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN38_FixedSizeBuffers_Transpilation()
+    public void Test_SYN38_FixedSizeBuffers_Transpilation(ITranspilerDialect dialect)
     {
     }
 }

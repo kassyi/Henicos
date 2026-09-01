@@ -2,61 +2,76 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_17_24_TypesAndStructsTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "SYN-17")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN17_TargetTypedNew_Transpilation()
+    public void Test_SYN17_TargetTypedNew_Transpilation(ITranspilerDialect dialect)
     {
         // Verified by SYN_17_TargetTypedNewTests
     }
 
-    [Fact(Skip = "未実装: SYN-18 (構造化束縛・タプル宣言分解)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-18")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN18_TupleDeconstruction_Transpilation()
+    public void Test_SYN18_TupleDeconstruction_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-19 (構造体のプライマリコンストラクタ)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-19")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN19_PrimaryConstructor_Transpilation()
+    public void Test_SYN19_PrimaryConstructor_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-20 (record struct と with 式)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-20")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN20_RecordStructWithExpression_Transpilation()
+    public void Test_SYN20_RecordStructWithExpression_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-21 (構造体内インデクサ this[int index])")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-21")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN21_StructIndexer_Transpilation()
+    public void Test_SYN21_StructIndexer_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-22 (構造体内演算子オーバーロード)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-22")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN22_StructOperatorOverload_Transpilation()
+    public void Test_SYN22_StructOperatorOverload_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-23 (readonly struct / readonly メソッド)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-23")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN23_ReadonlyStruct_Transpilation()
+    public void Test_SYN23_ReadonlyStruct_Transpilation(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-24 (enum の基底型指定とビットフラグ [Flags])")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-24")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN24_EnumBaseTypeAndFlags_Transpilation()
+    public void Test_SYN24_EnumBaseTypeAndFlags_Transpilation(ITranspilerDialect dialect)
     {
     }
 }

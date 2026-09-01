@@ -31,30 +31,34 @@ public class TestClass_SYN90
 }
 
 public partial class SYN_90_StructAggregateInitTests
-{
+:  TranspilerTestBase{
     [GeneratedRegex(@"MyStruct_SYN90\s+_tmp\{\};\s*_tmp\.A\s*=\s*1;\s*_tmp\.B\s*=\s*2;")]
     private static partial Regex MyStructInitRegex();
 
     [GeneratedRegex(@"AStruct_SYN90\s+_tmp\{\};\s*_tmp\.B\s*=\s*\(\[\&\]\(\)\s*\{[\s\S]*?BStruct_SYN90\s+_tmp\{\};\s*_tmp\.X\s*=\s*1;\s*return\s*_tmp;\s*\}")]
     private static partial Regex NestedStructInitRegex();
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-90")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN90_StructAggregateInitialization_HappyPath()
+    public void Test_SYN90_StructAggregateInitialization_HappyPath(ITranspilerDialect dialect)
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct),dialect:dialect);
 
         Assert.Empty(diagnostics);
         Assert.Matches(MyStructInitRegex(), cudaSource);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-90")]
     [Trait("Category", "Syntax")]
-    public void Test_SYN90_StructAggregateInitialization_EdgeCase_DeeplyNested()
+    public void Test_SYN90_StructAggregateInitialization_EdgeCase_DeeplyNested(ITranspilerDialect dialect)
     {
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct),dialect:dialect);
 
         Assert.Empty(diagnostics);
         Assert.Matches(NestedStructInitRegex(), cudaSource);

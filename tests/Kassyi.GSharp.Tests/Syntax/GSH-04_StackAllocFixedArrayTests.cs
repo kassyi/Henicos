@@ -1,28 +1,33 @@
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class GSH04_StackAllocFixedArrayTests{
-    [Fact(Skip = "未実装: SYN-13 / GSH-04 (stackalloc トランスパイル機能)")]
+public class GSH04_StackAllocFixedArrayTests:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "SYN-13")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Execution")]
-    public void Test_SYN13_GSH04_StackAlloc_HappyPath()
+    public void Test_SYN13_GSH04_StackAlloc_HappyPath(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-13 / GSH-04 (stackalloc トランスパイル機能)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-13")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Execution")]
-    public void Test_SYN13_GSH04_StackAlloc_InTightLoop()
+    public void Test_SYN13_GSH04_StackAlloc_InTightLoop(ITranspilerDialect dialect)
     {
     }
 
-    [Fact(Skip = "未実装: SYN-13 / GSH-04 (stackalloc トランスパイル機能)")]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "SYN-13")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Execution")]
-    public void Test_SYN13_GSH04_StackAlloc_AsMethodArgument()
+    public void Test_SYN13_GSH04_StackAlloc_AsMethodArgument(ITranspilerDialect dialect)
     {
     }
 }

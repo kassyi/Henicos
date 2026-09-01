@@ -2,10 +2,11 @@
 namespace Kassyi.GSharp.Tests.Helpers;
 
 public class GEN_54_MegaCompilationCacheTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("Category", "Stress")]
-    public void GetDynamicCompilation_ConcurrentAccess_IsThreadSafe()
+    public void GetDynamicCompilation_ConcurrentAccess_IsThreadSafe(ITranspilerDialect dialect)
     {
         var exceptions = new ConcurrentBag<Exception>();
 
@@ -29,9 +30,11 @@ public class GEN_54_MegaCompilationCacheTests
         Assert.Empty(exceptions);
     }
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("Category", "Stress")]
-    public void GetDynamicCompilation_ConcurrentAccess_WithExplicitCallerPaths_IsDeterministicAndThreadSafe()
+    public void GetDynamicCompilation_ConcurrentAccess_WithExplicitCallerPaths_IsDeterministicAndThreadSafe(ITranspilerDialect dialect)
     {
         var exceptions = new ConcurrentBag<Exception>();
         var thisFilePath = GetThisFilePath();
@@ -57,8 +60,10 @@ public class GEN_54_MegaCompilationCacheTests
         Assert.Empty(exceptions);
     }
 
-    [Fact]
-    public void BaseCompilation_IsNotNullAndHasUnsafeAllowed()
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
+    public void BaseCompilation_IsNotNullAndHasUnsafeAllowed(ITranspilerDialect dialect)
     {
         var baseComp = MegaCompilationCache.BaseCompilation;
         Assert.NotNull(baseComp);

@@ -2,10 +2,11 @@
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_01_ForEachNotSupportedRuleTests
-{
-    [Fact]
+:  TranspilerTestBase{
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+    [Theory]
     [Trait("FeatureId", "GSH-01")]
-    public void Validate_GSH01_ReportsDiagnostic_OnForEachStatement()
+    public void Validate_GSH01_ReportsDiagnostic_OnForEachStatement(ITranspilerDialect dialect)
     {
         // Arrange
         var rule = ForEachNotSupportedRule.Instance;

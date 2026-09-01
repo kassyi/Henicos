@@ -1,12 +1,14 @@
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class GEN29_StructMemoryLayoutTests{
+public class GEN29_StructMemoryLayoutTests:  TranspilerTestBase{
 
-    [Fact]
+    [MemberData(nameof(TranspilerTestBase.Dialects))]
+
+    [Theory]
     [Trait("FeatureId", "GEN-29")]
     [Trait("Category", "Execution")]
-    public void Test_GEN29_SharedMemory_StaticExpansion_And_MultipleTypes()
+    public void Test_GEN29_SharedMemory_StaticExpansion_And_MultipleTypes(ITranspilerDialect dialect)
     {
         int[] intOutput = [0];
         float[] floatOutput = [0.0f];

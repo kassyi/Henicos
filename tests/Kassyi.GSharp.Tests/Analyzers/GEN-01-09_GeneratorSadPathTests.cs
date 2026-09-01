@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class GEN_01_09_GeneratorSadPathTests
-{
+:  TranspilerTestBase{
     [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-13", "Analyzers/SYN-13_DynamicStackAllocSadPath.cs", "GSH0003")]
