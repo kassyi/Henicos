@@ -61,7 +61,8 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     }
 
     public void Append(char value) => Builder.Append(value);
-
+    public void Append(int value) => Builder.Append(value);
+    public void Append(bool value) => Builder.Append(value);
     public void AppendComma() => Builder.Append(',');
     public void AppendSpace() => Builder.Append(' ');
     public void AppendSemiColon() => Builder.Append(';');
@@ -250,6 +251,10 @@ public readonly ref struct SourceWriterInlineScope
     public void Dispose() => _writer.Append(_closingText);
 }
 
+#pragma warning disable IDE0060 // Remove unused parameter
+#pragma warning disable IDE0051 // Remove unused private members
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedParameter.Local
 /// <summary>The handler that enables zero-allocation string interpolation using <see cref="SourceWriter"/>.</summary>
 [InterpolatedStringHandler]
 public readonly ref struct SourceWriterInterpolatedStringHandler
@@ -305,3 +310,6 @@ public readonly ref struct SourceWriterInterpolatedStringHandler
     public void AppendFormatted<T>(T? t, string format) where T : IFormattable =>
         _builder?.Append(t?.ToString(format, null));
 }
+#pragma warning restore IDE0051
+#pragma warning restore IDE0060
+

@@ -5,7 +5,6 @@ namespace Kassyi.GSharp.Compiler;
 internal static class TypeConstants
 {
     public const string SystemNamespace = "System";
-    public const string SystemThreadingNamespace = "System.Threading";
     public const string NumericsNamespace = "Numerics";
     public const string ThreadingNamespace = "Threading";
 
