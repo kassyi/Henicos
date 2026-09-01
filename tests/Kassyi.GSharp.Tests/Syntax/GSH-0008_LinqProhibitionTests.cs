@@ -7,8 +7,11 @@ public class GSH_0008_LinqProhibitionTests
     [Trait("FeatureId", "GSH-0008")]
     [InlineData(new[] { -5, 0, 3, 10, -2 }, 5)]
     [InlineData(new[] { 1, 2, 3 }, 3)]
+    [InlineData(new[] { 10 }, 1)]
+    [InlineData(new[] { -1, 0, 1 }, 3)]
+    [InlineData(new[] { 0x55555555, -0x55555555 }, 2)]
     [InlineData(new int[0], 0)]
-    public void TestStandardImperativeLoopKernel_HappyPath(int[] input, int length)
+    public void Test_GSH0008_StandardImperativeLoopKernel_HappyPath(int[] input, int length)
     {
         if (length == 0)
         {

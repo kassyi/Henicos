@@ -7,8 +7,11 @@ public class GSH_0007_ForEachProhibitionTests
     [Trait("FeatureId", "GSH-0007")]
     [InlineData(new[] { 1, 2, 3, 4 }, 4)]
     [InlineData(new[] { 10 }, 1)]
+    [InlineData(new[] { -1, 0, 1 }, 3)]
+    [InlineData(new[] { -10, -20, 30 }, 3)]
+    [InlineData(new[] { 0x55555555, 0x12345678 }, 2)]
     [InlineData(new int[0], 0)]
-    public void TestStandardForLoopKernel_HappyPath(int[] input, int length)
+    public void Test_GSH0007_StandardForLoopKernel_HappyPath(int[] input, int length)
     {
         if (length == 0)
         {
