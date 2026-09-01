@@ -1,6 +1,4 @@
-using System;
 using System.Threading;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 

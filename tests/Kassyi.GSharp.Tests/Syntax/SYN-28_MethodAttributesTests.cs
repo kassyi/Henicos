@@ -1,9 +1,5 @@
-using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 

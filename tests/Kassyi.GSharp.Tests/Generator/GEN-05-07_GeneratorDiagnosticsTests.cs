@@ -1,6 +1,4 @@
 
-using Kassyi.GSharp.Tests.Helpers;
-
 namespace Kassyi.GSharp.Tests;
 
 public class GEN_05_GeneratorDiagnosticsTests
