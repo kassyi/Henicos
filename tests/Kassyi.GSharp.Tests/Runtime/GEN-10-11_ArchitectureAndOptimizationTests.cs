@@ -12,12 +12,13 @@ public class ArchitectureAndOptimizationTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "Execution")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         var source = @"
 extern ""C"" __global__ void TestKernel(int* data) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -31,12 +32,13 @@ extern ""C"" __global__ void TestKernel(int* data) {
         Assert.True(ptx86.Length > 0);
     }
     [MemberData(nameof(TranspilerTestBase.Dialects))]
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
     public void CompileToPtx_InvalidArchitecture_ThrowsException(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         var source = @"
 extern ""C"" __global__ void TestKernel(int* data) {
     int idx = threadIdx.x;
@@ -54,12 +56,13 @@ extern ""C"" __global__ void TestKernel(int* data) {
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "Execution")]
     public void JitConstant_Unroll_AltersPtxOutput(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         var srcDynamic = @"
 extern ""C"" __global__ void TestKernelDynamic(int* data, int limit) {
     int sum = 0;

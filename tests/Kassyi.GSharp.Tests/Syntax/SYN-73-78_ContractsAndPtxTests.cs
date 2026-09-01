@@ -38,11 +38,12 @@ public class SYN_73_78_ContractsAndPtxTests
     {
     }
     [MemberData(nameof(TranspilerTestBase.Dialects))]
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Execution")]
     [Trait("FeatureId", "SYN-77")]
     public void TestInlinePtxKernel(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Explicit AI Judgment: Tests CUDA runtime/hardware specifics (e.g., SharedMemory, JIT, PTX, cuCtx).");
         uint[] data = [0];
         SYN_73_78_ContractsAndPtxKernelsWrapper.Launch_InlinePtxKernel(data);
         Assert.Equal(999u, data[0]);
@@ -50,10 +51,11 @@ public class SYN_73_78_ContractsAndPtxTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "SYN-78")]
     [Trait("Category", "Syntax")]
     public void Test_SYN78_WmmaTensorCores_Transpilation(ITranspilerDialect dialect)
     {
+    Skip.IfNot(dialect.IsCuda, "Syntax Test: Transpiles to CUDA-specific intrinsics/macros.");
     }
 }

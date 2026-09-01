@@ -123,11 +123,12 @@ public partial class SYN_28_MethodAttributesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Syntax Test: Method attributes compile to __device__ inline which is CUDA specific.");
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
         Assert.Empty(diagnostics);
@@ -136,11 +137,12 @@ public partial class SYN_28_MethodAttributesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_NoInlining_TranspilesWithNoinlineDevice(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Syntax Test: Method attributes compile to __device__ inline which is CUDA specific.");
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
         Assert.Empty(diagnostics);
@@ -149,11 +151,12 @@ public partial class SYN_28_MethodAttributesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Syntax Test: Method attributes compile to __device__ inline which is CUDA specific.");
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
         Assert.Empty(diagnostics);
@@ -165,11 +168,12 @@ public partial class SYN_28_MethodAttributesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Syntax Test: Method attributes compile to __device__ inline which is CUDA specific.");
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
         Assert.Empty(diagnostics);
@@ -180,11 +184,12 @@ public partial class SYN_28_MethodAttributesTests
 
     [MemberData(nameof(TranspilerTestBase.Dialects))]
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl(ITranspilerDialect dialect)
     {
+        Skip.IfNot(dialect.IsCuda, "Syntax Test: Method attributes compile to __device__ inline which is CUDA specific.");
         var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
 
         Assert.Empty(diagnostics);
