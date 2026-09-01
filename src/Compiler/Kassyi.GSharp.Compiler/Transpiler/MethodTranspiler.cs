@@ -20,11 +20,9 @@ public static class MethodTranspiler
         var methodSymbol = semanticModel.GetDeclaredSymbol(method);
         if (methodSymbol != null)
         {
-            if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
-                methodSymbol.ContainingType?.GetAttributes()
-                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
-                methodSymbol.ContainingModule?.GetAttributes()
-                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
+            if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
+                methodSymbol.ContainingType?.HasAttribute(KnownAttributes.SkipLocalsInit) == true ||
+                methodSymbol.ContainingModule?.HasAttribute(KnownAttributes.SkipLocalsInit) == true)
             {
                 context.SkipLocalsInit = true;
             }
@@ -94,84 +92,8 @@ public static class MethodTranspiler
 
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
-        var hasAggressiveInlining = false;
-        var hasNoInlining = false;
-
-        if (methodSymbol != null)
-        {
-            foreach (var attr in methodSymbol.GetAttributes())
-            {
-                if (attr.IsAttribute(KnownAttributes.GpuInline))
-                {
-                    hasAggressiveInlining = true;
-                }
-                else if (attr.IsAttribute(KnownAttributes.GpuNoInline))
-                {
-                    hasNoInlining = true;
-                }
-                else if (attr.IsAttribute(KnownAttributes.MethodImpl) &&
-                         attr.AttributeClass?.ContainingNamespace is
-                         {
-                             Name: "CompilerServices",
-                             ContainingNamespace:
-                             {
-                                 Name: "Runtime",
-                                 ContainingNamespace:
-                                 {
-                                     Name: "System", ContainingNamespace.IsGlobalNamespace: true
-                                 }
-                             }
-                         })
-                {
-                    if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
-                    {
-                        var options = (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
-                        if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                        {
-                            hasAggressiveInlining = true;
-                        }
-
-                        if ((options & MethodImplOptions.NoInlining) != 0)
-                        {
-                            hasNoInlining = true;
-                        }
-                    }
-                    else if (attr.NamedArguments.Length > 0)
-                    {
-                        foreach (var namedArg in attr.NamedArguments)
-                        {
-                            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
-                            {
-                                var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-                                if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                                {
-                                    hasAggressiveInlining = true;
-                                }
-
-                                if ((options & MethodImplOptions.NoInlining) != 0)
-                                {
-                                    hasNoInlining = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (hasAggressiveInlining)
-        {
-            context.Writer.AppendKeyword("__forceinline__");
-        }
-        else if (hasNoInlining)
-        {
-            context.Writer.AppendKeyword("__noinline__");
-        }
-        else
-        {
-            context.Writer.AppendKeyword("inline");
-        }
-
+        var inlineKeyword = GetInliningKeyword(methodSymbol);
+        context.Writer.AppendKeyword(inlineKeyword);
         context.Writer.AppendSpace();
         context.Writer.AppendKeyword("__device__");
         context.Writer.AppendSpace();
@@ -185,6 +107,61 @@ public static class MethodTranspiler
         {
             context.Writer.AppendKeyword("void");
         }
+    }
+
+    private static string GetInliningKeyword(IMethodSymbol? methodSymbol)
+    {
+        if (methodSymbol == null)
+        {
+            return "inline";
+        }
+
+        foreach (var attr in methodSymbol.GetAttributes())
+        {
+            if (attr.IsAttribute(KnownAttributes.GpuInline))
+            {
+                return "__forceinline__";
+            }
+
+            if (attr.IsAttribute(KnownAttributes.GpuNoInline))
+            {
+                return "__noinline__";
+            }
+
+            if (attr.IsAttribute(KnownAttributes.MethodImpl))
+            {
+                var options = ExtractMethodImplOptions(attr);
+                if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                {
+                    return "__forceinline__";
+                }
+
+                if ((options & MethodImplOptions.NoInlining) != 0)
+                {
+                    return "__noinline__";
+                }
+            }
+        }
+
+        return "inline";
+    }
+
+    private static MethodImplOptions ExtractMethodImplOptions(AttributeData attr)
+    {
+        if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
+        {
+            return (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
+        }
+
+        foreach (var namedArg in attr.NamedArguments)
+        {
+            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
+            {
+                return (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+            }
+        }
+
+        return default;
     }
 
     private static void WriteKernelMethodPrefix(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol,

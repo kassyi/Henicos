@@ -18,7 +18,7 @@ internal static class MacroTranspiler
     private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
-            symbol.ContainingType.Name != "Gpu" ||
+            symbol.ContainingType.Name != TypeConstants.GpuType ||
             !symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
