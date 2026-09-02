@@ -68,6 +68,11 @@ __device__ inline const unsigned int& operator[](int index) const
 {
 return _element0[index];
 }
+__device__ inline unsigned int* begin() { return _element0; }
+__device__ inline unsigned int* end() { return _element0 + 8; }
+__device__ inline const unsigned int* begin() const { return _element0; }
+__device__ inline const unsigned int* end() const { return _element0 + 8; }
+__device__ inline int size() const { return 8; }
 }
 ;
 #endif
@@ -80,7 +85,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles,float* __restrict__  totalMagnitude,bool* __restrict__  successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
+extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount){
 (*successFlag)=false;
 float Gravity=9.8f;
 int tx=threadIdx.x;
