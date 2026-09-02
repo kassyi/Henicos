@@ -1,5 +1,3 @@
-using System;
-
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
@@ -8,12 +6,7 @@ namespace Kassyi.GSharp.Core;
 /// which cannot be compiled in isolation by the snapshot generator.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = false)]
-public sealed class SkipSnapshotConsistencyAttribute : Attribute
+public sealed class SkipSnapshotConsistencyAttribute(string reason = "") : Attribute
 {
-    public string Reason { get; }
-
-    public SkipSnapshotConsistencyAttribute(string reason = "")
-    {
-        Reason = reason;
-    }
+    public string Reason { get; } = reason;
 }
