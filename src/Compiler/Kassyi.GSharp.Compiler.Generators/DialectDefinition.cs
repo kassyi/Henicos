@@ -9,7 +9,10 @@ public class DialectDefinition
     public string Name { get; set; } = string.Empty;
 
     [YamlMember(Alias = "Inherits")]
-    public string? Inherits { get; set; }
+    public string? Inherits
+    {
+        get; set;
+    }
 
     [YamlMember(Alias = "RequiredHeaders")]
     public List<string> RequiredHeaders { get; set; } = new();
