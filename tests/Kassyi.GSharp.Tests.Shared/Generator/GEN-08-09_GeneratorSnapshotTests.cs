@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -9,7 +10,7 @@ using Kassyi.GSharp.Compiler;
 
 namespace Kassyi.GSharp.Tests;
 
-public class GEN_08_GeneratorSnapshotTests
+public partial class GEN_08_GeneratorSnapshotTests
 {
     private class GpuAttributeRemover : CSharpSyntaxRewriter
     {
@@ -224,7 +225,7 @@ public class GEN_08_GeneratorSnapshotTests
 
         Assert.NotEmpty(snapshotFiles);
 
-        string GetPureName(string name) => Regex.Replace(name, @"^[A-Z]{3}-\d{2}(_\d{2})?_", "");
+        string GetPureName(string name) => PureNameRegex().Replace(name, "");
 
         var missingSnapshots = new List<string>();
         foreach (var pureName in mandatorySnapshotKernels)
@@ -238,4 +239,7 @@ public class GEN_08_GeneratorSnapshotTests
 
         Assert.Empty(missingSnapshots);
     }
+
+    [GeneratedRegex(@"^[A-Z]{3}-\d{2}(_\d{2})?_")]
+    private static partial Regex PureNameRegex();
 }
