@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
-public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __declspec(dllexport) void SharedMemoryReverseKernel(int* __restrict__ data,int size){
+public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __declspec(dllexport) void SharedMemoryReverseKernel(int* __restrict__ data, int size){
 int tid=threadIdx.x;
 __shared__ int sMem[256];
 if(tid<size)
@@ -22,29 +22,32 @@ if(tid<size)
 data[tid]=sMem[size-1-tid];
 }
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SharedMemoryReverseKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int size)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+SharedMemoryReverseKernel(data, size);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void SharedMemoryReverseKernel_Delegate(int* data, int size);
+private unsafe delegate void SharedMemoryReverseKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* data, int size);
 public static unsafe void Launch_SharedMemoryReverseKernel(int[] data, int size, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (data.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SharedMemoryReverseKernel_Delegate>("SharedMemoryReverseKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryReverseKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryReverseKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SharedMemoryReverseKernel_Delegate>("__gsharp_launch_SharedMemoryReverseKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryReverseKernel_Source, null, macros);
 fixed (int* p_data = data)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_data, size);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, size);
 }
 }
 #pragma warning restore CS8500

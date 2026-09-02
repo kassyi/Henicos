@@ -126,16 +126,16 @@ extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uin
     gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
-inline bool TrySquare(int input,int* __restrict__  output);
+inline bool TrySquare(int input, int* __restrict__  output);
 
-inline bool TryStep(int input,int* __restrict__  next);
+inline bool TryStep(int input, int* __restrict__  next);
 
-inline bool TrySquare(int input,int* __restrict__  output){
+inline bool TrySquare(int input, int* __restrict__  output){
 (*output)=input*input;
 return input>0;
 }
 
-inline bool TryStep(int input,int* __restrict__  next){
+inline bool TryStep(int input, int* __restrict__  next){
 (*next)=input-1;
 return (*next)>0;
 }

@@ -17,29 +17,32 @@ atomicOr(&globalState[0],(unsigned int)(1<<tid));
 }
 atomicMax(&globalState[1],(unsigned int)tid);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_AtomicOrMaxStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ globalState)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+AtomicOrMaxStressKernel(globalState);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AtomicOrMaxStressKernel_Delegate(uint* globalState);
+private unsafe delegate void AtomicOrMaxStressKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* globalState);
 public static unsafe void Launch_AtomicOrMaxStressKernel(uint[] globalState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (globalState.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AtomicOrMaxStressKernel_Delegate>("AtomicOrMaxStressKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AtomicOrMaxStressKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AtomicOrMaxStressKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AtomicOrMaxStressKernel_Delegate>("__gsharp_launch_AtomicOrMaxStressKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AtomicOrMaxStressKernel_Source, null, macros);
 fixed (uint* p_globalState = globalState)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_globalState);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalState);
 }
 }
 #pragma warning restore CS8500

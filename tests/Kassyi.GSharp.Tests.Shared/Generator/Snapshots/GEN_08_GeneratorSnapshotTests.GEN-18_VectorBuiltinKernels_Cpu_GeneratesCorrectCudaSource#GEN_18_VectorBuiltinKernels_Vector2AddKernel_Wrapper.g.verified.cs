@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GEN_18_VectorBuiltinKernelsWrapper
 {
-public const string Vector2AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector2AddKernel(float2* __restrict__ a,float2* __restrict__ b,float2* __restrict__ result,int length){
+public const string Vector2AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length){
 auto tid=threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -18,31 +18,34 @@ auto vb=b[tid];
 result[tid]=float2{(float)(va.x+vb.x), (float)(va.y+vb.y)};
 }
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+Vector2AddKernel(a, b, result, length);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Vector2AddKernel_Delegate(global::System.Numerics.Vector2* a, global::System.Numerics.Vector2* b, global::System.Numerics.Vector2* result, int length);
+private unsafe delegate void Vector2AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Numerics.Vector2* a, global::System.Numerics.Vector2* b, global::System.Numerics.Vector2* result, int length);
 public static unsafe void Launch_Vector2AddKernel(global::System.Numerics.Vector2[] a, global::System.Numerics.Vector2[] b, global::System.Numerics.Vector2[] result, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<Vector2AddKernel_Delegate>("Vector2AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + Vector2AddKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + Vector2AddKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + Vector2AddKernel_Source, null, macros);
 fixed (global::System.Numerics.Vector2* p_a = a)
 fixed (global::System.Numerics.Vector2* p_b = b)
 fixed (global::System.Numerics.Vector2* p_result = result)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_a, p_b, p_result, length);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_result, length);
 }
 }
 #pragma warning restore CS8500

@@ -11,24 +11,27 @@ public static partial class ErrorKernelsWrapper
 {
 public const string ManagedParamKernel_Source = @"extern ""C"" __declspec(dllexport) void ManagedParamKernel(TestSpace_ManagedClass obj){
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ManagedParamKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestSpace_ManagedClass obj)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+ManagedParamKernel(obj);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ManagedParamKernel_Delegate(global::TestSpace.ManagedClass obj);
+private unsafe delegate void ManagedParamKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestSpace.ManagedClass obj);
 public static unsafe void Launch_ManagedParamKernel(global::TestSpace.ManagedClass obj, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ManagedParamKernel_Delegate>("ManagedParamKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ManagedParamKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ManagedParamKernel_Source, null, macros);
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(obj);
-}
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ManagedParamKernel_Delegate>("__gsharp_launch_ManagedParamKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ManagedParamKernel_Source, null, macros);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, obj);
 }
 #pragma warning restore CS8500
 }

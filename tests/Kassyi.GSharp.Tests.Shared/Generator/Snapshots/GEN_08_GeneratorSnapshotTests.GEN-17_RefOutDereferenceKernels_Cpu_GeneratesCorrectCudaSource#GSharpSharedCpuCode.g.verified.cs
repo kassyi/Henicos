@@ -131,7 +131,7 @@ inline void ModifyRef(bool* __restrict__  successFlag);
 struct Kassyi_GSharp_Tests_Syntax_RefTestStruct;
 inline void MemberAccessRef(Kassyi_GSharp_Tests_Syntax_RefTestStruct* __restrict__  refArg);
 
-inline void ChainedAssignmentRef(int* __restrict__  refArg,int* __restrict__  a,int* __restrict__  b);
+inline void ChainedAssignmentRef(int* __restrict__  refArg, int* __restrict__  a, int* __restrict__  b);
 
 inline void ModifyRef(bool* __restrict__  successFlag){
 (*successFlag)=false;
@@ -150,7 +150,7 @@ inline void MemberAccessRef(Kassyi_GSharp_Tests_Syntax_RefTestStruct* __restrict
 (*refArg).Field=5;
 }
 
-inline void ChainedAssignmentRef(int* __restrict__  refArg,int* __restrict__  a,int* __restrict__  b){
+inline void ChainedAssignmentRef(int* __restrict__  refArg, int* __restrict__  a, int* __restrict__  b){
 (*a)=(*b)=(*refArg)=10;
 }
 

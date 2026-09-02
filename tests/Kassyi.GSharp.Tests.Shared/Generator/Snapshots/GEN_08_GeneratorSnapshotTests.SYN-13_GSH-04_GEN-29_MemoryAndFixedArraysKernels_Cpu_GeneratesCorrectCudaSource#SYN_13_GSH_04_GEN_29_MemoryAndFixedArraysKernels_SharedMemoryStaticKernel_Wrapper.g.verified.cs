@@ -18,7 +18,7 @@ float Y;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void SharedMemoryStaticKernel(int* __restrict__ intOutput,float* __restrict__ floatOutput,Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput){
+extern ""C"" __declspec(dllexport) void SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput){
 __shared__ int intSmem[256];
 __shared__ float floatSmem[256];
 __shared__ Kassyi_GSharp_Tests_Syntax_CustomPoint pointSmem[64];
@@ -42,31 +42,34 @@ floatOutput[0]=floatSmem[10];
 pointOutput[0]=pointSmem[5];
 }
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SharedMemoryStaticKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+SharedMemoryStaticKernel(intOutput, floatOutput, pointOutput);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void SharedMemoryStaticKernel_Delegate(int* intOutput, float* floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint* pointOutput);
+private unsafe delegate void SharedMemoryStaticKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* intOutput, float* floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint* pointOutput);
 public static unsafe void Launch_SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SharedMemoryStaticKernel_Delegate>("SharedMemoryStaticKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryStaticKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryStaticKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryStaticKernel_Source, null, macros);
 fixed (int* p_intOutput = intOutput)
 fixed (float* p_floatOutput = floatOutput)
 fixed (global::Kassyi.GSharp.Tests.Syntax.CustomPoint* p_pointOutput = pointOutput)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_intOutput, p_floatOutput, p_pointOutput);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_intOutput, p_floatOutput, p_pointOutput);
 }
 }
 #pragma warning restore CS8500

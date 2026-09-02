@@ -126,15 +126,15 @@ extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uin
     gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
-__forceinline__ int InlinedAdd(int a,int b);
+__forceinline__ int InlinedAdd(int a, int b);
 
-__forceinline__ int MultiAttributeMultiply(int a,int b);
+__forceinline__ int MultiAttributeMultiply(int a, int b);
 
-__forceinline__ int InlinedAdd(int a,int b){
+__forceinline__ int InlinedAdd(int a, int b){
 return a+b;
 }
 
-__forceinline__ int MultiAttributeMultiply(int a,int b){
+__forceinline__ int MultiAttributeMultiply(int a, int b){
 return a*b;
 }
 
