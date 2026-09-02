@@ -74,8 +74,21 @@ public sealed class CpuJitEngine
         var lazyPtr = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<Delegate>(() =>
         {
             var combinedMacros = new Dictionary<string, string>();
-            if (jitConstants != null) foreach (var kvp in jitConstants) combinedMacros[kvp.Key] = kvp.Value;
-            if (macros != null) foreach (var kvp in macros) combinedMacros[kvp.Key] = kvp.Value;
+            if (jitConstants != null)
+            {
+                foreach (var kvp in jitConstants)
+                {
+                    combinedMacros[kvp.Key] = kvp.Value;
+                }
+            }
+
+            if (macros != null)
+            {
+                foreach (var kvp in macros)
+                {
+                    combinedMacros[kvp.Key] = kvp.Value;
+                }
+            }
 
             var cppSource = PreprocessSource(baseSource, combinedMacros);
             var sourceHash = ComputeHash(cppSource);
@@ -131,8 +144,21 @@ public sealed class CpuJitEngine
         var lazyDelegate = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<Delegate>(() =>
         {
             var combinedMacros = new Dictionary<string, string>();
-            if (jitConstants != null) foreach (var kvp in jitConstants) combinedMacros[kvp.Key] = kvp.Value;
-            if (macros != null) foreach (var kvp in macros) combinedMacros[kvp.Key] = kvp.Value;
+            if (jitConstants != null)
+            {
+                foreach (var kvp in jitConstants)
+                {
+                    combinedMacros[kvp.Key] = kvp.Value;
+                }
+            }
+
+            if (macros != null)
+            {
+                foreach (var kvp in macros)
+                {
+                    combinedMacros[kvp.Key] = kvp.Value;
+                }
+            }
 
             var cppSource = PreprocessSource(baseSource, combinedMacros);
             var sourceHash = ComputeHash(cppSource);
@@ -153,7 +179,10 @@ public sealed class CpuJitEngine
 
     private static string PreprocessSource(string cppSource, Dictionary<string, string>? macros)
     {
-        if (macros == null || macros.Count == 0) return cppSource;
+        if (macros == null || macros.Count == 0)
+        {
+            return cppSource;
+        }
 
         var sb = new StringBuilder();
         foreach (var kvp in macros)
