@@ -21,10 +21,27 @@ public sealed class MsvcCompiler
         using var process = new Process();
         process.StartInfo = psi;
         var outputBuilder = new StringBuilder();
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) lock (outputBuilder) outputBuilder.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (outputBuilder) outputBuilder.AppendLine(e.Data); };
+        process.OutputDataReceived += (_, e) => { if (e.Data != null)
+            {
+                lock (outputBuilder)
+                {
+                    outputBuilder.AppendLine(e.Data);
+                }
+            }
+        };
+        process.ErrorDataReceived += (_, e) => { if (e.Data != null)
+            {
+                lock (outputBuilder)
+                {
+                    outputBuilder.AppendLine(e.Data);
+                }
+            }
+        };
 
-        if (!process.Start()) throw new InvalidOperationException("Failed to start process");
+        if (!process.Start())
+        {
+            throw new InvalidOperationException("Failed to start process");
+        }
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
