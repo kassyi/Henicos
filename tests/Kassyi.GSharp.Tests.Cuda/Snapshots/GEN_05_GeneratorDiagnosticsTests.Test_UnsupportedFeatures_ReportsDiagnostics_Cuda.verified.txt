@@ -2,12 +2,12 @@
   Diagnostics: [
     {
       Location: /*
-        [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
         public static int NonVoidReturnKernel()
                       ^^^
         {
 */
- : (9,22)-(9,25),
+ : (10,22)-(10,25),
       Message: Method 'NonVoidReturnKernel' is marked with [GpuKernel] but returns 'int'. GpuKernel methods must return void.,
       Severity: Error,
       Descriptor: {

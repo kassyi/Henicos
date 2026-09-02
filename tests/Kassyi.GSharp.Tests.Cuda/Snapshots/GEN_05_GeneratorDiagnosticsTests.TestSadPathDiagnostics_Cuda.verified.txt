@@ -2,12 +2,12 @@
   Diagnostics: [
     {
       Location: /*
-        [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
         public static int BadKernel()
                       ^^^
         {
 */
- : (7,22)-(7,25),
+ : (8,22)-(8,25),
       Message: Method 'BadKernel' is marked with [GpuKernel] but returns 'int'. GpuKernel methods must return void.,
       Severity: Error,
       Descriptor: {
@@ -26,7 +26,7 @@
             ^^^^^^
             object obj = new object();
 */
- : (9,12)-(9,18),
+ : (10,12)-(10,18),
       Message: The string type is not supported in GPU kernels,
       Severity: Error,
       Descriptor: {
@@ -45,7 +45,7 @@
                          ^^^^^^^^^^^^
             return 0;
 */
- : (10,25)-(10,37),
+ : (11,25)-(11,37),
       Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
       Severity: Error,
       Descriptor: {
@@ -64,7 +64,7 @@
                          ^^^^^^^^^^^^
             return 0;
 */
- : (10,25)-(10,37),
+ : (11,25)-(11,37),
       Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
       Severity: Error,
       Descriptor: {
@@ -83,7 +83,7 @@
                                    ^^
             return 0;
 */
- : (10,35)-(10,37),
+ : (11,35)-(11,37),
       Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
       Severity: Error,
       Descriptor: {
