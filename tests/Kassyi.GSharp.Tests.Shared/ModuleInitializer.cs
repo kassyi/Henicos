@@ -1,6 +1,6 @@
 using VerifyTests;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+// [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace Kassyi.GSharp.Tests;
 
