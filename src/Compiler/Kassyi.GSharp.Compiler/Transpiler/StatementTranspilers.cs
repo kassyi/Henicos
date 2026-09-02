@@ -74,6 +74,32 @@ internal static class StatementTranspilers
         context.Visitor.VisitStatementOrBlock(node.Statement);
     }
 
+    public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
+    {
+        DeclarationTranspilers.HoistDeclarationExpressions(node.Expression, ref context);
+        context.Writer.AppendKeyword("for");
+        using (context.Writer.Parentheses())
+        {
+            if (node.Type.IsVar)
+            {
+                context.Writer.Append("auto ");
+            }
+            else
+            {
+                var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
+                context.AppendType(typeSymbol);
+                context.Writer.AppendSpace();
+            }
+
+            context.Writer.Append(node.Identifier.Text);
+            context.Writer.Append(" : ");
+            context.Visitor.Visit(node.Expression);
+        }
+
+        context.Writer.AppendLine();
+        context.Visitor.VisitStatementOrBlock(node.Statement);
+    }
+
     private static void TranspileForInitializers(ForStatementSyntax node, ref TranspileContext context)
     {
         if (node.Declaration != null)
