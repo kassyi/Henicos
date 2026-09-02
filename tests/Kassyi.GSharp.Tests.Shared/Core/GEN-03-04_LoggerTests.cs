@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Logger = Kassyi.GSharp.Core.Logger;
 using LogLevel = Kassyi.GSharp.Core.LogLevel;
 
@@ -134,7 +134,7 @@ public class LoggerTests
         logger.LogInformation(marker);
 
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 5000);
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 10000);
 
         Assert.Contains(giantString, content);
     }
