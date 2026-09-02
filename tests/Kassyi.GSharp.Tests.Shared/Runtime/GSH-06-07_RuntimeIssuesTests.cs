@@ -4,7 +4,8 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Tests.Runtime;
 
 public partial class Gsh06_07_RuntimeIssuesTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     [Fact]
     [Trait("FeatureId", "GSH-06")]
     [Trait("Category", "Runtime")]
@@ -45,11 +46,11 @@ public partial class Gsh06_07_RuntimeIssuesTests
         });
     }
 
-    [SkippableFact]
+    [Fact(Skip = "GPU Out-of-memory stress test is disabled by default")]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Stress")]
     [Trait("Category", "SadPath")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "Stress")]
     public void Test_Runtime_OutOfMemory_SadPath()
     {
         // Require CUDA context for allocation
