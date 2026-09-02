@@ -34,6 +34,7 @@
   <ItemGroup>
     <AdditionalFiles Include="Dialects\**\*.yml" />
     <EmbeddedResource Include="Resources\Prelude.cu" />
+    <EmbeddedResource Include="Resources\Prelude.cpp" />
   </ItemGroup>
 
 </Project>

@@ -13,11 +13,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var dialectProvider = context.AnalyzerConfigOptionsProvider
             .Select((options, _) =>
             {
-                if (options.GlobalOptions.TryGetValue("build_property.GSharpTargetDialect", out var dialect) 
+                if (options.GlobalOptions.TryGetValue("build_property.GSharpTargetDialect", out var dialect)
                     && !string.IsNullOrWhiteSpace(dialect))
                 {
                     return dialect;
                 }
+
                 return "Cpu"; // Default fallback
             });
 
@@ -37,7 +38,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var compilationAndAll = context.CompilationProvider.Combine(kernelsAndDevices).Combine(dialectProvider);
 
         context.RegisterSourceOutput(compilationAndAll,
-            static (spc, source) => Execute(source.Left.Left, source.Left.Right.Left, source.Left.Right.Right, source.Right, spc));
+            static (spc, source) => Execute(source.Left.Left, source.Left.Right.Left, source.Left.Right.Right,
+                source.Right, spc));
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
@@ -49,7 +51,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 foreach (var attribute in attributeList.Attributes)
                 {
                     var simpleName = GetSimpleName(attribute.Name);
-                    if (simpleName != null && KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, attributeName))
+                    if (simpleName != null &&
+                        KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, attributeName))
                     {
                         return true;
                     }
@@ -89,14 +92,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect dialect;
-        if (targetDialect.Equals("Cuda", System.StringComparison.OrdinalIgnoreCase))
+        ITranspilerDialect dialect;
+        if (targetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
         {
-            dialect = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+            dialect = new Dialects.GSharpCudaDialect();
         }
         else
         {
-            dialect = new Kassyi.GSharp.Compiler.Dialects.StandardCppDialect();
+            dialect = new Dialects.StandardCppDialect();
         }
 
         var commonDeviceSource = GenerateCommonDeviceSource(compilation, deviceMethods, context, dialect);
@@ -130,11 +133,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
                         sharedWriter.Append(c);
                     }
                 }
+
                 sharedWriter.AppendLine("\";");
             }
         }
 
-        context.AddSource($"GSharpShared{targetDialect}Code.g.cs", SourceText.From(sharedWriter.ToString(), Encoding.UTF8));
+        context.AddSource($"GSharpShared{targetDialect}Code.g.cs",
+            SourceText.From(sharedWriter.ToString(), Encoding.UTF8));
 
         foreach (var method in kernelMethods.OfType<IMethodSymbol>()
                      .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
@@ -152,7 +157,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var source = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: false, dialect);
+            var source = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic,
+                isDevice: false, dialect);
 
             // Generate the C# Wrapper Class
             var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, source, targetDialect);
@@ -163,7 +169,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
     private static string GenerateCommonDeviceSource(Compilation compilation,
-        ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context, Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect dialect)
+        ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context,
+        ITranspilerDialect dialect)
     {
         var deviceSourceBuilder = new StringBuilder();
 
@@ -184,7 +191,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var signatureCode = MethodTranspiler.GenerateCudaSignature(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: true, dialect);
+            var signatureCode = MethodTranspiler.GenerateCudaSignature(syntaxNode, semanticModel,
+                context.ReportDiagnostic, isDevice: true, dialect);
             deviceSourceBuilder.AppendLine(signatureCode);
         }
 
@@ -205,128 +213,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var deviceCode = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic, isDevice: true, dialect);
+            var deviceCode = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic,
+                isDevice: true, dialect);
             deviceSourceBuilder.AppendLine(deviceCode);
         }
 
         return deviceSourceBuilder.ToString();
     }
 
-    private static string? GetPreludeSource(SourceProductionContext context, Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect dialect)
+    private static string? GetPreludeSource(SourceProductionContext context, ITranspilerDialect dialect)
     {
-        if (!dialect.IsCuda)
-        {
-            var writer = new SourceWriter();
-            writer.AppendLine("#include <cmath>");
-            writer.AppendLine("#include <algorithm>");
-            writer.AppendLine("#include <cstdint>");
-            writer.AppendLine("#include <intrin.h>");
-            writer.AppendLine();
-            writer.AppendLine("struct float2 { float x, y; };");
-            writer.AppendLine("struct float3 { float x, y, z; };");
-            writer.AppendLine("struct float4 { float x, y, z, w; };");
-            writer.AppendLine();
-            writer.AppendLine("inline uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }");
-            writer.AppendLine("inline uint64_t __gsharp_rotr64(uint64_t value, int offset) { return _rotr64(value, offset); }");
-            writer.AppendLine("inline uint32_t __gsharp_rotl32(uint32_t value, int offset) { return _rotl(value, offset); }");
-            writer.AppendLine("inline uint64_t __gsharp_rotl64(uint64_t value, int offset) { return _rotl64(value, offset); }");
-            writer.AppendLine("inline uint32_t __popc(uint32_t value) { return __popcnt(value); }");
-            writer.AppendLine("inline uint64_t __popcll(uint64_t value) { return __popcnt64(value); }");
-            writer.AppendLine("inline uint32_t __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? 31 - index : 32; }");
-            writer.AppendLine("inline uint64_t __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? 63 - index : 64; }");
-            writer.AppendLine("inline uint32_t __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? index : 32; }");
-            writer.AppendLine("inline uint64_t __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? index : 64; }");
-            writer.AppendLine("inline uint32_t __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? index : 0; }");
-            writer.AppendLine("inline uint64_t __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? index : 0; }");
-            writer.AppendLine();
-            writer.AppendLine("#define __device__");
-            writer.AppendLine("#define __global__");
-            writer.AppendLine("#define __forceinline__ inline");
-            writer.AppendLine("#define __noinline__");
-            writer.AppendLine("#define __shared__");
-            writer.AppendLine("#if defined(_MSC_VER)");
-            writer.AppendLine("#define __restrict__ __restrict");
-            writer.AppendLine("#endif");
-            writer.AppendLine();
-            writer.AppendLine("template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {");
-            writer.AppendLine("    return std::max(min_val, std::min(val, max_val));");
-            writer.AppendLine("}");
-            writer.AppendLine();
-            writer.AppendLine("template <typename T>");
-            writer.AppendLine("struct System_Nullable {");
-            writer.AppendLine("    bool HasValue;");
-            writer.AppendLine("    T Value;");
-            writer.AppendLine("    System_Nullable() : HasValue(false), Value() {}");
-            writer.AppendLine("    System_Nullable(T val) : HasValue(true), Value(val) {}");
-            writer.AppendLine("};");
-            writer.AppendLine();
-            writer.AppendLine("struct uint3 { uint32_t x, y, z; };");
-            writer.AppendLine("struct dim3 { uint32_t x, y, z; };");
-            writer.AppendLine();
-            writer.AppendLine("// CPU Polyfills for threadIdx, blockIdx, blockDim, gridDim");
-            writer.AppendLine("thread_local uint3 threadIdx;");
-            writer.AppendLine("thread_local uint3 blockIdx;");
-            writer.AppendLine("thread_local dim3 blockDim;");
-            writer.AppendLine("thread_local dim3 gridDim;");
-            writer.AppendLine();
-            writer.AppendLine("// Basic atomics polyfill");
-            writer.AppendLine("inline int atomicAdd(int* address, int val) { int old = *address; *address += val; return old; }");
-            writer.AppendLine("inline unsigned int atomicAdd(unsigned int* address, unsigned int val) { unsigned int old = *address; *address += val; return old; }");
-            writer.AppendLine("inline unsigned long long atomicAdd(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address += val; return old; }");
-            writer.AppendLine("inline int atomicMax(int* address, int val) { int old = *address; if (val > old) *address = val; return old; }");
-            writer.AppendLine("inline unsigned int atomicMax(unsigned int* address, unsigned int val) { unsigned int old = *address; if (val > old) *address = val; return old; }");
-            writer.AppendLine("inline unsigned long long atomicMax(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; if (val > old) *address = val; return old; }");
-            writer.AppendLine("inline int atomicOr(int* address, int val) { int old = *address; *address |= val; return old; }");
-            writer.AppendLine("inline unsigned int atomicOr(unsigned int* address, unsigned int val) { unsigned int old = *address; *address |= val; return old; }");
-            writer.AppendLine("inline unsigned long long atomicOr(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address |= val; return old; }");
-            writer.AppendLine("inline int atomicCAS(int* address, int compare, int val) { int old = *address; if (old == compare) *address = val; return old; }");
-            writer.AppendLine("inline unsigned int atomicCAS(unsigned int* address, unsigned int compare, unsigned int val) { unsigned int old = *address; if (old == compare) *address = val; return old; }");
-            writer.AppendLine("inline unsigned long long atomicCAS(unsigned long long* address, unsigned long long compare, unsigned long long val) { unsigned long long old = *address; if (old == compare) *address = val; return old; }");
-            writer.AppendLine();
-            writer.AppendLine("inline int atomicExch(int* address, int val) { int old = *address; *address = val; return old; }");
-            writer.AppendLine("inline unsigned int atomicExch(unsigned int* address, unsigned int val) { unsigned int old = *address; *address = val; return old; }");
-            writer.AppendLine("inline unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address = val; return old; }");
-            writer.AppendLine();
-            writer.AppendLine("__declspec(selectany) char __gsharp_dynamic_smem[65536];");
-            writer.AppendLine();
-            writer.AppendLine("inline void __syncthreads() {}");
-            writer.AppendLine();
-            writer.AppendLine("// Math polyfills");
-            writer.AppendLine("template <typename T> T max(T a, T b) { return std::max(a, b); }");
-            writer.AppendLine("template <typename T> T min(T a, T b) { return std::min(a, b); }");
-            writer.AppendLine();
-            writer.AppendLine("__forceinline__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }");
-            writer.AppendLine("__forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }");
-            writer.AppendLine("__forceinline__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }");
-            writer.AppendLine();
-            writer.AppendLine("namespace cg {");
-            writer.AppendLine("    struct grid_group {");
-            writer.AppendLine("        void sync() {}");
-            writer.AppendLine("    };");
-            writer.AppendLine("    inline grid_group this_grid() { return grid_group(); }");
-            writer.AppendLine("}");
-            writer.AppendLine();
-            writer.AppendLine("__forceinline__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }");
-            writer.AppendLine("__forceinline__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }");
-            writer.AppendLine("__forceinline__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }");
-            writer.AppendLine();
-            writer.AppendLine("__forceinline__ int __gsharp_atomicExch(int* address, int val) { return atomicExch(address, val); }");
-            writer.AppendLine("__forceinline__ unsigned int __gsharp_atomicExch(unsigned int* address, unsigned int val) { return atomicExch(address, val); }");
-            writer.AppendLine("__forceinline__ unsigned long long __gsharp_atomicExch(unsigned long long* address, unsigned long long val) { return atomicExch(address, val); }");
-            writer.AppendLine();
-            writer.AppendLine("extern \"C\" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {");
-            writer.AppendLine("    threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;");
-            writer.AppendLine("    blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;");
-            writer.AppendLine("    blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;");
-            writer.AppendLine("    gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;");
-            writer.AppendLine("}");
-            writer.AppendLine();
-            
-            return writer.ToString();
-        }
-
+        var resourceFileName = dialect.IsCuda ? "Prelude.cu" : "Prelude.cpp";
         var assembly = typeof(GpuKernelGenerator).Assembly;
-        var resources = assembly.GetManifestResourceNames().Where(n => n.EndsWith("Prelude.cu")).ToList();
+        var resources = assembly.GetManifestResourceNames().Where(n => n.EndsWith(resourceFileName)).ToList();
 
         if (resources.Count != 1)
         {
