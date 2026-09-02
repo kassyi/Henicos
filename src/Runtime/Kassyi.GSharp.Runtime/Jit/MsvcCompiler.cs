@@ -16,12 +16,17 @@ public sealed class MsvcCompiler
         public string Output { get; } = output;
     }
 
-    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner
+    {
+        get; set;
+    } = psi =>
     {
         using var process = new Process();
         process.StartInfo = psi;
         var outputBuilder = new StringBuilder();
-        process.OutputDataReceived += (_, e) => { if (e.Data != null)
+        process.OutputDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
             {
                 lock (outputBuilder)
                 {
@@ -29,7 +34,9 @@ public sealed class MsvcCompiler
                 }
             }
         };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null)
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
             {
                 lock (outputBuilder)
                 {
