@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests;
 
 public class ArchitectureAndOptimizationTests
@@ -16,11 +16,12 @@ public class ArchitectureAndOptimizationTests
     [Trait("Category", "Execution")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
     {
-        var source = @"
-extern ""C"" __global__ void TestKernel(int* data) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    data[idx] = idx * 2;
-}";
+        var source = """
+            extern "C" __global__ void TestKernel(int* data) {
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
+                data[idx] = idx * 2;
+            }
+            """;
 
         var ptx89 = NvrtcCompiler.CompileToPtx(source, "TestKernel", ["-arch=sm_89"]);
         var ptx86 = NvrtcCompiler.CompileToPtx(source, "TestKernel", ["-arch=sm_86"]);
@@ -28,17 +29,19 @@ extern ""C"" __global__ void TestKernel(int* data) {
         Assert.True(ptx89.Length > 0);
         Assert.True(ptx86.Length > 0);
     }
+
     [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Execution")]
     public void CompileToPtx_InvalidArchitecture_ThrowsException()
     {
-        var source = @"
-extern ""C"" __global__ void TestKernel(int* data) {
-    int idx = threadIdx.x;
-    data[idx] = idx;
-}";
+        var source = """
+            extern "C" __global__ void TestKernel(int* data) {
+                int idx = threadIdx.x;
+                data[idx] = idx;
+            }
+            """;
 
         // Expect exception when passing an invalid architecture
         var ex = Assert.ThrowsAny<Exception>(() =>
@@ -55,25 +58,27 @@ extern ""C"" __global__ void TestKernel(int* data) {
     [Trait("Category", "Execution")]
     public void JitConstant_Unroll_AltersPtxOutput()
     {
-        var srcDynamic = @"
-extern ""C"" __global__ void TestKernelDynamic(int* data, int limit) {
-    int sum = 0;
-    for(int i = 0; i < limit; i++) {
-        sum += i * i;
-    }
-    data[0] = sum;
-}";
+        var srcDynamic = """
+            extern "C" __global__ void TestKernelDynamic(int* data, int limit) {
+                int sum = 0;
+                for(int i = 0; i < limit; i++) {
+                    sum += i * i;
+                }
+                data[0] = sum;
+            }
+            """;
 
-        var srcStatic = @"
-#define limit 5
-extern ""C"" __global__ void TestKernelStatic(int* data) {
-    int sum = 0;
-    #pragma unroll
-    for(int i = 0; i < limit; i++) {
-        sum += i * i;
-    }
-    data[0] = sum;
-}";
+        var srcStatic = """
+            #define limit 5
+            extern "C" __global__ void TestKernelStatic(int* data) {
+                int sum = 0;
+                #pragma unroll
+                for(int i = 0; i < limit; i++) {
+                    sum += i * i;
+                }
+                data[0] = sum;
+            }
+            """;
 
         var ptxDynamic =
             NvrtcCompiler.CompileToPtx(srcDynamic, "TestKernelDynamic", ["-arch=sm_86"]);

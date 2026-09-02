@@ -6,14 +6,20 @@ namespace Kassyi.GSharp.Tests.Helpers;
 
 public abstract class TranspilerTestBase
 {
+    protected ITranspilerDialect CurrentDialect { get; } =
+#if GSHARP_CUDA
+        new GSharpCudaDialect();
+#elif GSHARP_CPU
+        new StandardCppDialect();
+#else
+        new StandardCppDialect();
+#endif
+
+    protected bool IsCudaDialect => CurrentDialect.IsCuda;
+    protected bool IsCpuDialect => !CurrentDialect.IsCuda;
+
     protected void EnsureCapability(DialectCapabilities required)
     {
-        DialectCapabilities current = DialectCapabilities.None;
-#if GSHARP_CUDA
-        current = new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect().Capabilities;
-#elif GSHARP_CPU
-        current = new Kassyi.GSharp.Compiler.Dialects.StandardCppDialect().Capabilities;
-#endif
-        Skip.IfNot(current.HasFlag(required), $"Current dialect does not support {required}");
+        Skip.IfNot(CurrentDialect.Capabilities.HasFlag(required), $"Current dialect does not support {required}");
     }
 }
