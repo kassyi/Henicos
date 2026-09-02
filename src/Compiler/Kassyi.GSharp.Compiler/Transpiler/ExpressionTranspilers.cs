@@ -414,7 +414,10 @@ internal static class ExpressionTranspilers
 
     private static bool TryTranspileStackArrayLength(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
-        if (node.Name.Identifier.Text != "Length") return false;
+        if (node.Name.Identifier.Text != "Length")
+        {
+            return false;
+        }
 
         var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
         if (symbol is ILocalSymbol localSym)

@@ -61,7 +61,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void Visit(SyntaxNode? node)
     {
-        if (node == null) return;
+        if (node == null)
+        {
+            return;
+        }
 
         var interceptor = Context.Dialect.GetInterceptorVisitor(ref Context);
         bool handledByDialect = interceptor.Visit(node);

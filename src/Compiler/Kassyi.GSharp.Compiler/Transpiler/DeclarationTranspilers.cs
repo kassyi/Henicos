@@ -297,7 +297,11 @@ internal static class DeclarationTranspilers
 
     private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
-        if (variable.Initializer == null) return false;
+        if (variable.Initializer == null)
+        {
+            return false;
+        }
+
         var initVal = variable.Initializer.Value;
 
         ITypeSymbol? elemType = null;
@@ -314,12 +318,19 @@ internal static class DeclarationTranspilers
             elemType = arrayType.ElementType;
         }
 
-        if (elemType == null) return false;
+        if (elemType == null)
+        {
+            return false;
+        }
 
         // Case 1: CollectionExpression [10, 20, 30]
         if (initVal is CollectionExpressionSyntax collectionExpr)
         {
-            if (isConst) context.Writer.Append("const ");
+            if (isConst)
+            {
+                context.Writer.Append("const ");
+            }
+
             context.AppendType(elemType);
             context.Writer.Append($" {variable.Identifier.Text}");
             using (context.Writer.Brackets())
@@ -336,7 +347,11 @@ internal static class DeclarationTranspilers
         {
             if (stackAlloc.Initializer != null)
             {
-                if (isConst) context.Writer.Append("const ");
+                if (isConst)
+                {
+                    context.Writer.Append("const ");
+                }
+
                 context.AppendType(elemType);
                 context.Writer.Append($" {variable.Identifier.Text}");
                 using (context.Writer.Brackets())
@@ -379,7 +394,11 @@ internal static class DeclarationTranspilers
         {
             if (implStackAlloc.Initializer != null)
             {
-                if (isConst) context.Writer.Append("const ");
+                if (isConst)
+                {
+                    context.Writer.Append("const ");
+                }
+
                 context.AppendType(elemType);
                 context.Writer.Append($" {variable.Identifier.Text}");
                 using (context.Writer.Brackets())
@@ -397,7 +416,11 @@ internal static class DeclarationTranspilers
         {
             if (arrayCreation.Initializer != null)
             {
-                if (isConst) context.Writer.Append("const ");
+                if (isConst)
+                {
+                    context.Writer.Append("const ");
+                }
+
                 context.AppendType(elemType);
                 context.Writer.Append($" {variable.Identifier.Text}");
                 using (context.Writer.Brackets())
