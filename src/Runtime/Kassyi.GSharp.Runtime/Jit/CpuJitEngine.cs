@@ -19,7 +19,7 @@ public sealed class CpuJitEngine
 
     // Cache for loaded delegates: Hash of Source -> Lazy<Delegate>
     private static readonly ConcurrentDictionary<string, Lazy<Delegate>> s_functionCache = new();
-    
+
     // Maintain a list of loaded module handles to free during Shutdown
     private static readonly ConcurrentBag<IntPtr> s_loadedModules = new();
 
@@ -109,7 +109,7 @@ public sealed class CpuJitEngine
         {
             return ptrFunc();
         }
-        
+
         // If it was already cached as a real delegate by GetOrCompileKernel, we can't easily get the pointer back.
         // But since we only call this for __gsharp_set_thread_idx, it should be fine.
         throw new Exception("Cache type mismatch");
@@ -234,10 +234,7 @@ public sealed class CpuJitEngine
         return hfunc;
     }
 
-    private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName) where TDelegate : Delegate
-    {
-        return Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName));
-    }
+    private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName) where TDelegate : Delegate => Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName));
 
     private static string ComputeHash(string input)
     {
