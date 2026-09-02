@@ -24,10 +24,7 @@ public sealed partial class NvccCompiler
     }
 
     /// <summary>Gets or sets the delegate used to execute external system processes.</summary>
-    public static Func<ProcessStartInfo, string> ProcessRunner
-    {
-        get; set;
-    } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
     {
         using var process = new Process();
         process.StartInfo = psi;
@@ -250,24 +247,6 @@ public sealed partial class NvccCompiler
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-
-        Logger<NvccCompiler>.Info($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
-        Logger<NvccCompiler>.Info("====== CUDA SOURCE ======");
-        var cuSrc = FileSystem.File.ReadAllText(cuFile);
-        Logger<NvccCompiler>.Info(cuSrc.AsSpan(0, Math.Min(cuSrc.Length, 2000)).ToString()); // Print first 2000 chars
-        Logger<NvccCompiler>.Info("...");
-        if (cuSrc.Contains("Kernel_StaticFermatLoop"))
-        {
-            var match = Regex.Match(cuSrc,
-                @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
-            if (match.Success)
-            {
-                Logger<NvccCompiler>.Info(match.Value);
-            }
-        }
-
-        Logger<NvccCompiler>.Info("=========================");
-
         var sw = Stopwatch.StartNew();
 
         try
