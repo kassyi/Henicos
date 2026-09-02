@@ -6,19 +6,34 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
 public interface ITranspilerDialect
 {
     /// <summary>Headers required for the generated C++ file.</summary>
-    IEnumerable<string> RequiredHeaders { get; }
+    IEnumerable<string> RequiredHeaders
+    {
+        get;
+    }
 
     /// <summary>Gets a value indicating whether this dialect targets CUDA, enabling GPU execution tests.</summary>
-    bool IsCuda { get; }
+    bool IsCuda
+    {
+        get;
+    }
 
     /// <summary>Gets the capabilities (features) supported by this dialect.</summary>
-    DialectCapabilities Capabilities { get; }
+    DialectCapabilities Capabilities
+    {
+        get;
+    }
 
     /// <summary>Prefix applied to all generated struct definitions (e.g. `__device__ ` for CUDA).</summary>
-    string StructPrefix { get; }
+    string StructPrefix
+    {
+        get;
+    }
 
     /// <summary>Prefix applied to all generated methods (e.g. `__device__ inline ` for CUDA).</summary>
-    string MethodPrefix { get; }
+    string MethodPrefix
+    {
+        get;
+    }
 
     /// <summary>
     /// Appends the C++ type corresponding to a C# ITypeSymbol to the source writer.

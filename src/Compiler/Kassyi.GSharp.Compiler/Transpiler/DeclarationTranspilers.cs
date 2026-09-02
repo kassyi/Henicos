@@ -307,8 +307,7 @@ internal static class DeclarationTranspilers
         ITypeSymbol? elemType = null;
         bool isConst = false;
 
-        if (typeSymbol is INamedTypeSymbol named && named.TypeArguments.Length == 1 &&
-            (named.Name is "Span" or "ReadOnlySpan"))
+        if (typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1, Name: "Span" or "ReadOnlySpan" } named)
         {
             elemType = named.TypeArguments[0];
             isConst = named.Name == "ReadOnlySpan";
@@ -363,7 +362,7 @@ internal static class DeclarationTranspilers
                 return true;
             }
 
-            if (stackAlloc.Type is ArrayTypeSyntax arrayTypeSyntax && arrayTypeSyntax.RankSpecifiers.Count > 0)
+            if (stackAlloc.Type is ArrayTypeSyntax { RankSpecifiers.Count: > 0 } arrayTypeSyntax)
             {
                 var sizeExpr = arrayTypeSyntax.RankSpecifiers[0].Sizes.FirstOrDefault();
                 if (sizeExpr != null)
@@ -392,23 +391,20 @@ internal static class DeclarationTranspilers
         // Case 3: ImplicitStackAllocArrayCreationExpression stackalloc[] { 1, 2, 3 }
         if (initVal is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc)
         {
-            if (implStackAlloc.Initializer != null)
+            if (isConst)
             {
-                if (isConst)
-                {
-                    context.Writer.Append("const ");
-                }
-
-                context.AppendType(elemType);
-                context.Writer.Append($" {variable.Identifier.Text}");
-                using (context.Writer.Brackets())
-                {
-                    context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
-                }
-                context.Writer.AppendOperator("=");
-                context.Visitor.Visit(implStackAlloc.Initializer);
-                return true;
+                context.Writer.Append("const ");
             }
+
+            context.AppendType(elemType);
+            context.Writer.Append($" {variable.Identifier.Text}");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
+            }
+            context.Writer.AppendOperator("=");
+            context.Visitor.Visit(implStackAlloc.Initializer);
+            return true;
         }
 
         // Case 4: ArrayCreationExpression new int[] { 1, 2, 3 } or new int[4]

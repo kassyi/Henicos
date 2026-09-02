@@ -121,14 +121,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (sharedWriter.Scope())
             {
                 sharedWriter.Append("public const string Source = @\"");
-                for (var i = 0; i < sharedSource.Length; i++)
+                foreach (var c in sharedSource)
+
                 {
-                    var c = sharedSource[i];
                     if (c == '"')
+
                     {
                         sharedWriter.Append("\"\"");
                     }
+
                     else
+
                     {
                         sharedWriter.Append(c);
                     }

@@ -33,7 +33,7 @@ public static class MethodTranspiler
 
         WriteMethodSignature(methodDecl, isDevice, ref context);
         WriteMethodBody(methodDecl, ref context);
-        
+
         if (!isDevice && !context.Dialect.IsCuda)
         {
             WriteCpuLauncher(methodDecl, ref context);
@@ -99,7 +99,7 @@ public static class MethodTranspiler
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var inlineKeyword = GetInliningKeyword(methodSymbol);
-        
+
         if (context.Dialect.IsCuda)
         {
             context.Writer.Append($"{inlineKeyword} __device__ ");
@@ -271,11 +271,11 @@ public static class MethodTranspiler
         context.Writer.AppendLine();
         context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
         context.Writer.Append($" __gsharp_launch_{method.Identifier.Text}(");
-        
+
         // Launch dimensions
         context.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
         context.Writer.Append("uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ");
-        
+
         if (method.ParameterList.Parameters.Count > 0)
         {
             context.Writer.Append(", ");
@@ -283,7 +283,7 @@ public static class MethodTranspiler
 
         WriteParameters(method.ParameterList.Parameters, false, ref context);
         context.Writer.AppendLine(")");
-        
+
         using (context.Writer.Scope())
         {
             context.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
@@ -299,10 +299,10 @@ public static class MethodTranspiler
                 using (context.Writer.Parentheses())
                 {
                     var semanticModel = context.SemanticModel;
-                    var validParameters = method.ParameterList.Parameters.Where(p => 
+                    var validParameters = method.ParameterList.Parameters.Where(p =>
                         semanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.JitConstant) != true
                     ).ToList();
-                    
+
                     for (var i = 0; i < validParameters.Count; i++)
                     {
                         if (i > 0)

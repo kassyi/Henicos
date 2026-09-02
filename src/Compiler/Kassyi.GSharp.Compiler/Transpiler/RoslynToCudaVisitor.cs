@@ -113,6 +113,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 {
                     Context.Writer.Append(", ");
                 }
+
                 Visit(node.Parameters[i]);
             }
         }
@@ -284,6 +285,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             {
                 Context.Writer.Append($"*{node.Identifier.Text}");
             }
+
             return;
         }
 
@@ -301,10 +303,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Writer.Append(node.Token.Text);
     }
 
-    public override void VisitDefaultExpression(DefaultExpressionSyntax node)
-    {
-        Context.Writer.AppendEmptyScope();
-    }
+    public override void VisitDefaultExpression(DefaultExpressionSyntax node) => Context.Writer.AppendEmptyScope();
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
         => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
@@ -365,14 +364,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                     Context.Writer.AppendSpace();
                 }
             }
+
             Context.Writer.AppendSpace();
         }
     }
 
-    public override void VisitExpressionElement(ExpressionElementSyntax node)
-    {
-        Visit(node.Expression);
-    }
+    public override void VisitExpressionElement(ExpressionElementSyntax node) => Visit(node.Expression);
 
     public override void VisitInitializerExpression(InitializerExpressionSyntax node)
     {
@@ -382,12 +379,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             for (var i = 0; i < node.Expressions.Count; i++)
             {
                 Visit(node.Expressions[i]);
-                if (i < node.Expressions.Count - 1)
+                if (i >= node.Expressions.Count - 1)
                 {
-                    Context.Writer.AppendComma();
-                    Context.Writer.AppendSpace();
+                    continue;
                 }
+
+                Context.Writer.AppendComma();
+                Context.Writer.AppendSpace();
             }
+
             Context.Writer.AppendSpace();
         }
     }
@@ -404,15 +404,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
-    public override void VisitImplicitStackAllocArrayCreationExpression(ImplicitStackAllocArrayCreationExpressionSyntax node)
-    {
-        if (node.Initializer != null)
-        {
-            Visit(node.Initializer);
-        }
-        else
-        {
-            Context.Writer.AppendEmptyScope();
-        }
-    }
+    public override void VisitImplicitStackAllocArrayCreationExpression(
+        ImplicitStackAllocArrayCreationExpressionSyntax node) => Visit(node.Initializer);
 }
