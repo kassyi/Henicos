@@ -33,6 +33,11 @@ public static class MethodTranspiler
 
         WriteMethodSignature(methodDecl, isDevice, ref context);
         WriteMethodBody(methodDecl, ref context);
+        
+        if (!isDevice && !context.Dialect.IsCuda)
+        {
+            WriteCpuLauncher(methodDecl, ref context);
+        }
 
         context.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
@@ -250,7 +255,65 @@ public static class MethodTranspiler
             context.Writer.Append($" {p.Identifier.Text}");
             if (i < validParameters.Count - 1)
             {
-                context.Writer.AppendComma();
+                context.Writer.Append(", ");
+            }
+        }
+    }
+
+    private static void WriteCpuLauncher(MethodDeclarationSyntax method, ref TranspileContext context)
+    {
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
+        context.Writer.AppendLine();
+        context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
+        context.Writer.Append($" __gsharp_launch_{method.Identifier.Text}(");
+        
+        // Launch dimensions
+        context.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
+        context.Writer.Append("uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ");
+        
+        if (method.ParameterList.Parameters.Count > 0)
+        {
+            context.Writer.Append(", ");
+        }
+
+        WriteParameters(method.ParameterList.Parameters, false, ref context);
+        context.Writer.AppendLine(")");
+        
+        using (context.Writer.Scope())
+        {
+            context.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
+            context.Writer.AppendLine("for (uint32_t by = 0; by < gridDimY; by++)");
+            context.Writer.AppendLine("for (uint32_t bx = 0; bx < gridDimX; bx++)");
+            context.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
+            context.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
+            context.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
+            using (context.Writer.Scope())
+            {
+                context.Writer.AppendLine("__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
+                context.Writer.Append(method.Identifier.Text);
+                using (context.Writer.Parentheses())
+                {
+                    var semanticModel = context.SemanticModel;
+                    var validParameters = method.ParameterList.Parameters.Where(p => 
+                        semanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.JitConstant) != true
+                    ).ToList();
+                    
+                    for (var i = 0; i < validParameters.Count; i++)
+                    {
+                        if (i > 0)
+                        {
+                            context.Writer.Append(", ");
+                        }
+
+                        context.Writer.Append(validParameters[i].Identifier.Text);
+                    }
+                }
+                context.Writer.AppendSemiColonLine();
             }
         }
     }

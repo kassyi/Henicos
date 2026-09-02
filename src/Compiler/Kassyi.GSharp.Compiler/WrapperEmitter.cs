@@ -32,7 +32,7 @@ internal static class WrapperEmitter
             {
                 WriteKernelSource(writer, method, source);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
-                
+
                 if (targetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
                     WriteLaunchMethod(writer, method, false, targetDialect);
@@ -59,7 +59,8 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr, string targetDialect)
+    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
+        string targetDialect)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -154,7 +155,7 @@ internal static class WrapperEmitter
                     {
                         writer.Append("out ");
                     }
-                    
+
                     writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                     writer.AppendSpace();
                     writer.Append(p.Name);
@@ -226,23 +227,26 @@ internal static class WrapperEmitter
     private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method, string targetDialect)
     {
         writer.AppendLine("#pragma warning disable CS8500");
-        
+
         // Generate Delegate
-        writer.AppendLine("[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]");
+        writer.AppendLine(
+            "[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]");
         writer.Append("private unsafe delegate void ");
         writer.Append(method.Name);
         writer.Append("_Delegate");
         using (writer.Parentheses())
         {
-            var first = true;
+            writer.Append(
+                "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.JitConstant)) continue;
-                if (!first)
+                if (p.HasAttribute(KnownAttributes.JitConstant))
                 {
-                    writer.AppendComma();
-                    writer.AppendSpace();
+                    continue;
                 }
+
+                writer.AppendComma();
+                writer.AppendSpace();
 
                 if (p.Type is IArrayTypeSymbol arrayType)
                 {
@@ -257,12 +261,13 @@ internal static class WrapperEmitter
                     {
                         writer.Append("*");
                     }
+
                     writer.AppendSpace();
                     writer.Append(p.Name);
                 }
-                first = false;
             }
         }
+
         writer.AppendLine(";");
         writer.AppendLine();
 
@@ -278,23 +283,30 @@ internal static class WrapperEmitter
                 {
                     for (var i = 0; i < arrayParams.Count; i++)
                     {
-                        if (i > 0) writer.Append(" || ");
+                        if (i > 0)
+                        {
+                            writer.Append(" || ");
+                        }
+
                         writer.Append(arrayParams[i].Name);
                         writer.Append(".Length == 0");
                     }
                 }
+
                 using (writer.Scope())
                 {
                     writer.AppendLine("return;");
                 }
+
                 writer.AppendLine();
             }
-            
+
             // JIT constants
             var hasJitConstants = method.Parameters.Any(p => p.HasAttribute(KnownAttributes.JitConstant));
             if (hasJitConstants)
             {
-                writer.AppendLine("var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
+                writer.AppendLine(
+                    "var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
                 foreach (var p in method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)))
                 {
                     writer.Append("__gsharp_jit_constants.Add(\"");
@@ -308,7 +320,7 @@ internal static class WrapperEmitter
             // Get Delegate
             writer.Append("var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<");
             writer.Append(method.Name);
-            writer.Append("_Delegate>(\"");
+            writer.Append("_Delegate>(\"__gsharp_launch_");
             writer.Append(method.Name);
             writer.Append("\", global::Kassyi.GSharp.Generated.GSharpShared");
             writer.Append(targetDialect);
@@ -317,18 +329,10 @@ internal static class WrapperEmitter
             writer.Append("_Source, ");
             writer.Append(hasJitConstants ? "__gsharp_jit_constants" : "null");
             writer.AppendLine(", macros);");
-            
-            // Get ThreadIdx Setter Delegate
-            writer.Append("var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr(\"__gsharp_set_thread_idx\", global::Kassyi.GSharp.Generated.GSharpShared");
-            writer.Append(targetDialect);
-            writer.Append("Code.Source + ");
-            writer.Append(method.Name);
-            writer.Append("_Source, ");
-            writer.Append(hasJitConstants ? "__gsharp_jit_constants" : "null");
-            writer.AppendLine(", macros);");
-            
+
             // Generate fixed blocks
-            var refOutParams = method.Parameters.Where(p => p.RefKind is RefKind.Ref or RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
+            var refOutParams = method.Parameters
+                .Where(p => p.RefKind is RefKind.Ref or RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
             if (arrayParams.Count > 0 || refOutParams.Count > 0)
             {
                 foreach (var p in refOutParams)
@@ -339,16 +343,20 @@ internal static class WrapperEmitter
                         writer.AppendLine(" = default;");
                     }
                 }
+
                 foreach (var p in arrayParams)
                 {
                     writer.Append("fixed (");
-                    writer.Append(((IArrayTypeSymbol)p.Type).ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                    writer.Append(
+                        ((IArrayTypeSymbol)p.Type).ElementType.ToDisplayString(SymbolDisplayFormat
+                            .FullyQualifiedFormat));
                     writer.Append("* p_");
                     writer.Append(p.Name);
                     writer.Append(" = ");
                     writer.Append(p.Name);
                     writer.AppendLine(")");
                 }
+
                 foreach (var p in refOutParams)
                 {
                     writer.Append("fixed (");
@@ -359,6 +367,7 @@ internal static class WrapperEmitter
                     writer.Append(p.Name);
                     writer.AppendLine(")");
                 }
+
                 using (writer.Scope())
                 {
                     WriteDelegateInvocation(writer, method);
@@ -369,46 +378,39 @@ internal static class WrapperEmitter
                 WriteDelegateInvocation(writer, method);
             }
         }
+
         writer.AppendLine("#pragma warning restore CS8500");
     }
-    
+
     private static void WriteDelegateInvocation(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine("for (uint bz = 0; bz < gridDimZ; bz++)");
-        writer.AppendLine("for (uint by = 0; by < gridDimY; by++)");
-        writer.AppendLine("for (uint bx = 0; bx < gridDimX; bx++)");
-        writer.AppendLine("for (uint tz = 0; tz < blockDimZ; tz++)");
-        writer.AppendLine("for (uint ty = 0; ty < blockDimY; ty++)");
-        writer.AppendLine("for (uint tx = 0; tx < blockDimX; tx++)");
-        using (writer.Scope())
+        writer.Append("hfunc");
+        using (writer.Parentheses())
         {
-            writer.AppendLine("hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
-            writer.Append("hfunc");
-            using (writer.Parentheses())
+            writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ");
+
+            foreach (var p in method.Parameters)
             {
-                var first = true;
-                foreach (var p in method.Parameters)
+                if (p.HasAttribute(KnownAttributes.JitConstant))
                 {
-                    if (p.HasAttribute(KnownAttributes.JitConstant)) continue;
-                    if (!first)
-                    {
-                        writer.AppendComma();
-                        writer.AppendSpace();
-                    }
-                    
-                    if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
-                    {
-                        writer.Append("p_");
-                        writer.Append(p.Name);
-                    }
-                    else
-                    {
-                        writer.Append(p.Name);
-                    }
-                    first = false;
+                    continue;
+                }
+
+                writer.AppendComma();
+                writer.AppendSpace();
+
+                if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
+                {
+                    writer.Append("p_");
+                    writer.Append(p.Name);
+                }
+                else
+                {
+                    writer.Append(p.Name);
                 }
             }
-            writer.AppendLine(";");
         }
+
+        writer.AppendLine(";");
     }
 }
