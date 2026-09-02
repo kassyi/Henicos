@@ -50,11 +50,29 @@ int Data[4];
 extern ""C"" __declspec(dllexport) void AllInOneKernel(int* __restrict__ intInput,float* __restrict__ floatInput,float* __restrict__ results,Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct config,unsigned long long* __restrict__ globalCounter,int count,int dynamicSharedSize){
 for (int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < count; tid += gridDim.x * blockDim.x)
 {
+auto LocalInlineFunc = [&](int x) {
+return x+5-5;
+}
+;
 int a;
 int b;
 [&](){
-auto _t0 = tid;
+auto _t0 = LocalInlineFunc(tid);
 auto _t1 = tid*2;
+a = _t0;
+b = _t1;
+}
+();
+[&](){
+auto _t0 = b;
+auto _t1 = a;
+a = _t0;
+b = _t1;
+}
+();
+[&](){
+auto _t0 = b;
+auto _t1 = a;
 a = _t0;
 b = _t1;
 }

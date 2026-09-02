@@ -2,13 +2,14 @@
 
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-[System.Runtime.CompilerServices.InlineArray(4)]
+[InlineArray(4)]
 public struct Tier1FixedArray
 {
     private float _element0;
@@ -61,9 +62,15 @@ public static partial class Tier1IntegrationKernels
         // SYN-94: Macro DSL
         Gpu.GridStrideLoop(count, tid =>
         {
-            // Tuple & Inline out var (SYN-03)
-            (int a, int b) = (tid, tid * 2);
-            
+            // Local function with AggressiveInlining
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
+
+            // Tuple, tuple swap, & Inline out var (SYN-03)
+            (int a, int b) = (LocalInlineFunc(tid), tid * 2);
+            (a, b) = (b, a); // Swap
+            (a, b) = (b, a); // Swap back
+
             bool ok = TryProcess(intInput[tid], out var processed); // var support
 
             // Bitwise and Shifts
@@ -106,6 +113,7 @@ public static partial class Tier1IntegrationKernels
             {
                 foreachSum += val;
             }
+
             sum += foreachSum;
 
             // SYN-12: C# 12 Collection Expressions on ReadOnlySpan & Length property
@@ -115,6 +123,7 @@ public static partial class Tier1IntegrationKernels
             {
                 collSum += val;
             }
+
             sum += collSum + coll.Length;
 
             // SYN-13: StackAlloc on Span & Length property
@@ -124,6 +133,7 @@ public static partial class Tier1IntegrationKernels
             {
                 stackSum += val;
             }
+
             sum += stackSum + stackBuf.Length;
 
             // SYN-08: Lambda expressions (Expanded to C++ auto lambdas)
@@ -142,7 +152,9 @@ public static partial class Tier1IntegrationKernels
             Gpu.SyncThreads(); // GBI-31
 
             // Complex ternary (GSH-01)
-            float finalVal = (bitwise > 0) ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X]) : 0.0f;
+            float finalVal = (bitwise > 0)
+                ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X])
+                : 0.0f;
 
             // SYN-14: fixed buffers inside structs
             unsafe
@@ -177,6 +189,7 @@ public static partial class Tier1IntegrationKernels
                 {
                     finalVal -= 0.5f;
                 }
+
                 loopCounter++;
             } while (loopCounter < 3);
 
