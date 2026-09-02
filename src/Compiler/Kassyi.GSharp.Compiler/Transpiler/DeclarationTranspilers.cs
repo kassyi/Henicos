@@ -265,6 +265,16 @@ internal static class DeclarationTranspilers
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
+
+            if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
+            {
+                if (i < variables.Count - 1)
+                {
+                    context.Writer.AppendSemiColonLine();
+                }
+                continue;
+            }
+
             if (isVar)
             {
                 context.Writer.Append($"auto {v.Identifier.Text}");
@@ -283,6 +293,149 @@ internal static class DeclarationTranspilers
 
             context.Writer.AppendSemiColonLine();
         }
+    }
+
+    private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, ref TranspileContext context)
+    {
+        if (variable.Initializer == null) return false;
+        var initVal = variable.Initializer.Value;
+
+        ITypeSymbol? elemType = null;
+        bool isConst = false;
+
+        if (typeSymbol is INamedTypeSymbol named && named.TypeArguments.Length == 1 &&
+            (named.Name is "Span" or "ReadOnlySpan"))
+        {
+            elemType = named.TypeArguments[0];
+            isConst = named.Name == "ReadOnlySpan";
+        }
+        else if (typeSymbol is IArrayTypeSymbol arrayType)
+        {
+            elemType = arrayType.ElementType;
+        }
+
+        if (elemType == null) return false;
+
+        // Case 1: CollectionExpression [10, 20, 30]
+        if (initVal is CollectionExpressionSyntax collectionExpr)
+        {
+            if (isConst) context.Writer.Append("const ");
+            context.AppendType(elemType);
+            context.Writer.Append($" {variable.Identifier.Text}");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append(collectionExpr.Elements.Count);
+            }
+            context.Writer.AppendOperator("=");
+            context.Visitor.Visit(collectionExpr);
+            return true;
+        }
+
+        // Case 2: StackAllocArrayCreationExpression stackalloc int[4] or stackalloc int[] { 1, 2, 3 }
+        if (initVal is StackAllocArrayCreationExpressionSyntax stackAlloc)
+        {
+            if (stackAlloc.Initializer != null)
+            {
+                if (isConst) context.Writer.Append("const ");
+                context.AppendType(elemType);
+                context.Writer.Append($" {variable.Identifier.Text}");
+                using (context.Writer.Brackets())
+                {
+                    context.Writer.Append(stackAlloc.Initializer.Expressions.Count);
+                }
+                context.Writer.AppendOperator("=");
+                context.Visitor.Visit(stackAlloc.Initializer);
+                return true;
+            }
+
+            if (stackAlloc.Type is ArrayTypeSyntax arrayTypeSyntax && arrayTypeSyntax.RankSpecifiers.Count > 0)
+            {
+                var sizeExpr = arrayTypeSyntax.RankSpecifiers[0].Sizes.FirstOrDefault();
+                if (sizeExpr != null)
+                {
+                    var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
+                    if (!constVal.HasValue)
+                    {
+                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                            GSharpDiagnostics.UnsupportedSyntax,
+                            sizeExpr.GetLocation(),
+                            "dynamic stackalloc size"));
+                        return true;
+                    }
+
+                    context.AppendType(elemType);
+                    context.Writer.Append($" {variable.Identifier.Text}");
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExpr);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        // Case 3: ImplicitStackAllocArrayCreationExpression stackalloc[] { 1, 2, 3 }
+        if (initVal is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc)
+        {
+            if (implStackAlloc.Initializer != null)
+            {
+                if (isConst) context.Writer.Append("const ");
+                context.AppendType(elemType);
+                context.Writer.Append($" {variable.Identifier.Text}");
+                using (context.Writer.Brackets())
+                {
+                    context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
+                }
+                context.Writer.AppendOperator("=");
+                context.Visitor.Visit(implStackAlloc.Initializer);
+                return true;
+            }
+        }
+
+        // Case 4: ArrayCreationExpression new int[] { 1, 2, 3 } or new int[4]
+        if (initVal is ArrayCreationExpressionSyntax arrayCreation)
+        {
+            if (arrayCreation.Initializer != null)
+            {
+                if (isConst) context.Writer.Append("const ");
+                context.AppendType(elemType);
+                context.Writer.Append($" {variable.Identifier.Text}");
+                using (context.Writer.Brackets())
+                {
+                    context.Writer.Append(arrayCreation.Initializer.Expressions.Count);
+                }
+                context.Writer.AppendOperator("=");
+                context.Visitor.Visit(arrayCreation.Initializer);
+                return true;
+            }
+
+            if (arrayCreation.Type.RankSpecifiers.Count > 0)
+            {
+                var sizeExpr = arrayCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
+                if (sizeExpr != null)
+                {
+                    var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
+                    if (!constVal.HasValue)
+                    {
+                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                            GSharpDiagnostics.UnsupportedSyntax,
+                            sizeExpr.GetLocation(),
+                            "dynamic array size"));
+                        return true;
+                    }
+
+                    context.AppendType(elemType);
+                    context.Writer.Append($" {variable.Identifier.Text}");
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExpr);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void TranspileCombinedVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
