@@ -5,7 +5,7 @@ public class TestClass
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
-    public void MyKernel(int[] data)
+    public void MyKernel(System.Collections.Generic.IEnumerable<int> data)
     {
         foreach (var item in data)
         {

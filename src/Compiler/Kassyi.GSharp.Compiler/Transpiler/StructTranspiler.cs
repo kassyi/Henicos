@@ -136,9 +136,31 @@ internal static class StructTranspiler
 
             WriteInlineArrayIndexer(ref context, firstField, isConst: false);
             WriteInlineArrayIndexer(ref context, firstField, isConst: true);
+            WriteInlineArrayIterators(ref context, firstField, length);
         }
 
         WriteStructFooter(ref context);
+    }
+
+    private static void WriteInlineArrayIterators(ref TranspileContext context, IFieldSymbol firstField, int length)
+    {
+        context.Writer.Append("__device__ inline ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* begin() {{ return {firstField.Name}; }}");
+
+        context.Writer.Append("__device__ inline ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* end() {{ return {firstField.Name} + {length}; }}");
+
+        context.Writer.Append("__device__ inline const ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* begin() const {{ return {firstField.Name}; }}");
+
+        context.Writer.Append("__device__ inline const ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* end() const {{ return {firstField.Name} + {length}; }}");
+
+        context.Writer.AppendLine($"__device__ inline int size() const {{ return {length}; }}");
     }
 
     private static void WriteInlineArrayIndexer(ref TranspileContext context, IFieldSymbol firstField, bool isConst)
