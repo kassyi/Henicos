@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_64_69_NumericsAndHwMathKernelsWrapper
 {
-public const string BitOperationsTestKernel_Source = @"extern ""C"" __declspec(dllexport) void BitOperationsTestKernel(unsigned int* __restrict__ u32Data,unsigned long long* __restrict__ u64Data){
+public const string BitOperationsTestKernel_Source = @"extern ""C"" __declspec(dllexport) void BitOperationsTestKernel(unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data){
 unsigned int u32Val=u32Data[0];
 u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
 u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
@@ -25,30 +25,33 @@ u64Data[4]=(unsigned long long)__gsharp_log2_64(u64Val);
 u64Data[5]=__gsharp_rotl64(u64Val,10);
 u64Data[6]=__gsharp_rotr64(u64Val,7);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_BitOperationsTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+BitOperationsTestKernel(u32Data, u64Data);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void BitOperationsTestKernel_Delegate(uint* u32Data, ulong* u64Data);
+private unsafe delegate void BitOperationsTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* u32Data, ulong* u64Data);
 public static unsafe void Launch_BitOperationsTestKernel(uint[] u32Data, ulong[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<BitOperationsTestKernel_Delegate>("BitOperationsTestKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + BitOperationsTestKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + BitOperationsTestKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + BitOperationsTestKernel_Source, null, macros);
 fixed (uint* p_u32Data = u32Data)
 fixed (ulong* p_u64Data = u64Data)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_u32Data, p_u64Data);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_u32Data, p_u64Data);
 }
 }
 #pragma warning restore CS8500

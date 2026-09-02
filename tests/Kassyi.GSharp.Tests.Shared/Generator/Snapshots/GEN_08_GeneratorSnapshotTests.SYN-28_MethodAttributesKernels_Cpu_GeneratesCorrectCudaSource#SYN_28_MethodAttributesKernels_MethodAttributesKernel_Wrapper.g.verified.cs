@@ -9,35 +9,38 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_28_MethodAttributesKernelsWrapper
 {
-public const string MethodAttributesKernel_Source = @"extern ""C"" __declspec(dllexport) void MethodAttributesKernel(int* __restrict__ input,int* __restrict__ result){
+public const string MethodAttributesKernel_Source = @"extern ""C"" __declspec(dllexport) void MethodAttributesKernel(int* __restrict__ input, int* __restrict__ result){
 int tid=threadIdx.x;
 int sum=InlinedAdd(input[tid],100);
 result[tid]=MultiAttributeMultiply(sum,2);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_MethodAttributesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ result)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+MethodAttributesKernel(input, result);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MethodAttributesKernel_Delegate(int* input, int* result);
+private unsafe delegate void MethodAttributesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* input, int* result);
 public static unsafe void Launch_MethodAttributesKernel(int[] input, int[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (input.Length == 0 || result.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MethodAttributesKernel_Delegate>("MethodAttributesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MethodAttributesKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MethodAttributesKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MethodAttributesKernel_Source, null, macros);
 fixed (int* p_input = input)
 fixed (int* p_result = result)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_input, p_result);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_result);
 }
 }
 #pragma warning restore CS8500

@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Stdlib.Math
 {
 public static partial class GpuBigIntKernelsWrapper
 {
-public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void ChunkAddKernel(unsigned int* __restrict__ dA,unsigned int* __restrict__ dB,unsigned int* __restrict__ dResult,long long* __restrict__ carryBuffer,int numWords,int chunkSize){
+public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void ChunkAddKernel(unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize){
 int chunkIdx=blockIdx.x*blockDim.x+threadIdx.x;
 int start=chunkIdx*chunkSize;
 if(start>=numWords)
@@ -30,32 +30,35 @@ localCarry=current>>32;
 }
 carryBuffer[chunkIdx+1]=(long long)localCarry;
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ChunkAddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+ChunkAddKernel(dA, dB, dResult, carryBuffer, numWords, chunkSize);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ChunkAddKernel_Delegate(uint* dA, uint* dB, uint* dResult, long* carryBuffer, int numWords, int chunkSize);
+private unsafe delegate void ChunkAddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* dA, uint* dB, uint* dResult, long* carryBuffer, int numWords, int chunkSize);
 public static unsafe void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ChunkAddKernel_Delegate>("ChunkAddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ChunkAddKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ChunkAddKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ChunkAddKernel_Source, null, macros);
 fixed (uint* p_dA = dA)
 fixed (uint* p_dB = dB)
 fixed (uint* p_dResult = dResult)
 fixed (long* p_carryBuffer = carryBuffer)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_dA, p_dB, p_dResult, p_carryBuffer, numWords, chunkSize);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_dA, p_dB, p_dResult, p_carryBuffer, numWords, chunkSize);
 }
 }
 #pragma warning restore CS8500

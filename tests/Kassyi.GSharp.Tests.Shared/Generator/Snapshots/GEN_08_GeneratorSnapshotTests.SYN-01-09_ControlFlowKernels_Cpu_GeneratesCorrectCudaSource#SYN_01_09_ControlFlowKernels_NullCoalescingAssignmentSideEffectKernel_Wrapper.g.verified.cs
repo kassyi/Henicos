@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray,int* __restrict__ sideEffectTracker,int* __restrict__ values){
+public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values){
 int tid=threadIdx.x;
 int idx=sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
@@ -19,31 +19,34 @@ return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coale
 }
 ();
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_NullCoalescingAssignmentSideEffectKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+NullCoalescingAssignmentSideEffectKernel(targetArray, sideEffectTracker, values);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void NullCoalescingAssignmentSideEffectKernel_Delegate(int?* targetArray, int* sideEffectTracker, int* values);
+private unsafe delegate void NullCoalescingAssignmentSideEffectKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int?* targetArray, int* sideEffectTracker, int* values);
 public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(int?[] targetArray, int[] sideEffectTracker, int[] values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("NullCoalescingAssignmentSideEffectKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_NullCoalescingAssignmentSideEffectKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NullCoalescingAssignmentSideEffectKernel_Source, null, macros);
 fixed (int?* p_targetArray = targetArray)
 fixed (int* p_sideEffectTracker = sideEffectTracker)
 fixed (int* p_values = values)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_targetArray, p_sideEffectTracker, p_values);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_targetArray, p_sideEffectTracker, p_values);
 }
 }
 #pragma warning restore CS8500

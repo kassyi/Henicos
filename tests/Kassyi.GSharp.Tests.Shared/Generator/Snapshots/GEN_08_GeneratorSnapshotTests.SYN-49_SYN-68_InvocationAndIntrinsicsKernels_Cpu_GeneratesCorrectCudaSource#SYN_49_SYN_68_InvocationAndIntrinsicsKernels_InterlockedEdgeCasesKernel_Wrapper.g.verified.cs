@@ -19,37 +19,40 @@ long long ValueL;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void InterlockedEdgeCasesKernel(int* __restrict__ array,Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
+extern ""C"" __declspec(dllexport) void InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
 int tid=threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
 atomicExch(&structArray[tid].ValueU,42u);
 __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+InterlockedEdgeCasesKernel(array, structArray);
+}
+}
 ";
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void InterlockedEdgeCasesKernel_Delegate(int* array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* structArray);
+private unsafe delegate void InterlockedEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* structArray);
 public static unsafe void Launch_InterlockedEdgeCasesKernel(int[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InterlockedEdgeCasesKernel_Delegate>("InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
 fixed (int* p_array = array)
 fixed (global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_array, p_structArray);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_array, p_structArray);
 }
 }
 #pragma warning restore CS8500

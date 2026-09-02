@@ -126,17 +126,17 @@ extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uin
     gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
-inline float HelperMath(float x,float y);
+inline float HelperMath(float x, float y);
 
-inline bool TryProcess(int input,int* __restrict__  output);
+inline bool TryProcess(int input, int* __restrict__  output);
 
 __forceinline__ float HelperMathAggressive(float x);
 
-inline float HelperMath(float x,float y){
+inline float HelperMath(float x, float y){
 return (float)fmaxf(x*x,y*y);
 }
 
-inline bool TryProcess(int input,int* __restrict__  output){
+inline bool TryProcess(int input, int* __restrict__  output){
 (*output)=input*2;
 return input>0;
 }

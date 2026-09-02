@@ -126,9 +126,9 @@ extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uin
     gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
-inline int MyCustomAdd(int a,int b);
+inline int MyCustomAdd(int a, int b);
 
-inline int MyCustomAdd(int a,int b){
+inline int MyCustomAdd(int a, int b){
 return a+b;
 }
 

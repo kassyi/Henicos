@@ -85,7 +85,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles,float* __restrict__  totalMagnitude,bool* __restrict__  successFlag,DebugReduc_SpecTypes largeStructVal,int particleCount){
+extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount){
 (*successFlag)=false;
 float Gravity=9.8f;
 int tx=threadIdx.x;
@@ -197,6 +197,19 @@ return;
 }
 }
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount);
+}
+}
 ";
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
@@ -247,7 +260,7 @@ host.DoubleValue = native.DoubleValue;
 #pragma warning restore CS8500
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ProcessPhysics_Delegate(global::DebugReduc.PhysicsVector* particles, float* totalMagnitude, bool* successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount);
+private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::DebugReduc.PhysicsVector* particles, float* totalMagnitude, bool* successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount);
 public static unsafe void Launch_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
 if (particles.Length == 0){
@@ -255,23 +268,13 @@ return;
 }
 var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
 __gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ProcessPhysics_Source, __gsharp_jit_constants, macros);
-var hfunc_setThreadIdx = (delegate* unmanaged[Cdecl]<uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, uint, void>)global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernelPtr("__gsharp_set_thread_idx", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ProcessPhysics_Source, __gsharp_jit_constants, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ProcessPhysics_Source, __gsharp_jit_constants, macros);
 successFlag = default;
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (float* p_totalMagnitude = &totalMagnitude)
 fixed (bool* p_successFlag = &successFlag)
 {
-for (uint bz = 0; bz < gridDimZ; bz++)
-for (uint by = 0; by < gridDimY; by++)
-for (uint bx = 0; bx < gridDimX; bx++)
-for (uint tz = 0; tz < blockDimZ; tz++)
-for (uint ty = 0; ty < blockDimY; ty++)
-for (uint tx = 0; tx < blockDimX; tx++)
-{
-hfunc_setThreadIdx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-hfunc(p_particles, p_totalMagnitude, p_successFlag, largeStructVal, particleCount);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_particles, p_totalMagnitude, p_successFlag, largeStructVal, particleCount);
 }
 }
 #pragma warning restore CS8500
