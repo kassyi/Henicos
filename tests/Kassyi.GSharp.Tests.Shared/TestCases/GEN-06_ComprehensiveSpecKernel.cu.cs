@@ -1,4 +1,5 @@
 // ReSharper disable All
+
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
@@ -75,7 +76,7 @@ public static partial class ComprehensiveSpecKernel
     }
 
     [GpuKernel]
-    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Has intentional diagnostics errors")]
+    [SkipSnapshotConsistency("Has intentional diagnostics errors")]
     public static void ProcessPhysics(
         PhysicsVector[] particles,
         ref float totalMagnitude,

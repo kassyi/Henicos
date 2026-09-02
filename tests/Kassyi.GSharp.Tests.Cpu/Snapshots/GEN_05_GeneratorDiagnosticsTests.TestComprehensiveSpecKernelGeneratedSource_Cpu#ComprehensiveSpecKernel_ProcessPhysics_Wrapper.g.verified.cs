@@ -68,6 +68,11 @@ __device__ inline const unsigned int& operator[](int index) const
 {
 return _element0[index];
 }
+__device__ inline unsigned int* begin() { return _element0; }
+__device__ inline unsigned int* end() { return _element0 + 8; }
+__device__ inline const unsigned int* begin() const { return _element0; }
+__device__ inline const unsigned int* end() const { return _element0 + 8; }
+__device__ inline int size() const { return 8; }
 }
 ;
 #endif
