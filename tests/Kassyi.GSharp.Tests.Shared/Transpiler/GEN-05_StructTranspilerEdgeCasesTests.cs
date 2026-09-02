@@ -1,4 +1,4 @@
-﻿using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Transpiler;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
@@ -44,10 +44,11 @@ public class GEN_05_StructTranspilerEdgeCasesTests
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
     {
-        var symA = GetLocalTypeSymbol("StructA");
-        var symB = GetLocalTypeSymbol("StructB");
-        var symC = GetLocalTypeSymbol("StructC");
-        var symD = GetLocalTypeSymbol("StructD");
+        var comp = MegaCompilationCache.GetDynamicCompilation();
+        var symA = comp.GetSymbolsWithName("StructA", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
+        var symB = comp.GetSymbolsWithName("StructB", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
+        var symC = comp.GetSymbolsWithName("StructC", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
+        var symD = comp.GetSymbolsWithName("StructD", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
 
         var context = CreateTestContext(symA, symB, symC, symD);
 
