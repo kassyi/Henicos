@@ -378,17 +378,95 @@ internal static class ExpressionTranspilers
             return;
         }
 
+        if (TryTranspileStackArrayLength(node, ref context))
+        {
+            return;
+        }
+
         context.Visitor.Visit(node.Expression);
         context.Writer.Append(".");
 
         var memberName = node.Name.Identifier.Text;
         var typeInfo = context.SemanticModel.GetTypeInfo(node.Expression);
-        if (typeInfo.Type != null && typeInfo.Type.IsSystemNumericsVector())
+        if (typeInfo.Type != null)
         {
-            memberName = memberName.ToLowerInvariant();
+            if (typeInfo.Type.IsSystemNumericsVector())
+            {
+                memberName = memberName.ToLowerInvariant();
+            }
+            else if (memberName == "Length")
+            {
+                if (typeInfo.Type.HasAttribute(KnownAttributes.InlineArray))
+                {
+                    context.Writer.Append("size()");
+                    return;
+                }
+                memberName = "length";
+            }
+            else if (memberName == "Count")
+            {
+                memberName = "length";
+            }
         }
 
         context.Writer.Append(memberName);
+    }
+
+    private static bool TryTranspileStackArrayLength(MemberAccessExpressionSyntax node, ref TranspileContext context)
+    {
+        if (node.Name.Identifier.Text != "Length") return false;
+
+        var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (symbol is ILocalSymbol localSym)
+        {
+            var decl = localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+            if (decl?.Initializer?.Value is CollectionExpressionSyntax collExpr)
+            {
+                context.Writer.Append(collExpr.Elements.Count);
+                return true;
+            }
+            if (decl?.Initializer?.Value is StackAllocArrayCreationExpressionSyntax stackAlloc)
+            {
+                if (stackAlloc.Initializer != null)
+                {
+                    context.Writer.Append(stackAlloc.Initializer.Expressions.Count);
+                    return true;
+                }
+                if (stackAlloc.Type is ArrayTypeSyntax ats && ats.RankSpecifiers.Count > 0)
+                {
+                    var sizeSyntax = ats.RankSpecifiers[0].Sizes.FirstOrDefault();
+                    if (sizeSyntax != null)
+                    {
+                        context.Visitor.Visit(sizeSyntax);
+                        return true;
+                    }
+                }
+            }
+            if (decl?.Initializer?.Value is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc && implStackAlloc.Initializer != null)
+            {
+                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
+                return true;
+            }
+            if (decl?.Initializer?.Value is ArrayCreationExpressionSyntax arrCreation)
+            {
+                if (arrCreation.Initializer != null)
+                {
+                    context.Writer.Append(arrCreation.Initializer.Expressions.Count);
+                    return true;
+                }
+                if (arrCreation.Type.RankSpecifiers.Count > 0)
+                {
+                    var sizeSyntax = arrCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
+                    if (sizeSyntax != null)
+                    {
+                        context.Visitor.Visit(sizeSyntax);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private static readonly ImmutableArray<Rules.IInvocationTranspilerRule> s_invocationRules =
