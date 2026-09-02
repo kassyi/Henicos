@@ -2,7 +2,8 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_11_16_CollectionsAndMemoryTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     [Fact]
     [Trait("FeatureId", "SYN-11")]
     [Trait("Category", "Syntax")]
@@ -12,16 +13,22 @@ public class SYN_11_16_CollectionsAndMemoryTests
 
     [Fact]
     [Trait("FeatureId", "SYN-12")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN12_CollectionExpression_Transpilation()
+    [Trait("Category", "Execution")]
+    public void Test_SYN12_ForeachCollectionExpression_Execution()
     {
+        int[] output = [0];
+        SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachCollectionExpressionKernel(output, blockDimX: 1);
+        Assert.Equal(100, output[0]);
     }
 
     [Fact]
     [Trait("FeatureId", "SYN-13")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN13_Stackalloc_Transpilation()
+    [Trait("Category", "Execution")]
+    public void Test_SYN13_ForeachStackAlloc_Execution()
     {
+        int[] output = [0];
+        SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachStackAllocKernel(output, blockDimX: 1);
+        Assert.Equal(100, output[0]);
     }
 
     [Fact]

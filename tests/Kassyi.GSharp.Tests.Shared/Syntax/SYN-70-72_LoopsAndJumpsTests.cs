@@ -1,13 +1,16 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_70_72_LoopsAndJumpsTests
 :  TranspilerTestBase{
     [Fact]
     [Trait("FeatureId", "SYN-70")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN70_ForeachSpan_Transpilation()
+    [Trait("Category", "Execution")]
+    public void Test_SYN70_ForeachInlineArray_Execution()
     {
+        int[] output = [0];
+        SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachInlineArrayKernel(output, blockDimX: 1);
+        Assert.Equal(100, output[0]);
     }
 
     [Fact]
