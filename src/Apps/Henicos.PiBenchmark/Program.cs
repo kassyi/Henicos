@@ -11,13 +11,19 @@ class Program
 
         if (args.Length > 0 && args[0] == "prp")
         {
+            var E = 71428571;
             var iterations = 10;
-            if (args.Length > 1 && int.TryParse(args[1], out var i))
+            
+            if (args.Length > 1 && int.TryParse(args[1], out var e))
+            {
+                E = e;
+            }
+            if (args.Length > 2 && int.TryParse(args[2], out var i))
             {
                 iterations = i;
             }
 
-            FermatPrpBenchmark.RunFermatTest(iterations);
+            FermatPrpBenchmark.RunFermatTest(E, iterations);
             return;
         }
 
@@ -47,11 +53,7 @@ class Program
 
         if (args.Length > 0 && args[0] == "gpu-pi")
         {
-            var targetDigits = 10000;
-            if (args.Length > 1 && int.TryParse(args[1], out var parsed))
-            {
-                targetDigits = parsed;
-            }
+            var targetDigits = args.Length > 1 ? ParseDigits(args[1], 10000) : 10000;
 
             string? outPath = null;
             int outIdx = Array.IndexOf(args, "--out");
@@ -72,13 +74,9 @@ class Program
             return;
         }
 
-        var digits = 10000;
-        if (args.Length > 0 && int.TryParse(args[0], out var d))
-        {
-            digits = d;
-        }
+        var digits = args.Length > 0 ? ParseDigits(args[0], 10000) : 10000;
 
-        Console.WriteLine($"Calculating {digits} digits of Pi...");
+        Console.WriteLine($"Calculating {digits:N0} digits of Pi...");
 
         var pi = ChudnovskyPi.ComputePi(digits);
 
@@ -86,6 +84,37 @@ class Program
         Console.WriteLine(pi.Length > 100
             ? $"Result: {pi.Substring(0, 50)}...{pi.Substring(pi.Length - 50)}"
             : $"Result: {pi}");
+    }
+
+    private static int ParseDigits(string s, int defaultDigits = 10000)
+    {
+        if (string.IsNullOrWhiteSpace(s))
+        {
+            return defaultDigits;
+        }
+
+        var trimmed = s.Trim().Replace("_", string.Empty).Replace(",", string.Empty);
+        if (trimmed.EndsWith("k", StringComparison.OrdinalIgnoreCase))
+        {
+            if (double.TryParse(trimmed[..^1], out var val))
+            {
+                return (int)(val * 1_000);
+            }
+        }
+        else if (trimmed.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+        {
+            if (double.TryParse(trimmed[..^1], out var val))
+            {
+                return (int)(val * 1_000_000);
+            }
+        }
+
+        if (int.TryParse(trimmed, out var parsed))
+        {
+            return parsed;
+        }
+
+        return defaultDigits;
     }
 }
 
