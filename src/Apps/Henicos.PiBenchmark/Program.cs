@@ -9,6 +9,24 @@ class Program
     {
         Console.WriteLine("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
 
+        if (args.Length > 0 && args[0] == "tf")
+        {
+            var E = 71428571;
+            uint maxP = 4000000000;
+            
+            if (args.Length > 1 && int.TryParse(args[1], out var e))
+            {
+                E = e;
+            }
+            if (args.Length > 2 && uint.TryParse(args[2], out var mp))
+            {
+                maxP = mp;
+            }
+
+            TrialFactoringBenchmark.RunTrialFactoring(E, maxP);
+            return;
+        }
+
         if (args.Length > 0 && args[0] == "prp")
         {
             var E = 71428571;
