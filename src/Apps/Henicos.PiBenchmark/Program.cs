@@ -7,6 +7,17 @@ class Program
     {
         Console.WriteLine("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
 
+        if (args.Length > 0 && args[0] == "prp")
+        {
+            var iterations = 10;
+            if (args.Length > 1 && int.TryParse(args[1], out var i))
+            {
+                iterations = i;
+            }
+            FermatPrpBenchmark.RunFermatTest(iterations);
+            return;
+        }
+
         var digits = 10000;
         if (args.Length > 0 && int.TryParse(args[0], out var d))
         {
