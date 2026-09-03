@@ -25,6 +25,7 @@ extern "C" {
 
     // Fermat PRP specific Loop
     EXPORT_API bool GpuBigInt_StaticFermatLoop(void* workspace, int E, unsigned int* out_data);
+    EXPORT_API bool GpuBigInt_GraphFermatLoop(void* workspace, int E, unsigned int* out_data);
     
     // Basic arithmetic and bitwise operations
     EXPORT_API bool GpuBigInt_Square(void* workspace, unsigned int* data, int numWords, cudaStream_t stream = 0);
