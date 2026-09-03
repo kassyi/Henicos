@@ -60,7 +60,15 @@ class Program
                 outPath = args[outIdx + 1];
             }
 
-            GpuChudnovskyPi.ComputePiAndWriteToFile(targetDigits, outPath);
+            int thresholdTerms = 16;
+            int threshIdx = Array.IndexOf(args, "--threshold");
+            if (threshIdx >= 0 && threshIdx + 1 < args.Length && int.TryParse(args[threshIdx + 1], out var t))
+            {
+                thresholdTerms = t;
+            }
+
+            bool asHex = Array.IndexOf(args, "--hex") >= 0;
+            GpuChudnovskyPi.ComputePiAndWriteToFile(targetDigits, outPath, thresholdTerms, asHex);
             return;
         }
 
@@ -80,3 +88,4 @@ class Program
             : $"Result: {pi}");
     }
 }
+
