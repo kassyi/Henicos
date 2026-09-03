@@ -27,7 +27,7 @@ public static class GpuBigIntDivRem
     /// <summary>
     /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
     /// </summary>
-    public static void Reciprocal(GpuBigInteger targetOperand, GpuBigInteger resultBuffer)
+    private static void Reciprocal(GpuBigInteger targetOperand, GpuBigInteger resultBuffer)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != 2 * n)
@@ -153,15 +153,6 @@ public static class GpuBigIntDivRem
         reciprocalNorm.Clear();
         Reciprocal(bNorm, reciprocalNorm);
 
-        var topBNorm = bNorm.GetTopWords(4);
-        var topRecip = reciprocalNorm.GetTopWords(4);
-        var allWords = bNorm.ToHostArray();
-        Console.WriteLine(
-            $"[DEBUG-DIVREM] bNorm raw last 8 words: {allWords[allWords.Length - 1]:X8} {allWords[allWords.Length - 2]:X8} {allWords[allWords.Length - 3]:X8} {allWords[allWords.Length - 4]:X8} {allWords[allWords.Length - 5]:X8} {allWords[allWords.Length - 6]:X8} {allWords[allWords.Length - 7]:X8} {allWords[allWords.Length - 8]:X8}");
-        Console.WriteLine($"[DEBUG-DIVREM] bNorm ActualBits: {GetActualBits(bNorm)}");
-        Console.WriteLine(
-            $"[DEBUG-DIVREM] reciprocalNorm Top 4: {topRecip[0]:X8} {topRecip[1]:X8} {topRecip[2]:X8} {topRecip[3]:X8}");
-
         using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n);
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
@@ -181,24 +172,42 @@ public static class GpuBigIntDivRem
         rightOperand.Context.Provider.CopyHostToDevice(IntPtr.Add(leftOperandExtended.DevicePointer, n * 4), zeroArray,
             n);
 
-        bool underflow = GpuBigIntMath.IsLessThan(leftOperandExtended, qb);
         using var remainderExtended = new GpuBigInteger(rightOperand.Context, 2 * n);
         GpuBigIntMath.Sub(leftOperandExtended, qb, remainderExtended);
 
-        using var bPaddedExtended = new GpuBigInteger(rightOperand.Context, 2 * n);
-        bPaddedExtended.Clear();
-        bPaddedExtended.CopyFrom(rightOperand, numWords: n);
+        var remainderBits = GetActualBits(remainderExtended);
+        var underflow = remainderBits >= n * 32;
 
         if (underflow)
         {
+            using var bPaddedExtended = new GpuBigInteger(rightOperand.Context, 2 * n);
+            bPaddedExtended.Clear();
+            bPaddedExtended.CopyFrom(rightOperand, numWords: n);
+
             CorrectUnderflow(rightOperand.Context, n, quotientBuffer, remainderExtended, bPaddedExtended);
         }
         else
         {
+            using var bPaddedExtended = new GpuBigInteger(rightOperand.Context, 2 * n);
+            bPaddedExtended.Clear();
+            bPaddedExtended.CopyFrom(rightOperand, numWords: n);
+
             CorrectRemainder(rightOperand.Context, n, quotientBuffer, remainderExtended, bPaddedExtended);
         }
 
         remainderBuffer.CopyFrom(remainderExtended, numWords: n);
+    }
+
+    private static void LogTopWords(string name, GpuBigInteger gpuInt)
+    {
+        var bits = GetActualBits(gpuInt);
+        var arr = gpuInt.ToHostArray();
+        var wordIdx = bits == 0 ? 0 : (bits - 1) / 32;
+        var top0 = arr[wordIdx];
+        var top1 = wordIdx >= 1 ? arr[wordIdx - 1] : 0;
+        var top2 = wordIdx >= 2 ? arr[wordIdx - 2] : 0;
+        var top3 = wordIdx >= 3 ? arr[wordIdx - 3] : 0;
+        Logger<GpuContext>.Debug($"[{name}] Top 4 Words: {top0:X8} {top1:X8} {top2:X8} {top3:X8}");
     }
 
     private static void CorrectUnderflow(GpuContext context, int n, GpuBigInteger quotientBuffer,

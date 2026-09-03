@@ -10,21 +10,17 @@ public static class GpuBigIntNttKernels
 {
     // NTT Primes and primitive roots
     // We use two 32-bit primes for CRT to support convolution values up to 2^55
-    // P1 = 63 * 2^26 + 1 (Proth prime)
-    public const uint Prime1 = 4253024257; // 素数 (507 * 2^23 + 1, or something similar)
-    public const uint NttG1 = 5; // 原始根
+    // Primes of the form k * 2^25 + 1 to support NTT sizes up to 2^25 (33 million elements)
+    public const uint Prime1 = 4194304001; // 125 * 2^25 + 1
+    public const uint NttG1 = 3; // Primitive root
 
-    // NTT素数 2
-    public const uint Prime2 = 4293918721; // 素数 (4095 * 2^20 + 1)
-    public const uint NttG2 = 19; // 原始根
+    public const uint Prime2 = 2717908993; // 81 * 2^25 + 1
+    public const uint NttG2 = 5; // Primitive root
 
     // Barrett Reduction Constants
     // M = floor(2^64 / P)
-    // M1 = floor(2^64 / 4253024257) = 4337323974
-    public const ulong BarrettMagic1 = 4337323974UL; // for P1
-
-    // M2 = floor(2^64 / 4293918721) = 4296016127
-    public const ulong BarrettMagic2 = 4296016127UL; // for P2
+    public const ulong BarrettMagic1 = 4398046510UL; // for P1
+    public const ulong BarrettMagic2 = 6787108810UL; // for P2
 
     [GpuDeviceFunction]
     public static uint ModAdd(uint operandA, uint operandB, uint primeModulus)
@@ -291,16 +287,17 @@ public static class GpuBigIntNttKernels
             ulong value2 = ModMulBarrett(deviceResult2[index], inverseN2, Prime2, BarrettMagic2);
 
             ulong difference;
-            if (value2 >= value1)
+            ulong v1Mod2 = value1 % Modulus2;
+            if (value2 >= v1Mod2)
             {
-                difference = value2 - value1;
+                difference = value2 - v1Mod2;
             }
             else
             {
-                difference = value2 + Modulus2 - value1;
+                difference = value2 + Modulus2 - v1Mod2;
             }
 
-            const ulong Prime1InverseModPrime2 = 105UL;
+            const ulong Prime1InverseModPrime2 = 1050101200UL;
             var crtCoefficient = (difference * Prime1InverseModPrime2) % Modulus2;
             var recombinedValue = value1 + Modulus1 * crtCoefficient;
 
