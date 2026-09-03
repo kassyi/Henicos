@@ -252,7 +252,11 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     public void Clear(int offsetWords = 0, int? numWords = null)
     {
         int wordsToClear = numWords ?? (NumWords - offsetWords);
-        if (wordsToClear <= 0) return;
+        if (wordsToClear <= 0)
+        {
+            return;
+        }
+
         var zeroArray = new uint[wordsToClear];
         Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
     }
