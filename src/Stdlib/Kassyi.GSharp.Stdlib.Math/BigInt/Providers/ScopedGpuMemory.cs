@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.Math.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 /// <summary>
 /// A disposable stack-only ref struct representing a scoped allocation of GPU global device memory.
@@ -34,3 +34,4 @@ public ref struct ScopedGpuMemory
         }
     }
 }
+

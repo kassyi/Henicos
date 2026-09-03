@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
-namespace Kassyi.GSharp.Stdlib.Math.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 /// <summary>
 /// Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries.
@@ -171,6 +171,7 @@ public class NativeProvider : IGpuExecutionProvider
     public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 }
+
 
 
 

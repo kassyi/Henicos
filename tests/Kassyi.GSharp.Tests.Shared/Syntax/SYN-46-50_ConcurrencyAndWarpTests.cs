@@ -1,9 +1,9 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_46_50_ConcurrencyAndWarpTests
 :  TranspilerTestBase{
-    [SkippableFact]
+    [SkippableFact(Skip="未実装")]
     [Trait("FeatureId", "SYN-46")]
     [Trait("Category", "Syntax")]
     public void Test_SYN46_WarpPrimitives_Transpilation()
@@ -51,7 +51,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         }
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip="未実装")]
     [Trait("FeatureId", "SYN-48")]
     [Trait("Category", "Syntax")]
     public void Test_SYN48_CooperativeGroups_Transpilation()
@@ -122,7 +122,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads - 1, globalState[1]);
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip="未実装")]
     [Trait("FeatureId", "SYN-50")]
     [Trait("Category", "Syntax")]
     public void Test_SYN50_AsyncCopyTma_Transpilation()

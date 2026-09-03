@@ -1,6 +1,6 @@
-using Kassyi.GSharp.Stdlib.Math.Expressions;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
-namespace Kassyi.GSharp.Stdlib.Math;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global device memory.
@@ -66,6 +66,10 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
             throw new OutOfMemoryException(
                 $"Failed to allocate GPU memory for {numWords} words ({numWords * 4} bytes).");
         }
+
+        // Zero-clear the newly allocated GPU memory to prevent uninitialized memory bugs
+        var zeroArray = new uint[numWords];
+        Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, numWords);
     }
 
     /// <summary>
@@ -241,6 +245,19 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     }
 
     /// <summary>
+    /// Clears the GPU memory (sets to 0) for the specified range.
+    /// </summary>
+    /// <param name="offsetWords">The starting word offset.</param>
+    /// <param name="numWords">The number of words to clear. If null, clears to the end.</param>
+    public void Clear(int offsetWords = 0, int? numWords = null)
+    {
+        int wordsToClear = numWords ?? (NumWords - offsetWords);
+        if (wordsToClear <= 0) return;
+        var zeroArray = new uint[wordsToClear];
+        Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
+    }
+
+    /// <summary>
     /// Copies words from a source <see cref="GpuBigInteger"/> to this buffer on the GPU device.
     /// </summary>
     /// <param name="source">The source GPU buffer.</param>
@@ -336,419 +353,6 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         return new GpuBigInteger(context, hostData);
     }
 
-    private static void ThrowIfSizeMismatch(GpuBigInteger leftOperand, GpuBigInteger rightOperand,
-        GpuBigInteger resultBuffer)
-    {
-        if (leftOperand.NumWords != rightOperand.NumWords || leftOperand.NumWords != resultBuffer.NumWords)
-        {
-            throw new ArgumentException(
-                $"All buffers must have the same size. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
-        }
-    }
-
-    private static void ThrowIfSizeMismatch(GpuBigInteger leftOperand, GpuBigInteger resultBuffer)
-    {
-        if (leftOperand.NumWords != resultBuffer.NumWords)
-        {
-            throw new ArgumentException(
-                $"Result buffer must have the same size as input buffer. a: {leftOperand.NumWords}, result: {resultBuffer.NumWords} words.");
-        }
-    }
-
-    /// <summary>Performs bitwise AND (<c>leftOperand &amp; rightOperand</c>) on GPU and stores result in destination buffer.</summary>
-    public static void BitwiseAnd(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        leftOperand.Context.Provider.BitwiseAnd(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>Computes arbitrary-precision addition (<c>leftOperand + rightOperand</c>) on the GPU.</summary>
-    public static void Add(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        leftOperand.Context.Provider.Add(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>Computes arbitrary-precision subtraction (<c>leftOperand - rightOperand</c>) on the GPU.</summary>
-    public static void Sub(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        leftOperand.Context.Provider.Sub(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>
-    /// Computes full arbitrary-precision multiplication (<c>leftOperand * rightOperand</c>) on the GPU.
-    /// </summary>
-    /// <remarks>The destination buffer must have length equal to <c>leftOperand.NumWords + rightOperand.NumWords</c>.</remarks>
-    public static void Mul(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        if (resultBuffer.NumWords != leftOperand.NumWords + rightOperand.NumWords)
-        {
-            throw new ArgumentException(
-                $"Result buffer must be the sum of input buffer sizes for Mul. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
-        }
-
-        leftOperand.Context.Provider.Mul(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>Shifts the big integer left by the specified bit count on the GPU.</summary>
-    public static void ShiftLeft(GpuBigInteger leftOperand, int shiftBits, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, resultBuffer);
-        leftOperand.Context.Provider.ShiftLeft(leftOperand.Context, leftOperand, shiftBits, resultBuffer);
-    }
-
-    /// <summary>
-    /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
-    /// </summary>
-    public static void Reciprocal(GpuBigInteger targetOperand, GpuBigInteger resultBuffer)
-    {
-        var n = targetOperand.NumWords;
-        if (resultBuffer.NumWords != 2 * n)
-        {
-            throw new ArgumentException("Result buffer for Reciprocal must be 2 * b.NumWords.");
-        }
-
-        var numBits = n * 32;
-
-        var hostData = targetOperand.ToHostArray();
-        var bytes = new byte[n * 4 + 1];
-        Buffer.BlockCopy(hostData, 0, bytes, 0, n * 4);
-        var bigB = new BigInteger(bytes);
-
-        if (bigB == 0)
-        {
-            throw new DivideByZeroException();
-        }
-
-        var actualBits = 0;
-        var temp = bigB;
-        while (temp > 0)
-        {
-            actualBits++;
-            temp >>= 1;
-        }
-
-        var shift = actualBits - 62;
-        if (shift < 0)
-        {
-            shift = 0;
-        }
-
-        var bigTop = bigB >> shift;
-
-        var initialApproximation = (BigInteger.One << 124) / bigTop;
-        var finalShift = 2 * numBits - (124 + shift);
-        var shiftedApproximation = initialApproximation;
-        if (finalShift >= 0)
-        {
-            shiftedApproximation <<= finalShift;
-        }
-        else
-        {
-            shiftedApproximation >>= -finalShift;
-        }
-
-        var xData = new uint[2 * n];
-        var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
-        Buffer.BlockCopy(xBytes, 0, xData, 0, System.Math.Min(xBytes.Length, xData.Length * 4));
-
-        resultBuffer.CopyFrom(new GpuBigInteger(targetOperand.Context, xData));
-
-        using var constant = CreatePowerOfTwo(targetOperand.Context, 3 * n, 2 * numBits + 1);
-        using var currentProduct = new GpuBigInteger(targetOperand.Context, 3 * n);
-        using var currentDifference = new GpuBigInteger(targetOperand.Context, 3 * n);
-        using var nextIterationValue = new GpuBigInteger(targetOperand.Context, 5 * n);
-
-        for (var i = 0; i < 15; i++)
-        {
-            Mul(targetOperand, resultBuffer, currentProduct);
-            Sub(constant, currentProduct, currentDifference);
-            Mul(resultBuffer, currentDifference, nextIterationValue);
-
-            resultBuffer.CopyFrom(nextIterationValue, destOffsetWords: 0, srcOffsetWords: 2 * n, numWords: 2 * n);
-        }
-    }
-
-    /// <summary>Computes arbitrary-precision division (<c>leftOperand / rightOperand</c>) on the GPU.</summary>
-    public static void Div(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-
-        var n = rightOperand.NumWords;
-
-        using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n);
-        Reciprocal(rightOperand, reciprocalOfB);
-
-        using var productWithReciprocal = new GpuBigInteger(rightOperand.Context, 3 * n);
-        Mul(leftOperand, reciprocalOfB, productWithReciprocal);
-        resultBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n, numWords: n);
-    }
-
-    /// <summary>Determines whether <paramref name="leftOperand"/> is strictly less than <paramref name="rightOperand"/> on the GPU.</summary>
-    public static bool IsLessThan(GpuBigInteger leftOperand, GpuBigInteger rightOperand)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand);
-        using var temp = new GpuBigInteger(leftOperand.Context, leftOperand.NumWords);
-        Sub(leftOperand, rightOperand, temp);
-        var topWord = temp.GetTopWords(1)[0];
-        return (topWord & 0x80000000u) != 0;
-    }
-
-    /// <summary>Computes the integer square root (<c>floor(sqrt(leftOperand))</c>) on the GPU.</summary>
-    public static void Sqrt(GpuBigInteger leftOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, resultBuffer);
-        var n = leftOperand.NumWords;
-        var hostData = leftOperand.ToHostArray();
-        var highestBit = -1;
-        for (var i = n - 1; i >= 0; i--)
-        {
-            if (hostData[i] == 0)
-            {
-                continue;
-            }
-
-            var w = hostData[i];
-            var b = 31;
-            while ((w & (1u << b)) == 0)
-            {
-                b--;
-            }
-
-            highestBit = i * 32 + b;
-            break;
-        }
-
-        if (highestBit == -1)
-        {
-            resultBuffer.ClearWord(0);
-            resultBuffer.CopyFrom(resultBuffer, numWords: 0);
-            var zeros = new uint[n];
-            resultBuffer.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, zeros, n);
-            return;
-        }
-
-        using var currentRoot = CreatePowerOfTwo(leftOperand.Context, n, highestBit / 2);
-        using var divisionResult = new GpuBigInteger(leftOperand.Context, n);
-        using var sumWithDivision = new GpuBigInteger(leftOperand.Context, n);
-
-        for (var i = 0; i < 20; i++)
-        {
-            Div(leftOperand, currentRoot, divisionResult);
-            Add(currentRoot, divisionResult, sumWithDivision);
-            ShiftRight(sumWithDivision, 1, currentRoot);
-        }
-
-        using var squaredRoot = new GpuBigInteger(leftOperand.Context, 2 * n);
-        Mul(currentRoot, currentRoot, squaredRoot);
-
-        var topHalf = new uint[n];
-        leftOperand.Context.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n);
-        var isGreater = false;
-        for (var i = 0; i < n; i++)
-        {
-            if (topHalf[i] == 0)
-            {
-                continue;
-            }
-
-            isGreater = true;
-            break;
-        }
-
-        if (!isGreater)
-        {
-            using var lowerSquaredRoot = new GpuBigInteger(leftOperand.Context, n);
-            lowerSquaredRoot.CopyFrom(squaredRoot, numWords: n);
-            isGreater = IsLessThan(leftOperand, lowerSquaredRoot);
-        }
-
-        if (isGreater)
-        {
-            using var one = new GpuBigInteger(leftOperand.Context, n);
-            one.Context.Provider.CopyHostToDevice(one.DevicePointer, [1u], 1);
-            Sub(currentRoot, one, resultBuffer);
-        }
-        else
-        {
-            resultBuffer.CopyFrom(currentRoot);
-        }
-    }
-
-    /// <summary>Shifts the big integer right by the specified bit count on the GPU.</summary>
-    public static void ShiftRight(GpuBigInteger leftOperand, int shiftBits, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, resultBuffer);
-        leftOperand.Context.Provider.ShiftRight(leftOperand.Context, leftOperand, shiftBits, resultBuffer);
-    }
-
-    /// <summary>Performs bitwise OR on the GPU.</summary>
-    public static void BitwiseOr(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        leftOperand.Context.Provider.BitwiseOr(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>Performs bitwise XOR on the GPU.</summary>
-    public static void BitwiseXor(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        leftOperand.Context.Provider.BitwiseXor(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>Performs bitwise NOT on the GPU.</summary>
-    public static void BitwiseNot(GpuBigInteger leftOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, resultBuffer);
-        leftOperand.Context.Provider.BitwiseNot(leftOperand.Context, leftOperand, resultBuffer);
-    }
-
-    /// <summary>Computes simultaneous division quotient and remainder on the GPU.</summary>
-    public static void DivRem(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger quotientBuffer,
-        GpuBigInteger remainderBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, quotientBuffer);
-        ThrowIfSizeMismatch(leftOperand, remainderBuffer);
-
-        var n = rightOperand.NumWords;
-        using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n);
-        Reciprocal(rightOperand, reciprocalOfB);
-
-        using var productWithReciprocal = new GpuBigInteger(rightOperand.Context, 3 * n);
-        Mul(leftOperand, reciprocalOfB, productWithReciprocal);
-
-        quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n, numWords: n);
-
-        using var qb = new GpuBigInteger(rightOperand.Context, 2 * n);
-        Mul(quotientBuffer, rightOperand, qb);
-
-        using var qbLower = new GpuBigInteger(rightOperand.Context, n);
-        qbLower.CopyFrom(qb, numWords: n);
-
-        Sub(leftOperand, qbLower, remainderBuffer);
-
-        using var bPadded = new GpuBigInteger(rightOperand.Context, n);
-        bPadded.CopyFrom(rightOperand, numWords: n);
-        while (!IsLessThan(remainderBuffer, bPadded))
-        {
-            Sub(remainderBuffer, bPadded, remainderBuffer);
-        }
-    }
-
-    /// <summary>Computes arbitrary-precision modulo (<c>leftOperand % rightOperand</c>) on the GPU.</summary>
-    public static void Mod(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        using var tempQ = new GpuBigInteger(leftOperand.Context, leftOperand.NumWords);
-        DivRem(leftOperand, rightOperand, tempQ, resultBuffer);
-    }
-
-    /// <summary>Computes the Greatest Common Divisor (GCD) of two big integers on the GPU.</summary>
-    public static void Gcd(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        leftOperand.Context.Provider.Gcd(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-    }
-
-    /// <summary>
-    /// Computes self-squaring (<c>A * A</c>) in-place on the GPU.
-    /// </summary>
-    /// <param name="logicalWords">The logical number of input limbs to square.</param>
-    /// <returns><see langword="true"/> if executed successfully; otherwise, <see langword="false"/>.</returns>
-    public bool Square(int logicalWords)
-    {
-        if (NumWords < logicalWords * 2)
-        {
-            throw new InvalidOperationException(
-                $"Square requires the destination buffer to have at least {logicalWords * 2} words, but only has {NumWords}.");
-        }
-
-        return Context.Provider.Square(Context, DevicePointer, logicalWords);
-    }
-
-    /// <summary>Computes modular exponentiation (<c>baseVal^exp mod mod</c>) on the GPU.</summary>
-    public static void ModPow(GpuBigInteger baseVal, GpuBigInteger exp, GpuBigInteger mod, GpuBigInteger resultBuffer)
-    {
-        ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
-
-        var n = baseVal.NumWords;
-        var expWords = exp.NumWords;
-
-        using var mod2N = new GpuBigInteger(baseVal.Context, 2 * n);
-        mod2N.CopyFrom(mod, numWords: n);
-
-        using var tempResult = new GpuBigInteger(baseVal.Context, 2 * n);
-        var oneData = new uint[2 * n];
-        oneData[0] = 1;
-        tempResult.CopyFrom(new GpuBigInteger(baseVal.Context, oneData));
-
-        using var tempBase = new GpuBigInteger(baseVal.Context, 2 * n);
-        tempBase.CopyFrom(baseVal, numWords: n);
-
-        // Initial reduction of base
-        using var tempBaseQ = new GpuBigInteger(baseVal.Context, 2 * n);
-        using var tempBaseR = new GpuBigInteger(baseVal.Context, 2 * n);
-        DivRem(tempBase, mod2N, tempBaseQ, tempBaseR);
-        tempBase.CopyFrom(tempBaseR);
-
-        using var tempMul = new GpuBigInteger(baseVal.Context, 4 * n);
-        using var tempQ = new GpuBigInteger(baseVal.Context, 4 * n);
-        using var tempR = new GpuBigInteger(baseVal.Context, 4 * n);
-
-        using var mod4N = new GpuBigInteger(baseVal.Context, 4 * n);
-        mod4N.CopyFrom(mod, numWords: n);
-
-        var hostExp = exp.ToHostArray();
-
-        for (var i = 0; i < expWords; i++)
-        {
-            var e = hostExp[i];
-
-            // Optimization: if remaining bits are 0, we can break
-            if (e == 0)
-            {
-                var allZero = true;
-                for (var j = i; j < expWords; j++)
-                {
-                    if (hostExp[j] != 0)
-                    {
-                        allZero = false;
-                        break;
-                    }
-                }
-
-                if (allZero)
-                {
-                    break;
-                }
-            }
-
-            for (var bit = 0; bit < 32; bit++)
-            {
-                if ((e & 1) == 1)
-                {
-                    Mul(tempResult, tempBase, tempMul);
-                    DivRem(tempMul, mod4N, tempQ, tempR);
-                    tempResult.CopyFrom(tempR, numWords: 2 * n);
-                }
-
-                Mul(tempBase, tempBase, tempMul);
-                DivRem(tempMul, mod4N, tempQ, tempR);
-                tempBase.CopyFrom(tempR, numWords: 2 * n);
-
-                e >>= 1;
-
-                // If e becomes 0 and there are no more words, we can break bit loop
-                if (e == 0 && i == expWords - 1)
-                {
-                    break;
-                }
-            }
-        }
-
-        resultBuffer.CopyFrom(tempResult, numWords: n);
-    }
 
     internal void DisposeCore()
     {
@@ -840,16 +444,22 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         }
     }
 
-    /// <summary>Adds a scalar 32-bit unsigned integer to <paramref name="leftOperand"/> on the GPU.</summary>
-    public static void Add(GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
-        leftOperand.Context.Provider.Add(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
+    /// <summary>
+    /// Computes self-squaring (<c>A * A</c>) in-place on the GPU.
+    /// </summary>
+    /// <param name="logicalWords">The logical number of input limbs to square.</param>
+    /// <returns><see langword="true"/> if executed successfully; otherwise, <see langword="false"/>.</returns>
+    public bool Square(int logicalWords)
+    {
+        if (NumWords < logicalWords * 2)
+        {
+            throw new InvalidOperationException(
+                $"Square requires the destination buffer to have at least {logicalWords * 2} words, but only has {NumWords}.");
+        }
 
-    /// <summary>Subtracts a scalar 32-bit unsigned integer from <paramref name="leftOperand"/> on the GPU.</summary>
-    public static void Sub(GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
-        leftOperand.Context.Provider.Sub(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
-
-    /// <summary>Multiplies <paramref name="leftOperand"/> by a scalar 32-bit unsigned integer on the GPU.</summary>
-    public static void Mul(GpuBigInteger leftOperand, uint rightOperand, GpuBigInteger resultBuffer) =>
-        leftOperand.Context.Provider.Mul(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
+        return Context.Provider.Square(Context, DevicePointer, logicalWords);
+    }
 }
+
+
 

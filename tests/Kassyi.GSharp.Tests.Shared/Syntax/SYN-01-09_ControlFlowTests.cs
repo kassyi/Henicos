@@ -41,20 +41,13 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(888, b[1]); // b[1] updated
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "SYN-02")]
     [Trait("Category", "Syntax")]
     public void Test_SYN02_PatternMatching_Transpilation()
     {
     }
 
-    [Fact]
-    [Trait("FeatureId", "SYN-03")]
-    [Trait("Category", "Syntax")]
-    public void Test_SYN03_InlineOutVarDeclaration_Transpilation()
-    {
-        // Verified by SYN_03_InlineOutVarTests
-    }
 
     [Theory]
     [Trait("Category", "Execution")]
@@ -132,7 +125,7 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(expectedResult, result[0]);
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "SYN-06")]
     [Trait("Category", "Syntax")]
     public void Test_SYN06_RefConditionalExpression_Transpilation()
@@ -140,7 +133,7 @@ public class SYN_01_09_ControlFlowTests
     }
 
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "SYN-09")]
     [Trait("Category", "Syntax")]
     public void Test_SYN09_DefaultLiteral_Transpilation()

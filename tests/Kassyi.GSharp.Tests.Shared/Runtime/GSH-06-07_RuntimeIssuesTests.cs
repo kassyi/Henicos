@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Tests.Runtime;
@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Runtime;
 public partial class Gsh06_07_RuntimeIssuesTests
     : TranspilerTestBase
 {
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "GSH-06")]
     [Trait("Category", "Runtime")]
     public void Test_GSH06_LineNumberMappingInDiagnostics()

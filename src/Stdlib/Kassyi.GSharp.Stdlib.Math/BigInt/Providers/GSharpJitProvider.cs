@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Stdlib.Math.Kernels;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-namespace Kassyi.GSharp.Stdlib.Math.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 /// <summary>
 /// Execution provider implementing arbitrary-precision BigInteger arithmetic via GSharp JIT transpiled GPU kernels.
@@ -410,19 +410,98 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
 
-        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Device(
-            leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
-            buf1A.Pointer, buf2A.Pointer, buf1B.Pointer, buf2B.Pointer, tmpBuf.Pointer, uncarriedLow.Pointer, uncarriedHigh.Pointer,
-            twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
-            leftOperand.NumWords, rightOperand.NumWords, outWords, m,
-            gridDimX: gridDim, blockDimX: blockDim,
-            sharedMemBytes: (uint)(sharedMemWords * 4)
+        // Global NTT (Non-Cooperative) Launch
+
+        // 1. Unpack
+        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Unpack_Device(
+            leftOperand.DevicePointer, rightOperand.DevicePointer,
+            buf1A.Pointer, buf2A.Pointer, buf1B.Pointer, buf2B.Pointer,
+            m, leftOperand.NumWords, rightOperand.NumWords,
+            gridDimX: gridDim, blockDimX: blockDim
         );
 
+        // 2. Forward NTTs
+        LaunchNttHost(buf1A.Pointer, tmpBuf.Pointer, twiddle.Forward1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+        LaunchNttHost(buf2A.Pointer, tmpBuf.Pointer, twiddle.Forward2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+        LaunchNttHost(buf1B.Pointer, tmpBuf.Pointer, twiddle.Forward1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+        LaunchNttHost(buf2B.Pointer, tmpBuf.Pointer, twiddle.Forward2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+
+        // 3. Pointwise Multiply
+        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_PointwiseMultiply_Device(
+            buf1A.Pointer, buf2A.Pointer, buf1B.Pointer, buf2B.Pointer, m,
+            gridDimX: gridDim, blockDimX: blockDim
+        );
+
+        // 4. Inverse NTTs
+        LaunchNttHost(buf1A.Pointer, tmpBuf.Pointer, twiddle.Inverse1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, true);
+        LaunchNttHost(buf2A.Pointer, tmpBuf.Pointer, twiddle.Inverse2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
+
+        // 5. CRT Coefficients
+        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_ComputeCRT_Device(
+            buf1A.Pointer, buf2A.Pointer, uncarriedLow.Pointer, uncarriedHigh.Pointer, m,
+            gridDimX: gridDim, blockDimX: blockDim
+        );
+
+        // 6. Resolve Carries (Single Thread or small grid)
+        // Kernel_ResolveNttCarries is designed as SingleThread in Device function.
+        // Wait, Device_ResolveNttCarries uses `Gpu.SingleThread`, which means grid/block don't matter, it only runs on 1 thread.
+        // So gridDimX: 1, blockDimX: 1 is perfectly fine and avoids Cooperative.
         GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Device(
             uncarriedLow.Pointer, uncarriedHigh.Pointer, resultBuffer.DevicePointer, m, outWords,
             gridDimX: 1, blockDimX: 1
         );
+    }
+
+    private void LaunchNttHost(IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1, int n2, uint p, ulong pm, bool isInverse)
+    {
+        if (m <= 512)
+        {
+            var threads = m / 2;
+            GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_SharedRow_Device(
+                buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, 1, m,
+                gridDimX: 1, blockDimX: (uint)threads, sharedMemBytes: (uint)(m * 4)
+            );
+        }
+        else
+        {
+            if (isInverse)
+            {
+                LaunchSharedRow(buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, n1, n2);
+                LaunchTranspose(buffer, tempBuffer, n2, n1);
+                LaunchSharedRow(tempBuffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, n2, n1);
+                LaunchTranspose(tempBuffer, buffer, n1, n2);
+            }
+            else
+            {
+                LaunchTranspose(buffer, tempBuffer, n2, n1);
+                LaunchSharedRow(tempBuffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, n2, n1);
+                LaunchTranspose(tempBuffer, buffer, n1, n2);
+                LaunchSharedRow(buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, n1, n2);
+            }
+        }
+    }
+
+    private void LaunchSharedRow(IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1, int n2, uint p, ulong pm, bool applyTwiddleBefore, bool applyTwiddleAfter, int maxBlocks, int currentL)
+    {
+        var threadsNeeded = currentL / 2;
+        var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
+        var gridDim = (uint)System.Math.Min(65535, maxBlocks);
+        
+        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_SharedRow_Device(
+            buffer, tempBuffer, twiddle, m, n1, n2, p, pm, applyTwiddleBefore, applyTwiddleAfter, maxBlocks, currentL,
+            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: (uint)(System.Math.Max(1055, currentL) * 4)
+        );
+    }
+
+    private void LaunchTranspose(IntPtr input, IntPtr output, int width, int height)
+    {
+        uint gridDimX = (uint)((width + 31) / 32);
+        uint gridDimY = (uint)((height + 31) / 32);
+        uint totalGrid = gridDimX * gridDimY;
+        GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Transpose_Device(
+            input, output, width, height, 
+            gridDimX: totalGrid, gridDimY: 1, blockDimX: 256, blockDimY: 1,
+            sharedMemBytes: 32 * 33 * 4);
     }
 
     private uint CpuModPow(ulong baseVal, ulong exp, uint p)
@@ -532,7 +611,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         using var tempA = new GpuBigInteger(context, logicalWords);
         context.Provider.CopyDeviceToDevice(tempA.DevicePointer, devicePointer, logicalWords);
         using var tempResult = new GpuBigInteger(context, logicalWords * 2);
-        GpuBigInteger.Mul(tempA, tempA, tempResult);
+        GpuBigIntMath.Mul(tempA, tempA, tempResult);
         context.Provider.CopyDeviceToDevice(devicePointer, tempResult.DevicePointer, logicalWords * 2);
         return true;
     }
@@ -548,4 +627,9 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         return (gridSize, blockSize);
     }
 }
+
+
+
+
+
 

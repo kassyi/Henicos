@@ -22,28 +22,28 @@ public class GSH_01_05_TranspilerIssuesTests
         Assert.Equal(expectedResult, result[0]);
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "GSH-02")]
     [Trait("Category", "Transpiler")]
     public void Test_GSH02_GeneralTupleSupport()
     {
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "GSH-03")]
     [Trait("Category", "Transpiler")]
     public void Test_GSH03_LocalFunctionsSupport()
     {
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Transpiler")]
     public void Test_GSH04_StackAllocFixedArray()
     {
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "GSH-05")]
     [Trait("Category", "Transpiler")]
     public void Test_GSH05_GenericsConstraintResolution()

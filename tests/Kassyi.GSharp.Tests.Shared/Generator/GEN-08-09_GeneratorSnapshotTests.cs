@@ -10,7 +10,7 @@ using Kassyi.GSharp.Compiler;
 
 namespace Kassyi.GSharp.Tests;
 
-public partial class GEN_08_GeneratorSnapshotTests
+public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.TranspilerTestBase
 {
     private class GpuAttributeRemover : CSharpSyntaxRewriter
     {
@@ -77,7 +77,7 @@ public partial class GEN_08_GeneratorSnapshotTests
 
     public static TheoryData<string> GetSnapshotTestCases() => SnapshotTestCaseSource.GetTestCases();
 
-    private static async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
+    private async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
     {
 #pragma warning disable RS0030
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
@@ -155,7 +155,7 @@ public partial class GEN_08_GeneratorSnapshotTests
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: parseOptions,
-            optionsProvider: new Kassyi.GSharp.Tests.Helpers.TestAnalyzerConfigOptionsProvider());
+            optionsProvider: new Kassyi.GSharp.Tests.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
@@ -166,14 +166,9 @@ public partial class GEN_08_GeneratorSnapshotTests
             Assert.Fail($"Generator failed with errors:\n{errorMessages}");
         }
 
-#if GSHARP_CPU
-        var dialectName = "Cpu";
-#else
-        var dialectName = "Cuda";
-#endif
         await Verifier.Verify(driver)
             .UseDirectory(GetSnapshotsDirectory())
-            .UseMethodName($"{testName}_{dialectName}_GeneratesCorrectCudaSource");
+            .UseMethodName($"{testName}_{DialectName}_GeneratesCorrectCudaSource");
     }
 
     [SkippableTheory]

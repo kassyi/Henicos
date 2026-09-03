@@ -53,11 +53,14 @@ class Program
                 targetDigits = parsed;
             }
 
-            var gpuPiResult = GpuChudnovskyPi.ComputePi(targetDigits);
+            string? outPath = null;
+            int outIdx = Array.IndexOf(args, "--out");
+            if (outIdx >= 0 && outIdx + 1 < args.Length)
+            {
+                outPath = args[outIdx + 1];
+            }
 
-            Console.WriteLine(gpuPiResult.Length > 100
-                ? $"Result: {gpuPiResult.Substring(0, 50)}...{gpuPiResult.Substring(gpuPiResult.Length - 50)}"
-                : $"Result: {gpuPiResult}");
+            GpuChudnovskyPi.ComputePiAndWriteToFile(targetDigits, outPath);
             return;
         }
 

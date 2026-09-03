@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.Math;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// Represents a 2x2 transition matrix of arbitrary-precision integers (<see cref="GpuBigInteger"/>) allocated in GPU device memory.
@@ -180,24 +180,24 @@ public class GpuBigIntMatrix2x2 : IDisposable
         using var temp2 = new GpuBigInteger(ctx, outWords);
 
         // M00 = v00 * u00 + v01 * u10
-        GpuBigInteger.Mul(v.M00, u.M00, temp1);
-        GpuBigInteger.Mul(v.M01, u.M10, temp2);
-        GpuBigInteger.Add(temp1, temp2, result.M00);
+        GpuBigIntMath.Mul(v.M00, u.M00, temp1);
+        GpuBigIntMath.Mul(v.M01, u.M10, temp2);
+        GpuBigIntMath.Add(temp1, temp2, result.M00);
 
         // M01 = v00 * u01 + v01 * u11
-        GpuBigInteger.Mul(v.M00, u.M01, temp1);
-        GpuBigInteger.Mul(v.M01, u.M11, temp2);
-        GpuBigInteger.Add(temp1, temp2, result.M01);
+        GpuBigIntMath.Mul(v.M00, u.M01, temp1);
+        GpuBigIntMath.Mul(v.M01, u.M11, temp2);
+        GpuBigIntMath.Add(temp1, temp2, result.M01);
 
         // M10 = v10 * u00 + v11 * u10
-        GpuBigInteger.Mul(v.M10, u.M00, temp1);
-        GpuBigInteger.Mul(v.M11, u.M10, temp2);
-        GpuBigInteger.Add(temp1, temp2, result.M10);
+        GpuBigIntMath.Mul(v.M10, u.M00, temp1);
+        GpuBigIntMath.Mul(v.M11, u.M10, temp2);
+        GpuBigIntMath.Add(temp1, temp2, result.M10);
 
         // M11 = v10 * u01 + v11 * u11
-        GpuBigInteger.Mul(v.M10, u.M01, temp1);
-        GpuBigInteger.Mul(v.M11, u.M11, temp2);
-        GpuBigInteger.Add(temp1, temp2, result.M11);
+        GpuBigIntMath.Mul(v.M10, u.M01, temp1);
+        GpuBigIntMath.Mul(v.M11, u.M11, temp2);
+        GpuBigIntMath.Add(temp1, temp2, result.M11);
 
         return result;
     }
@@ -255,11 +255,11 @@ public class GpuBigIntMatrix2x2 : IDisposable
         using var tempB1 = new GpuBigInteger(ctx, tempWords);
         using var tempB2 = new GpuBigInteger(ctx, tempWords);
 
-        GpuBigInteger.Mul(M00, a, tempA1);
-        GpuBigInteger.Mul(M01, b, tempA2);
+        GpuBigIntMath.Mul(M00, a, tempA1);
+        GpuBigIntMath.Mul(M01, b, tempA2);
 
-        GpuBigInteger.Mul(M10, a, tempB1);
-        GpuBigInteger.Mul(M11, b, tempB2);
+        GpuBigIntMath.Mul(M10, a, tempB1);
+        GpuBigIntMath.Mul(M11, b, tempB2);
 
         using var resA = new GpuBigInteger(ctx, tempWords);
         using var resB = new GpuBigInteger(ctx, tempWords);
@@ -268,15 +268,15 @@ public class GpuBigIntMatrix2x2 : IDisposable
         {
             // A' = U00*A - U01*B
             // B' = U11*B - U10*A
-            GpuBigInteger.Sub(tempA1, tempA2, resA);
-            GpuBigInteger.Sub(tempB2, tempB1, resB);
+            GpuBigIntMath.Sub(tempA1, tempA2, resA);
+            GpuBigIntMath.Sub(tempB2, tempB1, resB);
         }
         else
         {
             // A' = U01*B - U00*A
             // B' = U10*A - U11*B
-            GpuBigInteger.Sub(tempA2, tempA1, resA);
-            GpuBigInteger.Sub(tempB1, tempB2, resB);
+            GpuBigIntMath.Sub(tempA2, tempA1, resA);
+            GpuBigIntMath.Sub(tempB1, tempB2, resB);
         }
 
         // [WHY] Destination buffers may have fewer limbs or need cleanup since reduced numbers decrease in magnitude.
@@ -301,4 +301,6 @@ public class GpuBigIntMatrix2x2 : IDisposable
         M11.Dispose();
     }
 }
+
+
 

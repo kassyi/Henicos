@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 using System.Collections.Concurrent;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
@@ -51,9 +53,9 @@ public class GpuContext : IDisposable
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
     /// </summary>
-    public Providers.IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
-        ? Providers.GSharpJitProvider.Instance
-        : Providers.NativeProvider.Instance;
+    public IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
+        ? GSharpJitProvider.Instance
+        : NativeProvider.Instance;
 
     private bool _disposed;
 
@@ -164,4 +166,5 @@ public class GpuContext : IDisposable
         bag.Add(temp);
     }
 }
+
 

@@ -1,7 +1,7 @@
 // ReSharper disable All
 #pragma warning disable GSH1002
 
-namespace Kassyi.GSharp.Stdlib.Math.Kernels;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
@@ -448,3 +448,4 @@ public static class GpuBigIntNttKernels
         Device_ForwardNTT(args);
     }
 }
+

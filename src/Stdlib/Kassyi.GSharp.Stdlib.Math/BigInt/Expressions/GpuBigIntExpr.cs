@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Stdlib.Math.Expressions;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>
 /// A value type wrapper that builds a lazy expression tree of GPU BigInteger arithmetic and bitwise operations.
@@ -67,4 +67,5 @@ public readonly struct GpuBigIntExpr
     public static GpuBigIntExpr operator >>(GpuBigIntExpr left, int shiftBits)
         => new(new ShiftRightExpression(left.Node, shiftBits));
 }
+
 

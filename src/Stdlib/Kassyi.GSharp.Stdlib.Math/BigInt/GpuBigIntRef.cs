@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.Math;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// A ref struct representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
@@ -38,3 +38,4 @@ public readonly ref struct GpuBigIntRef
     public static implicit operator GpuBigIntRef(uint[] data) => new GpuBigIntRef(data);
     public static implicit operator uint[](GpuBigIntRef data) => data.Data;
 }
+

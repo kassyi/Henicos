@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.Math.Algorithms;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 
 /// <summary>CPU reference implementation of Lehmer's / Half-GCD algorithm for validation before GPU kernel execution.</summary>
 public static class HalfGcdCpuReference
@@ -132,3 +132,4 @@ public static class HalfGcdCpuReference
         return bitLength;
     }
 }
+

@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.Math.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 /// <summary>
 /// Defines the contract for executing GPU-accelerated BigInteger arithmetic algorithms and managing device memory.
@@ -154,5 +154,6 @@ public interface IGpuExecutionProvider
     /// <returns>A signed integer that indicates the relative values of the operands.</returns>
     int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand);
 }
+
 
 
