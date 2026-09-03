@@ -53,18 +53,16 @@ public class ChudnovskyPi
                     PolynomialT = 13591409
                 };
             }
-            else
+
+            BigInteger numeratorP = -(BigInteger)(6L * a - 5) * (2L * a - 1) * (6L * a - 1);
+            BigInteger denominatorQ = (BigInteger)10939058860032000L * a * a * a;
+            var sumT = numeratorP * (13591409 + (BigInteger)545140134L * a);
+            return new ChudnovskyResult
             {
-                BigInteger numeratorP = -(6L * a - 5) * (2L * a - 1) * (6L * a - 1);
-                BigInteger denominatorQ = 10939058860032000L * a * a * a;
-                var sumT = numeratorP * (13591409 + 545140134L * a);
-                return new ChudnovskyResult
-                {
-                    PolynomialP = numeratorP,
-                    PolynomialQ = denominatorQ,
-                    PolynomialT = sumT
-                };
-            }
+                PolynomialP = numeratorP,
+                PolynomialQ = denominatorQ,
+                PolynomialT = sumT
+            };
         }
 
         var m = (a + b) / 2;
