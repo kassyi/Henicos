@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
 
@@ -8,14 +9,14 @@ namespace Henicos.PiBenchmark;
 
 /// <summary>
 /// GPU-accelerated Chudnovsky binary splitting algorithm for ultra-fast high-precision Pi computation.
-/// Utilizes G# GpuBigInteger and NTT multiplication kernels with Zero-PCIe hybrid orchestration.
+/// Utilizes G# <see cref="GpuBigInteger"/> and NTT multiplication kernels with Zero-PCIe intermediate merges.
 /// </summary>
 public static class GpuChudnovskyPi
 {
-    private struct SignedGpuBigInt : IDisposable
+    private readonly struct SignedGpuBigInt : IDisposable
     {
-        public GpuBigInteger Value;
-        public bool IsNegative;
+        public GpuBigInteger Value { get; }
+        public bool IsNegative { get; }
 
         public SignedGpuBigInt(GpuBigInteger value, bool isNegative)
         {
@@ -23,50 +24,56 @@ public static class GpuChudnovskyPi
             IsNegative = isNegative;
         }
 
-        public void Dispose()
-        {
-            Value?.Dispose();
-        }
+        public void Dispose() => Value.Dispose();
     }
 
-    private struct GpuPqt : IDisposable
+    private readonly struct GpuPqt : IDisposable
     {
-        public SignedGpuBigInt P;
-        public GpuBigInteger Q;
-        public SignedGpuBigInt T;
+        public SignedGpuBigInt P { get; }
+        public GpuBigInteger Q { get; }
+        public SignedGpuBigInt T { get; }
+
+        public GpuPqt(SignedGpuBigInt p, GpuBigInteger q, SignedGpuBigInt t)
+        {
+            P = p;
+            Q = q;
+            T = t;
+        }
 
         public void Dispose()
         {
             P.Dispose();
-            Q?.Dispose();
+            Q.Dispose();
             T.Dispose();
         }
     }
 
-    private struct CpuPqt
+    private readonly struct CpuPqt
     {
-        public BigInteger P;
-        public BigInteger Q;
-        public BigInteger T;
+        public BigInteger P { get; init; }
+        public BigInteger Q { get; init; }
+        public BigInteger T { get; init; }
     }
 
     /// <summary>
     /// Computes high-precision digits of Pi using the hybrid CPU/GPU Chudnovsky algorithm.
     /// </summary>
     /// <param name="digits">Target number of decimal digits.</param>
-    /// <param name="thresholdLimbWords">Threshold (in 32-bit words) where computation transitions from CPU to GPU NTT kernels.</param>
+    /// <param name="thresholdTerms">Maximum number of terms evaluated on CPU before transitioning to GPU NTT merges.</param>
     /// <returns>A string containing the computed decimal digits of Pi.</returns>
-    public static string ComputePi(int digits, int thresholdLimbWords = 64)
+    public static string ComputePi(int digits, int thresholdTerms = 16)
     {
-        int n = digits / 14 + 1;
-        int extraDigits = 20;
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(digits);
+
+        int totalTerms = digits / 14 + 1;
+        const int extraDigits = 20;
         int totalDigits = digits + extraDigits;
 
         // Estimate max limb words for GPU workspace allocation
         int estimatedWords = (int)((totalDigits * 3.32192809489) / 32) + 256;
         int maxContextWords = Math.Max(4096, 1 << (int)Math.Ceiling(Math.Log2(estimatedWords * 4)));
 
-        Console.WriteLine($"[GPU-Pi] Digits: {digits}, Terms: {n}, Threshold: {thresholdLimbWords} words");
+        Console.WriteLine($"[GPU-Pi] Digits: {digits}, Terms: {totalTerms}, CPU/GPU Leaf Threshold: {thresholdTerms} terms");
         Console.WriteLine($"[GPU-Pi] Initializing CUDA Device & G# GPU Context (MaxWords: {maxContextWords:N0})...");
 
         CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
@@ -77,57 +84,56 @@ public static class GpuChudnovskyPi
         {
             using var context = new GpuContext(maxContextWords, GpuExecutionEngine.GSharpJit);
 
-            var sw = Stopwatch.StartNew();
+            var totalStopwatch = Stopwatch.StartNew();
+
             // 1. Compute Binary Splitting tree using Hybrid CPU/GPU execution
-            using var pqt = ComputeTree(0, n, context, thresholdLimbWords);
-            long treeTimeMs = sw.ElapsedMilliseconds;
+            using var pqt = ComputeTree(0, totalTerms, context, thresholdTerms);
+            long treeTimeMs = totalStopwatch.ElapsedMilliseconds;
             Console.WriteLine($"[GPU-Pi] Binary Splitting Tree computed in {treeTimeMs} ms");
 
-        // 2. Final stage: Pi = (426880 * Sqrt(10005 * 10^(2*totalDigits)) * Q) / T
-        var finalSw = Stopwatch.StartNew();
+            // 2. Final stage: Pi = (426880 * Sqrt(10005 * 10^(2*totalDigits)) * Q) / T
+            var finalStageStopwatch = Stopwatch.StartNew();
 
-        // Compute Sqrt(10005 * 10^(2*totalDigits)) on CPU (or GPU for huge scales)
-        var sqrtBase = 10005 * BigInteger.Pow(10, 2 * totalDigits);
-        var sqrt10005Cpu = SqrtCpu(sqrtBase);
+            var sqrtBase = 10005 * BigInteger.Pow(10, 2 * totalDigits);
+            var sqrt10005Cpu = SqrtCpu(sqrtBase);
 
-        var qHostWords = pqt.Q.ToHostArray();
-        var qBigInt = ToBigInteger(qHostWords, false);
+            var qHostWords = pqt.Q.ToHostArray();
+            var qBigInt = ToBigInteger(qHostWords, isNegative: false);
 
-        var tHostWords = pqt.T.Value.ToHostArray();
-        var tBigInt = ToBigInteger(tHostWords, pqt.T.IsNegative);
+            var tHostWords = pqt.T.Value.ToHostArray();
+            var tBigInt = ToBigInteger(tHostWords, pqt.T.IsNegative);
 
-        var numerator = (BigInteger)426880 * sqrt10005Cpu * qBigInt;
-        var piExt = numerator / tBigInt;
-        var pi = piExt / BigInteger.Pow(10, extraDigits);
+            var numerator = (BigInteger)426880 * sqrt10005Cpu * qBigInt;
+            var piExt = numerator / tBigInt;
+            var pi = piExt / BigInteger.Pow(10, extraDigits);
 
-        finalSw.Stop();
-        sw.Stop();
+            finalStageStopwatch.Stop();
+            totalStopwatch.Stop();
 
-        Console.WriteLine($"[GPU-Pi] Final division/assembly: {finalSw.ElapsedMilliseconds} ms, Total: {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine(
+                $"[GPU-Pi] Final division/assembly: {finalStageStopwatch.ElapsedMilliseconds} ms, Total: {totalStopwatch.ElapsedMilliseconds} ms");
 
-        return pi.ToString();
+            return pi.ToString();
+        }
+        finally
+        {
+            CudaDriverApi.cuCtxDestroy_v2(cudaContext);
+        }
     }
-    finally
-    {
-        CudaDriverApi.cuCtxDestroy_v2(cudaContext);
-    }
-}
 
-    private static GpuPqt ComputeTree(int a, int b, GpuContext context, int thresholdWords)
+    private static GpuPqt ComputeTree(int a, int b, GpuContext context, int thresholdTerms)
     {
-        // For leaves or small subtrees, compute on CPU
         int terms = b - a;
-        if (terms <= 16)
+        if (terms <= thresholdTerms)
         {
             var cpuResult = ComputeCpuSubtree(a, b);
             return UploadToGpu(context, cpuResult);
         }
 
         int m = (a + b) / 2;
-        using var left = ComputeTree(a, m, context, thresholdWords);
-        using var right = ComputeTree(m, b, context, thresholdWords);
+        using var left = ComputeTree(a, m, context, thresholdTerms);
+        using var right = ComputeTree(m, b, context, thresholdTerms);
 
-        // Merge on GPU using NTT kernels
         return MergeGpu(context, left, right);
     }
 
@@ -168,9 +174,8 @@ public static class GpuChudnovskyPi
         }
         else
         {
-            // Subtract smaller from larger
-            int cmp = CompareGpu(termA, termB);
-            if (cmp >= 0)
+            int comparison = termA.CompareTo(termB);
+            if (comparison >= 0)
             {
                 GpuBigInteger.Sub(termA, termB, resultT);
                 tNegative = signA;
@@ -182,12 +187,11 @@ public static class GpuChudnovskyPi
             }
         }
 
-        return new GpuPqt
-        {
-            P = new SignedGpuBigInt(resultP, pNegative),
-            Q = resultQ,
-            T = new SignedGpuBigInt(resultT, tNegative)
-        };
+        return new GpuPqt(
+            new SignedGpuBigInt(resultP, pNegative),
+            resultQ,
+            new SignedGpuBigInt(resultT, tNegative)
+        );
     }
 
     private static GpuBigInteger PadToSize(GpuContext context, GpuBigInteger src, int targetWords)
@@ -199,26 +203,10 @@ public static class GpuChudnovskyPi
             return copy;
         }
 
-        var hostData = new uint[targetWords];
-        var srcData = src.ToHostArray();
-        Array.Copy(srcData, hostData, Math.Min(srcData.Length, targetWords));
-        return new GpuBigInteger(context, hostData);
-    }
-
-    private static int CompareGpu(GpuBigInteger a, GpuBigInteger b)
-    {
-        var aWords = a.ToHostArray();
-        var bWords = b.ToHostArray();
-
-        int maxLen = Math.Max(aWords.Length, bWords.Length);
-        for (int i = maxLen - 1; i >= 0; i--)
-        {
-            uint wa = i < aWords.Length ? aWords[i] : 0;
-            uint wb = i < bWords.Length ? bWords[i] : 0;
-            if (wa > wb) return 1;
-            if (wa < wb) return -1;
-        }
-        return 0;
+        var padded = new GpuBigInteger(context, targetWords);
+        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(padded.DevicePointer, 0, (IntPtr)(targetWords * sizeof(uint))));
+        context.Provider.CopyDeviceToDevice(padded.DevicePointer, src.DevicePointer, Math.Min(src.NumWords, targetWords));
+        return padded;
     }
 
     private static CpuPqt ComputeCpuSubtree(int a, int b)
@@ -261,12 +249,11 @@ public static class GpuChudnovskyPi
         var absT = BigInteger.Abs(cpu.T);
         var gpuT = ToGpuBigInt(context, absT, 0);
 
-        return new GpuPqt
-        {
-            P = new SignedGpuBigInt(gpuP, pNeg),
-            Q = gpuQ,
-            T = new SignedGpuBigInt(gpuT, tNeg)
-        };
+        return new GpuPqt(
+            new SignedGpuBigInt(gpuP, pNeg),
+            gpuQ,
+            new SignedGpuBigInt(gpuT, tNeg)
+        );
     }
 
     private static GpuBigInteger ToGpuBigInt(GpuContext context, BigInteger val, int minWords)
@@ -282,24 +269,26 @@ public static class GpuChudnovskyPi
         int allocWords = Math.Max(words, minWords);
 
         uint[] hostData = new uint[allocWords];
-        byte[] bytes = new byte[allocWords * 4];
-        val.TryWriteBytes(bytes, out _, isUnsigned: true, isBigEndian: false);
-        Buffer.BlockCopy(bytes, 0, hostData, 0, bytes.Length);
+        Span<byte> byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+        val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
 
         return new GpuBigInteger(context, hostData);
     }
 
-    private static BigInteger ToBigInteger(uint[] words, bool isNegative)
+    private static BigInteger ToBigInteger(ReadOnlySpan<uint> words, bool isNegative)
     {
-        byte[] bytes = new byte[words.Length * 4];
-        Buffer.BlockCopy(words, 0, bytes, 0, bytes.Length);
-        var big = new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
+        ReadOnlySpan<byte> byteSpan = MemoryMarshal.AsBytes(words);
+        var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
         return isNegative ? -big : big;
     }
 
     private static BigInteger SqrtCpu(BigInteger n)
     {
-        if (n == 0) return 0;
+        if (n == 0)
+        {
+            return 0;
+        }
+
         if (n > 0)
         {
             int bitLength = (int)Math.Ceiling(BigInteger.Log(n, 2));
@@ -310,13 +299,18 @@ public static class GpuChudnovskyPi
                 var next = (root + n / root) >> 1;
                 if (next == root || next == root + 1)
                 {
-                    if (root * root > n) return root - 1;
+                    if (root * root > n)
+                    {
+                        return root - 1;
+                    }
+
                     return root;
                 }
+
                 root = next;
             }
         }
 
-        throw new ArithmeticException("NaN");
+        throw new ArithmeticException("Cannot compute square root of a negative number.");
     }
 }
