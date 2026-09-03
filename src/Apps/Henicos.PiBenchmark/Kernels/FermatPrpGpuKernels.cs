@@ -6,9 +6,9 @@ namespace Henicos.PiBenchmark.Kernels;
 public static class FermatPrpGpuKernels
 {
     // Constants for NTT
-    public const uint NTT_P1 = 4253024257; 
+    public const uint NTT_P1 = 4253024257;
     public const ulong NTT_M1 = 4337323974UL;
-    public const uint NTT_P2 = 4246732801; 
+    public const uint NTT_P2 = 4246732801;
     public const ulong NTT_M2 = 4343749639UL;
 
     // ---------------------------------------------------------
@@ -16,29 +16,43 @@ public static class FermatPrpGpuKernels
     // ---------------------------------------------------------
 
     [GpuKernel]
-    public static void Kernel_Unpack16(uint[] src, uint[] dst1, uint[] dst2, [JitConstant] int M, [JitConstant] int numWords)
+    public static void Kernel_Unpack16(uint[] src, uint[] dst1, uint[] dst2, [JitConstant] int M,
+        [JitConstant] int numWords)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (tid < M)
+        if (tid >= M)
         {
-            uint val = 0;
-            int wordIdx = tid / 2;
-            if (wordIdx < numWords)
-            {
-                uint w = src[wordIdx];
-                if (tid % 2 == 0) val = (w & 0xFFFF);
-                else val = (w >> 16);
-            }
-            dst1[tid] = val;
-            dst2[tid] = val;
+            return;
         }
+
+        uint val = 0;
+        int wordIdx = tid / 2;
+        if (wordIdx < numWords)
+        {
+            uint w = src[wordIdx];
+            if (tid % 2 == 0)
+            {
+                val = (w & 0xFFFF);
+            }
+            else
+            {
+                val = (w >> 16);
+            }
+        }
+
+        dst1[tid] = val;
+        dst2[tid] = val;
     }
 
     [GpuDeviceFunction]
     public static uint ModAdd(uint a, uint b, uint modulo)
     {
         uint res = a + b;
-        if (res >= modulo || res < a) res -= modulo;
+        if (res >= modulo || res < a)
+        {
+            res -= modulo;
+        }
+
         return res;
     }
 
@@ -46,7 +60,11 @@ public static class FermatPrpGpuKernels
     public static uint ModSub(uint a, uint b, uint modulo)
     {
         uint res = a - b;
-        if (a < b) res += modulo;
+        if (a < b)
+        {
+            res += modulo;
+        }
+
         return res;
     }
 
@@ -57,7 +75,11 @@ public static class FermatPrpGpuKernels
         ulong q = 0;
         Gpu.InlinePtx("asm(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"(q) : \"l\"(prod), \"l\"(mBarrett));");
         uint res = (uint)(prod - q * modulo);
-        if (res >= modulo) res -= modulo;
+        if (res >= modulo)
+        {
+            res -= modulo;
+        }
+
         return res;
     }
 
@@ -68,10 +90,15 @@ public static class FermatPrpGpuKernels
         a = ModMulBarrett(a, 1, modulo, mBarrett);
         while (b > 0)
         {
-            if ((b & 1) != 0) res = ModMulBarrett(res, a, modulo, mBarrett);
+            if ((b & 1) != 0)
+            {
+                res = ModMulBarrett(res, a, modulo, mBarrett);
+            }
+
             a = ModMulBarrett(a, a, modulo, mBarrett);
             b >>= 1;
         }
+
         return res;
     }
 
@@ -100,11 +127,15 @@ public static class FermatPrpGpuKernels
     // ---------------------------------------------------------
 
     [GpuKernel]
-    public static void Kernel_NttGlobalPass(uint[] buf, uint[] twiddles, [JitConstant] int M, [JitConstant] int passIndex, [JitConstant] uint jitP, [JitConstant] ulong jitMBarrett)
+    public static void Kernel_NttGlobalPass(uint[] buf, uint[] twiddles, [JitConstant] int M,
+        [JitConstant] int passIndex, [JitConstant] uint jitP, [JitConstant] ulong jitMBarrett)
     {
         int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         int halfM = M / 2;
-        if (tid >= halfM) return;
+        if (tid >= halfM)
+        {
+            return;
+        }
 
         // passIndex determines the size of the butterfly group
         // s = passIndex (1 to log2(M))
@@ -143,55 +174,70 @@ public static class FermatPrpGpuKernels
             {
                 rev = (rev << 1) | ((tid >> i) & 1);
             }
+
             dst[rev] = src[tid];
         }
     }
 
     [GpuKernel]
-    public static void Kernel_PackAndFermatReduce(uint[] nttResult1, uint[] nttResult2, uint[] dst, [JitConstant] int M, [JitConstant] int outNumWords)
+    public static void Kernel_PackAndFermatReduce(uint[] nttResult1, uint[] nttResult2, uint[] dst, [JitConstant] int M,
+        [JitConstant] int outNumWords)
     {
         int k = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        
+
         if (k < M)
         {
             ulong p1 = NTT_P1;
             ulong p2 = NTT_P2;
             ulong p1_inv_p2 = 21; // invMod(p1, p2) = 21
-            
+
             uint invN1 = ModPow((uint)M, NTT_P1 - 2, NTT_P1, NTT_M1);
             uint invN2 = ModPow((uint)M, NTT_P2 - 2, NTT_P2, NTT_M2);
-            
+
             ulong v1 = ModMulBarrett(nttResult1[k], invN1, NTT_P1, NTT_M1);
             ulong v2 = ModMulBarrett(nttResult2[k], invN2, NTT_P2, NTT_M2);
-            
+
             ulong diff = v2 >= v1 ? v2 - v1 : v2 + p2 - v1;
             ulong h = (diff * p1_inv_p2) % p2;
             ulong val = v1 + p1 * h;
-            
-            if (val > 0)
+
+            if (val <= 0)
             {
-                int wordIdx = k / 2;
-                int bitOffset = (k % 2) * 16;
-                
-                uint low32 = 0;
-                uint mid32 = 0;
-                uint high32 = 0;
-                
-                if (bitOffset == 0)
-                {
-                    low32 = (uint)(val & 0xFFFFFFFF);
-                    mid32 = (uint)(val >> 32);
-                }
-                else
-                {
-                    low32 = (uint)((val << 16) & 0xFFFFFFFF);
-                    mid32 = (uint)((val >> 16) & 0xFFFFFFFF);
-                    high32 = (uint)(val >> 48);
-                }
-                
-                if (low32 > 0) AtomicAddWithCarry(dst, wordIdx, low32, outNumWords);
-                if (mid32 > 0) AtomicAddWithCarry(dst, wordIdx + 1, mid32, outNumWords);
-                if (high32 > 0) AtomicAddWithCarry(dst, wordIdx + 2, high32, outNumWords);
+                return;
+            }
+
+            int wordIdx = k / 2;
+            int bitOffset = (k % 2) * 16;
+
+            uint low32 = 0;
+            uint mid32 = 0;
+            uint high32 = 0;
+
+            if (bitOffset == 0)
+            {
+                low32 = (uint)(val & 0xFFFFFFFF);
+                mid32 = (uint)(val >> 32);
+            }
+            else
+            {
+                low32 = (uint)((val << 16) & 0xFFFFFFFF);
+                mid32 = (uint)((val >> 16) & 0xFFFFFFFF);
+                high32 = (uint)(val >> 48);
+            }
+
+            if (low32 > 0)
+            {
+                AtomicAddWithCarry(dst, wordIdx, low32, outNumWords);
+            }
+
+            if (mid32 > 0)
+            {
+                AtomicAddWithCarry(dst, wordIdx + 1, mid32, outNumWords);
+            }
+
+            if (high32 > 0)
+            {
+                AtomicAddWithCarry(dst, wordIdx + 2, high32, outNumWords);
             }
         }
     }
