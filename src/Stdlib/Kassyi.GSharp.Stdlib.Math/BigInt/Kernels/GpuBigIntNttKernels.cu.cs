@@ -307,45 +307,66 @@ public static class GpuBigIntNttKernels
         });
     }
 
-    [GpuDeviceFunction]
-    public static void Device_ResolveNttCarries(uint[] uncarriedLow, uint[] uncarriedHigh,
-        uint[] outputBuffer, int transformLength, int maxWordCount)
+    [GpuKernel]
+    public static void Kernel_ResolveNttCarries_Blocked(uint[] uncarriedLow, uint[] uncarriedHigh,
+        uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
     {
-        Gpu.SingleThread(() =>
+        var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        int startIdx = globalBlockIdx * chunkSize;
+        if (startIdx >= maxWordCount) return;
+
+        int endIdx = startIdx + chunkSize;
+        if (endIdx > maxWordCount) endIdx = maxWordCount;
+
+        ulong carry = 0;
+        for (int i = startIdx; i < endIdx; i++)
         {
-            ulong carry = 0;
-
-            for (int i = 0; i < maxWordCount; i++)
+            ulong localSum = carry;
+            if (2 * i + 1 < transformLength)
             {
-                ulong sum0 = carry;
-                if (2 * i < transformLength)
-                {
-                    sum0 += uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
-                }
-
-                ulong sum1 = 0;
-                if (2 * i + 1 < transformLength)
-                {
-                    sum1 = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
-                }
-
-                var low16 = (uint)(sum0 & 0xFFFF);
-                var carry0 = sum0 >> 16;
-                var sum1_with_carry = sum1 + carry0;
-                var high16 = (uint)(sum1_with_carry & 0xFFFF);
-
-                carry = sum1_with_carry >> 16;
-
-                outputBuffer[i] = low16 | (high16 << 16);
+                ulong c = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
+                localSum += (uint)(c << 16);
             }
-        });
+            if (2 * i < transformLength)
+            {
+                ulong c = uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
+                localSum += (uint)c;
+            }
+            if (2 * i - 1 >= 0 && 2 * i - 1 < transformLength)
+            {
+                ulong c = uncarriedLow[2 * i - 1] | ((ulong)uncarriedHigh[2 * i - 1] << 32);
+                localSum += (uint)(c >> 16);
+            }
+            if (2 * i - 2 >= 0 && 2 * i - 2 < transformLength)
+            {
+                ulong c = uncarriedLow[2 * i - 2] | ((ulong)uncarriedHigh[2 * i - 2] << 32);
+                localSum += (uint)(c >> 32);
+            }
+            if (2 * i - 3 >= 0 && 2 * i - 3 < transformLength)
+            {
+                ulong c = uncarriedLow[2 * i - 3] | ((ulong)uncarriedHigh[2 * i - 3] << 32);
+                localSum += (uint)(c >> 48);
+            }
+
+            outputBuffer[i] = (uint)localSum;
+            carry = localSum >> 32;
+        }
+
+        blockCarries[globalBlockIdx] = (uint)carry;
     }
 
-    [GpuKernel(Cooperative = true)]
-    public static void Kernel_ResolveNttCarries(uint[] uncarriedLow, uint[] uncarriedHigh,
-        uint[] outputBuffer, int transformLength, int maxWordCount)
+    [GpuKernel]
+    public static void Kernel_ResolveNttCarries_Apply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount, int chunkSize, int numBlocks)
     {
-        Device_ResolveNttCarries(uncarriedLow, uncarriedHigh, outputBuffer, transformLength, maxWordCount);
+        var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (globalBlockIdx >= numBlocks) return;
+
+        var carry = blockCarries[globalBlockIdx];
+        if (carry > 0)
+        {
+            int startIdx = (globalBlockIdx + 1) * chunkSize;
+            GpuBigIntKernels.AtomicAddWithCarry(outputBuffer, startIdx, carry, maxWordCount);
+        }
     }
 
 

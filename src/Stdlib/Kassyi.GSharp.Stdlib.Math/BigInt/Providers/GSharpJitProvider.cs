@@ -387,14 +387,14 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
         var twiddle = GetOrCreateTwiddleFactors(context, m);
 
-        using var buf1A = new ScopedGpuMemory(context.Provider, m);
-        using var buf2A = new ScopedGpuMemory(context.Provider, m);
-        using var buf1B = new ScopedGpuMemory(context.Provider, m);
-        using var buf2B = new ScopedGpuMemory(context.Provider, m);
-        using var tmpBuf = new ScopedGpuMemory(context.Provider, m);
+        using var buf1A = context.RentTemp(m);
+        using var buf2A = context.RentTemp(m);
+        using var buf1B = context.RentTemp(m);
+        using var buf2B = context.RentTemp(m);
+        using var tmpBuf = context.RentTemp(m);
 
-        using var uncarriedLow = new ScopedGpuMemory(context.Provider, m);
-        using var uncarriedHigh = new ScopedGpuMemory(context.Provider, m);
+        using var uncarriedLow = context.RentTemp(m);
+        using var uncarriedHigh = context.RentTemp(m);
 
         var n2 = 1;
         while (n2 * n2 < m)
@@ -415,40 +415,49 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         // 1. Unpack
         GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_Unpack_Device(
             leftOperand.DevicePointer, rightOperand.DevicePointer,
-            buf1A.Pointer, buf2A.Pointer, buf1B.Pointer, buf2B.Pointer,
+            buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer,
             m, leftOperand.NumWords, rightOperand.NumWords,
             gridDimX: gridDim, blockDimX: blockDim
         );
 
         // 2. Forward NTTs
-        LaunchNttHost(buf1A.Pointer, tmpBuf.Pointer, twiddle.Forward1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(buf2A.Pointer, tmpBuf.Pointer, twiddle.Forward2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
-        LaunchNttHost(buf1B.Pointer, tmpBuf.Pointer, twiddle.Forward1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(buf2B.Pointer, tmpBuf.Pointer, twiddle.Forward2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+        LaunchNttHost(buf1A.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+        LaunchNttHost(buf2A.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+        LaunchNttHost(buf1B.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+        LaunchNttHost(buf2B.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
 
         // 3. Pointwise Multiply
         GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_PointwiseMultiply_Device(
-            buf1A.Pointer, buf2A.Pointer, buf1B.Pointer, buf2B.Pointer, m,
+            buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
         );
 
         // 4. Inverse NTTs
-        LaunchNttHost(buf1A.Pointer, tmpBuf.Pointer, twiddle.Inverse1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, true);
-        LaunchNttHost(buf2A.Pointer, tmpBuf.Pointer, twiddle.Inverse2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
+        LaunchNttHost(buf1A.DevicePointer, tmpBuf.DevicePointer, twiddle.Inverse1, m, n1, n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, true);
+        LaunchNttHost(buf2A.DevicePointer, tmpBuf.DevicePointer, twiddle.Inverse2, m, n1, n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
 
         // 5. CRT Coefficients
         GpuBigIntMulKernelsWrapper.Launch_Kernel_MultiplyNtt_ComputeCRT_Device(
-            buf1A.Pointer, buf2A.Pointer, uncarriedLow.Pointer, uncarriedHigh.Pointer, m,
+            buf1A.DevicePointer, buf2A.DevicePointer, uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
         );
 
-        // 6. Resolve Carries (Single Thread or small grid)
-        // Kernel_ResolveNttCarries is designed as SingleThread in Device function.
-        // Wait, Device_ResolveNttCarries uses `Gpu.SingleThread`, which means grid/block don't matter, it only runs on 1 thread.
-        // So gridDimX: 1, blockDimX: 1 is perfectly fine and avoids Cooperative.
-        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Device(
-            uncarriedLow.Pointer, uncarriedHigh.Pointer, resultBuffer.DevicePointer, m, outWords,
-            gridDimX: 1, blockDimX: 1
+        // 6. Resolve Carries (Blocked + Atomic Propagation)
+        int chunkSize = 1024;
+        int numBlocks = (outWords + chunkSize - 1) / chunkSize;
+        using var blockCarries = context.RentTemp(numBlocks);
+
+        var resolveBlockDim = (uint)System.Math.Min(1024, System.Math.Max(256, numBlocks));
+        var resolveGridDim = (uint)((numBlocks + resolveBlockDim - 1) / resolveBlockDim);
+
+        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked_Device(
+            uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, resultBuffer.DevicePointer, blockCarries.DevicePointer, m, outWords, chunkSize,
+            gridDimX: resolveGridDim, blockDimX: resolveBlockDim
+        );
+
+        GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Apply_Device(
+            resultBuffer.DevicePointer, blockCarries.DevicePointer, outWords, chunkSize, numBlocks,
+            gridDimX: resolveGridDim, blockDimX: resolveBlockDim
         );
     }
 
