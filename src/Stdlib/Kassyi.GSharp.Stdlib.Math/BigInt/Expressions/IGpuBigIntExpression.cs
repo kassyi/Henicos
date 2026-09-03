@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Stdlib.Math.Expressions;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>
 /// Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated GPU BigInteger expression.
@@ -22,4 +22,5 @@ public interface IGpuBigIntExpression
     /// <returns>The evaluated <see cref="GpuBigInteger"/> result buffer.</returns>
     GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null);
 }
+
 

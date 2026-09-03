@@ -1,5 +1,5 @@
 // ReSharper disable All
-namespace Kassyi.GSharp.Stdlib.Math.Kernels;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntBenchmarkKernels
@@ -13,4 +13,5 @@ public static class GpuBigIntBenchmarkKernels
         }
     }
 }
+
 

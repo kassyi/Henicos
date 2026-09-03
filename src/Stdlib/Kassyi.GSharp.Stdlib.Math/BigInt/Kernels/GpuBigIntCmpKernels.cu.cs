@@ -1,5 +1,5 @@
 // ReSharper disable All
-namespace Kassyi.GSharp.Stdlib.Math.Kernels;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 [SuppressMessage("ReSharper", "NotAccessedVariable", Justification = "Variables are accessed within inline PTX assembly blocks")]
 [SuppressMessage("ReSharper", "RedundantAssignment", Justification = "Assignments are consumed by inline PTX assembly blocks")]
@@ -95,3 +95,4 @@ public static class GpuBigIntCmpKernels
         });
     }
 }
+

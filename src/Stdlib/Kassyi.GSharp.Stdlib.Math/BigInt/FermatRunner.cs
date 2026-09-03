@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Jit;
-using Kassyi.GSharp.Stdlib.Math.Kernels;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-namespace Kassyi.GSharp.Stdlib.Math;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on the GPU.
@@ -257,4 +257,6 @@ public class FermatRunner
         JitEngine.SynchronizeDevice();
     }
 }
+
+
 

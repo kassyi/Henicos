@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.Math.Algorithms;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 
 /// <summary>3-Prime NTT (Number Theoretic Transform) and Garner's CRT combination for large integer multiplication CPU reference.</summary>
 public static class NttCpuReference
@@ -244,6 +244,7 @@ public static class NttCpuReference
         return finalResult;
     }
 }
+
 
 
 

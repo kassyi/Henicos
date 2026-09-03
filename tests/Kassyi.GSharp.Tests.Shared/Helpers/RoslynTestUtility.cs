@@ -46,7 +46,8 @@ public static class RoslynTestUtility
 
         var diagnostics = new List<Diagnostic>();
         dialect ??= new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+        var cudaSource =
+            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
         return (cudaSource, diagnostics);
     }
 
@@ -58,12 +59,14 @@ public static class RoslynTestUtility
         bool isDevice = true,
         Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect? dialect = null)
     {
-        var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(targetType, methodName, callerFilePath);
+        var (semanticModel, methodSymbol) =
+            MegaCompilationCache.GetMethodContext(targetType, methodName, callerFilePath);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var diagnostics = new List<Diagnostic>();
         dialect ??= new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+        var cudaSource =
+            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
         return (cudaSource, diagnostics);
     }
 
@@ -78,16 +81,19 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Runs a DiagnosticAnalyzer on the given source text and returns reported diagnostics.</summary>
-    public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source, DiagnosticAnalyzer analyzer)
+    public static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(string source,
+        DiagnosticAnalyzer analyzer, string targetDialect = "Cuda")
     {
         var compilation = CreateCompilation(source);
-        var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, new TestAnalyzerConfigOptionsProvider());
+        var analyzerOptions =
+            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, new TestAnalyzerConfigOptionsProvider(targetDialect));
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer), analyzerOptions);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }
 
     /// <summary>Executes the GpuKernelGenerator on the given source text and produces the output compilation and diagnostics.</summary>
-    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics) RunGenerator(string source)
+    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
+        RunGenerator(string source, string targetDialect = "Cuda")
     {
         var compilation = CreateCompilation(source);
 
@@ -97,21 +103,23 @@ public static class RoslynTestUtility
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
-            optionsProvider: new TestAnalyzerConfigOptionsProvider());
+            optionsProvider: new TestAnalyzerConfigOptionsProvider(targetDialect));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
         return (driver, outputCompilation, diagnostics);
     }
 
     /// <summary>Initiates a fluent test assertion builder for Source Generator verification on a test case file.</summary>
-    public static GeneratorTestConfig TestGenerator(string relativePathToTestCases, [CallerFilePath] string callerFilePath = "")
+    public static GeneratorTestConfig TestGenerator(string relativePathToTestCases,
+        [CallerFilePath] string callerFilePath = "")
     {
         var testCasesDir = GetTestCasesDirectory(callerFilePath);
         return new GeneratorTestConfig(Path.Combine(testCasesDir, relativePathToTestCases));
     }
 
     /// <summary>Initiates a fluent test assertion builder for Diagnostic Analyzer verification on a test case file.</summary>
-    public static AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases, DiagnosticAnalyzer analyzer, [CallerFilePath] string callerFilePath = "")
+    public static AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases, DiagnosticAnalyzer analyzer,
+        [CallerFilePath] string callerFilePath = "")
     {
         var testCasesDir = GetTestCasesDirectory(callerFilePath);
         return new AnalyzerTestConfig(Path.Combine(testCasesDir, relativePathToTestCases), analyzer);
@@ -122,17 +130,24 @@ public static class RoslynTestUtility
 public class GeneratorTestConfig
 {
     private readonly string _fullPath;
+    public string TargetDialect { get; private set; } = "Cuda";
 
     public GeneratorTestConfig(string fullPath)
     {
         _fullPath = fullPath;
     }
 
+    public GeneratorTestConfig WithDialect(string dialect)
+    {
+        TargetDialect = dialect;
+        return this;
+    }
+
     /// <summary>Asserts that running the generator reports all specified diagnostic error IDs.</summary>
     public async Task ReportsErrorsAsync(params string[] expectedDiagnosticIds)
     {
         var source = await File.ReadAllTextAsync(_fullPath);
-        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source, TargetDialect);
         var allDiagnostics = diagnostics.AddRange(outputCompilation.GetDiagnostics());
         foreach (var id in expectedDiagnosticIds)
         {
@@ -144,7 +159,7 @@ public class GeneratorTestConfig
     public async Task ReportsDiagnosticsAsync(params string[] expectedDiagnosticIds)
     {
         var source = await File.ReadAllTextAsync(_fullPath);
-        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source, TargetDialect);
         var allDiagnostics = diagnostics.AddRange(outputCompilation.GetDiagnostics());
         foreach (var id in expectedDiagnosticIds)
         {
@@ -156,7 +171,7 @@ public class GeneratorTestConfig
     public async Task<GeneratorDriver> GetDriverAsync()
     {
         var source = await File.ReadAllTextAsync(_fullPath);
-        var (driver, _, _) = RoslynTestUtility.RunGenerator(source);
+        var (driver, _, _) = RoslynTestUtility.RunGenerator(source, TargetDialect);
         return driver;
     }
 
@@ -164,7 +179,7 @@ public class GeneratorTestConfig
     public async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync()
     {
         var source = await File.ReadAllTextAsync(_fullPath);
-        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source);
+        var (_, outputCompilation, diagnostics) = RoslynTestUtility.RunGenerator(source, TargetDialect);
         return diagnostics.AddRange(outputCompilation.GetDiagnostics());
     }
 
@@ -188,11 +203,18 @@ public class AnalyzerTestConfig
 {
     private readonly string _fullPath;
     private readonly DiagnosticAnalyzer _analyzer;
+    public string TargetDialect { get; private set; } = "Cuda";
 
     public AnalyzerTestConfig(string fullPath, DiagnosticAnalyzer analyzer)
     {
         _fullPath = fullPath;
         _analyzer = analyzer;
+    }
+
+    public AnalyzerTestConfig WithDialect(string dialect)
+    {
+        TargetDialect = dialect;
+        return this;
     }
 
     /// <summary>Asserts that running the analyzer reports all specified diagnostic error IDs.</summary>
@@ -219,7 +241,7 @@ public class AnalyzerTestConfig
     public async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync()
     {
         var source = await File.ReadAllTextAsync(_fullPath);
-        return await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, _analyzer);
+        return await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, _analyzer, TargetDialect);
     }
 
     /// <summary>Asserts that the analyzer produces at least one error-level diagnostic.</summary>
@@ -240,24 +262,31 @@ public class AnalyzerTestConfig
 #nullable enable
 internal class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 {
-    public override AnalyzerConfigOptions GlobalOptions { get; } = new TestAnalyzerConfigOptions();
+    public override AnalyzerConfigOptions GlobalOptions { get; }
+
+    public TestAnalyzerConfigOptionsProvider(string targetDialect = "Cuda")
+    {
+        GlobalOptions = new TestAnalyzerConfigOptions(targetDialect);
+    }
+
     public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
     public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
 }
 
 internal class TestAnalyzerConfigOptions : AnalyzerConfigOptions
 {
+    private readonly string _targetDialect;
+
+    public TestAnalyzerConfigOptions(string targetDialect)
+    {
+        _targetDialect = targetDialect;
+    }
+
     public override bool TryGetValue(string key, out string? value)
     {
         if (key == "build_property.GSharpTargetDialect")
         {
-#if GSHARP_CPU
-            value = "Cpu";
-#elif GSHARP_CUDA
-            value = "Cuda";
-#else
-            value = "Cuda"; // Default fallback for tests
-#endif
+            value = _targetDialect;
             return true;
         }
         value = null;

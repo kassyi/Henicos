@@ -1,6 +1,6 @@
 // ReSharper disable All
 
-namespace Kassyi.GSharp.Stdlib.Math.Kernels;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
@@ -422,4 +422,5 @@ public static class GpuBigIntFermatKernels
         });
     }
 }
+
 

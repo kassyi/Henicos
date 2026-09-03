@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos.Cli;
@@ -84,3 +86,4 @@ public class GpuBigIntBenchmark : IDisposable
 
     public void Dispose() => Cleanup();
 }
+

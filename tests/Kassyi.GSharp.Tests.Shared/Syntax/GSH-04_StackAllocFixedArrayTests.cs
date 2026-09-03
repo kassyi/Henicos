@@ -1,8 +1,8 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class GSH04_StackAllocFixedArrayTests:  TranspilerTestBase{
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "SYN-13")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Execution")]
@@ -10,7 +10,7 @@ public class GSH04_StackAllocFixedArrayTests:  TranspilerTestBase{
     {
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "SYN-13")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Execution")]
@@ -18,7 +18,7 @@ public class GSH04_StackAllocFixedArrayTests:  TranspilerTestBase{
     {
     }
 
-    [Fact]
+    [Fact(Skip="未実装")]
     [Trait("FeatureId", "SYN-13")]
     [Trait("FeatureId", "GSH-04")]
     [Trait("Category", "Execution")]
