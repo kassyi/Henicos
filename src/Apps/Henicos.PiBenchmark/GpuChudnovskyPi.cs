@@ -65,7 +65,8 @@ public static class GpuChudnovskyPi
     /// <param name="digits">Target number of decimal digits.</param>
     /// <param name="outputPath">Optional file path to write digits to.</param>
     /// <param name="thresholdTerms">Maximum number of terms evaluated on CPU before transitioning to GPU NTT merges.</param>
-    public static void ComputePiAndWriteToFile(int digits, string? outputPath, int thresholdTerms = 16)
+    public static void ComputePiAndWriteToFile(int digits, string? outputPath, int thresholdTerms = 16,
+        bool asHex = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(digits);
 
@@ -77,7 +78,8 @@ public static class GpuChudnovskyPi
         int estimatedWords = (int)((totalDigits * 3.32192809489) / 32) + 256;
         int maxContextWords = Math.Max(4096, 1 << (int)Math.Ceiling(Math.Log2(estimatedWords * 4)));
 
-        Console.WriteLine($"[GPU-Pi] Digits: {digits}, Terms: {totalTerms}, CPU/GPU Leaf Threshold: {thresholdTerms} terms");
+        Console.WriteLine(
+            $"[GPU-Pi] Digits: {digits}, Terms: {totalTerms}, CPU/GPU Leaf Threshold: {thresholdTerms} terms");
         Console.WriteLine($"[GPU-Pi] Initializing CUDA Device & G# GPU Context (MaxWords: {maxContextWords:N0})...");
 
         CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
@@ -112,7 +114,8 @@ public static class GpuChudnovskyPi
             using var gpuSqrtWithConstant = new GpuBigInteger(context, mulWords1);
             GpuBigIntMath.Mul(gpuSqrtResult, gpuConstant, gpuSqrtWithConstant);
             swMul1.Stop();
-            Console.WriteLine($"[GPU-Pi] Final division (Mul1: Sqrt * 426880) computed in {swMul1.ElapsedMilliseconds} ms");
+            Console.WriteLine(
+                $"[GPU-Pi] Final division (Mul1: Sqrt * 426880) computed in {swMul1.ElapsedMilliseconds} ms");
 
             var swMul2 = Stopwatch.StartNew();
             var mulWords2 = gpuSqrtWithConstant.NumWords + pqt.Q.NumWords;
@@ -130,9 +133,10 @@ public static class GpuChudnovskyPi
 
             int numBitsNumerator = paddedNumerator.GetBitLength();
             int numBitsT = paddedT.GetBitLength();
-            Console.WriteLine($"[DEBUG] Final DivRem inputs: Numerator words={paddedNumerator.NumWords}, ActualBits={numBitsNumerator}");
+            Console.WriteLine(
+                $"[DEBUG] Final DivRem inputs: Numerator words={paddedNumerator.NumWords}, ActualBits={numBitsNumerator}");
             Console.WriteLine($"[DEBUG] Final DivRem inputs: T words={paddedT.NumWords}, ActualBits={numBitsT}");
-            
+
             var topN = paddedNumerator.GetTopWords(4);
             var topT = paddedT.GetTopWords(4);
             Console.WriteLine($"[DEBUG] Numerator Top 4 words: {topN[0]:X8} {topN[1]:X8} {topN[2]:X8} {topN[3]:X8}");
@@ -148,7 +152,8 @@ public static class GpuChudnovskyPi
             var radixStopwatch = Stopwatch.StartNew();
             using StreamWriter? writer = outputPath != null ? new StreamWriter(outputPath, append: false) : null;
             var radixCache = new Dictionary<int, GpuBigInteger>();
-            var activePointers = new List<GpuBigInteger>(); // Track dynamically allocated cached bigints to dispose later
+            var activePointers =
+                new List<GpuBigInteger>(); // Track dynamically allocated cached bigints to dispose later
 
             try
             {
@@ -161,13 +166,36 @@ public static class GpuChudnovskyPi
                 GpuBigIntDivRem.DivRem(paddedPiExt, extraDivGpu, finalPi, finalRem);
 
                 // Fast recursive base conversion (D&C)
-                ConvertAndWriteGpu(context, finalPi, digits + 1, writer, radixCache, activePointers, isMostSignificant: true);
+                if (asHex)
+                {
+                    var hostData = finalPi.ToHostArray();
+                    var sb = new System.Text.StringBuilder(hostData.Length * 8);
+                    for (int i = hostData.Length - 1; i >= 0; i--)
+                    {
+                        sb.Append(hostData[i].ToString("X8"));
+                    }
 
-                if (writer == null) Console.WriteLine();
+                    var hexStr = sb.ToString();
+                    writer?.WriteLine(hexStr);
+                    Console.WriteLine($"[GPU-Pi] Hex output dumped. Length: {hexStr.Length} chars.");
+                }
+                else
+                {
+                    ConvertAndWriteGpu(context, finalPi, digits + 1, writer, radixCache, activePointers,
+                        isMostSignificant: true);
+                }
+
+                if (writer == null)
+                {
+                    Console.WriteLine();
+                }
             }
             finally
             {
-                foreach (var ptr in activePointers) ptr.Dispose();
+                foreach (var ptr in activePointers)
+                {
+                    ptr.Dispose();
+                }
             }
 
             radixStopwatch.Stop();
@@ -176,7 +204,7 @@ public static class GpuChudnovskyPi
 
             Console.WriteLine(
                 $"[GPU-Pi] Base Conversion & Output: {radixStopwatch.ElapsedMilliseconds} ms, Total: {totalStopwatch.ElapsedMilliseconds} ms");
-            
+
             if (outputPath != null)
             {
                 Console.WriteLine($"[GPU-Pi] Output successfully written to: {outputPath}");
@@ -189,7 +217,8 @@ public static class GpuChudnovskyPi
     }
 
     private static void ConvertAndWriteGpu(GpuContext context, GpuBigInteger value, int targetDigits,
-        StreamWriter? writer, Dictionary<int, GpuBigInteger> radixCache, List<GpuBigInteger> activePointers, bool isMostSignificant)
+        StreamWriter? writer, Dictionary<int, GpuBigInteger> radixCache, List<GpuBigInteger> activePointers,
+        bool isMostSignificant)
     {
         // Leaf threshold: CPU formatting is fast enough for < 10,000 digits.
         if (targetDigits <= 10000)
@@ -216,8 +245,10 @@ public static class GpuChudnovskyPi
             {
                 Console.Write(str);
             }
+
             swCpu.Stop();
-            Console.WriteLine($"[GPU-Pi] Base Conversion Leaf ({targetDigits} digits): ToHost+ToString+Write took {swCpu.ElapsedMilliseconds} ms");
+            Console.WriteLine(
+                $"[GPU-Pi] Base Conversion Leaf ({targetDigits} digits): ToHost+ToString+Write took {swCpu.ElapsedMilliseconds} ms");
             return;
         }
 
@@ -247,7 +278,8 @@ public static class GpuChudnovskyPi
 
         GpuBigIntDivRem.DivRem(paddedValue, paddedDivisor, quotient, remainder);
         swDiv.Stop();
-        Console.WriteLine($"[GPU-Pi] Base Conversion DivRem ({targetDigits} / {lowerDigits} digits): took {swDiv.ElapsedMilliseconds} ms");
+        Console.WriteLine(
+            $"[GPU-Pi] Base Conversion DivRem ({targetDigits} / {lowerDigits} digits): took {swDiv.ElapsedMilliseconds} ms");
 
         ConvertAndWriteGpu(context, quotient, upperDigits, writer, radixCache, activePointers, isMostSignificant);
         ConvertAndWriteGpu(context, remainder, lowerDigits, writer, radixCache, activePointers, false);
@@ -273,12 +305,13 @@ public static class GpuChudnovskyPi
         var swMerge = Stopwatch.StartNew();
         var result = MergeGpu(context, left, right);
         swMerge.Stop();
-        
+
         if (terms > thresholdTerms * 16)
         {
-            Console.WriteLine($"[GPU-Pi] Subtree({a},{b}): Left={swLeft.ElapsedMilliseconds}ms, Right={swRight.ElapsedMilliseconds}ms, Merge={swMerge.ElapsedMilliseconds}ms");
+            Console.WriteLine(
+                $"[GPU-Pi] Subtree({a},{b}): Left={swLeft.ElapsedMilliseconds}ms, Right={swRight.ElapsedMilliseconds}ms, Merge={swMerge.ElapsedMilliseconds}ms");
         }
-        
+
         return result;
     }
 
@@ -350,8 +383,10 @@ public static class GpuChudnovskyPi
         }
 
         var padded = new GpuBigInteger(context, targetWords);
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(padded.DevicePointer, 0, (IntPtr)(targetWords * sizeof(uint))));
-        context.Provider.CopyDeviceToDevice(padded.DevicePointer, src.DevicePointer, Math.Min(src.NumWords, targetWords));
+        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(padded.DevicePointer, 0,
+            targetWords * sizeof(uint)));
+        context.Provider.CopyDeviceToDevice(padded.DevicePointer, src.DevicePointer,
+            Math.Min(src.NumWords, targetWords));
         return padded;
     }
 
@@ -372,8 +407,20 @@ public static class GpuChudnovskyPi
         }
 
         int m = (a + b) / 2;
-        var l = ComputeCpuSubtree(a, m);
-        var r = ComputeCpuSubtree(m, b);
+        CpuPqt l = default, r = default;
+
+        if (b - a >= 16)
+        {
+            Parallel.Invoke(
+                () => l = ComputeCpuSubtree(a, m),
+                () => r = ComputeCpuSubtree(m, b)
+            );
+        }
+        else
+        {
+            l = ComputeCpuSubtree(a, m);
+            r = ComputeCpuSubtree(m, b);
+        }
 
         return new CpuPqt
         {
@@ -432,6 +479,7 @@ public static class GpuChudnovskyPi
         return isNegative ? -big : big;
     }
 }
+
 
 
 
