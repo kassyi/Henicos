@@ -37,6 +37,6 @@ jobs:
       - name: Run Static Compilation & Syntax Tests
         env:
           GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test --filter "Category!=Execution" --no-build -c Release
+        run: dotnet test --filter "Category!=GpuExecution" --no-build -c Release
 
 
