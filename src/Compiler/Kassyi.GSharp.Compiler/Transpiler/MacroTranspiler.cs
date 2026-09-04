@@ -18,7 +18,7 @@ internal static class MacroTranspiler
     private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
-            symbol.ContainingType.Name != "Gpu" ||
+            symbol.ContainingType.Name != TypeConstants.GpuType ||
             !symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
@@ -121,21 +121,10 @@ internal static class MacroTranspiler
             context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
         }
 
-        context.Writer.Append("for");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append($"int {paramName} = blockIdx.x * blockDim.x + threadIdx.x");
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendSpace();
-            context.Writer.Append(paramName);
-            context.Writer.AppendOperator("<");
-            context.Visitor.Visit(args[offset].Expression);
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendSpace();
-            context.Writer.Append(paramName);
-            context.Writer.AppendOperator("+=");
-            context.Writer.Append("gridDim.x * blockDim.x");
-        }
+        // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
+        context.Writer.Append($"for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < ");
+        context.Visitor.Visit(args[offset].Expression);
+        context.Writer.Append($"; {paramName} += gridDim.x * blockDim.x)");
 
         context.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
@@ -156,11 +145,7 @@ internal static class MacroTranspiler
             return false;
         }
 
-        context.Writer.Append("if");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
-        }
+        context.Writer.Append("if (threadIdx.x == 0 && blockIdx.x == 0)");
 
         context.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
@@ -185,8 +170,7 @@ internal static class MacroTranspiler
 
                 case ExpressionSyntax expr:
                     context.Visitor.Visit(expr);
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
+                    context.Writer.AppendSemiColonLine();
                     break;
             }
         }
@@ -274,9 +258,7 @@ internal static class MacroTranspiler
     {
         using (context.Writer.Scope())
         {
-            context.Writer.Append("Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _macroCtx");
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
+            context.Writer.AppendLine("Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _macroCtx;");
 
             if (rightNode is BinaryExpressionSyntax binaryExpr)
             {
@@ -296,17 +278,9 @@ internal static class MacroTranspiler
             EmitAssignment(ref context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
 
             // Context buffers propagation (standard in Henicos BigInt kernels)
-            context.Writer.Append("_macroCtx.Operands.CarryBuffer");
-            context.Writer.AppendOperator("=");
-            context.Writer.Append("ctx->Buffers.CarryBuffer");
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
+            context.Writer.AppendLine("_macroCtx.Operands.CarryBuffer = ctx->Buffers.CarryBuffer;");
 
-            context.Writer.Append("_macroCtx.NumberOfWords");
-            context.Writer.AppendOperator("=");
-            context.Writer.Append("ctx->Dimensions.NumberOfWordsExtended");
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
+            context.Writer.AppendLine("_macroCtx.NumberOfWords = ctx->Dimensions.NumberOfWordsExtended;");
 
             EmitDeviceFunctionCall(ref context, rightNode);
         }
@@ -314,11 +288,9 @@ internal static class MacroTranspiler
 
     private static void EmitAssignment(ref TranspileContext context, string target, ExpressionSyntax value)
     {
-        context.Writer.Append(target);
-        context.Writer.AppendOperator("=");
+        context.Writer.Append($"{target} = ");
         context.Visitor.Visit(value);
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
+        context.Writer.AppendSemiColonLine();
     }
 
     private static void EmitDeviceFunctionCall(ref TranspileContext context, ExpressionSyntax opNode)
@@ -365,8 +337,7 @@ internal static class MacroTranspiler
             }
         }
 
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
+        context.Writer.AppendSemiColonLine();
     }
 }
 

@@ -10,6 +10,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
     private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
 
     private ValidationContext _context;
+    internal ValidationContext Context => _context;
     private int _isRented;
 
     private GpuKernelValidationWalker()

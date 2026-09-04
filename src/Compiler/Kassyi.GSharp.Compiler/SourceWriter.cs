@@ -1,7 +1,3 @@
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
-
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Kassyi.GSharp.Compiler;
@@ -52,29 +48,87 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         }
     }
 
-    public void Append(string? value)
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(string? value)
     {
         if (value is not null)
         {
             Builder.Append(value);
         }
+
+        return ref this;
     }
 
-    public void Append(char value) => Builder.Append(value);
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(char value)
+    {
+        Builder.Append(value);
+        return ref this;
+    }
 
-    public void AppendComma() => Builder.Append(',');
-    public void AppendSpace() => Builder.Append(' ');
-    public void AppendSemiColon() => Builder.Append(';');
-    public void AppendSemiColonLine() => Builder.AppendLine(";");
-    public void AppendOperator(string op) => Builder.Append(op);
-    public void AppendKeyword(string keyword) => Builder.Append(keyword);
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(int value)
+    {
+        Builder.Append(value);
+        return ref this;
+    }
 
-    public void AppendConstantField(IFieldSymbol field)
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(bool value)
+    {
+        Builder.Append(value);
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendComma()
+    {
+        Builder.Append(',');
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendSpace()
+    {
+        Builder.Append(' ');
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendSemiColon()
+    {
+        Builder.Append(';');
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendSemiColonLine()
+    {
+        Builder.AppendLine(";");
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendOperator(string op)
+    {
+        Builder.Append(op);
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendKeyword(string keyword)
+    {
+        Builder.Append(keyword);
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendConstantField(IFieldSymbol field)
     {
         if (field.Type.SpecialType == SpecialType.System_Boolean)
         {
             Append(((bool)field.ConstantValue!) ? "true" : "false");
-            return;
+            return ref this;
         }
 
         Append(field.ConstantValue!.ToString());
@@ -90,24 +144,30 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
                 Append("LL");
                 break;
         }
+
+        return ref this;
     }
 
 #pragma warning disable CA1822 // Mark members as static
-    public void Append([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler)
-    {
-    }
+    [UnscopedRef]
+    public ref readonly SourceWriter Append(
+        [InterpolatedStringHandlerArgument("")]
+        ref SourceWriterInterpolatedStringHandler handler) => ref this;
 
-    public void AppendLine()
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendLine()
     {
         if (Builder.Length > 0 && Builder[Builder.Length - 1] == '\n')
         {
-            return;
+            return ref this;
         }
 
         Builder.AppendLine();
+        return ref this;
     }
 
-    public void AppendLine(string? value)
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendLine(string? value)
     {
         if (value is not null)
         {
@@ -117,41 +177,72 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         {
             AppendLine();
         }
+
+        return ref this;
     }
 
-    public void AppendLine([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) =>
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendLine(
+        [InterpolatedStringHandlerArgument("")]
+        ref SourceWriterInterpolatedStringHandler handler)
+    {
         AppendLine();
+        return ref this;
+    }
 
-    public void Line() => AppendLine();
+    [UnscopedRef]
+    public ref readonly SourceWriter Line()
+    {
+        AppendLine();
+        return ref this;
+    }
 
-    public void Line(string? value) => AppendLine(value);
+    [UnscopedRef]
+    public ref readonly SourceWriter Line(string? value)
+    {
+        AppendLine(value);
+        return ref this;
+    }
 
-    public void Line([InterpolatedStringHandlerArgument("")] ref SourceWriterInterpolatedStringHandler handler) =>
+    [UnscopedRef]
+    public ref readonly SourceWriter Line(
+        [InterpolatedStringHandlerArgument("")]
+        ref SourceWriterInterpolatedStringHandler handler)
+    {
         AppendLine(ref handler);
+        return ref this;
+    }
 
-    public void AppendIf(bool condition, string? value)
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendIf(bool condition, string? value)
     {
         if (condition && value is not null)
         {
             Builder.Append(value);
         }
+
+        return ref this;
     }
 
-    public void AppendIf(bool condition,
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendIf(bool condition,
         [InterpolatedStringHandlerArgument("", "condition")]
-        ref SourceWriterInterpolatedStringHandler handler)
-    {
-    }
+        ref SourceWriterInterpolatedStringHandler handler) =>
+        ref this;
 
-    public void AppendLineIf(bool condition, string? value)
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendLineIf(bool condition, string? value)
     {
         if (condition && value is not null)
         {
             Builder.AppendLine(value);
         }
+
+        return ref this;
     }
 
-    public void AppendLineIf(bool condition,
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendLineIf(bool condition,
         [InterpolatedStringHandlerArgument("", "condition")]
         ref SourceWriterInterpolatedStringHandler handler)
     {
@@ -159,14 +250,25 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         {
             Builder.AppendLine();
         }
+
+        return ref this;
     }
 
-    public void LineIf(bool condition, string? value) => AppendLineIf(condition, value);
+    [UnscopedRef]
+    public ref readonly SourceWriter LineIf(bool condition, string? value)
+    {
+        AppendLineIf(condition, value);
+        return ref this;
+    }
 
-    public void LineIf(bool condition,
+    [UnscopedRef]
+    public ref readonly SourceWriter LineIf(bool condition,
         [InterpolatedStringHandlerArgument("", "condition")]
-        ref SourceWriterInterpolatedStringHandler handler) =>
+        ref SourceWriterInterpolatedStringHandler handler)
+    {
         AppendLineIf(condition, ref handler);
+        return ref this;
+    }
 
     public override string ToString() => Builder.ToString();
 
@@ -192,9 +294,26 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
 
-    public void AppendParentheses() => Append("()");
-    public void AppendBrackets() => Append("[]");
-    public void AppendEmptyScope() => Append("{}");
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendParentheses()
+    {
+        Append("()");
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendBrackets()
+    {
+        Append("[]");
+        return ref this;
+    }
+
+    [UnscopedRef]
+    public ref readonly SourceWriter AppendEmptyScope()
+    {
+        Append("{}");
+        return ref this;
+    }
 
     public static bool operator ==(SourceWriter left, SourceWriter right) => left.Equals(right);
 
@@ -250,6 +369,10 @@ public readonly ref struct SourceWriterInlineScope
     public void Dispose() => _writer.Append(_closingText);
 }
 
+#pragma warning disable IDE0060 // Remove unused parameter
+#pragma warning disable IDE0051 // Remove unused private members
+// ReSharper disable UnusedMember.Global
+// ReSharper disable UnusedParameter.Local
 /// <summary>The handler that enables zero-allocation string interpolation using <see cref="SourceWriter"/>.</summary>
 [InterpolatedStringHandler]
 public readonly ref struct SourceWriterInterpolatedStringHandler
@@ -305,3 +428,6 @@ public readonly ref struct SourceWriterInterpolatedStringHandler
     public void AppendFormatted<T>(T? t, string format) where T : IFormattable =>
         _builder?.Append(t?.ToString(format, null));
 }
+#pragma warning restore IDE0051
+#pragma warning restore IDE0060
+

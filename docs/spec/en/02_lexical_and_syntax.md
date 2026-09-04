@@ -8,7 +8,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 
 | C# Construct | Supported | CUDA Equivalent | Notes |
 | :--- | :---: | :--- | :--- |
-| `if` / `else if` / `else` | Yes | `if` / `else` | Standard branching. Single-statement braceless `if` blocks are automatically scoped `{ }` in generated CUDA C++. |
+| `if` / `else if` / `else` | Yes | `if` / `else` | Standard branching. Single-statement braceless blocks are automatically scoped `{ }` in generated CUDA C++. |
 | `for` loop | Yes | `for` loop | Automatically prefixed with `#pragma unroll` during transpilation. |
 | `while` loop | Yes | `while` loop | Supported. |
 | `do...while` loop | Yes | `do...while` loop | Supported. |
@@ -32,6 +32,8 @@ Variables in G# are strictly translated to native C++ variables.
 * **Tuple Swaps / Assignments:** Supported for simple tuple swaps `(a, b) = (b, a)` via generated C++ IIFE (Immediately Invoked Lambda Expressions). Full C# tuple deconstruction into managed types remains unsupported.
 * **Heap Allocation (`new Class()`):** Prohibited. All local variables must be primitive types or value types (`struct`), which are allocated in GPU registers or local memory.
 * **Arrays (`T[]`):** Local instantiation (`new int[10]`) is prohibited inside a kernel. Arrays must be passed in as arguments (allocated via `__shared__` or globally in device memory).
+* **Default Literal (`default`):** Fully supported. Transpiles to zero-initialization or C++ default constructors (e.g., `{}`).
+* **Extension Methods:** Supported. Invocation via `this` arguments (e.g., `obj.Method()`) correctly transpiles to standard static C++ function calls.
 
 ## 2.3 Operators
 
@@ -43,7 +45,7 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 * **Relational:** `==`, `!=`, `<`, `>`, `<=`, `>=`
 * **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`, plus Tuple Swap `(a, b) = (b, a)`
 * **Ternary Conditional:** `? :`
-* **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access). *Note: The `unsafe` keyword must be used in the C# method signature.*
+* **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.
 
 ## 2.4 Preprocessor Directives
