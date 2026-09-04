@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
+    [Trait("Category", "Execution")]
     public class GBI_01_25_GpuBigIntTests
     {
         [Fact(Skip = "未実装・課題: GBI-01 (GSharpJitProvider のメモリプール不在 / スラブアロケータ)")]
