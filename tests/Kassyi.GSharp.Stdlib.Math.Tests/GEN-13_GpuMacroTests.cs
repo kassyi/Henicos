@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
+[Trait("Category", "Execution")]
 public class GEN_13_GpuMacroTests
 {
     [Theory]
