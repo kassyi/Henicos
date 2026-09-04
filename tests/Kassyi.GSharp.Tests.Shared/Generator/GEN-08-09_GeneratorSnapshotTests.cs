@@ -174,7 +174,7 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
     [SkippableTheory]
     [MemberData(nameof(GetSnapshotTestCases))]
     [Trait("FeatureId", "GEN-08")]
-    public async Task GeneratorSnapshots(string relativeFilePath)
+    public async Task Test_GEN08_GeneratorSnapshots(string relativeFilePath)
     {
         var rootDir = GetRepositoryRoot();
         var sourcePath = Path.Combine(rootDir, relativeFilePath);

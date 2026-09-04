@@ -8,7 +8,7 @@ public class GEN_04_SourceWriterTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-04")]
-    public void Test_SourceWriter_FluentChaining_BasicTokens()
+    public void Test_GEN04_SourceWriter_FluentChaining_BasicTokens()
     {
         using var writer = new SourceWriter();
         writer
@@ -28,7 +28,7 @@ public class GEN_04_SourceWriterTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-04")]
-    public void Test_SourceWriter_FluentChaining_WithNullsAndConditionals()
+    public void Test_GEN04_SourceWriter_FluentChaining_WithNullsAndConditionals()
     {
         using var writer = new SourceWriter();
         writer
@@ -48,7 +48,7 @@ public class GEN_04_SourceWriterTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-04")]
-    public void Test_SourceWriter_FluentChaining_StructuralTokens()
+    public void Test_GEN04_SourceWriter_FluentChaining_StructuralTokens()
     {
         using var writer = new SourceWriter();
         writer
@@ -66,7 +66,7 @@ public class GEN_04_SourceWriterTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-04")]
-    public void Test_SourceWriter_FluentChaining_RepeatedNewlines()
+    public void Test_GEN04_SourceWriter_FluentChaining_RepeatedNewlines()
     {
         using var writer = new SourceWriter();
         writer
@@ -82,7 +82,7 @@ public class GEN_04_SourceWriterTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-04")]
-    public void Test_SourceWriter_FluentChaining_InterpolatedStrings()
+    public void Test_GEN04_SourceWriter_FluentChaining_InterpolatedStrings()
     {
         using var writer = new SourceWriter();
         string name = "Kernel";
