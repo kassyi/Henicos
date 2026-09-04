@@ -30,34 +30,8 @@ internal abstract class BinaryExpression : IGpuBigIntExpression
         NumWords = left.NumWords;
     }
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
-    {
-        var leftResult = Left.Evaluate(context);
-        var rightResult = Right.Evaluate(context);
-
-        // [WHY] Rent temporary GPU memory buffers from the pool during AST evaluation
-        // to avoid costly device memory allocation calls (cuMemAlloc) in expression chains.
-        var finalResult = targetResult ?? context.RentTemp(NumWords);
-
-        try
-        {
-            Execute(leftResult, rightResult, finalResult);
-            return finalResult;
-        }
-        finally
-        {
-            // Return temporaries back to pool if they were rented
-            if (leftResult.IsTemp)
-            {
-                context.ReturnTemp(leftResult);
-            }
-
-            if (rightResult.IsTemp)
-            {
-                context.ReturnTemp(rightResult);
-            }
-        }
-    }
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+        ExpressionEvaluator.EvaluateBinary(context, Left, Right, targetResult, NumWords, Execute);
 
     protected abstract void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
 }
@@ -99,24 +73,8 @@ internal abstract class ShiftExpression(IGpuBigIntExpression target, int shiftBi
     protected int ShiftBits { get; } = shiftBits;
     public int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
-    {
-        var targetEval = Target.Evaluate(context);
-        var finalResult = targetResult ?? context.RentTemp(NumWords);
-
-        try
-        {
-            Execute(targetEval, finalResult);
-            return finalResult;
-        }
-        finally
-        {
-            if (targetEval.IsTemp)
-            {
-                context.ReturnTemp(targetEval);
-            }
-        }
-    }
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+        ExpressionEvaluator.EvaluateUnary(context, Target, targetResult, NumWords, Execute);
 
     protected abstract void Execute(GpuBigInteger target, GpuBigInteger result);
 }
@@ -138,24 +96,8 @@ internal class SqrtExpression(IGpuBigIntExpression target) : IGpuBigIntExpressio
     protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
-    {
-        var targetEval = Target.Evaluate(context);
-        var finalResult = targetResult ?? context.RentTemp(NumWords);
-
-        try
-        {
-            GpuBigIntDivRem.Sqrt(targetEval, finalResult);
-            return finalResult;
-        }
-        finally
-        {
-            if (targetEval.IsTemp)
-            {
-                context.ReturnTemp(targetEval);
-            }
-        }
-    }
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+        ExpressionEvaluator.EvaluateUnary(context, Target, targetResult, NumWords, GpuBigIntDivRem.Sqrt);
 }
 
 internal class ModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
@@ -184,23 +126,8 @@ internal class BitwiseNotExpression(IGpuBigIntExpression left) : IGpuBigIntExpre
 {
     public int NumWords => left.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null)
-    {
-        var targetEval = targetResult ?? context.RentTemp(NumWords);
-        var leftEval = left.Evaluate(context, targetEval);
-        try
-        {
-            GpuBigIntMath.BitwiseNot(leftEval, targetEval);
-            return targetEval;
-        }
-        finally
-        {
-            if (leftEval.IsTemp)
-            {
-                context.ReturnTemp(leftEval);
-            }
-        }
-    }
+    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+        ExpressionEvaluator.EvaluateUnary(context, left, targetResult, NumWords, GpuBigIntMath.BitwiseNot);
 }
 
 
