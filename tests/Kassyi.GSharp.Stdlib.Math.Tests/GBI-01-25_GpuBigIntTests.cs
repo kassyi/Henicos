@@ -813,11 +813,13 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var low = Array.Empty<uint>();
             var high = Array.Empty<uint>();
             var output = Array.Empty<uint>();
+            var blockCarries = Array.Empty<uint>();
 
             // Assert no exceptions thrown for 0 length buffers due to guard clause
             var exception = Record.Exception(() =>
             {
-                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries(low, high, output, 0, 0);
+                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 0, 0, 256);
+                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Apply(output, blockCarries, 0, 256, 0);
             });
             Assert.Null(exception);
         }
@@ -828,8 +830,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var low = new uint[] { 0x12345678, 0x9ABCDEF0 };
             var high = new uint[] { 0, 0 };
             var output = new uint[1];
+            var blockCarries = new uint[1];
 
-            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries(low, high, output, 2, 1);
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 2, 1, 256);
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Apply(output, blockCarries, 1, 256, 1);
 
             // Calculation logic:
             // sum0 = 0x12345678 -> low16 = 0x5678, carry = 0x1234
