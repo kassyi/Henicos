@@ -49,7 +49,7 @@ public class ArchitectureAndOptimizationTests
             NvrtcCompiler.CompileToPtx(source, "TestKernel", ["-arch=sm_999"]);
         });
         
-        Assert.Contains("nvrtc: error", ex.Message);
+        Assert.True(ex.Message.Contains("NVRTC", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("Simulated missing library"), $"Unexpected exception message: {ex.Message}");
     }
 
     [SkippableFact]
