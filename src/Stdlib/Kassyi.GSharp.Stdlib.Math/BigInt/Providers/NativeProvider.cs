@@ -170,6 +170,12 @@ public class NativeProvider : IGpuExecutionProvider
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
+    public void ClearCaches()
+    {
+        // No caching implemented in the native provider.
+    }
 }
 
 
