@@ -535,6 +535,7 @@ public static class GpuBigIntDivRem
         using var axSquared = new GpuBigInteger(targetOperand.Context, 3 * n);
         using var diff = new GpuBigInteger(targetOperand.Context, 3 * n);
         using var nextXUnshifted = new GpuBigInteger(targetOperand.Context, 4 * n);
+        using var nextXShifted = new GpuBigInteger(targetOperand.Context, 4 * n);
 
         int targetBits = actualBits / 2;
         int currentBits = 31; // X_top has 31 bits
@@ -555,8 +556,8 @@ public static class GpuBigIntDivRem
             GpuBigIntMath.Mul(resultBuffer, diff, nextXUnshifted);
 
             // Shift right by 2B + 1
-            GpuBigIntMath.ShiftRight(nextXUnshifted, 2 * actualBits + 1, nextXUnshifted);
-            resultBuffer.CopyFrom(nextXUnshifted, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
+            GpuBigIntMath.ShiftRight(nextXUnshifted, 2 * actualBits + 1, nextXShifted);
+            resultBuffer.CopyFrom(nextXShifted, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
         }
     }
 
@@ -621,6 +622,10 @@ public static class GpuBigIntDivRem
 
         int actualBits = highestBit + 1;
         int lz = n * 32 - actualBits;
+        if (lz % 2 != 0)
+        {
+            lz--;
+        }
 
         using var aNorm = new GpuBigInteger(leftOperand.Context, n);
         aNorm.Clear();
@@ -633,8 +638,14 @@ public static class GpuBigIntDivRem
         using var rNorm = new GpuBigInteger(leftOperand.Context, 2 * n);
         GpuBigIntMath.Mul(aNorm, xResult, rNorm);
 
+        int bBits = actualBits + lz;
+        int totalShift = bBits + (lz / 2);
+
+        using var shiftedRNorm = new GpuBigInteger(leftOperand.Context, 2 * n);
+        GpuBigIntMath.ShiftRight(rNorm, totalShift, shiftedRNorm);
+
         using var currentRoot = new GpuBigInteger(leftOperand.Context, n);
-        currentRoot.CopyFrom(rNorm, destOffsetWords: 0, srcOffsetWords: n, numWords: n);
+        currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
 
         // One final Newton-Raphson Division step to ensure exact integer precision
         using var divisionResult = new GpuBigInteger(leftOperand.Context, n);
