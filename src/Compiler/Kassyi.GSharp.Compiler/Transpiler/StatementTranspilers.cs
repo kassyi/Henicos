@@ -92,7 +92,7 @@ internal static class StatementTranspilers
             }
 
             context.Writer.Append(node.Identifier.Text);
-            context.Writer.Append(" : ");
+            context.Writer.AppendSpace().Append(':').AppendSpace();
             context.Visitor.Visit(node.Expression);
         }
 

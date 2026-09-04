@@ -299,18 +299,22 @@ public static class MethodTranspiler
                 using (context.Writer.Parentheses())
                 {
                     var semanticModel = context.SemanticModel;
-                    var validParameters = method.ParameterList.Parameters.Where(p =>
-                        semanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.JitConstant) != true
-                    ).ToList();
+                    var isFirst = true;
 
-                    for (var i = 0; i < validParameters.Count; i++)
+                    foreach (var parameter in method.ParameterList.Parameters)
                     {
-                        if (i > 0)
+                        if (semanticModel.GetDeclaredSymbol(parameter)?.HasAttribute(KnownAttributes.JitConstant) == true)
                         {
-                            context.Writer.Append(", ");
+                            continue;
                         }
 
-                        context.Writer.Append(validParameters[i].Identifier.Text);
+                        if (!isFirst)
+                        {
+                            context.Writer.AppendComma().AppendSpace();
+                        }
+                        isFirst = false;
+
+                        context.Writer.Append(parameter.Identifier.Text);
                     }
                 }
                 context.Writer.AppendSemiColonLine();
