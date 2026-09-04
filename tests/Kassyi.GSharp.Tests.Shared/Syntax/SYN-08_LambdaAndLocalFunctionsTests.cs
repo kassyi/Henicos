@@ -1,9 +1,9 @@
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_08_LambdaAndLocalFunctionsTests
 :  TranspilerTestBase{
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-08")]
     public void Test_SYN08_NonCapturingLambdaKernel()
     {
@@ -16,7 +16,7 @@ public class SYN_08_LambdaAndLocalFunctionsTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-08")]
     [InlineData(2, 5, 10)]
     [InlineData(3, 10, 30)]
@@ -29,7 +29,7 @@ public class SYN_08_LambdaAndLocalFunctionsTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-08")]
     public void Test_SYN08_ImmediatelyEvaluatedLambdaKernel()
     {
@@ -42,7 +42,7 @@ public class SYN_08_LambdaAndLocalFunctionsTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-08")]
     public void Test_SYN08_ShadowedVariableCaptureKernel()
     {

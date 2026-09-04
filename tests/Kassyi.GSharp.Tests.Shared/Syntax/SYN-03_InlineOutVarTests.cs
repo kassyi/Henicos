@@ -1,9 +1,9 @@
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_03_InlineOutVarTests
 :  TranspilerTestBase{
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(5, 25, 1)]
     [InlineData(1, 1, 1)]
@@ -23,7 +23,7 @@ public class SYN_03_InlineOutVarTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(4, 26)]  // 4 > 0 -> 16 + 10 = 26
     [InlineData(1, 11)]  // 1 > 0 -> 1 + 10 = 11
@@ -41,7 +41,7 @@ public class SYN_03_InlineOutVarTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(4, 6)] // 4 -> steps: 3, 2, 1 -> sum = 6
     [InlineData(1, 0)] // 1 -> step: 0 -> while condition false -> sum = 0

@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_31_38_AdvancedMemoryTests
@@ -33,7 +33,7 @@ public class SYN_31_38_AdvancedMemoryTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-36")]
     public void Test_SYN36_PointerIncrementKernel()
     {
@@ -48,7 +48,7 @@ public class SYN_31_38_AdvancedMemoryTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-36")]
     public void Test_SYN36_PointerDecrementKernel()
     {
@@ -63,7 +63,7 @@ public class SYN_31_38_AdvancedMemoryTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-36")]
     [InlineData(new uint[] { 2, 0, 1 }, new uint[] { 5, 15, 25 }, new uint[] { 25, 35, 15 })]
     [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 1, 2, 3 }, new uint[] { 11, 12, 13 })]

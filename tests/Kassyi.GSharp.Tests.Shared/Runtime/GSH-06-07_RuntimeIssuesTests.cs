@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Tests.Runtime;
@@ -16,7 +16,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
     [SkippableFact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache()
     {
         const string kernelName = "CacheTestKernel";

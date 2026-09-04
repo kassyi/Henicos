@@ -5,7 +5,7 @@ public class SYN_13_14_MemoryAndFixedArraysTests
 :  TranspilerTestBase{
 
         [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-14")]
     public void Test_SYN14_FixedBufferKernel()
     {

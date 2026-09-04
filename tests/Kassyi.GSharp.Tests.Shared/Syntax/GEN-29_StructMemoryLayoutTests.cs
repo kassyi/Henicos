@@ -5,7 +5,7 @@ public class GEN29_StructMemoryLayoutTests:  TranspilerTestBase{
 
     [SkippableFact]
     [Trait("FeatureId", "GEN-29")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void Test_GEN29_SharedMemory_StaticExpansion_And_MultipleTypes()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);

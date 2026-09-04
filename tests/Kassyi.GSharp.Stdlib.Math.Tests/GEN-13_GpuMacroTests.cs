@@ -1,10 +1,10 @@
-using Kassyi.GSharp.Runtime.Jit;
+﻿using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
 using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
-[Trait("Category", "Execution")]
+[Trait("Category", "GpuExecution")]
 public class GEN_13_GpuMacroTests
 {
     [Theory]

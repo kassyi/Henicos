@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis.CSharp;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
@@ -43,7 +43,7 @@ public partial class SYN_28_MethodAttributesTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_Execution()
     {
@@ -63,7 +63,7 @@ public partial class SYN_28_MethodAttributesTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MethodAttributes_EmptyArray_Execution()
     {
@@ -77,7 +77,7 @@ public partial class SYN_28_MethodAttributesTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MethodAttributes_SingleElement_Execution()
     {
@@ -91,7 +91,7 @@ public partial class SYN_28_MethodAttributesTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     [InlineData(0, (0 + 100) * 2)]
     [InlineData(1, (1 + 100) * 2)]

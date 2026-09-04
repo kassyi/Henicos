@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
@@ -32,7 +32,7 @@ public class SYN_64_69_NumericsAndHwMathTests
     {
     }
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-68")]
     [InlineData(0u, 0ul)]
     [InlineData(1u, 1ul)]
@@ -69,7 +69,7 @@ public class SYN_64_69_NumericsAndHwMathTests
     }
 
         [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-68")]
     [InlineData(0.0, 0.0f)]
     [InlineData(1.5707963267948966, 1.5707963f)] // pi / 2
@@ -106,7 +106,7 @@ public class SYN_64_69_NumericsAndHwMathTests
     }
 
         [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-68")]
     [InlineData(float.NaN, double.NaN)]
     [InlineData(float.PositiveInfinity, double.PositiveInfinity)]
@@ -153,7 +153,7 @@ public class SYN_64_69_NumericsAndHwMathTests
     }
 
         [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-68")]
     public void Test_SYN68_MathAndMathF_EmptyArray()
     {

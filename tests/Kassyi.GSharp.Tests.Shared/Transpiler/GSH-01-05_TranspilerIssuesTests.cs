@@ -1,11 +1,11 @@
-namespace Kassyi.GSharp.Tests.Transpiler;
+﻿namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GSH_01_05_TranspilerIssuesTests
 :  TranspilerTestBase{
     [Theory]
     [Trait("FeatureId", "GSH-01")]
     [Trait("Category", "Transpiler")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [InlineData(10, 5, 2, 1)]
     [InlineData(10, 2, 5, 2)]
     [InlineData(2, 5, 1, 3)]

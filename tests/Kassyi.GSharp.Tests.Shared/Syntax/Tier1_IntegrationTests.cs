@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Syntax;
 public class Tier1_IntegrationTests : TranspilerTestBase
 {
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "Tier1")]
     public void Test_Tier1_AllInOneKernel_Execution()
     {

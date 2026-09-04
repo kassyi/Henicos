@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_46_50_ConcurrencyAndWarpTests
@@ -10,7 +10,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     {
     }
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-47")]
     public void TestSharedMemoryKernel()
     {
@@ -26,7 +26,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-47")]
     public void TestSharedMemory_WarpSyncAcross256Threads()
     {
@@ -59,7 +59,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-49")]
     [Trait("FeatureId", "SYN-68")]
     public void TestIntrinsicsKernel()
@@ -76,7 +76,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "SYN-49")]
     public void TestAtomicAddStress_HighContention()
@@ -97,7 +97,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "SYN-49")]
     public void TestAtomicOrMaxStress_HighContention()
