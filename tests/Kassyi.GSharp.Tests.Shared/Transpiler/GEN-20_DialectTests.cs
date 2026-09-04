@@ -7,7 +7,8 @@ namespace Kassyi.GSharp.Tests.DialectTests
     public class YamlDialectTests
     {
         [Fact]
-        public void CanLoadStandardCpp()
+        [Trait("FeatureId", "GEN-20")]
+        public void Test_GEN20_CanLoadStandardCpp()
         {
             var dialect = new StandardCppDialect();
             Assert.NotNull(dialect);
@@ -19,7 +20,8 @@ namespace Kassyi.GSharp.Tests.DialectTests
         }
 
         [Fact]
-        public void CanLoadGSharpCuda()
+        [Trait("FeatureId", "GEN-20")]
+        public void Test_GEN20_CanLoadGSharpCuda()
         {
             var dialect = new GSharpCudaDialect();
             Assert.NotNull(dialect);
