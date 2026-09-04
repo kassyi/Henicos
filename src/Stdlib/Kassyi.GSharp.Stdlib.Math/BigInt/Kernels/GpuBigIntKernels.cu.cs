@@ -1,9 +1,9 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("GSharp", "GSH1002", Justification = "Lambda capture limitations in source generation prevent passing context by reference.")]
+[SuppressMessage("GSharp", "GSH1002",
+    Justification = "Lambda capture limitations in source generation prevent passing context by reference.")]
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntKernels
 {
@@ -13,35 +13,35 @@ public static class GpuBigIntKernels
     {
         var ctx = new BigIntKernelContext
         {
-            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+            Operands = new BigIntKernelContext.OperandsContext
+                { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
             NumberOfWords = numWords
         };
-        Device_ChunkAdd(ref ctx, chunkSize);
+        int numChunks = (numWords + chunkSize - 1) / chunkSize;
+        Device_ChunkAdd(ctx, numChunks, chunkSize);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ChunkAdd(ref BigIntKernelContext ctx, int chunkSize)
+    public static void Device_ChunkAdd(BigIntKernelContext ctx, int numChunks, int chunkSize)
     {
-        var chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        var start = chunkIdx * chunkSize;
-        if (start >= ctx.NumberOfWords)
+        Gpu.GridStrideLoop(numChunks, chunkIdx =>
         {
-            return;
-        }
+            var start = chunkIdx * chunkSize;
+            var end = start + chunkSize;
+            if (end > ctx.NumberOfWords)
+            {
+                end = ctx.NumberOfWords;
+            }
 
-        var end = start + chunkSize;
-        if (end > ctx.NumberOfWords)
-        {
-            end = ctx.NumberOfWords;
-        }
+            ulong localCarry = 0;
+            for (var i = start; i < end; i++)
+            {
+                ctx.Operands.ResultBuffer[i] = Gpu.AddWithCarry(ctx.Operands.LeftOperand[i],
+                    ctx.Operands.RightOperand[i], ref localCarry);
+            }
 
-        ulong localCarry = 0;
-        for (var i = start; i < end; i++)
-        {
-            ctx.Operands.ResultBuffer[i] = Gpu.AddWithCarry(ctx.Operands.LeftOperand[i], ctx.Operands.RightOperand[i], ref localCarry);
-        }
-
-        ctx.Operands.CarryBuffer[chunkIdx + 1] = (long)localCarry;
+            ctx.Operands.CarryBuffer[chunkIdx + 1] = (long)localCarry;
+        });
     }
 
     [GpuKernel]
@@ -53,23 +53,21 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
             NumberOfWords = numWords
         };
-        Device_ApplyAddCarry(ref ctx, numChunks, chunkSize);
+        Device_ApplyAddCarry(ctx, numChunks, chunkSize);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ApplyAddCarry(ref BigIntKernelContext ctx, int numChunks, int chunkSize)
+    public static void Device_ApplyAddCarry(BigIntKernelContext ctx, int numChunks, int chunkSize)
     {
-        var cIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (cIdx <= 0 || cIdx > numChunks)
+        Gpu.GridStrideLoop(numChunks, i =>
         {
-            return;
-        }
-
-        var carry = ctx.Operands.CarryBuffer[cIdx];
-        if (carry > 0)
-        {
-            AtomicAddWithCarry(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)carry, ctx.NumberOfWords);
-        }
+            var cIdx = i + 1;
+            var carry = ctx.Operands.CarryBuffer[cIdx];
+            if (carry > 0)
+            {
+                AtomicAddWithCarry(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)carry, ctx.NumberOfWords);
+            }
+        });
     }
 
     [GpuDeviceFunction]
@@ -98,35 +96,35 @@ public static class GpuBigIntKernels
     {
         var ctx = new BigIntKernelContext
         {
-            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
+            Operands = new BigIntKernelContext.OperandsContext
+                { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult, CarryBuffer = carryBuffer },
             NumberOfWords = numWords
         };
-        Device_ChunkSub(ref ctx, chunkSize);
+        int numChunks = (numWords + chunkSize - 1) / chunkSize;
+        Device_ChunkSub(ctx, numChunks, chunkSize);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ChunkSub(ref BigIntKernelContext ctx, int chunkSize)
+    public static void Device_ChunkSub(BigIntKernelContext ctx, int numChunks, int chunkSize)
     {
-        var chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        var start = chunkIdx * chunkSize;
-        if (start >= ctx.NumberOfWords)
+        Gpu.GridStrideLoop(numChunks, chunkIdx =>
         {
-            return;
-        }
+            var start = chunkIdx * chunkSize;
+            var end = start + chunkSize;
+            if (end > ctx.NumberOfWords)
+            {
+                end = ctx.NumberOfWords;
+            }
 
-        var end = start + chunkSize;
-        if (end > ctx.NumberOfWords)
-        {
-            end = ctx.NumberOfWords;
-        }
+            long localBorrow = 0;
+            for (var i = start; i < end; i++)
+            {
+                ctx.Operands.ResultBuffer[i] = Gpu.SubWithBorrow(ctx.Operands.LeftOperand[i],
+                    ctx.Operands.RightOperand[i], ref localBorrow);
+            }
 
-        long localBorrow = 0;
-        for (var i = start; i < end; i++)
-        {
-            ctx.Operands.ResultBuffer[i] = Gpu.SubWithBorrow(ctx.Operands.LeftOperand[i], ctx.Operands.RightOperand[i], ref localBorrow);
-        }
-
-        ctx.Operands.CarryBuffer[chunkIdx + 1] = localBorrow;
+            ctx.Operands.CarryBuffer[chunkIdx + 1] = localBorrow;
+        });
     }
 
     [GpuKernel]
@@ -138,23 +136,21 @@ public static class GpuBigIntKernels
             Operands = new BigIntKernelContext.OperandsContext { ResultBuffer = dResult, CarryBuffer = carryBuffer },
             NumberOfWords = numWords
         };
-        Device_ApplySubBorrow(ref ctx, numChunks, chunkSize);
+        Device_ApplySubBorrow(ctx, numChunks, chunkSize);
     }
 
     [GpuDeviceFunction]
-    public static void Device_ApplySubBorrow(ref BigIntKernelContext ctx, int numChunks, int chunkSize)
+    public static void Device_ApplySubBorrow(BigIntKernelContext ctx, int numChunks, int chunkSize)
     {
-        var cIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (cIdx <= 0 || cIdx > numChunks)
+        Gpu.GridStrideLoop(numChunks, i =>
         {
-            return;
-        }
-
-        var borrow = ctx.Operands.CarryBuffer[cIdx];
-        if (borrow > 0)
-        {
-            AtomicSubWithBorrow(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)borrow, ctx.NumberOfWords);
-        }
+            var cIdx = i + 1;
+            var borrow = ctx.Operands.CarryBuffer[cIdx];
+            if (borrow > 0)
+            {
+                AtomicSubWithBorrow(ctx.Operands.ResultBuffer, cIdx * chunkSize, (uint)borrow, ctx.NumberOfWords);
+            }
+        });
     }
 
     [GpuDeviceFunction]
@@ -266,18 +262,19 @@ public static class GpuBigIntKernels
     {
         var ctx = new BigIntKernelContext
         {
-            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+            Operands = new BigIntKernelContext.OperandsContext
+                { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseAnd(ctx);
+        Device_BitwiseAnd(ref ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseAnd(BigIntKernelContext ctx)
+    public static void Device_BitwiseAnd(ref BigIntKernelContext ctx)
     {
-        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
+        Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
-            ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] & ctx.Operands.RightOperand[i];
+            context.Operands.ResultBuffer[i] = context.Operands.LeftOperand[i] & context.Operands.RightOperand[i];
         });
     }
 
@@ -286,19 +283,21 @@ public static class GpuBigIntKernels
     {
         var ctx = new BigIntKernelContext
         {
-            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+            Operands = new BigIntKernelContext.OperandsContext
+                { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseOr(ctx);
+        Device_BitwiseOr(ref ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseOr(BigIntKernelContext ctx)
+    public static void Device_BitwiseOr(ref BigIntKernelContext ctx)
     {
-        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
-        {
-            ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] | ctx.Operands.RightOperand[i];
-        });
+        Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords,
+            static (ref context, i) =>
+            {
+                context.Operands.ResultBuffer[i] = context.Operands.LeftOperand[i] | context.Operands.RightOperand[i];
+            });
     }
 
     [GpuKernel]
@@ -306,19 +305,21 @@ public static class GpuBigIntKernels
     {
         var ctx = new BigIntKernelContext
         {
-            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
+            Operands = new BigIntKernelContext.OperandsContext
+                { LeftOperand = dA, RightOperand = dB, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseXor(ctx);
+        Device_BitwiseXor(ref ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseXor(BigIntKernelContext ctx)
+    public static void Device_BitwiseXor(ref BigIntKernelContext ctx)
     {
-        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
-        {
-            ctx.Operands.ResultBuffer[i] = ctx.Operands.LeftOperand[i] ^ ctx.Operands.RightOperand[i];
-        });
+        Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords,
+            static (ref context, i) =>
+            {
+                context.Operands.ResultBuffer[i] = context.Operands.LeftOperand[i] ^ context.Operands.RightOperand[i];
+            });
     }
 
     [GpuKernel]
@@ -326,19 +327,21 @@ public static class GpuBigIntKernels
     {
         var ctx = new BigIntKernelContext
         {
-            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
+            Operands = new BigIntKernelContext.OperandsContext
+                { LeftOperand = dA, RightOperand = dA, ResultBuffer = dResult },
             NumberOfWords = numWords
         };
-        Device_BitwiseNot(ctx);
+        Device_BitwiseNot(ref ctx);
     }
 
     [GpuDeviceFunction]
-    public static void Device_BitwiseNot(BigIntKernelContext ctx)
+    public static void Device_BitwiseNot(ref BigIntKernelContext ctx)
     {
-        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
-        {
-            ctx.Operands.ResultBuffer[i] = ~ctx.Operands.LeftOperand[i];
-        });
+        Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords,
+            static (ref context, i) =>
+            {
+                context.Operands.ResultBuffer[i] = ~context.Operands.LeftOperand[i];
+            });
     }
 }
 
