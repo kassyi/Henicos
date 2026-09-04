@@ -117,9 +117,23 @@ public static class GpuChudnovskyPi
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(digits);
 
-        var totalTerms = digits / 14 + 1;
-        const int extraDigits = 20;
-        var totalDigits = digits + extraDigits;
+        int totalDigits;
+        int totalTerms;
+        int extraDigits = 20;
+
+        if (asHex)
+        {
+            int exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
+            int extraBits = 1024; // Safe margin for series truncation error
+            int marginBits = 256; // Division noise margin
+            totalDigits = exactBits + extraBits + marginBits;
+            totalTerms = (int)Math.Ceiling(totalDigits / 14.181647462725477);
+        }
+        else
+        {
+            totalDigits = digits + extraDigits;
+            totalTerms = digits / 14 + 1;
+        }
 
         // Estimate max limb words for GPU workspace allocation
         var estimatedWords = (int)((totalDigits * 3.32192809489) / 32) + 256;
@@ -236,14 +250,6 @@ public static class GpuChudnovskyPi
 
         var numBitsNumerator = paddedNumerator.GetBitLength();
         var numBitsT = paddedT.GetBitLength();
-        Console.WriteLine(
-            $"[DEBUG] Final DivRem inputs: Numerator words={paddedNumerator.NumWords}, ActualBits={numBitsNumerator}");
-        Console.WriteLine($"[DEBUG] Final DivRem inputs: T words={paddedT.NumWords}, ActualBits={numBitsT}");
-
-        var topN = paddedNumerator.GetTopWords(4);
-        var topT = paddedT.GetTopWords(4);
-        Console.WriteLine($"[DEBUG] Numerator Top 4 words: {topN[0]:X8} {topN[1]:X8} {topN[2]:X8} {topN[3]:X8}");
-        Console.WriteLine($"[DEBUG] T Top 4 words: {topT[0]:X8} {topT[1]:X8} {topT[2]:X8} {topT[3]:X8}");
 
         // Execute Final Division entirely on GPU via Newton-Raphson NTT Division
         GpuBigIntDivRem.DivRem(paddedNumerator, paddedT, gpuPiExt, remainder);
@@ -279,48 +285,45 @@ public static class GpuChudnovskyPi
                 int exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
                 int extraBits = 1024; // Safe margin for series truncation error
                 int marginBits = 256; // Division noise margin
-
+                
                 var hostData = gpuPiExt.ToHostArray();
                 
-                // Discard noise and truncation error words
-                int dropWords = (marginBits + extraBits) / 32;
-                int validWords = hostData.Length - dropWords;
-                if (validWords < 2) validWords = hostData.Length;
+                // Find the actual integer part (the first non-zero word from the top)
+                int actualTopIndex = hostData.Length - 1;
+                while (actualTopIndex >= 0 && hostData[actualTopIndex] == 0)
+                {
+                    actualTopIndex--;
+                }
+
+                if (actualTopIndex < 0)
+                {
+                    actualTopIndex = 0;
+                }
                 
-                // Verification (BBP) using the exact precision
-                // We back off an additional 8 words (256 bits = 64 hex digits) from the very end 
-                // to avoid any Chudnovsky series truncation errors bleeding into the verification.
+                int dropWords = (marginBits + extraBits) / 32;
                 int truncationSafetyWords = 8; 
                 
-                if (validWords >= 2 + truncationSafetyWords)
+                int checkIndex = dropWords + truncationSafetyWords;
+                
+                if (checkIndex + 1 <= actualTopIndex)
                 {
-                    int checkIndex = dropWords + truncationSafetyWords;
                     string computedHexTail = hostData[checkIndex + 1].ToString("X8") + hostData[checkIndex].ToString("X8");
                     int hexDigits = exactBits / 4;
                     int offset = hexDigits - 16 - (truncationSafetyWords * 8); // 8 hex digits per word
+                    
                     PiVerification.VerifyWithBbp(computedHexTail, offset);
                 }
-                else if (validWords >= 2)
+                else
                 {
-                    string computedHexTail = hostData[dropWords + 1].ToString("X8") + hostData[dropWords].ToString("X8");
-                    int hexDigits = exactBits / 4;
-                    int offset = hexDigits - 16;
-                    PiVerification.VerifyWithBbp(computedHexTail, offset);
+                    Console.WriteLine("[Verification] FAIL: Not enough valid words to verify with BBP safety margin.");
                 }
 
                 using TextWriter hexWriter = outputPath != null
                     ? new StreamWriter(outputPath, append: false)
                     : new HeadTailTrackerWriter(50, 50);
 
-                // Start from the highest valid word (skipping leading zeros)
-                int startWord = hostData.Length - 1;
-                while (startWord >= dropWords && hostData[startWord] == 0)
-                {
-                    startWord--;
-                }
-                
                 // Output integer part and fraction
-                for (var i = startWord; i >= dropWords; i--)
+                for (var i = actualTopIndex; i >= dropWords; i--)
                 {
                     hexWriter.Write(hostData[i].ToString("X8"));
                 }
