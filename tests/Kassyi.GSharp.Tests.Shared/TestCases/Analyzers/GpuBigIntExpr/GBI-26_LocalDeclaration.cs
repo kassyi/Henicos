@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Stdlib.Math.Expressions;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 public class TestClass
 {
