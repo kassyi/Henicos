@@ -68,7 +68,9 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol? t3)
     {
         if (type is not INamedTypeSymbol namedType)
+        {
             return false;
+        }
 
         var originalDef = namedType.OriginalDefinition;
         return SymbolEqualityComparer.Default.Equals(originalDef, t1) ||
