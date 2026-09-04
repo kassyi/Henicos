@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
@@ -462,6 +464,59 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         }
 
         return Context.Provider.Square(Context, DevicePointer, logicalWords);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="GpuBigInteger"/> padded to the specified target words with zeros.
+    /// If the target size equals the current size, a duplicate is returned.
+    /// </summary>
+    /// <param name="targetWords">The requested minimum number of words.</param>
+    /// <returns>A new <see cref="GpuBigInteger"/> instance padded to the target size.</returns>
+    public GpuBigInteger PadTo(int targetWords)
+    {
+        if (targetWords < NumWords)
+        {
+            throw new ArgumentOutOfRangeException(nameof(targetWords), "Target size must be greater than or equal to current size.");
+        }
+        
+        var padded = new GpuBigInteger(Context, targetWords);
+        Context.Provider.CopyDeviceToDevice(padded.DevicePointer, DevicePointer, NumWords);
+        return padded;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="GpuBigInteger"/> by uploading a BCL <see cref="BigInteger"/> to the GPU.
+    /// </summary>
+    public static GpuBigInteger FromBigInteger(GpuContext context, BigInteger val, int minWords = 0)
+    {
+        val = BigInteger.Abs(val);
+        if (val.IsZero)
+        {
+            return new GpuBigInteger(context, System.Math.Max(1, minWords));
+        }
+
+        var byteCount = val.GetByteCount(isUnsigned: true);
+        var words = (byteCount + 3) / 4;
+        var allocWords = System.Math.Max(words, minWords);
+
+        var hostData = new uint[allocWords];
+        var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+        val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
+
+        return new GpuBigInteger(context, hostData);
+    }
+
+    /// <summary>
+    /// Downloads the integer from the GPU and converts it to a BCL <see cref="BigInteger"/>.
+    /// </summary>
+    public BigInteger ToBigInteger(bool isNegative = false)
+    {
+        var hostData = new uint[NumWords];
+        Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
+        
+        var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+        var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
+        return isNegative ? -big : big;
     }
 }
 
