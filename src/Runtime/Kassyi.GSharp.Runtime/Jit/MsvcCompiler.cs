@@ -55,7 +55,22 @@ public sealed class MsvcCompiler
 
         if (!process.WaitForExit(60000))
         {
-            try { process.Kill(true); } catch { try { process.Kill(); } catch { } }
+            try
+            {
+                process.Kill(true);
+            }
+            catch
+            {
+                try
+                {
+                    process.Kill();
+                }
+                catch
+                {
+                    // Ignore errors on best-effort process termination
+                }
+            }
+
             throw new TimeoutException($"Process timed out after 60 seconds. Partial output:\n{outputBuilder}");
         }
 
