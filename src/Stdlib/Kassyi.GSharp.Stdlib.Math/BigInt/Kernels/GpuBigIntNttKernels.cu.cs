@@ -62,7 +62,7 @@ public static class GpuBigIntNttKernels
             $"asm volatile(\"mul.hi.u64 %0, %1, %2;\" : \"=l\"({quotient}) : \"l\"({product}), \"l\"({barrettMagic}));");
 
         var remainder = product - quotient * primeModulus;
-        while (remainder >= primeModulus)
+        if (remainder >= primeModulus)
         {
             remainder -= primeModulus;
         }
