@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Jit;
@@ -22,7 +22,7 @@ public class CpuJitEngineTests : TranspilerTestBase
     [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void CpuJitEngine_CompileAndExecute_Success()
     {
         Skip.IfNot(IsCpuDialect, "CpuJitEngine tests only run under CPU dialect.");
@@ -60,7 +60,7 @@ public class CpuJitEngineTests : TranspilerTestBase
     [SkippableFact]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void CpuJitEngine_WithJitConstants_EvaluatesCorrectly()
     {
         Skip.IfNot(IsCpuDialect, "CpuJitEngine tests only run under CPU dialect.");
@@ -108,7 +108,7 @@ public class CpuJitEngineTests : TranspilerTestBase
     [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void CpuJitEngine_InvalidSyntax_ThrowsException()
     {
         Skip.IfNot(IsCpuDialect, "CpuJitEngine tests only run under CPU dialect.");

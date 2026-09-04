@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+﻿using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math;
 using System.Collections.Concurrent;
 using System.Linq;
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public class GBI_01_25_GpuBigIntTests
     {
         [Fact(Skip = "未実装・課題: GBI-01 (GSharpJitProvider のメモリプール不在 / スラブアロケータ)")]
@@ -20,7 +20,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         }
 
-        [Fact(Skip="未実装")]
+        [Fact(Skip = "未実装")]
         [Trait("FeatureId", "GBI-03")]
         [Trait("Category", "Performance")]
         public void Test_GBI03_GpuReductionCompareAndFlags()
@@ -85,7 +85,6 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 gpuFunc: (a, b) => a - b
             );
         }
-
 
 
         public GBI_01_25_GpuBigIntTests()
@@ -166,6 +165,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             GpuBigIntMath.Mul(gpuA, scalarMul, gpuResult);
             AssertGpuResultEqualsCpu(bigA * scalarMul, gpuResult, TestSizeWords);
         }
+
         [Trait("RoadmapId", "GBI-11")]
         [Fact]
         public void Test_NttReference_Correctness()
@@ -679,7 +679,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigA = ToBigInteger(arrA);
 
             // Expected Sqrt (using BigInteger.Log approx or similar)
-            // System.Numerics does not have BigInteger.Sqrt natively in net10.0 (it does in .NET 9+ actually as BigInteger.IsPowerOfTwo/etc but BigInteger.Sqrt is not always available depending on TFM).
+            // System.Numerics does not have BigInteger.Sqrt natively in net10.0
+            // (it does in .NET 9+ actually as BigInteger.IsPowerOfTwo/etc but BigInteger.Sqrt is not always available depending on TFM).
             // Let's compute expected Sqrt manually with Heron's method.
             BigInteger expectedSqrt = 1;
             int bytes = bigA.GetByteCount(isUnsigned: true);
@@ -752,7 +753,6 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
 
-
         private void AssertGpuResultEqualsCpu(BigInteger expected, GpuBigInteger actualGpu, int truncateWords = -1)
         {
             if (truncateWords > 0)
@@ -762,7 +762,12 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             }
 
             var actualBig = ToBigInteger(actualGpu.ToHostArray());
-            if(expected != actualBig) { System.IO.File.WriteAllText("P:\\Projects\\Active\\Henicos\\hex_diff.txt", "EXPECTED:\n" + expected.ToString("X") + "\nACTUAL:\n" + actualBig.ToString("X")); Assert.Equal(expected, actualBig); }
+            if (expected != actualBig)
+            {
+                System.IO.File.WriteAllText("P:\\Projects\\Active\\Henicos\\hex_diff.txt",
+                    "EXPECTED:\n" + expected.ToString("X") + "\nACTUAL:\n" + actualBig.ToString("X"));
+                Assert.Equal(expected, actualBig);
+            }
         }
 
         private void RunBinaryOpTest(
@@ -819,7 +824,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // Assert no exceptions thrown for 0 length buffers due to guard clause
             var exception = Record.Exception(() =>
             {
-                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 0, 0, 256);
+                GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 0,
+                    0, 256);
                 GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Apply(output, blockCarries, 0, 256, 0);
             });
             Assert.Null(exception);
@@ -833,7 +839,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var output = new uint[1];
             var blockCarries = new uint[1];
 
-            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 2, 1, 256);
+            GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 2, 1,
+                256);
             GpuBigIntNttKernelsWrapper.Launch_Kernel_ResolveNttCarries_Apply(output, blockCarries, 1, 256, 1);
 
             // Calculation logic:
@@ -888,8 +895,6 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Empty(exceptions);
         }
-
-
     }
 }
 

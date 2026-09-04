@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -10,7 +10,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
     [SkippableFact]
     [Trait("FeatureId", "GEN-12")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
         var (context, smVersion) = InitializeCuda();
@@ -104,7 +104,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [SkippableFact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "SadPath")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
     {
         var (context, _) = InitializeCuda();
@@ -126,7 +126,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [SkippableFact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Stress")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
     {
         var (context, smVersion) = InitializeCuda();

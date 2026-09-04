@@ -7,7 +7,7 @@ public class SYN_49_InvocationTests
     // SYN-49 Happy Path
     // SYN-49 Happy Path
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedAtomicOperations()
     {
@@ -36,7 +36,7 @@ public class SYN_49_InvocationTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedAtomicOperations_EmptyArray()
     {
@@ -56,7 +56,7 @@ public class SYN_49_InvocationTests
 
     // SYN-49 Edge Cases
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedEdgeCases_ArrayElementsAndStructFields()
     {
@@ -83,7 +83,7 @@ public class SYN_49_InvocationTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedEdgeCases_EmptyArray()
     {

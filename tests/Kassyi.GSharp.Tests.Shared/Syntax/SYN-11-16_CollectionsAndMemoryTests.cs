@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_11_16_CollectionsAndMemoryTests
@@ -13,7 +13,7 @@ public class SYN_11_16_CollectionsAndMemoryTests
 
     [Fact]
     [Trait("FeatureId", "SYN-12")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void Test_SYN12_ForeachCollectionExpression_Execution()
     {
         int[] output = [0];
@@ -23,7 +23,7 @@ public class SYN_11_16_CollectionsAndMemoryTests
 
     [Fact]
     [Trait("FeatureId", "SYN-13")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void Test_SYN13_ForeachStackAlloc_Execution()
     {
         int[] output = [0];

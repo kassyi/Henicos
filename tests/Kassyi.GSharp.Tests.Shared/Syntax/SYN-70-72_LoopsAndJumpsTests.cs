@@ -1,11 +1,11 @@
-
+﻿
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_70_72_LoopsAndJumpsTests
 :  TranspilerTestBase{
     [Fact]
     [Trait("FeatureId", "SYN-70")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void Test_SYN70_ForeachInlineArray_Execution()
     {
         int[] output = [0];

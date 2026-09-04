@@ -3,7 +3,7 @@
 public class GEN_20_34_TranspilerInfrastructureTests
 :  TranspilerTestBase{
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "GEN-20")]
     public void Test_GEN20_ForwardDeclarations_And_MutualCalls()
     {
@@ -22,7 +22,7 @@ public class GEN_20_34_TranspilerInfrastructureTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "GEN-20")]
     public void Test_GEN20_OverloadedFunctions_DeduplicationAndForwardDecl()
     {
@@ -45,7 +45,7 @@ public class GEN_20_34_TranspilerInfrastructureTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "GEN-34")]
     public void Test_GEN34_PinnedArrayTransfer_EmptyAndHugeArrays()
     {

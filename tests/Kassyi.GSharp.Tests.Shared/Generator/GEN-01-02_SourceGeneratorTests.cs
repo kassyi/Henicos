@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Tests;
 
 public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
@@ -6,7 +6,7 @@ public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
     private readonly ITestOutputHelper _output = output;
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "GEN-01")]
     public void TestGeneratedWrapper()
     {
@@ -20,7 +20,7 @@ public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "GEN-02")]
     public void TestInvalidKernelCompilation_ThrowsWrappedException()
     {

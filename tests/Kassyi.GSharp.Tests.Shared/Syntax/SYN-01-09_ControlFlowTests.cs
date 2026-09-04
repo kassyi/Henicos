@@ -1,9 +1,9 @@
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_01_09_ControlFlowTests
 :  TranspilerTestBase{
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-01")]
     [InlineData(1, 10)]
     [InlineData(2, 20)]
@@ -26,7 +26,7 @@ public class SYN_01_09_ControlFlowTests
 
     [Fact]
     [Trait("FeatureId", "SYN-01")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void Test_SYN01_RefSwitchExpression_Transpilation()
     {
         int[] a = [10, 20];
@@ -51,7 +51,7 @@ public class SYN_01_09_ControlFlowTests
 
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-04")]
     [InlineData(42, 100, 42)]
     [InlineData(null, 100, 100)]
@@ -68,7 +68,7 @@ public class SYN_01_09_ControlFlowTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-04")]
     public void Test_SYN04_NullCoalescingAssignment_SideEffect_Transpilation()
     {
@@ -88,7 +88,7 @@ public class SYN_01_09_ControlFlowTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-05")]
     [InlineData(10, 5, 10.0)]
     [InlineData(2, 5, 7.5)]
@@ -108,7 +108,7 @@ public class SYN_01_09_ControlFlowTests
     }
 
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-05")]
     [InlineData(10, 5, 2, 1)] // 10 > 5 and 5 > 2 -> 1
     [InlineData(10, 2, 5, 2)] // 10 > 2 and 2 <= 5 -> 2

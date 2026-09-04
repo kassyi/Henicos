@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Tests;
 
 public class ArchitectureAndOptimizationTests
@@ -13,7 +13,7 @@ public class ArchitectureAndOptimizationTests
     [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
     {
         var source = """
@@ -33,7 +33,7 @@ public class ArchitectureAndOptimizationTests
     [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void CompileToPtx_InvalidArchitecture_ThrowsException()
     {
         var source = """
@@ -55,7 +55,7 @@ public class ArchitectureAndOptimizationTests
     [SkippableFact]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     public void JitConstant_Unroll_AltersPtxOutput()
     {
         var srcDynamic = """

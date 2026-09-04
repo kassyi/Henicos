@@ -1,10 +1,10 @@
-
+﻿
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_90_93_CoreSyntaxTests
 :  TranspilerTestBase{
     [Theory]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-90")]
     [InlineData(5, 2, 10)]       // 5 <= 10 -> else branch 5 times: 5 * 2 = 10
     [InlineData(9, 2, 10)]       // 9 <= 10 -> else branch 5 times: 5 * 2 = 10
@@ -27,7 +27,7 @@ public class SYN_90_93_CoreSyntaxTests
 
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-91")]
     public void TestControlFlowKernel()
     {
@@ -50,7 +50,7 @@ public class SYN_90_93_CoreSyntaxTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-92")]
     public void TestStructKernel()
     {
@@ -81,7 +81,7 @@ public class SYN_90_93_CoreSyntaxTests
 
     [Fact]
     [Trait("Category", "Alignment")]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-92")]
     public void TestStruct_MixedPaddingAndAlignment()
     {
@@ -122,7 +122,7 @@ public class SYN_90_93_CoreSyntaxTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-93")]
     public void TestDeviceMethodKernel()
     {
