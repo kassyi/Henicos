@@ -10,7 +10,8 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | :--- | :--- |
 | **Object Instantiation (`new`)** | Lack of a managed heap and garbage collector on the GPU. (Note: Stack-allocated `struct` instantiation and `SharedMemory<T>` are exceptions and fully supported). |
 | **Strings (`string`)** | Strings are managed reference types. Fixed-size character arrays must be used instead, though not natively supported yet. |
-| **LINQ (`System.Linq`)** | Relies heavily on delegates, iterators, and dynamic allocations. |
+| **LINQ (`System.Linq`)** | Relies heavily on delegates, iterators, and dynamic allocations. (Enforced by **GSH0008**) |
+| **`foreach` Loops** | Implicitly allocates `IEnumerator` instances on the managed heap, which is incompatible with GPU memory execution. (Enforced by **GSH0007**) |
 | **Virtual Methods / Interfaces** | Dynamic dispatch (v-tables) is unsupported in the current AOT transpiler. |
 | **Exceptions (`throw`, `try-catch`)** | Exception unwinding is not supported in CUDA device code. |
 | **Recursion** | Heavily restricted due to the highly limited thread stack size (typically a few kilobytes per thread) on GPUs. |
@@ -46,3 +47,5 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | **GSH1001** | Warning | Excessive static shared memory | Triggered when a static `SharedMemory<T>` allocation exceeds 32,768 bytes, which can reduce warp occupancy. |
 | **GSH1002** | Warning | Large struct passed by value | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by array pointer or `ref` to conserve constant memory. |
 | **GSH0005** | Error | GpuBigIntExpr Direct Assignment | Triggered when a `GpuBigIntExpr` (from lazy evaluation operators) is assigned to a local variable (`var x = a + b;`) without being resolved into `.Value`. Prevents silent "computation lost" bugs. |
+| **GSH0007** | Error | `foreach` loop not supported | Triggered when a `foreach` loop is used. Prevents implicit `IEnumerator` allocation on the GPU heap. |
+| **GSH0008** | Error | LINQ syntax not supported | Triggered when LINQ query syntax or methods are used. |
