@@ -101,24 +101,33 @@ public class GpuContext : IDisposable
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
         if (!_disposed)
         {
-            // Dispose all pooled temporary buffers
-            foreach (var bag in _tempPool.Values)
+            if (disposing)
             {
-                while (bag.TryTake(out var temp))
+                // Dispose all pooled temporary buffers
+                foreach (var bag in _tempPool.Values)
                 {
-                    // Avoid circular calls since temp.Dispose() calls back into context or disposes native
-                    // Normally GpuBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
-                    temp.DisposeCore();
+                    while (bag.TryTake(out var temp))
+                    {
+                        // Avoid circular calls since temp.Dispose() calls back into context or disposes native
+                        // Normally GpuBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
+                        temp.DisposeCore();
+                    }
                 }
+                _tempPool.Clear();
             }
-
-            _tempPool.Clear();
 
             if (Engine == GpuExecutionEngine.GSharpJit)
             {
-                // JIT-specific cleanup (if any)
+                // JIT-specific cleanup
+                GSharpJitProvider.Instance.ClearCaches();
             }
             else
             {
@@ -130,13 +139,11 @@ public class GpuContext : IDisposable
 
             _disposed = true;
         }
-
-        GC.SuppressFinalize(this);
     }
 
     ~GpuContext()
     {
-        Dispose();
+        Dispose(false);
     }
 
     internal GpuBigInteger RentTemp(int numWords)

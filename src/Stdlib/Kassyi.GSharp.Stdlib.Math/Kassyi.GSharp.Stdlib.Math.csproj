@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Kassyi.GSharp.Stdlib.Math.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll" Condition="Exists('..\..\Native\Kassyi.GSharp.Stdlib.Math.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
