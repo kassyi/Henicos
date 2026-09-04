@@ -45,7 +45,7 @@ update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy
 
 build-cuda:
-    cmd /c ".\src\Kassyi.GSharp.GpuBigInt.Cuda\build.bat"
+    cmd /c ".\src\Native\Kassyi.GSharp.Stdlib.Math.Cuda\build.bat"
 build-cs:
     dotnet build
 
