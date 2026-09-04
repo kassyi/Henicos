@@ -26,6 +26,7 @@ public class SYN_01_09_ControlFlowTests
 
     [Fact]
     [Trait("FeatureId", "SYN-01")]
+    [Trait("Category", "Execution")]
     public void Test_SYN01_RefSwitchExpression_Transpilation()
     {
         int[] a = [10, 20];
