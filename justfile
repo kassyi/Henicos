@@ -15,7 +15,11 @@ test-syntax *args="":
 
 # Run GPU kernel execution tests on real device
 test-execution *args="":
-    dotnet test --filter "Category=Execution" {{args}}
+    dotnet test --filter "Category=GpuExecution" {{args}}
+
+# Alias for test-execution
+test-gpu *args="":
+    dotnet test --filter "Category=GpuExecution" {{args}}
 
 # Run concurrency and high-load stress tests
 test-stress *args="":
