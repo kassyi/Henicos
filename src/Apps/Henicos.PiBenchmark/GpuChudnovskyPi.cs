@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.IO;
 
 namespace Henicos.PiBenchmark;
 
@@ -14,27 +15,13 @@ namespace Henicos.PiBenchmark;
 /// </summary>
 public static class GpuChudnovskyPi
 {
-    private readonly struct SignedGpuBigInt : IDisposable
-    {
-        public GpuBigInteger Value { get; }
-        public bool IsNegative { get; }
-
-        public SignedGpuBigInt(GpuBigInteger value, bool isNegative)
-        {
-            Value = value;
-            IsNegative = isNegative;
-        }
-
-        public void Dispose() => Value.Dispose();
-    }
-
     private readonly struct GpuPqt : IDisposable
     {
-        public SignedGpuBigInt P { get; }
+        public SignedGpuBigInteger P { get; }
         public GpuBigInteger Q { get; }
-        public SignedGpuBigInt T { get; }
+        public SignedGpuBigInteger T { get; }
 
-        public GpuPqt(SignedGpuBigInt p, GpuBigInteger q, SignedGpuBigInt t)
+        public GpuPqt(SignedGpuBigInteger p, GpuBigInteger q, SignedGpuBigInteger t)
         {
             P = p;
             Q = q;
@@ -242,8 +229,8 @@ public static class GpuChudnovskyPi
         Console.WriteLine($"[GPU-Pi] Final division (Mul2: * Q) computed in {swMul2.ElapsedMilliseconds} ms");
 
         var targetWords = Math.Max(gpuNumeratorUnpadded.NumWords, pqt.T.Value.NumWords);
-        using var paddedNumerator = PadToSize(context, gpuNumeratorUnpadded, targetWords);
-        using var paddedT = PadToSize(context, pqt.T.Value, targetWords);
+        using var paddedNumerator = gpuNumeratorUnpadded.PadTo(targetWords);
+        using var paddedT = pqt.T.Value.PadTo(targetWords);
 
         var gpuPiExt = new GpuBigInteger(context, targetWords);
         using var remainder = new GpuBigInteger(context, targetWords);
@@ -345,7 +332,7 @@ public static class GpuChudnovskyPi
                 using var extraDivGpu = ToGpuBigInt(context, extraDivisor, targetWords);
                 using var finalPi = new GpuBigInteger(context, targetWords);
                 using var finalRem = new GpuBigInteger(context, targetWords);
-                using var paddedPiExt = PadToSize(context, gpuPiExt, targetWords);
+                using var paddedPiExt = gpuPiExt.PadTo(targetWords);
                 GpuBigIntDivRem.DivRem(paddedPiExt, extraDivGpu, finalPi, finalRem);
 
                 using TextWriter writer = outputPath != null
@@ -403,7 +390,7 @@ public static class GpuChudnovskyPi
 
                 var actualResultWords = (GpuBigIntDivRem.GetActualBits(nextResult) + 31) / 32;
                 if (actualResultWords == 0) actualResultWords = 1;
-                var trimmedResult = PadToSize(context, nextResult, actualResultWords);
+                var trimmedResult = nextResult.PadTo(actualResultWords);
                 nextResult.Dispose();
 
                 resultGpu.Dispose();
@@ -419,7 +406,7 @@ public static class GpuChudnovskyPi
 
                 var actualCurrentWords = (GpuBigIntDivRem.GetActualBits(nextCurrent) + 31) / 32;
                 if (actualCurrentWords == 0) actualCurrentWords = 1;
-                var trimmedCurrent = PadToSize(context, nextCurrent, actualCurrentWords);
+                var trimmedCurrent = nextCurrent.PadTo(actualCurrentWords);
                 nextCurrent.Dispose();
 
                 currentGpu.Dispose();
@@ -441,9 +428,7 @@ public static class GpuChudnovskyPi
         // Leaf threshold: CPU formatting is fast enough for < 10,000 digits.
         if (targetDigits <= 10000)
         {
-            var hostArray = new uint[actualWords];
-            context.Provider.CopyDeviceToHost(hostArray, value.DevicePointer, actualWords);
-            var cpuVal = ToBigInteger(hostArray, isNegative: false);
+            var cpuVal = value.ToBigInteger();
             var str = cpuVal.ToString();
 
             if (!isMostSignificant && str.Length < targetDigits)
@@ -487,8 +472,8 @@ public static class GpuChudnovskyPi
 
         // Align dimensions for GPU division
         var targetWords = Math.Max(actualWords, divisorGpu.NumWords);
-        using var paddedValue = PadToSize(context, value, targetWords);
-        using var paddedDivisor = PadToSize(context, divisorGpu, targetWords);
+        using var paddedValue = value.PadTo(targetWords);
+        using var paddedDivisor = divisorGpu.PadTo(targetWords);
 
         using var quotient = new GpuBigInteger(context, targetWords);
         using var remainder = new GpuBigInteger(context, targetWords);
@@ -552,8 +537,8 @@ public static class GpuChudnovskyPi
         var signB = left.P.IsNegative ^ right.T.IsNegative;
 
         var maxTWords = Math.Max(wordsA, wordsB);
-        using var termA = PadToSize(context, rawTermA, maxTWords);
-        using var termB = PadToSize(context, rawTermB, maxTWords);
+        using var termA = rawTermA.PadTo(maxTWords);
+        using var termB = rawTermB.PadTo(maxTWords);
         var resultT = new GpuBigInteger(context, maxTWords);
 
         bool tNegative;
@@ -578,28 +563,11 @@ public static class GpuChudnovskyPi
         }
 
         var result = new GpuPqt(
-            new SignedGpuBigInt(resultP, pNegative),
+            new SignedGpuBigInteger(resultP, pNegative),
             resultQ,
-            new SignedGpuBigInt(resultT, tNegative)
+            new SignedGpuBigInteger(resultT, tNegative)
         );
         return result;
-    }
-
-    private static GpuBigInteger PadToSize(GpuContext context, GpuBigInteger src, int targetWords)
-    {
-        if (src.NumWords == targetWords)
-        {
-            var copy = new GpuBigInteger(context, targetWords);
-            context.Provider.CopyDeviceToDevice(copy.DevicePointer, src.DevicePointer, targetWords);
-            return copy;
-        }
-
-        var padded = new GpuBigInteger(context, targetWords);
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(padded.DevicePointer, 0,
-            targetWords * sizeof(uint)));
-        context.Provider.CopyDeviceToDevice(padded.DevicePointer, src.DevicePointer,
-            Math.Min(src.NumWords, targetWords));
-        return padded;
     }
 
     private static CpuPqt ComputeCpuSubtree(int a, int b)
@@ -647,18 +615,18 @@ public static class GpuChudnovskyPi
         var sw = Stopwatch.StartNew();
         var pNeg = cpu.P < 0;
         var absP = BigInteger.Abs(cpu.P);
-        var gpuP = ToGpuBigInt(context, absP, 0);
+        var gpuP = GpuBigInteger.FromBigInteger(context, absP, 0);
 
-        var gpuQ = ToGpuBigInt(context, cpu.Q, 0);
+        var gpuQ = GpuBigInteger.FromBigInteger(context, cpu.Q, 0);
 
         var tNeg = cpu.T < 0;
         var absT = BigInteger.Abs(cpu.T);
-        var gpuT = ToGpuBigInt(context, absT, 0);
+        var gpuT = GpuBigInteger.FromBigInteger(context, absT, 0);
 
         var result = new GpuPqt(
-            new SignedGpuBigInt(gpuP, pNeg),
+            new SignedGpuBigInteger(gpuP, pNeg),
             gpuQ,
-            new SignedGpuBigInt(gpuT, tNeg)
+            new SignedGpuBigInteger(gpuT, tNeg)
         );
         sw.Stop();
         // Console.WriteLine($"[GPU-Pi] UploadToGpu took {sw.ElapsedMilliseconds} ms"); // Trace if needed
@@ -683,16 +651,4 @@ public static class GpuChudnovskyPi
 
         return new GpuBigInteger(context, hostData);
     }
-
-    private static BigInteger ToBigInteger(ReadOnlySpan<uint> words, bool isNegative)
-    {
-        var byteSpan = MemoryMarshal.AsBytes(words);
-        var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
-        return isNegative ? -big : big;
-    }
 }
-
-
-
-
-
