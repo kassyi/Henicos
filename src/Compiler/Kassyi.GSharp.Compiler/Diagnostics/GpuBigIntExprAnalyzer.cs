@@ -14,18 +14,34 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
 
-        // Register for VariableDeclarator (e.g. var x = gpuA + gpuB;)
-        context.RegisterSyntaxNodeAction(AnalyzeVariableDeclaration, SyntaxKind.VariableDeclarator);
+        context.RegisterCompilationStartAction(compilationContext =>
+        {
+            var type1 = compilationContext.Compilation.GetTypeByMetadataName(
+                "Kassyi.GSharp.Stdlib.Math.BigInt.Expressions.GpuBigIntExpr");
+            var type2 = compilationContext.Compilation.GetTypeByMetadataName(
+                "Kassyi.GSharp.Stdlib.Math.Expressions.GpuBigIntExpr");
+            var type3 = compilationContext.Compilation.GetTypeByMetadataName(
+                "Kassyi.GSharp.GpuBigInt.Expressions.GpuBigIntExpr");
 
-        // Register for SimpleAssignmentExpression (e.g. expr1 = expr2;)
-        context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
+            if (type1 is null && type2 is null && type3 is null)
+            {
+                return;
+            }
+
+            compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeVariableDeclaration(ctx, type1, type2, type3),
+                SyntaxKind.VariableDeclarator);
+            compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeAssignment(ctx, type1, type2, type3),
+                SyntaxKind.SimpleAssignmentExpression);
+        });
     }
 
-    private void AnalyzeVariableDeclaration(SyntaxNodeAnalysisContext context)
+    private void AnalyzeVariableDeclaration(SyntaxNodeAnalysisContext context, INamedTypeSymbol? t1,
+        INamedTypeSymbol? t2, INamedTypeSymbol? t3)
     {
         var declarator = (VariableDeclaratorSyntax)context.Node;
 
-        if (context.SemanticModel.GetDeclaredSymbol(declarator) is ILocalSymbol symbol && IsGpuBigIntExpr(symbol.Type))
+        if (context.SemanticModel.GetDeclaredSymbol(declarator) is ILocalSymbol symbol &&
+            IsGpuBigIntExpr(symbol.Type, t1, t2, t3))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 GSharpDiagnostics.GpuBigIntExprDirectAssignment,
@@ -33,13 +49,14 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
+    private void AnalyzeAssignment(SyntaxNodeAnalysisContext context, INamedTypeSymbol? t1, INamedTypeSymbol? t2,
+        INamedTypeSymbol? t3)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
         var typeInfo = context.SemanticModel.GetTypeInfo(assignment.Left);
 
         // Prevent assignments where the target evaluates to GpuBigIntExpr
-        if (typeInfo.Type != null && IsGpuBigIntExpr(typeInfo.Type))
+        if (typeInfo.Type != null && IsGpuBigIntExpr(typeInfo.Type, t1, t2, t3))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 GSharpDiagnostics.GpuBigIntExprDirectAssignment,
@@ -47,9 +64,15 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsGpuBigIntExpr(ITypeSymbol type)
+    private static bool IsGpuBigIntExpr(ITypeSymbol type, INamedTypeSymbol? t1, INamedTypeSymbol? t2,
+        INamedTypeSymbol? t3)
     {
-        return type.Name == "GpuBigIntExpr" &&
-               type.ContainingNamespace?.ToDisplayString() is "Kassyi.GSharp.Stdlib.Math.Expressions" or "Kassyi.GSharp.GpuBigInt.Expressions";
+        if (type is not INamedTypeSymbol namedType)
+            return false;
+
+        var originalDef = namedType.OriginalDefinition;
+        return SymbolEqualityComparer.Default.Equals(originalDef, t1) ||
+               SymbolEqualityComparer.Default.Equals(originalDef, t2) ||
+               SymbolEqualityComparer.Default.Equals(originalDef, t3);
     }
 }
