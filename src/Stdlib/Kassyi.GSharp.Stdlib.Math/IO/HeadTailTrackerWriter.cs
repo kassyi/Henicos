@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Henicos.PiBenchmark;
+namespace Kassyi.GSharp.Stdlib.Math.IO;
 
 /// <summary>
 /// A memory-efficient TextWriter that only keeps track of the first N (Head) and last N (Tail) characters.
