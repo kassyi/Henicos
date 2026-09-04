@@ -179,8 +179,11 @@ public static class GpuBigIntNttKernels
             value2 = ModMulBarrett(value2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
         }
 
-        Gpu.InlinePtx($"s_row[{reversedThreadId1}] = {value1};");
-        Gpu.InlinePtx($"s_row[{reversedThreadId2}] = {value2};");
+        uint pad1 = reversedThreadId1 + (reversedThreadId1 >> 5);
+        uint pad2 = reversedThreadId2 + (reversedThreadId2 >> 5);
+
+        Gpu.InlinePtx($"s_row[{pad1}] = {value1};");
+        Gpu.InlinePtx($"s_row[{pad2}] = {value2};");
     }
 
     [GpuDeviceFunction]
@@ -200,18 +203,21 @@ public static class GpuBigIntNttKernels
         var twiddleFactorIndex = elementIndex * (transformLength / length);
         var twiddleFactor = deviceTwiddle[twiddleFactorIndex];
 
+        uint padPos = (uint)(position + (position >> 5));
+        uint padPosHalf = (uint)((position + halfLength) + ((position + halfLength) >> 5));
+
         uint leftTerm = 0;
-        Gpu.InlinePtx($"{leftTerm} = s_row[{position}];");
+        Gpu.InlinePtx($"{leftTerm} = s_row[{padPos}];");
 
         uint rightTermSource = 0;
-        Gpu.InlinePtx($"{rightTermSource} = s_row[{position + halfLength}];");
+        Gpu.InlinePtx($"{rightTermSource} = s_row[{padPosHalf}];");
         var rightTerm = ModMulBarrett(rightTermSource, twiddleFactor, primeModulus, barrettMagic);
 
         var additionResult = ModAdd(leftTerm, rightTerm, primeModulus);
         var subtractionResult = ModSub(leftTerm, rightTerm, primeModulus);
 
-        Gpu.InlinePtx($"s_row[{position}] = {additionResult};");
-        Gpu.InlinePtx($"s_row[{position + halfLength}] = {subtractionResult};");
+        Gpu.InlinePtx($"s_row[{padPos}] = {additionResult};");
+        Gpu.InlinePtx($"s_row[{padPosHalf}] = {subtractionResult};");
     }
 
     [GpuDeviceFunction]
@@ -224,27 +230,30 @@ public static class GpuBigIntNttKernels
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
         var blockOffset = rowIndex * currentLength;
 
+        uint padId1 = (uint)(threadId + (threadId >> 5));
+        uint padId2 = (uint)((threadId + currentLength / 2) + ((threadId + currentLength / 2) >> 5));
+
         if (applyTwiddleAfter)
         {
             var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
             twiddleIndex1 %= (ulong)transformLength;
             uint result1 = 0;
-            Gpu.InlinePtx($"{result1} = s_row[{threadId}];");
+            Gpu.InlinePtx($"{result1} = s_row[{padId1}];");
             result1 = ModMulBarrett(result1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
-            Gpu.InlinePtx($"s_row[{threadId}] = {result1};");
+            Gpu.InlinePtx($"s_row[{padId1}] = {result1};");
 
             var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
             twiddleIndex2 %= (ulong)transformLength;
             uint result2 = 0;
-            Gpu.InlinePtx($"{result2} = s_row[{threadId + currentLength / 2}];");
+            Gpu.InlinePtx($"{result2} = s_row[{padId2}];");
             result2 = ModMulBarrett(result2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
-            Gpu.InlinePtx($"s_row[{threadId + currentLength / 2}] = {result2};");
+            Gpu.InlinePtx($"s_row[{padId2}] = {result2};");
         }
 
         uint output1 = 0;
         uint output2 = 0;
-        Gpu.InlinePtx($"{output1} = s_row[{threadId}];");
-        Gpu.InlinePtx($"{output2} = s_row[{threadId + currentLength / 2}];");
+        Gpu.InlinePtx($"{output1} = s_row[{padId1}];");
+        Gpu.InlinePtx($"{output2} = s_row[{padId2}];");
 
         deviceData[blockOffset + threadId] = output1;
         deviceData[blockOffset + threadId + currentLength / 2] = output2;
@@ -311,55 +320,78 @@ public static class GpuBigIntNttKernels
     public static void Kernel_ResolveNttCarries_Blocked(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
     {
-        var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        int startIdx = globalBlockIdx * chunkSize;
-        if (startIdx >= maxWordCount) return;
+        var bIdx = BlockIndex.X;
+        var tIdx = ThreadIndex.X;
 
-        int endIdx = startIdx + chunkSize;
-        if (endIdx > maxWordCount) endIdx = maxWordCount;
+        int startIdx = bIdx * chunkSize;
+        int i = startIdx + tIdx;
 
-        ulong carry = 0;
-        for (int i = startIdx; i < endIdx; i++)
+        ulong localSum = 0;
+        if (i < maxWordCount)
         {
-            ulong localSum = carry;
-            if (2 * i + 1 < transformLength)
+            // Each NTT coefficient c_j (64-bit) has weight 2^(16*j).
+            // For word i (weight 2^(32*i)), relevant coefficients are j = 2*i + 1 down to 2*i - 3.
+            Gpu.ForUnroll(0, 5, step =>
             {
-                ulong c = uncarriedLow[2 * i + 1] | ((ulong)uncarriedHigh[2 * i + 1] << 32);
-                localSum += (uint)(c << 16);
-            }
-            if (2 * i < transformLength)
-            {
-                ulong c = uncarriedLow[2 * i] | ((ulong)uncarriedHigh[2 * i] << 32);
-                localSum += (uint)c;
-            }
-            if (2 * i - 1 >= 0 && 2 * i - 1 < transformLength)
-            {
-                ulong c = uncarriedLow[2 * i - 1] | ((ulong)uncarriedHigh[2 * i - 1] << 32);
-                localSum += (uint)(c >> 16);
-            }
-            if (2 * i - 2 >= 0 && 2 * i - 2 < transformLength)
-            {
-                ulong c = uncarriedLow[2 * i - 2] | ((ulong)uncarriedHigh[2 * i - 2] << 32);
-                localSum += (uint)(c >> 32);
-            }
-            if (2 * i - 3 >= 0 && 2 * i - 3 < transformLength)
-            {
-                ulong c = uncarriedLow[2 * i - 3] | ((ulong)uncarriedHigh[2 * i - 3] << 32);
-                localSum += (uint)(c >> 48);
-            }
-
-            outputBuffer[i] = (uint)localSum;
-            carry = localSum >> 32;
+                int idx = 2 * i + 1 - step;
+                if (idx >= 0 && idx < transformLength)
+                {
+                    ulong c = uncarriedLow[idx] | ((ulong)uncarriedHigh[idx] << 32);
+                    if (step == 0)
+                    {
+                        localSum += (uint)(c << 16);
+                    }
+                    else
+                    {
+                        localSum += (uint)(c >> ((step - 1) * 16));
+                    }
+                }
+            });
         }
 
-        blockCarries[globalBlockIdx] = (uint)carry;
+        Gpu.InlinePtx("extern __shared__ uint64_t s_scan[];");
+        Gpu.InlinePtx($"s_scan[{tIdx}] = {localSum};");
+        Gpu.SyncThreads();
+
+        if (tIdx == 0)
+        {
+            ulong carry = 0;
+            int end = chunkSize;
+            if (startIdx + end > maxWordCount)
+            {
+                end = maxWordCount - startIdx;
+            }
+
+            for (int j = 0; j < end; j++)
+            {
+                ulong val = 0;
+                Gpu.InlinePtx($"{val} = s_scan[{j}];");
+                val += carry;
+                Gpu.InlinePtx($"s_scan[{j}] = {val};");
+                carry = val >> 32;
+            }
+
+            blockCarries[bIdx] = (uint)carry;
+        }
+
+        Gpu.SyncThreads();
+
+        if (i < maxWordCount)
+        {
+            ulong val = 0;
+            Gpu.InlinePtx($"{val} = s_scan[{tIdx}];");
+            outputBuffer[i] = (uint)val;
+        }
     }
 
     [GpuKernel]
     public static void Kernel_ResolveNttCarries_Apply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount, int chunkSize, int numBlocks)
     {
         var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (globalBlockIdx >= numBlocks) return;
+        if (globalBlockIdx >= numBlocks)
+        {
+            return;
+        }
 
         var carry = blockCarries[globalBlockIdx];
         if (carry > 0)
@@ -371,14 +403,14 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void Device_NTT_Internal(NumberTheoreticTransformKernelArgs args)
+    public static void Device_ForwardNTT(NumberTheoreticTransformKernelArgs args)
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
         var transformLength = args.M;
         var length1 = args.N1;
         var length2 = args.N2;
-        var isInverse = args.IsInverse;
+
         if (transformLength <= 512)
         {
             args.CurrentL = transformLength;
@@ -387,72 +419,73 @@ public static class GpuBigIntNttKernels
             args.MaxBlocks = 1;
             Device_NTT_Shared_Row(args);
             Gpu.SyncGrid();
+            return;
         }
-        else
-        {
-            if (isInverse)
-            {
-                args.CurrentL = length2;
-                args.ApplyTwiddleBefore = false;
-                args.ApplyTwiddleAfter = true;
-                args.MaxBlocks = length1;
-                Device_NTT_Shared_Row(args);
-                Gpu.SyncGrid();
 
-                GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
-                Gpu.SyncGrid();
+        GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
+        Gpu.SyncGrid();
 
-                args.Buffer = temporaryBuffer;
-                args.CurrentL = length1;
-                args.ApplyTwiddleBefore = false;
-                args.ApplyTwiddleAfter = false;
-                args.MaxBlocks = length2;
-                Device_NTT_Shared_Row(args);
-                args.Buffer = buffer; // Restore buffer
-                Gpu.SyncGrid();
+        args.Buffer = temporaryBuffer;
+        args.CurrentL = length1;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = true;
+        args.MaxBlocks = length2;
+        Device_NTT_Shared_Row(args);
+        args.Buffer = buffer; // Restore buffer
+        Gpu.SyncGrid();
 
-                GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
-                Gpu.SyncGrid();
-            }
-            else
-            {
-                GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
-                Gpu.SyncGrid();
+        GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
+        Gpu.SyncGrid();
 
-                args.Buffer = temporaryBuffer;
-                args.CurrentL = length1;
-                args.ApplyTwiddleBefore = false;
-                args.ApplyTwiddleAfter = true;
-                args.MaxBlocks = length2;
-                Device_NTT_Shared_Row(args);
-                args.Buffer = buffer; // Restore buffer
-                Gpu.SyncGrid();
-
-                GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
-                Gpu.SyncGrid();
-
-                args.CurrentL = length2;
-                args.ApplyTwiddleBefore = false;
-                args.ApplyTwiddleAfter = false;
-                args.MaxBlocks = length1;
-                Device_NTT_Shared_Row(args);
-                Gpu.SyncGrid();
-            }
-        }
-    }
-
-    [GpuDeviceFunction]
-    public static void Device_ForwardNTT(NumberTheoreticTransformKernelArgs args)
-    {
-        args.IsInverse = false;
-        Device_NTT_Internal(args);
+        args.CurrentL = length2;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = false;
+        args.MaxBlocks = length1;
+        Device_NTT_Shared_Row(args);
+        Gpu.SyncGrid();
     }
 
     [GpuDeviceFunction]
     public static void Device_InverseNTT(NumberTheoreticTransformKernelArgs args)
     {
-        args.IsInverse = true;
-        Device_NTT_Internal(args);
+        var buffer = args.Buffer;
+        var temporaryBuffer = args.TemporaryBuffer;
+        var transformLength = args.M;
+        var length1 = args.N1;
+        var length2 = args.N2;
+
+        if (transformLength <= 512)
+        {
+            args.CurrentL = transformLength;
+            args.ApplyTwiddleBefore = false;
+            args.ApplyTwiddleAfter = false;
+            args.MaxBlocks = 1;
+            Device_NTT_Shared_Row(args);
+            Gpu.SyncGrid();
+            return;
+        }
+
+        args.CurrentL = length2;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = true;
+        args.MaxBlocks = length1;
+        Device_NTT_Shared_Row(args);
+        Gpu.SyncGrid();
+
+        GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
+        Gpu.SyncGrid();
+
+        args.Buffer = temporaryBuffer;
+        args.CurrentL = length1;
+        args.ApplyTwiddleBefore = false;
+        args.ApplyTwiddleAfter = false;
+        args.MaxBlocks = length2;
+        Device_NTT_Shared_Row(args);
+        args.Buffer = buffer; // Restore buffer
+        Gpu.SyncGrid();
+
+        GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
+        Gpu.SyncGrid();
     }
 
     [GpuKernel]

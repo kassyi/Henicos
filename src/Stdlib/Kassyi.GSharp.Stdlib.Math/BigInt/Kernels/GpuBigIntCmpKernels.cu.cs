@@ -94,5 +94,36 @@ public static class GpuBigIntCmpKernels
             }
         });
     }
+
+    [GpuKernel]
+    public static void GetBitLengthKernel(uint[] dA, uint[] dResult, int numWords)
+    {
+        var ctx = new BigIntKernelContext
+        {
+            Operands = new BigIntKernelContext.OperandsContext { LeftOperand = dA, ResultBuffer = dResult },
+            NumberOfWords = numWords
+        };
+        Device_GetBitLength(ctx);
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_GetBitLength(BigIntKernelContext ctx)
+    {
+        Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
+        {
+            var w = ctx.Operands.LeftOperand[i];
+            if (w != 0)
+            {
+                uint bitLen = 0;
+                while (w > 0)
+                {
+                    bitLen++;
+                    w >>= 1;
+                }
+                uint totalBits = (uint)(i * 32) + bitLen;
+                Gpu.AtomicMax(ref ctx.Operands.ResultBuffer[0], totalBits);
+            }
+        });
+    }
 }
 
