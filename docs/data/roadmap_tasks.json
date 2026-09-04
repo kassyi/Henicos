@@ -35,7 +35,7 @@
       "score": 42
     },
     "details": {
-      "current_behavior": "While simple assignments can be converted, nested expressions or ternary operators involving type conversions may result in C\u002B\u002B syntax mismatch errors during AST conversion.",
+      "current_behavior": "While simple assignments can be converted, nested expressions or ternary operators involving type conversions may result in C++ syntax mismatch errors during AST conversion.",
       "strategy": "Enhances type resolution and parenthesis completion logic in TranspileConditionalExpression.",
       "csharp_example": "var result = condition ? a : b;"
     },
@@ -65,8 +65,8 @@
     },
     "details": {
       "current_behavior": "Currently, only swap assignment (a, b) = (b, a) is limitedly supported via IIFE. Tuple return values and declaration deconstruction var (a, b) = ... are unsupported.",
-      "strategy": "Considering mapping to C\u002B\u002B11 std::tuple / std::tie or local structs.",
-      "csharp_example": "(int, float) GetData() =\u003E (1, 2.0f);\nvar (a, b) = GetData();"
+      "strategy": "Considering mapping to C++11 std::tuple / std::tie or local structs.",
+      "csharp_example": "(int, float) GetData() => (1, 2.0f);\nvar (a, b) = GetData();"
     },
     "score": 33,
     "files": [
@@ -96,8 +96,8 @@
       "score": 37
     },
     "details": {
-      "current_behavior": "Local functions (void Helper() { ... }) defined inside kernel methods cannot be expanded to C\u002B\u002B and cause build errors.",
-      "strategy": "Implements promotion to C\u002B\u002B lambdas with captures (auto Helper = [\u0026] { ... };) or __device__ helper functions.",
+      "current_behavior": "Local functions (void Helper() { ... }) defined inside kernel methods cannot be expanded to C++ and cause build errors.",
+      "strategy": "Implements promotion to C++ lambdas with captures (auto Helper = [&] { ... };) or __device__ helper functions.",
       "csharp_example": "void Outer() {\n    void Inner() { }\n    Inner();\n}"
     },
     "score": 37,
@@ -117,7 +117,7 @@
     "title": "Limitations of stack fixed-length arrays and stackalloc",
     "domain": "GSH",
     "category": "Type System",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -125,9 +125,9 @@
       "score": 37
     },
     "details": {
-      "current_behavior": "Complete mapping for stackalloc byte[N] and fixed-length array syntax to C\u002B\u002B stack arrays (T buf[N]) is not yet in place.",
+      "current_behavior": "Complete mapping for stackalloc byte[N] and fixed-length array syntax to C++ stack arrays (T buf[N]) is not yet in place.",
       "strategy": "Detects StackAllocArrayCreationExpressionSyntax and outputs declaration/initialization code as native stack arrays.",
-      "csharp_example": "Span\u003Cint\u003E buffer = stackalloc int[256];"
+      "csharp_example": "Span<int> buffer = stackalloc int[256];"
     },
     "score": 37,
     "files": [
@@ -142,7 +142,7 @@
   },
   {
     "id": "GSH-05",
-    "title": "Constraint resolution for generics (\u003CT\u003E)",
+    "title": "Constraint resolution for generics (<T>)",
     "domain": "GSH",
     "category": "Type System",
     "status": "incomplete",
@@ -153,8 +153,8 @@
       "score": 21
     },
     "details": {
-      "current_behavior": "Currently limited to simple replacements to C\u002B\u002B templates; complex type constraints and overload resolution are limited.",
-      "strategy": "Automatic generation of concrete type resolution and C\u002B\u002B template specialization leveraging Roslyn SemanticModel.",
+      "current_behavior": "Currently limited to simple replacements to C++ templates; complex type constraints and overload resolution are limited.",
+      "strategy": "Automatic generation of concrete type resolution and C++ template specialization leveraging Roslyn SemanticModel.",
       "csharp_example": "[DiagnosticAnalyzer(LanguageNames.CSharp)]\npublic class GpuKernelAnalyzer : DiagnosticAnalyzer\n{"
     },
     "score": 21,
@@ -174,7 +174,7 @@
   },
   {
     "id": "GSH-06",
-    "title": "Line number mapping for PTX / C\u002B\u002B compilation errors",
+    "title": "Line number mapping for PTX / C++ compilation errors",
     "domain": "GSH",
     "category": "Runtime",
     "status": "incomplete",
@@ -186,8 +186,8 @@
     },
     "details": {
       "current_behavior": "When NVCC / NVRTC compilation errors occur, line numbers do not match the original .cu.cs, requiring visual inspection of the generated code during debugging.",
-      "strategy": "Embeds #line directives into the generated CUDA C\u002B\u002B to achieve direct mapping to C# source locations.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "strategy": "Embeds #line directives into the generated CUDA C++ to achieve direct mapping to C# source locations.",
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 27,
     "files": [
@@ -333,7 +333,7 @@
       "score": 41
     },
     "details": {
-      "current_behavior": "Verified that when invalid C\u002B\u002B (CUDA) source is included, JitEngine properly detects, wraps, and notifies the C# side of NVRTC Compilation Failed.",
+      "current_behavior": "Verified that when invalid C++ (CUDA) source is included, JitEngine properly detects, wraps, and notifies the C# side of NVRTC Compilation Failed.",
       "strategy": "Implemented successfully as a feature.",
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
@@ -634,7 +634,7 @@
     "details": {
       "current_behavior": "Verification of architecture optimization flags in the JIT engine.",
       "strategy": "JIT disk cache is already implemented, enabling fast PTX loading.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 30,
     "files": [
@@ -670,7 +670,7 @@
     "details": {
       "current_behavior": "Verification of NVRTC optimizer through constant expansion.",
       "strategy": "Ditto.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 30,
     "files": [
@@ -707,7 +707,7 @@
     "details": {
       "current_behavior": "Kernel execution and verification using the raw PTX engine.",
       "strategy": "Room for tuning as an overall runtime.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 30,
     "files": [
@@ -834,7 +834,7 @@
       "score": 32
     },
     "details": {
-      "current_behavior": "Eliminates hardcoded mappings, allowing declarative replacement of external libraries and BCL type methods with CUDA C\u002B\u002B / Intrinsics.",
+      "current_behavior": "Eliminates hardcoded mappings, allowing declarative replacement of external libraries and BCL type methods with CUDA C++ / Intrinsics.",
       "strategy": "Implementation complete via CudaIntrinsicsMapper attribute resolution and zero-allocation traversal.",
       "notes": "Declarative replacement of external types and methods via attribute resolution in CudaIntrinsicsMapper",
       "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
@@ -856,7 +856,7 @@
     "title": "Ref/out arguments and pointer cascade optimization",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -864,7 +864,7 @@
       "score": 36
     },
     "details": {
-      "current_behavior": "Prevention of double pointer (T) conversion and guarantee of -\u003E translation for pointer member access during device function call chains.",
+      "current_behavior": "Prevention of double pointer (T) conversion and guarantee of -> translation for pointer member access during device function call chains.",
       "strategy": "Implementation complete via automatic pointer type determination by SemanticModel and suppression of the cascade operator.",
       "notes": "Suppression of double pointer (T**) conversion and pointer access translation during device function calls",
       "csharp_example": "void Modify(ref int x) {\n    x = 10;\n}"
@@ -894,7 +894,7 @@
       "score": 36
     },
     "details": {
-      "current_behavior": "Transparently maps System.Numerics Vector types to CUDA C\u002B\u002B float2/float3/float4, generating field accesses (X,Y,Z,W -\u003E x,y,z,w) and new VectorN(...).",
+      "current_behavior": "Transparently maps System.Numerics Vector types to CUDA C++ float2/float3/float4, generating field accesses (X,Y,Z,W -> x,y,z,w) and new VectorN(...).",
       "strategy": "Implemented and snapshot verified in CudaTypeMapper and ExpressionTranspilers.",
       "notes": "Mapping to CUDA float2/3/4, lowercasing of field names, and generating new VectorN(...)",
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
@@ -927,9 +927,9 @@
       "score": 27
     },
     "details": {
-      "current_behavior": "Prelude definitions and inline expansions of arithmetic operators (\u002B, -, *, /) between Vector2/3/4, dot products (Vector2.Dot), normalization, and distance calculations.",
+      "current_behavior": "Prelude definitions and inline expansions of arithmetic operators (+, -, *, /) between Vector2/3/4, dot products (Vector2.Dot), normalization, and distance calculations.",
       "strategy": "Helper operator function definitions in Prelude.cu and mapping processing on the Transpiler side.",
-      "csharp_example": "public static GpuBigInteger operator \u002B(GpuBigInteger a, GpuBigInteger b)"
+      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 27,
     "files": [
@@ -966,9 +966,9 @@
       "score": 36
     },
     "details": {
-      "csharp_example": "for (int i = 0; i \u003C 10; i\u002B\u002B) {\n    // loop body\n}",
+      "csharp_example": "for (int i = 0; i < 10; i++) {\n    // loop body\n}",
       "current_behavior": "Supports statements only. Expression syntax cannot be parsed.",
-      "target_cuda": "Expanded to an Immediately Invoked Function Expression (IIFE: [\u0026]() { switch(mode) { ... } }()) or a chain of ternary operators."
+      "target_cuda": "Expanded to an Immediately Invoked Function Expression (IIFE: [&]() { switch(mode) { ... } }()) or a chain of ternary operators."
     },
     "score": 36,
     "files": [
@@ -1003,7 +1003,7 @@
     "details": {
       "csharp_example": "while (condition) {\n    // loop body\n}",
       "current_behavior": "Parse error except for BinaryExpression.",
-      "target_cuda": "Expanded to simple logical expressions (val \u003E= 0 \u0026\u0026 val \u003C 1024). Type patterns are bound to C\u002B\u002B auto."
+      "target_cuda": "Expanded to simple logical expressions (val >= 0 && val < 1024). Type patterns are bound to C++ auto."
     },
     "score": 35,
     "files": [
@@ -1040,7 +1040,7 @@
     "details": {
       "csharp_example": "do {\n    // loop body\n} while(condition);",
       "current_behavior": "DeclarationExpressionSyntax is unsupported.",
-      "target_cuda": "Variable lifting of forward declarations passed to the top of the C\u002B\u002B scope."
+      "target_cuda": "Variable lifting of forward declarations passed to the top of the C++ scope."
     },
     "score": 39,
     "files": [
@@ -1108,7 +1108,7 @@
     },
     "details": {
       "csharp_example": "var result = condition ? a : b;",
-      "current_behavior": "C\u002B\u002B type mismatch errors during nesting or type promotion.",
+      "current_behavior": "C++ type mismatch errors during nesting or type promotion.",
       "target_cuda": "Strict parenthesis guarantee and explicit type casting.",
       "memo": "Merged into GSH-01 due to functional duplication (Ternary operator type conversion and nesting)."
     },
@@ -1151,7 +1151,7 @@
     "details": {
       "csharp_example": "var result = condition ? a : b;",
       "current_behavior": "RefExpressionSyntax is unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B reference binding auto\u0026 x = (cond ? a : b);."
+      "target_cuda": "Expanded to C++ reference binding auto& x = (cond ? a : b);."
     },
     "score": 21,
     "files": [
@@ -1225,8 +1225,8 @@
     "details": {
       "csharp_example": "void Outer() {\n    void Inner() { }\n    Inner();\n}",
       "current_behavior": "Unsupported syntax (skipped or flagged as syntax error in AST).",
-      "target_cuda": "Expanded to C\u002B\u002B lambdas with captures (auto Add = [\u0026](int v) { sum \u002B= v; };).",
-      "memo": "Merged into SYN-08 as they share identical transpilation logic (C\u002B\u002B Lambdas)."
+      "target_cuda": "Expanded to C++ lambdas with captures (auto Add = [&](int v) { sum += v; };).",
+      "memo": "Merged into SYN-08 as they share identical transpilation logic (C++ Lambdas)."
     },
     "score": 37,
     "files": [
@@ -1250,9 +1250,9 @@
       "score": 36
     },
     "details": {
-      "csharp_example": "Func\u003Cint, int\u003E square = x =\u003E x * x;",
+      "csharp_example": "Func<int, int> square = x => x * x;",
       "current_behavior": "Delegate and lambda syntax are unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B generic lambdas ([\u0026](auto x) { return x * 2; }) or function objects."
+      "target_cuda": "Expanded to C++ generic lambdas ([&](auto x) { return x * 2; }) or function objects."
     },
     "score": 36,
     "files": [
@@ -1268,7 +1268,7 @@
     "title": "Default literal (default)",
     "domain": "SYN",
     "category": "Control Syntax and Expression Level",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
@@ -1278,7 +1278,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Type inference for LiteralExpression(DefaultLiteral) is missing.",
-      "target_cuda": "Mapped to C\u002B\u002B zero initialization {} or MyStruct{}."
+      "target_cuda": "Mapped to C++ zero initialization {} or MyStruct{}."
     },
     "score": 41,
     "files": [
@@ -1305,7 +1305,7 @@
   },
   {
     "id": "SYN-11",
-    "title": "Index \u0026 Range syntax (^1, [1..5])",
+    "title": "Index & Range syntax (^1, [1..5])",
     "domain": "SYN",
     "category": "Collections, Arrays, and Memory Operations",
     "status": "incomplete",
@@ -1318,7 +1318,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "IndexExpressionSyntax / RangeExpressionSyntax are unsupported.",
-      "target_cuda": "Expanded to offset calculation buffer[length - 1] or pointer offset (buffer \u002B 1)."
+      "target_cuda": "Expanded to offset calculation buffer[length - 1] or pointer offset (buffer + 1)."
     },
     "score": 29,
     "files": [
@@ -1369,7 +1369,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "C# 12 CollectionExpressionSyntax is unsupported.",
-      "target_cuda": "Converts to C\u002B\u002B initialization list { 2, 3, 5, 7 } or stack array initialization."
+      "target_cuda": "Converts to C++ initialization list { 2, 3, 5, 7 } or stack array initialization."
     },
     "score": 32,
     "files": [
@@ -1411,7 +1411,7 @@
     "title": "stackalloc and fixed-length stack arrays",
     "domain": "SYN",
     "category": "Collections, Arrays, and Memory Operations",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -1419,9 +1419,9 @@
       "score": 37
     },
     "details": {
-      "csharp_example": "Span\u003Cint\u003E buffer = stackalloc int[256];",
-      "current_behavior": "C\u002B\u002B translation of stack allocation is unsupported.",
-      "target_cuda": "Declaration replacement to C\u002B\u002B local arrays uint32_t buf[32];."
+      "csharp_example": "Span<int> buffer = stackalloc int[256];",
+      "current_behavior": "C++ translation of stack allocation is unsupported.",
+      "target_cuda": "Declaration replacement to C++ local arrays uint32_t buf[32];."
     },
     "score": 37,
     "files": [
@@ -1446,9 +1446,9 @@
       "score": 34
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
       "current_behavior": "Type resolution is insufficient for some syntaxes.",
-      "target_cuda": "Expanded to C\u002B\u002B native pointer declaration uint32_t* p = \u0026array[0];."
+      "target_cuda": "Expanded to C++ native pointer declaration uint32_t* p = &array[0];."
     },
     "score": 34,
     "files": [
@@ -1474,7 +1474,7 @@
   },
   {
     "id": "SYN-15",
-    "title": "Usage of Span\u003CT\u003E / ReadOnlySpan\u003CT\u003E inside kernels",
+    "title": "Usage of Span<T> / ReadOnlySpan<T> inside kernels",
     "domain": "SYN",
     "category": "Collections, Arrays, and Memory Operations",
     "status": "incomplete",
@@ -1487,7 +1487,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Struct definition and pass-by-reference lack native mapping.",
-      "target_cuda": "Mapped to a pointer-and-length pair, or a lightweight struct equivalent to C\u002B\u002B20 std::span."
+      "target_cuda": "Mapped to a pointer-and-length pair, or a lightweight struct equivalent to C++20 std::span."
     },
     "score": 33,
     "files": [
@@ -1515,7 +1515,7 @@
     "details": {
       "csharp_example": "int[,] matrix = new int[3, 3];\nmatrix[0, 1] = 5;",
       "current_behavior": "Multi-dimensional indexers are unsupported.",
-      "target_cuda": "Expanded to flattened 1D index calculation grid[y * width \u002B x]."
+      "target_cuda": "Expanded to flattened 1D index calculation grid[y * width + x]."
     },
     "score": 25,
     "files": [
@@ -1568,7 +1568,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Type inference is missing for nested property initializers.",
-      "target_cuda": "Complete fallback to C\u002B\u002B11 Uniform Initialization { ... }."
+      "target_cuda": "Complete fallback to C++11 Uniform Initialization { ... }."
     },
     "score": 38,
     "files": [
@@ -1608,9 +1608,9 @@
       "score": 33
     },
     "details": {
-      "csharp_example": "(int, float) GetData() =\u003E (1, 2.0f);\nvar (a, b) = GetData();",
+      "csharp_example": "(int, float) GetData() => (1, 2.0f);\nvar (a, b) = GetData();",
       "current_behavior": "TupleElementSyntax variable declarations are unsupported.",
-      "target_cuda": "C\u002B\u002B17 Structured Binding (auto [quotient, remainder] = ...) or temporary variable expansion.",
+      "target_cuda": "C++17 Structured Binding (auto [quotient, remainder] = ...) or temporary variable expansion.",
       "memo": "Merged into GSH-02 due to functional duplication (Tuple declaration deconstruction)."
     },
     "score": 33,
@@ -1638,7 +1638,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "C# 12 primary constructor syntax is unsupported.",
-      "target_cuda": "Automatic output of C\u002B\u002B constructors like Point(int X, int Y) : X(X), Y(Y) {}."
+      "target_cuda": "Automatic output of C++ constructors like Point(int X, int Y) : X(X), Y(Y) {}."
     },
     "score": 30,
     "files": [
@@ -1693,7 +1693,7 @@
     "details": {
       "csharp_example": "public record Point(int X, int Y);",
       "current_behavior": "WithExpressionSyntax is unsupported.",
-      "target_cuda": "Expanded to copy generation \u002B member overwrite auto next = current; next.Index = i \u002B 1;."
+      "target_cuda": "Expanded to copy generation + member overwrite auto next = current; next.Index = i + 1;."
     },
     "score": 27,
     "files": [
@@ -1722,9 +1722,9 @@
       "score": 27
     },
     "details": {
-      "csharp_example": "public int this[int index] { get =\u003E arr[index]; }",
+      "csharp_example": "public int this[int index] { get => arr[index]; }",
       "current_behavior": "IndexerDeclarationSyntax is unsupported.",
-      "target_cuda": "Conversion to C\u002B\u002B operator[](int i)."
+      "target_cuda": "Conversion to C++ operator[](int i)."
     },
     "score": 27,
     "files": [
@@ -1779,9 +1779,9 @@
       "score": 33
     },
     "details": {
-      "csharp_example": "public static GpuBigInteger operator \u002B(GpuBigInteger a, GpuBigInteger b)",
-      "current_behavior": "User-defined operators are not mapped to C\u002B\u002B operators.",
-      "target_cuda": "Expanded to C\u002B\u002B Point operator\u002B(const Point\u0026 a, const Point\u0026 b)."
+      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)",
+      "current_behavior": "User-defined operators are not mapped to C++ operators.",
+      "target_cuda": "Expanded to C++ Point operator+(const Point& a, const Point& b)."
     },
     "score": 33,
     "files": [
@@ -1822,8 +1822,8 @@
     },
     "details": {
       "csharp_example": "internal static class DeclarationTranspilers\n{",
-      "current_behavior": "Modifiers are not completely reflected in C\u002B\u002B const.",
-      "target_cuda": "Appends the const modifier to C\u002B\u002B struct member functions."
+      "current_behavior": "Modifiers are not completely reflected in C++ const.",
+      "target_cuda": "Appends the const modifier to C++ struct member functions."
     },
     "score": 29,
     "files": [
@@ -1859,7 +1859,7 @@
     "details": {
       "csharp_example": "internal static class DeclarationTranspilers\n{",
       "current_behavior": "Explicit cast issues with underlying types and bitwise operations.",
-      "target_cuda": "Expanded to C\u002B\u002B enum class State : uint8_t or scoped enums."
+      "target_cuda": "Expanded to C++ enum class State : uint8_t or scoped enums."
     },
     "score": 32,
     "files": [
@@ -1879,7 +1879,7 @@
   },
   {
     "id": "SYN-25",
-    "title": "Debug output for string interpolation ($\u0022\u0022)",
+    "title": "Debug output for string interpolation ($\"\")",
     "domain": "SYN",
     "category": "Strings, Debugging, and Metaprogramming",
     "status": "incomplete",
@@ -1892,7 +1892,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Strings are prohibited on the GPU, so compilation fails.",
-      "target_cuda": "Automatic format decomposition to CUDA printf(\u0022Thread %d: val=%u\\n\u0022, threadIdx.x, val);."
+      "target_cuda": "Automatic format decomposition to CUDA printf(\"Thread %d: val=%u\\n\", threadIdx.x, val);."
     },
     "score": 31,
     "files": [
@@ -1949,7 +1949,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Utf8StringLiteralExpressionSyntax is unsupported.",
-      "target_cuda": "Mapped to C\u002B\u002B const char* / const uint8_t[] literals."
+      "target_cuda": "Mapped to C++ const char* / const uint8_t[] literals."
     },
     "score": 24,
     "files": [
@@ -2079,7 +2079,7 @@
       "score": 41
     },
     "details": {
-      "csharp_example": "[MethodImpl(MethodImplOptions.AggressiveInlining)]\npublic static int Func(int x) =\u003E x \u002B 1;",
+      "csharp_example": "[MethodImpl(MethodImplOptions.AggressiveInlining)]\npublic static int Func(int x) => x + 1;",
       "current_behavior": "Transpiled with __forceinline__ / __noinline__ / inline __device__ and zero-allocation symbol checks.",
       "target_cuda": "Automatic appending of the CUDA __forceinline__ modifier."
     },
@@ -2123,7 +2123,7 @@
       "score": 35
     },
     "details": {
-      "csharp_example": "Gpu.ForUnroll(0, 10, i =\u003E { });",
+      "csharp_example": "Gpu.ForUnroll(0, 10, i => { });",
       "current_behavior": "Uniformly applies #pragma unroll.",
       "target_cuda": "Outputting #pragma unroll N or #pragma unroll 1 (disable) depending on the specified number."
     },
@@ -2171,7 +2171,7 @@
   },
   {
     "id": "SYN-30",
-    "title": "Generic structs (struct Vector\u003CT\u003E)",
+    "title": "Generic structs (struct Vector<T>)",
     "domain": "SYN",
     "category": "Strings, Debugging, and Metaprogramming",
     "status": "incomplete",
@@ -2183,8 +2183,8 @@
     },
     "details": {
       "csharp_example": "internal static class DeclarationTranspilers\n{",
-      "current_behavior": "Type parameter binding for C\u002B\u002B templates is unsupported.",
-      "target_cuda": "Automatic expansion to C\u002B\u002B template\u003Ctypename T\u003E struct Vector2 { ... };."
+      "current_behavior": "Type parameter binding for C++ templates is unsupported.",
+      "target_cuda": "Automatic expansion to C++ template<typename T> struct Vector2 { ... };."
     },
     "score": 27,
     "files": [
@@ -2210,9 +2210,9 @@
       "score": 16
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
       "current_behavior": "FunctionPointerTypeSyntax is unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B native function pointer uint32_t (*fnPtr)(uint32_t, uint32_t)."
+      "target_cuda": "Expanded to C++ native function pointer uint32_t (*fnPtr)(uint32_t, uint32_t)."
     },
     "score": 16,
     "files": [
@@ -2274,7 +2274,7 @@
   },
   {
     "id": "SYN-32",
-    "title": "MemoryMarshal.Cast\u003CTFrom, TTo\u003E",
+    "title": "MemoryMarshal.Cast<TFrom, TTo>",
     "domain": "SYN",
     "category": "Memory, Pointers, and Unsafe",
     "status": "incomplete",
@@ -2287,7 +2287,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Unresolved error as a BCL call.",
-      "target_cuda": "Inline cast expansion to C\u002B\u002B reinterpret_cast\u003Cuint64_t*\u003E."
+      "target_cuda": "Inline cast expansion to C++ reinterpret_cast<uint64_t*>."
     },
     "score": 30,
     "files": [
@@ -2346,7 +2346,7 @@
     "details": {
       "csharp_example": "void Modify(ref int x) {\n    x = 10;\n}",
       "current_behavior": "Field declarations for RefTypeSyntax are unsupported.",
-      "target_cuda": "Mapped to C\u002B\u002B reference members int\u0026 Value; or pointer members."
+      "target_cuda": "Mapped to C++ reference members int& Value; or pointer members."
     },
     "score": 24,
     "files": [
@@ -2442,7 +2442,7 @@
     "title": "Pointer postfix increment/decrement",
     "domain": "SYN",
     "category": "Memory, Pointers, and Unsafe",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 1,
@@ -2450,9 +2450,9 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
       "current_behavior": "Guarantee of evaluation order and side effects for pointer expressions.",
-      "target_cuda": "Safely output as C\u002B\u002B native pointer postfix increment operations."
+      "target_cuda": "Safely output as C++ native pointer postfix increment operations."
     },
     "score": 39,
     "files": [
@@ -2494,9 +2494,9 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
       "current_behavior": "System.Runtime.CompilerServices.Unsafe is unresolved.",
-      "target_cuda": "Inline expansion to native C\u002B\u002B pointer addition and address difference calculations."
+      "target_cuda": "Inline expansion to native C++ pointer addition and address difference calculations."
     },
     "score": 32,
     "files": [
@@ -2555,9 +2555,9 @@
       "score": 31
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
       "current_behavior": "FixedSizeBufferDeclarationSyntax is unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B struct-embedded arrays uint32_t Buffer[64];."
+      "target_cuda": "Expanded to C++ struct-embedded arrays uint32_t Buffer[64];."
     },
     "score": 31,
     "files": [
@@ -2602,7 +2602,7 @@
     "details": {
       "csharp_example": "public static implicit operator int(MyStruct s)",
       "current_behavior": "ConversionOperatorDeclarationSyntax is unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B user-defined type conversion operators operator uint32_t() const."
+      "target_cuda": "Expanded to C++ user-defined type conversion operators operator uint32_t() const."
     },
     "score": 29,
     "files": [
@@ -2662,8 +2662,8 @@
     },
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Auto-properties inside structs are not expanded to C\u002B\u002B.",
-      "target_cuda": "Expanded to C\u002B\u002B public member variables or inline getters/setters."
+      "current_behavior": "Auto-properties inside structs are not expanded to C++.",
+      "target_cuda": "Expanded to C++ public member variables or inline getters/setters."
     },
     "score": 32,
     "files": [
@@ -2712,7 +2712,7 @@
   },
   {
     "id": "SYN-41",
-    "title": "Expression-bodied properties (=\u003E)",
+    "title": "Expression-bodied properties (=>)",
     "domain": "SYN",
     "category": "C# Advanced Operators, Properties, and Interfaces",
     "status": "incomplete",
@@ -2725,7 +2725,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Expression bodies for PropertyDeclarationSyntax are unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B const member functions int ByteCount() const { return WordCount * 4; }."
+      "target_cuda": "Expanded to C++ const member functions int ByteCount() const { return WordCount * 4; }."
     },
     "score": 32,
     "files": [
@@ -2788,7 +2788,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "C# 11 abstract static interfaces are unsupported.",
-      "target_cuda": "Expansion to C\u002B\u002B template constraints (Concepts / CRTP patterns)."
+      "target_cuda": "Expansion to C++ template constraints (Concepts / CRTP patterns)."
     },
     "score": 19,
     "files": [
@@ -2850,7 +2850,7 @@
       "score": 26
     },
     "details": {
-      "csharp_example": "checked {\n    int a = int.MaxValue \u002B 1; // OverflowException\n}",
+      "csharp_example": "checked {\n    int a = int.MaxValue + 1; // OverflowException\n}",
       "current_behavior": "Syntax skip or ignore.",
       "target_cuda": "Carry/overflow checking (PTX add.cc) or explicit handling ignoring it by default."
     },
@@ -2914,10 +2914,10 @@
   },
   {
     "id": "SYN-44",
-    "title": "Extension methods (the \u0027this\u0027 argument)",
+    "title": "Extension methods (the 'this' argument)",
     "domain": "SYN",
     "category": "C# Advanced Operators, Properties, and Interfaces",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -2927,7 +2927,7 @@
     "details": {
       "csharp_example": "public static void Ext(this MyStruct s) { }",
       "current_behavior": "Resolution of extension method syntax.",
-      "target_cuda": "Expanded to normal C\u002B\u002B static function calls like Clear(span)."
+      "target_cuda": "Expanded to normal C++ static function calls like Clear(span)."
     },
     "score": 38,
     "files": [
@@ -2973,7 +2973,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "NullableTypeSyntax is unresolved.",
-      "target_cuda": "Expanded to C\u002B\u002B lightweight struct struct { bool has_value; uint32_t value; }."
+      "target_cuda": "Expanded to C++ lightweight struct struct { bool has_value; uint32_t value; }."
     },
     "score": 27,
     "files": [
@@ -3028,7 +3028,7 @@
     "title": "Warp shuffle and synchronization primitives",
     "domain": "SYN",
     "category": "Parallel, Synchronization, and GPU-specific Idioms",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -3134,7 +3134,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Lack of integration with cooperative kernel dispatch.",
-      "target_cuda": "Expansion to cg::this_grid().sync() \u002B automatic selection of cudaLaunchCooperativeKernel at launch."
+      "target_cuda": "Expansion to cg::this_grid().sync() + automatic selection of cudaLaunchCooperativeKernel at launch."
     },
     "score": 15,
     "files": [
@@ -3350,7 +3350,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "C# 11 ListPatternSyntax is unsupported.",
-      "target_cuda": "Expanded to length checking and element index comparison (len \u003E= 2 \u0026\u0026 slice[0] == 0 \u0026\u0026 slice[len-1] == 0)."
+      "target_cuda": "Expanded to length checking and element index comparison (len >= 2 && slice[0] == 0 && slice[len-1] == 0)."
     },
     "score": 18,
     "files": [
@@ -3425,9 +3425,9 @@
       "score": 21
     },
     "details": {
-      "csharp_example": "if (obj is { Length: \u003E 0 } p) { }",
+      "csharp_example": "if (obj is { Length: > 0 } p) { }",
       "current_behavior": "PropertyPatternClauseSyntax is unsupported.",
-      "target_cuda": "Expanded to member access comparison (ctx.NumberOfWords \u003E 0)."
+      "target_cuda": "Expanded to member access comparison (ctx.NumberOfWords > 0)."
     },
     "score": 21,
     "files": [
@@ -3505,7 +3505,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "PositionalPatternClauseSyntax is unsupported.",
-      "target_cuda": "Expanded to (pos.Item1 == 0 \u0026\u0026 pos.Item2 == 0)."
+      "target_cuda": "Expanded to (pos.Item1 == 0 && pos.Item2 == 0)."
     },
     "score": 21,
     "files": [
@@ -3582,9 +3582,9 @@
       "score": 26
     },
     "details": {
-      "csharp_example": "Func\u003Cint, int\u003E square = x =\u003E x * x;",
+      "csharp_example": "Func<int, int> square = x => x * x;",
       "current_behavior": "Default arguments for lambdas are unsupported.",
-      "target_cuda": "Mapped to C\u002B\u002B lambda default arguments [](int a, int b = 10) { return a \u002B b; }."
+      "target_cuda": "Mapped to C++ lambda default arguments [](int a, int b = 10) { return a + b; }."
     },
     "score": 26,
     "files": [
@@ -3662,9 +3662,9 @@
       "score": 26
     },
     "details": {
-      "csharp_example": "Func\u003Cint, int\u003E square = x =\u003E x * x;",
+      "csharp_example": "Func<int, int> square = x => x * x;",
       "current_behavior": "ParenthesizedLambdaExpressionSyntax return value is unresolved.",
-      "target_cuda": "Expanded to C\u002B\u002B lambda trailing return type []() -\u003E uint32_t { return 10u; }."
+      "target_cuda": "Expanded to C++ lambda trailing return type []() -> uint32_t { return 10u; }."
     },
     "score": 26,
     "files": [
@@ -3732,7 +3732,7 @@
   },
   {
     "id": "SYN-62",
-    "title": "scoped ref / scoped Span\u003CT\u003E",
+    "title": "scoped ref / scoped Span<T>",
     "domain": "SYN",
     "category": "Functional, Expression, and Modern Control Syntax",
     "status": "incomplete",
@@ -3745,7 +3745,7 @@
     "details": {
       "csharp_example": "void Modify(ref int x) {\n    x = 10;\n}",
       "current_behavior": "scoped keyword is unsupported.",
-      "target_cuda": "Guaranteeing C\u002B\u002B reference qualification (in-scope reference binding)."
+      "target_cuda": "Guaranteeing C++ reference qualification (in-scope reference binding)."
     },
     "score": 24,
     "files": [
@@ -3814,7 +3814,7 @@
   },
   {
     "id": "SYN-63",
-    "title": "Unsafe.NullRef\u003CT\u003E() / IsNullRef",
+    "title": "Unsafe.NullRef<T>() / IsNullRef",
     "domain": "SYN",
     "category": "Functional, Expression, and Modern Control Syntax",
     "status": "incomplete",
@@ -3827,7 +3827,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Null-reference idiom is unresolved.",
-      "target_cuda": "Inline expansion to C\u002B\u002B nullptr / pointer comparison."
+      "target_cuda": "Inline expansion to C++ nullptr / pointer comparison."
     },
     "score": 30,
     "files": [
@@ -4324,7 +4324,7 @@
   },
   {
     "id": "SYN-70",
-    "title": "foreach loop on Span\u003CT\u003E",
+    "title": "foreach loop on Span<T>",
     "domain": "SYN",
     "category": "Loops, Jumps, and Flow Control",
     "status": "incomplete",
@@ -4337,7 +4337,7 @@
     "details": {
       "csharp_example": "// Error: NotSupportedException (ForEachStatementSyntax)\nforeach (var item in array) { }",
       "current_behavior": "ForEachStatementSyntax is unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B range-based for (const auto\u0026 item : buffer) or indexed for loops."
+      "target_cuda": "Expanded to C++ range-based for (const auto& item : buffer) or indexed for loops."
     },
     "score": 35,
     "files": [
@@ -4364,7 +4364,7 @@
     "details": {
       "csharp_example": "goto MyLabel;\nMyLabel:\n    return;",
       "current_behavior": "GotoCaseStatementSyntax is unsupported.",
-      "target_cuda": "C\u002B\u002B label jump or fallthrough expansion."
+      "target_cuda": "C++ label jump or fallthrough expansion."
     },
     "score": 19,
     "files": [
@@ -4392,7 +4392,7 @@
     "details": {
       "csharp_example": "internal static class StatementTranspilers\n{",
       "current_behavior": "GotoStatementSyntax restriction.",
-      "target_cuda": "Safely outputs to C\u002B\u002B goto label jumps."
+      "target_cuda": "Safely outputs to C++ goto label jumps."
     },
     "score": 24,
     "files": [
@@ -4490,7 +4490,7 @@
     "details": {
       "csharp_example": "internal static class DeclarationTranspilers\n{",
       "current_behavior": "Caller info attributes are unresolved.",
-      "target_cuda": "Automatic expansion to C\u002B\u002B macros __FILE__, __LINE__, __func__."
+      "target_cuda": "Automatic expansion to C++ macros __FILE__, __LINE__, __func__."
     },
     "score": 27,
     "files": [
@@ -4510,7 +4510,7 @@
   },
   {
     "id": "SYN-75",
-    "title": "[Conditional(\u0022DEBUG\u0022)] attribute",
+    "title": "[Conditional(\"DEBUG\")] attribute",
     "domain": "SYN",
     "category": "Debug, Contracts, and PTX/Hardware Integration",
     "status": "incomplete",
@@ -4593,8 +4593,8 @@
     },
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
-      "current_behavior": "Converting C# const to C\u002B\u002B constexpr.",
-      "target_cuda": "Outputs as C\u002B\u002B constexpr int BlockSize = 256; and propagates to static array lengths and unroll counts."
+      "current_behavior": "Converting C# const to C++ constexpr.",
+      "target_cuda": "Outputs as C++ constexpr int BlockSize = 256; and propagates to static array lengths and unroll counts."
     },
     "score": 30,
     "files": [
@@ -4653,7 +4653,7 @@
   },
   {
     "id": "SYN-77",
-    "title": "Inline PTX / C\u002B\u002B Embedding",
+    "title": "Inline PTX / C++ Embedding",
     "domain": "SYN",
     "category": "Debug, Contracts, and PTX/Hardware Integration",
     "status": "implemented",
@@ -4664,9 +4664,9 @@
       "score": 45
     },
     "details": {
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);",
-      "current_behavior": "Already supports direct insertion of raw C\u002B\u002B / PTX via string literals and interpolated strings.",
-      "target_cuda": "Output directly embedded into C\u002B\u002B source code (interpolated parts are expanded as variable expressions)."
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");",
+      "current_behavior": "Already supports direct insertion of raw C++ / PTX via string literals and interpolated strings.",
+      "target_cuda": "Output directly embedded into C++ source code (interpolated parts are expanded as variable expressions)."
     },
     "score": 45,
     "files": [
@@ -4782,7 +4782,7 @@
     "details": {
       "csharp_example": "internal static class DeclarationTranspilers\n{",
       "current_behavior": "C# 11 access modifiers are unsupported.",
-      "target_cuda": "Hidden expansion to C\u002B\u002B anonymous namespace namespace { struct InternalState { }; }."
+      "target_cuda": "Hidden expansion to C++ anonymous namespace namespace { struct InternalState { }; }."
     },
     "score": 18,
     "files": [
@@ -4807,7 +4807,7 @@
   },
   {
     "id": "SYN-80",
-    "title": "params Span\u003CT\u003E",
+    "title": "params Span<T>",
     "domain": "SYN",
     "category": "Bleeding-edge and Minor Modifiers/Scopes",
     "status": "incomplete",
@@ -4820,7 +4820,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "C# 13 variable length Span arguments are unresolved.",
-      "target_cuda": "Stack array initialization without heap allocation \u002B automatic expansion to C\u002B\u002B pass-by-reference."
+      "target_cuda": "Stack array initialization without heap allocation + automatic expansion to C++ pass-by-reference."
     },
     "score": 23,
     "files": [
@@ -4906,7 +4906,7 @@
     "details": {
       "csharp_example": "void Modify(ref int x) {\n    x = 10;\n}",
       "current_behavior": "Reference qualification of return values is unexpanded.",
-      "target_cuda": "Accurate mapping to C\u002B\u002B const int\u0026 return values."
+      "target_cuda": "Accurate mapping to C++ const int& return values."
     },
     "score": 24,
     "files": [
@@ -4993,7 +4993,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Inter-thread visibility modifiers are ignored.",
-      "target_cuda": "Applied to CUDA C\u002B\u002B volatile uint32_t or automatic insertion of __threadfence() boundaries."
+      "target_cuda": "Applied to CUDA C++ volatile uint32_t or automatic insertion of __threadfence() boundaries."
     },
     "score": 21,
     "files": [
@@ -5081,7 +5081,7 @@
     "details": {
       "csharp_example": "[SkipLocalsInit]\npublic static void FastFunc() { }",
       "current_behavior": "The omission of zero-clearing for local variables is unverified.",
-      "target_cuda": "(Since C\u002B\u002B leaves them uninitialized by default, it is considered complete without generating additional code)."
+      "target_cuda": "(Since C++ leaves them uninitialized by default, it is considered complete without generating additional code)."
     },
     "score": 21,
     "files": [
@@ -5175,7 +5175,7 @@
     "details": {
       "csharp_example": "// Error: NotSupportedException (ForEachStatementSyntax)\nforeach (var item in array) { }",
       "current_behavior": "ForEachVariableStatementSyntax is unsupported.",
-      "target_cuda": "Expanded to C\u002B\u002B17 Structured Binding built-in range-based for: for(auto [x, y] : points).",
+      "target_cuda": "Expanded to C++17 Structured Binding built-in range-based for: for(auto [x, y] : points).",
       "memo": "Merged into GSH-02 due to functional duplication (Tuple declaration deconstruction)."
     },
     "score": 21,
@@ -5207,7 +5207,7 @@
       "score": 18
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
       "current_behavior": "Resolution of modifier attributes.",
       "target_cuda": "Ignored (permitted in static analysis) as it is uniformly treated as a __device__ calling convention on the device side."
     },
@@ -5398,9 +5398,9 @@
       "score": 24
     },
     "details": {
-      "csharp_example": "Span\u003Cint\u003E buffer = stackalloc int[256];",
+      "csharp_example": "Span<int> buffer = stackalloc int[256];",
       "current_behavior": "stackalloc with size inference is unsupported.",
-      "target_cuda": "Expanded to local arrays like C\u002B\u002B int s[] = { 1, 2 };."
+      "target_cuda": "Expanded to local arrays like C++ int s[] = { 1, 2 };."
     },
     "score": 24,
     "files": [
@@ -5490,7 +5490,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Successfully transpiled and executed.",
-      "target_cuda": "Complete mapping to C\u002B\u002B control structures."
+      "target_cuda": "Complete mapping to C++ control structures."
     },
     "score": 45,
     "files": [
@@ -5549,7 +5549,7 @@
     "details": {
       "csharp_example": "internal static class ExpressionTranspilers\n{",
       "current_behavior": "Successfully transpiled and executed.",
-      "target_cuda": "Mapped to C\u002B\u002B struct type declarations and field access."
+      "target_cuda": "Mapped to C++ struct type declarations and field access."
     },
     "score": 45,
     "files": [
@@ -5583,7 +5583,7 @@
     "details": {
       "csharp_example": "[GpuDevice]\npublic static void HelperDeviceFunc() { }",
       "current_behavior": "Successfully transpiled and executed.",
-      "target_cuda": "Mapped to C\u002B\u002B __device__ qualified function declarations and inline calls."
+      "target_cuda": "Mapped to C++ __device__ qualified function declarations and inline calls."
     },
     "score": 45,
     "files": [
@@ -5616,9 +5616,9 @@
       "score": 45
     },
     "details": {
-      "csharp_example": "Gpu.ForUnroll(0, 10, i =\u003E { });",
-      "current_behavior": "Expands CUDA idioms at the AST level using lambda syntax in C#. The C# restriction that ref parameters cannot be captured in lambdas (CS1628) has been resolved with generic overloads (\u003CTContext\u003E) for passing context arguments.",
-      "target_cuda": "Completely expanded to CUDA\u0027s for (int i = blockIdx.x * ...) or #pragma unroll."
+      "csharp_example": "Gpu.ForUnroll(0, 10, i => { });",
+      "current_behavior": "Expands CUDA idioms at the AST level using lambda syntax in C#. The C# restriction that ref parameters cannot be captured in lambdas (CS1628) has been resolved with generic overloads (<TContext>) for passing context arguments.",
+      "target_cuda": "Completely expanded to CUDA's for (int i = blockIdx.x * ...) or #pragma unroll."
     },
     "score": 45,
     "files": [
@@ -5651,7 +5651,7 @@
     "details": {
       "current_behavior": "Achieved deterministic zero-allocation, cleanups, and memory leak elimination by introducing ScopedGpuMemory (including addressing Qodo feedback).",
       "strategy": "Implementation and tuning complete.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 28,
     "files": [
@@ -5732,7 +5732,7 @@
     "details": {
       "current_behavior": "CPU transfers for checks like CompareTo, GetBitLength, IsZero, IsOne, IsEven have been abolished and successfully migrated to parallel reduction and dedicated kernel processing on the GPU side.",
       "strategy": "Executes parallel reduction kernels on the GPU side, eliminating host transfer overhead. Implementation complete.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 29,
     "files": [
@@ -5801,7 +5801,7 @@
   },
   {
     "id": "GBI-05",
-    "title": "Large-digit parallelization of Lehmer\u0027s GCD",
+    "title": "Large-digit parallelization of Lehmer's GCD",
     "domain": "GBI",
     "category": "Operation Optimization",
     "status": "incomplete",
@@ -5865,7 +5865,7 @@
     "details": {
       "current_behavior": "Current expression trees sequentially dispatch individual kernels (Add, Sub, Bitwise, etc.), consuming VRAM read/write bandwidth for intermediate buffers.",
       "strategy": "Introduced a mechanism to fuse multiple element-wise operations into a single CUDA kernel via dynamic JIT (Kernel Fusion) and dispatch it.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 15,
     "files": [
@@ -5908,7 +5908,7 @@
   },
   {
     "id": "GBI-10",
-    "title": "Addition and Subtraction (\u002B, -)",
+    "title": "Addition and Subtraction (+, -)",
     "domain": "GBI",
     "category": "Addition and Subtraction",
     "status": "implemented",
@@ -5919,7 +5919,7 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "var c = a \u002B b;\nvar d = a - b;",
+      "csharp_example": "var c = a + b;\nvar d = a - b;",
       "current_behavior": "CarryBuffer zero-allocation and fast path completed."
     },
     "score": 30,
@@ -6007,7 +6007,7 @@
   },
   {
     "id": "GBI-13",
-    "title": "Bitwise logical operations (\u0026, |, ^, ~)",
+    "title": "Bitwise logical operations (&, |, ^, ~)",
     "domain": "GBI",
     "category": "Bitwise logical operations",
     "status": "implemented",
@@ -6018,7 +6018,7 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "var c = a \u0026 b;\nvar d = a | b;\nvar e = a ^ b;\nvar f = ~a;",
+      "csharp_example": "var c = a & b;\nvar d = a | b;\nvar e = a ^ b;\nvar f = ~a;",
       "current_behavior": "-"
     },
     "score": 30,
@@ -6043,7 +6043,7 @@
   },
   {
     "id": "GBI-14",
-    "title": "Bit shifts (\u003C\u003C, \u003E\u003E)",
+    "title": "Bit shifts (<<, >>)",
     "domain": "GBI",
     "category": "Bit shifts",
     "status": "implemented",
@@ -6054,7 +6054,7 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "var c = a \u003C\u003C 5;\nvar d = a \u003E\u003E 5;",
+      "csharp_example": "var c = a << 5;\nvar d = a >> 5;",
       "current_behavior": "Fully operational and optimized via the arbitrary bit-shift kernel."
     },
     "score": 30,
@@ -6080,7 +6080,7 @@
   },
   {
     "id": "GBI-15",
-    "title": "Comparison Operations (==, !=, \u003C, \u003E, \u003C=, \u003E=)",
+    "title": "Comparison Operations (==, !=, <, >, <=, >=)",
     "domain": "GBI",
     "category": "Comparison Operations",
     "status": "implemented",
@@ -6091,7 +6091,7 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "if (a == b || a \u003E b) { }",
+      "csharp_example": "if (a == b || a > b) { }",
       "current_behavior": "Checks themselves are fully operational. CPU transfer of all words has been abolished and parallelized via GPU kernels (CompareToKernel, etc.) (GBI-03 complete)."
     },
     "score": 30,
@@ -6118,7 +6118,7 @@
   },
   {
     "id": "GBI-16",
-    "title": "Increment/Decrement (\u002B\u002B, --)",
+    "title": "Increment/Decrement (++, --)",
     "domain": "GBI",
     "category": "Increment/Decrement",
     "status": "incomplete",
@@ -6129,8 +6129,8 @@
       "score": 26
     },
     "details": {
-      "csharp_example": "a\u002B\u002B;\n--b;",
-      "current_behavior": "Can be substituted with a = a \u002B 1, but dedicated overloads are undefined."
+      "csharp_example": "a++;\n--b;",
+      "current_behavior": "Can be substituted with a = a + 1, but dedicated overloads are undefined."
     },
     "score": 26,
     "files": [
@@ -6299,7 +6299,7 @@
     },
     "details": {
       "current_behavior": "Greatest Common Divisor (GCD)",
-      "strategy": "Full operation and optimization complete for Lehmer\u0027s GCD. (Super large-digit parallelization GBI-05 is deferred for future consideration)",
+      "strategy": "Full operation and optimization complete for Lehmer's GCD. (Super large-digit parallelization GBI-05 is deferred for future consideration)",
       "csharp_example": "GpuBigInteger.GreatestCommonDivisor(a, b);"
     },
     "score": 32,
@@ -6385,7 +6385,7 @@
     "details": {
       "current_behavior": "Size Comparison and Equality Check",
       "strategy": "GPU parallel reduction and dedicated kernel generation (GBI-03) complete.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 30,
     "files": [
@@ -6472,7 +6472,7 @@
     "details": {
       "current_behavior": "State flag evaluation",
       "strategy": "GPU parallel reduction and dedicated kernel generation (GBI-03) complete.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 30,
     "files": [
@@ -6516,7 +6516,7 @@
     },
     "details": {
       "current_behavior": "Square Root ($\\lfloor\\sqrt{a}\\rfloor$)",
-      "strategy": "Requires GPU kernel implementation via Newton\u0027s method or binary search.",
+      "strategy": "Requires GPU kernel implementation via Newton's method or binary search.",
       "csharp_example": "GpuBigInteger.Sqrt(a);"
     },
     "score": 25,
@@ -6563,7 +6563,7 @@
     "details": {
       "current_behavior": "Diagnostics for GpuBigIntExpr upon local variable declaration",
       "strategy": "Reporting GSH0005 for direct declarations like var local = expr;.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 20,
     "files": [
@@ -6611,7 +6611,7 @@
     "details": {
       "current_behavior": "GpuBigIntExpr diagnostics during assignment",
       "strategy": "Reporting of GSH0005 for assignments to fields, etc.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 20,
     "files": [
@@ -6660,7 +6660,7 @@
     "details": {
       "current_behavior": "Declaration diagnostics for legacy namespaces",
       "strategy": "Diagnostics for usages from legacy namespaces.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 20,
     "files": [
@@ -6755,7 +6755,7 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{",
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{",
       "current_behavior": "Successfully transpiled and executed",
       "target_cuda": "Mapped to built-in functions like atomicAdd, atomicMax, etc."
     },
@@ -6781,7 +6781,7 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{",
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{",
       "current_behavior": "Successfully transpiled and executed",
       "target_cuda": "Mapped to PTX level carry/borrow instructions."
     },
@@ -6808,9 +6808,9 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);",
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Output directly as C\u002B\u002B inline assembly or macros."
+      "target_cuda": "Output directly as C++ inline assembly or macros."
     },
     "score": 39,
     "files": [
@@ -6909,7 +6909,7 @@
       "score": 39
     },
     "details": {
-      "current_behavior": "Because C\u002B\u002B requires declaration before use, forward declarations (signatures) of all __device__ functions are generated and embedded at the top of the source along with the common Prelude.cu header.",
+      "current_behavior": "Because C++ requires declaration before use, forward declarations (signatures) of all __device__ functions are generated and embedded at the top of the source along with the common Prelude.cu header.",
       "strategy": "Architecture where signature scanning precedes and merges with the main source in the output phase of the Roslyn Generator.",
       "csharp_example": "public static class MethodTranspiler\n{"
     },
@@ -6920,10 +6920,10 @@
   },
   {
     "id": "GEN-21",
-    "title": "Automatic wrapping of single statements with C\u002B\u002B curly braces {}",
+    "title": "Automatic wrapping of single statements with C++ curly braces {}",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
@@ -6931,9 +6931,9 @@
       "score": 40
     },
     "details": {
-      "current_behavior": "if or for statements omitting {} in C# break their scope when expanded to C\u002B\u002B if internal macro expansion occurs, leading to critical bugs.",
-      "strategy": "A safety mechanism in RoslynToCudaVisitor that detects single statements and forces them to be wrapped in C\u002B\u002B {} braces.",
-      "csharp_example": "// Example for automatic wrapping of single statements with C\u002B\u002B curly braces {}\n// Implements: GEN-21"
+      "current_behavior": "if or for statements omitting {} in C# break their scope when expanded to C++ if internal macro expansion occurs, leading to critical bugs.",
+      "strategy": "A safety mechanism in RoslynToCudaVisitor that detects single statements and forces them to be wrapped in C++ {} braces.",
+      "csharp_example": "// Example for automatic wrapping of single statements with C++ curly braces {}\n// Implements: GEN-21"
     },
     "score": 40,
     "files": []
@@ -6971,16 +6971,16 @@
       "score": 42
     },
     "details": {
-      "current_behavior": "Mapping C# array arguments (T[]) to C\u002B\u002B pointers T* __restrict__.",
-      "strategy": "Applying the __restrict__ keyword promotes NVCC\u0027s alias analysis optimization and maximizes L1 cache and register utilization efficiency.",
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}"
+      "current_behavior": "Mapping C# array arguments (T[]) to C++ pointers T* __restrict__.",
+      "strategy": "Applying the __restrict__ keyword promotes NVCC's alias analysis optimization and maximizes L1 cache and register utilization efficiency.",
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}"
     },
     "score": 42,
     "files": []
   },
   {
     "id": "GEN-24",
-    "title": "Skipping zero-initialization generation of C\u002B\u002B local variables via the [SkipLocalsInit] attribute",
+    "title": "Skipping zero-initialization generation of C++ local variables via the [SkipLocalsInit] attribute",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
     "status": "incomplete",
@@ -6991,7 +6991,7 @@
       "score": 30
     },
     "details": {
-      "current_behavior": "Normally, C# local variables generate zero-initialization code via = on the C\u002B\u002B side, but this is skipped if the [SkipLocalsInit] attribute is applied.",
+      "current_behavior": "Normally, C# local variables generate zero-initialization code via = on the C++ side, but this is skipped if the [SkipLocalsInit] attribute is applied.",
       "strategy": "Detects attributes at the method, type, and module levels to suppress generation via the TranspileContext.SkipLocalsInit flag.",
       "csharp_example": "[SkipLocalsInit]\npublic static void FastFunc() { }"
     },
@@ -7011,8 +7011,8 @@
       "score": 35
     },
     "details": {
-      "current_behavior": "Directly maps [GpuInline] and [GpuNoInline] attributes on C# methods to CUDA\u0027s __forceinline__ and __noinline__ compiler directives.",
-      "strategy": "Scans attributes during method signature generation to switch C\u002B\u002B prefixes.",
+      "current_behavior": "Directly maps [GpuInline] and [GpuNoInline] attributes on C# methods to CUDA's __forceinline__ and __noinline__ compiler directives.",
+      "strategy": "Scans attributes during method signature generation to switch C++ prefixes.",
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 35,
@@ -7051,9 +7051,9 @@
       "score": 31
     },
     "details": {
-      "current_behavior": "For swap assignments like (a, b) = (b, a), a simple expansion to C\u002B\u002B destroys the value on the right side due to the assignment on the left side.",
-      "strategy": "Generates an IIFE [\u0026]() { auto _t0 = b; auto _t1 = a; a = _t0; b = _t1; }() to protect values with temporary variables.",
-      "csharp_example": "(int, float) GetData() =\u003E (1, 2.0f);\nvar (a, b) = GetData();"
+      "current_behavior": "For swap assignments like (a, b) = (b, a), a simple expansion to C++ destroys the value on the right side due to the assignment on the left side.",
+      "strategy": "Generates an IIFE [&]() { auto _t0 = b; auto _t1 = a; a = _t0; b = _t1; }() to protect values with temporary variables.",
+      "csharp_example": "(int, float) GetData() => (1, 2.0f);\nvar (a, b) = GetData();"
     },
     "score": 31,
     "files": []
@@ -7071,16 +7071,16 @@
       "score": 33
     },
     "details": {
-      "current_behavior": "To safely evaluate creation expressions with initializers like new Struct { A = 1 } in C\u002B\u002B.",
-      "strategy": "Expands scope-isolated IIFEs like [\u0026]() { Struct _tmp; _tmp.A = 1; return _tmp; }() to match C# side effects and evaluation order.",
-      "csharp_example": "Func\u003Cint, int\u003E square = x =\u003E x * x;"
+      "current_behavior": "To safely evaluate creation expressions with initializers like new Struct { A = 1 } in C++.",
+      "strategy": "Expands scope-isolated IIFEs like [&]() { Struct _tmp; _tmp.A = 1; return _tmp; }() to match C# side effects and evaluation order.",
+      "csharp_example": "Func<int, int> square = x => x * x;"
     },
     "score": 33,
     "files": []
   },
   {
     "id": "GEN-28",
-    "title": "Automatic generation of alignof(T) boundary alignment macros for dynamic SharedMemory\u003CT\u003E",
+    "title": "Automatic generation of alignof(T) boundary alignment macros for dynamic SharedMemory<T>",
     "domain": "GEN",
     "category": "Runtime and Type System",
     "status": "implemented",
@@ -7092,7 +7092,7 @@
     },
     "details": {
       "current_behavior": "Prevents Misaligned Access violations (memory access exceptions) when allocating multiple types to the dynamic shared memory extern __shared__ char __gsharp_dynamic_smem[].",
-      "strategy": "Memory allocator architecture that auto-generates safe byte offset calculations __smem_offset = (__smem_offset \u002B align - 1) \u0026 ~(align - 1); using alignof(T).",
+      "strategy": "Memory allocator architecture that auto-generates safe byte offset calculations __smem_offset = (__smem_offset + align - 1) & ~(align - 1); using alignof(T).",
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
@@ -7105,10 +7105,10 @@
   },
   {
     "id": "GEN-29",
-    "title": "Static C\u002B\u002B array expansion for constant size SharedMemory\u003CT\u003E",
+    "title": "Static C++ array expansion for constant size SharedMemory<T>",
     "domain": "GEN",
     "category": "Runtime and Type System",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -7116,8 +7116,8 @@
       "score": 36
     },
     "details": {
-      "current_behavior": "When a constant is passed, such as SharedMemory\u003CT\u003E smem = new(256);, it is expanded as a static-sized shared memory.",
-      "strategy": "Converts to static C\u002B\u002B declarations like __shared__ T smem[256];, eliminating dynamic offset calculations at runtime.",
+      "current_behavior": "When a constant is passed, such as SharedMemory<T> smem = new(256);, it is expanded as a static-sized shared memory.",
+      "strategy": "Converts to static C++ declarations like __shared__ T smem[256];, eliminating dynamic offset calculations at runtime.",
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
@@ -7136,7 +7136,7 @@
   },
   {
     "id": "GEN-30",
-    "title": "Transpiling C# 12 [InlineArray] attribute to C\u002B\u002B fixed-length arrays",
+    "title": "Transpiling C# 12 [InlineArray] attribute to C++ fixed-length arrays",
     "domain": "GEN",
     "category": "Type System",
     "status": "implemented",
@@ -7147,8 +7147,8 @@
       "score": 39
     },
     "details": {
-      "current_behavior": "Maps C# structs with [InlineArray] applied to C\u002B\u002B fixed-length array fields (T field[N]).",
-      "strategy": "Simultaneously auto-generates operator[](int index) and const operator[](int index) const to achieve seamless index access and memory layout matching in C\u002B\u002B.",
+      "current_behavior": "Maps C# structs with [InlineArray] applied to C++ fixed-length array fields (T field[N]).",
+      "strategy": "Simultaneously auto-generates operator[](int index) and const operator[](int index) const to achieve seamless index access and memory layout matching in C++.",
       "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
     },
     "score": 39,
@@ -7163,7 +7163,7 @@
   },
   {
     "id": "GEN-31",
-    "title": "Topological sorting of C\u002B\u002B struct forward declarations considering dependencies",
+    "title": "Topological sorting of C++ struct forward declarations considering dependencies",
     "domain": "GEN",
     "category": "Generator Infrastructure",
     "status": "implemented",
@@ -7174,8 +7174,8 @@
       "score": 36
     },
     "details": {
-      "current_behavior": "C\u002B\u002B cannot hold an undefined struct as a value type field, so declaring structs out of order like in C# results in compilation errors.",
-      "strategy": "StructTranspiler.GetTopologicallySortedStructs topologically sorts the dependency graph of used structs to generate C\u002B\u002B declarations in the correct order.",
+      "current_behavior": "C++ cannot hold an undefined struct as a value type field, so declaring structs out of order like in C# results in compilation errors.",
+      "strategy": "StructTranspiler.GetTopologicallySortedStructs topologically sorts the dependency graph of used structs to generate C++ declarations in the correct order.",
       "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
     },
     "score": 36,
@@ -7189,7 +7189,7 @@
   },
   {
     "id": "GEN-32",
-    "title": "Mapping of implicit operator to C\u002B\u002B implicit constructors",
+    "title": "Mapping of implicit operator to C++ implicit constructors",
     "domain": "GEN",
     "category": "Type System",
     "status": "incomplete",
@@ -7200,9 +7200,9 @@
       "score": 31
     },
     "details": {
-      "current_behavior": "Matches the implicit operator of structs to the C\u002B\u002B native cast specification.",
-      "strategy": "Automatically expands to C\u002B\u002B constructors with arguments if casting to a target struct, or to operator T() const conversion operators if casting to a different type.",
-      "csharp_example": "public static GpuBigInteger operator \u002B(GpuBigInteger a, GpuBigInteger b)"
+      "current_behavior": "Matches the implicit operator of structs to the C++ native cast specification.",
+      "strategy": "Automatically expands to C++ constructors with arguments if casting to a target struct, or to operator T() const conversion operators if casting to a different type.",
+      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 31,
     "files": [
@@ -7224,7 +7224,7 @@
     "title": "P/Invoke interoperability and layout compatibility of custom structs (__Native_Struct)",
     "domain": "GEN",
     "category": "Interoperability Infrastructure",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -7278,7 +7278,7 @@
     "details": {
       "current_behavior": "Generates Launch_XXX_Device overloads that directly accept GPU device pointers (IntPtr) to bypass host-device memory copying and allocation.",
       "strategy": "Maximizing performance path during iterative execution, etc.",
-      "csharp_example": "fixed (int* ptr = \u0026array[0]) {\n    // use ptr\n}"
+      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}"
     },
     "score": 33,
     "files": [
@@ -7298,7 +7298,7 @@
       "score": 32
     },
     "details": {
-      "current_behavior": "ref or out custom structs completely eliminate heap allocation by transferring them using pointer casts (IntPtr)(\u0026native_Struct) without GC pinning (equivalent to fixed context).",
+      "current_behavior": "ref or out custom structs completely eliminate heap allocation by transferring them using pointer casts (IntPtr)(&native_Struct) without GC pinning (equivalent to fixed context).",
       "strategy": "Optimization to eliminate struct boxing and GC overhead completely.",
       "csharp_example": "void GetValue(out int x) {\n    x = 10;\n}"
     },
@@ -7323,7 +7323,7 @@
       "score": 33
     },
     "details": {
-      "current_behavior": "Arguments with IsJitConstant are excluded from the CUDA kernel signature, passed to JitEngine via the __gsharp_jit_constants dictionary, and injected into PTX as C\u002B\u002B macros (#define).",
+      "current_behavior": "Arguments with IsJitConstant are excluded from the CUDA kernel signature, passed to JitEngine via the __gsharp_jit_constants dictionary, and injected into PTX as C++ macros (#define).",
       "strategy": "Enables compile-time loop unrolling for dynamic block sizes and iteration counts.",
       "csharp_example": "[AttributeUsage(AttributeTargets.Parameter)]\npublic sealed class JitConstantAttribute : Attribute;"
     },
@@ -7400,16 +7400,16 @@
       "score": 32
     },
     "details": {
-      "current_behavior": "Recursively traverses InterpolatedStringExpressionSyntax, outputting plain text parts as-is and falling back to C\u002B\u002B AST expansion for interpolated parts ({x \u002B 1}).",
+      "current_behavior": "Recursively traverses InterpolatedStringExpressionSyntax, outputting plain text parts as-is and falling back to C++ AST expansion for interpolated parts ({x + 1}).",
       "strategy": "Hybrid expansion to safely embed C# variables into PTX inline assembly.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 32,
     "files": []
   },
   {
     "id": "GEN-41",
-    "title": "PTX macro expansion of compile-time constants using Gpu.JitConstant(\u0022Name\u0022)",
+    "title": "PTX macro expansion of compile-time constants using Gpu.JitConstant(\"Name\")",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
     "status": "incomplete",
@@ -7422,7 +7422,7 @@
     "details": {
       "current_behavior": "Replaces Gpu.JitConstant calls with a simple identifier name (Name) defined via #define on the PTX side and outputs it.",
       "strategy": "Static expansion combined with __gsharp_jit_constants in JitEngine.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 30,
     "files": [
@@ -7437,7 +7437,7 @@
     "title": "GSH0007: foreach is prohibited because it implicitly allocates IEnumerator, putting pressure on the GPU heap.",
     "domain": "GSH",
     "category": "Diagnostics",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 2,
@@ -7457,7 +7457,7 @@
     "title": "GSH0008: Prohibition of LINQ query syntax",
     "domain": "GSH",
     "category": "Diagnostics",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 1,
@@ -7485,7 +7485,7 @@
       "score": 34
     },
     "details": {
-      "current_behavior": "Statements like var x = 10; trigger an error to prevent incorrect 32-bit signed integer inference by auto in C\u002B\u002B (forcing 10U, etc.).",
+      "current_behavior": "Statements like var x = 10; trigger an error to prevent incorrect 32-bit signed integer inference by auto in C++ (forcing 10U, etc.).",
       "strategy": "Guarantees the safety of type inference.",
       "csharp_example": "// Error: Implicit 32-bit signed integer inference\nvar x = 10;\n// Solution: Use explicit uint suffix\nvar x = 10U;"
     },
@@ -7527,7 +7527,7 @@
     "details": {
       "current_behavior": "JitEngine performs a two-stage cache based on source hashes: a ConcurrentDictionary in memory and PTX files on disk.",
       "strategy": "Architecture that completely hides NVRTC runtime compilation overhead.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for runtime consumers\u0022)]\npublic sealed class JitEngine\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
     },
     "score": 33,
     "files": [
@@ -7536,7 +7536,7 @@
   },
   {
     "id": "GEN-43",
-    "title": "Thread-safe exclusive control via Lazy\u003CT\u003E and CudaContextScope (RAII)",
+    "title": "Thread-safe exclusive control via Lazy<T> and CudaContextScope (RAII)",
     "domain": "GEN",
     "category": "JIT Infrastructure",
     "status": "incomplete",
@@ -7547,9 +7547,9 @@
       "score": 35
     },
     "details": {
-      "current_behavior": "Uses Lazy\u003CGpuModule\u003E for exclusive control during initial compilation, and further binds/automatically restores the CUDA context per thread using CudaContextScope (IDisposable).",
+      "current_behavior": "Uses Lazy<GpuModule> for exclusive control during initial compilation, and further binds/automatically restores the CUDA context per thread using CudaContextScope (IDisposable).",
       "strategy": "Safely handles concurrent calls in multi-threaded environments.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for runtime consumers\u0022)]\npublic sealed class JitEngine\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
     },
     "score": 35,
     "files": [
@@ -7573,7 +7573,7 @@
       "score": 26
     },
     "details": {
-      "current_behavior": "BackendCompiler (NvccCompiler) searches for vcvars64.bat via vswhere.exe and automatically executes cmd.exe /c \u0022call vcvars \u0026\u0026 nvcc ...\u0022.",
+      "current_behavior": "BackendCompiler (NvccCompiler) searches for vcvars64.bat via vswhere.exe and automatically executes cmd.exe /c \"call vcvars && nvcc ...\".",
       "strategy": "Enables native builds under Windows environments without additional configuration.",
       "csharp_example": "public sealed partial class NvccCompiler\n{"
     },
@@ -7597,7 +7597,7 @@
     "details": {
       "current_behavior": "Parses ptxas output logs during nvcc compilation with regular expressions to automatically extract RegistersUsed, SharedMemoryBytes, etc., as CompilationResult.",
       "strategy": "Feeds back kernel tuning metrics to the runtime.",
-      "csharp_example": "Gpu.InlinePtx(\u0022asm volatile (\u0022nop;\u0022);\u0022);"
+      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
     },
     "score": 32,
     "files": [
@@ -7620,9 +7620,9 @@
       "score": 34
     },
     "details": {
-      "current_behavior": "Operators (\u002B, -, *, /) for GpuBigInteger instances are generated as expression tree objects (GpuBigIntExpr), and the actual GPU kernels are issued upon calling .Value or .Evaluate().",
+      "current_behavior": "Operators (+, -, *, /) for GpuBigInteger instances are generated as expression tree objects (GpuBigIntExpr), and the actual GPU kernels are issued upon calling .Value or .Evaluate().",
       "strategy": "Foundation for a mechanism that minimizes temporary buffer allocation and evaluates the entire expression at once.",
-      "csharp_example": "public static GpuBigInteger operator \u002B(GpuBigInteger a, GpuBigInteger b)"
+      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
     },
     "score": 34,
     "files": [
@@ -7673,7 +7673,7 @@
     "details": {
       "current_behavior": "For Div/Rem operations, calculates the reciprocal approximation of the divisor on the GPU using Newton-Raphson iteration, solving the division based on multiplication.",
       "strategy": "Parallelization-appropriate algorithms to prevent warp-level penalties due to thread divergence.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 25,
     "files": [
@@ -7773,7 +7773,7 @@
     "details": {
       "current_behavior": "By attaching attributes to C# signatures like Gpu.SyncThreads or ThreadIndex.X, the transpiler transparently replaces them with PTX/CUDA syntaxes such as __syncthreads() or threadIdx.x.",
       "strategy": "Exposes hardware-specific instructions while maintaining user code type safety.",
-      "csharp_example": "[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedType.Global\u0022, Justification = \u0022Public API exposed for GPU kernels\u0022)]\n[SuppressMessage(\u0022ReSharper\u0022, \u0022UnusedMember.Global\u0022, Justification = \u0022Public API exposed for GPU kernels\u0022)]\n[SuppressMessage(\u0022IDE\u0022, \u0022IDE0051\u0022, Justification = \u0022Public API exposed for library consumers\u0022)]\npublic static class Gpu\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"IDE\", \"IDE0051\", Justification = \"Public API exposed for library consumers\")]\npublic static class Gpu\n{"
     },
     "score": 39,
     "files": [
