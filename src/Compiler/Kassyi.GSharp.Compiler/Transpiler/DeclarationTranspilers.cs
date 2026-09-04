@@ -100,11 +100,9 @@ internal static class DeclarationTranspilers
     {
         CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
 
-        context.Writer.AppendKeyword("__shared__");
-        context.Writer.AppendSpace();
-        context.Writer.AppendType(typeArg);
-        context.Writer.AppendSpace();
-        context.Writer.Append(alloc.Declarator.Identifier.Text);
+        context.Writer.Append("__shared__ ");
+        context.AppendType(typeArg);
+        context.Writer.Append($" {alloc.Declarator.Identifier.Text}");
         using (context.Writer.Brackets())
         {
             context.Visitor.Visit(alloc.SizeArgument);
@@ -120,7 +118,7 @@ internal static class DeclarationTranspilers
     private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        var elemSize = CudaTypeMapper.GetApproximateSize(typeArg);
+        var elemSize = context.Dialect.GetApproximateSize(typeArg);
         var byteSize = elementCount * elemSize;
         if (byteSize > 32768)
         {
@@ -133,7 +131,7 @@ internal static class DeclarationTranspilers
         LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
     {
         EnsureDynamicSharedMemoryBase(ref context);
-        AlignDynamicSharedMemoryOffset(typeArg, ref context.Writer);
+        AlignDynamicSharedMemoryOffset(typeArg, ref context);
         EmitDynamicSharedMemoryPointerAndAdvance(alloc, typeArg, ref context);
 
         if (index < node.Declaration.Variables.Count - 1)
@@ -149,84 +147,76 @@ internal static class DeclarationTranspilers
             return;
         }
 
-        context.Writer.Append("extern __shared__ char __gsharp_dynamic_smem");
-        context.Writer.AppendBrackets();
-        context.Writer.AppendLine(";");
-        context.Writer.AppendLine("size_t __smem_offset = 0;");
+        context.Writer
+            .Append("extern __shared__ char __gsharp_dynamic_smem[]")
+            .AppendLine(";")
+            .AppendLine("size_t __smem_offset = 0;");
         context.HasEmittedDynamicSmemBase = true;
     }
 
-    private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref SourceWriter writer)
+    private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        writer.Append("__smem_offset");
-        writer.AppendOperator("=");
-        using (writer.Parentheses())
+        context.Writer
+            .Append("__smem_offset")
+            .AppendOperator("=");
+        using (context.Writer.Parentheses())
         {
-            writer.Append("__smem_offset");
-            writer.AppendOperator("+");
-            writer.Append("alignof");
-            using (writer.Parentheses())
+            context.Writer
+                .Append("__smem_offset")
+                .AppendOperator("+")
+                .Append("alignof");
+            using (context.Writer.Parentheses())
             {
-                writer.AppendType(typeArg);
+                context.AppendType(typeArg);
             }
 
-            writer.AppendOperator("-");
-            writer.Append("1");
+            context.Writer.AppendOperator("-");
+            context.Writer.Append("1");
         }
 
-        writer.AppendOperator("&");
-        writer.Append("~");
-        using (writer.Parentheses())
+        context.Writer
+            .AppendOperator("&")
+            .Append("~");
+        using (context.Writer.Parentheses())
         {
-            writer.Append("alignof");
-            using (writer.Parentheses())
+            context.Writer.Append("alignof");
+            using (context.Writer.Parentheses())
             {
-                writer.AppendType(typeArg);
+                context.AppendType(typeArg);
             }
 
-            writer.AppendOperator("-");
-            writer.Append("1");
+            context.Writer.AppendOperator("-");
+            context.Writer.Append("1");
         }
 
-        writer.AppendSemiColon();
-        writer.AppendLine();
+        context.Writer.AppendSemiColonLine();
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        context.Writer.AppendType(typeArg);
-        context.Writer.Append("* ");
-        context.Writer.Append(alloc.Declarator.Identifier.Text);
-        context.Writer.AppendOperator("=");
+        context.AppendType(typeArg);
+        context.Writer.Append($"* {alloc.Declarator.Identifier.Text} = ");
         using (context.Writer.Parentheses())
         {
-            context.Writer.AppendType(typeArg);
+            context.AppendType(typeArg);
             context.Writer.Append("*");
         }
 
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("__gsharp_dynamic_smem");
-            context.Writer.AppendOperator("+");
-            context.Writer.Append("__smem_offset");
-        }
+        context.Writer.Append("(__gsharp_dynamic_smem + __smem_offset)");
 
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
-        context.Writer.Append("__smem_offset");
-        context.Writer.AppendOperator("+=");
+        context.Writer.AppendLine(";");
+        context.Writer.Append("__smem_offset += ");
         using (context.Writer.Parentheses())
         {
             context.Visitor.Visit(alloc.SizeArgument);
         }
 
-        context.Writer.AppendOperator("*");
-        context.Writer.AppendKeyword("sizeof");
+        context.Writer.Append(" * sizeof");
         using (context.Writer.Parentheses())
         {
-            context.Writer.AppendType(typeArg);
+            context.AppendType(typeArg);
         }
         context.Writer.AppendSemiColon();
     }
@@ -275,16 +265,25 @@ internal static class DeclarationTranspilers
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
+
+            if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
+            {
+                if (i < variables.Count - 1)
+                {
+                    context.Writer.AppendSemiColonLine();
+                }
+                continue;
+            }
+
             if (isVar)
             {
-                context.Writer.AppendKeyword("auto");
+                context.Writer.Append($"auto {v.Identifier.Text}");
             }
             else
             {
-                context.Writer.AppendType(typeSymbol);
+                context.AppendType(typeSymbol);
+                context.Writer.Append($" {v.Identifier.Text}");
             }
-            context.Writer.AppendSpace();
-            context.Writer.Append(v.Identifier.Text);
             WriteDeclaratorInitializer(v, ref context);
 
             if (i >= variables.Count - 1)
@@ -292,9 +291,170 @@ internal static class DeclarationTranspilers
                 continue;
             }
 
-            context.Writer.AppendSemiColon();
-            context.Writer.AppendLine();
+            context.Writer.AppendSemiColonLine();
         }
+    }
+
+    private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, ref TranspileContext context)
+    {
+        if (variable.Initializer == null)
+        {
+            return false;
+        }
+
+        var initVal = variable.Initializer.Value;
+
+        ITypeSymbol? elemType = null;
+        bool isConst = false;
+
+        if (typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1, Name: "Span" or "ReadOnlySpan" } named)
+        {
+            elemType = named.TypeArguments[0];
+            isConst = named.Name == "ReadOnlySpan";
+        }
+        else if (typeSymbol is IArrayTypeSymbol arrayType)
+        {
+            elemType = arrayType.ElementType;
+        }
+
+        if (elemType == null)
+        {
+            return false;
+        }
+
+        // Case 1: CollectionExpression [10, 20, 30]
+        if (initVal is CollectionExpressionSyntax collectionExpr)
+        {
+            if (isConst)
+            {
+                context.Writer.Append("const ");
+            }
+
+            context.AppendType(elemType);
+            context.Writer.Append($" {variable.Identifier.Text}");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append(collectionExpr.Elements.Count);
+            }
+            context.Writer.AppendOperator("=");
+            context.Visitor.Visit(collectionExpr);
+            return true;
+        }
+
+        // Case 2: StackAllocArrayCreationExpression stackalloc int[4] or stackalloc int[] { 1, 2, 3 }
+        if (initVal is StackAllocArrayCreationExpressionSyntax stackAlloc)
+        {
+            if (stackAlloc.Initializer != null)
+            {
+                if (isConst)
+                {
+                    context.Writer.Append("const ");
+                }
+
+                context.AppendType(elemType);
+                context.Writer.Append($" {variable.Identifier.Text}");
+                using (context.Writer.Brackets())
+                {
+                    context.Writer.Append(stackAlloc.Initializer.Expressions.Count);
+                }
+                context.Writer.AppendOperator("=");
+                context.Visitor.Visit(stackAlloc.Initializer);
+                return true;
+            }
+
+            if (stackAlloc.Type is ArrayTypeSyntax { RankSpecifiers.Count: > 0 } arrayTypeSyntax)
+            {
+                var sizeExpr = arrayTypeSyntax.RankSpecifiers[0].Sizes.FirstOrDefault();
+                if (sizeExpr != null)
+                {
+                    var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
+                    if (!constVal.HasValue)
+                    {
+                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                            GSharpDiagnostics.UnsupportedSyntax,
+                            sizeExpr.GetLocation(),
+                            "dynamic stackalloc size"));
+                        return true;
+                    }
+
+                    context.AppendType(elemType);
+                    context.Writer.Append($" {variable.Identifier.Text}");
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExpr);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        // Case 3: ImplicitStackAllocArrayCreationExpression stackalloc[] { 1, 2, 3 }
+        if (initVal is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc)
+        {
+            if (isConst)
+            {
+                context.Writer.Append("const ");
+            }
+
+            context.AppendType(elemType);
+            context.Writer.Append($" {variable.Identifier.Text}");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
+            }
+            context.Writer.AppendOperator("=");
+            context.Visitor.Visit(implStackAlloc.Initializer);
+            return true;
+        }
+
+        // Case 4: ArrayCreationExpression new int[] { 1, 2, 3 } or new int[4]
+        if (initVal is ArrayCreationExpressionSyntax arrayCreation)
+        {
+            if (arrayCreation.Initializer != null)
+            {
+                if (isConst)
+                {
+                    context.Writer.Append("const ");
+                }
+
+                context.AppendType(elemType);
+                context.Writer.Append($" {variable.Identifier.Text}");
+                using (context.Writer.Brackets())
+                {
+                    context.Writer.Append(arrayCreation.Initializer.Expressions.Count);
+                }
+                context.Writer.AppendOperator("=");
+                context.Visitor.Visit(arrayCreation.Initializer);
+                return true;
+            }
+
+            if (arrayCreation.Type.RankSpecifiers.Count > 0)
+            {
+                var sizeExpr = arrayCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
+                if (sizeExpr != null)
+                {
+                    var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
+                    if (!constVal.HasValue)
+                    {
+                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                            GSharpDiagnostics.UnsupportedSyntax,
+                            sizeExpr.GetLocation(),
+                            "dynamic array size"));
+                        return true;
+                    }
+
+                    context.AppendType(elemType);
+                    context.Writer.Append($" {variable.Identifier.Text}");
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExpr);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void TranspileCombinedVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
@@ -302,20 +462,20 @@ internal static class DeclarationTranspilers
     {
         if (isVar)
         {
-            context.Writer.AppendKeyword("auto");
+            context.Writer.Append("auto");
         }
         else
         {
             if (isPointer && typeSymbol is IPointerTypeSymbol pointerType)
             {
-                context.Writer.AppendType(pointerType.PointedAtType);
+                context.AppendType(pointerType.PointedAtType);
             }
             else
             {
-                context.Writer.AppendType(typeSymbol);
+                context.AppendType(typeSymbol);
             }
         }
-        context.Writer.AppendSpace();
+        context.Writer.Append(" ");
 
         for (var i = 0; i < variables.Count; i++)
         {
@@ -363,16 +523,13 @@ internal static class DeclarationTranspilers
                 var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
                 if (typeSymbol != null)
                 {
-                    context.Writer.AppendType(typeSymbol);
+                    context.AppendType(typeSymbol);
                 }
                 else
                 {
-                    context.Writer.AppendKeyword("auto");
+                    context.Writer.Append("auto");
                 }
-                context.Writer.AppendSpace();
-                context.Writer.Append(singleVar.Identifier.Text);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendLine($" {singleVar.Identifier.Text};");
             }
         }
     }

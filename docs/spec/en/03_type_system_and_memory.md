@@ -67,6 +67,9 @@ Point p = new Point(0, 0); // record struct / Primary Constructor
 ```
 *Note: The transpiler converts constructor arguments (like `new Point(0, 0)`) into C++ brace initialization (`Point{0, 0}`). For C# Object Initializers (e.g., `new() { X = 1 }`), the transpiler emits an Immediately Invoked Function Expression (IIFE) using a C++ lambda (e.g., `[&]() { Point _tmp; _tmp.X = 1; return _tmp; }()`) to safely execute arbitrary member assignments in C++ without requiring explicit constructors.*
 
+### 2.2.4 P/Invoke and Layout Compatibility (`__Native_Struct`)
+G# generates structurally compatible C++ definitions for C# custom structs. To ensure exact binary layout compatibility during memory transfers (marshaling) and P/Invoke boundary crossings, the generator natively aligns with C#'s `[StructLayout]` configurations (e.g., Sequential or Explicit). The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
+
 ## 2.3 Memory Model and Pointers
 
 G# enforces strict rules on memory access to ensure valid device pointer dereferencing and thread safety.

@@ -91,7 +91,7 @@ internal static class StructTranspiler
             return;
         }
 
-        var size = CudaTypeMapper.GetApproximateSize(typeSymbol);
+        var size = context.Dialect.GetApproximateSize(typeSymbol);
         if (size >= 32)
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.LargeStructByValueWarning,
@@ -101,16 +101,7 @@ internal static class StructTranspiler
 
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        AttributeData? inlineArrayAttr = null;
-        foreach (var attr in structSym.GetAttributes())
-        {
-            if (attr.AttributeClass?.Name == "InlineArrayAttribute")
-            {
-                inlineArrayAttr = attr;
-                break;
-            }
-        }
-
+        var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);
         if (inlineArrayAttr != null)
         {
             WriteInlineArrayDefinition(structSym, inlineArrayAttr, ref context);
@@ -131,94 +122,78 @@ internal static class StructTranspiler
             return;
         }
 
-        context.Writer.Append("#ifndef __GSHARP_STRUCT_");
-        context.Writer.AppendFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine("__");
+        WriteStructHeader(ref context, structSym);
+        using (context.Writer.Scope())
+        {
+            context.AppendType(firstField.Type);
+            context.Writer.Append($" {firstField.Name}");
+            using (context.Writer.Brackets())
+            {
+                context.Writer.Append(length);
+            }
 
-        context.Writer.Append("#define __GSHARP_STRUCT_");
-        context.Writer.AppendFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine("__");
+            context.Writer.AppendSemiColonLine();
 
-        context.Writer.Append("struct ");
-        context.Writer.AppendFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine();
+            WriteInlineArrayIndexer(ref context, firstField, isConst: false);
+            WriteInlineArrayIndexer(ref context, firstField, isConst: true);
+            WriteInlineArrayIterators(ref context, firstField, length);
+        }
+
+        WriteStructFooter(ref context);
+    }
+
+    private static void WriteInlineArrayIterators(ref TranspileContext context, IFieldSymbol firstField, int length)
+    {
+        context.Writer.Append("__device__ inline ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* begin() {{ return {firstField.Name}; }}");
+
+        context.Writer.Append("__device__ inline ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* end() {{ return {firstField.Name} + {length}; }}");
+
+        context.Writer.Append("__device__ inline const ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* begin() const {{ return {firstField.Name}; }}");
+
+        context.Writer.Append("__device__ inline const ");
+        context.AppendType(firstField.Type);
+        context.Writer.AppendLine($"* end() const {{ return {firstField.Name} + {length}; }}");
+
+        context.Writer.AppendLine($"__device__ inline int size() const {{ return {length}; }}");
+    }
+
+    private static void WriteInlineArrayIndexer(ref TranspileContext context, IFieldSymbol firstField, bool isConst)
+    {
+        context.Writer.Append(isConst ? "__device__ inline const " : "__device__ inline ");
+        context.AppendType(firstField.Type);
+        context.Writer.Append("& operator[]");
+
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append("int index");
+        }
+
+        if (isConst)
+        {
+            context.Writer.AppendLine(" const");
+        }
 
         using (context.Writer.Scope())
         {
-            context.Writer.AppendType(firstField.Type);
-            context.Writer.AppendSpace();
-            context.Writer.Append(firstField.Name);
+            context.Writer.Append($"return {firstField.Name}");
             using (context.Writer.Brackets())
             {
-                context.Writer.Append($"{length}");
+                context.Writer.Append("index");
             }
 
-            context.Writer.AppendLine(";");
-
-            context.Writer.Append("__device__ inline ");
-            context.Writer.AppendType(firstField.Type);
-            context.Writer.Append("& operator");
-            context.Writer.AppendBrackets();
-
-            using (context.Writer.Parentheses())
-            {
-                context.Writer.Append("int index");
-            }
-
-            using (context.Writer.Scope())
-            {
-                context.Writer.Append($"return {firstField.Name}");
-                using (context.Writer.Brackets())
-                {
-                    context.Writer.Append("index");
-                }
-
-                context.Writer.AppendSemiColonLine();
-            }
-
-            context.Writer.Append("__device__ inline const ");
-            context.Writer.AppendType(firstField.Type);
-            context.Writer.Append("& operator");
-            context.Writer.AppendBrackets();
-
-            using (context.Writer.Parentheses())
-            {
-                context.Writer.Append("int index");
-            }
-
-            context.Writer.AppendLine(" const");
-            using (context.Writer.Scope())
-            {
-                context.Writer.Append($"return {firstField.Name}");
-                using (context.Writer.Brackets())
-                {
-                    context.Writer.Append("index");
-                }
-
-                context.Writer.AppendSemiColonLine();
-            }
+            context.Writer.AppendSemiColonLine();
         }
-
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
-        context.Writer.AppendLine("#endif");
-        context.Writer.AppendLine();
     }
 
     private static void WriteStandardStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        context.Writer.Append("#ifndef __GSHARP_STRUCT_");
-        context.Writer.AppendFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine("__");
-
-        context.Writer.Append("#define __GSHARP_STRUCT_");
-        context.Writer.AppendFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine("__");
-
-        context.Writer.Append("struct ");
-        context.Writer.AppendFullyQualifiedCppName(structSym);
-        context.Writer.AppendLine();
-
+        WriteStructHeader(ref context, structSym);
         using (context.Writer.Scope())
         {
             foreach (var member in structSym.GetMembers())
@@ -238,10 +213,22 @@ internal static class StructTranspiler
             }
         }
 
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
-        context.Writer.AppendLine("#endif");
-        context.Writer.AppendLine();
+        WriteStructFooter(ref context);
+    }
+
+    private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
+    {
+        context.Writer.Append("#ifndef __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
+            .Append("#define __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
+            .Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
+    }
+
+    private static void WriteStructFooter(ref TranspileContext context)
+    {
+        context.Writer
+            .AppendSemiColonLine()
+            .AppendLine("#endif")
+            .AppendLine();
     }
 
     private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,
@@ -252,19 +239,13 @@ internal static class StructTranspiler
         if (SymbolEqualityComparer.Default.Equals(conv.ReturnType, structSym))
         {
             // Implicit constructor from param type
-            context.Writer.Append("__device__ inline ");
-            context.Writer.AppendFullyQualifiedCppName(structSym);
-            context.Writer.AppendParentheses();
-            context.Writer.AppendSpace();
-            context.Writer.AppendEmptyScope();
+            context.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym).AppendLine("() {}");
 
-            context.Writer.Append("__device__ inline ");
-            context.Writer.AppendFullyQualifiedCppName(structSym);
+            context.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym);
             using (context.Writer.Parentheses())
             {
-                context.Writer.AppendType(conv.Parameters[0].Type);
-                context.Writer.AppendSpace();
-                context.Writer.Append("v");
+                context.AppendType(conv.Parameters[0].Type);
+                context.Writer.Append(" v");
             }
 
             context.Writer.AppendSpace();
@@ -272,9 +253,7 @@ internal static class StructTranspiler
             {
                 if (firstField != null)
                 {
-                    context.Writer.Append("this->");
-                    context.Writer.Append(firstField.Name);
-                    context.Writer.AppendLine(" = v;");
+                    context.Writer.AppendLine($"this->{firstField.Name} = v;");
                 }
             }
         }
@@ -282,16 +261,17 @@ internal static class StructTranspiler
         {
             // Implicit conversion operator to return type
             context.Writer.Append("__device__ inline operator ");
-            context.Writer.AppendType(conv.ReturnType);
+            context.AppendType(conv.ReturnType);
             context.Writer.Append("() const ");
             using (context.Writer.Scope())
             {
-                if (firstField != null)
+                if (firstField == null)
                 {
-                    context.Writer.Append("return this->");
-                    context.Writer.Append(firstField.Name);
-                    context.Writer.AppendSemiColonLine();
+                    return;
                 }
+
+                context.Writer.Append($"return this->{firstField.Name}");
+                context.Writer.AppendSemiColonLine();
             }
         }
     }
@@ -314,43 +294,39 @@ internal static class StructTranspiler
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
-            {
-                VariableDeclaratorSyntax? syntax = null;
-                var syntaxRefs = field.DeclaringSyntaxReferences;
-                if (!syntaxRefs.IsEmpty)
                 {
-                    syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
-                }
-
-                ExpressionSyntax? sizeExp = null;
-                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                {
-                    sizeExp = argList.Arguments[0].Expression;
-                }
-
-                if (sizeExp != null)
-                {
-                    context.Writer.AppendType(ptrType.PointedAtType);
-                    context.Writer.AppendSpace();
-                    context.Writer.Append(field.Name);
-                    using (context.Writer.Brackets())
+                    VariableDeclaratorSyntax? syntax = null;
+                    var syntaxRefs = field.DeclaringSyntaxReferences;
+                    if (!syntaxRefs.IsEmpty)
                     {
-                        context.Visitor.Visit(sizeExp);
+                        syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
                     }
 
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
-                }
-                else
-                {
-                    context.Writer.AppendType(ptrType.PointedAtType);
-                    context.Writer.AppendSpace();
-                    context.Writer.Append(field.Name);
-                    context.Writer.AppendLine("; // ERROR: fixed size not found");
-                }
+                    ExpressionSyntax? sizeExp = null;
+                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+                    {
+                        sizeExp = argList.Arguments[0].Expression;
+                    }
 
-                break;
-            }
+                    if (sizeExp != null)
+                    {
+                        context.AppendType(ptrType.PointedAtType);
+                        context.Writer.Append($" {field.Name}");
+                        using (context.Writer.Brackets())
+                        {
+                            context.Visitor.Visit(sizeExp);
+                        }
+
+                        context.Writer.AppendSemiColonLine();
+                    }
+                    else
+                    {
+                        context.AppendType(ptrType.PointedAtType);
+                        context.Writer.AppendLine($"* {field.Name}; // ERROR: fixed size not found");
+                    }
+
+                    break;
+                }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, field.Name, field, ref context);
                 break;
@@ -365,14 +341,10 @@ internal static class StructTranspiler
     {
         if (memberSymbol.HasAttribute(KnownAttributes.GpuConst))
         {
-            context.Writer.AppendKeyword("const");
-            context.Writer.AppendSpace();
+            context.Writer.Append("const ");
         }
 
-        context.Writer.AppendType(type);
-        context.Writer.AppendSpace();
-        context.Writer.Append(name);
-        context.Writer.AppendSemiColon();
-        context.Writer.AppendLine();
+        context.AppendType(type);
+        context.Writer.AppendLine($" {name};");
     }
 }

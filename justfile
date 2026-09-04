@@ -15,7 +15,11 @@ test-syntax *args="":
 
 # Run GPU kernel execution tests on real device
 test-execution *args="":
-    dotnet test --filter "Category=Execution" {{args}}
+    dotnet test --filter "Category=GpuExecution" {{args}}
+
+# Alias for test-execution
+test-gpu *args="":
+    dotnet test --filter "Category=GpuExecution" {{args}}
 
 # Run concurrency and high-load stress tests
 test-stress *args="":
@@ -45,7 +49,7 @@ update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy
 
 build-cuda:
-    cmd /c ".\src\Kassyi.GSharp.GpuBigInt.Cuda\build.bat"
+    cmd /c ".\src\Native\Kassyi.GSharp.Stdlib.Math.Cuda\build.bat"
 build-cs:
     dotnet build
 
@@ -59,3 +63,20 @@ roadmap:
 
 # Alias for roadmap
 run-ui: roadmap
+
+# Run GPU Pi Benchmark (e.g. `just bench-pi 100k`, `just bench-pi 1M`, `just bench-pi 1M --hex`)
+bench-pi digits="100k" *args="":
+    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- gpu-pi {{digits}} {{args}}
+
+# Short alias for GPU Pi Benchmark (e.g. `just pi 1M`, `just pi 100k`)
+pi digits="100k" *args="":
+    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- gpu-pi {{digits}} {{args}}
+
+# Run GPU Pi Benchmark skipping decimal base conversion
+bench-pi-hex digits="100k" *args="":
+    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- gpu-pi {{digits}} --hex {{args}}
+
+# Run CPU baseline Pi Benchmark (e.g. `just bench-pi-cpu 10k`)
+bench-pi-cpu digits="10k" *args="":
+    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- {{digits}} {{args}}
+

@@ -29,8 +29,14 @@ When threads within the same warp take different execution paths due to data-dep
 
 * **Behavior:** The hardware executes each branch path serially, disabling threads that are not on that path. When all paths complete, the threads converge back to the same execution path.
 
-> [!CAUTION]
 > Warp divergence severely degrades performance. G# developers should avoid branching on condition variables that vary across threads within a warp (e.g., `ThreadIndex.X`). Condition variables based on `BlockIndex.X` or `[JitConstant]` parameters do not cause divergence within a block.
+
+### 4.2.2 Warp Intrinsics (Synchronization and Shuffle)
+
+G# natively supports Warp-level intrinsics, allowing threads within the same warp to communicate and synchronize efficiently without relying on Shared Memory.
+
+* **Synchronization:** `Gpu.SyncWarp()` synchronizes threads within the same warp (mapping to `__syncwarp()`), ensuring memory visibility and instruction ordering at the warp level.
+* **Warp Shuffle:** Operations like `Gpu.Shuffle`, `Gpu.ShuffleUp`, and `Gpu.ShuffleDown` permit threads in a warp to directly exchange register values. This is critical for high-performance parallel reductions and scans.
 
 ## 4.3 Memory Consistency and Synchronization
 

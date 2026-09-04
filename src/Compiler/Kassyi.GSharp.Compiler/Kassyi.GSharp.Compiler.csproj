@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests" />
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,7 +24,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- No runtime yaml dependency anymore -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="Dialects\**\*.yml" />
     <EmbeddedResource Include="Resources\Prelude.cu" />
+    <EmbeddedResource Include="Resources\Prelude.cpp" />
   </ItemGroup>
 
 </Project>

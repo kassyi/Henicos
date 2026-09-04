@@ -20,7 +20,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
     }
 
-    public static RoslynToCudaVisitor Rent(SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
+    public static RoslynToCudaVisitor Rent(
+        ITranspilerDialect dialect,
+        SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
         ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (!s_pool.TryTake(out var visitor))
@@ -40,7 +42,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             semanticModel,
             reportDiagnostic,
             visitor,
-            bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty);
+            bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
+            dialect);
 
         return visitor;
     }
@@ -54,6 +57,24 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         Context = default;
         s_pool.Add(this);
+    }
+
+    public override void Visit(SyntaxNode? node)
+    {
+        if (node == null)
+        {
+            return;
+        }
+
+        var interceptor = Context.Dialect.GetInterceptorVisitor(ref Context);
+        bool handledByDialect = interceptor.Visit(node);
+
+        if (handledByDialect)
+        {
+            return;
+        }
+
+        base.Visit(node);
     }
 
     public override void DefaultVisit(SyntaxNode node)
@@ -74,7 +95,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
         if (typeSymbol != null)
         {
-            Context.Writer.AppendType(typeSymbol);
+            Context.AppendType(typeSymbol);
         }
         else
         {
@@ -90,9 +111,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             {
                 if (i > 0)
                 {
-                    Context.Writer.AppendComma();
-                    Context.Writer.AppendSpace();
+                    Context.Writer.Append(", ");
                 }
+
                 Visit(node.Parameters[i]);
             }
         }
@@ -105,7 +126,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             var typeSymbol = Context.SemanticModel.GetTypeInfo(node.Type).Type;
             if (typeSymbol != null)
             {
-                Context.Writer.AppendType(typeSymbol);
+                Context.AppendType(typeSymbol);
             }
             else
             {
@@ -118,8 +139,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Context.Writer.AppendKeyword("auto");
         }
 
-        Context.Writer.AppendSpace();
-        Context.Writer.Append(node.Identifier.Text);
+        Context.Writer.Append($" {node.Identifier.Text}");
     }
 
     public void VisitStatementOrBlock(StatementSyntax statement)
@@ -166,8 +186,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitFixedStatement(FixedStatementSyntax node)
     {
         Visit(node.Declaration);
-        Context.Writer.AppendSemiColon();
-        Context.Writer.AppendLine();
+        Context.Writer.AppendSemiColonLine();
         VisitStatementOrBlock(node.Statement);
     }
 
@@ -176,6 +195,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitForStatement(ForStatementSyntax node)
         => StatementTranspilers.TranspileForStatement(node, ref Context);
+
+    public override void VisitForEachStatement(ForEachStatementSyntax node)
+        => StatementTranspilers.TranspileForEachStatement(node, ref Context);
 
     public override void VisitWhileStatement(WhileStatementSyntax node)
         => StatementTranspilers.TranspileWhileStatement(node, ref Context);
@@ -191,8 +213,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitCaseSwitchLabel(CaseSwitchLabelSyntax node)
     {
-        Context.Writer.AppendKeyword("case");
-        Context.Writer.AppendSpace();
+        Context.Writer.Append("case ");
         Visit(node.Value);
         Context.Writer.Append(":");
     }
@@ -262,17 +283,27 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             using (Context.Writer.Parentheses())
             {
-                Context.Writer.AppendOperator("*");
-                Context.Writer.Append(node.Identifier.Text);
+                Context.Writer.Append($"*{node.Identifier.Text}");
             }
+
             return;
         }
 
         Context.Writer.Append(node.Identifier.Text);
     }
 
-    public override void VisitLiteralExpression(LiteralExpressionSyntax node) =>
+    public override void VisitLiteralExpression(LiteralExpressionSyntax node)
+    {
+        if (node.IsKind(SyntaxKind.DefaultLiteralExpression))
+        {
+            Context.Writer.AppendEmptyScope();
+            return;
+        }
+
         Context.Writer.Append(node.Token.Text);
+    }
+
+    public override void VisitDefaultExpression(DefaultExpressionSyntax node) => Context.Writer.AppendEmptyScope();
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
         => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
@@ -318,4 +349,61 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
         => ExpressionTranspilers.TranspileAnonymousMethodExpression(node, ref Context);
+
+    public override void VisitCollectionExpression(CollectionExpressionSyntax node)
+    {
+        using (Context.Writer.Braces())
+        {
+            Context.Writer.AppendSpace();
+            for (var i = 0; i < node.Elements.Count; i++)
+            {
+                Visit(node.Elements[i]);
+                if (i < node.Elements.Count - 1)
+                {
+                    Context.Writer.AppendComma();
+                    Context.Writer.AppendSpace();
+                }
+            }
+
+            Context.Writer.AppendSpace();
+        }
+    }
+
+    public override void VisitExpressionElement(ExpressionElementSyntax node) => Visit(node.Expression);
+
+    public override void VisitInitializerExpression(InitializerExpressionSyntax node)
+    {
+        using (Context.Writer.Braces())
+        {
+            Context.Writer.AppendSpace();
+            for (var i = 0; i < node.Expressions.Count; i++)
+            {
+                Visit(node.Expressions[i]);
+                if (i >= node.Expressions.Count - 1)
+                {
+                    continue;
+                }
+
+                Context.Writer.AppendComma();
+                Context.Writer.AppendSpace();
+            }
+
+            Context.Writer.AppendSpace();
+        }
+    }
+
+    public override void VisitStackAllocArrayCreationExpression(StackAllocArrayCreationExpressionSyntax node)
+    {
+        if (node.Initializer != null)
+        {
+            Visit(node.Initializer);
+        }
+        else
+        {
+            Context.Writer.AppendEmptyScope();
+        }
+    }
+
+    public override void VisitImplicitStackAllocArrayCreationExpression(
+        ImplicitStackAllocArrayCreationExpressionSyntax node) => Visit(node.Initializer);
 }

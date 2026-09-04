@@ -40,7 +40,7 @@ Assume the following existing helpers and attributes when designing.
 - **Compilation Optimization via `MegaCompilationCache.cs`**
   A caching infrastructure that minimizes Roslyn's reference assembly resolution overhead. Using lazy initialization, it generates and caches a mega-compilation with all metadata loaded only once per process. Assume a differential addition design where individual test cases pass through `RoslynTestUtility.CreateCompilation()` and perform `AddSyntaxTrees()` against the cache.
 - **Requirement Tracking and Filtering Attributes**
-    - `[Trait("Category", "Execution")]`: Used to classify execution-based tests (tests requiring real hardware like a GPU).
+    - `[Trait("Category", "GpuExecution")]`: Used to classify execution-based tests (tests requiring real hardware like a GPU).
     - `[Trait("FeatureId", "TaskID")]`: Must be applied to test methods or classes to ensure traceability with the roadmap.
 
 ### Execution Steps & Output Format

@@ -61,11 +61,9 @@ internal static class ExpressionTranspilers
         {
             using (context.Writer.Scope())
             {
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
+                context.Writer.Append("return ");
                 context.Visitor.Visit(expressionBody);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendSemiColonLine();
             }
         }
     }
@@ -87,16 +85,15 @@ internal static class ExpressionTranspilers
                 {
                     context.Writer.Append($"auto _t{i} = ");
                     context.Visitor.Visit(rightTuple.Arguments[i].Expression);
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
+                    context.Writer.AppendSemiColonLine();
                 }
 
                 for (var i = 0; i < leftTuple.Arguments.Count; i++)
                 {
                     context.Visitor.Visit(leftTuple.Arguments[i].Expression);
-                    context.Writer.Append($" = _t{i}");
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendLine();
+                    context.Writer
+                        .Append($" = _t{i}")
+                        .AppendSemiColonLine();
                 }
             }
 
@@ -111,44 +108,21 @@ internal static class ExpressionTranspilers
                 context.Writer.Append("&");
             }
 
-            context.Writer.AppendParentheses();
-            context.Writer.AppendSpace();
-            context.Writer.Append("-> decltype(auto) ");
+            context.Writer.Append("() -> decltype(auto) ");
             using (context.Writer.Scope())
             {
-                context.Writer.AppendKeyword("auto");
-                context.Writer.AppendOperator("&");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_target");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("=");
-                context.Writer.AppendSpace();
+                context.Writer.Append("auto& __coalesce_target = ");
                 context.Visitor.Visit(node.Left);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendSemiColonLine();
 
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("!");
-                context.Writer.Append("__coalesce_target.HasValue");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("?");
-                context.Writer.AppendSpace();
+                context.Writer.Append("return !__coalesce_target.HasValue ? ");
                 using (context.Writer.Parentheses())
                 {
-                    context.Writer.Append("__coalesce_target");
-                    context.Writer.AppendSpace();
-                    context.Writer.AppendOperator("=");
-                    context.Writer.AppendSpace();
+                    context.Writer.Append("__coalesce_target = ");
                     context.Visitor.Visit(node.Right);
                 }
 
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator(":");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_target.Value");
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendLine(" : __coalesce_target.Value;");
             }
 
             context.Writer.AppendParentheses();
@@ -170,33 +144,16 @@ internal static class ExpressionTranspilers
                 context.Writer.Append("&");
             }
 
-            context.Writer.AppendParentheses();
-            context.Writer.AppendSpace();
+            context.Writer.Append("() ");
             using (context.Writer.Scope())
             {
-                context.Writer.AppendKeyword("auto");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_tmp");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("=");
-                context.Writer.AppendSpace();
+                context.Writer.Append("auto __coalesce_tmp = ");
                 context.Visitor.Visit(node.Left);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendSemiColonLine();
 
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_tmp.HasValue");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator("?");
-                context.Writer.AppendSpace();
-                context.Writer.Append("__coalesce_tmp.Value");
-                context.Writer.AppendSpace();
-                context.Writer.AppendOperator(":");
-                context.Writer.AppendSpace();
+                context.Writer.Append("return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : ");
                 context.Visitor.Visit(node.Right);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendSemiColonLine();
             }
 
             context.Writer.AppendParentheses();
@@ -209,9 +166,7 @@ internal static class ExpressionTranspilers
         var opText = node.OperatorToken.Text;
         if (opText.Length > 0 && char.IsLetter(opText[0]))
         {
-            context.Writer.AppendSpace();
-            context.Writer.AppendOperator(opText);
-            context.Writer.AppendSpace();
+            context.Writer.Append($" {opText} ");
         }
         else
         {
@@ -226,9 +181,7 @@ internal static class ExpressionTranspilers
         using (context.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);
-            context.Writer.AppendSpace();
-            context.Writer.AppendOperator("?");
-            context.Writer.AppendSpace();
+            context.Writer.Append(" ? ");
 
             // Handle 'ref' conditionals if present
             if (node.WhenTrue is RefExpressionSyntax refTrue)
@@ -240,9 +193,7 @@ internal static class ExpressionTranspilers
                 context.Visitor.Visit(node.WhenTrue);
             }
 
-            context.Writer.AppendSpace();
-            context.Writer.AppendOperator(":");
-            context.Writer.AppendSpace();
+            context.Writer.Append(" : ");
 
             if (node.WhenFalse is RefExpressionSyntax refFalse)
             {
@@ -290,8 +241,7 @@ internal static class ExpressionTranspilers
                         switch (arm.Pattern)
                         {
                             case ConstantPatternSyntax constantPattern:
-                                context.Writer.AppendKeyword("case");
-                                context.Writer.AppendSpace();
+                                context.Writer.Append("case ");
                                 context.Visitor.Visit(constantPattern.Expression);
                                 context.Writer.Append(":");
                                 break;
@@ -306,13 +256,9 @@ internal static class ExpressionTranspilers
                                 break;
                         }
 
-                        context.Writer.AppendSpace();
-                        context.Writer.AppendKeyword("return");
-
-                        context.Writer.AppendSpace();
+                        context.Writer.Append(" return ");
                         context.Visitor.Visit(arm.Expression);
-                        context.Writer.AppendSemiColon();
-                        context.Writer.AppendLine();
+                        context.Writer.AppendSemiColonLine();
                     }
                 }
             }
@@ -357,7 +303,7 @@ internal static class ExpressionTranspilers
     {
         using (context.Writer.Parentheses())
         {
-            context.Writer.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
+            context.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
         }
 
         context.Visitor.Visit(node.Expression);
@@ -389,23 +335,26 @@ internal static class ExpressionTranspilers
 
         if (symbol != null)
         {
-            if (CudaIntrinsicsMapper.TryMap(symbol, out var mappedName))
+            if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
             {
                 context.Writer.Append(mappedName);
                 return;
             }
+        }
 
-            if ((symbol.ContainingType?.Name is TypeConstants.MathType or TypeConstants.MathFType
-                    or TypeConstants.InterlockedType) &&
-                (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading()))
+        if (symbol is
             {
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                    GSharpDiagnostics.UnsupportedSyntax,
-                    node.GetLocation(),
-                    $"{symbol.ContainingType.Name}.{symbol.Name}"));
-                context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
-                return;
-            }
+                ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
+                or TypeConstants.InterlockedType
+            } &&
+            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading()))
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnsupportedSyntax,
+                node.GetLocation(),
+                $"{symbol.ContainingType.Name}.{symbol.Name}"));
+            context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
+            return;
         }
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
@@ -420,8 +369,7 @@ internal static class ExpressionTranspilers
             if (typeSym.TypeKind == TypeKind.Enum)
             {
                 context.Visitor.Visit(node.Expression);
-                context.Writer.Append("::");
-                context.Writer.Append(node.Name.Identifier.Text);
+                context.Writer.Append($"::{node.Name.Identifier.Text}");
                 return;
             }
 
@@ -430,17 +378,104 @@ internal static class ExpressionTranspilers
             return;
         }
 
+        if (TryTranspileStackArrayLength(node, ref context))
+        {
+            return;
+        }
+
         context.Visitor.Visit(node.Expression);
         context.Writer.Append(".");
 
         var memberName = node.Name.Identifier.Text;
         var typeInfo = context.SemanticModel.GetTypeInfo(node.Expression);
-        if (typeInfo.Type != null && typeInfo.Type.IsSystemNumericsVector())
+        if (typeInfo.Type != null)
         {
-            memberName = memberName.ToLowerInvariant();
+            if (typeInfo.Type.IsSystemNumericsVector())
+            {
+                memberName = memberName.ToLowerInvariant();
+            }
+            else if (memberName == "Length")
+            {
+                if (typeInfo.Type.HasAttribute(KnownAttributes.InlineArray))
+                {
+                    context.Writer.Append("size()");
+                    return;
+                }
+
+                memberName = "length";
+            }
+            else if (memberName == "Count")
+            {
+                memberName = "length";
+            }
         }
 
         context.Writer.Append(memberName);
+    }
+
+    private static bool TryTranspileStackArrayLength(MemberAccessExpressionSyntax node, ref TranspileContext context)
+    {
+        if (node.Name.Identifier.Text != "Length")
+        {
+            return false;
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (symbol is ILocalSymbol localSym)
+        {
+            var decl = localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
+            if (decl?.Initializer?.Value is CollectionExpressionSyntax collExpr)
+            {
+                context.Writer.Append(collExpr.Elements.Count);
+                return true;
+            }
+
+            if (decl?.Initializer?.Value is StackAllocArrayCreationExpressionSyntax stackAlloc)
+            {
+                if (stackAlloc.Initializer != null)
+                {
+                    context.Writer.Append(stackAlloc.Initializer.Expressions.Count);
+                    return true;
+                }
+
+                if (stackAlloc.Type is ArrayTypeSyntax { RankSpecifiers.Count: > 0 } ats)
+                {
+                    var sizeSyntax = ats.RankSpecifiers[0].Sizes.FirstOrDefault();
+                    if (sizeSyntax != null)
+                    {
+                        context.Visitor.Visit(sizeSyntax);
+                        return true;
+                    }
+                }
+            }
+
+            if (decl?.Initializer?.Value is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc)
+            {
+                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
+                return true;
+            }
+
+            if (decl?.Initializer?.Value is ArrayCreationExpressionSyntax arrCreation)
+            {
+                if (arrCreation.Initializer != null)
+                {
+                    context.Writer.Append(arrCreation.Initializer.Expressions.Count);
+                    return true;
+                }
+
+                if (arrCreation.Type.RankSpecifiers.Count > 0)
+                {
+                    var sizeSyntax = arrCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
+                    if (sizeSyntax != null)
+                    {
+                        context.Visitor.Visit(sizeSyntax);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private static readonly ImmutableArray<Rules.IInvocationTranspilerRule> s_invocationRules =
@@ -555,32 +590,9 @@ internal static class ExpressionTranspilers
             context.Writer.AppendSpace();
             using (context.Writer.Scope())
             {
-                context.Writer.AppendType(typeSymbol);
-                context.Writer.AppendSpace();
-                context.Writer.Append("_tmp");
-
-                if (argumentList is { Arguments.Count: > 0 })
-                {
-                    using (context.Writer.Braces())
-                    {
-                        var first = true;
-                        foreach (var arg in argumentList.Arguments)
-                        {
-                            if (!first)
-                            {
-                                context.Writer.AppendComma();
-                                context.Writer.AppendSpace();
-                            }
-
-                            context.Visitor.Visit(arg);
-                            first = false;
-                        }
-                    }
-                }
-                else
-                {
-                    context.Writer.AppendEmptyScope();
-                }
+                context.AppendType(typeSymbol);
+                context.Writer.Append(" _tmp");
+                TranspileArgumentListAsBraces(argumentList, ref context);
 
                 context.Writer.AppendSemiColon();
                 context.Writer.AppendSpace();
@@ -594,19 +606,12 @@ internal static class ExpressionTranspilers
 
                     context.Writer.Append("_tmp.");
                     context.Visitor.Visit(assignment.Left);
-                    context.Writer.AppendSpace();
-                    context.Writer.AppendOperator("=");
-                    context.Writer.AppendSpace();
+                    context.Writer.Append(" = ");
                     context.Visitor.Visit(assignment.Right);
-                    context.Writer.AppendSemiColon();
-                    context.Writer.AppendSpace();
+                    context.Writer.Append("; ");
                 }
 
-                context.Writer.AppendKeyword("return");
-                context.Writer.AppendSpace();
-                context.Writer.Append("_tmp");
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendSpace();
+                context.Writer.Append("return _tmp; ");
             }
 
             context.Writer.AppendParentheses();
@@ -617,19 +622,24 @@ internal static class ExpressionTranspilers
         ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
-        context.Writer.AppendType(typeSymbol);
+        context.AppendType(typeSymbol);
+        TranspileArgumentListAsBraces(argumentList, ref context);
+    }
 
+    private static void TranspileArgumentListAsBraces(ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
         if (argumentList is { Arguments.Count: > 0 })
         {
-            using (context.Writer.Scope())
+            using (context.Writer.Braces())
             {
                 var first = true;
                 foreach (var arg in argumentList.Arguments)
                 {
                     if (!first)
                     {
-                        context.Writer.AppendComma();
-                        context.Writer.AppendSpace();
+                        context.Writer
+                            .AppendComma()
+                            .AppendSpace();
                     }
 
                     context.Visitor.Visit(arg);

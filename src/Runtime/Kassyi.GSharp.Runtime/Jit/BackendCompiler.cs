@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Runtime.Jit;
 
@@ -251,24 +250,6 @@ public sealed partial class NvccCompiler
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-
-        Logger<NvccCompiler>.Info($"[JIT] Compiling dynamically generated CUDA code ({logName})...");
-        Logger<NvccCompiler>.Info("====== CUDA SOURCE ======");
-        var cuSrc = FileSystem.File.ReadAllText(cuFile);
-        Logger<NvccCompiler>.Info(cuSrc.AsSpan(0, Math.Min(cuSrc.Length, 2000)).ToString()); // Print first 2000 chars
-        Logger<NvccCompiler>.Info("...");
-        if (cuSrc.Contains("Kernel_StaticFermatLoop"))
-        {
-            var match = Regex.Match(cuSrc,
-                @"void Kernel_StaticFermatLoop[\s\S]*?(?=\}\s*extern|\z)");
-            if (match.Success)
-            {
-                Logger<NvccCompiler>.Info(match.Value);
-            }
-        }
-
-        Logger<NvccCompiler>.Info("=========================");
-
         var sw = Stopwatch.StartNew();
 
         try

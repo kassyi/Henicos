@@ -5,11 +5,11 @@ namespace Kassyi.GSharp.Compiler;
 internal static class TypeConstants
 {
     public const string SystemNamespace = "System";
-    public const string SystemThreadingNamespace = "System.Threading";
     public const string NumericsNamespace = "Numerics";
     public const string ThreadingNamespace = "Threading";
 
     public const string SharedMemoryType = "SharedMemory";
+    public const string GpuType = "Gpu";
     public const string CoreNamespace = "Kassyi.GSharp.Core";
 
     public const string MathType = "Math";

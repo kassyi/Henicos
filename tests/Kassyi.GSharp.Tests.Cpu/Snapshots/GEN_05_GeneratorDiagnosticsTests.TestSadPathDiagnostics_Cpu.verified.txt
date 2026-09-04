@@ -1,0 +1,99 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
+        public static int BadKernel()
+                      ^^^
+        {
+*/
+ : (8,22)-(8,25),
+      Message: Method 'BadKernel' is marked with [GpuKernel] but returns 'int'. GpuKernel methods must return void.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0004,
+        Title: GpuKernel must return void,
+        MessageFormat: Method '{0}' is marked with [GpuKernel] but returns '{1}'. GpuKernel methods must return void.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+        {
+            string s = "hello";
+            ^^^^^^
+            object obj = new object();
+*/
+ : (10,12)-(10,18),
+      Message: The string type is not supported in GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0002,
+        Title: String usage not supported in GPU kernels,
+        MessageFormat: The string type is not supported in GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            string s = "hello";
+            object obj = new object();
+                         ^^^^^^^^^^^^
+            return 0;
+*/
+ : (11,25)-(11,37),
+      Message: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0001,
+        Title: Object creation not supported in GPU kernels,
+        MessageFormat: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            string s = "hello";
+            object obj = new object();
+                         ^^^^^^^^^^^^
+            return 0;
+*/
+ : (11,25)-(11,37),
+      Message: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+            string s = "hello";
+            object obj = new object();
+                                   ^^
+            return 0;
+*/
+ : (11,35)-(11,37),
+      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

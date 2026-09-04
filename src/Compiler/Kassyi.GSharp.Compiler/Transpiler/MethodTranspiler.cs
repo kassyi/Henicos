@@ -1,4 +1,5 @@
-using System.Runtime.CompilerServices;
+
+using Kassyi.GSharp.Compiler.Dialects;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -6,32 +7,37 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>GEN-20</b></para></remarks>
 public static class MethodTranspiler
 {
-    public static string GenerateCudaSource(MethodDeclarationSyntax method, SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = false)
+    public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
+        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
+        ITranspilerDialect? dialect = null)
     {
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic, bclIntrinsicMap);
+        dialect ??= new GSharpCudaDialect();
+        using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         context.Writer = bodyWriter;
-        var methodSymbol = semanticModel.GetDeclaredSymbol(method);
+        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
         if (methodSymbol != null)
         {
-            if (methodSymbol.GetAttributes().Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") ||
-                methodSymbol.ContainingType?.GetAttributes()
-                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true ||
-                methodSymbol.ContainingModule?.GetAttributes()
-                    .Any(a => a.AttributeClass?.Name == "SkipLocalsInitAttribute") == true)
+            if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
+                methodSymbol.ContainingType?.HasAttribute(KnownAttributes.SkipLocalsInit) == true ||
+                methodSymbol.ContainingModule?.HasAttribute(KnownAttributes.SkipLocalsInit) == true)
             {
                 context.SkipLocalsInit = true;
             }
         }
 
-        WriteMethodSignature(method, isDevice, ref context);
-        WriteMethodBody(method, ref context);
+        WriteMethodSignature(methodDecl, isDevice, ref context);
+        WriteMethodBody(methodDecl, ref context);
+
+        if (!isDevice && !context.Dialect.IsCuda)
+        {
+            WriteCpuLauncher(methodDecl, ref context);
+        }
 
         context.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
@@ -43,27 +49,26 @@ public static class MethodTranspiler
         return mainWriter + bodyWriter.ToString();
     }
 
-    public static string GenerateCudaSignature(MethodDeclarationSyntax method, SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = false)
+    public static string GenerateCudaSignature(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
+        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
+        ITranspilerDialect? dialect = null)
     {
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        using var visitor = RoslynToCudaVisitor.Rent(semanticModel, reportDiagnostic, bclIntrinsicMap);
+        dialect ??= new GSharpCudaDialect();
+        using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         context.Writer = sigWriter;
-        WriteMethodSignature(method, isDevice, ref context);
-        context.Writer.Append(";");
-        context.Writer.AppendLine();
+        WriteMethodSignature(methodDecl, isDevice, ref context);
+        context.Writer.AppendSemiColonLine();
 
         context.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
-            context.Writer.Append("struct ");
-            context.Writer.AppendFullyQualifiedCppName(structSym);
-            context.Writer.AppendLine(";");
+            context.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
 
         context.Writer.Append(sigWriter.ToString());
@@ -84,8 +89,7 @@ public static class MethodTranspiler
             WriteKernelMethodPrefix(method, methodSymbol, ref context);
         }
 
-        context.Writer.AppendSpace();
-        context.Writer.Append(method.Identifier.Text);
+        context.Writer.Append($" {method.Identifier.Text}");
         using (context.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
@@ -94,97 +98,81 @@ public static class MethodTranspiler
 
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
-        var hasAggressiveInlining = false;
-        var hasNoInlining = false;
+        var inlineKeyword = GetInliningKeyword(methodSymbol);
 
-        if (methodSymbol != null)
+        if (context.Dialect.IsCuda)
         {
-            foreach (var attr in methodSymbol.GetAttributes())
-            {
-                if (attr.IsAttribute(KnownAttributes.GpuInline))
-                {
-                    hasAggressiveInlining = true;
-                }
-                else if (attr.IsAttribute(KnownAttributes.GpuNoInline))
-                {
-                    hasNoInlining = true;
-                }
-                else if (attr.IsAttribute(KnownAttributes.MethodImpl) &&
-                         attr.AttributeClass?.ContainingNamespace is
-                         {
-                             Name: "CompilerServices",
-                             ContainingNamespace:
-                             {
-                                 Name: "Runtime",
-                                 ContainingNamespace:
-                                 {
-                                     Name: "System", ContainingNamespace.IsGlobalNamespace: true
-                                 }
-                             }
-                         })
-                {
-                    if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
-                    {
-                        var options = (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
-                        if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                        {
-                            hasAggressiveInlining = true;
-                        }
-
-                        if ((options & MethodImplOptions.NoInlining) != 0)
-                        {
-                            hasNoInlining = true;
-                        }
-                    }
-                    else if (attr.NamedArguments.Length > 0)
-                    {
-                        foreach (var namedArg in attr.NamedArguments)
-                        {
-                            if (namedArg.Key == "Value" && namedArg.Value.Value is int or short)
-                            {
-                                var options = (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-                                if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                                {
-                                    hasAggressiveInlining = true;
-                                }
-
-                                if ((options & MethodImplOptions.NoInlining) != 0)
-                                {
-                                    hasNoInlining = true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (hasAggressiveInlining)
-        {
-            context.Writer.AppendKeyword("__forceinline__");
-        }
-        else if (hasNoInlining)
-        {
-            context.Writer.AppendKeyword("__noinline__");
+            context.Writer.Append($"{inlineKeyword} __device__ ");
         }
         else
         {
-            context.Writer.AppendKeyword("inline");
+            context.Writer.Append($"{inlineKeyword} ");
         }
-
-        context.Writer.AppendSpace();
-        context.Writer.AppendKeyword("__device__");
-        context.Writer.AppendSpace();
 
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
-            context.Writer.AppendType(returnType);
+            context.AppendType(returnType);
         }
         else
         {
             context.Writer.AppendKeyword("void");
         }
+    }
+
+    private static string GetInliningKeyword(IMethodSymbol? methodSymbol)
+    {
+        if (methodSymbol == null)
+        {
+            return "inline";
+        }
+
+        foreach (var attr in methodSymbol.GetAttributes())
+        {
+            if (attr.IsAttribute(KnownAttributes.GpuInline))
+            {
+                return "__forceinline__";
+            }
+
+            if (attr.IsAttribute(KnownAttributes.GpuNoInline))
+            {
+                return "__noinline__";
+            }
+
+            if (attr.IsAttribute(KnownAttributes.MethodImpl))
+            {
+                var options = ExtractMethodImplOptions(attr);
+                if ((options & MethodImplOptions.AggressiveInlining) != 0)
+                {
+                    return "__forceinline__";
+                }
+
+                if ((options & MethodImplOptions.NoInlining) != 0)
+                {
+                    return "__noinline__";
+                }
+            }
+        }
+
+        return "inline";
+    }
+
+    private static MethodImplOptions ExtractMethodImplOptions(AttributeData attr)
+    {
+        if (attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is int or short)
+        {
+            return (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
+        }
+
+        foreach (var namedArg in attr.NamedArguments)
+        {
+            if (namedArg is { Key: "Value", Value.Value: int or short })
+            {
+                return (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
+            }
+        }
+
+        return default;
     }
 
     private static void WriteKernelMethodPrefix(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol,
@@ -197,7 +185,14 @@ public static class MethodTranspiler
                 method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
         }
 
-        context.Writer.AppendKeyword("extern \"C\" __global__ void");
+        if (context.Dialect.IsCuda)
+        {
+            context.Writer.AppendKeyword("extern \"C\" __global__ void");
+        }
+        else
+        {
+            context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
+        }
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
@@ -213,13 +208,11 @@ public static class MethodTranspiler
                 var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
                 if (methodSymbol is { ReturnsVoid: false })
                 {
-                    context.Writer.AppendKeyword("return");
-                    context.Writer.AppendSpace();
+                    context.Writer.Append("return ");
                 }
 
                 context.Visitor.Visit(method.ExpressionBody.Expression);
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendLine();
+                context.Writer.AppendSemiColonLine();
             }
         }
     }
@@ -248,24 +241,83 @@ public static class MethodTranspiler
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
             if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuConst))
             {
-                context.Writer.AppendKeyword("const");
-                context.Writer.AppendSpace();
+                context.Writer.Append("const ");
             }
 
-            var (isRefPointer, isPointerType, hasRestrict) = context.Writer.AppendParameterCppType(p, typeSymbol);
+            var (isRefPointer, isPointerType, hasRestrict) = context.AppendParameterCppType(p, typeSymbol);
             StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)
             {
-                context.Writer.AppendSpace();
-                context.Writer.AppendKeyword("__restrict__");
+                context.Writer.Append(" __restrict__");
             }
 
-            context.Writer.AppendSpace();
-            context.Writer.Append(p.Identifier.Text);
+            context.Writer.Append($" {p.Identifier.Text}");
             if (i < validParameters.Count - 1)
             {
-                context.Writer.AppendComma();
+                context.Writer.Append(", ");
+            }
+        }
+    }
+
+    private static void WriteCpuLauncher(MethodDeclarationSyntax method, ref TranspileContext context)
+    {
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
+        context.Writer.AppendLine();
+        context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
+        context.Writer.Append($" __gsharp_launch_{method.Identifier.Text}(");
+
+        // Launch dimensions
+        context.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
+        context.Writer.Append("uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ");
+
+        if (method.ParameterList.Parameters.Count > 0)
+        {
+            context.Writer.Append(", ");
+        }
+
+        WriteParameters(method.ParameterList.Parameters, false, ref context);
+        context.Writer.AppendLine(")");
+
+        using (context.Writer.Scope())
+        {
+            context.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
+            context.Writer.AppendLine("for (uint32_t by = 0; by < gridDimY; by++)");
+            context.Writer.AppendLine("for (uint32_t bx = 0; bx < gridDimX; bx++)");
+            context.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
+            context.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
+            context.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
+            using (context.Writer.Scope())
+            {
+                context.Writer.AppendLine("__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
+                context.Writer.Append(method.Identifier.Text);
+                using (context.Writer.Parentheses())
+                {
+                    var semanticModel = context.SemanticModel;
+                    var isFirst = true;
+
+                    foreach (var parameter in method.ParameterList.Parameters)
+                    {
+                        if (semanticModel.GetDeclaredSymbol(parameter)?.HasAttribute(KnownAttributes.JitConstant) == true)
+                        {
+                            continue;
+                        }
+
+                        if (!isFirst)
+                        {
+                            context.Writer.AppendComma().AppendSpace();
+                        }
+                        isFirst = false;
+
+                        context.Writer.Append(parameter.Identifier.Text);
+                    }
+                }
+                context.Writer.AppendSemiColonLine();
             }
         }
     }

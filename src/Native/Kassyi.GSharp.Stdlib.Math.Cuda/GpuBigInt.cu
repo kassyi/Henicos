@@ -175,6 +175,124 @@ extern "C" {
         return true;
     }
 
+    EXPORT_API bool GpuBigInt_GraphFermatLoop(void* workspace, int E, unsigned int* out_data) {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+
+        FermatSetup s;
+        if (!s.init(ws, E)) {
+            s.cleanup();
+            return false;
+        }
+
+        cudaStream_t stream;
+        cudaStreamCreate(&stream);
+
+        int words = s.outNumWords;
+        int origWords = s.numWords;
+
+        auto squareAndReduce = [&]() {
+            GpuBigInt_Square(workspace, s.d_T, origWords, stream);
+            for (int j = 0; j < 3; j++) {
+                GpuBigInt_ShiftRight(workspace, s.d_T, 2 * E + 1, s.d_Q, words, stream);
+                GpuBigInt_BitwiseAnd(workspace, s.d_T, s.d_MaskR, s.d_R, words, stream);
+                GpuBigInt_ShiftLeft(workspace, s.d_Q, E, s.d_T_tmp, words, stream);
+                GpuBigInt_Add(workspace, s.d_R, s.d_T_tmp, s.d_R, words, stream);
+                GpuBigInt_ShiftLeft(workspace, s.d_Q, 1, s.d_T_tmp, words, stream);
+                GpuBigInt_Sub(workspace, s.d_R, s.d_Q, s.d_R, words, stream);
+                GpuBigInt_Sub(workspace, s.d_R, s.d_T_tmp, s.d_R, words, stream);
+                GpuBigInt_ShiftLeft(workspace, s.d_Q, 3, s.d_T_tmp, words, stream);
+                GpuBigInt_Sub(workspace, s.d_R, s.d_T_tmp, s.d_T, words, stream);
+            }
+        };
+
+        auto multiplyBy2AndReduce = [&]() {
+            GpuBigInt_ShiftLeft(workspace, s.d_T, 1, s.d_T_tmp, words, stream);
+            cudaMemcpyAsync(s.d_T, s.d_T_tmp, sizeof(unsigned int) * words, cudaMemcpyDeviceToDevice, stream);
+            for (int j = 0; j < 3; j++) {
+                GpuBigInt_ShiftRight(workspace, s.d_T, 2 * E + 1, s.d_Q, words, stream);
+                GpuBigInt_BitwiseAnd(workspace, s.d_T, s.d_MaskR, s.d_R, words, stream);
+                GpuBigInt_ShiftLeft(workspace, s.d_Q, E, s.d_T_tmp, words, stream);
+                GpuBigInt_Add(workspace, s.d_R, s.d_T_tmp, s.d_R, words, stream);
+                GpuBigInt_ShiftLeft(workspace, s.d_Q, 1, s.d_T_tmp, words, stream);
+                GpuBigInt_Sub(workspace, s.d_R, s.d_Q, s.d_R, words, stream);
+                GpuBigInt_Sub(workspace, s.d_R, s.d_T_tmp, s.d_R, words, stream);
+                GpuBigInt_ShiftLeft(workspace, s.d_Q, 3, s.d_T_tmp, words, stream);
+                GpuBigInt_Sub(workspace, s.d_R, s.d_T_tmp, s.d_T, words, stream);
+            }
+        };
+
+        printf("Building CUDA Graphs for E=%d...\n", E);
+        fflush(stdout);
+        
+        // Graph A: Square and MultiplyBy2
+        cudaGraph_t graphA;
+        cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+        squareAndReduce();
+        multiplyBy2AndReduce();
+        cudaError_t errA1 = cudaStreamEndCapture(stream, &graphA);
+        if (errA1 != cudaSuccess) { printf("Graph A Capture failed: %s\n", cudaGetErrorString(errA1)); fflush(stdout); return false; }
+        
+        cudaGraphExec_t execA;
+        cudaError_t errA2 = cudaGraphInstantiate(&execA, graphA, NULL, NULL, 0);
+        if (errA2 != cudaSuccess) { printf("Graph A Instantiate failed: %s\n", cudaGetErrorString(errA2)); fflush(stdout); return false; }
+        printf("Graph A instantiated.\n"); fflush(stdout);
+
+        // Graph B: Square only
+        cudaGraph_t graphB;
+        cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+        squareAndReduce();
+        cudaError_t errB1 = cudaStreamEndCapture(stream, &graphB);
+        if (errB1 != cudaSuccess) { printf("Graph B Capture failed: %s\n", cudaGetErrorString(errB1)); fflush(stdout); return false; }
+        
+        cudaGraphExec_t execB;
+        cudaError_t errB2 = cudaGraphInstantiate(&execB, graphB, NULL, NULL, 0);
+        if (errB2 != cudaSuccess) { printf("Graph B Instantiate failed: %s\n", cudaGetErrorString(errB2)); fflush(stdout); return false; }
+        printf("Graph B instantiated.\n"); fflush(stdout);
+
+
+        // Graph C: Final bits 1010
+        cudaGraph_t graphC;
+        cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+        squareAndReduce(); multiplyBy2AndReduce(); // 1
+        squareAndReduce(); // 0
+        squareAndReduce(); multiplyBy2AndReduce(); // 1
+        squareAndReduce(); // 0
+        cudaError_t errC1 = cudaStreamEndCapture(stream, &graphC);
+        if (errC1 != cudaSuccess) { printf("Graph C Capture failed: %s\n", cudaGetErrorString(errC1)); fflush(stdout); return false; }
+        
+        cudaGraphExec_t execC;
+        cudaError_t errC2 = cudaGraphInstantiate(&execC, graphC, NULL, NULL, 0);
+        if (errC2 != cudaSuccess) { printf("Graph C Instantiate failed: %s\n", cudaGetErrorString(errC2)); fflush(stdout); return false; }
+        printf("Graph C instantiated.\n"); fflush(stdout);
+
+        printf("Running Graph A (E times)...\n"); fflush(stdout);
+        for (int i = 0; i < E; i++) {
+            cudaGraphLaunch(execA, stream);
+        }
+
+        printf("Running Graph B (E-4 times)...\n");
+        for (int i = 0; i < E - 4; i++) {
+            cudaGraphLaunch(execB, stream);
+        }
+
+        printf("Running Graph C (Final 4 bits)...\n");
+        cudaGraphLaunch(execC, stream);
+
+        cudaStreamSynchronize(stream);
+
+        cudaMemcpy(out_data, s.d_T, sizeof(unsigned int) * s.outNumWords, cudaMemcpyDeviceToHost);
+
+        cudaGraphExecDestroy(execA); cudaGraphDestroy(graphA);
+        cudaGraphExecDestroy(execB); cudaGraphDestroy(graphB);
+        cudaGraphExecDestroy(execC); cudaGraphDestroy(graphC);
+        cudaStreamDestroy(stream);
+        s.cleanup();
+        
+        return true;
+    }
+
+
     typedef void (*JitLaunchCallback)(
         unsigned int* T, unsigned int* Q, unsigned int* R, unsigned int* MaskR,
         unsigned int* T_tmp,

@@ -16,6 +16,25 @@ struct System_Nullable {
 };
 
 /**
+ * @brief CUDA device-side representation of C# Array / Span fat pointer.
+ */
+template <typename T>
+struct GSharpArray {
+    T* __restrict__ data;
+    int length;
+
+    __device__ inline T* begin() { return data; }
+    __device__ inline T* end() { return data + length; }
+    __device__ inline const T* begin() const { return data; }
+    __device__ inline const T* end() const { return data + length; }
+    __device__ inline int size() const { return length; }
+    __device__ inline T& operator[](int index) { return data[index]; }
+    __device__ inline const T& operator[](int index) const { return data[index]; }
+    __device__ inline operator T*() { return data; }
+    __device__ inline operator const T*() const { return data; }
+};
+
+/**
  * @brief 32-bit unsigned addition with carry-in and carry-out (PTX add.cc / addc).
  * @param a First operand.
  * @param b Second operand.
