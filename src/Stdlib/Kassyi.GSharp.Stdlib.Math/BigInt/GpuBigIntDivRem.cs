@@ -27,24 +27,25 @@ public static class GpuBigIntDivRem
     /// <summary>
     /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
     /// </summary>
-    private static void Reciprocal(GpuBigInteger targetOperand, GpuBigInteger resultBuffer)
+    private static void Reciprocal(GpuBigInteger targetOperand, GpuBigInteger resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;
-        if (resultBuffer.NumWords != 2 * n)
+        if (resultBuffer.NumWords != 2 * n + marginWords)
         {
-            throw new ArgumentException("Result buffer for Reciprocal must be 2 * b.NumWords.");
+            throw new ArgumentException("Result buffer for Reciprocal must be 2 * b.NumWords + marginWords.");
         }
 
         var numBits = n * 32;
-        ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: false);
+        var marginBits = marginWords * 32;
+        ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: false, marginBits);
 
-        using var constant = GpuBigInteger.CreatePowerOfTwo(targetOperand.Context, 3 * n, 2 * numBits + 1);
-        using var currentProduct = new GpuBigInteger(targetOperand.Context, 3 * n);
-        using var currentDifference = new GpuBigInteger(targetOperand.Context, 3 * n);
-        using var nextIterationValue = new GpuBigInteger(targetOperand.Context, 5 * n);
+        using var constant = GpuBigInteger.CreatePowerOfTwo(targetOperand.Context, 3 * n + marginWords, 2 * numBits + marginBits + 1);
+        using var currentProduct = new GpuBigInteger(targetOperand.Context, 3 * n + marginWords);
+        using var currentDifference = new GpuBigInteger(targetOperand.Context, 3 * n + marginWords);
+        using var nextIterationValue = new GpuBigInteger(targetOperand.Context, 5 * n + 2 * marginWords);
 
-        var targetBits = 2 * numBits;
-        var currentBits = 124;
+        var targetBits = 2 * numBits + marginBits;
+        var currentBits = 63; // Initial guess has ~63 bits of precision
         var iterations = 0;
         while (currentBits < targetBits)
         {
@@ -56,7 +57,12 @@ public static class GpuBigIntDivRem
 
         for (var i = 0; i < iterations; i++)
         {
-            var xiWords = (GetActualBits(resultBuffer) + 31) / 32;
+            var xiWords = (GetActualBits(resultBuffer) + 31) / 32 + 4; // Add 4 guard words for truncation margin
+            if (xiWords > 2 * n + marginWords)
+            {
+                xiWords = 2 * n + marginWords;
+            }
+
             if (xiWords == 0)
             {
                 xiWords = 1;
@@ -77,7 +83,7 @@ public static class GpuBigIntDivRem
             // But we only care about the lower part!
             var constantWords = pWords;
             using var constantTrunc =
-                GpuBigInteger.CreatePowerOfTwo(targetOperand.Context, constantWords, 2 * numBits + 1);
+                GpuBigInteger.CreatePowerOfTwo(targetOperand.Context, constantWords, 2 * numBits + marginBits + 1);
             using var diffTrunc = new GpuBigInteger(targetOperand.Context, constantWords);
             GpuBigIntMath.Sub(constantTrunc, currentProductTrunc, diffTrunc);
 
@@ -94,43 +100,44 @@ public static class GpuBigIntDivRem
             using var nextIter = new GpuBigInteger(targetOperand.Context, nextWords);
             GpuBigIntMath.Mul(xiTrunc, diffActual, nextIter);
 
+            // Shift right by 2*numBits + marginBits
             resultBuffer.Clear();
-            if (nextWords <= 2 * n)
-            {
-                continue;
-            }
-
-            var copyWords = System.Math.Min(2 * n, nextWords - 2 * n);
-            resultBuffer.CopyFrom(nextIter, destOffsetWords: 0, srcOffsetWords: 2 * n, numWords: copyWords);
+            var copyWords = System.Math.Min(2 * n + marginWords, nextWords - (2 * n + marginWords));
+            resultBuffer.CopyFrom(nextIter, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords, numWords: copyWords);
         }
     }
 
-    public static void DivRem(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger quotientBuffer,
-        GpuBigInteger remainderBuffer)
+    public static void DivRem(GpuBigInteger leftOperand, GpuBigInteger rightOperand, GpuBigInteger quotientBuffer, GpuBigInteger remainderBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, quotientBuffer);
         ThrowIfSizeMismatch(leftOperand, remainderBuffer);
 
         var n = rightOperand.NumWords;
         var bActualBits = GetActualBits(rightOperand);
+        if (bActualBits == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
         var lz = n * 32 - bActualBits;
 
         using var bNorm = new GpuBigInteger(rightOperand.Context, n);
         bNorm.Clear();
         GpuBigIntMath.ShiftLeft(rightOperand, lz, bNorm);
 
-        using var reciprocalNorm = new GpuBigInteger(rightOperand.Context, 2 * n);
+        var marginWords = 16;
+        using var reciprocalNorm = new GpuBigInteger(rightOperand.Context, 2 * n + marginWords);
         reciprocalNorm.Clear();
-        Reciprocal(bNorm, reciprocalNorm);
+        Reciprocal(bNorm, reciprocalNorm, marginWords);
 
-        using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n);
+        using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n + marginWords);
         reciprocalOfB.Clear();
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
-        using var productWithReciprocal = new GpuBigInteger(rightOperand.Context, 3 * n);
+        using var productWithReciprocal = new GpuBigInteger(rightOperand.Context, 3 * n + marginWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 
-        quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n, numWords: n);
+        quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords, numWords: n);
 
         using var qb = new GpuBigInteger(rightOperand.Context, 2 * n);
         GpuBigIntMath.Mul(quotientBuffer, rightOperand, qb);
@@ -304,12 +311,14 @@ public static class GpuBigIntDivRem
 
         var n = rightOperand.NumWords;
 
-        using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n);
-        Reciprocal(rightOperand, reciprocalOfB);
+        var marginWords = 16;
+        using var reciprocalOfB = new GpuBigInteger(rightOperand.Context, 2 * n + marginWords);
+        Reciprocal(rightOperand, reciprocalOfB, marginWords);
 
-        using var productWithReciprocal = new GpuBigInteger(rightOperand.Context, 3 * n);
+        using var productWithReciprocal = new GpuBigInteger(rightOperand.Context, 3 * n + marginWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
-        resultBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n, numWords: n);
+
+        resultBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords, numWords: n);
     }
 
     /// <summary>Computes arbitrary-precision modulo (<c>leftOperand % rightOperand</c>) on the GPU.</summary>
@@ -409,32 +418,33 @@ public static class GpuBigIntDivRem
     /// Computes the inverse square root approximation of the operand using Newton-Raphson iterations on the GPU.
     /// X ≈ 2^B / sqrt(A)
     /// </summary>
-    private static void InverseSqrt(GpuBigInteger targetOperand, GpuBigInteger resultBuffer)
+    private static void InverseSqrt(GpuBigInteger targetOperand, GpuBigInteger resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;
-        if (resultBuffer.NumWords != n)
+        if (resultBuffer.NumWords != n + marginWords)
         {
-            throw new ArgumentException("Result buffer for InverseSqrt must be n words.");
+            throw new ArgumentException("Result buffer for InverseSqrt must be n + marginWords words.");
         }
 
-        var actualBits = ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: true);
+        var marginBits = marginWords * 32;
+        var actualBits = ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: true, marginBits);
 
         // 3. GPU Newton-Raphson iterations
-        using var constant3 = new GpuBigInteger(targetOperand.Context, 3 * n);
+        using var constant3 = new GpuBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
         constant3.Clear();
-        var hostConstant3 = new uint[3 * n];
-        var bit2B = 2 * actualBits;
+        var hostConstant3 = new uint[3 * n + 2 * marginWords];
+        var bit2B = 2 * actualBits + 2 * marginBits;
         hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
         hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
-        targetOperand.Context.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, 3 * n);
+        targetOperand.Context.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, 3 * n + 2 * marginWords);
 
-        using var xSquared = new GpuBigInteger(targetOperand.Context, 2 * n);
-        using var axSquared = new GpuBigInteger(targetOperand.Context, 3 * n);
-        using var diff = new GpuBigInteger(targetOperand.Context, 3 * n);
-        using var nextXUnshifted = new GpuBigInteger(targetOperand.Context, 4 * n);
-        using var nextXShifted = new GpuBigInteger(targetOperand.Context, 4 * n);
+        using var xSquared = new GpuBigInteger(targetOperand.Context, 2 * n + 2 * marginWords);
+        using var axSquared = new GpuBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
+        using var diff = new GpuBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
+        using var nextXUnshifted = new GpuBigInteger(targetOperand.Context, 4 * n + 3 * marginWords);
+        using var nextXShifted = new GpuBigInteger(targetOperand.Context, 4 * n + 3 * marginWords);
 
-        var targetBits = actualBits / 2;
+        var targetBits = actualBits / 2 + marginBits;
         var currentBits = 31; // X_top has 31 bits
         var iterations = 0;
         while (currentBits < targetBits)
@@ -452,10 +462,10 @@ public static class GpuBigIntDivRem
             GpuBigIntMath.Sub(constant3, axSquared, diff);
             GpuBigIntMath.Mul(resultBuffer, diff, nextXUnshifted);
 
-            // Shift right by 2B + 1
+            // Shift right by 2S + 1
             nextXShifted.Clear();
-            GpuBigIntMath.ShiftRight(nextXUnshifted, 2 * actualBits + 1, nextXShifted);
-            resultBuffer.CopyFrom(nextXShifted, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
+            GpuBigIntMath.ShiftRight(nextXUnshifted, 2 * actualBits + 2 * marginBits + 1, nextXShifted);
+            resultBuffer.CopyFrom(nextXShifted, destOffsetWords: 0, srcOffsetWords: 0, numWords: n + marginWords);
         }
     }
 
@@ -529,30 +539,61 @@ public static class GpuBigIntDivRem
         aNorm.Clear();
         GpuBigIntMath.ShiftLeft(leftOperand, lz, aNorm);
 
-        using var xResult = new GpuBigInteger(leftOperand.Context, n);
+        var marginWords = 16;
+        using var xResult = new GpuBigInteger(leftOperand.Context, n + marginWords);
         xResult.Clear();
-        InverseSqrt(aNorm, xResult);
+        InverseSqrt(aNorm, xResult, marginWords);
 
-        using var rNorm = new GpuBigInteger(leftOperand.Context, 2 * n);
+        using var rNorm = new GpuBigInteger(leftOperand.Context, 2 * n + marginWords);
         GpuBigIntMath.Mul(aNorm, xResult, rNorm);
 
         var bBits = actualBits + lz;
-        var totalShift = bBits + (lz / 2);
+        var marginBits = marginWords * 32;
+        var totalShift = bBits + marginBits + (lz / 2);
 
-        using var shiftedRNorm = new GpuBigInteger(leftOperand.Context, 2 * n);
+        using var shiftedRNorm = new GpuBigInteger(leftOperand.Context, 2 * n + marginWords);
         shiftedRNorm.Clear();
         GpuBigIntMath.ShiftRight(rNorm, totalShift, shiftedRNorm);
 
         using var currentRoot = new GpuBigInteger(leftOperand.Context, n);
-        currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
-
-        // One final Newton-Raphson Division step to ensure exact integer precision
+        currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);        
+        
+        // Final Babylonian (Heron's) method loop to ensure exact integer precision.
+        // InverseSqrt may stall at low precision if the input has many trailing zeros (e.g., 10005 * 2^9152).
         using var divisionResult = new GpuBigInteger(leftOperand.Context, n);
         using var sumWithDivision = new GpuBigInteger(leftOperand.Context, n);
-        Div(leftOperand, currentRoot, divisionResult);
-        GpuBigIntMath.Add(currentRoot, divisionResult, sumWithDivision);
-        currentRoot.Clear();
-        GpuBigIntMath.ShiftRight(sumWithDivision, 1, currentRoot);
+        using var prevRoot = new GpuBigInteger(leftOperand.Context, n);
+        
+        while (true)
+        {
+            prevRoot.CopyFrom(currentRoot, numWords: n);
+            
+            Div(leftOperand, currentRoot, divisionResult);
+            GpuBigIntMath.Add(currentRoot, divisionResult, sumWithDivision);
+            currentRoot.Clear();
+            GpuBigIntMath.ShiftRight(sumWithDivision, 1, currentRoot);
+            
+            // If current == prev or current == prev + 1 (oscillating), we have converged.
+            using var diff = new GpuBigInteger(leftOperand.Context, n);
+            GpuBigIntMath.BitwiseXor(currentRoot, prevRoot, diff);
+            if (GetActualBits(diff) == 0)
+            {
+                break;
+            }
+            
+            // To prevent infinite oscillation between floor and ceil
+            using var plusOne = new GpuBigInteger(leftOperand.Context, n);
+            plusOne.Context.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1);
+            using var prevPlusOne = new GpuBigInteger(leftOperand.Context, n);
+            GpuBigIntMath.Add(prevRoot, plusOne, prevPlusOne);
+            
+            GpuBigIntMath.BitwiseXor(currentRoot, prevPlusOne, diff);
+            if (GetActualBits(diff) == 0)
+            {
+                currentRoot.CopyFrom(prevRoot, numWords: n); // take the smaller one
+                break;
+            }
+        }
 
         using var squaredRoot = new GpuBigInteger(leftOperand.Context, 2 * n);
         GpuBigIntMath.Mul(currentRoot, currentRoot, squaredRoot);
@@ -607,7 +648,7 @@ public static class GpuBigIntDivRem
         return new BigInteger(extractBytes);
     }
 
-    private static int ComputeInitialGuess(GpuBigInteger targetOperand, GpuBigInteger resultBuffer, bool isSquareRoot)
+    private static int ComputeInitialGuess(GpuBigInteger targetOperand, GpuBigInteger resultBuffer, bool isSquareRoot, int marginBits = 0)
     {
         var topBig = ExtractTopBitsAsBigInteger(targetOperand, out var actualBits);
 
@@ -620,17 +661,14 @@ public static class GpuBigIntDivRem
         }
 
         var shiftInTruncated = truncatedBits - 62;
-        if (shiftInTruncated < 0)
-        {
-            shiftInTruncated = 0;
-        }
-
         if (isSquareRoot && shiftInTruncated % 2 != 0)
         {
-            shiftInTruncated++;
+            shiftInTruncated++; // even if negative, maintain parity
         }
 
-        var originalBigTop = topBig >> shiftInTruncated;
+        var originalBigTop = shiftInTruncated >= 0 
+            ? (topBig >> shiftInTruncated)
+            : (topBig << -shiftInTruncated);
 
         var shift = actualBits - 62;
         if (shift < 0)
@@ -645,19 +683,19 @@ public static class GpuBigIntDivRem
 
         BigInteger initialApproximation;
         int finalShift;
-
         var numBits = targetOperand.NumWords * 32;
+        var n = targetOperand.NumWords;
 
         if (isSquareRoot)
         {
             var root = IntegerSqrt(originalBigTop);
             initialApproximation = (BigInteger.One << 62) / root;
-            finalShift = actualBits - 62 - (shift / 2);
+            finalShift = actualBits / 2 + marginBits - 31;
         }
         else
         {
             initialApproximation = (BigInteger.One << 124) / originalBigTop;
-            finalShift = 2 * numBits - (124 + shift);
+            finalShift = 2 * numBits + marginBits - actualBits - 62;
         }
 
         var shiftedApproximation = initialApproximation;
