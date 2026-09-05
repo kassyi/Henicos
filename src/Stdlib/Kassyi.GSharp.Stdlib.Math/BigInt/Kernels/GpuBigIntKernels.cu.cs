@@ -327,5 +327,127 @@ public static class GpuBigIntKernels
         });
     }
 
+    [GpuDeviceFunction]
+    public static void Device_Add(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    {
+        ulong carry = 0;
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            result[i] = Gpu.AddWithCarry(left[i], right[i], ref carry);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_Sub(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    {
+        long borrow = 0;
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            result[i] = Gpu.SubWithBorrow(left[i], right[i], ref borrow);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_ShiftLeft(ref BigIntKernelContext ctx, uint[] result, uint[] left, int shiftBits)
+    {
+        var wordShift = shiftBits / 32;
+        var bitShift = shiftBits % 32;
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            var srcIdx0 = i - wordShift;
+            var srcIdx1 = srcIdx0 - 1;
+            uint w0 = 0;
+            uint w1 = 0;
+
+            if (srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords)
+            {
+                w0 = left[srcIdx0];
+            }
+
+            if (srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords)
+            {
+                w1 = left[srcIdx1];
+            }
+
+            if (bitShift == 0)
+            {
+                result[i] = w0;
+            }
+            else
+            {
+                result[i] = (w0 << bitShift) | (w1 >> (32 - bitShift));
+            }
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_ShiftRight(ref BigIntKernelContext ctx, uint[] result, uint[] left, int shiftBits)
+    {
+        var wordShift = shiftBits / 32;
+        var bitShift = shiftBits % 32;
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            var srcIdx0 = i + wordShift;
+            var srcIdx1 = srcIdx0 + 1;
+            uint w0 = 0;
+            uint w1 = 0;
+
+            if (srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords)
+            {
+                w0 = left[srcIdx0];
+            }
+
+            if (srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords)
+            {
+                w1 = left[srcIdx1];
+            }
+
+            if (bitShift == 0)
+            {
+                result[i] = w0;
+            }
+            else
+            {
+                result[i] = (w0 >> bitShift) | (w1 << (32 - bitShift));
+            }
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_BitwiseAnd(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    {
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            result[i] = left[i] & right[i];
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_BitwiseOr(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    {
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            result[i] = left[i] | right[i];
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_BitwiseXor(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    {
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            result[i] = left[i] ^ right[i];
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_BitwiseNot(ref BigIntKernelContext ctx, uint[] result, uint[] operand)
+    {
+        for (int i = 0; i < ctx.NumberOfWords; i++)
+        {
+            result[i] = ~operand[i];
+        }
+    }
+
     #endregion
 }
