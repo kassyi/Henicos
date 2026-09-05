@@ -11,11 +11,12 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
 {
     private static readonly global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[] s_constArray = new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-46")]
-    [Trait("Category", "Integration")]
+    [Trait("Category", "GpuExecution")]
     public void Test_GBI46_LaunchDevice_ShouldNotAllocateOnHotPath()
     {
+        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
         using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         // Setup
         int ioVal = 5;
