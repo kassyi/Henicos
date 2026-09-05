@@ -190,16 +190,28 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <param name="rightOperand">The second operand.</param>
     /// <returns><c>true</c> if equal; otherwise, <c>false</c>.</returns>
     /// <remarks>This evaluates synchronously by triggering a GPU device memory comparison.</remarks>
-    public static bool operator ==(GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
-        leftOperand.Context.Provider.CompareTo(leftOperand.Context, leftOperand, rightOperand) == 0;
+    public static bool operator ==(GpuBigInteger? leftOperand, GpuBigInteger? rightOperand)
+    {
+        if (ReferenceEquals(leftOperand, rightOperand))
+        {
+            return true;
+        }
+
+        if (leftOperand is null || rightOperand is null)
+        {
+            return false;
+        }
+
+        return leftOperand.Context.Provider.CompareTo(leftOperand.Context, leftOperand, rightOperand) == 0;
+    }
 
     /// <summary>Determines whether two big integers represent different values on the GPU.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns><c>true</c> if not equal; otherwise, <c>false</c>.</returns>
     /// <remarks>This evaluates synchronously by triggering a GPU device memory comparison.</remarks>
-    public static bool operator !=(GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
-        leftOperand.Context.Provider.CompareTo(leftOperand.Context, leftOperand, rightOperand) != 0;
+    public static bool operator !=(GpuBigInteger? leftOperand, GpuBigInteger? rightOperand) =>
+        !(leftOperand == rightOperand);
 
     /// <summary>Determines whether the first big integer is less than the second on the GPU.</summary>
     /// <param name="leftOperand">The first operand.</param>
@@ -392,7 +404,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 
     ~GpuBigInteger()
     {
-        Dispose();
+        DisposeCore();
     }
 
     /// <summary>Checks whether this big integer equals zero on the GPU.</summary>

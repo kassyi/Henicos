@@ -1,4 +1,4 @@
-﻿using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 using System.Collections.Concurrent;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Jit;
@@ -620,6 +620,33 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.Equal(bigZero.GetBitLength(), gpuZero.GetBitLength());
             Assert.Equal(bigZero.GetByteCount(isUnsigned: true), gpuZero.GetByteCount());
+        }
+
+        [Theory]
+        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [Trait("RoadmapId", "GBI-23")]
+        public void Test_GBI23_GetBitLength_AtomicStress(GpuExecutionEngine engine)
+        {
+            const int stressWords = 65536;
+            using var context = new GpuContext(stressWords, engine);
+            var arr = new uint[stressWords];
+            var rnd = new Random(42);
+            for (int i = 0; i < stressWords / 2; i++)
+            {
+                arr[i] = (uint)rnd.Next();
+            }
+            int targetWord = stressWords / 2 - 100;
+            arr[targetWord] = 0x40000000;
+            for (int i = targetWord + 1; i < stressWords; i++)
+            {
+                arr[i] = 0;
+            }
+
+            using var gpu = new GpuBigInteger(context, arr);
+            var bigInt = ToBigInteger(arr);
+
+            Assert.Equal(bigInt.GetBitLength(), gpu.GetBitLength());
+            Assert.Equal(bigInt.GetByteCount(isUnsigned: true), gpu.GetByteCount());
         }
 
         [Trait("RoadmapId", "GBI-24")]

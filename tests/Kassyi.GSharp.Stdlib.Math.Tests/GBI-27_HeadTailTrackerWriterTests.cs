@@ -10,7 +10,7 @@ public class GBI27_HeadTailTrackerWriterTests
     [InlineData("12345", 5, 5, "12345", "12345", "12345")]
     [InlineData("1234567890", 5, 5, "12345", "67890", "1234567890")]
     [InlineData("1234567890123", 5, 5, "12345", "90123", "12345...90123")]
-    public void Write_String_TracksHeadAndTailCorrectly(string input, int headCap, int tailCap, string expectedHead, string expectedTail, string expectedPreview)
+    public void Test_GBI27_Write_String_TracksHeadAndTailCorrectly(string input, int headCap, int tailCap, string expectedHead, string expectedTail, string expectedPreview)
     {
         using var writer = new HeadTailTrackerWriter(headCap, tailCap);
         writer.Write(input);
@@ -24,7 +24,7 @@ public class GBI27_HeadTailTrackerWriterTests
     [Fact]
     [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "EdgeCase")]
-    public void Write_ZeroCapacity_DoesNotThrowAndTracksLength()
+    public void Test_GBI27_Write_ZeroCapacity_DoesNotThrowAndTracksLength()
     {
         using var writer = new HeadTailTrackerWriter(0, 0);
         writer.Write("1234567890");
@@ -38,7 +38,7 @@ public class GBI27_HeadTailTrackerWriterTests
     [Fact]
     [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "EdgeCase")]
-    public void Write_CharByChar_MatchesStringOutput()
+    public void Test_GBI27_Write_CharByChar_MatchesStringOutput()
     {
         using var writer = new HeadTailTrackerWriter(3, 3);
         var input = "abcdefghijklmnopqrstuvwxyz";

@@ -130,14 +130,15 @@ public static class GpuBigIntMath
     /// <returns>A new <see cref="GpuBigInteger"/> containing the result.</returns>
     public static GpuBigInteger Pow10(GpuContext context, int exponent)
     {
-        if (exponent < 0)
+        const int MaxPow10Exponent = 50_000_000;
+        if (exponent < 0 || exponent > MaxPow10Exponent)
         {
-            throw new System.ArgumentOutOfRangeException(nameof(exponent), "Exponent must be non-negative.");
+            throw new ArgumentOutOfRangeException(nameof(exponent), $"Exponent must be between 0 and {MaxPow10Exponent}.");
         }
 
         if (exponent <= 9)
         {
-            return GpuBigInteger.FromBigInteger(context, System.Numerics.BigInteger.Pow(10, exponent));
+            return GpuBigInteger.FromBigInteger(context, BigInteger.Pow(10, exponent));
         }
 
         var resultGpu = GpuBigInteger.FromBigInteger(context, 1);
