@@ -1,8 +1,7 @@
-using System.Numerics;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
+[Trait("Category", "GpuExecution")]
 public class GBI29_GpuBigIntMathPow10Tests
 {
     private static GpuExecutionEngine CreateTestEngine() => GpuExecutionEngine.GSharpJit;

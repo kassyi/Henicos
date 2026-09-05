@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Stdlib.Math.BigInt;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Running;

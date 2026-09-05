@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
-using System.Collections.Concurrent;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math;

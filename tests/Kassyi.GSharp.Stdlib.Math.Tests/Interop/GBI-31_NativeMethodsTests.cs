@@ -2,6 +2,7 @@ using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.Interop;
 
+[Trait("Category", "GpuExecution")]
 public class GBI31_NativeMethodsTests
 {
     [Fact]

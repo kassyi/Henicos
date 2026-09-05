@@ -1,5 +1,6 @@
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
+[Trait("Category", "GpuExecution")]
 public class GBI30_GpuContextTests
 {
     [Fact]

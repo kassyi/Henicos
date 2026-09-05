@@ -1,9 +1,7 @@
-using System.Numerics;
-using Kassyi.GSharp.Runtime.Jit;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
+[Trait("Category", "GpuExecution")]
 public class GBI26_GpuBigIntegerCoreTests : IDisposable
 {
     private readonly JitEngine.CudaContextScope _scope;
