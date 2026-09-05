@@ -20,7 +20,7 @@ public class TrialFactoringBenchmark
 
         using var gpuContext = new GpuContext(1024);
 
-        int maxResults = 1024;
+        var maxResults = 1024;
         using var resultsBuffer = new ScopedGpuMemory(gpuContext.Provider, maxResults * sizeof(uint));
         using var resultCountBuffer = new ScopedGpuMemory(gpuContext.Provider, sizeof(uint));
 
@@ -36,8 +36,8 @@ public class TrialFactoringBenchmark
 
         for (uint startOdd = 3; startOdd < maxP; startOdd += batchSize * 2)
         {
-            uint currentBatchSize = Math.Min(batchSize, (maxP - startOdd) / 2 + 1);
-            uint gridX = (currentBatchSize + blockSize - 1) / blockSize;
+            var currentBatchSize = Math.Min(batchSize, (maxP - startOdd) / 2 + 1);
+            var gridX = (currentBatchSize + blockSize - 1) / blockSize;
 
             FermatTrialFactoringKernelsWrapper.Launch_Kernel_SearchFactors32_Device(
                 startOdd,
@@ -52,7 +52,7 @@ public class TrialFactoringBenchmark
             JitEngine.SynchronizeDevice();
 
             gpuContext.Provider.CopyDeviceToHost(zeroCount, resultCountBuffer.Pointer, 1);
-            uint count = zeroCount[0];
+            var count = zeroCount[0];
             if (count > 0)
             {
                 Console.WriteLine($"\n[FOUND] GPU reported {count} potential matches in range!");

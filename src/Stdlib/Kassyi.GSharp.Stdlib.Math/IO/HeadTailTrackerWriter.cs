@@ -65,7 +65,7 @@ public class HeadTailTrackerWriter : TextWriter
 
     public override void Write(char[] buffer, int index, int count)
     {
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             Write(buffer[index + i]);
         }
@@ -86,9 +86,9 @@ public class HeadTailTrackerWriter : TextWriter
         }
 
         var sb = new StringBuilder(_tailCapacity);
-        for (int i = 0; i < _tailCapacity; i++)
+        for (var i = 0; i < _tailCapacity; i++)
         {
-            int idx = (_tailIndex + i) % _tailCapacity;
+            var idx = (_tailIndex + i) % _tailCapacity;
             sb.Append(_tailBuffer[idx]);
         }
         return sb.ToString();

@@ -19,10 +19,10 @@ public static class PiVerification
             return false;
         }
 
-        int count = computedHexTail.Length;
+        var count = computedHexTail.Length;
         Console.WriteLine($"[Verification] Extracting {count} hex digits at offset {offset} via BBP...");
         
-        string expectedHex = BbpDigitExtractor.ExtractHexDigits(offset, count);
+        var expectedHex = BbpDigitExtractor.ExtractHexDigits(offset, count);
         expectedHex = expectedHex.ToUpperInvariant();
         computedHexTail = computedHexTail.ToUpperInvariant();
 

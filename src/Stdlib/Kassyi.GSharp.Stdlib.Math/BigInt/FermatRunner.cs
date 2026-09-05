@@ -120,7 +120,7 @@ public class FermatRunner : IDisposable
     {
         var sw = Stopwatch.StartNew();
 
-        for (int i = 0; i < E; i++)
+        for (var i = 0; i < E; i++)
         {
             MultiplySquareAndReduceHost();
         }
@@ -134,7 +134,7 @@ public class FermatRunner : IDisposable
     /// <summary>Executes a specified number of squaring iterations on the GPU for benchmarking purposes.</summary>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
-        for (int i = 0; i < chunkSize; i++)
+        for (var i = 0; i < chunkSize; i++)
         {
             MultiplySquareAndReduceHost();
         }
