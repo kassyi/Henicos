@@ -9,23 +9,23 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
     public class GBI_01_25_GpuBigIntTests
     {
         [Fact]
-        [Trait("RoadmapId", "GBI-01")]
+        [Trait("FeatureId", "GBI-01")]
         [Trait("Category", "Memory")]
         public void Test_GBI01_MemoryPoolAllocation()
         {
             // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
-            // that exist before lazy thread-safe initialization.
+            // across multiple concurrent threads sharing the same GpuContext instance.
             var exceptions = new ConcurrentBag<Exception>();
+            using var sharedCtx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
 
             Parallel.For(0, 100, i =>
             {
                 try
                 {
-                    using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
-                    using var a = new GpuBigInteger(ctx, new uint[] { (uint)i + 1, 0, 0, 0 });
-                    using var b = new GpuBigInteger(ctx, new uint[] { (uint)i + 2, 0, 0, 0 });
-                    using var c = new GpuBigInteger(ctx, 4);
-                    using var d = new GpuBigInteger(ctx, 8);
+                    using var a = new GpuBigInteger(sharedCtx, new uint[] { (uint)i + 1, 0, 0, 0 });
+                    using var b = new GpuBigInteger(sharedCtx, new uint[] { (uint)i + 2, 0, 0, 0 });
+                    using var c = new GpuBigInteger(sharedCtx, 4);
+                    using var d = new GpuBigInteger(sharedCtx, 8);
                     
                     c.Value = a + b;
                     d.Value = c * a;
@@ -45,6 +45,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            
+            // Typical case
             using var a = new GpuBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
             using var b = new GpuBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
             using var c = new GpuBigInteger(ctx, new uint[] { 101, 200, 300, 400 });
@@ -52,12 +54,31 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(0, a.CompareTo(b));
             Assert.Equal(-1, a.CompareTo(c));
             Assert.Equal(1, c.CompareTo(a));
+
+            // Boundary case 1: Zero limbs comparison
+            using var zero1 = new GpuBigInteger(ctx, new uint[] { 0, 0, 0, 0 });
+            using var zero2 = new GpuBigInteger(ctx, new uint[] { 0, 0, 0, 0 });
+            Assert.Equal(0, zero1.CompareTo(zero2));
+
+            // Boundary case 2: Max value limbs (0xFFFFFFFF)
+            using var max1 = new GpuBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue });
+            using var max2 = new GpuBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue });
+            using var maxSub1 = new GpuBigInteger(ctx, new uint[] { uint.MaxValue - 1, uint.MaxValue, uint.MaxValue, uint.MaxValue });
+            Assert.Equal(0, max1.CompareTo(max2));
+            Assert.Equal(1, max1.CompareTo(maxSub1));
+            Assert.Equal(-1, maxSub1.CompareTo(max1));
+
+            // Boundary case 3: High-limb vs low-limb dominance
+            using var highDominant = new GpuBigInteger(ctx, new uint[] { 0, 0, 0, 1 });
+            using var lowDominant = new GpuBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, 0 });
+            Assert.Equal(1, highDominant.CompareTo(lowDominant));
+            Assert.Equal(-1, lowDominant.CompareTo(highDominant));
         }
 
         private const int TestSizeWords = 256; // 8192 bits
 
         [Fact]
-        [Trait("RoadmapId", "GBI-04")]
+        [Trait("FeatureId", "GBI-04")]
         [Trait("Category", "Optimization")]
         public void Test_GBI04_DirectSquarePointwiseKernel()
         {
@@ -73,7 +94,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [Fact]
-        [Trait("RoadmapId", "GBI-05")]
+        [Trait("FeatureId", "GBI-05")]
         [Trait("Category", "Algorithm")]
         public void Test_GBI05_ParallelGcdLargeDigits()
         {
@@ -96,7 +117,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [Fact]
-        [Trait("RoadmapId", "GBI-06")]
+        [Trait("FeatureId", "GBI-06")]
         [Trait("Category", "Runtime")]
         public void Test_GBI06_ExpressionKernelFusion()
         {
