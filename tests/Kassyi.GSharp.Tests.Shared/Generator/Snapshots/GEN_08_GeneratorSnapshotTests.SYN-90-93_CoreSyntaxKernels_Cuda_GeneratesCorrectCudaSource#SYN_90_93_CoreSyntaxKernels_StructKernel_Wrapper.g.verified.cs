@@ -19,10 +19,10 @@ float Y;
 ;
 #endif
 extern ""C"" __global__ void StructKernel(Kassyi_GSharp_Tests_Syntax_Vector2* __restrict__ vectors, int length){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_Vector2 v=vectors[tid];
+Kassyi_GSharp_Tests_Syntax_Vector2 v = vectors[tid];
 v.X=v.X*2.0f;
 v.Y=v.Y+1.0f;
 vectors[tid]=v;

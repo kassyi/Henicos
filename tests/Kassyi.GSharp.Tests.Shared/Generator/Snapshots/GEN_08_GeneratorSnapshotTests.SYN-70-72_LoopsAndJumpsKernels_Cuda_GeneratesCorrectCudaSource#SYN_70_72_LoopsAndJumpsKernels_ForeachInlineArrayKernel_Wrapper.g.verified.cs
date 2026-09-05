@@ -30,12 +30,12 @@ __device__ inline int size() const { return 4; }
 ;
 #endif
 extern ""C"" __global__ void ForeachInlineArrayKernel(int* __restrict__ output){
-Kassyi_GSharp_Tests_Syntax_FixedArray4 arr=Kassyi_GSharp_Tests_Syntax_FixedArray4{};
+Kassyi_GSharp_Tests_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Syntax_FixedArray4{};
 arr[0]=10;
 arr[1]=20;
 arr[2]=30;
 arr[3]=40;
-int total=0;
+int total = 0;
 for(auto val : arr)
 {
 total+=val;

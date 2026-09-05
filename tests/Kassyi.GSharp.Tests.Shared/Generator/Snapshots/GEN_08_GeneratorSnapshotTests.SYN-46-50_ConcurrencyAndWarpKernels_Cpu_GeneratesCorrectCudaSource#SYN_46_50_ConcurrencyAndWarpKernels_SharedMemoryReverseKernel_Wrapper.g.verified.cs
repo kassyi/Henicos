@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
 public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __declspec(dllexport) void SharedMemoryReverseKernel(int* __restrict__ data, int size){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 __shared__ int sMem[256];
 if(tid<size)
 {

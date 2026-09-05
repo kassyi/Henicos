@@ -10,9 +10,9 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_03_InlineOutVarKernelsWrapper
 {
 public const string WhileConditionKernel_Source = @"extern ""C"" __declspec(dllexport) void WhileConditionKernel(int* __restrict__ input, int* __restrict__ output){
-int tid=threadIdx.x;
-int curr=input[tid];
-int sum=0;
+int tid = threadIdx.x;
+int curr = input[tid];
+int sum = 0;
 int nextVal;
 while(TryStep(curr,&nextVal))
 {

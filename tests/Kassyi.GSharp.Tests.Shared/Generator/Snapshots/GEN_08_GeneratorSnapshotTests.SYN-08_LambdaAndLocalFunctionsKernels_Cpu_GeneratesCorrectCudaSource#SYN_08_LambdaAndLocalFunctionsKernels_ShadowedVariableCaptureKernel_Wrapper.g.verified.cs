@@ -10,9 +10,9 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_08_LambdaAndLocalFunctionsKernelsWrapper
 {
 public const string ShadowedVariableCaptureKernel_Source = @"extern ""C"" __declspec(dllexport) void ShadowedVariableCaptureKernel(int* __restrict__ data){
-int tid=threadIdx.x;
-int value=50;
-auto calc=[&](int value) {
+int tid = threadIdx.x;
+int value = 50;
+auto calc = [&](int value) {
 return value*2;
 }
 ;

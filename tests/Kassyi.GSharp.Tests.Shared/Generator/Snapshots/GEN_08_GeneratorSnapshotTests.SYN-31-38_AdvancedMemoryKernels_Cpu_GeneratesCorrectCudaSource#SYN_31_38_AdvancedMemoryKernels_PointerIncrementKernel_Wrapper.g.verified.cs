@@ -10,12 +10,12 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
 public const string PointerIncrementKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
-unsigned int* pSrc=&src[0];
-unsigned int* pDest=&dest[0];
+unsigned int* pSrc = &src[0];
+unsigned int* pDest = &dest[0];
 {
-unsigned int* ptrS=pSrc;
-unsigned int* ptrD=pDest;
-for(int i=0;i<3;i++)
+unsigned int* ptrS = pSrc;
+unsigned int* ptrD = pDest;
+for(int i = 0;i<3;i++)
 {
 *ptrD++=*ptrS++;
 }

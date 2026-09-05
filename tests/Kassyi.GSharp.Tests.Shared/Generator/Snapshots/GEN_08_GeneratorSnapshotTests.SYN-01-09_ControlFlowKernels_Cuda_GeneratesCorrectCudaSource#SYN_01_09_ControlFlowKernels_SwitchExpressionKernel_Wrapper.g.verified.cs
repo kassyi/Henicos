@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
 public const string SwitchExpressionKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernel(int* __restrict__ input, int* __restrict__ output){
-int tid=threadIdx.x;
-int val=input[tid];
+int tid = threadIdx.x;
+int val = input[tid];
 output[tid]=([&]() {
 switch(val)
 {

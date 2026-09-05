@@ -18,10 +18,10 @@ int Value;
 ;
 #endif
 extern ""C"" __global__ void HappyPathKernel(int* __restrict__ output){
-int tid=threadIdx.x;
-Kassyi_GSharp_Tests_Syntax_NestedChildStruct c1=Kassyi_GSharp_Tests_Syntax_NestedChildStruct{};
+int tid = threadIdx.x;
+Kassyi_GSharp_Tests_Syntax_NestedChildStruct c1 = Kassyi_GSharp_Tests_Syntax_NestedChildStruct{};
 c1.Value=tid+100;
-Kassyi_GSharp_Tests_Syntax_NestedChildStruct c2=CreateChild(Kassyi_GSharp_Tests_Syntax_NestedChildStruct{});
+Kassyi_GSharp_Tests_Syntax_NestedChildStruct c2 = CreateChild(Kassyi_GSharp_Tests_Syntax_NestedChildStruct{});
 c2.Value=tid+200;
 output[tid]=c1.Value+c2.Value;
 }

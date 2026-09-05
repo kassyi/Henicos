@@ -10,21 +10,21 @@ namespace Kassyi.GSharp.Stdlib.Math
 public static partial class GpuBigIntKernelsWrapper
 {
 public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void ChunkAddKernel(unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize){
-int chunkIdx=blockIdx.x*blockDim.x+threadIdx.x;
-int start=chunkIdx*chunkSize;
+int chunkIdx = blockIdx.x*blockDim.x+threadIdx.x;
+int start = chunkIdx*chunkSize;
 if(start>=numWords)
 {
 return;
 }
-int end=start+chunkSize;
+int end = start+chunkSize;
 if(end>numWords)
 {
 end=numWords;
 }
-unsigned long long localCarry=0;
-for(int i=start;i<end;i++)
+unsigned long long localCarry = 0;
+for(int i = start;i<end;i++)
 {
-unsigned long long current=(unsigned long long)dA[i]+(unsigned long long)dB[i]+localCarry;
+unsigned long long current = (unsigned long long)dA[i]+(unsigned long long)dB[i]+localCarry;
 dResult[i]=(unsigned int)(current&0xFFFFFFFF);
 localCarry=current>>32;
 }

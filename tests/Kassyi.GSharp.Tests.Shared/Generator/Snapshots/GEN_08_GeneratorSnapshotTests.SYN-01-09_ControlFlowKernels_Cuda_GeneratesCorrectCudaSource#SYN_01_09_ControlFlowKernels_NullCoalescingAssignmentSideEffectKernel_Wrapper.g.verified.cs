@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
 public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __global__ void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values){
-int tid=threadIdx.x;
-int idx=sideEffectTracker[tid];
+int tid = threadIdx.x;
+int idx = sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
 [&]() -> decltype(auto) {
 auto& __coalesce_target = targetArray[idx];

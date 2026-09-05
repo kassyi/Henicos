@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
 public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __global__ void AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState){
-int tid=blockIdx.x*blockDim.x+threadIdx.x;
+int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<31)
 {
 atomicOr(&globalState[0],(unsigned int)(1<<tid));

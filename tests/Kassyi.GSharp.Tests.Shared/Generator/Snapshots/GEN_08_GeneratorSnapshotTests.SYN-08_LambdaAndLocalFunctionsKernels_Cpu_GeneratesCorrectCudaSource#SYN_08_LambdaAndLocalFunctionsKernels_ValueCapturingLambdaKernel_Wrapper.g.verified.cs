@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_08_LambdaAndLocalFunctionsKernelsWrapper
 {
 public const string ValueCapturingLambdaKernel_Source = @"extern ""C"" __declspec(dllexport) void ValueCapturingLambdaKernel(int* __restrict__ data, int factor){
-int tid=threadIdx.x;
-auto multiply=[&](int x) {
+int tid = threadIdx.x;
+auto multiply = [&](int x) {
 return x*factor;
 }
 ;

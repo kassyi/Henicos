@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
 public const string IntrinsicsKernel_Source = @"extern ""C"" __global__ void IntrinsicsKernel(int* __restrict__ data){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 if(tid<10)
 {
 atomicAdd(&data[0],tid);

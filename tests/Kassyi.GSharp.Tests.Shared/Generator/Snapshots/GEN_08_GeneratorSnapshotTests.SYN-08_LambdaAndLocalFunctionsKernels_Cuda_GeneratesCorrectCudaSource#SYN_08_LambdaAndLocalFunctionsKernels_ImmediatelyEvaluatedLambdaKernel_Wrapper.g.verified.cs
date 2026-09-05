@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_08_LambdaAndLocalFunctionsKernelsWrapper
 {
 public const string ImmediatelyEvaluatedLambdaKernel_Source = @"extern ""C"" __global__ void ImmediatelyEvaluatedLambdaKernel(int* __restrict__ data){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 auto LocalAdd = [&](int a, int b) {
 return a+b;
 }
