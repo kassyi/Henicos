@@ -36,7 +36,7 @@ internal static class WrapperEmitter
             writer.AppendLine(className);
             using (writer.Scope())
             {
-                if (method.Parameters.Any(p => p.HasAttribute(KnownAttributes.JitConstant)))
+                if (HasJitConstants(method))
                 {
                     writer.AppendLine("[System.ThreadStatic]");
                     writer.Append(
@@ -466,5 +466,18 @@ internal static class WrapperEmitter
         }
 
         writer.Append(ns.Name);
+    }
+
+    private static bool HasJitConstants(IMethodSymbol method)
+    {
+        foreach (var p in method.Parameters)
+        {
+            if (p.HasAttribute(KnownAttributes.JitConstant))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
