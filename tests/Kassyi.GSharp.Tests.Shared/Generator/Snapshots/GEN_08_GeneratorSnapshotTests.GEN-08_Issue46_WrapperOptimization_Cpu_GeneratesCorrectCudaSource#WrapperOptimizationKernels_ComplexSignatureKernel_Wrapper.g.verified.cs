@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 public static partial class WrapperOptimizationKernelsWrapper
 {
 [System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ComplexSignatureKernel;
+private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_ComplexSignatureKernel;
 public const string ComplexSignatureKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 struct Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -42,6 +42,7 @@ ComplexSignatureKernel(scalarRef, scalarOut, arrayVal, structRef);
 }
 }
 ";
+public static readonly string ComplexSignatureKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ComplexSignatureKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -65,16 +66,16 @@ host.B = native.B;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ComplexSignatureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* scalarRef, float* scalarOut, int* arrayVal, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* structRef);
-public static unsafe void Launch_ComplexSignatureKernel(ref int scalarRef, out float scalarOut, int[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_ComplexSignatureKernel(ref int scalarRef, out float scalarOut, int[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 scalarOut = default;
 if (arrayVal.Length == 0){
 return;
 }
-__t_jitConstants_ComplexSignatureKernel ??= new System.Collections.Generic.Dictionary<string, string>();
-__t_jitConstants_ComplexSignatureKernel.Clear();
-__t_jitConstants_ComplexSignatureKernel["constantVal"] = (constantVal).ToString();
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ComplexSignatureKernel_Source, __t_jitConstants_ComplexSignatureKernel, macros);
+__t_jitConstants_array_ComplexSignatureKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
+__t_jitConstants_array_ComplexSignatureKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ComplexSignatureKernel, 0, 1);
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", ComplexSignatureKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_arrayVal = arrayVal)
 fixed (int* p_scalarRef = &scalarRef)
 fixed (float* p_scalarOut = &scalarOut)

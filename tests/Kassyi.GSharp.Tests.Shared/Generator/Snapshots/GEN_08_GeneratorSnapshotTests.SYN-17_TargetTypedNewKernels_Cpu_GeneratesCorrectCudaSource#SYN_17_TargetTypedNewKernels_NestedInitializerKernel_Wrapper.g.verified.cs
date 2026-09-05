@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_17_TargetTypedNewKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NestedInitializerKernel;
 public const string NestedInitializerKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
 struct Kassyi_GSharp_Tests_Syntax_NestedChildStruct
@@ -50,15 +48,17 @@ NestedInitializerKernel(output);
 }
 }
 ";
+public static readonly string NestedInitializerKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NestedInitializerKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NestedInitializerKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* output);
-public static unsafe void Launch_NestedInitializerKernel(int[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_NestedInitializerKernel(int[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NestedInitializerKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", NestedInitializerKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

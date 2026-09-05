@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_PointerComplexAssignmentKernel;
 public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest){
 unsigned int* pIdx=&idx[0];
 unsigned int* pVal=&val[0];
@@ -37,15 +35,17 @@ PointerComplexAssignmentKernel(idx, val, dest);
 }
 }
 ";
+public static readonly string PointerComplexAssignmentKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + PointerComplexAssignmentKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void PointerComplexAssignmentKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* idx, uint* val, uint* dest);
-public static unsafe void Launch_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (idx.Length == 0 || val.Length == 0 || dest.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + PointerComplexAssignmentKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", PointerComplexAssignmentKernel_FullSource, __t_jitConstants, macros);
 fixed (uint* p_idx = idx)
 fixed (uint* p_val = val)
 fixed (uint* p_dest = dest)

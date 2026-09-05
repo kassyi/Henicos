@@ -9,8 +9,6 @@ namespace TestSpace
 {
 public static partial class MacroExpansionKernelWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_TestMacroKernel;
 public const string TestMacroKernel_Source = @"extern ""C"" __declspec(dllexport) void TestMacroKernel(int* __restrict__ data, int length){
 for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
@@ -38,15 +36,17 @@ TestMacroKernel(data, length);
 }
 }
 ";
+public static readonly string TestMacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + TestMacroKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void TestMacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* data, int length);
-public static unsafe void Launch_TestMacroKernel(int[] data, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_TestMacroKernel(int[] data, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<TestMacroKernel_Delegate>("__gsharp_launch_TestMacroKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + TestMacroKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<TestMacroKernel_Delegate>("__gsharp_launch_TestMacroKernel", TestMacroKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, length);

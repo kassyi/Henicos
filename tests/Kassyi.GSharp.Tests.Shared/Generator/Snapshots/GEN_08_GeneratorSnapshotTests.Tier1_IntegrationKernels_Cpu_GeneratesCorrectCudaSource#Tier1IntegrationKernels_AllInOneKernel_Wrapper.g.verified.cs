@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class Tier1IntegrationKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_AllInOneKernel;
 public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct__
 struct Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
@@ -214,6 +212,7 @@ AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dyna
 }
 }
 ";
+public static readonly string AllInOneKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AllInOneKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
@@ -240,12 +239,13 @@ host.BoolVal = native.BoolVal;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* intInput, float* floatInput, float* results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, ulong* globalCounter, int count, int dynamicSharedSize);
-public static unsafe void Launch_AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AllInOneKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", AllInOneKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_intInput = intInput)
 fixed (float* p_floatInput = floatInput)
 fixed (float* p_results = results)

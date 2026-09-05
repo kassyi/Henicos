@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_PointerDecrementKernel;
 public const string PointerDecrementKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
 unsigned int* pSrc=&src[0];
 unsigned int* pDest=&dest[0];
@@ -37,15 +35,17 @@ PointerDecrementKernel(src, dest);
 }
 }
 ";
+public static readonly string PointerDecrementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + PointerDecrementKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void PointerDecrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* src, uint* dest);
-public static unsafe void Launch_PointerDecrementKernel(uint[] src, uint[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_PointerDecrementKernel(uint[] src, uint[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (src.Length == 0 || dest.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + PointerDecrementKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", PointerDecrementKernel_FullSource, __t_jitConstants, macros);
 fixed (uint* p_src = src)
 fixed (uint* p_dest = dest)
 {

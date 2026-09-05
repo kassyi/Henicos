@@ -21,15 +21,17 @@ doubleSpecialResults[1]=fmax(d,0.0);
 doubleSpecialResults[2]=fmin(d,0.0);
 }
 ";
+public static readonly string MathEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathEdgeCasesKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MathEdgeCasesKernel(float[] floatSpecialInputs, float[] floatSpecialResults, double[] doubleSpecialInputs, double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MathEdgeCasesKernel(float[] floatSpecialInputs, float[] floatSpecialResults, double[] doubleSpecialInputs, double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathEdgeCasesKernel", MathEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_floatSpecialInputs = IntPtr.Zero;
 IntPtr d_floatSpecialResults = IntPtr.Zero;
 IntPtr d_doubleSpecialInputs = IntPtr.Zero;
@@ -182,11 +184,12 @@ if (d_doubleSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_doubleSp
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MathEdgeCasesKernel_Device(IntPtr floatSpecialInputs, IntPtr floatSpecialResults, IntPtr doubleSpecialInputs, IntPtr doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MathEdgeCasesKernel_Device(IntPtr floatSpecialInputs, IntPtr floatSpecialResults, IntPtr doubleSpecialInputs, IntPtr doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathEdgeCasesKernel", MathEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[4];
