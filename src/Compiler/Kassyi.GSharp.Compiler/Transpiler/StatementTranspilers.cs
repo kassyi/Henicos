@@ -6,9 +6,7 @@ internal static class StatementTranspilers
 {
     public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
     {
-        context.Writer.Append($"auto {node.Identifier.Text} = ");
-
-        context.Writer.Append("[&]");
+        context.Writer.Append($"auto {node.Identifier.Text} = [&]");
         context.Visitor.Visit(node.ParameterList);
         context.Writer.AppendSpace();
 
@@ -91,8 +89,7 @@ internal static class StatementTranspilers
                 context.Writer.AppendSpace();
             }
 
-            context.Writer.Append(node.Identifier.Text);
-            context.Writer.AppendSpace().Append(':').AppendSpace();
+            context.Writer.Append($"{node.Identifier.Text} : ");
             context.Visitor.Visit(node.Expression);
         }
 
@@ -118,11 +115,14 @@ internal static class StatementTranspilers
             for (var i = 0; i < node.Declaration.Variables.Count; i++)
             {
                 var v = node.Declaration.Variables[i];
-                context.Writer.Append(v.Identifier.Text);
                 if (v.Initializer != null)
                 {
-                    context.Writer.AppendOperator("=");
+                    context.Writer.Append($"{v.Identifier.Text} = ");
                     context.Visitor.Visit(v.Initializer.Value);
+                }
+                else
+                {
+                    context.Writer.Append(v.Identifier.Text);
                 }
 
                 if (i < node.Declaration.Variables.Count - 1)
