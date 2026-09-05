@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_InterlockedEdgeCasesKernel;
 public const string InterlockedEdgeCasesKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AtomicTestStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AtomicTestStruct__
 struct Kassyi_GSharp_Tests_Syntax_AtomicTestStruct

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_28_MethodAttributesKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_MethodAttributesKernel;
 public const string MethodAttributesKernel_Source = @"extern ""C"" __declspec(dllexport) void MethodAttributesKernel(int* __restrict__ input, int* __restrict__ result){
 int tid=threadIdx.x;
 int sum=InlinedAdd(input[tid],100);

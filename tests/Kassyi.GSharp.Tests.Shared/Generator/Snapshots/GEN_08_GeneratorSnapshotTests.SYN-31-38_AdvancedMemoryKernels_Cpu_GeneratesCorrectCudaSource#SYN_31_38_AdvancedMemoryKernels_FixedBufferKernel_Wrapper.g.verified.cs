@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_FixedBufferKernel;
 public const string FixedBufferKernel_Source = @"extern ""C"" __declspec(dllexport) void FixedBufferKernel(unsigned int* __restrict__ data){
 unsigned int* p=&data[0];
 {

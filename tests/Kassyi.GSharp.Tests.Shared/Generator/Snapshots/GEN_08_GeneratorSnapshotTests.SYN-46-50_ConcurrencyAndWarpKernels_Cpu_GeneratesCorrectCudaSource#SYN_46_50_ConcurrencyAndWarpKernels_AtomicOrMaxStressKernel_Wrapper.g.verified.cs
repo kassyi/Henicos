@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_AtomicOrMaxStressKernel;
 public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __declspec(dllexport) void AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState){
 int tid=blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<31)

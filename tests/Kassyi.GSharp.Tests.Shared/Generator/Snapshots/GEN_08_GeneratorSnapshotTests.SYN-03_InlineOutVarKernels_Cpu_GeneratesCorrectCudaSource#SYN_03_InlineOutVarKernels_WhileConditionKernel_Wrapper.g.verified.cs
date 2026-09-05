@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_03_InlineOutVarKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_WhileConditionKernel;
 public const string WhileConditionKernel_Source = @"extern ""C"" __declspec(dllexport) void WhileConditionKernel(int* __restrict__ input, int* __restrict__ output){
 int tid=threadIdx.x;
 int curr=input[tid];

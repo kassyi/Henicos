@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NestedTernaryKernel;
 public const string NestedTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void NestedTernaryKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result){
 int tid=threadIdx.x;
 int x=a[tid];

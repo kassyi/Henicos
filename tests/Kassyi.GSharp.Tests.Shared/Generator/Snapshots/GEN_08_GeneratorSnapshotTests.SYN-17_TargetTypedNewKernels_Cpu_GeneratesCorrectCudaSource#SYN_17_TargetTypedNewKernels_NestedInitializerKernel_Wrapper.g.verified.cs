@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_17_TargetTypedNewKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NestedInitializerKernel;
 public const string NestedInitializerKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
 struct Kassyi_GSharp_Tests_Syntax_NestedChildStruct

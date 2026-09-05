@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_InterlockedKernel;
 public const string InterlockedKernel_Source = @"extern ""C"" __declspec(dllexport) void InterlockedKernel(int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf){
 int tid=threadIdx.x;
 __gsharp_atomicAdd(&intBuf[0],1);

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_SharedMemoryKernel;
 public const string SharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void SharedMemoryKernel(int* __restrict__ data, int dynSize){
 int tid=threadIdx.x;
 __shared__ int sStatic[256];

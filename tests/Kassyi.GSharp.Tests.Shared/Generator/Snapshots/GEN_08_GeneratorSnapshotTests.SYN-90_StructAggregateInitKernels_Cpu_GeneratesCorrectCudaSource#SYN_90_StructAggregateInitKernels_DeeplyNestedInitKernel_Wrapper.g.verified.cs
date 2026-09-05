@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_90_StructAggregateInitKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_DeeplyNestedInitKernel;
 public const string DeeplyNestedInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_InnerStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_InnerStruct__
 struct Kassyi_GSharp_Tests_Syntax_InnerStruct

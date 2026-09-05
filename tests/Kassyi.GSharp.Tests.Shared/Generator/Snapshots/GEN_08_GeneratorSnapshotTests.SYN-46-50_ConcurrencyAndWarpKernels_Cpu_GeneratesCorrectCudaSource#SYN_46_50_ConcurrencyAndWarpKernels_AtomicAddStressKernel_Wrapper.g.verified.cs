@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_AtomicAddStressKernel;
 public const string AtomicAddStressKernel_Source = @"extern ""C"" __declspec(dllexport) void AtomicAddStressKernel(int* __restrict__ globalSum){
 atomicAdd(&globalSum[0],1);
 }

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GEN_18_VectorBuiltinKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_Vector2AddKernel;
 public const string Vector2AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length){
 auto tid=threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)

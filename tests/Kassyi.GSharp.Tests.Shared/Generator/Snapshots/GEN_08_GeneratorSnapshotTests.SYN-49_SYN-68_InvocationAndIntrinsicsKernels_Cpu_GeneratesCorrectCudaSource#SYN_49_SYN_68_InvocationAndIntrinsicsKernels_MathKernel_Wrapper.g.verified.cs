@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_MathKernel;
 public const string MathKernel_Source = @"extern ""C"" __declspec(dllexport) void MathKernel(double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs){
 int tid=threadIdx.x;
 double dVal=doubleInputs[tid];

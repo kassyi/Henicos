@@ -9,6 +9,8 @@ namespace TestSpace
 {
 public static partial class MacroExpansionKernelWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_TestMacroKernel;
 public const string TestMacroKernel_Source = @"extern ""C"" __declspec(dllexport) void TestMacroKernel(int* __restrict__ data, int length){
 for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {

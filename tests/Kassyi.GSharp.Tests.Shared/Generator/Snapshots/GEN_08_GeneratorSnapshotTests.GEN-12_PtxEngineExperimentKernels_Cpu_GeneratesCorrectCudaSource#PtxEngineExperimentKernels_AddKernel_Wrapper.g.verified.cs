@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests
 {
 public static partial class PtxEngineExperimentKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_AddKernel;
 public const string AddKernel_Source = @"extern ""C"" __declspec(dllexport) void AddKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c){
 c[0]=a[0]+b[0];
 }

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests
 {
 public static partial class GEN_01_SourceGeneratorTestKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_MyTestKernel;
 public const string MyTestKernel_Source = @"extern ""C"" __declspec(dllexport) void MyTestKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c){
 c[0]=a[0]+b[0];
 }

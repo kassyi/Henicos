@@ -9,6 +9,8 @@ namespace TestNamespace
 {
 public static partial class TestKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_MacroKernel;
 public const string MacroKernel_Source = @"#ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
 struct TestNamespace_DummyContext
@@ -60,7 +62,7 @@ public struct __Native_TestNamespace_DummyContext
 {
 public int State;
 }
-public static unsafe __Native_TestNamespace_DummyContext Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_TestNamespace_DummyContext Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 var native = new __Native_TestNamespace_DummyContext();
 native.State = host.State;

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_70_72_LoopsAndJumpsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ForeachInlineArrayKernel;
 public const string ForeachInlineArrayKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_FixedArray4__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_FixedArray4__
 struct Kassyi_GSharp_Tests_Syntax_FixedArray4

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_73_78_ContractsAndPtxKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_InlinePtxKernel;
 public const string InlinePtxKernel_Source = @"extern ""C"" __declspec(dllexport) void InlinePtxKernel(unsigned int* __restrict__ data){
 data[0] = 999;
 ;

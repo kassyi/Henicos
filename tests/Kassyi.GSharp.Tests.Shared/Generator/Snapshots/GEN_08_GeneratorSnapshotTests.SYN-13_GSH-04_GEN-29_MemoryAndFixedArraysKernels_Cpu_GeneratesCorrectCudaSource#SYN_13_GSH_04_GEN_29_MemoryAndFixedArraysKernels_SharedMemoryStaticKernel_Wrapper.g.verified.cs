@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_SharedMemoryStaticKernel;
 public const string SharedMemoryStaticKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_CustomPoint__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_CustomPoint__
 struct Kassyi_GSharp_Tests_Syntax_CustomPoint

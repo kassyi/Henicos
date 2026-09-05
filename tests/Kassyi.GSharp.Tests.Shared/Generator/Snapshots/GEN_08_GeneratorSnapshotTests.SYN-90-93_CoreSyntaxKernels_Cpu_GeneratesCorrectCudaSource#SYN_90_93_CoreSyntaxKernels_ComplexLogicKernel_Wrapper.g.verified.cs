@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_90_93_CoreSyntaxKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ComplexLogicKernel;
 public const string ComplexLogicKernel_Source = @"extern ""C"" __declspec(dllexport) void ComplexLogicKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c){
 for(int i=0;i<5;i++)
 {

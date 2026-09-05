@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class Tier1IntegrationKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_AllInOneKernel;
 public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct__
 struct Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
@@ -220,7 +222,7 @@ public int IntVal;
 public float FloatVal;
 public bool BoolVal;
 }
-public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 var native = new __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct();
 native.IntVal = host.IntVal;

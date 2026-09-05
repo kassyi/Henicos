@@ -9,6 +9,8 @@ namespace TestSpace
 {
 public static partial class ErrorSpecKernelWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_BadKernel;
 public const string BadKernel_Source = @"extern ""C"" __declspec(dllexport) void BadKernel(){
 System_String s=""hello"";
 System_Object obj=object;

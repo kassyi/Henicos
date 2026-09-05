@@ -9,6 +9,8 @@ namespace TestSpace
 {
 public static partial class ErrorKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ManagedParamKernel;
 public const string ManagedParamKernel_Source = @"extern ""C"" __declspec(dllexport) void ManagedParamKernel(TestSpace_ManagedClass obj){
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ManagedParamKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestSpace_ManagedClass obj)

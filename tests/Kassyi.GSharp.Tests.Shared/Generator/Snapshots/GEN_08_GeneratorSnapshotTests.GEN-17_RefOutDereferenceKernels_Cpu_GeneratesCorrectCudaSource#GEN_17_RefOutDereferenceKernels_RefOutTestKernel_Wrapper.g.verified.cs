@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GEN_17_RefOutDereferenceKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_RefOutTestKernel;
 public const string RefOutTestKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_RefTestStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_RefTestStruct__
 struct Kassyi_GSharp_Tests_Syntax_RefTestStruct

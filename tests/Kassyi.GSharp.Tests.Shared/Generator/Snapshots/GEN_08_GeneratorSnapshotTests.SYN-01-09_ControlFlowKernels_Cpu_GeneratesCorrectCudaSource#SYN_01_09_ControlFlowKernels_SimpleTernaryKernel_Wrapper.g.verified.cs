@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_SimpleTernaryKernel;
 public const string SimpleTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void SimpleTernaryKernel(int* __restrict__ a, int* __restrict__ b, double* __restrict__ result){
 int tid=threadIdx.x;
 result[tid]=(a[tid]>b[tid] ? a[tid] : b[tid]*1.5);

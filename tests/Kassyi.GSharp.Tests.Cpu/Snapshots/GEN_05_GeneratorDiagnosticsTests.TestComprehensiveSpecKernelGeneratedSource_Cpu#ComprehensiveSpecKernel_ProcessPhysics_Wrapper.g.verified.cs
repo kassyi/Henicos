@@ -9,6 +9,8 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ProcessPhysics;
 public const string ProcessPhysics_Source = @"#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 struct DebugReduc_PhysicsVector
@@ -227,7 +229,7 @@ public ulong ULongValue;
 public float FloatValue;
 public double DoubleValue;
 }
-public static unsafe __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 var native = new __Native_DebugReduc_SpecTypes();
 native.BooleanValue = host.BooleanValue;
@@ -263,13 +265,14 @@ host.DoubleValue = native.DoubleValue;
 private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::DebugReduc.PhysicsVector* particles, float* totalMagnitude, bool* successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount);
 public static unsafe void Launch_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
+successFlag = default;
 if (particles.Length == 0){
 return;
 }
-var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
-__gsharp_jit_constants.Add("unrollFactor", (unrollFactor).ToString());
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ProcessPhysics_Source, __gsharp_jit_constants, macros);
-successFlag = default;
+__t_jitConstants_ProcessPhysics ??= new System.Collections.Generic.Dictionary<string, string>();
+__t_jitConstants_ProcessPhysics.Clear();
+__t_jitConstants_ProcessPhysics["unrollFactor"] = (unrollFactor).ToString();
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ProcessPhysics_Source, __t_jitConstants_ProcessPhysics, macros);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (float* p_totalMagnitude = &totalMagnitude)
 fixed (bool* p_successFlag = &successFlag)
