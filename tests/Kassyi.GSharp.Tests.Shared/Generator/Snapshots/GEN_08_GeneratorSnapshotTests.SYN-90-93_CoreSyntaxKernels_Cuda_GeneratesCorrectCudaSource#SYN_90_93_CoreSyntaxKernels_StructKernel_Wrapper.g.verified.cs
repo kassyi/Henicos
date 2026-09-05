@@ -29,15 +29,17 @@ vectors[tid]=v;
 }
 }
 ";
+public static readonly string StructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + StructKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_StructKernel(global::Kassyi.GSharp.Tests.Syntax.Vector2[] vectors, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_StructKernel(global::Kassyi.GSharp.Tests.Syntax.Vector2[] vectors, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (vectors.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("StructKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + StructKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("StructKernel", StructKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_vectors = IntPtr.Zero;
 try
 {
@@ -93,11 +95,12 @@ if (d_vectors != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_vectors);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_StructKernel_Device(IntPtr vectors, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_StructKernel_Device(IntPtr vectors, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("StructKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + StructKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("StructKernel", StructKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[2];

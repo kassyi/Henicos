@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_SharedMemoryStaticKernel;
 public const string SharedMemoryStaticKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_CustomPoint__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_CustomPoint__
 struct Kassyi_GSharp_Tests_Syntax_CustomPoint
@@ -58,15 +56,17 @@ SharedMemoryStaticKernel(intOutput, floatOutput, pointOutput);
 }
 }
 ";
+public static readonly string SharedMemoryStaticKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryStaticKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void SharedMemoryStaticKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* intOutput, float* floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint* pointOutput);
-public static unsafe void Launch_SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SharedMemoryStaticKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", SharedMemoryStaticKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_intOutput = intOutput)
 fixed (float* p_floatOutput = floatOutput)
 fixed (global::Kassyi.GSharp.Tests.Syntax.CustomPoint* p_pointOutput = pointOutput)

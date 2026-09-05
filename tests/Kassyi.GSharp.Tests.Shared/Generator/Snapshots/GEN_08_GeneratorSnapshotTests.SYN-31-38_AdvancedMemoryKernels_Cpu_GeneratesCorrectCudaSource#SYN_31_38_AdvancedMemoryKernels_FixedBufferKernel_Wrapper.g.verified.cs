@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_FixedBufferKernel;
 public const string FixedBufferKernel_Source = @"extern ""C"" __declspec(dllexport) void FixedBufferKernel(unsigned int* __restrict__ data){
 unsigned int* p=&data[0];
 {
@@ -31,15 +29,17 @@ FixedBufferKernel(data);
 }
 }
 ";
+public static readonly string FixedBufferKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + FixedBufferKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void FixedBufferKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* data);
-public static unsafe void Launch_FixedBufferKernel(uint[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_FixedBufferKernel(uint[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + FixedBufferKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", FixedBufferKernel_FullSource, __t_jitConstants, macros);
 fixed (uint* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

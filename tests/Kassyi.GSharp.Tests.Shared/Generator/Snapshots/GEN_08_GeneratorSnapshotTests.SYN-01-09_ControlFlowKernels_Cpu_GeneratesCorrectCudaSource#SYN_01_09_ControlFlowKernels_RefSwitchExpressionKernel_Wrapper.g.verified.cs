@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_RefSwitchExpressionKernel;
 public const string RefSwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void RefSwitchExpressionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign){
 int tid=threadIdx.x;
 if(selectors[tid]==1)
@@ -36,15 +34,17 @@ RefSwitchExpressionKernel(a, b, selectors, valuesToAssign);
 }
 }
 ";
+public static readonly string RefSwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + RefSwitchExpressionKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void RefSwitchExpressionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* a, int* b, int* selectors, int* valuesToAssign);
-public static unsafe void Launch_RefSwitchExpressionKernel(int[] a, int[] b, int[] selectors, int[] valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_RefSwitchExpressionKernel(int[] a, int[] b, int[] selectors, int[] valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || selectors.Length == 0 || valuesToAssign.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + RefSwitchExpressionKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", RefSwitchExpressionKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_a = a)
 fixed (int* p_b = b)
 fixed (int* p_selectors = selectors)

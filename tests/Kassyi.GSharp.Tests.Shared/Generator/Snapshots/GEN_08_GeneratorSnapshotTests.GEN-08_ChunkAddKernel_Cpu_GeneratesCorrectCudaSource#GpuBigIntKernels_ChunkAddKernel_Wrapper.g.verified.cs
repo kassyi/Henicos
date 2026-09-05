@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Stdlib.Math
 {
 public static partial class GpuBigIntKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ChunkAddKernel;
 public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void ChunkAddKernel(unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize){
 int chunkIdx=blockIdx.x*blockDim.x+threadIdx.x;
 int start=chunkIdx*chunkSize;
@@ -46,15 +44,17 @@ ChunkAddKernel(dA, dB, dResult, carryBuffer, numWords, chunkSize);
 }
 }
 ";
+public static readonly string ChunkAddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ChunkAddKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ChunkAddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* dA, uint* dB, uint* dResult, long* carryBuffer, int numWords, int chunkSize);
-public static unsafe void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ChunkAddKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", ChunkAddKernel_FullSource, __t_jitConstants, macros);
 fixed (uint* p_dA = dA)
 fixed (uint* p_dB = dB)
 fixed (uint* p_dResult = dResult)

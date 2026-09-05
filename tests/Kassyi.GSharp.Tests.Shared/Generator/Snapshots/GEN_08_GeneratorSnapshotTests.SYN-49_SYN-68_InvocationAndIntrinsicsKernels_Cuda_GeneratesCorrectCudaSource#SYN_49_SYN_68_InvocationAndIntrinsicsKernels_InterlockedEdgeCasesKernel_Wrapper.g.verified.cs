@@ -27,15 +27,17 @@ atomicExch(&structArray[tid].ValueU,42u);
 __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 }
 ";
+public static readonly string InterlockedEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_InterlockedEdgeCasesKernel(int[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_InterlockedEdgeCasesKernel(int[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", InterlockedEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_array = IntPtr.Zero;
 IntPtr d_structArray = IntPtr.Zero;
 try
@@ -122,11 +124,12 @@ if (d_structArray != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structArray);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_InterlockedEdgeCasesKernel_Device(IntPtr array, IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_InterlockedEdgeCasesKernel_Device(IntPtr array, IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", InterlockedEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[2];

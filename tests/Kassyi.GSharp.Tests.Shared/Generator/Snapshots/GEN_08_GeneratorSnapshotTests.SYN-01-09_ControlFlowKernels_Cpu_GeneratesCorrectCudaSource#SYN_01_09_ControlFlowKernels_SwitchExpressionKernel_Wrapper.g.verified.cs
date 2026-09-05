@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_SwitchExpressionKernel;
 public const string SwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void SwitchExpressionKernel(int* __restrict__ input, int* __restrict__ output){
 int tid=threadIdx.x;
 int val=input[tid];
@@ -39,15 +37,17 @@ SwitchExpressionKernel(input, output);
 }
 }
 ";
+public static readonly string SwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SwitchExpressionKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void SwitchExpressionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* input, int* output);
-public static unsafe void Launch_SwitchExpressionKernel(int[] input, int[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_SwitchExpressionKernel(int[] input, int[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + SwitchExpressionKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", SwitchExpressionKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_input = input)
 fixed (int* p_output = output)
 {

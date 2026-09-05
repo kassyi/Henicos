@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_InterlockedKernel;
 public const string InterlockedKernel_Source = @"extern ""C"" __declspec(dllexport) void InterlockedKernel(int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf){
 int tid=threadIdx.x;
 __gsharp_atomicAdd(&intBuf[0],1);
@@ -44,15 +42,17 @@ InterlockedKernel(intBuf, uintBuf, longBuf, ulongBuf);
 }
 }
 ";
+public static readonly string InterlockedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InterlockedKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void InterlockedKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* intBuf, uint* uintBuf, long* longBuf, ulong* ulongBuf);
-public static unsafe void Launch_InterlockedKernel(int[] intBuf, uint[] uintBuf, long[] longBuf, ulong[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_InterlockedKernel(int[] intBuf, uint[] uintBuf, long[] longBuf, ulong[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InterlockedKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", InterlockedKernel_FullSource, __t_jitConstants, macros);
 fixed (int* p_intBuf = intBuf)
 fixed (uint* p_uintBuf = uintBuf)
 fixed (long* p_longBuf = longBuf)

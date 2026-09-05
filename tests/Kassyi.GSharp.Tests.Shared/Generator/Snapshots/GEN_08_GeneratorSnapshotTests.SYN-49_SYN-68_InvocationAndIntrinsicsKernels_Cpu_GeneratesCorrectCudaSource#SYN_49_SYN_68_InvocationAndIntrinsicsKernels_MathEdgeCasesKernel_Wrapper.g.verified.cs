@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
-[System.ThreadStatic]
-private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_MathEdgeCasesKernel;
 public const string MathEdgeCasesKernel_Source = @"extern ""C"" __declspec(dllexport) void MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults){
 int tid=threadIdx.x;
 float f=floatSpecialInputs[tid];
@@ -36,15 +34,17 @@ MathEdgeCasesKernel(floatSpecialInputs, floatSpecialResults, doubleSpecialInputs
 }
 }
 ";
+public static readonly string MathEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MathEdgeCasesKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MathEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, float* floatSpecialInputs, float* floatSpecialResults, double* doubleSpecialInputs, double* doubleSpecialResults);
-public static unsafe void Launch_MathEdgeCasesKernel(float[] floatSpecialInputs, float[] floatSpecialResults, double[] doubleSpecialInputs, double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MathEdgeCasesKernel(float[] floatSpecialInputs, float[] floatSpecialResults, double[] doubleSpecialInputs, double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MathEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", MathEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 fixed (float* p_floatSpecialInputs = floatSpecialInputs)
 fixed (float* p_floatSpecialResults = floatSpecialResults)
 fixed (double* p_doubleSpecialInputs = doubleSpecialInputs)

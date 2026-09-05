@@ -43,15 +43,17 @@ pointOutput[0]=pointSmem[5];
 }
 }
 ";
+public static readonly string SharedMemoryStaticKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SharedMemoryStaticKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SharedMemoryStaticKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SharedMemoryStaticKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SharedMemoryStaticKernel", SharedMemoryStaticKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_intOutput = IntPtr.Zero;
 IntPtr d_floatOutput = IntPtr.Zero;
 IntPtr d_pointOutput = IntPtr.Zero;
@@ -171,11 +173,12 @@ if (d_pointOutput != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_pointOutput);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_SharedMemoryStaticKernel_Device(IntPtr intOutput, IntPtr floatOutput, IntPtr pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_SharedMemoryStaticKernel_Device(IntPtr intOutput, IntPtr floatOutput, IntPtr pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SharedMemoryStaticKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SharedMemoryStaticKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SharedMemoryStaticKernel", SharedMemoryStaticKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[3];

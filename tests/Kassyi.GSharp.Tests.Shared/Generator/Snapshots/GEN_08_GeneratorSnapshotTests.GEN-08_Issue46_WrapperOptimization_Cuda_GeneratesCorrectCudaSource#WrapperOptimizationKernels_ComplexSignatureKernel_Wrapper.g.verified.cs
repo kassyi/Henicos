@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class WrapperOptimizationKernelsWrapper
 {
+[System.ThreadStatic]
+private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_ComplexSignatureKernel;
 public const string ComplexSignatureKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 struct Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -27,6 +29,7 @@ if((*scalarRef)>constantVal)
 }
 }
 ";
+public static readonly string ComplexSignatureKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ComplexSignatureKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -34,7 +37,7 @@ public struct __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
 public int A;
 public float B;
 }
-public static unsafe __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct Marshal_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct Marshal_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 var native = new __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct();
 native.A = host.A;
@@ -48,16 +51,18 @@ host.B = native.B;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ComplexSignatureKernel(ref int scalarRef, out float scalarOut, int[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_ComplexSignatureKernel(ref int scalarRef, out float scalarOut, int[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+scalarOut = default;
 if (arrayVal.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
-__gsharp_jit_constants.Add("constantVal", (constantVal).ToString());
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ComplexSignatureKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ComplexSignatureKernel_Source, __gsharp_jit_constants, macros);
+__t_jitConstants_array_ComplexSignatureKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
+__t_jitConstants_array_ComplexSignatureKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ComplexSignatureKernel, 0, 1);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ComplexSignatureKernel", ComplexSignatureKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -153,42 +158,25 @@ if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structRef);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ComplexSignatureKernel_Device(ref int scalarRef, out float scalarOut, IntPtr arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_ComplexSignatureKernel_Device(IntPtr scalarRef, IntPtr scalarOut, IntPtr arrayVal, IntPtr structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();
-__gsharp_jit_constants.Add("constantVal", (constantVal).ToString());
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ComplexSignatureKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ComplexSignatureKernel_Source, __gsharp_jit_constants, macros);
-IntPtr d_scalarRef = IntPtr.Zero;
-IntPtr d_scalarOut = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> structRef_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
-IntPtr d_structRef = IntPtr.Zero;
+__t_jitConstants_array_ComplexSignatureKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
+__t_jitConstants_array_ComplexSignatureKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ComplexSignatureKernel, 0, 1);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ComplexSignatureKernel", ComplexSignatureKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[4];
-// Marshal ref/out scalar: scalarRef
-int scalarRef_size = sizeof(int);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarRef, scalarRef_size));
-// Fast zero-allocation copy to device
-fixed (int* p_scalarRef_temp = &scalarRef)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_scalarRef, (IntPtr)p_scalarRef_temp, scalarRef_size));
-}
-kernelParams[0] = &d_scalarRef;
-// Marshal ref/out scalar: scalarOut
-int scalarOut_size = sizeof(float);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarOut, scalarOut_size));
-kernelParams[1] = &d_scalarOut;
+// Marshal device scalar: scalarRef
+kernelParams[0] = &scalarRef;
+// Marshal device scalar: scalarOut
+kernelParams[1] = &scalarOut;
 // Marshal device array: arrayVal
 kernelParams[2] = &arrayVal;
-var native_structRef = Marshal_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct(ref structRef, true, structRef_allocatedPtrs);
-// Marshal ref/out struct: structRef
-int structRef_size = sizeof(__Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_structRef, structRef_size));
-// Fast zero-allocation copy to device
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_structRef, (IntPtr)(&native_structRef), structRef_size));
-kernelParams[3] = &d_structRef;
+// Marshal device struct: structRef
+kernelParams[3] = &structRef;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -198,27 +186,9 @@ IntPtr.Zero, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-// Fast zero-allocation copy from device for scalar: scalarRef
-fixed (int* ptr_scalarRef = &scalarRef)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarRef, d_scalarRef, scalarRef_size));
-}
-scalarOut = default;
-// Fast zero-allocation copy from device for scalar: scalarOut
-fixed (float* ptr_scalarOut = &scalarOut)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarOut, d_scalarOut, scalarOut_size));
-}
-// Fast zero-allocation copy from device
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_structRef), d_structRef, structRef_size));
-Unmarshal_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct(ref structRef, ref native_structRef, true);
 }
 finally
 {
-if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_scalarRef);
-if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_scalarOut);
-foreach (var ptr in structRef_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
-if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structRef);
 }
 }
 }
