@@ -39,7 +39,7 @@ try
 void** kernelParams = stackalloc void*[3];
 // Marshal array: targetArray
 int targetArray_size = targetArray.Length * sizeof(int?);
-if(targetArray_size>0)
+if (targetArray_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_targetArray, targetArray_size));
 System.Runtime.InteropServices.GCHandle handle_targetArray = System.Runtime.InteropServices.GCHandle.Alloc(targetArray, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -56,7 +56,7 @@ handle_targetArray.Free();
 kernelParams[0] = &d_targetArray;
 // Marshal array: sideEffectTracker
 int sideEffectTracker_size = sideEffectTracker.Length * sizeof(int);
-if(sideEffectTracker_size>0)
+if (sideEffectTracker_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_sideEffectTracker, sideEffectTracker_size));
 System.Runtime.InteropServices.GCHandle handle_sideEffectTracker = System.Runtime.InteropServices.GCHandle.Alloc(sideEffectTracker, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -73,7 +73,7 @@ handle_sideEffectTracker.Free();
 kernelParams[1] = &d_sideEffectTracker;
 // Marshal array: values
 int values_size = values.Length * sizeof(int);
-if(values_size>0)
+if (values_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_values, values_size));
 System.Runtime.InteropServices.GCHandle handle_values = System.Runtime.InteropServices.GCHandle.Alloc(values, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -98,9 +98,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: targetArray
-if(targetArray_size>0&&d_targetArray!=IntPtr.Zero)
+if (targetArray_size > 0 && d_targetArray != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_targetArray=System.Runtime.InteropServices.GCHandle.Alloc(targetArray,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_targetArray = System.Runtime.InteropServices.GCHandle.Alloc(targetArray, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_targetArray = handleBack_targetArray.AddrOfPinnedObject();
@@ -112,9 +112,9 @@ handleBack_targetArray.Free();
 }
 }
 // Copy back array: sideEffectTracker
-if(sideEffectTracker_size>0&&d_sideEffectTracker!=IntPtr.Zero)
+if (sideEffectTracker_size > 0 && d_sideEffectTracker != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_sideEffectTracker=System.Runtime.InteropServices.GCHandle.Alloc(sideEffectTracker,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_sideEffectTracker = System.Runtime.InteropServices.GCHandle.Alloc(sideEffectTracker, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_sideEffectTracker = handleBack_sideEffectTracker.AddrOfPinnedObject();
@@ -126,9 +126,9 @@ handleBack_sideEffectTracker.Free();
 }
 }
 // Copy back array: values
-if(values_size>0&&d_values!=IntPtr.Zero)
+if (values_size > 0 && d_values != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_values=System.Runtime.InteropServices.GCHandle.Alloc(values,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_values = System.Runtime.InteropServices.GCHandle.Alloc(values, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_values = handleBack_values.AddrOfPinnedObject();

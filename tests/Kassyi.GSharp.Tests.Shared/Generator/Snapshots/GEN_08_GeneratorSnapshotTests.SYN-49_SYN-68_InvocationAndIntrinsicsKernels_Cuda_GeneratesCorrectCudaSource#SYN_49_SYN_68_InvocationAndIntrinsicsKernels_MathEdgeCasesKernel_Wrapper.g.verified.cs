@@ -41,7 +41,7 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: floatSpecialInputs
 int floatSpecialInputs_size = floatSpecialInputs.Length * sizeof(float);
-if(floatSpecialInputs_size>0)
+if (floatSpecialInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatSpecialInputs, floatSpecialInputs_size));
 System.Runtime.InteropServices.GCHandle handle_floatSpecialInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -58,7 +58,7 @@ handle_floatSpecialInputs.Free();
 kernelParams[0] = &d_floatSpecialInputs;
 // Marshal array: floatSpecialResults
 int floatSpecialResults_size = floatSpecialResults.Length * sizeof(float);
-if(floatSpecialResults_size>0)
+if (floatSpecialResults_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatSpecialResults, floatSpecialResults_size));
 System.Runtime.InteropServices.GCHandle handle_floatSpecialResults = System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialResults, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -75,7 +75,7 @@ handle_floatSpecialResults.Free();
 kernelParams[1] = &d_floatSpecialResults;
 // Marshal array: doubleSpecialInputs
 int doubleSpecialInputs_size = doubleSpecialInputs.Length * sizeof(double);
-if(doubleSpecialInputs_size>0)
+if (doubleSpecialInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleSpecialInputs, doubleSpecialInputs_size));
 System.Runtime.InteropServices.GCHandle handle_doubleSpecialInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -92,7 +92,7 @@ handle_doubleSpecialInputs.Free();
 kernelParams[2] = &d_doubleSpecialInputs;
 // Marshal array: doubleSpecialResults
 int doubleSpecialResults_size = doubleSpecialResults.Length * sizeof(double);
-if(doubleSpecialResults_size>0)
+if (doubleSpecialResults_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleSpecialResults, doubleSpecialResults_size));
 System.Runtime.InteropServices.GCHandle handle_doubleSpecialResults = System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialResults, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -117,9 +117,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: floatSpecialInputs
-if(floatSpecialInputs_size>0&&d_floatSpecialInputs!=IntPtr.Zero)
+if (floatSpecialInputs_size > 0 && d_floatSpecialInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatSpecialInputs=System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatSpecialInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatSpecialInputs = handleBack_floatSpecialInputs.AddrOfPinnedObject();
@@ -131,9 +131,9 @@ handleBack_floatSpecialInputs.Free();
 }
 }
 // Copy back array: floatSpecialResults
-if(floatSpecialResults_size>0&&d_floatSpecialResults!=IntPtr.Zero)
+if (floatSpecialResults_size > 0 && d_floatSpecialResults != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatSpecialResults=System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialResults,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatSpecialResults = System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialResults, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatSpecialResults = handleBack_floatSpecialResults.AddrOfPinnedObject();
@@ -145,9 +145,9 @@ handleBack_floatSpecialResults.Free();
 }
 }
 // Copy back array: doubleSpecialInputs
-if(doubleSpecialInputs_size>0&&d_doubleSpecialInputs!=IntPtr.Zero)
+if (doubleSpecialInputs_size > 0 && d_doubleSpecialInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_doubleSpecialInputs=System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_doubleSpecialInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleSpecialInputs = handleBack_doubleSpecialInputs.AddrOfPinnedObject();
@@ -159,9 +159,9 @@ handleBack_doubleSpecialInputs.Free();
 }
 }
 // Copy back array: doubleSpecialResults
-if(doubleSpecialResults_size>0&&d_doubleSpecialResults!=IntPtr.Zero)
+if (doubleSpecialResults_size > 0 && d_doubleSpecialResults != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_doubleSpecialResults=System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialResults,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_doubleSpecialResults = System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialResults, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleSpecialResults = handleBack_doubleSpecialResults.AddrOfPinnedObject();

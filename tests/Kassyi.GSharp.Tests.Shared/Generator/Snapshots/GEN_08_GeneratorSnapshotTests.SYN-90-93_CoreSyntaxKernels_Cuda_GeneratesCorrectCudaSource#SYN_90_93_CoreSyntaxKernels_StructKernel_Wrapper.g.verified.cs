@@ -46,7 +46,7 @@ try
 void** kernelParams = stackalloc void*[2];
 // Marshal array: vectors
 int vectors_size = vectors.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.Vector2);
-if(vectors_size>0)
+if (vectors_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_vectors, vectors_size));
 System.Runtime.InteropServices.GCHandle handle_vectors = System.Runtime.InteropServices.GCHandle.Alloc(vectors, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -73,9 +73,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: vectors
-if(vectors_size>0&&d_vectors!=IntPtr.Zero)
+if (vectors_size > 0 && d_vectors != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_vectors=System.Runtime.InteropServices.GCHandle.Alloc(vectors,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_vectors = System.Runtime.InteropServices.GCHandle.Alloc(vectors, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_vectors = handleBack_vectors.AddrOfPinnedObject();

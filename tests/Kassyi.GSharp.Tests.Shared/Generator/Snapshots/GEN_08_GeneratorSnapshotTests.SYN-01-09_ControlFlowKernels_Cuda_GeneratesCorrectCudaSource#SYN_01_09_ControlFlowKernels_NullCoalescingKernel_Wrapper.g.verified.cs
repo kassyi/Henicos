@@ -38,7 +38,7 @@ try
 void** kernelParams = stackalloc void*[3];
 // Marshal array: nullableInputs
 int nullableInputs_size = nullableInputs.Length * sizeof(int?);
-if(nullableInputs_size>0)
+if (nullableInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nullableInputs, nullableInputs_size));
 System.Runtime.InteropServices.GCHandle handle_nullableInputs = System.Runtime.InteropServices.GCHandle.Alloc(nullableInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -55,7 +55,7 @@ handle_nullableInputs.Free();
 kernelParams[0] = &d_nullableInputs;
 // Marshal array: fallbackValues
 int fallbackValues_size = fallbackValues.Length * sizeof(int);
-if(fallbackValues_size>0)
+if (fallbackValues_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_fallbackValues, fallbackValues_size));
 System.Runtime.InteropServices.GCHandle handle_fallbackValues = System.Runtime.InteropServices.GCHandle.Alloc(fallbackValues, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -72,7 +72,7 @@ handle_fallbackValues.Free();
 kernelParams[1] = &d_fallbackValues;
 // Marshal array: results
 int results_size = results.Length * sizeof(int);
-if(results_size>0)
+if (results_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_results, results_size));
 System.Runtime.InteropServices.GCHandle handle_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -97,9 +97,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: nullableInputs
-if(nullableInputs_size>0&&d_nullableInputs!=IntPtr.Zero)
+if (nullableInputs_size > 0 && d_nullableInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_nullableInputs=System.Runtime.InteropServices.GCHandle.Alloc(nullableInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_nullableInputs = System.Runtime.InteropServices.GCHandle.Alloc(nullableInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_nullableInputs = handleBack_nullableInputs.AddrOfPinnedObject();
@@ -111,9 +111,9 @@ handleBack_nullableInputs.Free();
 }
 }
 // Copy back array: fallbackValues
-if(fallbackValues_size>0&&d_fallbackValues!=IntPtr.Zero)
+if (fallbackValues_size > 0 && d_fallbackValues != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_fallbackValues=System.Runtime.InteropServices.GCHandle.Alloc(fallbackValues,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_fallbackValues = System.Runtime.InteropServices.GCHandle.Alloc(fallbackValues, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_fallbackValues = handleBack_fallbackValues.AddrOfPinnedObject();
@@ -125,9 +125,9 @@ handleBack_fallbackValues.Free();
 }
 }
 // Copy back array: results
-if(results_size>0&&d_results!=IntPtr.Zero)
+if (results_size > 0 && d_results != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_results=System.Runtime.InteropServices.GCHandle.Alloc(results,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_results = handleBack_results.AddrOfPinnedObject();

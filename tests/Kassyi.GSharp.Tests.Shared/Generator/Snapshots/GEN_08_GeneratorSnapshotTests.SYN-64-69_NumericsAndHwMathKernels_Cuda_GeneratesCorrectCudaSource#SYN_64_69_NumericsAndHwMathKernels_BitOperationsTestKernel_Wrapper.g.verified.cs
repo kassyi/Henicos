@@ -44,7 +44,7 @@ try
 void** kernelParams = stackalloc void*[2];
 // Marshal array: u32Data
 int u32Data_size = u32Data.Length * sizeof(uint);
-if(u32Data_size>0)
+if (u32Data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_u32Data, u32Data_size));
 System.Runtime.InteropServices.GCHandle handle_u32Data = System.Runtime.InteropServices.GCHandle.Alloc(u32Data, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -61,7 +61,7 @@ handle_u32Data.Free();
 kernelParams[0] = &d_u32Data;
 // Marshal array: u64Data
 int u64Data_size = u64Data.Length * sizeof(ulong);
-if(u64Data_size>0)
+if (u64Data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_u64Data, u64Data_size));
 System.Runtime.InteropServices.GCHandle handle_u64Data = System.Runtime.InteropServices.GCHandle.Alloc(u64Data, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -86,9 +86,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: u32Data
-if(u32Data_size>0&&d_u32Data!=IntPtr.Zero)
+if (u32Data_size > 0 && d_u32Data != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_u32Data=System.Runtime.InteropServices.GCHandle.Alloc(u32Data,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_u32Data = System.Runtime.InteropServices.GCHandle.Alloc(u32Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_u32Data = handleBack_u32Data.AddrOfPinnedObject();
@@ -100,9 +100,9 @@ handleBack_u32Data.Free();
 }
 }
 // Copy back array: u64Data
-if(u64Data_size>0&&d_u64Data!=IntPtr.Zero)
+if (u64Data_size > 0 && d_u64Data != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_u64Data=System.Runtime.InteropServices.GCHandle.Alloc(u64Data,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_u64Data = System.Runtime.InteropServices.GCHandle.Alloc(u64Data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_u64Data = handleBack_u64Data.AddrOfPinnedObject();

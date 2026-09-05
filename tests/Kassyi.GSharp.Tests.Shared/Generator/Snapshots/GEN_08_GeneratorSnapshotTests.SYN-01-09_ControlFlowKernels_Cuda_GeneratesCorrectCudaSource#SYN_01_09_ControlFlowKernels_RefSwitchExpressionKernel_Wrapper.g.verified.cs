@@ -41,7 +41,7 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
 int a_size = a.Length * sizeof(int);
-if(a_size>0)
+if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
 System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -58,7 +58,7 @@ handle_a.Free();
 kernelParams[0] = &d_a;
 // Marshal array: b
 int b_size = b.Length * sizeof(int);
-if(b_size>0)
+if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
 System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -75,7 +75,7 @@ handle_b.Free();
 kernelParams[1] = &d_b;
 // Marshal array: selectors
 int selectors_size = selectors.Length * sizeof(int);
-if(selectors_size>0)
+if (selectors_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_selectors, selectors_size));
 System.Runtime.InteropServices.GCHandle handle_selectors = System.Runtime.InteropServices.GCHandle.Alloc(selectors, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -92,7 +92,7 @@ handle_selectors.Free();
 kernelParams[2] = &d_selectors;
 // Marshal array: valuesToAssign
 int valuesToAssign_size = valuesToAssign.Length * sizeof(int);
-if(valuesToAssign_size>0)
+if (valuesToAssign_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_valuesToAssign, valuesToAssign_size));
 System.Runtime.InteropServices.GCHandle handle_valuesToAssign = System.Runtime.InteropServices.GCHandle.Alloc(valuesToAssign, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -117,9 +117,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: a
-if(a_size>0&&d_a!=IntPtr.Zero)
+if (a_size > 0 && d_a != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_a=System.Runtime.InteropServices.GCHandle.Alloc(a,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_a = handleBack_a.AddrOfPinnedObject();
@@ -131,9 +131,9 @@ handleBack_a.Free();
 }
 }
 // Copy back array: b
-if(b_size>0&&d_b!=IntPtr.Zero)
+if (b_size > 0 && d_b != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_b=System.Runtime.InteropServices.GCHandle.Alloc(b,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_b = handleBack_b.AddrOfPinnedObject();
@@ -145,9 +145,9 @@ handleBack_b.Free();
 }
 }
 // Copy back array: selectors
-if(selectors_size>0&&d_selectors!=IntPtr.Zero)
+if (selectors_size > 0 && d_selectors != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_selectors=System.Runtime.InteropServices.GCHandle.Alloc(selectors,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_selectors = System.Runtime.InteropServices.GCHandle.Alloc(selectors, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_selectors = handleBack_selectors.AddrOfPinnedObject();
@@ -159,9 +159,9 @@ handleBack_selectors.Free();
 }
 }
 // Copy back array: valuesToAssign
-if(valuesToAssign_size>0&&d_valuesToAssign!=IntPtr.Zero)
+if (valuesToAssign_size > 0 && d_valuesToAssign != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_valuesToAssign=System.Runtime.InteropServices.GCHandle.Alloc(valuesToAssign,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_valuesToAssign = System.Runtime.InteropServices.GCHandle.Alloc(valuesToAssign, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_valuesToAssign = handleBack_valuesToAssign.AddrOfPinnedObject();

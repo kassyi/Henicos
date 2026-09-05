@@ -47,7 +47,7 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: doubleInputs
 int doubleInputs_size = doubleInputs.Length * sizeof(double);
-if(doubleInputs_size>0)
+if (doubleInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleInputs, doubleInputs_size));
 System.Runtime.InteropServices.GCHandle handle_doubleInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -64,7 +64,7 @@ handle_doubleInputs.Free();
 kernelParams[0] = &d_doubleInputs;
 // Marshal array: doubleOutputs
 int doubleOutputs_size = doubleOutputs.Length * sizeof(double);
-if(doubleOutputs_size>0)
+if (doubleOutputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleOutputs, doubleOutputs_size));
 System.Runtime.InteropServices.GCHandle handle_doubleOutputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -81,7 +81,7 @@ handle_doubleOutputs.Free();
 kernelParams[1] = &d_doubleOutputs;
 // Marshal array: floatInputs
 int floatInputs_size = floatInputs.Length * sizeof(float);
-if(floatInputs_size>0)
+if (floatInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatInputs, floatInputs_size));
 System.Runtime.InteropServices.GCHandle handle_floatInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -98,7 +98,7 @@ handle_floatInputs.Free();
 kernelParams[2] = &d_floatInputs;
 // Marshal array: floatOutputs
 int floatOutputs_size = floatOutputs.Length * sizeof(float);
-if(floatOutputs_size>0)
+if (floatOutputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatOutputs, floatOutputs_size));
 System.Runtime.InteropServices.GCHandle handle_floatOutputs = System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -123,9 +123,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: doubleInputs
-if(doubleInputs_size>0&&d_doubleInputs!=IntPtr.Zero)
+if (doubleInputs_size > 0 && d_doubleInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_doubleInputs=System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_doubleInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleInputs = handleBack_doubleInputs.AddrOfPinnedObject();
@@ -137,9 +137,9 @@ handleBack_doubleInputs.Free();
 }
 }
 // Copy back array: doubleOutputs
-if(doubleOutputs_size>0&&d_doubleOutputs!=IntPtr.Zero)
+if (doubleOutputs_size > 0 && d_doubleOutputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_doubleOutputs=System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_doubleOutputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleOutputs = handleBack_doubleOutputs.AddrOfPinnedObject();
@@ -151,9 +151,9 @@ handleBack_doubleOutputs.Free();
 }
 }
 // Copy back array: floatInputs
-if(floatInputs_size>0&&d_floatInputs!=IntPtr.Zero)
+if (floatInputs_size > 0 && d_floatInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatInputs=System.Runtime.InteropServices.GCHandle.Alloc(floatInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatInputs = handleBack_floatInputs.AddrOfPinnedObject();
@@ -165,9 +165,9 @@ handleBack_floatInputs.Free();
 }
 }
 // Copy back array: floatOutputs
-if(floatOutputs_size>0&&d_floatOutputs!=IntPtr.Zero)
+if (floatOutputs_size > 0 && d_floatOutputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatOutputs=System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatOutputs = System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatOutputs = handleBack_floatOutputs.AddrOfPinnedObject();

@@ -86,7 +86,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarOut, scalarOu
 kernelParams[1] = &d_scalarOut;
 // Marshal array: arrayVal
 int arrayVal_size = arrayVal.Length * sizeof(int);
-if(arrayVal_size>0)
+if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_arrayVal, arrayVal_size));
 System.Runtime.InteropServices.GCHandle handle_arrayVal = System.Runtime.InteropServices.GCHandle.Alloc(arrayVal, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -129,9 +129,9 @@ fixed (float* ptr_scalarOut = &scalarOut)
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarOut, d_scalarOut, scalarOut_size));
 }
 // Copy back array: arrayVal
-if(arrayVal_size>0&&d_arrayVal!=IntPtr.Zero)
+if (arrayVal_size > 0 && d_arrayVal != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_arrayVal=System.Runtime.InteropServices.GCHandle.Alloc(arrayVal,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_arrayVal = System.Runtime.InteropServices.GCHandle.Alloc(arrayVal, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_arrayVal = handleBack_arrayVal.AddrOfPinnedObject();

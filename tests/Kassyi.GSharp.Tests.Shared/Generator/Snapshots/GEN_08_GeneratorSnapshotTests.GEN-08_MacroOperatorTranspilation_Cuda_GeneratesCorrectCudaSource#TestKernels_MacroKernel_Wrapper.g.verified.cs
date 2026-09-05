@@ -81,7 +81,7 @@ var native_ctx = Marshal_TestNamespace_DummyContext(ref ctx, false, ctx_allocate
 kernelParams[0] = &native_ctx;
 // Marshal array: dA
 int dA_size = dA.Length * sizeof(uint);
-if(dA_size>0)
+if (dA_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dA, dA_size));
 System.Runtime.InteropServices.GCHandle handle_dA = System.Runtime.InteropServices.GCHandle.Alloc(dA, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -98,7 +98,7 @@ handle_dA.Free();
 kernelParams[1] = &d_dA;
 // Marshal array: dB
 int dB_size = dB.Length * sizeof(uint);
-if(dB_size>0)
+if (dB_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dB, dB_size));
 System.Runtime.InteropServices.GCHandle handle_dB = System.Runtime.InteropServices.GCHandle.Alloc(dB, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -115,7 +115,7 @@ handle_dB.Free();
 kernelParams[2] = &d_dB;
 // Marshal array: dResult
 int dResult_size = dResult.Length * sizeof(uint);
-if(dResult_size>0)
+if (dResult_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));
 System.Runtime.InteropServices.GCHandle handle_dResult = System.Runtime.InteropServices.GCHandle.Alloc(dResult, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -141,9 +141,9 @@ IntPtr.Zero // Extra
 ));
 Unmarshal_TestNamespace_DummyContext(ref ctx, ref native_ctx, false);
 // Copy back array: dA
-if(dA_size>0&&d_dA!=IntPtr.Zero)
+if (dA_size > 0 && d_dA != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dA=System.Runtime.InteropServices.GCHandle.Alloc(dA,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dA = System.Runtime.InteropServices.GCHandle.Alloc(dA, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dA = handleBack_dA.AddrOfPinnedObject();
@@ -155,9 +155,9 @@ handleBack_dA.Free();
 }
 }
 // Copy back array: dB
-if(dB_size>0&&d_dB!=IntPtr.Zero)
+if (dB_size > 0 && d_dB != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dB=System.Runtime.InteropServices.GCHandle.Alloc(dB,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dB = System.Runtime.InteropServices.GCHandle.Alloc(dB, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dB = handleBack_dB.AddrOfPinnedObject();
@@ -169,9 +169,9 @@ handleBack_dB.Free();
 }
 }
 // Copy back array: dResult
-if(dResult_size>0&&d_dResult!=IntPtr.Zero)
+if (dResult_size > 0 && d_dResult != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dResult=System.Runtime.InteropServices.GCHandle.Alloc(dResult,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dResult = System.Runtime.InteropServices.GCHandle.Alloc(dResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dResult = handleBack_dResult.AddrOfPinnedObject();
