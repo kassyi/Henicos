@@ -30,6 +30,12 @@ internal static class WrapperEmitter
             writer.AppendLine(className);
             using (writer.Scope())
             {
+                writer.AppendLine("[System.ThreadStatic]");
+                writer.Append("private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_");
+                writer.Append(method.Name);
+                writer.AppendLine(";");
+                writer.AppendLine();
+                
                 WriteKernelSource(writer, method, source);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
@@ -140,7 +146,7 @@ internal static class WrapperEmitter
                     writer.AppendSpace();
                 }
 
-                if (isDevicePtr && p.Type is IArrayTypeSymbol)
+                if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
                 {
                     writer.Append("IntPtr ");
                     writer.Append(p.Name);
@@ -191,17 +197,23 @@ internal static class WrapperEmitter
 
         if (hasJitConstants)
         {
-            writer.AppendLine(
-                "var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
+            writer.Append("__t_jitConstants_");
+            writer.Append(method.Name);
+            writer.AppendLine(" ??= new System.Collections.Generic.Dictionary<string, string>();");
+            writer.Append("__t_jitConstants_");
+            writer.Append(method.Name);
+            writer.AppendLine(".Clear();");
             foreach (var p in method.Parameters)
             {
                 if (p.HasAttribute(KnownAttributes.JitConstant))
                 {
-                    writer.Append("__gsharp_jit_constants.Add(\"");
+                    writer.Append("__t_jitConstants_");
+                    writer.Append(method.Name);
+                    writer.Append("[\"");
                     writer.Append(p.Name);
-                    writer.Append("\", (");
+                    writer.Append("\"] = (");
                     writer.Append(p.Name);
-                    writer.AppendLine(").ToString());");
+                    writer.AppendLine(").ToString();");
                 }
             }
         }
@@ -216,7 +228,7 @@ internal static class WrapperEmitter
             writer.Append("Code.Source + ");
             writer.Append(method.Name);
             writer.Append("_Source, ");
-            writer.Append(hasJitConstants ? "__gsharp_jit_constants" : "null");
+            writer.Append(hasJitConstants ? $"__t_jitConstants_{method.Name}" : "null");
             writer.Append(", macros");
         }
 
@@ -276,6 +288,18 @@ internal static class WrapperEmitter
         {
             // Null array checks
             var arrayParams = method.Parameters.Where(p => p.Type is IArrayTypeSymbol).ToList();
+            var refOutParams = method.Parameters
+                .Where(p => p.RefKind is RefKind.Ref or RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
+
+            foreach (var p in refOutParams)
+            {
+                if (p.RefKind == RefKind.Out)
+                {
+                    writer.Append(p.Name);
+                    writer.AppendLine(" = default;");
+                }
+            }
+
             if (arrayParams.Count > 0)
             {
                 writer.Append("if ");
@@ -305,15 +329,21 @@ internal static class WrapperEmitter
             var hasJitConstants = method.Parameters.Any(p => p.HasAttribute(KnownAttributes.JitConstant));
             if (hasJitConstants)
             {
-                writer.AppendLine(
-                    "var __gsharp_jit_constants = new System.Collections.Generic.Dictionary<string, string>();");
+                writer.Append("__t_jitConstants_");
+                writer.Append(method.Name);
+                writer.AppendLine(" ??= new System.Collections.Generic.Dictionary<string, string>();");
+                writer.Append("__t_jitConstants_");
+                writer.Append(method.Name);
+                writer.AppendLine(".Clear();");
                 foreach (var p in method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)))
                 {
-                    writer.Append("__gsharp_jit_constants.Add(\"");
+                    writer.Append("__t_jitConstants_");
+                    writer.Append(method.Name);
+                    writer.Append("[\"");
                     writer.Append(p.Name);
-                    writer.Append("\", (");
+                    writer.Append("\"] = (");
                     writer.Append(p.Name);
-                    writer.AppendLine(").ToString());");
+                    writer.AppendLine(").ToString();");
                 }
             }
 
@@ -327,23 +357,12 @@ internal static class WrapperEmitter
             writer.Append("Code.Source + ");
             writer.Append(method.Name);
             writer.Append("_Source, ");
-            writer.Append(hasJitConstants ? "__gsharp_jit_constants" : "null");
+            writer.Append(hasJitConstants ? $"__t_jitConstants_{method.Name}" : "null");
             writer.AppendLine(", macros);");
 
             // Generate fixed blocks
-            var refOutParams = method.Parameters
-                .Where(p => p.RefKind is RefKind.Ref or RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
             if (arrayParams.Count > 0 || refOutParams.Count > 0)
             {
-                foreach (var p in refOutParams)
-                {
-                    if (p.RefKind == RefKind.Out)
-                    {
-                        writer.Append(p.Name);
-                        writer.AppendLine(" = default;");
-                    }
-                }
-
                 foreach (var p in arrayParams)
                 {
                     writer.Append("fixed (");

@@ -103,7 +103,7 @@ internal static class MarshalingEmitter
         writer.AppendFullyQualifiedCppName(s);
         writer.Append("(ref ");
         writer.Append(s.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        writer.AppendLine(" host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)");
+        writer.AppendLine(" host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)");
         using (writer.Scope())
         {
             writer.Append("var native = new __Native_");
@@ -179,7 +179,7 @@ internal static class MarshalingEmitter
                     writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.");
                     writer.Append(member.Name);
                     writer.AppendLine(", size));");
-                    writer.Append("allocatedPtrs.Add(native.");
+                    writer.Append("allocatedPtrs!.Add(native.");
                     writer.Append(member.Name);
                     writer.AppendLine(");");
                     writer.Append("var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.");
@@ -321,21 +321,27 @@ internal static class MarshalingEmitter
         {
             if (IsCustomStruct(p.Type))
             {
-                writer.Append("System.Collections.Generic.List<IntPtr> ");
-                writer.Append(p.Name);
-                writer.Append("_allocatedPtrs = new System.Collections.Generic.List<IntPtr>");
-                writer.AppendParentheses();
-
-                writer.AppendLine(";");
+                if (!isDevicePtr)
+                {
+                    writer.Append("System.Collections.Generic.List<IntPtr> ");
+                    writer.Append(p.Name);
+                    writer.Append("_allocatedPtrs = new System.Collections.Generic.List<IntPtr>");
+                    writer.AppendParentheses();
+                    writer.AppendLine(";");
+                }
+                
                 if (p.RefKind is RefKind.Ref or RefKind.Out)
                 {
-                    writer.Append("IntPtr d_");
-                    writer.Append(p.Name);
-                    writer.AppendLine(" = IntPtr.Zero;");
+                    if (!isDevicePtr)
+                    {
+                        writer.Append("IntPtr d_");
+                        writer.Append(p.Name);
+                        writer.AppendLine(" = IntPtr.Zero;");
+                    }
                 }
             }
             else if ((!isDevicePtr && p.Type is IArrayTypeSymbol) ||
-                     p.RefKind is RefKind.Ref or RefKind.Out)
+                     (!isDevicePtr && p.RefKind is RefKind.Ref or RefKind.Out))
             {
                 writer.Append("IntPtr d_");
                 writer.Append(p.Name);
@@ -390,7 +396,7 @@ internal static class MarshalingEmitter
         }
         else if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            WriteRefOrOutScalarMarshal(writer, p, paramIndex);
+            WriteRefOrOutScalarMarshal(writer, p, paramIndex, isDevicePtr);
         }
         else
         {
@@ -401,53 +407,74 @@ internal static class MarshalingEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        writer.Append("var native_");
-        writer.Append(p.Name);
-        writer.Append(" = Marshal_");
-        writer.AppendFullyQualifiedCppName(p.Type);
-        writer.Append("(ref ");
-        writer.Append(p.Name);
-        writer.Append(", ");
-        writer.Append(isDevicePtr ? "true" : "false");
-        writer.Append(", ");
-        writer.Append(p.Name);
-        writer.AppendLine("_allocatedPtrs);");
+        bool isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
+
+        if (!isDevicePointerStruct)
+        {
+            writer.Append("var native_");
+            writer.Append(p.Name);
+            writer.Append(" = Marshal_");
+            writer.AppendFullyQualifiedCppName(p.Type);
+            writer.Append("(ref ");
+            writer.Append(p.Name);
+            writer.Append(", ");
+            writer.Append(isDevicePtr ? "true" : "false");
+            writer.Append(", ");
+            writer.Append(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs");
+            writer.AppendLine(");");
+        }
 
         if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            writer.Append("// Marshal ref/out struct: ");
-            writer.AppendLine(p.Name);
-            writer.Append("int ");
-            writer.Append(p.Name);
-            writer.Append("_size = sizeof(__Native_");
-            writer.AppendFullyQualifiedCppName(p.Type);
-            writer.AppendLine(");");
-
-            writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_");
-            writer.Append(p.Name);
-            writer.Append(", ");
-            writer.Append(p.Name);
-            writer.AppendLine("_size));");
-            if (p.RefKind == RefKind.Ref)
+            if (isDevicePtr)
             {
-                writer.AppendLine("// Fast zero-allocation copy to device");
-                writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_");
+                writer.Append("// Marshal device struct: ");
+                writer.AppendLine(p.Name);
+                writer.Append("kernelParams");
+                using (writer.Brackets())
+                {
+                    writer.Append(paramIndex);
+                }
+                writer.Append(" = &");
                 writer.Append(p.Name);
-                writer.Append(", (IntPtr)(&native_");
+                writer.AppendSemiColonLine();
+            }
+            else
+            {
+                writer.Append("// Marshal ref/out struct: ");
+                writer.AppendLine(p.Name);
+                writer.Append("int ");
                 writer.Append(p.Name);
-                writer.Append("), ");
+                writer.Append("_size = sizeof(__Native_");
+                writer.AppendFullyQualifiedCppName(p.Type);
+                writer.AppendLine(");");
+
+                writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_");
+                writer.Append(p.Name);
+                writer.Append(", ");
                 writer.Append(p.Name);
                 writer.AppendLine("_size));");
-            }
+                if (p.RefKind == RefKind.Ref)
+                {
+                    writer.AppendLine("// Fast zero-allocation copy to device");
+                    writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_");
+                    writer.Append(p.Name);
+                    writer.Append(", (IntPtr)(&native_");
+                    writer.Append(p.Name);
+                    writer.Append("), ");
+                    writer.Append(p.Name);
+                    writer.AppendLine("_size));");
+                }
 
-            writer.Append("kernelParams");
-            using (writer.Brackets())
-            {
-                writer.Append(paramIndex);
+                writer.Append("kernelParams");
+                using (writer.Brackets())
+                {
+                    writer.Append(paramIndex);
+                }
+                writer.Append(" = &d_");
+                writer.Append(p.Name);
+                writer.AppendSemiColonLine();
             }
-            writer.Append(" = &d_");
-            writer.Append(p.Name);
-            writer.AppendSemiColonLine();
         }
         else
         {
@@ -553,52 +580,68 @@ internal static class MarshalingEmitter
         }
     }
 
-    private static void WriteRefOrOutScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
+    private static void WriteRefOrOutScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
     {
-        writer.Append("// Marshal ref/out scalar: ");
-        writer.AppendLine(p.Name);
-        writer.Append("int ");
-        writer.Append(p.Name);
-        writer.Append("_size = sizeof(");
-        writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        writer.AppendLine(");");
-
-        writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_");
-        writer.Append(p.Name);
-        writer.Append(", ");
-        writer.Append(p.Name);
-        writer.AppendLine("_size));");
-
-        if (p.RefKind == RefKind.Ref)
+        if (isDevicePtr)
         {
-            writer.AppendLine("// Fast zero-allocation copy to device");
-            writer.Append("fixed (");
-            writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-            writer.Append("* p_");
-            writer.Append(p.Name);
-            writer.Append("_temp = &");
-            writer.Append(p.Name);
-            writer.AppendLine(")");
-            using (writer.Scope())
+            writer.Append("// Marshal device scalar: ");
+            writer.AppendLine(p.Name);
+            writer.Append("kernelParams");
+            using (writer.Brackets())
             {
-                writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_");
-                writer.Append(p.Name);
-                writer.Append(", (IntPtr)p_");
-                writer.Append(p.Name);
-                writer.Append("_temp, ");
-                writer.Append(p.Name);
-                writer.AppendLine("_size));");
+                writer.Append(paramIndex);
             }
+            writer.Append(" = &");
+            writer.Append(p.Name);
+            writer.AppendSemiColonLine();
         }
-
-        writer.Append("kernelParams");
-        using (writer.Brackets())
+        else
         {
-            writer.Append(paramIndex);
+            writer.Append("// Marshal ref/out scalar: ");
+            writer.AppendLine(p.Name);
+            writer.Append("int ");
+            writer.Append(p.Name);
+            writer.Append("_size = sizeof(");
+            writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            writer.AppendLine(");");
+
+            writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_");
+            writer.Append(p.Name);
+            writer.Append(", ");
+            writer.Append(p.Name);
+            writer.AppendLine("_size));");
+
+            if (p.RefKind == RefKind.Ref)
+            {
+                writer.AppendLine("// Fast zero-allocation copy to device");
+                writer.Append("fixed (");
+                writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                writer.Append("* p_");
+                writer.Append(p.Name);
+                writer.Append("_temp = &");
+                writer.Append(p.Name);
+                writer.AppendLine(")");
+                using (writer.Scope())
+                {
+                    writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_");
+                    writer.Append(p.Name);
+                    writer.Append(", (IntPtr)p_");
+                    writer.Append(p.Name);
+                    writer.Append("_temp, ");
+                    writer.Append(p.Name);
+                    writer.AppendLine("_size));");
+                }
+            }
+
+            writer.Append("kernelParams");
+            using (writer.Brackets())
+            {
+                writer.Append(paramIndex);
+            }
+            writer.Append(" = &d_");
+            writer.Append(p.Name);
+            writer.AppendSemiColonLine();
         }
-        writer.Append(" = &d_");
-        writer.Append(p.Name);
-        writer.AppendSemiColonLine();
     }
 
     private static void WriteScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
@@ -670,22 +713,32 @@ internal static class MarshalingEmitter
         }
         else if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            WriteRefOrOutScalarUnmarshal(writer, p);
+            WriteRefOrOutScalarUnmarshal(writer, p, isDevicePtr);
         }
     }
 
     private static void WriteCustomStructUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
+        bool isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
+        
+        if (isDevicePointerStruct)
+        {
+            return;
+        }
+
         if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            writer.AppendLine("// Fast zero-allocation copy from device");
-            writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_");
-            writer.Append(p.Name);
-            writer.Append("), d_");
-            writer.Append(p.Name);
-            writer.Append(", ");
-            writer.Append(p.Name);
-            writer.AppendLine("_size));");
+            if (!isDevicePtr)
+            {
+                writer.AppendLine("// Fast zero-allocation copy from device");
+                writer.Append("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_");
+                writer.Append(p.Name);
+                writer.Append("), d_");
+                writer.Append(p.Name);
+                writer.Append(", ");
+                writer.Append(p.Name);
+                writer.AppendLine("_size));");
+            }
         }
 
         writer.Append("Unmarshal_");
@@ -766,8 +819,10 @@ internal static class MarshalingEmitter
         }
     }
 
-    private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, IParameterSymbol p)
+    private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
+        if (isDevicePtr) return;
+        
         if (p.RefKind == RefKind.Out)
         {
             writer.Append(p.Name);
@@ -799,16 +854,19 @@ internal static class MarshalingEmitter
     {
         if (IsCustomStruct(p.Type))
         {
-            writer.Append("foreach (var ptr in ");
-            writer.Append(p.Name);
-            writer.AppendLine("_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);");
-            if (p.RefKind is RefKind.Ref or RefKind.Out)
+            if (!isDevicePtr)
             {
-                writer.Append("if (d_");
+                writer.Append("foreach (var ptr in ");
                 writer.Append(p.Name);
-                writer.Append(" != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_");
-                writer.Append(p.Name);
-                writer.AppendLine(");");
+                writer.AppendLine("_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);");
+                if (p.RefKind is RefKind.Ref or RefKind.Out)
+                {
+                    writer.Append("if (d_");
+                    writer.Append(p.Name);
+                    writer.Append(" != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_");
+                    writer.Append(p.Name);
+                    writer.AppendLine(");");
+                }
             }
         }
         else if (p.Type is IArrayTypeSymbol)
@@ -824,11 +882,14 @@ internal static class MarshalingEmitter
         }
         else if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            writer.Append("if (d_");
-            writer.Append(p.Name);
-            writer.Append(" != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_");
-            writer.Append(p.Name);
-            writer.AppendLine(");");
+            if (!isDevicePtr)
+            {
+                writer.Append("if (d_");
+                writer.Append(p.Name);
+                writer.Append(" != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_");
+                writer.Append(p.Name);
+                writer.AppendLine(");");
+            }
         }
     }
 }
