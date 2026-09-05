@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using YamlDotNet.Serialization;
 
 namespace Kassyi.GSharp.Compiler.Generators;
