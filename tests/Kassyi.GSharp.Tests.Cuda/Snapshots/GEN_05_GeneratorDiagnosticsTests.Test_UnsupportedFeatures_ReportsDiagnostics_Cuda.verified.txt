@@ -8,7 +8,7 @@
         {
 */
  : (10,22)-(10,25),
-      Message: Method 'NonVoidReturnKernel' is marked with [GpuKernel] but returns 'int'. GpuKernel methods must return void.,
+      Message: Method 'NonVoidReturnKernel' is marked with [GpuKernel] but returns 'Int32'. GpuKernel methods must return void.,
       Severity: Error,
       Descriptor: {
         Id: GSH0004,

@@ -205,17 +205,17 @@ public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_DebugReduc_SpecTypes
 {
-public bool BooleanValue;
-public byte ByteValue;
-public sbyte SByteValue;
-public short ShortValue;
-public ushort UShortValue;
-public int IntValue;
-public uint UIntValue;
-public long LongValue;
-public ulong ULongValue;
-public float FloatValue;
-public double DoubleValue;
+public global::System.Boolean BooleanValue;
+public global::System.Byte ByteValue;
+public global::System.SByte SByteValue;
+public global::System.Int16 ShortValue;
+public global::System.UInt16 UShortValue;
+public global::System.Int32 IntValue;
+public global::System.UInt32 UIntValue;
+public global::System.Int64 LongValue;
+public global::System.UInt64 ULongValue;
+public global::System.Single FloatValue;
+public global::System.Double DoubleValue;
 }
 public static unsafe __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
@@ -249,7 +249,7 @@ host.DoubleValue = native.DoubleValue;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref global::System.Single totalMagnitude, out global::System.Boolean successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 successFlag = default;
 if (particles.Length == 0){
@@ -286,16 +286,16 @@ handle_particles.Free();
 }
 kernelParams[0] = &d_particles;
 // Marshal ref/out scalar: totalMagnitude
-int totalMagnitude_size = sizeof(float);
+int totalMagnitude_size = sizeof(global::System.Single);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_totalMagnitude, totalMagnitude_size));
 // Fast zero-allocation copy to device
-fixed (float* p_totalMagnitude_temp = &totalMagnitude)
+fixed (global::System.Single* p_totalMagnitude_temp = &totalMagnitude)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_totalMagnitude, (IntPtr)p_totalMagnitude_temp, totalMagnitude_size));
 }
 kernelParams[1] = &d_totalMagnitude;
 // Marshal ref/out scalar: successFlag
-int successFlag_size = sizeof(bool);
+int successFlag_size = sizeof(global::System.Boolean);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
 kernelParams[2] = &d_successFlag;
 var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, false, largeStructVal_allocatedPtrs);
@@ -327,13 +327,13 @@ handleBack_particles.Free();
 }
 }
 // Fast zero-allocation copy from device for scalar: totalMagnitude
-fixed (float* ptr_totalMagnitude = &totalMagnitude)
+fixed (global::System.Single* ptr_totalMagnitude = &totalMagnitude)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_totalMagnitude, d_totalMagnitude, totalMagnitude_size));
 }
 successFlag = default;
 // Fast zero-allocation copy from device for scalar: successFlag
-fixed (bool* ptr_successFlag = &successFlag)
+fixed (global::System.Boolean* ptr_successFlag = &successFlag)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_successFlag, d_successFlag, successFlag_size));
 }
@@ -350,7 +350,7 @@ foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, IntPtr totalMagnitude, IntPtr successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, IntPtr totalMagnitude, IntPtr successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
