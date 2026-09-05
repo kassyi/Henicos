@@ -387,7 +387,7 @@ internal static class DeclarationTranspilers
             context.Writer.Append($" {variable.Identifier.Text}");
             using (context.Writer.Brackets())
             {
-                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count.ToString());
+                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
             }
             context.Writer.Append(" = ");
             context.Visitor.Visit(implStackAlloc.Initializer);
