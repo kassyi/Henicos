@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\..\Stdlib\Kassyi.GSharp.Stdlib.Math\Kassyi.GSharp.Stdlib.Math.csproj" />
   </ItemGroup>
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -12,11 +10,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GSharpTargetDialect>Cuda</GSharpTargetDialect>
   </PropertyGroup>
-
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

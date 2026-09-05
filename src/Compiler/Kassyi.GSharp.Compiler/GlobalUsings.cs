@@ -5,7 +5,7 @@ global using System.Runtime.CompilerServices;
 global using Kassyi.GSharp.Compiler.Diagnostics;
 global using Kassyi.GSharp.Compiler.Extensions;
 global using Kassyi.GSharp.Compiler.Transpiler;
+global using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 global using Microsoft.CodeAnalysis;
 global using Microsoft.CodeAnalysis.CSharp;
 global using Microsoft.CodeAnalysis.CSharp.Syntax;
-global using Kassyi.GSharp.Compiler.Transpiler.Dialects;

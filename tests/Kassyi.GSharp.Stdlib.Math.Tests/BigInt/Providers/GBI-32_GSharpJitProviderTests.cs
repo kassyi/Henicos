@@ -3,6 +3,7 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt.Providers;
 
+[Trait("Category", "GpuExecution")]
 public class GBI32_GSharpJitProviderTests
 {
     [Fact]
