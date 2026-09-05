@@ -1,47 +1,117 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
-
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
     [Trait("Category", "GpuExecution")]
     public class GBI_01_25_GpuBigIntTests
     {
-        [Fact(Skip = "未実装・課題: GBI-01 (GSharpJitProvider のメモリプール不在 / スラブアロケータ)")]
+        [Fact]
         [Trait("RoadmapId", "GBI-01")]
         [Trait("Category", "Memory")]
         public void Test_GBI01_MemoryPoolAllocation()
         {
+            // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
+            // that exist before lazy thread-safe initialization.
+            var exceptions = new ConcurrentBag<Exception>();
+
+            Parallel.For(0, 100, i =>
+            {
+                try
+                {
+                    using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+                    using var a = new GpuBigInteger(ctx, new uint[] { (uint)i + 1, 0, 0, 0 });
+                    using var b = new GpuBigInteger(ctx, new uint[] { (uint)i + 2, 0, 0, 0 });
+                    using var c = new GpuBigInteger(ctx, 4);
+                    using var d = new GpuBigInteger(ctx, 8);
+                    
+                    c.Value = a + b;
+                    d.Value = c * a;
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            });
+
+            Assert.Empty(exceptions);
         }
 
-        [Fact(Skip = "未実装")]
+        [Fact]
         [Trait("FeatureId", "GBI-03")]
         [Trait("Category", "Performance")]
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
+            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var a = new GpuBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
+            using var b = new GpuBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
+            using var c = new GpuBigInteger(ctx, new uint[] { 101, 200, 300, 400 });
+            
+            Assert.Equal(0, a.CompareTo(b));
+            Assert.Equal(-1, a.CompareTo(c));
+            Assert.Equal(1, c.CompareTo(a));
         }
 
         private const int TestSizeWords = 256; // 8192 bits
 
-        [Fact(Skip = "未実装・課題: GBI-04 (Square 専用 JIT Pointwise カーネルの直接ディスパッチ)")]
+        [Fact]
         [Trait("RoadmapId", "GBI-04")]
         [Trait("Category", "Optimization")]
         public void Test_GBI04_DirectSquarePointwiseKernel()
         {
+            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var a = new GpuBigInteger(ctx, new uint[] { 123456789, 0, 0, 0 });
+            using var result = new GpuBigInteger(ctx, 8);
+            
+            // Should invoke direct square kernel instead of generic multiply
+            result.Value = a * a;
+            
+            var expected = ToBigInteger(new uint[] { 123456789, 0, 0, 0 }) * ToBigInteger(new uint[] { 123456789, 0, 0, 0 });
+            Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
         }
 
-        [Fact(Skip = "未実装・課題: GBI-05 (Lehmer's GCD の大桁並列化 / Half-GCD)")]
+        [Fact]
         [Trait("RoadmapId", "GBI-05")]
         [Trait("Category", "Algorithm")]
         public void Test_GBI05_ParallelGcdLargeDigits()
         {
+            // Issue #112 & #117: Test large GCD to trigger pipeline stalls / TDR issues.
+            using var ctx = new GpuContext(128, GpuExecutionEngine.GSharpJit);
+            
+            var arrA = GenerateRandomArray(128, 42); // 4096-bit number
+            var arrB = GenerateRandomArray(128, 43);
+            
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+            var expected = System.Numerics.BigInteger.GreatestCommonDivisor(bigA, bigB);
+
+            using var gpuA = new GpuBigInteger(ctx, arrA);
+            using var gpuB = new GpuBigInteger(ctx, arrB);
+            using var result = new GpuBigInteger(ctx, 128);
+            
+            GpuBigIntMath.Gcd(gpuA, gpuB, result);
+            Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
         }
 
-        [Fact(Skip = "未実装・課題: GBI-06 (式木 GpuBigIntExpr の動的 Kernel Fusion)")]
+        [Fact]
         [Trait("RoadmapId", "GBI-06")]
         [Trait("Category", "Runtime")]
         public void Test_GBI06_ExpressionKernelFusion()
         {
+            // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
+            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var a = new GpuBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
+            using var b = new GpuBigInteger(ctx, new uint[] { 200, 0, 0, 0 });
+            using var c = new GpuBigInteger(ctx, new uint[] { 300, 0, 0, 0 });
+            using var result = new GpuBigInteger(ctx, 8); // Mul requires a+b size
+            
+            // (a + b) * c
+            result.Value = (a + b) * c;
+            
+            var expected = System.Numerics.BigInteger.Parse("90000");
+            Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
         }
 
         [Trait("RoadmapId", "GBI-10")]
