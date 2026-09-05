@@ -1,4 +1,5 @@
 using System.Text;
+using Kassyi.GSharp.Compiler.Dialects;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Compiler;
@@ -95,11 +96,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         ITranspilerDialect dialect;
         if (targetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
         {
-            dialect = new Dialects.GSharpCudaDialect();
+            dialect = new GSharpCudaDialect();
         }
         else
         {
-            dialect = new Dialects.StandardCppDialect();
+            dialect = new StandardCppDialect();
         }
 
         var commonDeviceSource = GenerateCommonDeviceSource(compilation, deviceMethods, context, dialect);
