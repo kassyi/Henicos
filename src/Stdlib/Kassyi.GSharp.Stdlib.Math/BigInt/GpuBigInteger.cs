@@ -46,7 +46,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         get; set;
     }
 
-    private bool _disposed;
+    internal bool _disposed;
 
     /// <summary>
     /// Allocates uninitialized GPU device memory for an integer of the specified limb length.
@@ -474,14 +474,10 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <returns>A new <see cref="GpuBigInteger"/> instance padded to the target size.</returns>
     public GpuBigInteger PadTo(int targetWords)
     {
-        if (targetWords < NumWords)
-        {
-            throw new ArgumentOutOfRangeException(nameof(targetWords), "Target size must be greater than or equal to current size.");
-        }
-        
-        var padded = new GpuBigInteger(Context, targetWords);
-        Context.Provider.CopyDeviceToDevice(padded.DevicePointer, DevicePointer, NumWords);
-        return padded;
+        var result = new GpuBigInteger(Context, targetWords);
+        var copyWords = System.Math.Min(NumWords, targetWords);
+        Context.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, copyWords);
+        return result;
     }
 
     /// <summary>

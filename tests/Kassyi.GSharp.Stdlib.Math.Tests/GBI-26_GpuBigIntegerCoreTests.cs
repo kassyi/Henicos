@@ -62,10 +62,21 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
 
     [Fact]
     [Trait("FeatureId", "GBI-26")]
-    [Trait("Category", "SadPath")]
-    public void PadTo_SmallerSize_ThrowsArgumentOutOfRangeException()
+    public void PadTo_SmallerSize_ReturnsTruncatedValue()
     {
-        using var gpuBigInt = new GpuBigInteger(_context, 4);
-        Assert.Throws<ArgumentOutOfRangeException>(() => gpuBigInt.PadTo(2));
+        var originalData = new uint[] { 1, 2, 3, 4, 5 };
+        using var original = new GpuBigInteger(_context, originalData);
+
+        using var padded = original.PadTo(3);
+
+        Assert.Equal(3, padded.NumWords);
+        
+        var resultData = new uint[3];
+        _context.Provider.CopyDeviceToHost(resultData, padded.DevicePointer, 3);
+        
+        Assert.Equal(3, resultData.Length);
+        Assert.Equal(1u, resultData[0]);
+        Assert.Equal(2u, resultData[1]);
+        Assert.Equal(3u, resultData[2]);
     }
 }
