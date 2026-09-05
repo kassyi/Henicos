@@ -154,8 +154,6 @@ public interface IGpuExecutionProvider
     /// <returns>A signed integer that indicates the relative values of the operands.</returns>
     int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand);
 
-    /// <summary>Clears any cached resources (e.g. twiddle factors, carry buffers) and frees their device memory.</summary>
-    void ClearCaches();
 }
 
 
