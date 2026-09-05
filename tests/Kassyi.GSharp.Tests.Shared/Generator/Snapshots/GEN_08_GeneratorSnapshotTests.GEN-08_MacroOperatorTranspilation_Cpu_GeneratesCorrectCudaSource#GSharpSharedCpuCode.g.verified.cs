@@ -129,6 +129,11 @@ extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uin
 struct TestNamespace_DummyContext;
 inline void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, unsigned int* result, unsigned int* left, unsigned int* right);
 
+inline void DummyUnaryOp(unsigned int* result, unsigned int* operand);
+
+struct TestNamespace_DummyContext;
+inline void DummyShiftOp(TestNamespace_DummyContext ctx, unsigned int* result, unsigned int* operand, int shift);
+
 #ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
 struct TestNamespace_DummyContext
@@ -138,6 +143,20 @@ int State;
 ;
 #endif
 inline void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, unsigned int* result, unsigned int* left, unsigned int* right){
+}
+
+inline void DummyUnaryOp(unsigned int* result, unsigned int* operand){
+}
+
+#ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
+#define __GSHARP_STRUCT_TestNamespace_DummyContext__
+struct TestNamespace_DummyContext
+{
+int State;
+}
+;
+#endif
+inline void DummyShiftOp(TestNamespace_DummyContext ctx, unsigned int* result, unsigned int* operand, int shift){
 }
 
 ";

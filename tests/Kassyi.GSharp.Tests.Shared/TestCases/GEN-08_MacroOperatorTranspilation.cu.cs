@@ -8,6 +8,12 @@ namespace TestNamespace
     {
         [GpuDeviceFunction]
         public static void DummyOp(ref DummyContext ctx, uint[] result, uint[] left, uint[] right) { }
+
+        [GpuDeviceFunction]
+        public static void DummyUnaryOp(uint[] result, uint[] operand) { }
+
+        [GpuDeviceFunction]
+        public static void DummyShiftOp(DummyContext ctx, uint[] result, uint[] operand, int shift) { }
     }
 
     public struct DummyContext
@@ -24,6 +30,12 @@ namespace TestNamespace
         [GpuOperatorMacro(typeof(DummyKernels), nameof(DummyKernels.DummyOp))]
         public static DummyRef operator +(DummyRef a, DummyRef b) => throw new Exception();
 
+        [GpuOperatorMacro(typeof(DummyKernels), nameof(DummyKernels.DummyUnaryOp))]
+        public static DummyRef operator ~(DummyRef a) => throw new Exception();
+
+        [GpuOperatorMacro(typeof(DummyKernels), nameof(DummyKernels.DummyShiftOp))]
+        public static DummyRef operator <<(DummyRef a, int shift) => throw new Exception();
+
         public static implicit operator DummyRef(uint[] data) => new DummyRef(data);
         public static implicit operator uint[](DummyRef data) => data.Data;
     }
@@ -38,6 +50,8 @@ namespace TestNamespace
             DummyRef c = dResult;
             
             c = a + b;
+            c = ~a;
+            c = a << 5;
         }
     }
 }
