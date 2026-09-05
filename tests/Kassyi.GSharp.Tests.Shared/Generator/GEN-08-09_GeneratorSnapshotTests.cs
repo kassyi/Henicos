@@ -1,13 +1,4 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Xunit;
-using System.Text;
-using Kassyi.GSharp.Compiler;
-
 namespace Kassyi.GSharp.Tests;
 
 public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.TranspilerTestBase

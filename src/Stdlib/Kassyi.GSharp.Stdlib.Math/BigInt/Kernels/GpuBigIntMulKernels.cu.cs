@@ -20,8 +20,8 @@ public static class GpuBigIntMulKernels
     [GpuKernel]
     public static void Kernel_MultiplyNtt_SharedRow(
         uint[] buffer, uint[] temporaryBuffer, uint[] twiddle,
-        int m, int n1, int n2, uint p, ulong pm, 
-        bool applyTwiddleBefore, bool applyTwiddleAfter, 
+        int m, int n1, int n2, uint p, ulong pm,
+        bool applyTwiddleBefore, bool applyTwiddleAfter,
         int maxBlocks, int currentL)
     {
         var args = new NumberTheoreticTransformKernelArgs

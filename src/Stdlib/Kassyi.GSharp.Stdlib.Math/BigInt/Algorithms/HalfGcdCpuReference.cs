@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
+
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 
 /// <summary>CPU reference implementation of Lehmer's / Half-GCD algorithm for validation before GPU kernel execution.</summary>
@@ -36,48 +38,9 @@ public static class HalfGcdCpuReference
             var x = (ulong)(a >> shift);
             var y = (ulong)(b >> shift);
 
-            long u0 = 1, v0 = 0;
-            long u1 = 0, v1 = 1;
-
-            var progress = false;
-
-            while (y != 0)
-            {
-                // [WHY] Validates that the quotient computed from truncated single-word precision matches the full-precision quotient.
-                // Truncated bounds satisfy: x * 2^s <= A < (x+1) * 2^s and y * 2^s <= B < (y+1) * 2^s.
-                // If min quotient (x / (y + 1)) equals max quotient ((x + 1) / y), the single-word quotient q is mathematically exact.
-                if (y + 1 == 0)
-                {
-                    break; // overflow protection
-                }
-
-                var qMin = x / (y + 1);
-                var qMax = (x + 1) / y;
-
-                if (qMin != qMax)
-                {
-                    break;
-                }
-
-                var q = qMin;
-                if (q == 0)
-                {
-                    break;
-                }
-
-                var r = x - q * y;
-
-                var u2 = u0 - (long)q * u1;
-                var v2 = v0 - (long)q * v1;
-
-                x = y;
-                y = r;
-                u0 = u1;
-                u1 = u2;
-                v0 = v1;
-                v1 = v2;
-                progress = true;
-            }
+            var progress =
+                GpuBigIntGcdKernels.ComputeLehmerMatrix(x, y, out long u0,
+                    out long v0, out long u1, out long v1);
 
             if (!progress)
             {

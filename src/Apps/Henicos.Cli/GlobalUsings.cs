@@ -2,3 +2,4 @@
 global using System.Numerics;
 global using BenchmarkDotNet.Attributes;
 global using Kassyi.GSharp.Stdlib.Math;
+global using Kassyi.GSharp.Stdlib.Math.BigInt;

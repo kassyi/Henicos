@@ -1,5 +1,3 @@
-using System;
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
 
 /// <summary>

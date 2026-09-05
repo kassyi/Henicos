@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Jit;
 
@@ -11,7 +10,10 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 public class FermatRunner : IDisposable
 {
     /// <summary>Gets the Fermat exponent parameter <c>E</c> (testing <c>F_n = 2^(2^E) + 1</c>).</summary>
-    public int E { get; }
+    public int E
+    {
+        get;
+    }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
     public int OutNumWords => _outNumWords;
@@ -25,7 +27,7 @@ public class FermatRunner : IDisposable
     private GpuBigInteger _valueT;
     private GpuBigInteger _valueTReduced;
     private GpuBigInteger _mulResult;
-    
+
     private GpuBigInteger _quotient;
     private GpuBigInteger _remainder;
     private GpuBigInteger _remainderMask;
@@ -38,7 +40,7 @@ public class FermatRunner : IDisposable
     public FermatRunner(int e)
     {
         E = e;
-        
+
         _numWords = (2 * E + 1 + 31) / 32;
         _outNumWords = _numWords * 2 + 16;
         _bitOffset2E1 = (2 * E + 1) % 32;
@@ -73,6 +75,7 @@ public class FermatRunner : IDisposable
         {
             maskArray[word2E1] = (1U << rem2E1) - 1;
         }
+
         _gpuContext.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, _outNumWords);
     }
 
@@ -91,6 +94,7 @@ public class FermatRunner : IDisposable
         {
             throw new ArgumentException($"Invalid state buffer size. Expected {_outNumWords}, got {valueT.Length}.");
         }
+
         _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, _outNumWords);
     }
 
@@ -102,25 +106,13 @@ public class FermatRunner : IDisposable
         // Square it using host-side NTT multiplication orchestration
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
 
-        // Copy _mulResult into the zero-padded _valueT (which is _outNumWords long)
-        // First zero out _valueT
-        var zeroMem = new uint[_outNumWords]; 
-        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, zeroMem, _outNumWords);
-        _gpuContext.Provider.CopyDeviceToDevice(_valueT.DevicePointer, _mulResult.DevicePointer, _numWords * 2);
-
-        // Reduce
-        GpuBigIntMath.ShiftRight(_valueT, _bitOffset2E1, _quotient);
-        GpuBigIntMath.BitwiseAnd(_valueT, _remainderMask, _remainder);
-        
-        GpuBigIntMath.ShiftLeft(_quotient, _exponent, _temp);
-        GpuBigIntMath.Add(_remainder, _temp, _remainder);
-        
-        GpuBigIntMath.ShiftLeft(_quotient, 1, _temp);
-        GpuBigIntMath.Sub(_remainder, _quotient, _remainder);
-        GpuBigIntMath.Sub(_remainder, _temp, _remainder);
-        
-        GpuBigIntMath.ShiftLeft(_quotient, 3, _temp);
-        GpuBigIntMath.Sub(_remainder, _temp, _valueT);
+        // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
+        Kernels.GpuBigIntFermatKernelsWrapper.Launch_Kernel_FermatReduce_Mega_Device(
+            _valueT.DevicePointer, _mulResult.DevicePointer, _quotient.DevicePointer, _remainder.DevicePointer,
+            _temp.DevicePointer, _remainderMask.DevicePointer,
+            _numWords, _outNumWords, 2 * E + 1, _exponent,
+            gridDimX: 1, blockDimX: 1
+        );
     }
 
     /// <summary>Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.</summary>
@@ -146,10 +138,11 @@ public class FermatRunner : IDisposable
         {
             MultiplySquareAndReduceHost();
         }
+
         JitEngine.SynchronizeDevice();
     }
 
-    public void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
         _valueT.Dispose();
         _valueTReduced.Dispose();
@@ -159,5 +152,11 @@ public class FermatRunner : IDisposable
         _remainderMask.Dispose();
         _temp.Dispose();
         _gpuContext.Dispose();
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

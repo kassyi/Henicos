@@ -4,3 +4,4 @@ global using System.Numerics;
 global using System.Runtime.CompilerServices;
 global using Kassyi.GSharp.Core;
 global using Kassyi.GSharp.Stdlib.Math.Contexts;
+global using System.Runtime.InteropServices;

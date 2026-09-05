@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public class GEN_18_VectorBuiltinTests
 :  TranspilerTestBase{

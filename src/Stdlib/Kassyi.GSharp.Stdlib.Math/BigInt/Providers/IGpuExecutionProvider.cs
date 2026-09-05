@@ -153,6 +153,7 @@ public interface IGpuExecutionProvider
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A signed integer that indicates the relative values of the operands.</returns>
     int CompareTo(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand);
+
 }
 
 
