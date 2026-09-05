@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Tests.Runtime;
@@ -35,13 +35,13 @@ public partial class Gsh06_07_RuntimeIssuesTests
         File.WriteAllBytes(dummyCorruptPath, [0x00, 0xDE, 0xAD, 0xBE, 0xEF]);
 
         // Attempt compilation / cache loading
-        var func1 = JitEngine.GetOrCompileKernel(kernelName, kernelSource);
+        var func1 = JitEngine.GetOrCompileKernel(kernelName, kernelSource, default, default);
         Assert.NotEqual(IntPtr.Zero, func1);
 
         // Concurrent access test (stress testing atomic cache write)
         Parallel.For(0, 10, _ =>
         {
-            var funcConcurrent = JitEngine.GetOrCompileKernel(kernelName, kernelSource);
+            var funcConcurrent = JitEngine.GetOrCompileKernel(kernelName, kernelSource, default, default);
             Assert.NotEqual(IntPtr.Zero, funcConcurrent);
         });
     }
@@ -110,3 +110,4 @@ public partial class Gsh06_07_RuntimeIssuesTests
         }
     }
 }
+
