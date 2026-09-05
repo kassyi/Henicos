@@ -744,42 +744,6 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         return (gridSize, blockSize);
     }
 
-    /// <inheritdoc/>
-    public void ClearCaches()
-    {
-        lock (_cacheLock)
-        {
-            using (new Runtime.Jit.JitEngine.CudaContextScope())
-            {
-                CudaDriverApi.cuCtxSynchronize();
-            }
-
-            foreach (var cache in _twiddleCache.Values)
-            {
-                if (!cache.IsValueCreated)
-                {
-                    continue;
-                }
-
-                FreeMemory(cache.Value.Forward1);
-                FreeMemory(cache.Value.Forward2);
-                FreeMemory(cache.Value.Inverse1);
-                FreeMemory(cache.Value.Inverse2);
-            }
-
-            _twiddleCache.Clear();
-
-            foreach (var bag in _carryBufferPool.Values)
-            {
-                while (bag.TryTake(out var ptr))
-                {
-                    FreeMemory(ptr);
-                }
-            }
-
-            _carryBufferPool.Clear();
-        }
-    }
 }
 
 

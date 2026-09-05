@@ -171,11 +171,6 @@ public class NativeProvider : IGpuExecutionProvider
     public void Gcd(GpuContext context, GpuBigInteger leftOperand, GpuBigInteger rightOperand,
         GpuBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-    public void ClearCaches()
-    {
-        // No caching implemented in the native provider.
-    }
 }
 
 
