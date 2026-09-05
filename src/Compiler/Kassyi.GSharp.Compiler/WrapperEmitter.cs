@@ -30,8 +30,7 @@ internal static class WrapperEmitter
             writer.AppendLine(className);
             using (writer.Scope())
             {
-                var jitConstants = method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)).ToList();
-                if (jitConstants.Count > 0)
+                if (method.Parameters.Any(p => p.HasAttribute(KnownAttributes.JitConstant)))
                 {
                     writer.AppendLine("[System.ThreadStatic]");
                     writer.Append("private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_");
@@ -87,29 +86,44 @@ internal static class WrapperEmitter
         {
             if (!isDevicePtr)
             {
-                var refOutParams = method.Parameters
-                    .Where(p => p.RefKind is RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
-                foreach (var p in refOutParams)
+                foreach (var p in method.Parameters)
                 {
-                    writer.Append(p.Name);
-                    writer.AppendLine(" = default;");
+                    if (p.RefKind is RefKind.Out && p.Type is not IArrayTypeSymbol)
+                    {
+                        writer.Append(p.Name);
+                        writer.AppendLine(" = default;");
+                    }
                 }
 
-                var arrayParams = method.Parameters.Where(p => p.Type is IArrayTypeSymbol).ToList();
-                if (arrayParams.Count > 0)
+                bool hasArray = false;
+                foreach (var p in method.Parameters)
+                {
+                    if (p.Type is IArrayTypeSymbol)
+                    {
+                        hasArray = true;
+                        break;
+                    }
+                }
+
+                if (hasArray)
                 {
                     writer.Append("if ");
                     using (writer.Parentheses())
                     {
-                        for (var i = 0; i < arrayParams.Count; i++)
+                        bool isFirst = true;
+                        foreach (var p in method.Parameters)
                         {
-                            if (i > 0)
+                            if (p.Type is IArrayTypeSymbol)
                             {
-                                writer.Append(" || ");
-                            }
+                                if (!isFirst)
+                                {
+                                    writer.Append(" || ");
+                                }
 
-                            writer.Append(arrayParams[i].Name);
-                            writer.Append(".Length == 0");
+                                writer.Append(p.Name);
+                                writer.Append(".Length == 0");
+                                isFirst = false;
+                            }
                         }
                     }
 
@@ -205,18 +219,29 @@ internal static class WrapperEmitter
 
     private static void WriteKernelCompilationCall(SourceWriter writer, IMethodSymbol method, string targetDialect)
     {
-        var jitConstants = method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)).ToList();
-
-        if (jitConstants.Count > 0)
+        int jitConstantCount = 0;
+        foreach (var p in method.Parameters)
         {
-            writer.AppendLine($"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstants.Count}];");
-            
-            for (var i = 0; i < jitConstants.Count; i++)
+            if (p.HasAttribute(KnownAttributes.JitConstant))
             {
-                var p = jitConstants[i];
-                writer.AppendLine($"__t_jitConstants_array_{method.Name}[{i}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
+                jitConstantCount++;
             }
-            writer.AppendLine($"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstants.Count});");
+        }
+
+        if (jitConstantCount > 0)
+        {
+            writer.AppendLine($"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstantCount}];");
+
+            int index = 0;
+            foreach (var p in method.Parameters)
+            {
+                if (p.HasAttribute(KnownAttributes.JitConstant))
+                {
+                    writer.AppendLine($"__t_jitConstants_array_{method.Name}[{index}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
+                    index++;
+                }
+            }
+            writer.AppendLine($"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstantCount});");
         }
         else
         {
@@ -288,33 +313,44 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             // Null array checks
-            var arrayParams = method.Parameters.Where(p => p.Type is IArrayTypeSymbol).ToList();
-            var refOutParams = method.Parameters
-                .Where(p => p.RefKind is RefKind.Ref or RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
-
-            foreach (var p in refOutParams)
+            foreach (var p in method.Parameters)
             {
-                if (p.RefKind == RefKind.Out)
+                if (p.RefKind is RefKind.Out && p.Type is not IArrayTypeSymbol)
                 {
                     writer.Append(p.Name);
                     writer.AppendLine(" = default;");
                 }
             }
 
-            if (arrayParams.Count > 0)
+            bool hasArray = false;
+            foreach (var p in method.Parameters)
+            {
+                if (p.Type is IArrayTypeSymbol)
+                {
+                    hasArray = true;
+                    break;
+                }
+            }
+
+            if (hasArray)
             {
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    for (var i = 0; i < arrayParams.Count; i++)
+                    bool isFirst = true;
+                    foreach (var p in method.Parameters)
                     {
-                        if (i > 0)
+                        if (p.Type is IArrayTypeSymbol)
                         {
-                            writer.Append(" || ");
-                        }
+                            if (!isFirst)
+                            {
+                                writer.Append(" || ");
+                            }
 
-                        writer.Append(arrayParams[i].Name);
-                        writer.Append(".Length == 0");
+                            writer.Append(p.Name);
+                            writer.Append(".Length == 0");
+                            isFirst = false;
+                        }
                     }
                 }
 
@@ -327,17 +363,29 @@ internal static class WrapperEmitter
             }
 
             // JIT constants
-            var jitConstants = method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)).ToList();
-            if (jitConstants.Count > 0)
+            int jitConstantCount = 0;
+            foreach (var p in method.Parameters)
             {
-                writer.AppendLine($"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstants.Count}];");
-                
-                for (var i = 0; i < jitConstants.Count; i++)
+                if (p.HasAttribute(KnownAttributes.JitConstant))
                 {
-                    var p = jitConstants[i];
-                    writer.AppendLine($"__t_jitConstants_array_{method.Name}[{i}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
+                    jitConstantCount++;
                 }
-                writer.AppendLine($"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstants.Count});");
+            }
+
+            if (jitConstantCount > 0)
+            {
+                writer.AppendLine($"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstantCount}];");
+
+                int index = 0;
+                foreach (var p in method.Parameters)
+                {
+                    if (p.HasAttribute(KnownAttributes.JitConstant))
+                    {
+                        writer.AppendLine($"__t_jitConstants_array_{method.Name}[{index}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
+                        index++;
+                    }
+                }
+                writer.AppendLine($"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstantCount});");
             }
             else
             {
@@ -356,30 +404,45 @@ internal static class WrapperEmitter
             writer.AppendLine();
 
             // Generate fixed blocks
-            if (arrayParams.Count > 0 || refOutParams.Count > 0)
+            bool hasFixed = false;
+            foreach (var p in method.Parameters)
             {
-                foreach (var p in arrayParams)
+                if (p.Type is IArrayTypeSymbol || (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
                 {
-                    writer.Append("fixed (");
-                    writer.Append(
-                        ((IArrayTypeSymbol)p.Type).ElementType.ToDisplayString(SymbolDisplayFormat
-                            .FullyQualifiedFormat));
-                    writer.Append("* p_");
-                    writer.Append(p.Name);
-                    writer.Append(" = ");
-                    writer.Append(p.Name);
-                    writer.AppendLine(")");
+                    hasFixed = true;
+                    break;
+                }
+            }
+
+            if (hasFixed)
+            {
+                foreach (var p in method.Parameters)
+                {
+                    if (p.Type is IArrayTypeSymbol arrayType)
+                    {
+                        writer.Append("fixed (");
+                        writer.Append(
+                            arrayType.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                        writer.Append("* p_");
+                        writer.Append(p.Name);
+                        writer.Append(" = ");
+                        writer.Append(p.Name);
+                        writer.AppendLine(")");
+                    }
                 }
 
-                foreach (var p in refOutParams)
+                foreach (var p in method.Parameters)
                 {
-                    writer.Append("fixed (");
-                    writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-                    writer.Append("* p_");
-                    writer.Append(p.Name);
-                    writer.Append(" = &");
-                    writer.Append(p.Name);
-                    writer.AppendLine(")");
+                    if (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol)
+                    {
+                        writer.Append("fixed (");
+                        writer.Append(p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                        writer.Append("* p_");
+                        writer.Append(p.Name);
+                        writer.Append(" = &");
+                        writer.Append(p.Name);
+                        writer.AppendLine(")");
+                    }
                 }
 
                 using (writer.Scope())

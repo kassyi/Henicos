@@ -69,5 +69,57 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
             CudaDriverApi.cuMemFree_v2(d_arrayVal);
         }
     }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBI-46")]
+    [Trait("Category", "GpuExecution")]
+    public void Test_GBI46_Launch_EmptyArray_ShouldReturnEarlyAndSetDefaultOut()
+    {
+        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
+        using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+
+        int ioVal = 42;
+        float outVal = 99.0f;
+        int[] emptyArray = [];
+        uint constantVal = 10;
+
+        // Launch with empty array - should early-return without executing GPU kernel
+        WrapperAllocationKernelsWrapper.Launch_AllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal);
+
+        // Verification: ioVal is untouched, outVal gets C# default(float) = 0f
+        Assert.Equal(42, ioVal);
+        Assert.Equal(0f, outVal);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBI-46")]
+    [Trait("Category", "GpuExecution")]
+    public void Test_GBI46_LaunchDevice_ConcurrentAccess_ShouldBeThreadSafe()
+    {
+        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
+
+        // Warm up and JIT compile on primary thread
+        using (var _initCtx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+        {
+            int io = 5;
+            WrapperAllocationKernelsWrapper.Launch_AllocationTestKernel(ref io, out _, [42], 10);
+        }
+
+        // Stress test concurrent invocation across multiple worker threads, each binding CUDA context
+        System.Threading.Tasks.Parallel.For(0, 10, i =>
+        {
+            using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+
+            int ioVal = 5;
+            float outVal;
+            int[] arrayVal = [42];
+            uint constantVal = (uint)(10 + (i % 3));
+
+            WrapperAllocationKernelsWrapper.Launch_AllocationTestKernel(ref ioVal, out outVal, arrayVal, constantVal);
+
+            // 5 is not > constantVal (10, 11, 12), so outVal should be 0
+            Assert.Equal(0f, outVal);
+        });
+    }
 }
 #endif
