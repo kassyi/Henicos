@@ -52,7 +52,10 @@ public class HeadTailTrackerWriter : TextWriter
 
     public override void Write(string? value)
     {
-        if (string.IsNullOrEmpty(value)) return;
+        if (string.IsNullOrEmpty(value))
+        {
+            return;
+        }
 
         foreach (var c in value)
         {
@@ -72,7 +75,10 @@ public class HeadTailTrackerWriter : TextWriter
 
     public string GetTail()
     {
-        if (_tailCapacity == 0) return string.Empty;
+        if (_tailCapacity == 0)
+        {
+            return string.Empty;
+        }
 
         if (!_tailFull)
         {

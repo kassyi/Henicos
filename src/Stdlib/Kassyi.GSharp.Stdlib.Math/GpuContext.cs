@@ -106,7 +106,11 @@ public class GpuContext : IDisposable
         // Dispose all pooled temporary buffers and release unmanaged device pointers
         foreach (var lazyBag in _tempPool.Values)
         {
-            if (!lazyBag.IsValueCreated) continue;
+            if (!lazyBag.IsValueCreated)
+            {
+                continue;
+            }
+
             var bag = lazyBag.Value;
             while (bag.TryTake(out var temp))
             {
