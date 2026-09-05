@@ -60,7 +60,7 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: output
 int output_size = output.Length * sizeof(int);
-if(output_size>0)
+if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_output, output_size));
 System.Runtime.InteropServices.GCHandle handle_output = System.Runtime.InteropServices.GCHandle.Alloc(output, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -85,9 +85,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: output
-if(output_size>0&&d_output!=IntPtr.Zero)
+if (output_size > 0 && d_output != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_output=System.Runtime.InteropServices.GCHandle.Alloc(output,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_output = System.Runtime.InteropServices.GCHandle.Alloc(output, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_output = handleBack_output.AddrOfPinnedObject();

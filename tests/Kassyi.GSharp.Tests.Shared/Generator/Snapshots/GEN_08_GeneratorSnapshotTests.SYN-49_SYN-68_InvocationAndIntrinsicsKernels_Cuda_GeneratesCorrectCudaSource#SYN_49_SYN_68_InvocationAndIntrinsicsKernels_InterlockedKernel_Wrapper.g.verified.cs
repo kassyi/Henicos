@@ -49,7 +49,7 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: intBuf
 int intBuf_size = intBuf.Length * sizeof(int);
-if(intBuf_size>0)
+if (intBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_intBuf, intBuf_size));
 System.Runtime.InteropServices.GCHandle handle_intBuf = System.Runtime.InteropServices.GCHandle.Alloc(intBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -66,7 +66,7 @@ handle_intBuf.Free();
 kernelParams[0] = &d_intBuf;
 // Marshal array: uintBuf
 int uintBuf_size = uintBuf.Length * sizeof(uint);
-if(uintBuf_size>0)
+if (uintBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_uintBuf, uintBuf_size));
 System.Runtime.InteropServices.GCHandle handle_uintBuf = System.Runtime.InteropServices.GCHandle.Alloc(uintBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -83,7 +83,7 @@ handle_uintBuf.Free();
 kernelParams[1] = &d_uintBuf;
 // Marshal array: longBuf
 int longBuf_size = longBuf.Length * sizeof(long);
-if(longBuf_size>0)
+if (longBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_longBuf, longBuf_size));
 System.Runtime.InteropServices.GCHandle handle_longBuf = System.Runtime.InteropServices.GCHandle.Alloc(longBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -100,7 +100,7 @@ handle_longBuf.Free();
 kernelParams[2] = &d_longBuf;
 // Marshal array: ulongBuf
 int ulongBuf_size = ulongBuf.Length * sizeof(ulong);
-if(ulongBuf_size>0)
+if (ulongBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ulongBuf, ulongBuf_size));
 System.Runtime.InteropServices.GCHandle handle_ulongBuf = System.Runtime.InteropServices.GCHandle.Alloc(ulongBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -125,9 +125,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: intBuf
-if(intBuf_size>0&&d_intBuf!=IntPtr.Zero)
+if (intBuf_size > 0 && d_intBuf != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_intBuf=System.Runtime.InteropServices.GCHandle.Alloc(intBuf,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_intBuf = System.Runtime.InteropServices.GCHandle.Alloc(intBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_intBuf = handleBack_intBuf.AddrOfPinnedObject();
@@ -139,9 +139,9 @@ handleBack_intBuf.Free();
 }
 }
 // Copy back array: uintBuf
-if(uintBuf_size>0&&d_uintBuf!=IntPtr.Zero)
+if (uintBuf_size > 0 && d_uintBuf != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_uintBuf=System.Runtime.InteropServices.GCHandle.Alloc(uintBuf,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_uintBuf = System.Runtime.InteropServices.GCHandle.Alloc(uintBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_uintBuf = handleBack_uintBuf.AddrOfPinnedObject();
@@ -153,9 +153,9 @@ handleBack_uintBuf.Free();
 }
 }
 // Copy back array: longBuf
-if(longBuf_size>0&&d_longBuf!=IntPtr.Zero)
+if (longBuf_size > 0 && d_longBuf != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_longBuf=System.Runtime.InteropServices.GCHandle.Alloc(longBuf,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_longBuf = System.Runtime.InteropServices.GCHandle.Alloc(longBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_longBuf = handleBack_longBuf.AddrOfPinnedObject();
@@ -167,9 +167,9 @@ handleBack_longBuf.Free();
 }
 }
 // Copy back array: ulongBuf
-if(ulongBuf_size>0&&d_ulongBuf!=IntPtr.Zero)
+if (ulongBuf_size > 0 && d_ulongBuf != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_ulongBuf=System.Runtime.InteropServices.GCHandle.Alloc(ulongBuf,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_ulongBuf = System.Runtime.InteropServices.GCHandle.Alloc(ulongBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_ulongBuf = handleBack_ulongBuf.AddrOfPinnedObject();

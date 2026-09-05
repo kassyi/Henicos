@@ -30,7 +30,7 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: globalSum
 int globalSum_size = globalSum.Length * sizeof(int);
-if(globalSum_size>0)
+if (globalSum_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalSum, globalSum_size));
 System.Runtime.InteropServices.GCHandle handle_globalSum = System.Runtime.InteropServices.GCHandle.Alloc(globalSum, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -55,9 +55,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: globalSum
-if(globalSum_size>0&&d_globalSum!=IntPtr.Zero)
+if (globalSum_size > 0 && d_globalSum != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_globalSum=System.Runtime.InteropServices.GCHandle.Alloc(globalSum,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_globalSum = System.Runtime.InteropServices.GCHandle.Alloc(globalSum, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_globalSum = handleBack_globalSum.AddrOfPinnedObject();

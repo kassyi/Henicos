@@ -243,7 +243,7 @@ try
 void** kernelParams = stackalloc void*[7];
 // Marshal array: intInput
 int intInput_size = intInput.Length * sizeof(int);
-if(intInput_size>0)
+if (intInput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_intInput, intInput_size));
 System.Runtime.InteropServices.GCHandle handle_intInput = System.Runtime.InteropServices.GCHandle.Alloc(intInput, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -260,7 +260,7 @@ handle_intInput.Free();
 kernelParams[0] = &d_intInput;
 // Marshal array: floatInput
 int floatInput_size = floatInput.Length * sizeof(float);
-if(floatInput_size>0)
+if (floatInput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatInput, floatInput_size));
 System.Runtime.InteropServices.GCHandle handle_floatInput = System.Runtime.InteropServices.GCHandle.Alloc(floatInput, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -277,7 +277,7 @@ handle_floatInput.Free();
 kernelParams[1] = &d_floatInput;
 // Marshal array: results
 int results_size = results.Length * sizeof(float);
-if(results_size>0)
+if (results_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_results, results_size));
 System.Runtime.InteropServices.GCHandle handle_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -297,7 +297,7 @@ var native_config = Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref con
 kernelParams[3] = &native_config;
 // Marshal array: globalCounter
 int globalCounter_size = globalCounter.Length * sizeof(ulong);
-if(globalCounter_size>0)
+if (globalCounter_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalCounter, globalCounter_size));
 System.Runtime.InteropServices.GCHandle handle_globalCounter = System.Runtime.InteropServices.GCHandle.Alloc(globalCounter, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -326,9 +326,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: intInput
-if(intInput_size>0&&d_intInput!=IntPtr.Zero)
+if (intInput_size > 0 && d_intInput != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_intInput=System.Runtime.InteropServices.GCHandle.Alloc(intInput,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_intInput = System.Runtime.InteropServices.GCHandle.Alloc(intInput, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_intInput = handleBack_intInput.AddrOfPinnedObject();
@@ -340,9 +340,9 @@ handleBack_intInput.Free();
 }
 }
 // Copy back array: floatInput
-if(floatInput_size>0&&d_floatInput!=IntPtr.Zero)
+if (floatInput_size > 0 && d_floatInput != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatInput=System.Runtime.InteropServices.GCHandle.Alloc(floatInput,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatInput = System.Runtime.InteropServices.GCHandle.Alloc(floatInput, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatInput = handleBack_floatInput.AddrOfPinnedObject();
@@ -354,9 +354,9 @@ handleBack_floatInput.Free();
 }
 }
 // Copy back array: results
-if(results_size>0&&d_results!=IntPtr.Zero)
+if (results_size > 0 && d_results != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_results=System.Runtime.InteropServices.GCHandle.Alloc(results,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_results = handleBack_results.AddrOfPinnedObject();
@@ -369,9 +369,9 @@ handleBack_results.Free();
 }
 Unmarshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, ref native_config, false);
 // Copy back array: globalCounter
-if(globalCounter_size>0&&d_globalCounter!=IntPtr.Zero)
+if (globalCounter_size > 0 && d_globalCounter != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_globalCounter=System.Runtime.InteropServices.GCHandle.Alloc(globalCounter,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_globalCounter = System.Runtime.InteropServices.GCHandle.Alloc(globalCounter, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_globalCounter = handleBack_globalCounter.AddrOfPinnedObject();

@@ -50,7 +50,7 @@ try
 void** kernelParams = stackalloc void*[2];
 // Marshal array: items
 int items_size = items.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct);
-if(items_size>0)
+if (items_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_items, items_size));
 System.Runtime.InteropServices.GCHandle handle_items = System.Runtime.InteropServices.GCHandle.Alloc(items, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -77,9 +77,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: items
-if(items_size>0&&d_items!=IntPtr.Zero)
+if (items_size > 0 && d_items != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_items=System.Runtime.InteropServices.GCHandle.Alloc(items,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_items = System.Runtime.InteropServices.GCHandle.Alloc(items, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_items = handleBack_items.AddrOfPinnedObject();

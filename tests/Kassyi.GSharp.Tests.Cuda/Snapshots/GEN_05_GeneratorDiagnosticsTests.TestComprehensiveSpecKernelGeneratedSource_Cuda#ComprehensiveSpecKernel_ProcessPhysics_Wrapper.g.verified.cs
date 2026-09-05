@@ -270,7 +270,7 @@ try
 void** kernelParams = stackalloc void*[5];
 // Marshal array: particles
 int particles_size = particles.Length * sizeof(global::DebugReduc.PhysicsVector);
-if(particles_size>0)
+if (particles_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_particles, particles_size));
 System.Runtime.InteropServices.GCHandle handle_particles = System.Runtime.InteropServices.GCHandle.Alloc(particles, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -313,9 +313,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: particles
-if(particles_size>0&&d_particles!=IntPtr.Zero)
+if (particles_size > 0 && d_particles != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_particles=System.Runtime.InteropServices.GCHandle.Alloc(particles,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_particles = System.Runtime.InteropServices.GCHandle.Alloc(particles, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_particles = handleBack_particles.AddrOfPinnedObject();

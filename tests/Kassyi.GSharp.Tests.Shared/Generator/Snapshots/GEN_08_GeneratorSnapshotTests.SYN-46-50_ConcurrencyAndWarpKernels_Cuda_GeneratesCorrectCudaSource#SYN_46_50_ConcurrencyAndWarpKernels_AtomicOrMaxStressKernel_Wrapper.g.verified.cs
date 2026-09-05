@@ -35,7 +35,7 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: globalState
 int globalState_size = globalState.Length * sizeof(uint);
-if(globalState_size>0)
+if (globalState_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalState, globalState_size));
 System.Runtime.InteropServices.GCHandle handle_globalState = System.Runtime.InteropServices.GCHandle.Alloc(globalState, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -60,9 +60,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: globalState
-if(globalState_size>0&&d_globalState!=IntPtr.Zero)
+if (globalState_size > 0 && d_globalState != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_globalState=System.Runtime.InteropServices.GCHandle.Alloc(globalState,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_globalState = System.Runtime.InteropServices.GCHandle.Alloc(globalState, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_globalState = handleBack_globalState.AddrOfPinnedObject();
