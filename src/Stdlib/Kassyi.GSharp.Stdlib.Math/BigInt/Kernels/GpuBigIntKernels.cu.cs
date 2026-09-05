@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-using Kassyi.GSharp.Stdlib.Math.Contexts;
+using Contexts;
 
 [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
 [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]

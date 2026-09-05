@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
+using Core;
+using Kernels;
 
 /// <summary>
 /// A ref struct representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
