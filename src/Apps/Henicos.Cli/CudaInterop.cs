@@ -68,7 +68,7 @@ public static class CudaInterop
                     return NativeLibrary.Load(path, assembly, searchPath);
                 }
             }
-            return nint.Zero;
+            return IntPtr.Zero;
         });
     }
 }
