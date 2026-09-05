@@ -51,7 +51,7 @@ public class GpuContext : IDisposable
     private bool _disposed;
 
     // Memory pooling for Lazy Evaluation
-    private readonly ConcurrentDictionary<int, ConcurrentBag<GpuBigInteger>> _tempPool = new();
+    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuBigInteger>>> _tempPool = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuContext"/> class with the specified limb capacity and engine backend.
@@ -104,8 +104,10 @@ public class GpuContext : IDisposable
         }
 
         // Dispose all pooled temporary buffers and release unmanaged device pointers
-        foreach (var bag in _tempPool.Values)
+        foreach (var lazyBag in _tempPool.Values)
         {
+            if (!lazyBag.IsValueCreated) continue;
+            var bag = lazyBag.Value;
             while (bag.TryTake(out var temp))
             {
                 // Avoid circular calls since temp.Dispose() calls back into context or disposes native
@@ -138,7 +140,7 @@ public class GpuContext : IDisposable
 
     internal GpuBigInteger RentTemp(int numWords)
     {
-        if (_tempPool.TryGetValue(numWords, out var bag) && bag.TryTake(out var temp))
+        if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var temp))
         {
             temp._disposed = false;
             temp.IsTemp = true; // ensure it's marked as temp again if needed
@@ -160,7 +162,7 @@ public class GpuContext : IDisposable
             return;
         }
 
-        var bag = _tempPool.GetOrAdd(temp.NumWords, _ => []);
+        var bag = _tempPool.GetOrAdd(temp.NumWords, _ => new Lazy<ConcurrentBag<GpuBigInteger>>(() => [])).Value;
         bag.Add(temp);
     }
 }
