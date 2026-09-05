@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_49_InvocationTests
 :  TranspilerTestBase{

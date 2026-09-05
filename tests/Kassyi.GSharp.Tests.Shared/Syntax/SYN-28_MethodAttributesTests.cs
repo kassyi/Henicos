@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
-
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public partial class SYN_28_MethodAttributesTests
 :  TranspilerTestBase{

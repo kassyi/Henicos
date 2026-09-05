@@ -1,7 +1,4 @@
-using System;
-using System.IO;
 using Kassyi.GSharp.Stdlib.Math.IO;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.IO;
 

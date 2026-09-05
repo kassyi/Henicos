@@ -1,4 +1,3 @@
-using System.Numerics;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;

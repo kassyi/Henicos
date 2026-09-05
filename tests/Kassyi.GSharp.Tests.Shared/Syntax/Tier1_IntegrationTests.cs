@@ -1,7 +1,4 @@
-﻿using System;
-using Xunit;
-
-namespace Kassyi.GSharp.Tests.Syntax;
+﻿namespace Kassyi.GSharp.Tests.Syntax;
 
 public class Tier1_IntegrationTests : TranspilerTestBase
 {

@@ -1,9 +1,3 @@
-using System;
-using System.Runtime.InteropServices;
-using Xunit;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
 public class GpuContextTests
@@ -52,16 +46,19 @@ public class GpuContextTests
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
         var provider = Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider.Instance;
-        
+
         // Populate caches via dummy rent/return if possible, or just call ClearCaches explicitly to reset state before test
         provider.ClearCaches();
-        
-        var carryPoolField = typeof(Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider).GetField("_carryBufferPool", 
+
+        var carryPoolField = typeof(Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider).GetField(
+            "_carryBufferPool",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var carryPool = (System.Collections.Concurrent.ConcurrentDictionary<int, System.Collections.Concurrent.ConcurrentBag<IntPtr>>)carryPoolField!.GetValue(provider)!;
-        
+        var carryPool =
+            (System.Collections.Concurrent.ConcurrentDictionary<int,
+                System.Collections.Concurrent.ConcurrentBag<IntPtr>>)carryPoolField!.GetValue(provider)!;
+
         // Add dummy entry
-        carryPool.TryAdd(8, new System.Collections.Concurrent.ConcurrentBag<IntPtr>([IntPtr.Zero]));
+        carryPool.TryAdd(8, [IntPtr.Zero]);
 
         // Act
         context.Dispose();

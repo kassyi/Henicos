@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
