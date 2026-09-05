@@ -31,6 +31,12 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
 
+    static GSharpJitProvider()
+    {
+        // Ensure CUDA driver API is initialized before any memory allocations
+        CudaDriverApi.cuInit(0);
+    }
+
     private GSharpJitProvider()
     {
     }
@@ -38,6 +44,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     /// <inheritdoc/>
     public IntPtr AllocateMemory(int numWords)
     {
+        using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var dPtr, numWords * 4));
         return dPtr;
     }
@@ -210,6 +217,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
+        using var scope_memset1 = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
         GpuBigIntCmpKernelsWrapper.Launch_IsZeroKernel_Device(
@@ -226,6 +234,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
+        using var scope_memset2 = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
         GpuBigIntCmpKernelsWrapper.Launch_IsOneKernel_Device(
@@ -245,6 +254,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
         // Rent 2 words since the result is a ulong (8 bytes)
         using var resultBuf = context.RentTemp(2);
+        using var scope_memset3 = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 8));
 
         GpuBigIntCmpKernelsWrapper.Launch_CompareToKernel_Device(
@@ -255,6 +265,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         var handle = GCHandle.Alloc(res, GCHandleType.Pinned);
         try
         {
+            using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
             CudaException.ThrowIfError(
                 CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), resultBuf.DevicePointer, 8));
         }
@@ -279,6 +290,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
+        using var scope_memset4 = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
         GpuBigIntCmpKernelsWrapper.Launch_GetBitLengthKernel_Device(
@@ -295,6 +307,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         if (devicePointer != IntPtr.Zero)
         {
+            using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
             CudaDriverApi.cuMemFree_v2(devicePointer);
         }
     }
@@ -305,8 +318,9 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         var handle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
         try
         {
+            using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
             CudaException.ThrowIfError(
-                CudaDriverApi.cuMemcpyHtoD_v2(devicePointer, handle.AddrOfPinnedObject(), hostData.Length * 4));
+                CudaDriverApi.cuMemcpyHtoD_v2(devicePointer, handle.AddrOfPinnedObject(), System.Math.Min(hostData.Length, numWords) * 4));
         }
         finally
         {
@@ -320,6 +334,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         var handle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
         try
         {
+            using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
             CudaException.ThrowIfError(
                 CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), devicePointer, numWords * 4));
         }
@@ -332,6 +347,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     /// <inheritdoc/>
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords)
     {
+        using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         CudaException.ThrowIfError(
             CudaDriverApi.cuMemcpyDtoD_v2(destPointer, srcPointer, numWords * 4));
     }
@@ -348,7 +364,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
             return ptr;
         }
 
-        CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out ptr, sizeBytes));
+        using (new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope()) { CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out ptr, sizeBytes)); }
         return ptr;
     }
 
@@ -371,6 +387,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         try
         {
             var carryBufferSize = (numChunks + 1) * 8;
+            using var scope_memset5 = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, carryBufferSize));
 
             GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
@@ -400,6 +417,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         try
         {
             var carryBufferSize = (numChunks + 1) * 8;
+            using var scope_memset6 = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, carryBufferSize));
 
             GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(
