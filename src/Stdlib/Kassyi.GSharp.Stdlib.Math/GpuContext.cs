@@ -127,7 +127,6 @@ public class GpuContext : IDisposable
             if (Engine == GpuExecutionEngine.GSharpJit)
             {
                 // JIT-specific cleanup
-                GSharpJitProvider.Instance.ClearCaches();
             }
             else
             {
@@ -150,6 +149,7 @@ public class GpuContext : IDisposable
     {
         if (_tempPool.TryGetValue(numWords, out var bag) && bag.TryTake(out var temp))
         {
+            temp._disposed = false;
             temp.IsTemp = true; // ensure it's marked as temp again if needed
             return temp;
         }
