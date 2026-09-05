@@ -30,13 +30,17 @@ internal static class WrapperEmitter
             writer.AppendLine(className);
             using (writer.Scope())
             {
-                writer.AppendLine("[System.ThreadStatic]");
-                writer.Append("private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_");
-                writer.Append(method.Name);
-                writer.AppendLine(";");
-                writer.AppendLine();
-                
-                WriteKernelSource(writer, method, source);
+                var jitConstants = method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)).ToList();
+                if (jitConstants.Count > 0)
+                {
+                    writer.AppendLine("[System.ThreadStatic]");
+                    writer.Append("private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_");
+                    writer.Append(method.Name);
+                    writer.AppendLine(";");
+                    writer.AppendLine();
+                }
+
+                WriteKernelSource(writer, method, source, targetDialect);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
                 if (targetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
@@ -54,7 +58,7 @@ internal static class WrapperEmitter
         return writer.ToString();
     }
 
-    private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string source)
+    private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string source, string targetDialect)
     {
         var escapedSource = source.Replace("\"", "\"\"");
         writer.Append("public const string ");
@@ -62,6 +66,14 @@ internal static class WrapperEmitter
         writer.Append("_Source = @\"");
         writer.Append(escapedSource);
         writer.AppendLine("\";");
+        
+        writer.Append("public static readonly string ");
+        writer.Append(method.Name);
+        writer.Append("_FullSource = global::Kassyi.GSharp.Generated.GSharpShared");
+        writer.Append(targetDialect);
+        writer.Append("Code.Source + ");
+        writer.Append(method.Name);
+        writer.AppendLine("_Source;");
         writer.AppendLine();
     }
 
@@ -75,6 +87,14 @@ internal static class WrapperEmitter
         {
             if (!isDevicePtr)
             {
+                var refOutParams = method.Parameters
+                    .Where(p => p.RefKind is RefKind.Out && !(p.Type is IArrayTypeSymbol)).ToList();
+                foreach (var p in refOutParams)
+                {
+                    writer.Append(p.Name);
+                    writer.AppendLine(" = default;");
+                }
+
                 var arrayParams = method.Parameters.Where(p => p.Type is IArrayTypeSymbol).ToList();
                 if (arrayParams.Count > 0)
                 {
@@ -177,7 +197,7 @@ internal static class WrapperEmitter
             }
 
             writer.Append(
-                "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null");
+                "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default");
         }
 
         writer.AppendLine();
@@ -185,37 +205,22 @@ internal static class WrapperEmitter
 
     private static void WriteKernelCompilationCall(SourceWriter writer, IMethodSymbol method, string targetDialect)
     {
-        var hasJitConstants = false;
-        foreach (var p in method.Parameters)
-        {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                hasJitConstants = true;
-                break;
-            }
-        }
+        var jitConstants = method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)).ToList();
 
-        if (hasJitConstants)
+        if (jitConstants.Count > 0)
         {
-            writer.Append("__t_jitConstants_");
-            writer.Append(method.Name);
-            writer.AppendLine(" ??= new System.Collections.Generic.Dictionary<string, string>();");
-            writer.Append("__t_jitConstants_");
-            writer.Append(method.Name);
-            writer.AppendLine(".Clear();");
-            foreach (var p in method.Parameters)
+            writer.AppendLine($"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstants.Count}];");
+            
+            for (var i = 0; i < jitConstants.Count; i++)
             {
-                if (p.HasAttribute(KnownAttributes.JitConstant))
-                {
-                    writer.Append("__t_jitConstants_");
-                    writer.Append(method.Name);
-                    writer.Append("[\"");
-                    writer.Append(p.Name);
-                    writer.Append("\"] = (");
-                    writer.Append(p.Name);
-                    writer.AppendLine(").ToString();");
-                }
+                var p = jitConstants[i];
+                writer.AppendLine($"__t_jitConstants_array_{method.Name}[{i}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
             }
+            writer.AppendLine($"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstants.Count});");
+        }
+        else
+        {
+            writer.AppendLine("System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;");
         }
 
         writer.Append("IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
@@ -223,13 +228,9 @@ internal static class WrapperEmitter
         {
             writer.Append("\"");
             writer.Append(method.Name);
-            writer.Append("\", global::Kassyi.GSharp.Generated.GSharpShared");
-            writer.Append(targetDialect);
-            writer.Append("Code.Source + ");
+            writer.Append("\", ");
             writer.Append(method.Name);
-            writer.Append("_Source, ");
-            writer.Append(hasJitConstants ? $"__t_jitConstants_{method.Name}" : "null");
-            writer.Append(", macros");
+            writer.Append("_FullSource, __t_jitConstants, macros");
         }
 
         writer.AppendLine(";");
@@ -326,39 +327,33 @@ internal static class WrapperEmitter
             }
 
             // JIT constants
-            var hasJitConstants = method.Parameters.Any(p => p.HasAttribute(KnownAttributes.JitConstant));
-            if (hasJitConstants)
+            var jitConstants = method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)).ToList();
+            if (jitConstants.Count > 0)
             {
-                writer.Append("__t_jitConstants_");
-                writer.Append(method.Name);
-                writer.AppendLine(" ??= new System.Collections.Generic.Dictionary<string, string>();");
-                writer.Append("__t_jitConstants_");
-                writer.Append(method.Name);
-                writer.AppendLine(".Clear();");
-                foreach (var p in method.Parameters.Where(p => p.HasAttribute(KnownAttributes.JitConstant)))
+                writer.AppendLine($"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstants.Count}];");
+                
+                for (var i = 0; i < jitConstants.Count; i++)
                 {
-                    writer.Append("__t_jitConstants_");
-                    writer.Append(method.Name);
-                    writer.Append("[\"");
-                    writer.Append(p.Name);
-                    writer.Append("\"] = (");
-                    writer.Append(p.Name);
-                    writer.AppendLine(").ToString();");
+                    var p = jitConstants[i];
+                    writer.AppendLine($"__t_jitConstants_array_{method.Name}[{i}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
                 }
+                writer.AppendLine($"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstants.Count});");
+            }
+            else
+            {
+                writer.AppendLine("System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;");
             }
 
             // Get Delegate
-            writer.Append("var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<");
+            writer.Append(
+                "        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<");
             writer.Append(method.Name);
             writer.Append("_Delegate>(\"__gsharp_launch_");
             writer.Append(method.Name);
-            writer.Append("\", global::Kassyi.GSharp.Generated.GSharpShared");
-            writer.Append(targetDialect);
-            writer.Append("Code.Source + ");
+            writer.Append("\", ");
             writer.Append(method.Name);
-            writer.Append("_Source, ");
-            writer.Append(hasJitConstants ? $"__t_jitConstants_{method.Name}" : "null");
-            writer.AppendLine(", macros);");
+            writer.Append("_FullSource, __t_jitConstants, macros);");
+            writer.AppendLine();
 
             // Generate fixed blocks
             if (arrayParams.Count > 0 || refOutParams.Count > 0)
