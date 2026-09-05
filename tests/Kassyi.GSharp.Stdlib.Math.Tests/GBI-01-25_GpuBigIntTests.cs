@@ -1,12 +1,9 @@
 ﻿using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math;
 using System.Collections.Concurrent;
-using System.Linq;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {

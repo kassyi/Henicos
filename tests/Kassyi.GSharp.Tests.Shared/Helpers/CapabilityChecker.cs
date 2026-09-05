@@ -1,7 +1,3 @@
-using System;
-using Xunit;
-using Kassyi.GSharp.Compiler.Transpiler.Dialects;
-
 namespace Kassyi.GSharp.Tests.Helpers;
 
 public static class CapabilityChecker

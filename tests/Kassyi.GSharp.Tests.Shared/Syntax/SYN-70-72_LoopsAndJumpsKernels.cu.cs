@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;

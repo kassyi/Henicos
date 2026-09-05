@@ -1,5 +1,3 @@
-using System;
-
 namespace Henicos.PiBenchmark;
 
 /// <summary>

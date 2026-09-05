@@ -1,6 +1,3 @@
-using System.IO;
-using System.Runtime.CompilerServices;
-
 namespace Kassyi.GSharp.Tests.Helpers;
 
 public static class MegaCompilationCache

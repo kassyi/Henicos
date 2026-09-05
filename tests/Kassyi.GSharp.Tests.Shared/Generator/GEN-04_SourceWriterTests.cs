@@ -1,6 +1,4 @@
 #nullable enable
-using Kassyi.GSharp.Compiler;
-
 namespace Kassyi.GSharp.Tests.Generator;
 
 public class GEN_04_SourceWriterTests
