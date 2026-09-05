@@ -378,12 +378,12 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
     // Dynamic CarryBuffer allocation to avoid race conditions.
     // We pool them based on size to avoid cuMemAlloc overhead on every call.
-    private readonly ConcurrentDictionary<int, ConcurrentBag<IntPtr>> _carryBufferPool = new();
+    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<IntPtr>>> _carryBufferPool = new();
 
     private IntPtr RentCarryBuffer(int numChunks)
     {
         var sizeBytes = (numChunks + 1) * 8;
-        if (_carryBufferPool.TryGetValue(sizeBytes, out var bag) && bag.TryTake(out var ptr))
+        if (_carryBufferPool.TryGetValue(sizeBytes, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var ptr))
         {
             return ptr;
         }
@@ -399,7 +399,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     private void ReturnCarryBuffer(int numChunks, IntPtr ptr)
     {
         var sizeBytes = (numChunks + 1) * 8;
-        var bag = _carryBufferPool.GetOrAdd(sizeBytes, _ => []);
+        var bag = _carryBufferPool.GetOrAdd(sizeBytes, _ => new Lazy<ConcurrentBag<IntPtr>>(() => [])).Value;
         bag.Add(ptr);
     }
 
@@ -579,23 +579,33 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
                 buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, 1, m,
                 gridDimX: 1, blockDimX: (uint)threads, sharedMemBytes: (uint)((m + (m >> 5)) * 4)
             );
+            return;
         }
-        else
+
+        var firstW = isInverse ? n1 : n2;
+        var firstH = isInverse ? n2 : n1;
+        var secondW = isInverse ? n2 : n1;
+        var secondH = isInverse ? n1 : n2;
+        
+        var currentBuf = buffer;
+        
+        if (!isInverse)
         {
-            if (isInverse)
-            {
-                LaunchSharedRow(buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, n1, n2);
-                LaunchTranspose(buffer, tempBuffer, n2, n1);
-                LaunchSharedRow(tempBuffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, n2, n1);
-                LaunchTranspose(tempBuffer, buffer, n1, n2);
-            }
-            else
-            {
-                LaunchTranspose(buffer, tempBuffer, n2, n1);
-                LaunchSharedRow(tempBuffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, n2, n1);
-                LaunchTranspose(tempBuffer, buffer, n1, n2);
-                LaunchSharedRow(buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, n1, n2);
-            }
+            LaunchTranspose(currentBuf, tempBuffer, firstW, firstH);
+            currentBuf = tempBuffer;
+        }
+
+        LaunchSharedRow(currentBuf, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, firstW, firstH);
+        
+        var nextBuf = currentBuf == buffer ? tempBuffer : buffer;
+        LaunchTranspose(currentBuf, nextBuf, firstH, firstW);
+        currentBuf = nextBuf;
+        
+        LaunchSharedRow(currentBuf, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, secondW, secondH);
+        
+        if (isInverse)
+        {
+            LaunchTranspose(currentBuf, buffer, secondH, secondW);
         }
     }
 

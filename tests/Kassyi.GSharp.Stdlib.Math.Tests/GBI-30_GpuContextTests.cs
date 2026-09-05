@@ -55,11 +55,11 @@ public class GBI30_GpuContextTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var carryPool =
             (System.Collections.Concurrent.ConcurrentDictionary<int,
-                System.Collections.Concurrent.ConcurrentBag<IntPtr>>)carryPoolField!.GetValue(provider)!;
+                System.Lazy<System.Collections.Concurrent.ConcurrentBag<IntPtr>>>)carryPoolField!.GetValue(provider)!;
 
         // Add a test-specific unique key
         const int testKey = -99999;
-        carryPool.TryAdd(testKey, [new IntPtr(0x1234)]);
+        carryPool.TryAdd(testKey, new System.Lazy<System.Collections.Concurrent.ConcurrentBag<IntPtr>>(() => [new IntPtr(0x1234)]));
 
         // Act
         context.Dispose();

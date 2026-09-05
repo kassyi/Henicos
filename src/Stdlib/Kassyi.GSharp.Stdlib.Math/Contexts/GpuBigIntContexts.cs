@@ -57,7 +57,7 @@ public struct FermatContext
 }
 
 /// <summary>
-/// Context parameters for basic BigInt GPU kernels.
+/// Context parameters for basic BigInt GPU kernels and MacroTranspiler expansions.
 /// </summary>
 public struct BigIntKernelContext
 {
@@ -80,7 +80,10 @@ public struct NumberTheoreticTransformKernelArgs
 {
     public uint[] Buffer;
     public uint[] TemporaryBuffer;
-    [GpuConst] public uint[] Twiddle;
+
+    [GpuConst]
+    public uint[] Twiddle;
+
     public int M;
     public int N1;
     public int N2;
@@ -92,4 +95,3 @@ public struct NumberTheoreticTransformKernelArgs
     public int MaxBlocks;
     public int CurrentL;
 }
-
