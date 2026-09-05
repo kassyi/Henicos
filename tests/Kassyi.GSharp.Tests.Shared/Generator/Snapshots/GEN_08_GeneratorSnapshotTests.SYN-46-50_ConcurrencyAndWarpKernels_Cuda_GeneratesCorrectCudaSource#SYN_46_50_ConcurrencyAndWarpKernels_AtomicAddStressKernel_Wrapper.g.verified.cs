@@ -13,22 +13,24 @@ public const string AtomicAddStressKernel_Source = @"extern ""C"" __global__ voi
 atomicAdd(&globalSum[0],1);
 }
 ";
+public static readonly string AtomicAddStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AtomicAddStressKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AtomicAddStressKernel(int[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AtomicAddStressKernel(global::System.Int32[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (globalSum.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AtomicAddStressKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AtomicAddStressKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AtomicAddStressKernel", AtomicAddStressKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_globalSum = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: globalSum
-int globalSum_size = globalSum.Length * sizeof(int);
-if(globalSum_size>0)
+int globalSum_size = globalSum.Length * sizeof(global::System.Int32);
+if (globalSum_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalSum, globalSum_size));
 System.Runtime.InteropServices.GCHandle handle_globalSum = System.Runtime.InteropServices.GCHandle.Alloc(globalSum, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -53,9 +55,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: globalSum
-if(globalSum_size>0&&d_globalSum!=IntPtr.Zero)
+if (globalSum_size > 0 && d_globalSum != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_globalSum=System.Runtime.InteropServices.GCHandle.Alloc(globalSum,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_globalSum = System.Runtime.InteropServices.GCHandle.Alloc(globalSum, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_globalSum = handleBack_globalSum.AddrOfPinnedObject();
@@ -75,11 +77,12 @@ if (d_globalSum != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_globalSum);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AtomicAddStressKernel_Device(IntPtr globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AtomicAddStressKernel_Device(IntPtr globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AtomicAddStressKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AtomicAddStressKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AtomicAddStressKernel", AtomicAddStressKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[1];

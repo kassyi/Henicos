@@ -27,16 +27,18 @@ InlinePtxKernel(data);
 }
 }
 ";
+public static readonly string InlinePtxKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InlinePtxKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void InlinePtxKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* data);
-public static unsafe void Launch_InlinePtxKernel(uint[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+private unsafe delegate void InlinePtxKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* data);
+public static unsafe void Launch_InlinePtxKernel(global::System.UInt32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + InlinePtxKernel_Source, null, macros);
-fixed (uint* p_data = data)
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", InlinePtxKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }

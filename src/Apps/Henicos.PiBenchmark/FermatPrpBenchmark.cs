@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Henicos.PiBenchmark;
@@ -18,11 +19,11 @@ public class FermatPrpBenchmark
         Console.WriteLine($"Digits  = {(2 * E * Math.Log10(2)):N0}");
         Console.WriteLine("==================================================");
 
-        using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+        using var scope = new JitEngine.CudaContextScope();
 
         var runner = new FermatRunner(E);
 
-        int startIter = 0;
+        var startIter = 0;
 
         if (File.Exists(CheckpointFile))
         {
@@ -40,7 +41,7 @@ public class FermatPrpBenchmark
                     throw new Exception("Checkpoint file is corrupted or truncated.");
                 }
 
-                byte[] storedHash = br.ReadBytes(32);
+                var storedHash = br.ReadBytes(32);
                 if (storedHash.Length != 32)
                 {
                     throw new Exception("Checkpoint file is missing SHA256 hash or truncated.");
@@ -49,7 +50,7 @@ public class FermatPrpBenchmark
                 using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
                 hasher.AppendData(BitConverter.GetBytes(startIter));
                 hasher.AppendData(bytes);
-                byte[] computedHash = hasher.GetHashAndReset();
+                var computedHash = hasher.GetHashAndReset();
 
                 if (!computedHash.SequenceEqual(storedHash))
                 {
@@ -72,16 +73,16 @@ public class FermatPrpBenchmark
 
         var sw = Stopwatch.StartNew();
 
-        int saveInterval = 100000;
-        int tdrChunkSize = 100;
+        var saveInterval = 100000;
+        var tdrChunkSize = 100;
 
-        for (int i = startIter; i < iterations;)
+        for (var i = startIter; i < iterations;)
         {
-            int nextSave = Math.Min(i + saveInterval, iterations);
+            var nextSave = Math.Min(i + saveInterval, iterations);
 
             while (i < nextSave)
             {
-                int chunk = Math.Min(tdrChunkSize, nextSave - i);
+                var chunk = Math.Min(tdrChunkSize, nextSave - i);
                 runner.RunBenchmarkChunk(chunk);
                 i += chunk;
             }
@@ -108,7 +109,7 @@ public class FermatPrpBenchmark
             using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             hasher.AppendData(BitConverter.GetBytes(currentIteration));
             hasher.AppendData(bytes);
-            byte[] computedHash = hasher.GetHashAndReset();
+            var computedHash = hasher.GetHashAndReset();
 
             fs.Write(computedHash);
         }

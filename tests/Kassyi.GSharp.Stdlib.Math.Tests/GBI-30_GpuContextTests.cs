@@ -1,3 +1,7 @@
+using System.Collections.Concurrent;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
 [Trait("Category", "GpuExecution")]
@@ -36,7 +40,7 @@ public class GBI30_GpuContextTests
         Assert.False(weakRef.IsAlive, "Context should have been collected.");
     }
 
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private WeakReference CreateAndDropContext()
     {
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
@@ -49,17 +53,17 @@ public class GBI30_GpuContextTests
     {
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
-        var provider = Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider.Instance;
-        var carryPoolField = typeof(Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider).GetField(
+        var provider = GSharpJitProvider.Instance;
+        var carryPoolField = typeof(GSharpJitProvider).GetField(
             "_carryBufferPool",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            BindingFlags.NonPublic | BindingFlags.Instance);
         var carryPool =
-            (System.Collections.Concurrent.ConcurrentDictionary<int,
-                System.Lazy<System.Collections.Concurrent.ConcurrentBag<IntPtr>>>)carryPoolField!.GetValue(provider)!;
+            (ConcurrentDictionary<int,
+                Lazy<ConcurrentBag<IntPtr>>>)carryPoolField!.GetValue(provider)!;
 
         // Add a test-specific unique key
         const int testKey = -99999;
-        carryPool.TryAdd(testKey, new System.Lazy<System.Collections.Concurrent.ConcurrentBag<IntPtr>>(() => [new IntPtr(0x1234)]));
+        carryPool.TryAdd(testKey, new Lazy<ConcurrentBag<IntPtr>>(() => [new IntPtr(0x1234)]));
 
         // Act
         context.Dispose();
@@ -77,7 +81,7 @@ public class GBI30_GpuContextTests
     {
         Parallel.For(0, 8, i =>
         {
-            using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+            using var scope = new JitEngine.CudaContextScope();
             using var ctx = new GpuContext(256, GpuExecutionEngine.GSharpJit);
             using var temp1 = ctx.RentTemp(16);
             using var temp2 = ctx.RentTemp(32);

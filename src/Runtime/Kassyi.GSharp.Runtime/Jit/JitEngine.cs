@@ -31,9 +31,6 @@ public sealed class JitEngine
     {
         private readonly IntPtr _prevContext;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CudaContextScope"/> struct, switching the thread's CUDA context to GSharp global context.
-        /// </summary>
         public CudaContextScope()
         {
             EnsureInitialized();
@@ -44,9 +41,6 @@ public sealed class JitEngine
             }
         }
 
-        /// <summary>
-        /// Restores the previously active CUDA context on the current thread.
-        /// </summary>
         public void Dispose()
         {
             if (_prevContext != s_globalContext)
@@ -92,7 +86,7 @@ public sealed class JitEngine
     }
 
     // Cache for compiled functions: Hash of Source -> Lazy<GpuModule>
-    private static readonly ConcurrentDictionary<string, Lazy<GpuModule>> s_functionCache = new();
+    private static readonly ConcurrentDictionary<Guid, Lazy<GpuModule>> s_functionCache = new();
 
     /// <summary>
     /// Unloads all cached GPU modules from the device driver and clears the in-memory cache to reclaim device memory.
@@ -126,65 +120,120 @@ public sealed class JitEngine
         s_functionCache.Clear();
     }
 
-    /// <summary>
-    /// JIT-compiles CUDA C++ source text into PTX, loads the module into the active CUDA context, and returns the function handle (<c>CUfunction</c>).
-    /// </summary>
-    /// <param name="kernelName">The name of the <c>__global__</c> kernel function to locate and execute.</param>
-    /// <param name="baseSource">The CUDA C++ source code text.</param>
-    /// <param name="jitConstants">Optional compile-time constant key-value pairs to inject as preprocessor macros.</param>
-    /// <param name="macros">Optional preprocessor macro definitions.</param>
-    /// <returns>A native pointer handle (<see cref="IntPtr"/>) representing the loaded <c>CUfunction</c>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="kernelName"/> or <paramref name="baseSource"/> is <see langword="null"/>.</exception>
-    /// <exception cref="Exception">Thrown when JIT compilation or driver module loading fails.</exception>
-    /// <remarks>
-    /// <para><b>Caching:</b> Compilation results are cached in-memory and on disk. Identical source text, constants, and SM architectures return the cached module without invoking NVRTC.</para>
-    /// <para><b>Thread Safety:</b> Thread-safe. Compilation is lazily executed once per unique cache key.</para>
-    /// </remarks>
+    public static int CacheMissCount = 0;
+
     public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
-        Dictionary<string, string>? jitConstants = null, Dictionary<string, string>? macros = null)
+        ReadOnlySpan<JitConstantArg> jitConstants = default, ReadOnlySpan<KeyValuePair<string, string>> macros = default)
     {
         EnsureInitialized();
 
-        var sb = new StringBuilder(kernelName);
+        var cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
+
+        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
+        {
+            return lazyHit.Value.Function;
+        }
+        
+        Interlocked.Increment(ref CacheMissCount);
+
+        var jitArr = jitConstants.ToArray();
+        var macroArr = macros.ToArray();
+
+        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
+        {
+            return CompileKernelInternal(kernelName, baseSource, jitArr, macroArr);
+        }));
+
+        return lazyModule.Value.Function;
+    }
+
+    private static Guid ComputeCacheKey(string kernelName, string baseSource, ReadOnlySpan<JitConstantArg> jitConstants, ReadOnlySpan<KeyValuePair<string, string>> macros)
+    {
+        // Zero-allocation FNV-1a hash
+        const ulong offsetBasis = 14695981039346656037;
+        const ulong prime = 1099511628211;
+        var hash = offsetBasis;
+
+        hash = HashString(hash, prime, kernelName);
+        hash = HashString(hash, prime, baseSource);
+
+        foreach (var constant in jitConstants)
+        {
+            hash = HashString(hash, prime, constant.Key);
+            hash = HashJitConstantType(hash, prime, constant.Type);
+            hash = HashJitConstantValue(hash, prime, in constant.Value);
+        }
+
+        foreach (var macro in macros)
+        {
+            hash = HashString(hash, prime, macro.Key);
+            hash = HashString(hash, prime, macro.Value);
+        }
+
+        var hash2 = hash ^ prime; 
+        unsafe
+        {
+            var b = stackalloc byte[16];
+            *(ulong*)b = hash;
+            *(ulong*)(b + 8) = hash2;
+            return new Guid(new ReadOnlySpan<byte>(b, 16));
+        }
+    }
+
+    private static ulong HashString(ulong hash, ulong prime, string? str)
+    {
+        if (str == null)
+        {
+            return hash;
+        }
+
+        foreach (var c in str)
+        {
+            hash ^= c;
+            hash *= prime;
+        }
+        return hash;
+    }
+
+    private static ulong HashJitConstantType(ulong hash, ulong prime, JitConstantType val)
+    {
+        hash ^= (byte)val;
+        hash *= prime;
+        return hash;
+    }
+
+    private static ulong HashJitConstantValue(ulong hash, ulong prime, in JitConstantValue val)
+    {
+        var v = val.UInt64Value; // Unionなので最大サイズのフィールドを読めばOK
+        for (var i = 0; i < 8; i++)
+        {
+            hash ^= (v & 0xFF);
+            hash *= prime;
+            v >>= 8;
+        }
+        return hash;
+    }
+
+    private static GpuModule CompileKernelInternal(string kernelName, string baseSource, JitConstantArg[]? jitConstants, KeyValuePair<string, string>[]? macros)
+    {
+        var combinedMacros = new Dictionary<string, string>();
         if (jitConstants != null)
         {
-            foreach (var kvp in jitConstants.OrderBy(x => x.Key))
+            foreach (var kvp in jitConstants)
             {
-                sb.Append($"|{kvp.Key}={kvp.Value}");
+                combinedMacros[kvp.Key] = kvp.GetStringValue();
             }
         }
 
         if (macros != null)
         {
-            foreach (var kvp in macros.OrderBy(x => x.Key))
+            foreach (var kvp in macros)
             {
-                sb.Append($"|{kvp.Key}={kvp.Value}");
+                combinedMacros[kvp.Key] = kvp.Value;
             }
         }
 
-        sb.Append($"|src={ComputeHash(baseSource)}");
-        var cacheKey = sb.ToString();
-
-        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
-        {
-            var combinedMacros = new Dictionary<string, string>();
-            if (jitConstants != null)
-            {
-                foreach (var kvp in jitConstants)
-                {
-                    combinedMacros[kvp.Key] = kvp.Value;
-                }
-            }
-
-            if (macros != null)
-            {
-                foreach (var kvp in macros)
-                {
-                    combinedMacros[kvp.Key] = kvp.Value;
-                }
-            }
-
-            var cppSource = PreprocessSource(baseSource, combinedMacros);
+        var cppSource = PreprocessSource(baseSource, combinedMacros);
             var sourceHash = ComputeHash(cppSource);
             var toolkitHash = ComputeHash(GetCudaToolkitPath());
             var nvrtcVersion = NvrtcApi.GetNvrtcVersion();
@@ -232,9 +281,6 @@ public sealed class JitEngine
             ptxBytes = CompileToPtx(cppSource, kernelName);
             WriteCacheFileAtomic(cacheFilePath, ptxBytes);
             return LoadKernelFunction(ptxBytes, kernelName);
-        }));
-
-        return lazyModule.Value.Function;
     }
 
     private static string PreprocessSource(string cppSource, Dictionary<string, string>? macros)

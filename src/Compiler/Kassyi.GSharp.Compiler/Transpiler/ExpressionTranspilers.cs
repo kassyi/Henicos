@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# expressions (operators, invocations, member accesses, and struct creation) to CUDA C++.</summary>
@@ -478,10 +479,10 @@ internal static class ExpressionTranspilers
         return false;
     }
 
-    private static readonly ImmutableArray<Rules.IInvocationTranspilerRule> s_invocationRules =
-        ImmutableArray.Create<Rules.IInvocationTranspilerRule>(
-            Rules.BclIntrinsicTranspilerRule.Instance,
-            Rules.GpuMacroTranspilerRule.Instance
+    private static readonly ImmutableArray<IInvocationTranspilerRule> s_invocationRules =
+        ImmutableArray.Create<IInvocationTranspilerRule>(
+            BclIntrinsicTranspilerRule.Instance,
+            GpuMacroTranspilerRule.Instance
         );
 
 

@@ -263,7 +263,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <param name="numWords">The number of words to clear. If null, clears to the end.</param>
     public void Clear(int offsetWords = 0, int? numWords = null)
     {
-        int wordsToClear = numWords ?? (NumWords - offsetWords);
+        var wordsToClear = numWords ?? (NumWords - offsetWords);
         if (wordsToClear <= 0)
         {
             return;

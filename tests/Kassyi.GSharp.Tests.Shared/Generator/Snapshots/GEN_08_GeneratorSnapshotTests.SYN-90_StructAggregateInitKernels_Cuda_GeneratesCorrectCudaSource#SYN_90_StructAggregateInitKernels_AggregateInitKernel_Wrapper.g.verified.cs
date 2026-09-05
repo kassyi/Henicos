@@ -25,22 +25,24 @@ Kassyi_GSharp_Tests_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; retur
 output[0]=s.A+s.B;
 }
 ";
+public static readonly string AggregateInitKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AggregateInitKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AggregateInitKernel(int[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AggregateInitKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AggregateInitKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AggregateInitKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AggregateInitKernel", AggregateInitKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_output = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: output
-int output_size = output.Length * sizeof(int);
-if(output_size>0)
+int output_size = output.Length * sizeof(global::System.Int32);
+if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_output, output_size));
 System.Runtime.InteropServices.GCHandle handle_output = System.Runtime.InteropServices.GCHandle.Alloc(output, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -65,9 +67,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: output
-if(output_size>0&&d_output!=IntPtr.Zero)
+if (output_size > 0 && d_output != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_output=System.Runtime.InteropServices.GCHandle.Alloc(output,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_output = System.Runtime.InteropServices.GCHandle.Alloc(output, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_output = handleBack_output.AddrOfPinnedObject();
@@ -87,11 +89,12 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AggregateInitKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AggregateInitKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AggregateInitKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AggregateInitKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AggregateInitKernel", AggregateInitKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[1];

@@ -107,7 +107,7 @@ public class FermatRunner : IDisposable
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
 
         // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
-        Kernels.GpuBigIntFermatKernelsWrapper.Launch_Kernel_FermatReduce_Mega_Device(
+        GpuBigIntFermatKernelsWrapper.Launch_Kernel_FermatReduce_Mega_Device(
             _valueT.DevicePointer, _mulResult.DevicePointer, _quotient.DevicePointer, _remainder.DevicePointer,
             _temp.DevicePointer, _remainderMask.DevicePointer,
             _numWords, _outNumWords, 2 * E + 1, _exponent,
@@ -120,7 +120,7 @@ public class FermatRunner : IDisposable
     {
         var sw = Stopwatch.StartNew();
 
-        for (int i = 0; i < E; i++)
+        for (var i = 0; i < E; i++)
         {
             MultiplySquareAndReduceHost();
         }
@@ -134,7 +134,7 @@ public class FermatRunner : IDisposable
     /// <summary>Executes a specified number of squaring iterations on the GPU for benchmarking purposes.</summary>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
-        for (int i = 0; i < chunkSize; i++)
+        for (var i = 0; i < chunkSize; i++)
         {
             MultiplySquareAndReduceHost();
         }

@@ -43,7 +43,7 @@ public class GBI29_GpuBigIntMathPow10Tests
         var engine = CreateTestEngine();
         using var context = new GpuContext(1024, engine);
 
-        Assert.Throws<System.ArgumentOutOfRangeException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
             GpuBigIntMath.Pow10(context, exponent);
         });

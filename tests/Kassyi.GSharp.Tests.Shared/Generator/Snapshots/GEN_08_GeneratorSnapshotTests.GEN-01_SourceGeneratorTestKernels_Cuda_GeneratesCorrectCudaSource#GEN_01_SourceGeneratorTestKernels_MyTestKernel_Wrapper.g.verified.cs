@@ -13,15 +13,17 @@ public const string MyTestKernel_Source = @"extern ""C"" __global__ void MyTestK
 c[0]=a[0]+b[0];
 }
 ";
+public static readonly string MyTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MyTestKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MyTestKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MyTestKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MyTestKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MyTestKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MyTestKernel", MyTestKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -29,8 +31,8 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: a
-int a_size = a.Length * sizeof(int);
-if(a_size>0)
+int a_size = a.Length * sizeof(global::System.Int32);
+if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
 System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -46,8 +48,8 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * sizeof(int);
-if(b_size>0)
+int b_size = b.Length * sizeof(global::System.Int32);
+if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
 System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -63,8 +65,8 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: c
-int c_size = c.Length * sizeof(int);
-if(c_size>0)
+int c_size = c.Length * sizeof(global::System.Int32);
+if (c_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, c_size));
 System.Runtime.InteropServices.GCHandle handle_c = System.Runtime.InteropServices.GCHandle.Alloc(c, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -89,9 +91,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: a
-if(a_size>0&&d_a!=IntPtr.Zero)
+if (a_size > 0 && d_a != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_a=System.Runtime.InteropServices.GCHandle.Alloc(a,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_a = handleBack_a.AddrOfPinnedObject();
@@ -103,9 +105,9 @@ handleBack_a.Free();
 }
 }
 // Copy back array: b
-if(b_size>0&&d_b!=IntPtr.Zero)
+if (b_size > 0 && d_b != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_b=System.Runtime.InteropServices.GCHandle.Alloc(b,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_b = handleBack_b.AddrOfPinnedObject();
@@ -117,9 +119,9 @@ handleBack_b.Free();
 }
 }
 // Copy back array: c
-if(c_size>0&&d_c!=IntPtr.Zero)
+if (c_size > 0 && d_c != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_c=System.Runtime.InteropServices.GCHandle.Alloc(c,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_c = System.Runtime.InteropServices.GCHandle.Alloc(c, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_c = handleBack_c.AddrOfPinnedObject();
@@ -141,11 +143,12 @@ if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MyTestKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MyTestKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MyTestKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MyTestKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MyTestKernel", MyTestKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[3];

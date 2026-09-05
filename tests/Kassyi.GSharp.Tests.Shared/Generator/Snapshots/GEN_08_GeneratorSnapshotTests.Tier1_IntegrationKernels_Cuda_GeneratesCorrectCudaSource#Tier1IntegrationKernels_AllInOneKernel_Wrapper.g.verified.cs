@@ -199,15 +199,16 @@ results[tid]=finalVal;
 }
 }
 ";
+public static readonly string AllInOneKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AllInOneKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
 {
-public int IntVal;
-public float FloatVal;
-public bool BoolVal;
+public global::System.Int32 IntVal;
+public global::System.Single FloatVal;
+public global::System.Boolean BoolVal;
 }
-public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 var native = new __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct();
 native.IntVal = host.IntVal;
@@ -223,14 +224,15 @@ host.BoolVal = native.BoolVal;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AllInOneKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AllInOneKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AllInOneKernel", AllInOneKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_intInput = IntPtr.Zero;
 IntPtr d_floatInput = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -240,8 +242,8 @@ try
 {
 void** kernelParams = stackalloc void*[7];
 // Marshal array: intInput
-int intInput_size = intInput.Length * sizeof(int);
-if(intInput_size>0)
+int intInput_size = intInput.Length * sizeof(global::System.Int32);
+if (intInput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_intInput, intInput_size));
 System.Runtime.InteropServices.GCHandle handle_intInput = System.Runtime.InteropServices.GCHandle.Alloc(intInput, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -257,8 +259,8 @@ handle_intInput.Free();
 }
 kernelParams[0] = &d_intInput;
 // Marshal array: floatInput
-int floatInput_size = floatInput.Length * sizeof(float);
-if(floatInput_size>0)
+int floatInput_size = floatInput.Length * sizeof(global::System.Single);
+if (floatInput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatInput, floatInput_size));
 System.Runtime.InteropServices.GCHandle handle_floatInput = System.Runtime.InteropServices.GCHandle.Alloc(floatInput, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -274,8 +276,8 @@ handle_floatInput.Free();
 }
 kernelParams[1] = &d_floatInput;
 // Marshal array: results
-int results_size = results.Length * sizeof(float);
-if(results_size>0)
+int results_size = results.Length * sizeof(global::System.Single);
+if (results_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_results, results_size));
 System.Runtime.InteropServices.GCHandle handle_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -294,8 +296,8 @@ var native_config = Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref con
 // Marshal scalar struct: config
 kernelParams[3] = &native_config;
 // Marshal array: globalCounter
-int globalCounter_size = globalCounter.Length * sizeof(ulong);
-if(globalCounter_size>0)
+int globalCounter_size = globalCounter.Length * sizeof(global::System.UInt64);
+if (globalCounter_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalCounter, globalCounter_size));
 System.Runtime.InteropServices.GCHandle handle_globalCounter = System.Runtime.InteropServices.GCHandle.Alloc(globalCounter, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -324,9 +326,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: intInput
-if(intInput_size>0&&d_intInput!=IntPtr.Zero)
+if (intInput_size > 0 && d_intInput != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_intInput=System.Runtime.InteropServices.GCHandle.Alloc(intInput,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_intInput = System.Runtime.InteropServices.GCHandle.Alloc(intInput, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_intInput = handleBack_intInput.AddrOfPinnedObject();
@@ -338,9 +340,9 @@ handleBack_intInput.Free();
 }
 }
 // Copy back array: floatInput
-if(floatInput_size>0&&d_floatInput!=IntPtr.Zero)
+if (floatInput_size > 0 && d_floatInput != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatInput=System.Runtime.InteropServices.GCHandle.Alloc(floatInput,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatInput = System.Runtime.InteropServices.GCHandle.Alloc(floatInput, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatInput = handleBack_floatInput.AddrOfPinnedObject();
@@ -352,9 +354,9 @@ handleBack_floatInput.Free();
 }
 }
 // Copy back array: results
-if(results_size>0&&d_results!=IntPtr.Zero)
+if (results_size > 0 && d_results != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_results=System.Runtime.InteropServices.GCHandle.Alloc(results,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_results = handleBack_results.AddrOfPinnedObject();
@@ -367,9 +369,9 @@ handleBack_results.Free();
 }
 Unmarshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, ref native_config, false);
 // Copy back array: globalCounter
-if(globalCounter_size>0&&d_globalCounter!=IntPtr.Zero)
+if (globalCounter_size > 0 && d_globalCounter != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_globalCounter=System.Runtime.InteropServices.GCHandle.Alloc(globalCounter,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_globalCounter = System.Runtime.InteropServices.GCHandle.Alloc(globalCounter, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_globalCounter = handleBack_globalCounter.AddrOfPinnedObject();
@@ -393,12 +395,12 @@ if (d_globalCounter != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_globalCounter);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AllInOneKernel_Device(IntPtr intInput, IntPtr floatInput, IntPtr results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, IntPtr globalCounter, int count, int dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_AllInOneKernel_Device(IntPtr intInput, IntPtr floatInput, IntPtr results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, IntPtr globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AllInOneKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AllInOneKernel_Source, null, macros);
-System.Collections.Generic.List<IntPtr> config_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AllInOneKernel", AllInOneKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[7];
@@ -408,7 +410,7 @@ kernelParams[0] = &intInput;
 kernelParams[1] = &floatInput;
 // Marshal device array: results
 kernelParams[2] = &results;
-var native_config = Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, true, config_allocatedPtrs);
+var native_config = Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, true, null);
 // Marshal scalar struct: config
 kernelParams[3] = &native_config;
 // Marshal device array: globalCounter
@@ -430,7 +432,6 @@ Unmarshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, ref native_co
 }
 finally
 {
-foreach (var ptr in config_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
 }
 }
 }
