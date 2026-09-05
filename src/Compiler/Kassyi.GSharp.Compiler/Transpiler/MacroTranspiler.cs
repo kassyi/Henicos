@@ -208,30 +208,21 @@ internal static class MacroTranspiler
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
 
-        var isSupportedGpuBigIntOp = false;
-        if (rightNode is BinaryExpressionSyntax binaryExpr)
-        {
-            var type = context.SemanticModel.GetTypeInfo(binaryExpr).Type;
-            if (type is { Name: "GpuBigIntRef" })
-            {
-                isSupportedGpuBigIntOp = true;
-            }
-        }
-        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
-        {
-            var type = context.SemanticModel.GetTypeInfo(unaryExpr).Type;
-            if (type is { Name: "GpuBigIntRef" })
-            {
-                isSupportedGpuBigIntOp = true;
-            }
-        }
-
-        if (!isSupportedGpuBigIntOp)
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(rightNode);
+        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
         {
             return false;
         }
 
-        EmitGpuBigIntRefOperation(assignment, rightNode, ref context);
+        var macroAttr = methodSymbol.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.Name == "GpuOperatorMacroAttribute");
+
+        if (macroAttr == null)
+        {
+            return false;
+        }
+
+        EmitMacroOperatorAssignment(assignment, rightNode, methodSymbol, macroAttr, ref context);
         return true;
     }
 
@@ -251,88 +242,79 @@ internal static class MacroTranspiler
         return expression;
     }
 
-    private static void EmitGpuBigIntRefOperation(
+    private static void EmitMacroOperatorAssignment(
         AssignmentExpressionSyntax assignment,
         ExpressionSyntax rightNode,
+        IMethodSymbol methodSymbol,
+        AttributeData macroAttr,
         ref TranspileContext context)
     {
-        using (context.Writer.Scope())
-        {
-            context.Writer.AppendLine("Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _macroCtx;");
+        var targetType = (INamedTypeSymbol)macroAttr.ConstructorArguments[0].Value!;
+        var targetMethodName = (string)macroAttr.ConstructorArguments[1].Value!;
+        var targetMethod = targetType.GetMembers(targetMethodName).OfType<IMethodSymbol>().FirstOrDefault();
 
-            if (rightNode is BinaryExpressionSyntax binaryExpr)
-            {
-                EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", binaryExpr.Left);
-
-                if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
-                    !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
-                {
-                    EmitAssignment(ref context, "_macroCtx.Operands.RightOperand", binaryExpr.Right);
-                }
-            }
-            else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
-            {
-                EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", unaryExpr.Operand);
-            }
-
-            EmitAssignment(ref context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
-
-            // Context buffers propagation (standard in Henicos BigInt kernels)
-            context.Writer.AppendLine("_macroCtx.Operands.CarryBuffer = ctx->Buffers.CarryBuffer;");
-
-            context.Writer.AppendLine("_macroCtx.NumberOfWords = ctx->Dimensions.NumberOfWordsExtended;");
-
-            EmitDeviceFunctionCall(ref context, rightNode);
-        }
-    }
-
-    private static void EmitAssignment(ref TranspileContext context, string target, ExpressionSyntax value)
-    {
-        context.Writer.Append($"{target} = ");
-        context.Visitor.Visit(value);
-        context.Writer.AppendSemiColonLine();
-    }
-
-    private static void EmitDeviceFunctionCall(ref TranspileContext context, ExpressionSyntax opNode)
-    {
-        ExpressionSyntax? extraArg = null;
-        string? functionName = null;
-
-        if (opNode is BinaryExpressionSyntax binaryExpr)
-        {
-            (functionName, extraArg) = binaryExpr.Kind() switch
-            {
-                SyntaxKind.AddExpression => ("Device_Add", (ExpressionSyntax?)null),
-                SyntaxKind.SubtractExpression => ("Device_Sub", null),
-                SyntaxKind.BitwiseAndExpression => ("Device_BitwiseAnd", null),
-                SyntaxKind.BitwiseOrExpression => ("Device_BitwiseOr", null),
-                SyntaxKind.ExclusiveOrExpression => ("Device_BitwiseXor", null),
-                SyntaxKind.LeftShiftExpression => ("Device_ShiftLeft", binaryExpr.Right),
-                SyntaxKind.RightShiftExpression => ("Device_ShiftRight", binaryExpr.Right),
-                _ => (null, null)
-            };
-        }
-        else if (opNode is PrefixUnaryExpressionSyntax unaryExpr)
-        {
-            functionName = unaryExpr.Kind() switch
-            {
-                SyntaxKind.BitwiseNotExpression => "Device_BitwiseNot",
-                _ => null
-            };
-        }
-
-        if (functionName == null)
+        if (targetMethod == null)
         {
             return;
         }
 
-        context.Writer.Append(functionName);
+        ExpressionSyntax? leftOp = null;
+        ExpressionSyntax? rightOp = null;
+        ExpressionSyntax? extraArg = null;
+
+        if (rightNode is BinaryExpressionSyntax binaryExpr)
+        {
+            leftOp = binaryExpr.Left;
+            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
+                !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
+            {
+                rightOp = binaryExpr.Right;
+            }
+            else
+            {
+                extraArg = binaryExpr.Right;
+            }
+        }
+        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
+        {
+            leftOp = unaryExpr.Operand;
+        }
+
+        var resultOp = assignment.Left;
+
+        context.Writer.AppendFullyQualifiedCppName(targetType).Append("::").Append(targetMethodName);
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append("_macroCtx");
+            bool hasContext = targetMethod.Parameters.Length > 0 && targetMethod.Parameters[0].Type.IsValueType;
+            bool isFirst = true;
+
+            if (hasContext)
+            {
+                context.Writer.Append("ctx");
+                isFirst = false;
+            }
+
+            if (!isFirst) context.Writer.AppendComma();
+            context.Visitor.Visit(resultOp);
+            isFirst = false;
+
+            if (leftOp != null)
+            {
+                if (!isFirst) context.Writer.AppendComma();
+                context.Visitor.Visit(leftOp);
+                isFirst = false;
+            }
+
+            if (rightOp != null)
+            {
+                if (!isFirst) context.Writer.AppendComma();
+                context.Visitor.Visit(rightOp);
+                isFirst = false;
+            }
+
             if (extraArg != null)
             {
-                context.Writer.AppendComma();
+                if (!isFirst) context.Writer.AppendComma();
                 context.Visitor.Visit(extraArg);
             }
         }
