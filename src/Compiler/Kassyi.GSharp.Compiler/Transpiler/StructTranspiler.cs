@@ -8,7 +8,6 @@ internal static class StructTranspiler
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
         if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
-            namedStruct.IsRefLikeType ||
             namedStruct.ContainingNamespace.IsSystemOrNumerics())
         {
             return;

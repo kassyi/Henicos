@@ -215,15 +215,14 @@ internal static class MacroTranspiler
         }
 
         var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "GpuOperatorMacroAttribute");
+            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Kassyi.GSharp.Core.GpuOperatorMacroAttribute");
 
-        if (macroAttr == null)
+        if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {
             return false;
         }
 
-        EmitMacroOperatorAssignment(assignment, rightNode, methodSymbol, macroAttr, ref context);
-        return true;
+        return EmitMacroOperatorAssignment(assignment, rightNode, methodSymbol, macroAttr, ref context);
     }
 
     private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
@@ -242,20 +241,36 @@ internal static class MacroTranspiler
         return expression;
     }
 
-    private static void EmitMacroOperatorAssignment(
+    private static bool EmitMacroOperatorAssignment(
         AssignmentExpressionSyntax assignment,
         ExpressionSyntax rightNode,
         IMethodSymbol methodSymbol,
         AttributeData macroAttr,
         ref TranspileContext context)
     {
-        var targetType = (INamedTypeSymbol)macroAttr.ConstructorArguments[0].Value!;
-        var targetMethodName = (string)macroAttr.ConstructorArguments[1].Value!;
-        var targetMethod = targetType.GetMembers(targetMethodName).OfType<IMethodSymbol>().FirstOrDefault();
+        var targetType = macroAttr.ConstructorArguments[0].Value as INamedTypeSymbol;
+        var targetMethodName = macroAttr.ConstructorArguments[1].Value as string;
+
+        if (targetType == null || targetMethodName == null)
+        {
+            return false;
+        }
+
+        var expectedMethodParamsMin = rightNode is BinaryExpressionSyntax ? 3 : 2; // result + left + (right/extraArg)
+        var expectedMethodParamsMax = expectedMethodParamsMin + 1; // + context
+
+        var targetMethods = targetType.GetMembers(targetMethodName).OfType<IMethodSymbol>().ToList();
+        var targetMethod = targetMethods.FirstOrDefault(m =>
+            m.Parameters.Length == expectedMethodParamsMin ||
+            (m.Parameters.Length == expectedMethodParamsMax && m.Parameters[0].Type.IsValueType));
 
         if (targetMethod == null)
         {
-            return;
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnsupportedSyntax,
+                assignment.GetLocation(),
+                $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible."));
+            return false;
         }
 
         ExpressionSyntax? leftOp = null;
@@ -282,44 +297,70 @@ internal static class MacroTranspiler
 
         var resultOp = assignment.Left;
 
-        context.Writer.AppendFullyQualifiedCppName(targetType).Append("::").Append(targetMethodName);
+        context.Writer.Append(targetMethodName);
         using (context.Writer.Parentheses())
         {
-            bool hasContext = targetMethod.Parameters.Length > 0 && targetMethod.Parameters[0].Type.IsValueType;
-            bool isFirst = true;
+            var hasContext = targetMethod.Parameters.Length == expectedMethodParamsMax;
+            var isFirst = true;
+            var paramIndex = 0;
+
+            void AppendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
+            {
+                if (!isFirst)
+                {
+                    localContext.Writer.AppendComma();
+                }
+
+                isFirst = false;
+
+                var param = targetMethod.Parameters[paramIndex++];
+                var isPointer = param.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
+
+                if (isPointer && rawString != null)
+                {
+                    localContext.Writer.Append("&").Append(rawString);
+                }
+                else if (rawString != null)
+                {
+                    localContext.Writer.Append(rawString);
+                }
+                else if (expr != null)
+                {
+                    var isExprPointer = localContext.SemanticModel.GetTypeInfo(expr).Type is IPointerTypeSymbol;
+                    if (isPointer && !isExprPointer)
+                    {
+                        localContext.Writer.Append("&");
+                    }
+
+                    localContext.Visitor.Visit(expr);
+                }
+            }
 
             if (hasContext)
             {
-                context.Writer.Append("ctx");
-                isFirst = false;
+                AppendArg(null, "ctx", ref context);
             }
 
-            if (!isFirst) context.Writer.AppendComma();
-            context.Visitor.Visit(resultOp);
-            isFirst = false;
+            AppendArg(resultOp, null, ref context);
 
             if (leftOp != null)
             {
-                if (!isFirst) context.Writer.AppendComma();
-                context.Visitor.Visit(leftOp);
-                isFirst = false;
+                AppendArg(leftOp, null, ref context);
             }
 
             if (rightOp != null)
             {
-                if (!isFirst) context.Writer.AppendComma();
-                context.Visitor.Visit(rightOp);
-                isFirst = false;
+                AppendArg(rightOp, null, ref context);
             }
 
             if (extraArg != null)
             {
-                if (!isFirst) context.Writer.AppendComma();
-                context.Visitor.Visit(extraArg);
+                AppendArg(extraArg, null, ref context);
             }
         }
 
         context.Writer.AppendSemiColonLine();
+        return true;
     }
 }
 

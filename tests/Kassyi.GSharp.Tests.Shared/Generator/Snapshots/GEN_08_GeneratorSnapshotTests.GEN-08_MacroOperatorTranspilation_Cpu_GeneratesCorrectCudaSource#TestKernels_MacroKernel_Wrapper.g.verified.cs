@@ -17,11 +17,28 @@ int State;
 }
 ;
 #endif
+#ifndef __GSHARP_STRUCT_TestNamespace_DummyRef__
+#define __GSHARP_STRUCT_TestNamespace_DummyRef__
+struct TestNamespace_DummyRef
+{
+unsigned int* Data;
+__device__ inline TestNamespace_DummyRef() {}
+__device__ inline TestNamespace_DummyRef(unsigned int* v) {
+this->Data = v;
+}
+__device__ inline operator unsigned int*() const {
+return this->Data;
+}
+}
+;
+#endif
 extern ""C"" __declspec(dllexport) void MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult){
 TestNamespace_DummyRef a=dA;
 TestNamespace_DummyRef b=dB;
 TestNamespace_DummyRef c=dResult;
-TestNamespace_DummyKernels::DummyOp(ctx,c,a,b);
+DummyOp(&ctx,c,a,b);
+DummyUnaryOp(c,a);
+DummyShiftOp(ctx,c,a,5);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_MacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult)
 {

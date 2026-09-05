@@ -184,6 +184,11 @@ __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long l
 struct TestNamespace_DummyContext;
 inline __device__ void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, unsigned int* result, unsigned int* left, unsigned int* right);
 
+inline __device__ void DummyUnaryOp(unsigned int* result, unsigned int* operand);
+
+struct TestNamespace_DummyContext;
+inline __device__ void DummyShiftOp(TestNamespace_DummyContext ctx, unsigned int* result, unsigned int* operand, int shift);
+
 #ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
 struct TestNamespace_DummyContext
@@ -193,6 +198,20 @@ int State;
 ;
 #endif
 inline __device__ void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, unsigned int* result, unsigned int* left, unsigned int* right){
+}
+
+inline __device__ void DummyUnaryOp(unsigned int* result, unsigned int* operand){
+}
+
+#ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
+#define __GSHARP_STRUCT_TestNamespace_DummyContext__
+struct TestNamespace_DummyContext
+{
+int State;
+}
+;
+#endif
+inline __device__ void DummyShiftOp(TestNamespace_DummyContext ctx, unsigned int* result, unsigned int* operand, int shift){
 }
 
 ";

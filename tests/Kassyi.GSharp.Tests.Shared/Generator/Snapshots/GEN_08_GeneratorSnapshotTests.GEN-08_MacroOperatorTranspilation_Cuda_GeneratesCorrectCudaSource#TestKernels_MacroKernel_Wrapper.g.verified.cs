@@ -17,11 +17,28 @@ int State;
 }
 ;
 #endif
+#ifndef __GSHARP_STRUCT_TestNamespace_DummyRef__
+#define __GSHARP_STRUCT_TestNamespace_DummyRef__
+struct TestNamespace_DummyRef
+{
+unsigned int* Data;
+__device__ inline TestNamespace_DummyRef() {}
+__device__ inline TestNamespace_DummyRef(unsigned int* v) {
+this->Data = v;
+}
+__device__ inline operator unsigned int*() const {
+return this->Data;
+}
+}
+;
+#endif
 extern ""C"" __global__ void MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult){
 TestNamespace_DummyRef a=dA;
 TestNamespace_DummyRef b=dB;
 TestNamespace_DummyRef c=dResult;
-TestNamespace_DummyKernels::DummyOp(ctx,c,a,b);
+DummyOp(&ctx,c,a,b);
+DummyUnaryOp(c,a);
+DummyShiftOp(ctx,c,a,5);
 }
 ";
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
