@@ -27,10 +27,10 @@ public ref struct ScopedGpuMemory
     /// <summary>Frees the allocated GPU memory buffer.</summary>
     public void Dispose()
     {
-        if (Pointer != nint.Zero)
+        if (Pointer != IntPtr.Zero)
         {
             _provider.FreeMemory(Pointer);
-            Pointer = nint.Zero;
+            Pointer = IntPtr.Zero;
         }
     }
 }

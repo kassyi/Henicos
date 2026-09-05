@@ -61,7 +61,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 
         DevicePointer = Context.Provider.AllocateMemory(numWords);
 
-        if (DevicePointer == nint.Zero)
+        if (DevicePointer == IntPtr.Zero)
         {
             throw new OutOfMemoryException(
                 $"Failed to allocate GPU memory for {numWords} words ({numWords * 4} bytes).");
@@ -270,7 +270,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         }
 
         var zeroArray = new uint[wordsToClear];
-        Context.Provider.CopyHostToDevice(nint.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
+        Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
     }
 
     /// <summary>
@@ -289,8 +289,8 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
             return;
         }
 
-        var destPtr = nint.Add(DevicePointer, destOffsetWords * 4);
-        var srcPtr = nint.Add(source.DevicePointer, srcOffsetWords * 4);
+        var destPtr = IntPtr.Add(DevicePointer, destOffsetWords * 4);
+        var srcPtr = IntPtr.Add(source.DevicePointer, srcOffsetWords * 4);
 
         Context.Provider.CopyDeviceToDevice(destPtr, srcPtr, wordsToCopy);
     }
@@ -308,7 +308,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         }
 
         var hostData = new uint[wordCount];
-        var srcPtr = nint.Add(DevicePointer, (NumWords - wordCount) * 4);
+        var srcPtr = IntPtr.Add(DevicePointer, (NumWords - wordCount) * 4);
         Context.Provider.CopyDeviceToHost(hostData, srcPtr, wordCount);
         return hostData;
     }
@@ -345,7 +345,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <param name="wordIndex">The zero-based limb index.</param>
     public void ClearWord(int wordIndex)
     {
-        var destPtr = nint.Add(DevicePointer, wordIndex * 4);
+        var destPtr = IntPtr.Add(DevicePointer, wordIndex * 4);
         Context.Provider.CopyHostToDevice(destPtr, [0], 1);
     }
 
@@ -379,7 +379,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 
         _disposed = true;
 
-        if (DevicePointer != nint.Zero)
+        if (DevicePointer != IntPtr.Zero)
         {
             Context.Provider.FreeMemory(DevicePointer);
         }
@@ -439,13 +439,13 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         get
         {
             var word = new uint[1];
-            Context.Provider.CopyDeviceToHost(word, nint.Add(DevicePointer, (NumWords - 1) * 4), 1);
+            Context.Provider.CopyDeviceToHost(word, IntPtr.Add(DevicePointer, (NumWords - 1) * 4), 1);
             return (word[0] & 0x80000000) != 0;
         }
         set
         {
             var word = new uint[1];
-            var ptr = nint.Add(DevicePointer, (NumWords - 1) * 4);
+            var ptr = IntPtr.Add(DevicePointer, (NumWords - 1) * 4);
             Context.Provider.CopyDeviceToHost(word, ptr, 1);
             if (value)
             {
