@@ -25,7 +25,7 @@ else
 ";
 public static readonly string AllocationTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AllocationTestKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AllocationTestKernel(ref int ioVal, out float outVal, int[] arrayVal, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_AllocationTestKernel(ref global::System.Int32 ioVal, out global::System.Single outVal, global::System.Int32[] arrayVal, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 outVal = default;
 if (arrayVal.Length == 0){
@@ -44,20 +44,20 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal ref/out scalar: ioVal
-int ioVal_size = sizeof(int);
+int ioVal_size = sizeof(global::System.Int32);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ioVal, ioVal_size));
 // Fast zero-allocation copy to device
-fixed (int* p_ioVal_temp = &ioVal)
+fixed (global::System.Int32* p_ioVal_temp = &ioVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ioVal, (IntPtr)p_ioVal_temp, ioVal_size));
 }
 kernelParams[0] = &d_ioVal;
 // Marshal ref/out scalar: outVal
-int outVal_size = sizeof(float);
+int outVal_size = sizeof(global::System.Single);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_outVal, outVal_size));
 kernelParams[1] = &d_outVal;
 // Marshal array: arrayVal
-int arrayVal_size = arrayVal.Length * sizeof(int);
+int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_arrayVal, arrayVal_size));
@@ -83,13 +83,13 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Fast zero-allocation copy from device for scalar: ioVal
-fixed (int* ptr_ioVal = &ioVal)
+fixed (global::System.Int32* ptr_ioVal = &ioVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_ioVal, d_ioVal, ioVal_size));
 }
 outVal = default;
 // Fast zero-allocation copy from device for scalar: outVal
-fixed (float* ptr_outVal = &outVal)
+fixed (global::System.Single* ptr_outVal = &outVal)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_outVal, d_outVal, outVal_size));
 }
@@ -118,7 +118,7 @@ if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_arrayVal);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AllocationTestKernel_Device(IntPtr ioVal, IntPtr outVal, IntPtr arrayVal, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_AllocationTestKernel_Device(IntPtr ioVal, IntPtr outVal, IntPtr arrayVal, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {

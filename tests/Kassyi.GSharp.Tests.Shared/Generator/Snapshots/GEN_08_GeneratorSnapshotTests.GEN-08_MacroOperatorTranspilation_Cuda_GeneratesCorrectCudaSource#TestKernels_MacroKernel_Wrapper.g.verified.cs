@@ -46,7 +46,7 @@ public static readonly string MacroKernel_FullSource = global::Kassyi.GSharp.Gen
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_TestNamespace_DummyContext
 {
-public int State;
+public global::System.Int32 State;
 }
 public static unsafe __Native_TestNamespace_DummyContext Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
@@ -60,7 +60,7 @@ host.State = native.State;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MacroKernel(global::TestNamespace.DummyContext ctx, uint[] dA, uint[] dB, uint[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_MacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
 return;
@@ -80,7 +80,7 @@ var native_ctx = Marshal_TestNamespace_DummyContext(ref ctx, false, ctx_allocate
 // Marshal scalar struct: ctx
 kernelParams[0] = &native_ctx;
 // Marshal array: dA
-int dA_size = dA.Length * sizeof(uint);
+int dA_size = dA.Length * sizeof(global::System.UInt32);
 if (dA_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dA, dA_size));
@@ -97,7 +97,7 @@ handle_dA.Free();
 }
 kernelParams[1] = &d_dA;
 // Marshal array: dB
-int dB_size = dB.Length * sizeof(uint);
+int dB_size = dB.Length * sizeof(global::System.UInt32);
 if (dB_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dB, dB_size));
@@ -114,7 +114,7 @@ handle_dB.Free();
 }
 kernelParams[2] = &d_dB;
 // Marshal array: dResult
-int dResult_size = dResult.Length * sizeof(uint);
+int dResult_size = dResult.Length * sizeof(global::System.UInt32);
 if (dResult_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dResult, dResult_size));

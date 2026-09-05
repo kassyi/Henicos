@@ -24,7 +24,7 @@ dest[*ptrI++]=*ptrV+++10u;
 ";
 public static readonly string PointerComplexAssignmentKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + PointerComplexAssignmentKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_PointerComplexAssignmentKernel(global::System.UInt32[] idx, global::System.UInt32[] val, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (idx.Length == 0 || val.Length == 0 || dest.Length == 0){
 return;
@@ -40,7 +40,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: idx
-int idx_size = idx.Length * sizeof(uint);
+int idx_size = idx.Length * sizeof(global::System.UInt32);
 if (idx_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_idx, idx_size));
@@ -57,7 +57,7 @@ handle_idx.Free();
 }
 kernelParams[0] = &d_idx;
 // Marshal array: val
-int val_size = val.Length * sizeof(uint);
+int val_size = val.Length * sizeof(global::System.UInt32);
 if (val_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_val, val_size));
@@ -74,7 +74,7 @@ handle_val.Free();
 }
 kernelParams[1] = &d_val;
 // Marshal array: dest
-int dest_size = dest.Length * sizeof(uint);
+int dest_size = dest.Length * sizeof(global::System.UInt32);
 if (dest_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dest, dest_size));

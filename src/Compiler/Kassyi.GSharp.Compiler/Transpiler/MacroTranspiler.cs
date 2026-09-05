@@ -216,7 +216,7 @@ internal static class MacroTranspiler
         }
 
         var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Kassyi.GSharp.Core.GpuOperatorMacroAttribute");
+            .FirstOrDefault(a => a.AttributeClass?.Name == "GpuOperatorMacroAttribute" && a.AttributeClass.ContainingNamespace.IsCoreNamespace());
 
         if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {

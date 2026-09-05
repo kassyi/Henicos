@@ -29,7 +29,7 @@ __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_InterlockedEdgeCasesKernel(int[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_InterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
@@ -44,7 +44,7 @@ try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal array: array
-int array_size = array.Length * sizeof(int);
+int array_size = array.Length * sizeof(global::System.Int32);
 if (array_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_array, array_size));

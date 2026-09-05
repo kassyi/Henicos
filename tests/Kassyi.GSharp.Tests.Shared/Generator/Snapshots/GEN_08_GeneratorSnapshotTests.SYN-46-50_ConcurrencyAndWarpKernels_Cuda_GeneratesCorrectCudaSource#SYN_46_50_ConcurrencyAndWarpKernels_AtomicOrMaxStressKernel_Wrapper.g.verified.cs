@@ -20,7 +20,7 @@ atomicMax(&globalState[1],(unsigned int)tid);
 ";
 public static readonly string AtomicOrMaxStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AtomicOrMaxStressKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AtomicOrMaxStressKernel(uint[] globalState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_AtomicOrMaxStressKernel(global::System.UInt32[] globalState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (globalState.Length == 0){
 return;
@@ -34,7 +34,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: globalState
-int globalState_size = globalState.Length * sizeof(uint);
+int globalState_size = globalState.Length * sizeof(global::System.UInt32);
 if (globalState_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalState, globalState_size));

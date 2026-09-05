@@ -31,7 +31,7 @@ __gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ul,0ul);
 ";
 public static readonly string InterlockedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_InterlockedKernel(int[] intBuf, uint[] uintBuf, long[] longBuf, ulong[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_InterlockedKernel(global::System.Int32[] intBuf, global::System.UInt32[] uintBuf, global::System.Int64[] longBuf, global::System.UInt64[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf.Length == 0){
 return;
@@ -48,7 +48,7 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: intBuf
-int intBuf_size = intBuf.Length * sizeof(int);
+int intBuf_size = intBuf.Length * sizeof(global::System.Int32);
 if (intBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_intBuf, intBuf_size));
@@ -65,7 +65,7 @@ handle_intBuf.Free();
 }
 kernelParams[0] = &d_intBuf;
 // Marshal array: uintBuf
-int uintBuf_size = uintBuf.Length * sizeof(uint);
+int uintBuf_size = uintBuf.Length * sizeof(global::System.UInt32);
 if (uintBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_uintBuf, uintBuf_size));
@@ -82,7 +82,7 @@ handle_uintBuf.Free();
 }
 kernelParams[1] = &d_uintBuf;
 // Marshal array: longBuf
-int longBuf_size = longBuf.Length * sizeof(long);
+int longBuf_size = longBuf.Length * sizeof(global::System.Int64);
 if (longBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_longBuf, longBuf_size));
@@ -99,7 +99,7 @@ handle_longBuf.Free();
 }
 kernelParams[2] = &d_longBuf;
 // Marshal array: ulongBuf
-int ulongBuf_size = ulongBuf.Length * sizeof(ulong);
+int ulongBuf_size = ulongBuf.Length * sizeof(global::System.UInt64);
 if (ulongBuf_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ulongBuf, ulongBuf_size));

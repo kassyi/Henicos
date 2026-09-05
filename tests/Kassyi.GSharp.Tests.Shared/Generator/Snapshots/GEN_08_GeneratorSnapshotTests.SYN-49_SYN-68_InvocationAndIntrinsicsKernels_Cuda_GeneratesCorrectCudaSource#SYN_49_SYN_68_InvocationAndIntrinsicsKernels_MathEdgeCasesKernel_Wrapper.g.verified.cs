@@ -23,7 +23,7 @@ doubleSpecialResults[2]=fmin(d,0.0);
 ";
 public static readonly string MathEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathEdgeCasesKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MathEdgeCasesKernel(float[] floatSpecialInputs, float[] floatSpecialResults, double[] doubleSpecialInputs, double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_MathEdgeCasesKernel(global::System.Single[] floatSpecialInputs, global::System.Single[] floatSpecialResults, global::System.Double[] doubleSpecialInputs, global::System.Double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
@@ -40,7 +40,7 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: floatSpecialInputs
-int floatSpecialInputs_size = floatSpecialInputs.Length * sizeof(float);
+int floatSpecialInputs_size = floatSpecialInputs.Length * sizeof(global::System.Single);
 if (floatSpecialInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatSpecialInputs, floatSpecialInputs_size));
@@ -57,7 +57,7 @@ handle_floatSpecialInputs.Free();
 }
 kernelParams[0] = &d_floatSpecialInputs;
 // Marshal array: floatSpecialResults
-int floatSpecialResults_size = floatSpecialResults.Length * sizeof(float);
+int floatSpecialResults_size = floatSpecialResults.Length * sizeof(global::System.Single);
 if (floatSpecialResults_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatSpecialResults, floatSpecialResults_size));
@@ -74,7 +74,7 @@ handle_floatSpecialResults.Free();
 }
 kernelParams[1] = &d_floatSpecialResults;
 // Marshal array: doubleSpecialInputs
-int doubleSpecialInputs_size = doubleSpecialInputs.Length * sizeof(double);
+int doubleSpecialInputs_size = doubleSpecialInputs.Length * sizeof(global::System.Double);
 if (doubleSpecialInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleSpecialInputs, doubleSpecialInputs_size));
@@ -91,7 +91,7 @@ handle_doubleSpecialInputs.Free();
 }
 kernelParams[2] = &d_doubleSpecialInputs;
 // Marshal array: doubleSpecialResults
-int doubleSpecialResults_size = doubleSpecialResults.Length * sizeof(double);
+int doubleSpecialResults_size = doubleSpecialResults.Length * sizeof(global::System.Double);
 if (doubleSpecialResults_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleSpecialResults, doubleSpecialResults_size));

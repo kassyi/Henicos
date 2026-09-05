@@ -218,17 +218,17 @@ public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_DebugReduc_SpecTypes
 {
-public bool BooleanValue;
-public byte ByteValue;
-public sbyte SByteValue;
-public short ShortValue;
-public ushort UShortValue;
-public int IntValue;
-public uint UIntValue;
-public long LongValue;
-public ulong ULongValue;
-public float FloatValue;
-public double DoubleValue;
+public global::System.Boolean BooleanValue;
+public global::System.Byte ByteValue;
+public global::System.SByte SByteValue;
+public global::System.Int16 ShortValue;
+public global::System.UInt16 UShortValue;
+public global::System.Int32 IntValue;
+public global::System.UInt32 UIntValue;
+public global::System.Int64 LongValue;
+public global::System.UInt64 ULongValue;
+public global::System.Single FloatValue;
+public global::System.Double DoubleValue;
 }
 public static unsafe __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
@@ -263,8 +263,8 @@ host.DoubleValue = native.DoubleValue;
 #pragma warning restore CS8500
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::DebugReduc.PhysicsVector* particles, float* totalMagnitude, bool* successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount);
-public static unsafe void Launch_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::DebugReduc.PhysicsVector* particles, global::System.Single* totalMagnitude, global::System.Boolean* successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount);
+public static unsafe void Launch_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref global::System.Single totalMagnitude, out global::System.Boolean successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 successFlag = default;
 if (particles.Length == 0){
@@ -273,10 +273,10 @@ return;
 __t_jitConstants_array_ProcessPhysics ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
 __t_jitConstants_array_ProcessPhysics[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("unrollFactor", unrollFactor);
 System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ProcessPhysics, 0, 1);
-        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", ProcessPhysics_FullSource, __t_jitConstants, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", ProcessPhysics_FullSource, __t_jitConstants, macros);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
-fixed (float* p_totalMagnitude = &totalMagnitude)
-fixed (bool* p_successFlag = &successFlag)
+fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
+fixed (global::System.Boolean* p_successFlag = &successFlag)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_particles, p_totalMagnitude, p_successFlag, largeStructVal, particleCount);
 }

@@ -15,7 +15,7 @@ atomicAdd(&globalSum[0],1);
 ";
 public static readonly string AtomicAddStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AtomicAddStressKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AtomicAddStressKernel(int[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_AtomicAddStressKernel(global::System.Int32[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (globalSum.Length == 0){
 return;
@@ -29,7 +29,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: globalSum
-int globalSum_size = globalSum.Length * sizeof(int);
+int globalSum_size = globalSum.Length * sizeof(global::System.Int32);
 if (globalSum_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_globalSum, globalSum_size));

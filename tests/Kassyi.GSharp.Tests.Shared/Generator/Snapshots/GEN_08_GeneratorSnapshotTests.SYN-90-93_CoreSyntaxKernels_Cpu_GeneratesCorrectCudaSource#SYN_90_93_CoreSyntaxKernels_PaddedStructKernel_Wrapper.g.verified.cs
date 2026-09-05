@@ -49,14 +49,14 @@ PaddedStructKernel(items, length);
 public static readonly string PaddedStructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + PaddedStructKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void PaddedStructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* items, int length);
-public static unsafe void Launch_PaddedStructKernel(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct[] items, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private unsafe delegate void PaddedStructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* items, global::System.Int32 length);
+public static unsafe void Launch_PaddedStructKernel(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct[] items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (items.Length == 0){
 return;
 }
 System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", PaddedStructKernel_FullSource, __t_jitConstants, macros);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", PaddedStructKernel_FullSource, __t_jitConstants, macros);
 fixed (global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* p_items = items)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_items, length);

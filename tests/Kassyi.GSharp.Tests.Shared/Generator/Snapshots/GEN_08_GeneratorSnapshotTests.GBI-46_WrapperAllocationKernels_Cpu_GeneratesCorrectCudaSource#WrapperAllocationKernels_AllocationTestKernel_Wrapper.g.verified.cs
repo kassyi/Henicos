@@ -39,8 +39,8 @@ AllocationTestKernel(ioVal, outVal, arrayVal);
 public static readonly string AllocationTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AllocationTestKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AllocationTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* ioVal, float* outVal, int* arrayVal);
-public static unsafe void Launch_AllocationTestKernel(ref int ioVal, out float outVal, int[] arrayVal, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private unsafe delegate void AllocationTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* ioVal, global::System.Single* outVal, global::System.Int32* arrayVal);
+public static unsafe void Launch_AllocationTestKernel(ref global::System.Int32 ioVal, out global::System.Single outVal, global::System.Int32[] arrayVal, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 outVal = default;
 if (arrayVal.Length == 0){
@@ -49,10 +49,10 @@ return;
 __t_jitConstants_array_AllocationTestKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
 __t_jitConstants_array_AllocationTestKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
 System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_AllocationTestKernel, 0, 1);
-        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", AllocationTestKernel_FullSource, __t_jitConstants, macros);
-fixed (int* p_arrayVal = arrayVal)
-fixed (int* p_ioVal = &ioVal)
-fixed (float* p_outVal = &outVal)
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", AllocationTestKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.Int32* p_arrayVal = arrayVal)
+fixed (global::System.Int32* p_ioVal = &ioVal)
+fixed (global::System.Single* p_outVal = &outVal)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_ioVal, p_outVal, p_arrayVal);
 }

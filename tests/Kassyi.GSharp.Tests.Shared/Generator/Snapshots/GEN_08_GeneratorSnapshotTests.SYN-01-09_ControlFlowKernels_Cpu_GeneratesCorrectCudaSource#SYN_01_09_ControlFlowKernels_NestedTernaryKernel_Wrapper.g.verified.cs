@@ -33,18 +33,18 @@ NestedTernaryKernel(a, b, c, result);
 public static readonly string NestedTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NestedTernaryKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void NestedTernaryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* a, int* b, int* c, int* result);
-public static unsafe void Launch_NestedTernaryKernel(int[] a, int[] b, int[] c, int[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private unsafe delegate void NestedTernaryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* c, global::System.Int32* result);
+public static unsafe void Launch_NestedTernaryKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || c.Length == 0 || result.Length == 0){
 return;
 }
 System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", NestedTernaryKernel_FullSource, __t_jitConstants, macros);
-fixed (int* p_a = a)
-fixed (int* p_b = b)
-fixed (int* p_c = c)
-fixed (int* p_result = result)
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", NestedTernaryKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.Int32* p_a = a)
+fixed (global::System.Int32* p_b = b)
+fixed (global::System.Int32* p_c = c)
+fixed (global::System.Int32* p_result = result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_c, p_result);
 }
