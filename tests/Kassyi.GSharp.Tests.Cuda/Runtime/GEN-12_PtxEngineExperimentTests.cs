@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Tests;
@@ -64,8 +64,8 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 
     private unsafe void RunKernelAndVerify(byte[] ptxBytes, int a, int b, int expected)
     {
-        IntPtr dA = nint.Zero, dB = nint.Zero, dC = nint.Zero;
-        IntPtr module = nint.Zero;
+        IntPtr dA = IntPtr.Zero, dB = IntPtr.Zero, dC = IntPtr.Zero;
+        IntPtr module = IntPtr.Zero;
 
         try
         {
@@ -85,7 +85,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             kernelParams[2] = &dC;
 
             CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-                hfunc, 1, 1, 1, 1, 1, 1, 0, nint.Zero, kernelParams, nint.Zero));
+                hfunc, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, kernelParams, IntPtr.Zero));
                 
             int c = 0;
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&c), dC, 4));
@@ -94,10 +94,10 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         }
         finally
         {
-            if (dA != nint.Zero) CudaDriverApi.cuMemFree_v2(dA);
-            if (dB != nint.Zero) CudaDriverApi.cuMemFree_v2(dB);
-            if (dC != nint.Zero) CudaDriverApi.cuMemFree_v2(dC);
-            if (module != nint.Zero) CudaDriverApi.cuModuleUnload(module);
+            if (dA != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dA);
+            if (dB != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dB);
+            if (dC != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(dC);
+            if (module != IntPtr.Zero) CudaDriverApi.cuModuleUnload(module);
         }
     }
     [SkippableFact]
@@ -145,7 +145,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
                 }
                 finally
                 {
-                    CudaDriverApi.cuCtxSetCurrent(nint.Zero);
+                    CudaDriverApi.cuCtxSetCurrent(IntPtr.Zero);
                 }
             });
         }
