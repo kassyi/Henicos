@@ -203,11 +203,15 @@ public static class NttCpuReference
         ExecuteNttPass(operandA, operandB, result2, P2, G2, transformLength);
         ExecuteNttPass(operandA, operandB, result3, P3, G3, transformLength);
 
-        // [WHY] Reconstructs final coefficients from 3 modular residues via Garner's algorithm without multi-precision division:
         // X = x1 + x2*P1 + x3*P1*P2
         var inverseP1ModP2 = ModInverse(P1, P2);
         var inverseP1P2ModP3 = ModInverse((uint)(((ulong)P1 * P2) % P3), P3);
 
+        return GarnerReconstruct(result1, result2, result3, transformLength, inverseP1ModP2, inverseP1P2ModP3);
+    }
+
+    private static uint[] GarnerReconstruct(uint[] result1, uint[] result2, uint[] result3, int transformLength, uint inverseP1ModP2, uint inverseP1P2ModP3)
+    {
         var finalResult = new uint[transformLength];
         ulong carry = 0;
 
