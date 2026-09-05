@@ -103,9 +103,14 @@ internal static class MarshalingEmitter
         writer.AppendFullyQualifiedCppName(s);
         writer.Append(" Marshal_");
         writer.AppendFullyQualifiedCppName(s);
-        writer.Append("(ref ");
-        writer.AppendFullyQualifiedCsharpName(s);
-        writer.AppendLine(" host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)");
+        using (writer.Parentheses())
+        {
+            writer.Append("ref ");
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(" host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs");
+        }
+
+        writer.AppendLine();
         using (writer.Scope())
         {
             writer.Append("var native = new __Native_");
@@ -135,7 +140,12 @@ internal static class MarshalingEmitter
         {
             writer.Append($"native.{member.Name} = Marshal_");
             writer.AppendFullyQualifiedCppName(member.Type);
-            writer.AppendLine($"(ref host.{member.Name}, isDevicePtr, allocatedPtrs);");
+            using (writer.Parentheses())
+            {
+                writer.Append($"ref host.{member.Name}, isDevicePtr, allocatedPtrs");
+            }
+
+            writer.AppendLine(";");
         }
         else
         {
@@ -186,11 +196,16 @@ internal static class MarshalingEmitter
     {
         writer.Append("public static unsafe void Unmarshal_");
         writer.AppendFullyQualifiedCppName(s);
-        writer.Append("(ref ");
-        writer.AppendFullyQualifiedCsharpName(s);
-        writer.Append(" host, ref __Native_");
-        writer.AppendFullyQualifiedCppName(s);
-        writer.AppendLine(" native, bool isDevicePtr)");
+        using (writer.Parentheses())
+        {
+            writer.Append("ref ");
+            writer.AppendFullyQualifiedCsharpName(s);
+            writer.Append(" host, ref __Native_");
+            writer.AppendFullyQualifiedCppName(s);
+            writer.Append(" native, bool isDevicePtr");
+        }
+
+        writer.AppendLine();
         using (writer.Scope())
         {
             foreach (var member in s.GetMembers())
@@ -215,7 +230,12 @@ internal static class MarshalingEmitter
         {
             writer.Append("Unmarshal_");
             writer.AppendFullyQualifiedCppName(member.Type);
-            writer.AppendLine($"(ref host.{member.Name}, ref native.{member.Name}, isDevicePtr);");
+            using (writer.Parentheses())
+            {
+                writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr");
+            }
+
+            writer.AppendLine(";");
         }
         else
         {
@@ -380,7 +400,12 @@ internal static class MarshalingEmitter
         {
             writer.Append($"var native_{p.Name} = Marshal_");
             writer.AppendFullyQualifiedCppName(p.Type);
-            writer.AppendLine($"(ref {p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")});");
+            using (writer.Parentheses())
+            {
+                writer.Append($"ref {p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}");
+            }
+
+            writer.AppendLine(";");
         }
 
         if (p.RefKind is RefKind.Ref or RefKind.Out)
@@ -572,7 +597,12 @@ internal static class MarshalingEmitter
 
         writer.Append("Unmarshal_");
         writer.AppendFullyQualifiedCppName(p.Type);
-        writer.AppendLine($"(ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")});");
+        using (writer.Parentheses())
+        {
+            writer.Append($"ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}");
+        }
+
+        writer.AppendLine(";");
     }
 
     private static void WriteArrayUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
