@@ -208,31 +208,21 @@ internal static class MacroTranspiler
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
 
-        var isSupportedGpuBigIntOp = false;
-        if (rightNode is BinaryExpressionSyntax binaryExpr)
-        {
-            var type = context.SemanticModel.GetTypeInfo(binaryExpr).Type;
-            if (type is { Name: "GpuBigIntRef" })
-            {
-                isSupportedGpuBigIntOp = true;
-            }
-        }
-        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
-        {
-            var type = context.SemanticModel.GetTypeInfo(unaryExpr).Type;
-            if (type is { Name: "GpuBigIntRef" })
-            {
-                isSupportedGpuBigIntOp = true;
-            }
-        }
-
-        if (!isSupportedGpuBigIntOp)
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(rightNode);
+        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
         {
             return false;
         }
 
-        EmitGpuBigIntRefOperation(assignment, rightNode, ref context);
-        return true;
+        var macroAttr = methodSymbol.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Kassyi.GSharp.Core.GpuOperatorMacroAttribute");
+
+        if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
+        {
+            return false;
+        }
+
+        return EmitMacroOperatorAssignment(assignment, rightNode, methodSymbol, macroAttr, ref context);
     }
 
     private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
@@ -251,93 +241,126 @@ internal static class MacroTranspiler
         return expression;
     }
 
-    private static void EmitGpuBigIntRefOperation(
+    private static bool EmitMacroOperatorAssignment(
         AssignmentExpressionSyntax assignment,
         ExpressionSyntax rightNode,
+        IMethodSymbol methodSymbol,
+        AttributeData macroAttr,
         ref TranspileContext context)
     {
-        using (context.Writer.Scope())
+        var targetType = macroAttr.ConstructorArguments[0].Value as INamedTypeSymbol;
+        var targetMethodName = macroAttr.ConstructorArguments[1].Value as string;
+
+        if (targetType == null || targetMethodName == null)
         {
-            context.Writer.AppendLine("Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext _macroCtx;");
-
-            if (rightNode is BinaryExpressionSyntax binaryExpr)
-            {
-                EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", binaryExpr.Left);
-
-                if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
-                    !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
-                {
-                    EmitAssignment(ref context, "_macroCtx.Operands.RightOperand", binaryExpr.Right);
-                }
-            }
-            else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
-            {
-                EmitAssignment(ref context, "_macroCtx.Operands.LeftOperand", unaryExpr.Operand);
-            }
-
-            EmitAssignment(ref context, "_macroCtx.Operands.ResultBuffer", assignment.Left);
-
-            // Context buffers propagation (standard in Henicos BigInt kernels)
-            context.Writer.AppendLine("_macroCtx.Operands.CarryBuffer = ctx->Buffers.CarryBuffer;");
-
-            context.Writer.AppendLine("_macroCtx.NumberOfWords = ctx->Dimensions.NumberOfWordsExtended;");
-
-            EmitDeviceFunctionCall(ref context, rightNode);
+            return false;
         }
-    }
 
-    private static void EmitAssignment(ref TranspileContext context, string target, ExpressionSyntax value)
-    {
-        context.Writer.Append($"{target} = ");
-        context.Visitor.Visit(value);
-        context.Writer.AppendSemiColonLine();
-    }
+        var expectedMethodParamsMin = rightNode is BinaryExpressionSyntax ? 3 : 2; // result + left + (right/extraArg)
+        var expectedMethodParamsMax = expectedMethodParamsMin + 1; // + context
 
-    private static void EmitDeviceFunctionCall(ref TranspileContext context, ExpressionSyntax opNode)
-    {
+        var targetMethods = targetType.GetMembers(targetMethodName).OfType<IMethodSymbol>().ToList();
+        var targetMethod = targetMethods.FirstOrDefault(m =>
+            m.Parameters.Length == expectedMethodParamsMin ||
+            (m.Parameters.Length == expectedMethodParamsMax && m.Parameters[0].Type.IsValueType));
+
+        if (targetMethod == null)
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnsupportedSyntax,
+                assignment.GetLocation(),
+                $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible."));
+            return false;
+        }
+
+        ExpressionSyntax? leftOp = null;
+        ExpressionSyntax? rightOp = null;
         ExpressionSyntax? extraArg = null;
-        string? functionName = null;
 
-        if (opNode is BinaryExpressionSyntax binaryExpr)
+        if (rightNode is BinaryExpressionSyntax binaryExpr)
         {
-            (functionName, extraArg) = binaryExpr.Kind() switch
+            leftOp = binaryExpr.Left;
+            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
+                !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
             {
-                SyntaxKind.AddExpression => ("Device_Add", (ExpressionSyntax?)null),
-                SyntaxKind.SubtractExpression => ("Device_Sub", null),
-                SyntaxKind.BitwiseAndExpression => ("Device_BitwiseAnd", null),
-                SyntaxKind.BitwiseOrExpression => ("Device_BitwiseOr", null),
-                SyntaxKind.ExclusiveOrExpression => ("Device_BitwiseXor", null),
-                SyntaxKind.LeftShiftExpression => ("Device_ShiftLeft", binaryExpr.Right),
-                SyntaxKind.RightShiftExpression => ("Device_ShiftRight", binaryExpr.Right),
-                _ => (null, null)
-            };
-        }
-        else if (opNode is PrefixUnaryExpressionSyntax unaryExpr)
-        {
-            functionName = unaryExpr.Kind() switch
+                rightOp = binaryExpr.Right;
+            }
+            else
             {
-                SyntaxKind.BitwiseNotExpression => "Device_BitwiseNot",
-                _ => null
-            };
+                extraArg = binaryExpr.Right;
+            }
         }
-
-        if (functionName == null)
+        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
         {
-            return;
+            leftOp = unaryExpr.Operand;
         }
 
-        context.Writer.Append(functionName);
+        var resultOp = assignment.Left;
+
+        context.Writer.Append(targetMethodName);
         using (context.Writer.Parentheses())
         {
-            context.Writer.Append("_macroCtx");
+            var hasContext = targetMethod.Parameters.Length == expectedMethodParamsMax;
+            var isFirst = true;
+            var paramIndex = 0;
+
+            void AppendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
+            {
+                if (!isFirst)
+                {
+                    localContext.Writer.AppendComma();
+                }
+
+                isFirst = false;
+
+                var param = targetMethod.Parameters[paramIndex++];
+                var isPointer = param.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
+
+                if (isPointer && rawString != null)
+                {
+                    localContext.Writer.Append("&").Append(rawString);
+                }
+                else if (rawString != null)
+                {
+                    localContext.Writer.Append(rawString);
+                }
+                else if (expr != null)
+                {
+                    var isExprPointer = localContext.SemanticModel.GetTypeInfo(expr).Type is IPointerTypeSymbol;
+                    if (isPointer && !isExprPointer)
+                    {
+                        localContext.Writer.Append("&");
+                    }
+
+                    localContext.Visitor.Visit(expr);
+                }
+            }
+
+            if (hasContext)
+            {
+                AppendArg(null, "ctx", ref context);
+            }
+
+            AppendArg(resultOp, null, ref context);
+
+            if (leftOp != null)
+            {
+                AppendArg(leftOp, null, ref context);
+            }
+
+            if (rightOp != null)
+            {
+                AppendArg(rightOp, null, ref context);
+            }
+
             if (extraArg != null)
             {
-                context.Writer.AppendComma();
-                context.Visitor.Visit(extraArg);
+                AppendArg(extraArg, null, ref context);
             }
         }
 
         context.Writer.AppendSemiColonLine();
+        return true;
     }
 }
 

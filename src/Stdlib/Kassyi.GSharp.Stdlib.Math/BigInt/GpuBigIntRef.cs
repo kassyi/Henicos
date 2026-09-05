@@ -1,5 +1,8 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
+
 /// <summary>
 /// A ref struct representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
 /// </summary>
@@ -18,20 +21,28 @@ public readonly ref struct GpuBigIntRef
         Data = data;
     }
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Add))]
     public static GpuBigIntRef operator +(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Sub))]
     public static GpuBigIntRef operator -(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_ShiftLeft))]
     public static GpuBigIntRef operator <<(GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_ShiftRight))]
     public static GpuBigIntRef operator >>(GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseAnd))]
     public static GpuBigIntRef operator &(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseOr))]
     public static GpuBigIntRef operator |(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseXor))]
     public static GpuBigIntRef operator ^(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseNot))]
     public static GpuBigIntRef operator ~(GpuBigIntRef a) => throw new GpuOnlyException();
 
     // Implicit cast from uint[] so we can easily pass ctx.Buffers.X directly.

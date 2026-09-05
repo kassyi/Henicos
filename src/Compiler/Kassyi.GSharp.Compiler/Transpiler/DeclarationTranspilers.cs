@@ -305,7 +305,7 @@ internal static class DeclarationTranspilers
         var initVal = variable.Initializer.Value;
 
         ITypeSymbol? elemType = null;
-        bool isConst = false;
+        var isConst = false;
 
         if (typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1, Name: "Span" or "ReadOnlySpan" } named)
         {
