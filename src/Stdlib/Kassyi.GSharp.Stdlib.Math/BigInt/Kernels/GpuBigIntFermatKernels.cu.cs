@@ -85,6 +85,90 @@ public static class GpuBigIntFermatKernels
             }
         });
     }
+
+    [GpuDeviceFunction]
+    public static void Device_ShiftLeft_SingleThread([GpuConst] uint[] src, uint[] dst, int shiftBits, int numWords)
+    {
+        var wordShift = shiftBits / 32;
+        var bitShift = shiftBits % 32;
+        for (int i = 0; i < numWords; i++)
+        {
+            uint val = 0;
+            if (i - wordShift >= 0)
+            {
+                val = src[i - wordShift] << bitShift;
+                if (bitShift > 0 && i - wordShift - 1 >= 0)
+                {
+                    val |= src[i - wordShift - 1] >> (32 - bitShift);
+                }
+            }
+
+            dst[i] = val;
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void Device_AddSub_SingleThread([GpuConst] uint[] a, [GpuConst] uint[] b, uint[] result, int numWords,
+        long sign)
+    {
+        long carry = 0;
+        for (int i = 0; i < numWords; i++)
+        {
+            long sum = (long)a[i] + sign * b[i] + carry;
+            result[i] = (uint)sum;
+            carry = sum >> 32;
+        }
+    }
+
+    [GpuKernel]
+    public static void Kernel_FermatReduce_Mega(
+        [GpuConst] uint[] valueT,
+        uint[] mulResult,
+        uint[] quotient,
+        uint[] remainder,
+        uint[] temp,
+        [GpuConst] uint[] remainderMask,
+        int numWords,
+        int outNumWords,
+        int totalShiftBits,
+        int exponent)
+    {
+        Gpu.SingleThread(() =>
+        {
+            var wordShift = totalShiftBits / 32;
+            var bitShift = totalShiftBits % 32;
+
+            for (int i = 0; i < outNumWords; i++)
+            {
+                uint val = 0;
+                if (i + wordShift < numWords * 2)
+                {
+                    val = mulResult[i + wordShift] >> bitShift;
+                    if (bitShift > 0 && i + wordShift + 1 < numWords * 2)
+                    {
+                        val |= mulResult[i + wordShift + 1] << (32 - bitShift);
+                    }
+                }
+
+                quotient[i] = val;
+            }
+
+            for (int i = 0; i < outNumWords; i++)
+            {
+                remainder[i] = mulResult[i] & remainderMask[i];
+            }
+
+            Device_ShiftLeft_SingleThread(quotient, temp, exponent, outNumWords);
+            Device_AddSub_SingleThread(remainder, temp, remainder, outNumWords, 1);
+
+            Device_ShiftLeft_SingleThread(quotient, temp, 1, outNumWords);
+            Device_AddSub_SingleThread(remainder, temp, remainder, outNumWords, -1);
+            Device_AddSub_SingleThread(remainder, quotient, remainder, outNumWords, -1);
+
+            Device_ShiftLeft_SingleThread(quotient, temp, 3, outNumWords);
+            Device_AddSub_SingleThread(remainder, temp, valueT, outNumWords, -1);
+        });
+    }
 }
 
 

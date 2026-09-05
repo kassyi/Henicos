@@ -44,7 +44,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         get; set;
     }
 
-    private bool _disposed;
+    internal bool _disposed;
 
     /// <summary>
     /// Allocates uninitialized GPU device memory for an integer of the specified limb length.
@@ -189,16 +189,28 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
     /// <param name="rightOperand">The second operand.</param>
     /// <returns><c>true</c> if equal; otherwise, <c>false</c>.</returns>
     /// <remarks>This evaluates synchronously by triggering a GPU device memory comparison.</remarks>
-    public static bool operator ==(GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
-        leftOperand.Context.Provider.CompareTo(leftOperand.Context, leftOperand, rightOperand) == 0;
+    public static bool operator ==(GpuBigInteger? leftOperand, GpuBigInteger? rightOperand)
+    {
+        if (ReferenceEquals(leftOperand, rightOperand))
+        {
+            return true;
+        }
+
+        if (leftOperand is null || rightOperand is null)
+        {
+            return false;
+        }
+
+        return leftOperand.Context.Provider.CompareTo(leftOperand.Context, leftOperand, rightOperand) == 0;
+    }
 
     /// <summary>Determines whether two big integers represent different values on the GPU.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns><c>true</c> if not equal; otherwise, <c>false</c>.</returns>
     /// <remarks>This evaluates synchronously by triggering a GPU device memory comparison.</remarks>
-    public static bool operator !=(GpuBigInteger leftOperand, GpuBigInteger rightOperand) =>
-        leftOperand.Context.Provider.CompareTo(leftOperand.Context, leftOperand, rightOperand) != 0;
+    public static bool operator !=(GpuBigInteger? leftOperand, GpuBigInteger? rightOperand) =>
+        !(leftOperand == rightOperand);
 
     /// <summary>Determines whether the first big integer is less than the second on the GPU.</summary>
     /// <param name="leftOperand">The first operand.</param>
@@ -391,7 +403,7 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
 
     ~GpuBigInteger()
     {
-        Dispose();
+        DisposeCore();
     }
 
     /// <summary>Checks whether this big integer equals zero on the GPU.</summary>
@@ -462,6 +474,55 @@ public class GpuBigInteger : IDisposable, IGpuBigIntExpression
         }
 
         return Context.Provider.Square(Context, DevicePointer, logicalWords);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="GpuBigInteger"/> padded to the specified target words with zeros.
+    /// If the target size equals the current size, a duplicate is returned.
+    /// </summary>
+    /// <param name="targetWords">The requested minimum number of words.</param>
+    /// <returns>A new <see cref="GpuBigInteger"/> instance padded to the target size.</returns>
+    public GpuBigInteger PadTo(int targetWords)
+    {
+        var result = new GpuBigInteger(Context, targetWords);
+        var copyWords = System.Math.Min(NumWords, targetWords);
+        Context.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, copyWords);
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="GpuBigInteger"/> by uploading a BCL <see cref="BigInteger"/> to the GPU.
+    /// </summary>
+    public static GpuBigInteger FromBigInteger(GpuContext context, BigInteger val, int minWords = 0)
+    {
+        val = BigInteger.Abs(val);
+        if (val.IsZero)
+        {
+            return new GpuBigInteger(context, System.Math.Max(1, minWords));
+        }
+
+        var byteCount = val.GetByteCount(isUnsigned: true);
+        var words = (byteCount + 3) / 4;
+        var allocWords = System.Math.Max(words, minWords);
+
+        var hostData = new uint[allocWords];
+        var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+        val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
+
+        return new GpuBigInteger(context, hostData);
+    }
+
+    /// <summary>
+    /// Downloads the integer from the GPU and converts it to a BCL <see cref="BigInteger"/>.
+    /// </summary>
+    public BigInteger ToBigInteger(bool isNegative = false)
+    {
+        var hostData = new uint[NumWords];
+        Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
+        
+        var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+        var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
+        return isNegative ? -big : big;
     }
 }
 

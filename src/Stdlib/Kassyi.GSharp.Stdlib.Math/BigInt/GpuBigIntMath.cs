@@ -1,5 +1,3 @@
-using System;
-
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
@@ -122,6 +120,87 @@ public static class GpuBigIntMath
         Sub(leftOperand, rightOperand, temp);
         var topWord = temp.GetTopWords(1)[0];
         return (topWord & 0x80000000u) != 0;
+    }
+
+    /// <summary>
+    /// Computes 10 raised to the specified exponent on the GPU using exponentiation by squaring.
+    /// </summary>
+    /// <param name="context">The GPU execution context.</param>
+    /// <param name="exponent">The exponent.</param>
+    /// <returns>A new <see cref="GpuBigInteger"/> containing the result.</returns>
+    public static GpuBigInteger Pow10(GpuContext context, int exponent)
+    {
+        const int MaxPow10Exponent = 50_000_000;
+        if (exponent < 0 || exponent > MaxPow10Exponent)
+        {
+            throw new ArgumentOutOfRangeException(nameof(exponent), $"Exponent must be between 0 and {MaxPow10Exponent}.");
+        }
+
+        if (exponent <= 9)
+        {
+            return GpuBigInteger.FromBigInteger(context, BigInteger.Pow(10, exponent));
+        }
+
+        var resultGpu = GpuBigInteger.FromBigInteger(context, 1);
+        GpuBigInteger? currentGpu = null;
+        bool success = false;
+        try
+        {
+            currentGpu = GpuBigInteger.FromBigInteger(context, 10);
+            var exp = exponent;
+
+            while (exp > 0)
+            {
+                if ((exp & 1) == 1)
+                {
+                    var nextResult = MulAndTrim(resultGpu, currentGpu);
+                    resultGpu.Dispose();
+                    resultGpu = nextResult;
+                }
+
+                exp >>= 1;
+                if (exp > 0)
+                {
+                    var nextCurrent = MulAndTrim(currentGpu, currentGpu);
+                    currentGpu.Dispose();
+                    currentGpu = nextCurrent;
+                }
+            }
+            
+            success = true;
+            return resultGpu;
+        }
+        finally
+        {
+            currentGpu?.Dispose();
+            if (!success)
+            {
+                resultGpu?.Dispose();
+            }
+        }
+    }
+
+    private static GpuBigInteger MulAndTrim(GpuBigInteger left, GpuBigInteger right)
+    {
+        var context = left.Context;
+        var nextBuffer = new GpuBigInteger(context, left.NumWords + right.NumWords);
+        GpuBigInteger? trimmed = null;
+        try
+        {
+            Mul(left, right, nextBuffer);
+            var actualWords = (GpuBigIntDivRem.GetActualBits(nextBuffer) + 31) / 32;
+            if (actualWords == 0) actualWords = 1;
+            trimmed = nextBuffer.PadTo(actualWords);
+            
+            var result = trimmed;
+            trimmed = null; // Ownership transferred to caller
+            return result;
+        }
+        finally
+        {
+            nextBuffer.Dispose();
+            trimmed?.Dispose();
+        }
     }
 }
 

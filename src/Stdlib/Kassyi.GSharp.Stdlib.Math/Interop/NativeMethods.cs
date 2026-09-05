@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 
@@ -24,7 +23,10 @@ internal static partial class NativeMethods
             Environment.SetEnvironmentVariable("PATH", binPath + Path.PathSeparator + pathEnv);
         }
 
-        _ = SetDllDirectory(binPath);
+        if (!SetDllDirectory(binPath))
+        {
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Failed to SetDllDirectory for CUDA bin path.");
+        }
 
         NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly,
             (libraryName, assembly, _) => DlImportResolover(libraryName, assembly));
@@ -43,20 +45,23 @@ internal static partial class NativeMethods
             Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, DllName + ".dll")
         ];
 
+        var triedPaths = new List<string>();
         foreach (var path in possiblePaths)
         {
-            if (!File.Exists(path))
+            var fullPath = Path.GetFullPath(path);
+            triedPaths.Add(fullPath);
+            if (!File.Exists(fullPath))
             {
                 continue;
             }
 
-            if (NativeLibrary.TryLoad(Path.GetFullPath(path), out var handle))
+            if (NativeLibrary.TryLoad(fullPath, out var handle))
             {
                 return handle;
             }
         }
 
-        return IntPtr.Zero;
+        throw new DllNotFoundException($"Failed to load native library '{libraryName}'. Tried paths:\n{string.Join("\n", triedPaths)}");
     }
 
     [LibraryImport("kernel32.dll", EntryPoint = "SetDllDirectoryW", SetLastError = true,

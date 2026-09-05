@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler;
-
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_05_StructTranspilerEdgeCasesTests

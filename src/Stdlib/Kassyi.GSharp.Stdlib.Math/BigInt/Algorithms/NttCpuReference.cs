@@ -155,6 +155,32 @@ public static class NttCpuReference
         }
     }
 
+    private static void ExecuteNttPass(uint[] operandA, uint[] operandB, uint[] result, uint prime, uint primitiveRoot, int transformLength)
+    {
+        var opA = new uint[transformLength];
+        var opB = new uint[transformLength];
+
+        for (var index = 0; index < operandA.Length; index++)
+        {
+            opA[index] = operandA[index] % prime;
+        }
+
+        for (var index = 0; index < operandB.Length; index++)
+        {
+            opB[index] = operandB[index] % prime;
+        }
+
+        Ntt(opA, prime, primitiveRoot, false);
+        Ntt(opB, prime, primitiveRoot, false);
+
+        for (var index = 0; index < transformLength; index++)
+        {
+            result[index] = ModMul(opA[index], opB[index], prime);
+        }
+
+        Ntt(result, prime, primitiveRoot, true);
+    }
+
     /// <summary>Multiplies two arrays of 32-bit unsigned integers using 3-Prime NTT and Garner's CRT algorithm.</summary>
     /// <param name="operandA">The first operand array.</param>
     /// <param name="operandB">The second operand array.</param>
@@ -169,49 +195,13 @@ public static class NttCpuReference
             transformLength <<= 1;
         }
 
-        var operandA1 = new uint[transformLength];
-        var operandA2 = new uint[transformLength];
-        var operandA3 = new uint[transformLength];
-        var operandB1 = new uint[transformLength];
-        var operandB2 = new uint[transformLength];
-        var operandB3 = new uint[transformLength];
-
-        for (var index = 0; index < operandA.Length; index++)
-        {
-            operandA1[index] = operandA[index] % P1;
-            operandA2[index] = operandA[index] % P2;
-            operandA3[index] = operandA[index] % P3;
-        }
-
-        for (var index = 0; index < operandB.Length; index++)
-        {
-            operandB1[index] = operandB[index] % P1;
-            operandB2[index] = operandB[index] % P2;
-            operandB3[index] = operandB[index] % P3;
-        }
-
-        Ntt(operandA1, P1, G1, false);
-        Ntt(operandA2, P2, G2, false);
-        Ntt(operandA3, P3, G3, false);
-
-        Ntt(operandB1, P1, G1, false);
-        Ntt(operandB2, P2, G2, false);
-        Ntt(operandB3, P3, G3, false);
-
         var result1 = new uint[transformLength];
         var result2 = new uint[transformLength];
         var result3 = new uint[transformLength];
 
-        for (var index = 0; index < transformLength; index++)
-        {
-            result1[index] = ModMul(operandA1[index], operandB1[index], P1);
-            result2[index] = ModMul(operandA2[index], operandB2[index], P2);
-            result3[index] = ModMul(operandA3[index], operandB3[index], P3);
-        }
-
-        Ntt(result1, P1, G1, true);
-        Ntt(result2, P2, G2, true);
-        Ntt(result3, P3, G3, true);
+        ExecuteNttPass(operandA, operandB, result1, P1, G1, transformLength);
+        ExecuteNttPass(operandA, operandB, result2, P2, G2, transformLength);
+        ExecuteNttPass(operandA, operandB, result3, P3, G3, transformLength);
 
         // [WHY] Reconstructs final coefficients from 3 modular residues via Garner's algorithm without multi-precision division:
         // X = x1 + x2*P1 + x3*P1*P2
