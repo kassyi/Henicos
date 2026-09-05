@@ -43,17 +43,6 @@ internal static class SymbolExtensions
             }
         };
 
-    public static bool IsGpuBigIntRef(this ITypeSymbol? typeSymbol) =>
-        typeSymbol is
-        {
-            Name: TypeConstants.GpuBigIntRefType,
-            ContainingNamespace:
-            {
-                Name: "Core",
-                ContainingNamespace:
-                { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
-            }
-        };
 
     /// <summary>
     /// Checks if the attribute matches the specified short name (e.g. "GpuKernel" matches both "GpuKernel" and "GpuKernelAttribute").
