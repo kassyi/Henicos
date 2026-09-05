@@ -201,7 +201,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
 
         int wordsToRead = System.Math.Min(3, numWords - wordShift);
         var hostData = new uint[3];
-        context.Provider.CopyDeviceToHost(hostData, nint.Add(operand.DevicePointer, wordShift * 4), wordsToRead);
+        context.Provider.CopyDeviceToHost(hostData, IntPtr.Add(operand.DevicePointer, wordShift * 4), wordsToRead);
 
         ulong val64 = hostData[0] | ((ulong)hostData[1] << 32);
         if (bitShift > 0)
@@ -328,7 +328,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     /// <inheritdoc/>
     public void FreeMemory(IntPtr devicePointer)
     {
-        if (devicePointer != nint.Zero)
+        if (devicePointer != IntPtr.Zero)
         {
             using var scope = new JitEngine.CudaContextScope();
             CudaDriverApi.cuMemFree_v2(devicePointer);
@@ -399,7 +399,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     private void ReturnCarryBuffer(int numChunks, IntPtr ptr)
     {
         var sizeBytes = (numChunks + 1) * 8;
-        var bag = _carryBufferPool.GetOrAdd(sizeBytes, _ => new Lazy<ConcurrentBag<nint>>(() => [])).Value;
+        var bag = _carryBufferPool.GetOrAdd(sizeBytes, _ => new Lazy<ConcurrentBag<IntPtr>>(() => [])).Value;
         bag.Add(ptr);
     }
 

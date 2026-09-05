@@ -37,7 +37,7 @@ internal static partial class NativeMethods
     {
         if (libraryName != DllName && libraryName != DllName + ".dll")
         {
-            return nint.Zero;
+            return IntPtr.Zero;
         }
 
         string[] possiblePaths =
