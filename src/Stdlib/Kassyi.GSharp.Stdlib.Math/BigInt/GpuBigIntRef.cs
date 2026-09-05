@@ -21,10 +21,10 @@ public readonly ref struct GpuBigIntRef
         Data = data;
     }
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), "Device_Add")]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Add))]
     public static GpuBigIntRef operator +(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), "Device_Sub")]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Sub))]
     public static GpuBigIntRef operator -(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
     [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_ShiftLeft))]
