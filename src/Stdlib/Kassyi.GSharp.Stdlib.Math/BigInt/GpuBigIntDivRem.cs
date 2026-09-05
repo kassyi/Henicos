@@ -572,7 +572,7 @@ public static class GpuBigIntDivRem
         GpuBigIntMath.Mul(currentRoot, currentRoot, squaredRoot);
 
         var topHalf = new uint[n];
-        leftOperand.Context.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n);
+        leftOperand.Context.Provider.CopyDeviceToHost(topHalf, nint.Add(squaredRoot.DevicePointer, n * 4), n);
         var isGreater = false;
         for (var i = 0; i < n; i++)
         {

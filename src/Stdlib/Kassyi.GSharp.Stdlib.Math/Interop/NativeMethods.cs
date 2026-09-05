@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Reflection;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -25,7 +26,7 @@ internal static partial class NativeMethods
 
         if (!SetDllDirectory(binPath))
         {
-            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Failed to SetDllDirectory for CUDA bin path.");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to SetDllDirectory for CUDA bin path.");
         }
 
         NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly,
@@ -36,7 +37,7 @@ internal static partial class NativeMethods
     {
         if (libraryName != DllName && libraryName != DllName + ".dll")
         {
-            return IntPtr.Zero;
+            return nint.Zero;
         }
 
         string[] possiblePaths =

@@ -29,7 +29,7 @@ public class NativeProvider : IGpuExecutionProvider
 
     public void FreeMemory(IntPtr devicePointer)
     {
-        if (devicePointer != IntPtr.Zero)
+        if (devicePointer != nint.Zero)
         {
             NativeMethods.GpuBigInt_Free(devicePointer);
         }

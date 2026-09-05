@@ -72,7 +72,7 @@ public class GpuContext : IDisposable
             try
             {
                 WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
-                if (WorkspacePointer == IntPtr.Zero)
+                if (WorkspacePointer == nint.Zero)
                 {
                     throw new InvalidOperationException("Failed to initialize GPU context.");
                 }
@@ -128,7 +128,7 @@ public class GpuContext : IDisposable
         }
         else
         {
-            if (WorkspacePointer != IntPtr.Zero)
+            if (WorkspacePointer != nint.Zero)
             {
                 NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
             }
