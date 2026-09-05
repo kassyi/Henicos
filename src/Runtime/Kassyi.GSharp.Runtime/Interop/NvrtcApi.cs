@@ -75,7 +75,7 @@ public static class NvrtcApi
 
         if (libraryName != DllName)
         {
-            return IntPtr.Zero;
+            return nint.Zero;
         }
 
         string[] potentialNames =
@@ -123,7 +123,7 @@ public static class NvrtcApi
         var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
         if (!Directory.Exists(cudaBaseDir))
         {
-            return IntPtr.Zero;
+            return nint.Zero;
         }
 
         {
@@ -152,7 +152,7 @@ public static class NvrtcApi
             }
         }
 
-        return IntPtr.Zero;
+        return nint.Zero;
     }
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]

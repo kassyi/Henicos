@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Security.Cryptography;
 
 namespace Kassyi.GSharp.Runtime.Jit;
@@ -187,7 +188,7 @@ public sealed class CpuJitEngine
     private static string ComputeHash(string input)
     {
         var bytes = Encoding.UTF8.GetBytes(input);
-        var hashBytes = System.Security.Cryptography.SHA256.HashData(bytes);
+        var hashBytes = SHA256.HashData(bytes);
         return Convert.ToHexStringLower(hashBytes);
     }
 
@@ -208,7 +209,7 @@ public sealed class CpuJitEngine
         byte[]? rentedArray = null;
         Span<byte> buffer = totalLength <= 4096
             ? stackalloc byte[4096]
-            : (rentedArray = System.Buffers.ArrayPool<byte>.Shared.Rent(totalLength));
+            : (rentedArray = ArrayPool<byte>.Shared.Rent(totalLength));
 
         try
         {
@@ -220,32 +221,32 @@ public sealed class CpuJitEngine
                 off += data.Length;
             }
 
-            Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(kernelName.AsSpan()));
-            Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(baseSource.AsSpan()));
+            Append(ref buffer, ref offset, MemoryMarshal.AsBytes(kernelName.AsSpan()));
+            Append(ref buffer, ref offset, MemoryMarshal.AsBytes(baseSource.AsSpan()));
 
             foreach (var c in jitConstants)
             {
-                Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(c.Key.AsSpan()));
+                Append(ref buffer, ref offset, MemoryMarshal.AsBytes(c.Key.AsSpan()));
                 var typeVal = c.Type;
-                Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref typeVal, 1)));
+                Append(ref buffer, ref offset, MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref typeVal, 1)));
                 var valVal = c.Value;
-                Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref valVal, 1)));
+                Append(ref buffer, ref offset, MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref valVal, 1)));
             }
 
             foreach (var m in macros)
             {
-                Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(m.Key.AsSpan()));
-                Append(ref buffer, ref offset, System.Runtime.InteropServices.MemoryMarshal.AsBytes(m.Value.AsSpan()));
+                Append(ref buffer, ref offset, MemoryMarshal.AsBytes(m.Key.AsSpan()));
+                Append(ref buffer, ref offset, MemoryMarshal.AsBytes(m.Value.AsSpan()));
             }
 
             Span<byte> hashBytes = stackalloc byte[32];
-            System.Security.Cryptography.SHA256.HashData(buffer.Slice(0, offset), hashBytes);
+            SHA256.HashData(buffer.Slice(0, offset), hashBytes);
             return new Guid(hashBytes.Slice(0, 16));
         }
         finally
         {
             if (rentedArray != null)
-                System.Buffers.ArrayPool<byte>.Shared.Return(rentedArray);
+                ArrayPool<byte>.Shared.Return(rentedArray);
         }
     }
 }

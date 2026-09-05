@@ -7,7 +7,7 @@ public static class NvrtcCompiler
 {
     public static byte[] CompileToPtx(string cuSource, string kernelName, string[] options)
     {
-        var prog = IntPtr.Zero;
+        var prog = nint.Zero;
         try
         {
             NvrtcException.ThrowIfError(
@@ -49,7 +49,7 @@ public static class NvrtcCompiler
         }
         finally
         {
-            if (prog != IntPtr.Zero)
+            if (prog != nint.Zero)
             {
                 NvrtcApi.nvrtcDestroyProgram(ref prog);
             }

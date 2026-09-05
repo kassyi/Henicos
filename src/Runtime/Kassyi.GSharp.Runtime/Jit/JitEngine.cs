@@ -134,7 +134,7 @@ public sealed class JitEngine
             return lazyHit.Value.Function;
         }
         
-        System.Threading.Interlocked.Increment(ref CacheMissCount);
+        Interlocked.Increment(ref CacheMissCount);
 
         var jitArr = jitConstants.ToArray();
         var macroArr = macros.ToArray();
