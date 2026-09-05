@@ -10,12 +10,12 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels
 public static partial class GpuMacroTestKernelsWrapper
 {
 public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __global__ void Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue){
-for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
+for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
 outputBuffer[i]=fillValue;
 }
 cg::this_grid().sync();
-if (threadIdx.x == 0 && blockIdx.x == 0)
+if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 if(length>0)
 {

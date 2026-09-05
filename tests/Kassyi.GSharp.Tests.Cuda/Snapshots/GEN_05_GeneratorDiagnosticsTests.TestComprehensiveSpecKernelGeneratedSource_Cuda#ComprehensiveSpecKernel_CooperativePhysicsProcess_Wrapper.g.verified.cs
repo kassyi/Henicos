@@ -10,7 +10,7 @@ namespace DebugReduc
 public static partial class ComprehensiveSpecKernelWrapper
 {
 public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void CooperativePhysicsProcess(int* __restrict__ data){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 data[tid]=tid;
 cg::this_grid().sync();
 }

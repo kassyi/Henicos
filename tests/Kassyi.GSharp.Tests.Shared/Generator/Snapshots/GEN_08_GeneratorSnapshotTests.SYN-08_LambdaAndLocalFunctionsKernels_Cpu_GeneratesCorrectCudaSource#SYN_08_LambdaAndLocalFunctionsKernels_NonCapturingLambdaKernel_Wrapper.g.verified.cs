@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_08_LambdaAndLocalFunctionsKernelsWrapper
 {
 public const string NonCapturingLambdaKernel_Source = @"extern ""C"" __declspec(dllexport) void NonCapturingLambdaKernel(int* __restrict__ data){
-int tid=threadIdx.x;
-auto doubleValue=[&](int x) {
+int tid = threadIdx.x;
+auto doubleValue = [&](int x) {
 return x*2;
 }
 ;

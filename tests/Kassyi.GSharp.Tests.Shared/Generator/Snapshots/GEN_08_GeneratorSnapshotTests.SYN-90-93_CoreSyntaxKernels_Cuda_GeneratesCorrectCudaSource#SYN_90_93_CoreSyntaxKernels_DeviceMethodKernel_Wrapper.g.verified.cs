@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_90_93_CoreSyntaxKernelsWrapper
 {
 public const string DeviceMethodKernel_Source = @"extern ""C"" __global__ void DeviceMethodKernel(int* __restrict__ data){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 data[tid]=MyCustomAdd(data[tid],100);
 }
 ";

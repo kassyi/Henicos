@@ -10,12 +10,12 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
 public const string MathEdgeCasesKernel_Source = @"extern ""C"" __global__ void MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults){
-int tid=threadIdx.x;
-float f=floatSpecialInputs[tid];
+int tid = threadIdx.x;
+float f = floatSpecialInputs[tid];
 floatSpecialResults[0]=fabsf(f);
 floatSpecialResults[1]=fmaxf(f,0.0f);
 floatSpecialResults[2]=fminf(f,0.0f);
-double d=doubleSpecialInputs[tid];
+double d = doubleSpecialInputs[tid];
 doubleSpecialResults[0]=fabs(d);
 doubleSpecialResults[1]=fmax(d,0.0);
 doubleSpecialResults[2]=fmin(d,0.0);

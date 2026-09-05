@@ -27,8 +27,8 @@ Kassyi_GSharp_Tests_Syntax_NestedChildStruct Child;
 ;
 #endif
 extern ""C"" __declspec(dllexport) void NestedInitializerKernel(int* __restrict__ output){
-int tid=threadIdx.x;
-Kassyi_GSharp_Tests_Syntax_NestedParentStruct p=([&]() {
+int tid = threadIdx.x;
+Kassyi_GSharp_Tests_Syntax_NestedParentStruct p = ([&]() {
 Kassyi_GSharp_Tests_Syntax_NestedParentStruct _tmp{}; _tmp.Id = tid; _tmp.Child = Kassyi_GSharp_Tests_Syntax_NestedChildStruct{}; return _tmp; }
 ());
 p.Child.Value=tid*5;

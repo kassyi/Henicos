@@ -21,10 +21,10 @@ short Flag2;
 ;
 #endif
 extern ""C"" __global__ void PaddedStructKernel(Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct* __restrict__ items, int length){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct item=items[tid];
+Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct item = items[tid];
 item.Flag1=(unsigned char)(item.Flag1+1);
 item.ValueD=item.ValueD*1.5;
 item.ValueI=item.ValueI+100;
