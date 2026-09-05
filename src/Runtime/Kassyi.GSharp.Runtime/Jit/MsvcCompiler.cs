@@ -1,3 +1,4 @@
+using System.IO.Abstractions;
 namespace Kassyi.GSharp.Runtime.Jit;
 
 /// <summary>
@@ -5,7 +6,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// </summary>
 public sealed class MsvcCompiler
 {
-    public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
+    public static IFileSystem FileSystem { get; set; } = new FileSystem();
 
     public class ProcessFailedException(string message, string output) : Exception(message)
     {

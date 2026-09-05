@@ -1,3 +1,4 @@
+using System.IO.Abstractions;
 using System.Text.RegularExpressions;
 
 namespace Kassyi.GSharp.Runtime.Jit;
@@ -12,7 +13,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 public sealed partial class NvccCompiler
 {
     /// <summary>Gets or sets the filesystem abstraction used for I/O operations.</summary>
-    public static System.IO.Abstractions.IFileSystem FileSystem { get; set; } = new System.IO.Abstractions.FileSystem();
+    public static IFileSystem FileSystem { get; set; } = new FileSystem();
 
     /// <summary>
     /// The exception thrown when an external compiler process exits with a non-zero exit code.
