@@ -189,7 +189,11 @@ public static class GpuBigIntMath
         {
             Mul(left, right, nextBuffer);
             var actualWords = (GpuBigIntDivRem.GetActualBits(nextBuffer) + 31) / 32;
-            if (actualWords == 0) actualWords = 1;
+            if (actualWords == 0)
+            {
+                actualWords = 1;
+            }
+
             trimmed = nextBuffer.PadTo(actualWords);
             
             var result = trimmed;

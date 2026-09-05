@@ -391,7 +391,11 @@ public static class GpuChudnovskyPi
                 GpuBigIntMath.Mul(resultGpu, currentGpu, nextResult);
 
                 var actualResultWords = (GpuBigIntDivRem.GetActualBits(nextResult) + 31) / 32;
-                if (actualResultWords == 0) actualResultWords = 1;
+                if (actualResultWords == 0)
+                {
+                    actualResultWords = 1;
+                }
+
                 var trimmedResult = nextResult.PadTo(actualResultWords);
                 nextResult.Dispose();
 
@@ -407,7 +411,11 @@ public static class GpuChudnovskyPi
                 GpuBigIntMath.Mul(currentGpu, currentGpu, nextCurrent);
 
                 var actualCurrentWords = (GpuBigIntDivRem.GetActualBits(nextCurrent) + 31) / 32;
-                if (actualCurrentWords == 0) actualCurrentWords = 1;
+                if (actualCurrentWords == 0)
+                {
+                    actualCurrentWords = 1;
+                }
+
                 var trimmedCurrent = nextCurrent.PadTo(actualCurrentWords);
                 nextCurrent.Dispose();
 
@@ -425,7 +433,10 @@ public static class GpuChudnovskyPi
         bool isMostSignificant)
     {
         var actualWords = (GpuBigIntDivRem.GetActualBits(value) + 31) / 32;
-        if (actualWords == 0) actualWords = 1;
+        if (actualWords == 0)
+        {
+            actualWords = 1;
+        }
 
         // Leaf threshold: CPU formatting is fast enough for < 10,000 digits.
         if (targetDigits <= 10000)

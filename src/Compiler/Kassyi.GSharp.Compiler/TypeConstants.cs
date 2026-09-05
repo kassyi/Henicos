@@ -19,7 +19,6 @@ internal static class TypeConstants
     public const string Vector2Type = "Vector2";
     public const string Vector3Type = "Vector3";
     public const string Vector4Type = "Vector4";
-    public const string GpuBigIntRefType = "GpuBigIntRef";
 
     public static class CudaTypes
     {
