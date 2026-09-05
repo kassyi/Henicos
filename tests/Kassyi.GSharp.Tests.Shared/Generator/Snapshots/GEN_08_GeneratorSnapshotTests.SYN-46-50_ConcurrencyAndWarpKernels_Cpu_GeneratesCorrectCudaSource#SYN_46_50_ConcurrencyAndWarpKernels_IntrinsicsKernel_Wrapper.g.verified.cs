@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_IntrinsicsKernel;
 public const string IntrinsicsKernel_Source = @"extern ""C"" __declspec(dllexport) void IntrinsicsKernel(int* __restrict__ data){
 int tid=threadIdx.x;
 if(tid<10)

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_91_92_ParenthesesSuppressionKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ParenthesesKernel;
 public const string ParenthesesKernel_Source = @"extern ""C"" __declspec(dllexport) void ParenthesesKernel(int* __restrict__ output, int a, int b, int c){
 if(a<b)
 {

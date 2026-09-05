@@ -9,6 +9,8 @@ namespace TestSpace
 {
 public static partial class ErrorKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NonVoidReturnKernel;
 public const string NonVoidReturnKernel_Source = @"extern ""C"" __declspec(dllexport) void NonVoidReturnKernel(){
 return 1;
 }

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_MathEdgeCasesKernel;
 public const string MathEdgeCasesKernel_Source = @"extern ""C"" __declspec(dllexport) void MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults){
 int tid=threadIdx.x;
 float f=floatSpecialInputs[tid];

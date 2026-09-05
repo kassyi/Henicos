@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels
 {
 public static partial class GpuMacroTestKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_Kernel_MacroTest_FillAndSingle;
 public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __declspec(dllexport) void Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue){
 for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_SwitchExpressionKernel;
 public const string SwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void SwitchExpressionKernel(int* __restrict__ input, int* __restrict__ output){
 int tid=threadIdx.x;
 int val=input[tid];

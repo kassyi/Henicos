@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_PointerComplexAssignmentKernel;
 public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest){
 unsigned int* pIdx=&idx[0];
 unsigned int* pVal=&val[0];

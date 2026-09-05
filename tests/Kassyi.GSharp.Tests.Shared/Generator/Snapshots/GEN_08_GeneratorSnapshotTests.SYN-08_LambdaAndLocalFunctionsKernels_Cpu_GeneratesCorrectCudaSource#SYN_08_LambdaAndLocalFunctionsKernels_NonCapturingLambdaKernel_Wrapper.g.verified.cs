@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_08_LambdaAndLocalFunctionsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NonCapturingLambdaKernel;
 public const string NonCapturingLambdaKernel_Source = @"extern ""C"" __declspec(dllexport) void NonCapturingLambdaKernel(int* __restrict__ data){
 int tid=threadIdx.x;
 auto doubleValue=[&](int x) {

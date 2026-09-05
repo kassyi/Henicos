@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_90_93_CoreSyntaxKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_DeviceMethodKernel;
 public const string DeviceMethodKernel_Source = @"extern ""C"" __declspec(dllexport) void DeviceMethodKernel(int* __restrict__ data){
 int tid=threadIdx.x;
 data[tid]=MyCustomAdd(data[tid],100);

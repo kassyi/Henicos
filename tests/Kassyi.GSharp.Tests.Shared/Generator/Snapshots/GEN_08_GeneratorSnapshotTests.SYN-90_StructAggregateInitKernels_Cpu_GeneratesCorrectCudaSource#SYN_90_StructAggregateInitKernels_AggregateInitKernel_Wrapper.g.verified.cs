@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_90_StructAggregateInitKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_AggregateInitKernel;
 public const string AggregateInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AggregateStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AggregateStruct__
 struct Kassyi_GSharp_Tests_Syntax_AggregateStruct

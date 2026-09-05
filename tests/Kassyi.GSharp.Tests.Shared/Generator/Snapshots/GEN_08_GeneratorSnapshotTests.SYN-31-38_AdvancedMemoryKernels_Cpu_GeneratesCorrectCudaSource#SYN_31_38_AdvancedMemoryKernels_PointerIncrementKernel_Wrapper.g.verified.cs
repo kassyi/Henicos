@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_PointerIncrementKernel;
 public const string PointerIncrementKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
 unsigned int* pSrc=&src[0];
 unsigned int* pDest=&dest[0];

@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Stdlib.Math
 {
 public static partial class GpuBigIntKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ChunkAddKernel;
 public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void ChunkAddKernel(unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize){
 int chunkIdx=blockIdx.x*blockDim.x+threadIdx.x;
 int start=chunkIdx*chunkSize;

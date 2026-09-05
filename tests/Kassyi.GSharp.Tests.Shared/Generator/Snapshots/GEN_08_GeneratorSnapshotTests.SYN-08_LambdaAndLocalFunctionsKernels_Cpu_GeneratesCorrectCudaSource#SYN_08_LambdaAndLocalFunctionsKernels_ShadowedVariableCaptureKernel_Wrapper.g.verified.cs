@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_08_LambdaAndLocalFunctionsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ShadowedVariableCaptureKernel;
 public const string ShadowedVariableCaptureKernel_Source = @"extern ""C"" __declspec(dllexport) void ShadowedVariableCaptureKernel(int* __restrict__ data){
 int tid=threadIdx.x;
 int value=50;

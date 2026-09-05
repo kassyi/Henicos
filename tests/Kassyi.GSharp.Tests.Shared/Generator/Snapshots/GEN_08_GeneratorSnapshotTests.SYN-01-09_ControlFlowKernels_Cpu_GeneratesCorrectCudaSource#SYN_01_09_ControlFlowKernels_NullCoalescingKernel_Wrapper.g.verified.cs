@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NullCoalescingKernel;
 public const string NullCoalescingKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results){
 int tid=threadIdx.x;
 System_Nullable<int> input=nullableInputs[tid];

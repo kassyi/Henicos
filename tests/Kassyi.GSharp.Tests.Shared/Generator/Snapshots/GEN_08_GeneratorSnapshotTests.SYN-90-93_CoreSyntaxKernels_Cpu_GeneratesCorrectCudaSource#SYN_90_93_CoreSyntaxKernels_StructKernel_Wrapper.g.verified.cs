@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_90_93_CoreSyntaxKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_StructKernel;
 public const string StructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Vector2__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Vector2__
 struct Kassyi_GSharp_Tests_Syntax_Vector2

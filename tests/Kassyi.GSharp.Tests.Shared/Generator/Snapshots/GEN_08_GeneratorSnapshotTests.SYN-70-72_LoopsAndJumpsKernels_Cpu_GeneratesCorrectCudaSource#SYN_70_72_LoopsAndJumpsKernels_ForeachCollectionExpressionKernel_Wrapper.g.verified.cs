@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_70_72_LoopsAndJumpsKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_ForeachCollectionExpressionKernel;
 public const string ForeachCollectionExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void ForeachCollectionExpressionKernel(int* __restrict__ output){
 const int arr[4]={ 10, 20, 30, 40 };
 int total=0;

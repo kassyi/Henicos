@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_NullCoalescingAssignmentSideEffectKernel;
 public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values){
 int tid=threadIdx.x;
 int idx=sideEffectTracker[tid];

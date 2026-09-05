@@ -9,6 +9,8 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_CooperativePhysicsProcess;
 public const string CooperativePhysicsProcess_Source = @"extern ""C"" __declspec(dllexport) void CooperativePhysicsProcess(int* __restrict__ data){
 int tid=threadIdx.x;
 data[tid]=tid;

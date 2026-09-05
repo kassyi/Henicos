@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_64_69_NumericsAndHwMathKernelsWrapper
 {
+[System.ThreadStatic]
+private static System.Collections.Generic.Dictionary<string, string>? __t_jitConstants_BitOperationsTestKernel;
 public const string BitOperationsTestKernel_Source = @"extern ""C"" __declspec(dllexport) void BitOperationsTestKernel(unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data){
 unsigned int u32Val=u32Data[0];
 u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
