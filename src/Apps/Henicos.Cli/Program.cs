@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Running;
 using Cocona;
+using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos.Cli;
 
@@ -99,7 +100,7 @@ internal class Program
             runner.RunBenchmarkChunk(chunkSize);
 
             // Wait for GPU sync since the wrapper might only queue the launch
-            Kassyi.GSharp.Runtime.Jit.JitEngine.SynchronizeDevice();
+            JitEngine.SynchronizeDevice();
             sw.Stop();
 
             var throughput = mDigitsPerLoop * chunkSize / (sw.Elapsed.TotalSeconds);

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Henicos.PiBenchmark;
@@ -18,7 +19,7 @@ public class FermatPrpBenchmark
         Console.WriteLine($"Digits  = {(2 * E * Math.Log10(2)):N0}");
         Console.WriteLine("==================================================");
 
-        using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+        using var scope = new JitEngine.CudaContextScope();
 
         var runner = new FermatRunner(E);
 

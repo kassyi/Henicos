@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Kassyi.GSharp.Core;
 
 namespace Henicos.Cli;
 
@@ -47,7 +48,7 @@ public static class CudaInterop
 
     static CudaInterop()
     {
-        var cudaBin = Kassyi.GSharp.Core.CudaEnvironment.GetCudaBinPath();
+        var cudaBin = CudaEnvironment.GetCudaBinPath();
         if (!string.IsNullOrEmpty(cudaBin))
         {
             var pathEnv = Environment.GetEnvironmentVariable("PATH");
@@ -67,7 +68,7 @@ public static class CudaInterop
                     return NativeLibrary.Load(path, assembly, searchPath);
                 }
             }
-            return IntPtr.Zero;
+            return nint.Zero;
         });
     }
 }
