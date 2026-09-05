@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 namespace Kassyi.GSharp.Stdlib.Math.Tests
@@ -106,7 +106,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
-            var expected = System.Numerics.BigInteger.GreatestCommonDivisor(bigA, bigB);
+            var expected = BigInteger.GreatestCommonDivisor(bigA, bigB);
 
             using var gpuA = new GpuBigInteger(ctx, arrA);
             using var gpuB = new GpuBigInteger(ctx, arrB);
@@ -131,7 +131,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // (a + b) * c
             result.Value = (a + b) * c;
             
-            var expected = System.Numerics.BigInteger.Parse("90000");
+            var expected = BigInteger.Parse("90000");
             Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
         }
 
@@ -274,7 +274,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Buffer.BlockCopy(expectedBytes, 0, expectedWords, 0,
                 System.Math.Min(expectedBytes.Length, expectedWords.Length * 4));
 
-            var actualWords = Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms.NttCpuReference.Multiply(aWords, bWords);
+            var actualWords = NttCpuReference.Multiply(aWords, bWords);
 
             for (int i = 0; i < expectedWords.Length; i++)
             {
@@ -562,7 +562,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 }
 
                 var expectedGcd = BigInteger.GreatestCommonDivisor(a, b);
-                var actualGcd = Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms.HalfGcdCpuReference.Gcd(a, b);
+                var actualGcd = HalfGcdCpuReference.Gcd(a, b);
 
                 Assert.Equal(expectedGcd, actualGcd);
             }
@@ -848,7 +848,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigExp = ToBigInteger(arrExp);
             var bigMod = ToBigInteger(arrMod);
 
-            var expected = System.Numerics.BigInteger.ModPow(bigBase, bigExp, bigMod);
+            var expected = BigInteger.ModPow(bigBase, bigExp, bigMod);
 
             using var gpuBase = new GpuBigInteger(context, arrBase);
             var arrExpPadded = new uint[TestSizeWords];
@@ -876,7 +876,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var actualBig = ToBigInteger(actualGpu.ToHostArray());
             if (expected != actualBig)
             {
-                System.IO.File.WriteAllText("P:\\Projects\\Active\\Henicos\\hex_diff.txt",
+                File.WriteAllText("P:\\Projects\\Active\\Henicos\\hex_diff.txt",
                     "EXPECTED:\n" + expected.ToString("X") + "\nACTUAL:\n" + actualBig.ToString("X"));
                 Assert.Equal(expected, actualBig);
             }
