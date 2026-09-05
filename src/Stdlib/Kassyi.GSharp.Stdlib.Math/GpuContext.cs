@@ -29,26 +29,17 @@ public class GpuContext : IDisposable
     /// <summary>
     /// Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
     /// </summary>
-    public int MaxWords
-    {
-        get;
-    }
+    public int MaxWords { get; }
 
     /// <summary>
     /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
     /// </summary>
-    public IntPtr WorkspacePointer
-    {
-        get;
-    }
+    public IntPtr WorkspacePointer { get; }
 
     /// <summary>
     /// Gets the active GPU execution engine type.
     /// </summary>
-    public GpuExecutionEngine Engine
-    {
-        get;
-    }
+    public GpuExecutionEngine Engine { get; }
 
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
@@ -107,37 +98,37 @@ public class GpuContext : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposed)
+        if (_disposed)
         {
-            if (disposing)
-            {
-                // Dispose all pooled temporary buffers
-                foreach (var bag in _tempPool.Values)
-                {
-                    while (bag.TryTake(out var temp))
-                    {
-                        // Avoid circular calls since temp.Dispose() calls back into context or disposes native
-                        // Normally GpuBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
-                        temp.DisposeCore();
-                    }
-                }
-                _tempPool.Clear();
-            }
-
-            if (Engine == GpuExecutionEngine.GSharpJit)
-            {
-                // JIT-specific cleanup
-            }
-            else
-            {
-                if (WorkspacePointer != IntPtr.Zero)
-                {
-                    NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
-                }
-            }
-
-            _disposed = true;
+            return;
         }
+
+        // Dispose all pooled temporary buffers and release unmanaged device pointers
+        foreach (var bag in _tempPool.Values)
+        {
+            while (bag.TryTake(out var temp))
+            {
+                // Avoid circular calls since temp.Dispose() calls back into context or disposes native
+                // Normally GpuBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
+                temp.DisposeCore();
+            }
+        }
+
+        _tempPool.Clear();
+
+        if (Engine == GpuExecutionEngine.GSharpJit)
+        {
+            // JIT-specific cleanup
+        }
+        else
+        {
+            if (WorkspacePointer != IntPtr.Zero)
+            {
+                NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
+            }
+        }
+
+        _disposed = true;
     }
 
     ~GpuContext()

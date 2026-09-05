@@ -94,9 +94,14 @@ internal static class Program
             }
             else if (arg.Equals("--threshold", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
             {
-                if (int.TryParse(args[++i], out var thresh))
+                if (int.TryParse(args[++i], out var thresh) && thresh > 0)
                 {
                     thresholdTerms = thresh;
+                }
+                else
+                {
+                    Console.Error.WriteLine("Error: --threshold must be a positive integer greater than zero.");
+                    return 1;
                 }
             }
             else if (arg.Equals("--hex", StringComparison.OrdinalIgnoreCase))

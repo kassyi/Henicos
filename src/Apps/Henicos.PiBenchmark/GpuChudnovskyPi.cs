@@ -102,16 +102,17 @@ public static class GpuChudnovskyPi
         bool asHex = false)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(digits);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thresholdTerms);
 
         int totalDigits;
         int totalTerms;
-        int extraDigits = 20;
+        var extraDigits = 20;
 
         if (asHex)
         {
-            int exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
-            int extraBits = 1024; // Safe margin for series truncation error
-            int marginBits = 256; // Division noise margin
+            var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
+            var extraBits = 1024; // Safe margin for series truncation error
+            var marginBits = 256; // Division noise margin
             totalDigits = exactBits + extraBits + marginBits;
             totalTerms = (int)Math.Ceiling(totalDigits / 14.181647462725477);
         }
@@ -164,7 +165,8 @@ public static class GpuChudnovskyPi
     /// Pi = (426880 * Sqrt(10005 * 10^(2*totalDigits)) * Q) / T
     /// using GPU-accelerated NTT multiplication, Sqrt, and Newton-Raphson division.
     /// </summary>
-    private static GpuBigInteger ComputeFinalPiFraction(GpuContext context, GpuPqt pqt, int digits, int totalDigits, bool asHex)
+    private static GpuBigInteger ComputeFinalPiFraction(GpuContext context, GpuPqt pqt, int digits, int totalDigits,
+        bool asHex)
     {
         var finalStageStopwatch = Stopwatch.StartNew();
         var swPow = Stopwatch.StartNew();
@@ -173,20 +175,20 @@ public static class GpuChudnovskyPi
 
         if (asHex)
         {
-            int exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
-            int extraBits = 1024; // Safe margin for series truncation error
-            int marginBits = 256; // Division noise margin
-            int targetBits = exactBits + extraBits + marginBits;
+            var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
+            var extraBits = 1024; // Safe margin for series truncation error
+            var marginBits = 256; // Division noise margin
+            var targetBits = exactBits + extraBits + marginBits;
 
             Console.WriteLine($"[GPU-Pi] Computing Sqrt base (10005 * 2^{2 * targetBits})...");
-            
-            int bitShift = 2 * targetBits;
-            int wordIndex = bitShift / 32;
-            int bitIndex = bitShift % 32;
-            uint[] pow2Data = new uint[wordIndex + 1];
+
+            var bitShift = 2 * targetBits;
+            var wordIndex = bitShift / 32;
+            var bitIndex = bitShift % 32;
+            var pow2Data = new uint[wordIndex + 1];
             pow2Data[wordIndex] = 1u << bitIndex;
             using var gpuPow2 = new GpuBigInteger(context, pow2Data);
-            
+
             using var const10005 = ToGpuBigInt(context, 10005, 0);
             gpuSqrtBase = new GpuBigInteger(context, gpuPow2.NumWords + const10005.NumWords);
             GpuBigIntMath.Mul(gpuPow2, const10005, gpuSqrtBase);
@@ -268,14 +270,14 @@ public static class GpuChudnovskyPi
             if (asHex)
             {
                 // Exact bits that are guaranteed to be correct (word-aligned)
-                int exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
-                int extraBits = 1024; // Safe margin for series truncation error
-                int marginBits = 256; // Division noise margin
-                
+                var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
+                var extraBits = 1024; // Safe margin for series truncation error
+                var marginBits = 256; // Division noise margin
+
                 var hostData = gpuPiExt.ToHostArray();
-                
+
                 // Find the actual integer part (the first non-zero word from the top)
-                int actualTopIndex = hostData.Length - 1;
+                var actualTopIndex = hostData.Length - 1;
                 while (actualTopIndex >= 0 && hostData[actualTopIndex] == 0)
                 {
                     actualTopIndex--;
@@ -285,18 +287,18 @@ public static class GpuChudnovskyPi
                 {
                     actualTopIndex = 0;
                 }
-                
-                int dropWords = (marginBits + extraBits) / 32;
-                int truncationSafetyWords = 8; 
-                
-                int checkIndex = dropWords + truncationSafetyWords;
-                
+
+                var dropWords = (marginBits + extraBits) / 32;
+                var truncationSafetyWords = 8;
+
+                var checkIndex = dropWords + truncationSafetyWords;
+
                 if (checkIndex + 1 <= actualTopIndex)
                 {
-                    string computedHexTail = hostData[checkIndex + 1].ToString("X8") + hostData[checkIndex].ToString("X8");
-                    int hexDigits = exactBits / 4;
-                    int offset = hexDigits - 16 - (truncationSafetyWords * 8); // 8 hex digits per word
-                    
+                    var computedHexTail =
+                        hostData[checkIndex + 1].ToString("X8") + hostData[checkIndex].ToString("X8");
+                    var offset = (actualTopIndex - checkIndex - 2) * 8;
+
                     PiVerification.VerifyWithBbp(computedHexTail, offset);
                 }
                 else
@@ -308,8 +310,10 @@ public static class GpuChudnovskyPi
                     ? new StreamWriter(outputPath, append: false)
                     : new HeadTailTrackerWriter(50, 50);
 
-                // Output integer part and fraction
-                for (var i = actualTopIndex; i >= dropWords; i--)
+                // Output integer part and fraction separated by a radix point
+                hexWriter.Write(hostData[actualTopIndex].ToString("X"));
+                hexWriter.Write('.');
+                for (var i = actualTopIndex - 1; i >= dropWords; i--)
                 {
                     hexWriter.Write(hostData[i].ToString("X8"));
                 }
@@ -486,6 +490,7 @@ public static class GpuChudnovskyPi
 
     private static GpuPqt ComputeTree(int a, int b, GpuContext context, int thresholdTerms, ProgressState state)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thresholdTerms);
         var terms = b - a;
         if (terms <= thresholdTerms)
         {

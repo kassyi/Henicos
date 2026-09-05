@@ -1,9 +1,10 @@
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
-public class GpuContextTests
+public class GBI30_GpuContextTests
 {
     [Fact]
-    public void Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
+    [Trait("FeatureId", "GBI-30")]
+    public void Test_GBI30_Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
@@ -19,7 +20,8 @@ public class GpuContextTests
     }
 
     [Fact]
-    public void Finalizer_ShouldNotCrash()
+    [Trait("FeatureId", "GBI-30")]
+    public void Test_GBI30_Finalizer_ShouldNotCrash()
     {
         // Arrange & Act
         WeakReference weakRef = CreateAndDropContext();
@@ -41,15 +43,12 @@ public class GpuContextTests
     }
 
     [Fact]
-    public void Dispose_WhenUsingGSharpJit_ShouldNotClearSharedProviderCaches()
+    [Trait("FeatureId", "GBI-30")]
+    public void Test_GBI30_Dispose_WhenUsingGSharpJit_ShouldNotClearSharedProviderCaches()
     {
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
         var provider = Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider.Instance;
-
-        // Populate caches via dummy rent/return if possible, or just call ClearCaches explicitly to reset state before test
-        provider.ClearCaches();
-
         var carryPoolField = typeof(Kassyi.GSharp.Stdlib.Math.BigInt.Providers.GSharpJitProvider).GetField(
             "_carryBufferPool",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -57,16 +56,30 @@ public class GpuContextTests
             (System.Collections.Concurrent.ConcurrentDictionary<int,
                 System.Collections.Concurrent.ConcurrentBag<IntPtr>>)carryPoolField!.GetValue(provider)!;
 
-        // Add dummy entry
-        carryPool.TryAdd(8, [IntPtr.Zero]);
+        // Add a test-specific unique key
+        const int testKey = -99999;
+        carryPool.TryAdd(testKey, [new IntPtr(0x1234)]);
 
         // Act
         context.Dispose();
 
         // Assert - Shared provider caches must not be cleared on individual context disposal
-        Assert.NotEmpty(carryPool);
+        Assert.True(carryPool.ContainsKey(testKey));
 
-        // Cleanup dummy entry
-        carryPool.Clear();
+        // Cleanup test key only
+        carryPool.TryRemove(testKey, out _);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GBI-30")]
+    public void Test_GBI30_ParallelContextDisposal_ShouldNotCorruptCaches()
+    {
+        Parallel.For(0, 8, i =>
+        {
+            using var scope = new Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+            using var ctx = new GpuContext(256, GpuExecutionEngine.GSharpJit);
+            using var temp1 = ctx.RentTemp(16);
+            using var temp2 = ctx.RentTemp(32);
+        });
     }
 }

@@ -27,7 +27,7 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
     [InlineData("0", 1)]
     [InlineData("123456789012345678901234567890", 4)]
     [InlineData("-123456789012345678901234567890", 4)] // Should take absolute value
-    public void FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
+    public void Test_GBI26_FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
     {
         var original = BigInteger.Parse(valueStr);
         using var gpuBigInt = GpuBigInteger.FromBigInteger(_context, original, minWords);
@@ -41,7 +41,7 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
     [Fact]
     [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "EdgeCase")]
-    public void PadTo_LargerSize_ZeroPadsCorrectly()
+    public void Test_GBI26_PadTo_LargerSize_ZeroPadsCorrectly()
     {
         var original = new BigInteger(0xDEADBEEF);
         using var gpuBigInt = GpuBigInteger.FromBigInteger(_context, original, 1);
@@ -60,7 +60,7 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
 
     [Fact]
     [Trait("FeatureId", "GBI-26")]
-    public void PadTo_SmallerSize_ReturnsTruncatedValue()
+    public void Test_GBI26_PadTo_SmallerSize_ReturnsTruncatedValue()
     {
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
         using var original = new GpuBigInteger(_context, originalData);

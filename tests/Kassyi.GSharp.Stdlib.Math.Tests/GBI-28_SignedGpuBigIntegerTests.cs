@@ -23,7 +23,7 @@ public class GBI28_SignedGpuBigIntegerTests : IDisposable
     [Fact]
     [Trait("FeatureId", "GBI-28")]
     [Trait("Category", "HappyPath")]
-    public void ConstructAndDispose_WorksCorrectly()
+    public void Test_GBI28_ConstructAndDispose_WorksCorrectly()
     {
         var gpuBigInt = new GpuBigInteger(_context, 4);
         var signed = new SignedGpuBigInteger(gpuBigInt, isNegative: true);

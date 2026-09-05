@@ -3,10 +3,11 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt.Providers;
 
-public class GSharpJitProviderTests
+public class GBI32_GSharpJitProviderTests
 {
     [Fact]
-    public void ClearCaches_ShouldEmptyInternalPools()
+    [Trait("FeatureId", "GBI-32")]
+    public void Test_GBI32_ClearCaches_ShouldEmptyInternalPools()
     {
         var provider = (GSharpJitProvider)Activator.CreateInstance(typeof(GSharpJitProvider), nonPublic: true)!;
 
