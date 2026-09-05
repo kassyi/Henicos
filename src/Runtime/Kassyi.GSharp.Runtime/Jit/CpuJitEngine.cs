@@ -48,7 +48,7 @@ public sealed class CpuJitEngine
     public static IntPtr GetOrCompileKernelPtr(string kernelName, string baseSource,
         ReadOnlySpan<JitConstantArg> jitConstants = default, ReadOnlySpan<KeyValuePair<string, string>> macros = default)
     {
-        Guid cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
+        var cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
 
         // Cache miss: Allocate on heap for lambda capture
         var jitArr = jitConstants.ToArray();
@@ -78,7 +78,7 @@ public sealed class CpuJitEngine
         ReadOnlySpan<JitConstantArg> jitConstants = default,
         ReadOnlySpan<KeyValuePair<string, string>> macros = default) where TDelegate : Delegate
     {
-        Guid cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
+        var cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
 
         if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
         {
@@ -195,7 +195,7 @@ public sealed class CpuJitEngine
     private static Guid ComputeCacheKey(string kernelName, string baseSource, ReadOnlySpan<JitConstantArg> jitConstants,
         ReadOnlySpan<KeyValuePair<string, string>> macros)
     {
-        int totalLength = kernelName.Length * 2 + baseSource.Length * 2;
+        var totalLength = kernelName.Length * 2 + baseSource.Length * 2;
         foreach (var c in jitConstants)
         {
             totalLength += c.Key.Length * 2 + 1 + 8;
@@ -207,13 +207,13 @@ public sealed class CpuJitEngine
         }
 
         byte[]? rentedArray = null;
-        Span<byte> buffer = totalLength <= 4096
+        var buffer = totalLength <= 4096
             ? stackalloc byte[4096]
             : (rentedArray = ArrayPool<byte>.Shared.Rent(totalLength));
 
         try
         {
-            int offset = 0;
+            var offset = 0;
 
             static void Append(ref Span<byte> buf, ref int off, ReadOnlySpan<byte> data)
             {
@@ -246,7 +246,9 @@ public sealed class CpuJitEngine
         finally
         {
             if (rentedArray != null)
+            {
                 ArrayPool<byte>.Shared.Return(rentedArray);
+            }
         }
     }
 }

@@ -143,7 +143,7 @@ public static class GpuBigIntMath
 
         var resultGpu = GpuBigInteger.FromBigInteger(context, 1);
         GpuBigInteger? currentGpu = null;
-        bool success = false;
+        var success = false;
         try
         {
             currentGpu = GpuBigInteger.FromBigInteger(context, 10);

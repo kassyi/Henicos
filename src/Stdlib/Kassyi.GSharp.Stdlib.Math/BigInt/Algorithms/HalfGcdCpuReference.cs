@@ -38,8 +38,8 @@ public static class HalfGcdCpuReference
             var y = (ulong)(b >> shift);
 
             var progress =
-                GpuBigIntGcdKernels.ComputeLehmerMatrix(x, y, out long u0,
-                    out long v0, out long u1, out long v1);
+                GpuBigIntGcdKernels.ComputeLehmerMatrix(x, y, out var u0,
+                    out var v0, out var u1, out var v1);
 
             if (!progress)
             {

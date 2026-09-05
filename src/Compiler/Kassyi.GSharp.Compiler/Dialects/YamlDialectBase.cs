@@ -46,7 +46,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
         if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType)
         {
             context.Writer.Append("<");
-            for (int i = 0; i < namedType.TypeArguments.Length; i++)
+            for (var i = 0; i < namedType.TypeArguments.Length; i++)
             {
                 AppendType(ref context, namedType.TypeArguments[i]);
                 if (i < namedType.TypeArguments.Length - 1)
@@ -102,8 +102,8 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {
-        bool isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) || p.Modifiers.Any(SyntaxKind.OutKeyword);
-        bool isPointerType = typeSymbol is IPointerTypeSymbol || typeSymbol is IArrayTypeSymbol;
+        var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) || p.Modifiers.Any(SyntaxKind.OutKeyword);
+        var isPointerType = typeSymbol is IPointerTypeSymbol || typeSymbol is IArrayTypeSymbol;
         
         AppendType(ref context, typeSymbol);
         if (isRefPointer)

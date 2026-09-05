@@ -407,7 +407,7 @@ internal static class MarshalingEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        bool isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
+        var isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
 
         if (!isDevicePointerStruct)
         {
@@ -719,7 +719,7 @@ internal static class MarshalingEmitter
 
     private static void WriteCustomStructUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        bool isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
+        var isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
         
         if (isDevicePointerStruct)
         {
@@ -821,8 +821,11 @@ internal static class MarshalingEmitter
 
     private static void WriteRefOrOutScalarUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (isDevicePtr) return;
-        
+        if (isDevicePtr)
+        {
+            return;
+        }
+
         if (p.RefKind == RefKind.Out)
         {
             writer.Append(p.Name);

@@ -127,7 +127,7 @@ public sealed class JitEngine
     {
         EnsureInitialized();
 
-        Guid cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
+        var cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
 
         if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
         {
@@ -152,7 +152,7 @@ public sealed class JitEngine
         // Zero-allocation FNV-1a hash
         const ulong offsetBasis = 14695981039346656037;
         const ulong prime = 1099511628211;
-        ulong hash = offsetBasis;
+        var hash = offsetBasis;
 
         hash = HashString(hash, prime, kernelName);
         hash = HashString(hash, prime, baseSource);
@@ -170,10 +170,10 @@ public sealed class JitEngine
             hash = HashString(hash, prime, macro.Value);
         }
 
-        ulong hash2 = hash ^ prime; 
+        var hash2 = hash ^ prime; 
         unsafe
         {
-            byte* b = stackalloc byte[16];
+            var b = stackalloc byte[16];
             *(ulong*)b = hash;
             *(ulong*)(b + 8) = hash2;
             return new Guid(new ReadOnlySpan<byte>(b, 16));
@@ -182,8 +182,12 @@ public sealed class JitEngine
 
     private static ulong HashString(ulong hash, ulong prime, string? str)
     {
-        if (str == null) return hash;
-        foreach (char c in str)
+        if (str == null)
+        {
+            return hash;
+        }
+
+        foreach (var c in str)
         {
             hash ^= c;
             hash *= prime;
@@ -200,8 +204,8 @@ public sealed class JitEngine
 
     private static ulong HashJitConstantValue(ulong hash, ulong prime, in JitConstantValue val)
     {
-        ulong v = val.UInt64Value; // Unionなので最大サイズのフィールドを読めばOK
-        for (int i = 0; i < 8; i++)
+        var v = val.UInt64Value; // Unionなので最大サイズのフィールドを読めばOK
+        for (var i = 0; i < 8; i++)
         {
             hash ^= (v & 0xFF);
             hash *= prime;
