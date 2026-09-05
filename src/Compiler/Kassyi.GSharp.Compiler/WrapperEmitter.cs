@@ -68,19 +68,9 @@ internal static class WrapperEmitter
         string targetDialect)
     {
         var escapedSource = source.Replace("\"", "\"\"");
-        writer.Append("public const string ");
-        writer.Append(method.Name);
-        writer.Append("_Source = @\"");
-        writer.Append(escapedSource);
-        writer.AppendLine("\";");
-
-        writer.Append("public static readonly string ");
-        writer.Append(method.Name);
-        writer.Append("_FullSource = global::Kassyi.GSharp.Generated.GSharpShared");
-        writer.Append(targetDialect);
-        writer.Append("Code.Source + ");
-        writer.Append(method.Name);
-        writer.AppendLine("_Source;");
+        writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
+        writer.AppendLine(
+            $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{targetDialect}Code.Source + {method.Name}_Source;");
         writer.AppendLine();
     }
 
@@ -361,14 +351,8 @@ internal static class WrapperEmitter
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
     {
-        writer.Append("var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<");
-        writer.Append(method.Name);
-        writer.Append("_Delegate>(\"__gsharp_launch_");
-        writer.Append(method.Name);
-        writer.Append("\", ");
-        writer.Append(method.Name);
-        writer.Append("_FullSource, __t_jitConstants, macros);");
-        writer.AppendLine();
+        writer.AppendLine(
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", {method.Name}_FullSource, __t_jitConstants, macros);");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
@@ -388,30 +372,26 @@ internal static class WrapperEmitter
         {
             foreach (var p in method.Parameters)
             {
-                if (p.Type is IArrayTypeSymbol arrayType)
+                if (p.Type is not IArrayTypeSymbol arrayType)
                 {
-                    writer.Append("fixed (");
-                    writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
-                    writer.Append("* p_");
-                    writer.Append(p.Name);
-                    writer.Append(" = ");
-                    writer.Append(p.Name);
-                    writer.AppendLine(")");
+                    continue;
                 }
+
+                writer.Append("fixed (");
+                writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
+                writer.AppendLine($"* p_{p.Name} = {p.Name})");
             }
 
             foreach (var p in method.Parameters)
             {
-                if (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol)
+                if (p.RefKind is not (RefKind.Ref or RefKind.Out) || p.Type is IArrayTypeSymbol)
                 {
-                    writer.Append("fixed (");
-                    writer.AppendFullyQualifiedCsharpName(p.Type);
-                    writer.Append("* p_");
-                    writer.Append(p.Name);
-                    writer.Append(" = &");
-                    writer.Append(p.Name);
-                    writer.AppendLine(")");
+                    continue;
                 }
+
+                writer.Append("fixed (");
+                writer.AppendFullyQualifiedCsharpName(p.Type);
+                writer.AppendLine($"* p_{p.Name} = &{p.Name})");
             }
 
             using (writer.Scope())
