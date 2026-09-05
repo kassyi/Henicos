@@ -27,23 +27,25 @@ atomicExch(&structArray[tid].ValueU,42u);
 __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 }
 ";
+public static readonly string InterlockedEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_InterlockedEdgeCasesKernel(int[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_InterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", InterlockedEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_array = IntPtr.Zero;
 IntPtr d_structArray = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal array: array
-int array_size = array.Length * sizeof(int);
-if(array_size>0)
+int array_size = array.Length * sizeof(global::System.Int32);
+if (array_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_array, array_size));
 System.Runtime.InteropServices.GCHandle handle_array = System.Runtime.InteropServices.GCHandle.Alloc(array, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -60,7 +62,7 @@ handle_array.Free();
 kernelParams[0] = &d_array;
 // Marshal array: structArray
 int structArray_size = structArray.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct);
-if(structArray_size>0)
+if (structArray_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_structArray, structArray_size));
 System.Runtime.InteropServices.GCHandle handle_structArray = System.Runtime.InteropServices.GCHandle.Alloc(structArray, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -85,9 +87,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: array
-if(array_size>0&&d_array!=IntPtr.Zero)
+if (array_size > 0 && d_array != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_array=System.Runtime.InteropServices.GCHandle.Alloc(array,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_array = System.Runtime.InteropServices.GCHandle.Alloc(array, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_array = handleBack_array.AddrOfPinnedObject();
@@ -99,9 +101,9 @@ handleBack_array.Free();
 }
 }
 // Copy back array: structArray
-if(structArray_size>0&&d_structArray!=IntPtr.Zero)
+if (structArray_size > 0 && d_structArray != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_structArray=System.Runtime.InteropServices.GCHandle.Alloc(structArray,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_structArray = System.Runtime.InteropServices.GCHandle.Alloc(structArray, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_structArray = handleBack_structArray.AddrOfPinnedObject();
@@ -122,11 +124,12 @@ if (d_structArray != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structArray);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_InterlockedEdgeCasesKernel_Device(IntPtr array, IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_InterlockedEdgeCasesKernel_Device(IntPtr array, IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + InterlockedEdgeCasesKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("InterlockedEdgeCasesKernel", InterlockedEdgeCasesKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[2];

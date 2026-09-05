@@ -53,8 +53,8 @@ public class ChudnovskyPi
                 };
             }
 
-            BigInteger numeratorP = -(BigInteger)(6L * a - 5) * (2L * a - 1) * (6L * a - 1);
-            BigInteger denominatorQ = (BigInteger)10939058860032000L * a * a * a;
+            var numeratorP = -(BigInteger)(6L * a - 5) * (2L * a - 1) * (6L * a - 1);
+            var denominatorQ = (BigInteger)10939058860032000L * a * a * a;
             var sumT = numeratorP * (13591409 + (BigInteger)545140134L * a);
             return new ChudnovskyResult
             {

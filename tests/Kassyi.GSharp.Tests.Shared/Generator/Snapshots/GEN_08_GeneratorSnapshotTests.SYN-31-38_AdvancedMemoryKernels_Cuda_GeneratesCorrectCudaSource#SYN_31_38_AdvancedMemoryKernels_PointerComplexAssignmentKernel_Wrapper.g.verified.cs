@@ -22,15 +22,17 @@ dest[*ptrI++]=*ptrV+++10u;
 }
 }
 ";
+public static readonly string PointerComplexAssignmentKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + PointerComplexAssignmentKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_PointerComplexAssignmentKernel(global::System.UInt32[] idx, global::System.UInt32[] val, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (idx.Length == 0 || val.Length == 0 || dest.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerComplexAssignmentKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + PointerComplexAssignmentKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerComplexAssignmentKernel", PointerComplexAssignmentKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_idx = IntPtr.Zero;
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
@@ -38,8 +40,8 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: idx
-int idx_size = idx.Length * sizeof(uint);
-if(idx_size>0)
+int idx_size = idx.Length * sizeof(global::System.UInt32);
+if (idx_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_idx, idx_size));
 System.Runtime.InteropServices.GCHandle handle_idx = System.Runtime.InteropServices.GCHandle.Alloc(idx, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -55,8 +57,8 @@ handle_idx.Free();
 }
 kernelParams[0] = &d_idx;
 // Marshal array: val
-int val_size = val.Length * sizeof(uint);
-if(val_size>0)
+int val_size = val.Length * sizeof(global::System.UInt32);
+if (val_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_val, val_size));
 System.Runtime.InteropServices.GCHandle handle_val = System.Runtime.InteropServices.GCHandle.Alloc(val, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -72,8 +74,8 @@ handle_val.Free();
 }
 kernelParams[1] = &d_val;
 // Marshal array: dest
-int dest_size = dest.Length * sizeof(uint);
-if(dest_size>0)
+int dest_size = dest.Length * sizeof(global::System.UInt32);
+if (dest_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_dest, dest_size));
 System.Runtime.InteropServices.GCHandle handle_dest = System.Runtime.InteropServices.GCHandle.Alloc(dest, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -98,9 +100,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: idx
-if(idx_size>0&&d_idx!=IntPtr.Zero)
+if (idx_size > 0 && d_idx != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_idx=System.Runtime.InteropServices.GCHandle.Alloc(idx,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_idx = System.Runtime.InteropServices.GCHandle.Alloc(idx, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_idx = handleBack_idx.AddrOfPinnedObject();
@@ -112,9 +114,9 @@ handleBack_idx.Free();
 }
 }
 // Copy back array: val
-if(val_size>0&&d_val!=IntPtr.Zero)
+if (val_size > 0 && d_val != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_val=System.Runtime.InteropServices.GCHandle.Alloc(val,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_val = System.Runtime.InteropServices.GCHandle.Alloc(val, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_val = handleBack_val.AddrOfPinnedObject();
@@ -126,9 +128,9 @@ handleBack_val.Free();
 }
 }
 // Copy back array: dest
-if(dest_size>0&&d_dest!=IntPtr.Zero)
+if (dest_size > 0 && d_dest != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_dest=System.Runtime.InteropServices.GCHandle.Alloc(dest,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_dest = System.Runtime.InteropServices.GCHandle.Alloc(dest, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_dest = handleBack_dest.AddrOfPinnedObject();
@@ -150,11 +152,12 @@ if (d_dest != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dest);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_PointerComplexAssignmentKernel_Device(IntPtr idx, IntPtr val, IntPtr dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_PointerComplexAssignmentKernel_Device(IntPtr idx, IntPtr val, IntPtr dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerComplexAssignmentKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + PointerComplexAssignmentKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerComplexAssignmentKernel", PointerComplexAssignmentKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[3];

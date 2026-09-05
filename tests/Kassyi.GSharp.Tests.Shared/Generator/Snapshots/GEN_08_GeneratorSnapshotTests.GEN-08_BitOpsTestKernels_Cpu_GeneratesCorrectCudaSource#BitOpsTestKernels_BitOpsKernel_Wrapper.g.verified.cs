@@ -39,17 +39,19 @@ BitOpsKernel(u32Data, u64Data);
 }
 }
 ";
+public static readonly string BitOpsKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + BitOpsKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void BitOpsKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, uint* u32Data, ulong* u64Data);
-public static unsafe void Launch_BitOpsKernel(uint[] u32Data, ulong[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+private unsafe delegate void BitOpsKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* u32Data, global::System.UInt64* u64Data);
+public static unsafe void Launch_BitOpsKernel(global::System.UInt32[] u32Data, global::System.UInt64[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + BitOpsKernel_Source, null, macros);
-fixed (uint* p_u32Data = u32Data)
-fixed (ulong* p_u64Data = u64Data)
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsKernel", BitOpsKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.UInt32* p_u32Data = u32Data)
+fixed (global::System.UInt64* p_u64Data = u64Data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_u32Data, p_u64Data);
 }

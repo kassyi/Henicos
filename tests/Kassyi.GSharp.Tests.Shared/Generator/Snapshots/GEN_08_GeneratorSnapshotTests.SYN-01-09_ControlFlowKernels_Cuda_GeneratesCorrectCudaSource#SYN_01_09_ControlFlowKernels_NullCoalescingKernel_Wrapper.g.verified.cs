@@ -19,15 +19,17 @@ return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
 ();
 }
 ";
+public static readonly string NullCoalescingKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NullCoalescingKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_NullCoalescingKernel(int?[] nullableInputs, int[] fallbackValues, int[] results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_NullCoalescingKernel(global::System.Nullable<global::System.Int32>[] nullableInputs, global::System.Int32[] fallbackValues, global::System.Int32[] results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (nullableInputs.Length == 0 || fallbackValues.Length == 0 || results.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NullCoalescingKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingKernel", NullCoalescingKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_nullableInputs = IntPtr.Zero;
 IntPtr d_fallbackValues = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -35,8 +37,8 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: nullableInputs
-int nullableInputs_size = nullableInputs.Length * sizeof(int?);
-if(nullableInputs_size>0)
+int nullableInputs_size = nullableInputs.Length * sizeof(global::System.Nullable<global::System.Int32>);
+if (nullableInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_nullableInputs, nullableInputs_size));
 System.Runtime.InteropServices.GCHandle handle_nullableInputs = System.Runtime.InteropServices.GCHandle.Alloc(nullableInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -52,8 +54,8 @@ handle_nullableInputs.Free();
 }
 kernelParams[0] = &d_nullableInputs;
 // Marshal array: fallbackValues
-int fallbackValues_size = fallbackValues.Length * sizeof(int);
-if(fallbackValues_size>0)
+int fallbackValues_size = fallbackValues.Length * sizeof(global::System.Int32);
+if (fallbackValues_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_fallbackValues, fallbackValues_size));
 System.Runtime.InteropServices.GCHandle handle_fallbackValues = System.Runtime.InteropServices.GCHandle.Alloc(fallbackValues, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -69,8 +71,8 @@ handle_fallbackValues.Free();
 }
 kernelParams[1] = &d_fallbackValues;
 // Marshal array: results
-int results_size = results.Length * sizeof(int);
-if(results_size>0)
+int results_size = results.Length * sizeof(global::System.Int32);
+if (results_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_results, results_size));
 System.Runtime.InteropServices.GCHandle handle_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -95,9 +97,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: nullableInputs
-if(nullableInputs_size>0&&d_nullableInputs!=IntPtr.Zero)
+if (nullableInputs_size > 0 && d_nullableInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_nullableInputs=System.Runtime.InteropServices.GCHandle.Alloc(nullableInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_nullableInputs = System.Runtime.InteropServices.GCHandle.Alloc(nullableInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_nullableInputs = handleBack_nullableInputs.AddrOfPinnedObject();
@@ -109,9 +111,9 @@ handleBack_nullableInputs.Free();
 }
 }
 // Copy back array: fallbackValues
-if(fallbackValues_size>0&&d_fallbackValues!=IntPtr.Zero)
+if (fallbackValues_size > 0 && d_fallbackValues != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_fallbackValues=System.Runtime.InteropServices.GCHandle.Alloc(fallbackValues,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_fallbackValues = System.Runtime.InteropServices.GCHandle.Alloc(fallbackValues, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_fallbackValues = handleBack_fallbackValues.AddrOfPinnedObject();
@@ -123,9 +125,9 @@ handleBack_fallbackValues.Free();
 }
 }
 // Copy back array: results
-if(results_size>0&&d_results!=IntPtr.Zero)
+if (results_size > 0 && d_results != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_results=System.Runtime.InteropServices.GCHandle.Alloc(results,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_results = handleBack_results.AddrOfPinnedObject();
@@ -147,11 +149,12 @@ if (d_results != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_results);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_NullCoalescingKernel_Device(IntPtr nullableInputs, IntPtr fallbackValues, IntPtr results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_NullCoalescingKernel_Device(IntPtr nullableInputs, IntPtr fallbackValues, IntPtr results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NullCoalescingKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingKernel", NullCoalescingKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[3];

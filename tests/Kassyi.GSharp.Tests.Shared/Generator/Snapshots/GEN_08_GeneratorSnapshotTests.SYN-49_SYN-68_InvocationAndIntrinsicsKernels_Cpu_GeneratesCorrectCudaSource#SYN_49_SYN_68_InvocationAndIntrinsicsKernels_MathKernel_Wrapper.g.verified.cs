@@ -40,19 +40,21 @@ MathKernel(doubleInputs, doubleOutputs, floatInputs, floatOutputs);
 }
 }
 ";
+public static readonly string MathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MathKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, double* doubleInputs, double* doubleOutputs, float* floatInputs, float* floatOutputs);
-public static unsafe void Launch_MathKernel(double[] doubleInputs, double[] doubleOutputs, float[] floatInputs, float[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+private unsafe delegate void MathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Double* doubleInputs, global::System.Double* doubleOutputs, global::System.Single* floatInputs, global::System.Single* floatOutputs);
+public static unsafe void Launch_MathKernel(global::System.Double[] doubleInputs, global::System.Double[] doubleOutputs, global::System.Single[] floatInputs, global::System.Single[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + MathKernel_Source, null, macros);
-fixed (double* p_doubleInputs = doubleInputs)
-fixed (double* p_doubleOutputs = doubleOutputs)
-fixed (float* p_floatInputs = floatInputs)
-fixed (float* p_floatOutputs = floatOutputs)
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", MathKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.Double* p_doubleInputs = doubleInputs)
+fixed (global::System.Double* p_doubleOutputs = doubleOutputs)
+fixed (global::System.Single* p_floatInputs = floatInputs)
+fixed (global::System.Single* p_floatOutputs = floatOutputs)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_doubleInputs, p_doubleOutputs, p_floatInputs, p_floatOutputs);
 }

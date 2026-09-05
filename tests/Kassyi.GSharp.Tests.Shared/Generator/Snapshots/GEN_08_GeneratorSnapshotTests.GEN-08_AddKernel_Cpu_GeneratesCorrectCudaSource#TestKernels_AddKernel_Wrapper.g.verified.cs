@@ -26,18 +26,20 @@ AddKernel(a, b, c);
 }
 }
 ";
+public static readonly string AddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AddKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* a, int* b, int* c);
-public static unsafe void Launch_AddKernel(int[] a, int[] b, int[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+private unsafe delegate void AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* c);
+public static unsafe void Launch_AddKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AddKernel_Source, null, macros);
-fixed (int* p_a = a)
-fixed (int* p_b = b)
-fixed (int* p_c = c)
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", AddKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.Int32* p_a = a)
+fixed (global::System.Int32* p_b = b)
+fixed (global::System.Int32* p_c = c)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_c);
 }

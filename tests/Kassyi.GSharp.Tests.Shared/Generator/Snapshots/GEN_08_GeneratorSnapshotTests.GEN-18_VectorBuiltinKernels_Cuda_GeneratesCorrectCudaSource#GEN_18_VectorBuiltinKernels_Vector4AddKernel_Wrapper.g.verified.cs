@@ -19,15 +19,17 @@ result[tid]=float4{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z), (
 }
 }
 ";
+public static readonly string Vector4AddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + Vector4AddKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Vector4AddKernel(global::System.Numerics.Vector4[] a, global::System.Numerics.Vector4[] b, global::System.Numerics.Vector4[] result, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_Vector4AddKernel(global::System.Numerics.Vector4[] a, global::System.Numerics.Vector4[] b, global::System.Numerics.Vector4[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Vector4AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + Vector4AddKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Vector4AddKernel", Vector4AddKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -36,7 +38,7 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
 int a_size = a.Length * sizeof(global::System.Numerics.Vector4);
-if(a_size>0)
+if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
 System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -53,7 +55,7 @@ handle_a.Free();
 kernelParams[0] = &d_a;
 // Marshal array: b
 int b_size = b.Length * sizeof(global::System.Numerics.Vector4);
-if(b_size>0)
+if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
 System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -70,7 +72,7 @@ handle_b.Free();
 kernelParams[1] = &d_b;
 // Marshal array: result
 int result_size = result.Length * sizeof(global::System.Numerics.Vector4);
-if(result_size>0)
+if (result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_result, result_size));
 System.Runtime.InteropServices.GCHandle handle_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -97,9 +99,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: a
-if(a_size>0&&d_a!=IntPtr.Zero)
+if (a_size > 0 && d_a != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_a=System.Runtime.InteropServices.GCHandle.Alloc(a,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_a = handleBack_a.AddrOfPinnedObject();
@@ -111,9 +113,9 @@ handleBack_a.Free();
 }
 }
 // Copy back array: b
-if(b_size>0&&d_b!=IntPtr.Zero)
+if (b_size > 0 && d_b != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_b=System.Runtime.InteropServices.GCHandle.Alloc(b,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_b = handleBack_b.AddrOfPinnedObject();
@@ -125,9 +127,9 @@ handleBack_b.Free();
 }
 }
 // Copy back array: result
-if(result_size>0&&d_result!=IntPtr.Zero)
+if (result_size > 0 && d_result != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_result=System.Runtime.InteropServices.GCHandle.Alloc(result,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_result = handleBack_result.AddrOfPinnedObject();
@@ -149,11 +151,12 @@ if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_result);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Vector4AddKernel_Device(IntPtr a, IntPtr b, IntPtr result, int length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_Vector4AddKernel_Device(IntPtr a, IntPtr b, IntPtr result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Vector4AddKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + Vector4AddKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Vector4AddKernel", Vector4AddKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[4];

@@ -212,15 +212,16 @@ AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dyna
 }
 }
 ";
+public static readonly string AllInOneKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AllInOneKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
 {
-public int IntVal;
-public float FloatVal;
-public bool BoolVal;
+public global::System.Int32 IntVal;
+public global::System.Single FloatVal;
+public global::System.Boolean BoolVal;
 }
-public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr> allocatedPtrs)
+public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 var native = new __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct();
 native.IntVal = host.IntVal;
@@ -237,17 +238,18 @@ host.BoolVal = native.BoolVal;
 #pragma warning restore CS8500
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* intInput, float* floatInput, float* results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, ulong* globalCounter, int count, int dynamicSharedSize);
-public static unsafe void Launch_AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* intInput, global::System.Single* floatInput, global::System.Single* results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64* globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
+public static unsafe void Launch_AllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
 return;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + AllInOneKernel_Source, null, macros);
-fixed (int* p_intInput = intInput)
-fixed (float* p_floatInput = floatInput)
-fixed (float* p_results = results)
-fixed (ulong* p_globalCounter = globalCounter)
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", AllInOneKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.Int32* p_intInput = intInput)
+fixed (global::System.Single* p_floatInput = floatInput)
+fixed (global::System.Single* p_results = results)
+fixed (global::System.UInt64* p_globalCounter = globalCounter)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_intInput, p_floatInput, p_results, config, p_globalCounter, count, dynamicSharedSize);
 }

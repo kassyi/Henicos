@@ -21,15 +21,17 @@ b[tid]=valuesToAssign[tid];
 }
 }
 ";
+public static readonly string RefSwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + RefSwitchExpressionKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_RefSwitchExpressionKernel(int[] a, int[] b, int[] selectors, int[] valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_RefSwitchExpressionKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] selectors, global::System.Int32[] valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || selectors.Length == 0 || valuesToAssign.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("RefSwitchExpressionKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + RefSwitchExpressionKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("RefSwitchExpressionKernel", RefSwitchExpressionKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_selectors = IntPtr.Zero;
@@ -38,8 +40,8 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
-int a_size = a.Length * sizeof(int);
-if(a_size>0)
+int a_size = a.Length * sizeof(global::System.Int32);
+if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
 System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -55,8 +57,8 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * sizeof(int);
-if(b_size>0)
+int b_size = b.Length * sizeof(global::System.Int32);
+if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
 System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -72,8 +74,8 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: selectors
-int selectors_size = selectors.Length * sizeof(int);
-if(selectors_size>0)
+int selectors_size = selectors.Length * sizeof(global::System.Int32);
+if (selectors_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_selectors, selectors_size));
 System.Runtime.InteropServices.GCHandle handle_selectors = System.Runtime.InteropServices.GCHandle.Alloc(selectors, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -89,8 +91,8 @@ handle_selectors.Free();
 }
 kernelParams[2] = &d_selectors;
 // Marshal array: valuesToAssign
-int valuesToAssign_size = valuesToAssign.Length * sizeof(int);
-if(valuesToAssign_size>0)
+int valuesToAssign_size = valuesToAssign.Length * sizeof(global::System.Int32);
+if (valuesToAssign_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_valuesToAssign, valuesToAssign_size));
 System.Runtime.InteropServices.GCHandle handle_valuesToAssign = System.Runtime.InteropServices.GCHandle.Alloc(valuesToAssign, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -115,9 +117,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: a
-if(a_size>0&&d_a!=IntPtr.Zero)
+if (a_size > 0 && d_a != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_a=System.Runtime.InteropServices.GCHandle.Alloc(a,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_a = handleBack_a.AddrOfPinnedObject();
@@ -129,9 +131,9 @@ handleBack_a.Free();
 }
 }
 // Copy back array: b
-if(b_size>0&&d_b!=IntPtr.Zero)
+if (b_size > 0 && d_b != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_b=System.Runtime.InteropServices.GCHandle.Alloc(b,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_b = handleBack_b.AddrOfPinnedObject();
@@ -143,9 +145,9 @@ handleBack_b.Free();
 }
 }
 // Copy back array: selectors
-if(selectors_size>0&&d_selectors!=IntPtr.Zero)
+if (selectors_size > 0 && d_selectors != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_selectors=System.Runtime.InteropServices.GCHandle.Alloc(selectors,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_selectors = System.Runtime.InteropServices.GCHandle.Alloc(selectors, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_selectors = handleBack_selectors.AddrOfPinnedObject();
@@ -157,9 +159,9 @@ handleBack_selectors.Free();
 }
 }
 // Copy back array: valuesToAssign
-if(valuesToAssign_size>0&&d_valuesToAssign!=IntPtr.Zero)
+if (valuesToAssign_size > 0 && d_valuesToAssign != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_valuesToAssign=System.Runtime.InteropServices.GCHandle.Alloc(valuesToAssign,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_valuesToAssign = System.Runtime.InteropServices.GCHandle.Alloc(valuesToAssign, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_valuesToAssign = handleBack_valuesToAssign.AddrOfPinnedObject();
@@ -182,11 +184,12 @@ if (d_valuesToAssign != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_valuesToAssign
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_RefSwitchExpressionKernel_Device(IntPtr a, IntPtr b, IntPtr selectors, IntPtr valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_RefSwitchExpressionKernel_Device(IntPtr a, IntPtr b, IntPtr selectors, IntPtr valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("RefSwitchExpressionKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + RefSwitchExpressionKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("RefSwitchExpressionKernel", RefSwitchExpressionKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[4];

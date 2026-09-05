@@ -27,15 +27,17 @@ floatOutputs[4]=fminf(fVal,5.0f);
 floatOutputs[5]=fabsf(fVal);
 }
 ";
+public static readonly string MathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MathKernel(double[] doubleInputs, double[] doubleOutputs, float[] floatInputs, float[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MathKernel(global::System.Double[] doubleInputs, global::System.Double[] doubleOutputs, global::System.Single[] floatInputs, global::System.Single[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathKernel", MathKernel_FullSource, __t_jitConstants, macros);
 IntPtr d_doubleInputs = IntPtr.Zero;
 IntPtr d_doubleOutputs = IntPtr.Zero;
 IntPtr d_floatInputs = IntPtr.Zero;
@@ -44,8 +46,8 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: doubleInputs
-int doubleInputs_size = doubleInputs.Length * sizeof(double);
-if(doubleInputs_size>0)
+int doubleInputs_size = doubleInputs.Length * sizeof(global::System.Double);
+if (doubleInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleInputs, doubleInputs_size));
 System.Runtime.InteropServices.GCHandle handle_doubleInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -61,8 +63,8 @@ handle_doubleInputs.Free();
 }
 kernelParams[0] = &d_doubleInputs;
 // Marshal array: doubleOutputs
-int doubleOutputs_size = doubleOutputs.Length * sizeof(double);
-if(doubleOutputs_size>0)
+int doubleOutputs_size = doubleOutputs.Length * sizeof(global::System.Double);
+if (doubleOutputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleOutputs, doubleOutputs_size));
 System.Runtime.InteropServices.GCHandle handle_doubleOutputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -78,8 +80,8 @@ handle_doubleOutputs.Free();
 }
 kernelParams[1] = &d_doubleOutputs;
 // Marshal array: floatInputs
-int floatInputs_size = floatInputs.Length * sizeof(float);
-if(floatInputs_size>0)
+int floatInputs_size = floatInputs.Length * sizeof(global::System.Single);
+if (floatInputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatInputs, floatInputs_size));
 System.Runtime.InteropServices.GCHandle handle_floatInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -95,8 +97,8 @@ handle_floatInputs.Free();
 }
 kernelParams[2] = &d_floatInputs;
 // Marshal array: floatOutputs
-int floatOutputs_size = floatOutputs.Length * sizeof(float);
-if(floatOutputs_size>0)
+int floatOutputs_size = floatOutputs.Length * sizeof(global::System.Single);
+if (floatOutputs_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatOutputs, floatOutputs_size));
 System.Runtime.InteropServices.GCHandle handle_floatOutputs = System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -121,9 +123,9 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Copy back array: doubleInputs
-if(doubleInputs_size>0&&d_doubleInputs!=IntPtr.Zero)
+if (doubleInputs_size > 0 && d_doubleInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_doubleInputs=System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_doubleInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleInputs = handleBack_doubleInputs.AddrOfPinnedObject();
@@ -135,9 +137,9 @@ handleBack_doubleInputs.Free();
 }
 }
 // Copy back array: doubleOutputs
-if(doubleOutputs_size>0&&d_doubleOutputs!=IntPtr.Zero)
+if (doubleOutputs_size > 0 && d_doubleOutputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_doubleOutputs=System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_doubleOutputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleOutputs = handleBack_doubleOutputs.AddrOfPinnedObject();
@@ -149,9 +151,9 @@ handleBack_doubleOutputs.Free();
 }
 }
 // Copy back array: floatInputs
-if(floatInputs_size>0&&d_floatInputs!=IntPtr.Zero)
+if (floatInputs_size > 0 && d_floatInputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatInputs=System.Runtime.InteropServices.GCHandle.Alloc(floatInputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatInputs = handleBack_floatInputs.AddrOfPinnedObject();
@@ -163,9 +165,9 @@ handleBack_floatInputs.Free();
 }
 }
 // Copy back array: floatOutputs
-if(floatOutputs_size>0&&d_floatOutputs!=IntPtr.Zero)
+if (floatOutputs_size > 0 && d_floatOutputs != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatOutputs=System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_floatOutputs = System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatOutputs = handleBack_floatOutputs.AddrOfPinnedObject();
@@ -188,11 +190,12 @@ if (d_floatOutputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_floatOutputs);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MathKernel_Device(IntPtr doubleInputs, IntPtr doubleOutputs, IntPtr floatInputs, IntPtr floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_MathKernel_Device(IntPtr doubleInputs, IntPtr doubleOutputs, IntPtr floatInputs, IntPtr floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathKernel", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + MathKernel_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MathKernel", MathKernel_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[4];

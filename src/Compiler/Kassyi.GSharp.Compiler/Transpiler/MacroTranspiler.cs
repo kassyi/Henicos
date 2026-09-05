@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
@@ -215,7 +216,7 @@ internal static class MacroTranspiler
         }
 
         var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Kassyi.GSharp.Core.GpuOperatorMacroAttribute");
+            .FirstOrDefault(a => a.AttributeClass?.Name == "GpuOperatorMacroAttribute" && a.AttributeClass.ContainingNamespace.IsCoreNamespace());
 
         if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {
@@ -233,7 +234,7 @@ internal static class MacroTranspiler
         }
 
         var op = semanticModel.GetOperation(expression);
-        if (op is Microsoft.CodeAnalysis.Operations.IConversionOperation conv)
+        if (op is IConversionOperation conv)
         {
             return conv.Operand.Syntax as ExpressionSyntax ?? expression;
         }

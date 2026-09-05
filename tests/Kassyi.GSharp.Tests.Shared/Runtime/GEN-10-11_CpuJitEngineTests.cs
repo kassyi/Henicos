@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Tests;
 
@@ -30,7 +30,7 @@ public class CpuJitEngineTests : TranspilerTestBase
             }
             """;
 
-        var kernel = CpuJitEngine.GetOrCompileKernel<AddKernelDelegate>("AddKernel", source);
+        var kernel = CpuJitEngine.GetOrCompileKernel<AddKernelDelegate>("AddKernel", source, default, default);
         Assert.NotNull(kernel);
 
         int length = 5;
@@ -68,8 +68,8 @@ public class CpuJitEngineTests : TranspilerTestBase
             }
             """;
 
-        var macros = new Dictionary<string, string> { { "MULTIPLIER", "5" } };
-        var kernel = CpuJitEngine.GetOrCompileKernel<MultiplyWithMacroDelegate>("MultiplyKernel", source, jitConstants: macros);
+        var macros = new KeyValuePair<string, string>[] { new("MULTIPLIER", "5") };
+        var kernel = CpuJitEngine.GetOrCompileKernel<MultiplyWithMacroDelegate>("MultiplyKernel", source, macros: macros);
         Assert.NotNull(kernel);
 
         int length = 3;
@@ -86,8 +86,8 @@ public class CpuJitEngineTests : TranspilerTestBase
         Assert.Equal([5, 10, 15], data);
         
         // Ensure changing the macro recompiles and outputs a different result
-        var macros2 = new Dictionary<string, string> { { "MULTIPLIER", "10" } };
-        var kernel2 = CpuJitEngine.GetOrCompileKernel<MultiplyWithMacroDelegate>("MultiplyKernel", source, jitConstants: macros2);
+        var macros2 = new KeyValuePair<string, string>[] { new("MULTIPLIER", "10") };
+        var kernel2 = CpuJitEngine.GetOrCompileKernel<MultiplyWithMacroDelegate>("MultiplyKernel", source, macros: macros2);
         
         int[] data2 = [1, 2, 3];
         unsafe
@@ -117,10 +117,11 @@ public class CpuJitEngineTests : TranspilerTestBase
 
         var ex = Assert.ThrowsAny<Exception>(() =>
         {
-            CpuJitEngine.GetOrCompileKernel<MultiplyWithMacroDelegate>("InvalidKernel", source);
+            CpuJitEngine.GetOrCompileKernel<MultiplyWithMacroDelegate>("InvalidKernel", source, default, default);
         });
 
         // The MSVC compiler should throw a compilation error containing "error C"
         Assert.Contains("MSVC Compilation Failed", ex.Message);
     }
 }
+

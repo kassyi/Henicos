@@ -24,22 +24,24 @@ outputBuffer[0]=singleValue;
 }
 }
 ";
+public static readonly string Kernel_MacroTest_FillAndSingle_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + Kernel_MacroTest_FillAndSingle_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Kernel_MacroTest_FillAndSingle(uint[] outputBuffer, int length, uint fillValue, uint singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_Kernel_MacroTest_FillAndSingle(global::System.UInt32[] outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (outputBuffer.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MacroTest_FillAndSingle", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + Kernel_MacroTest_FillAndSingle_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MacroTest_FillAndSingle", Kernel_MacroTest_FillAndSingle_FullSource, __t_jitConstants, macros);
 IntPtr d_outputBuffer = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: outputBuffer
-int outputBuffer_size = outputBuffer.Length * sizeof(uint);
-if(outputBuffer_size>0)
+int outputBuffer_size = outputBuffer.Length * sizeof(global::System.UInt32);
+if (outputBuffer_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_outputBuffer, outputBuffer_size));
 System.Runtime.InteropServices.GCHandle handle_outputBuffer = System.Runtime.InteropServices.GCHandle.Alloc(outputBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -69,9 +71,9 @@ IntPtr.Zero, // Stream
 kernelParams
 ));
 // Copy back array: outputBuffer
-if(outputBuffer_size>0&&d_outputBuffer!=IntPtr.Zero)
+if (outputBuffer_size > 0 && d_outputBuffer != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_outputBuffer=System.Runtime.InteropServices.GCHandle.Alloc(outputBuffer,System.Runtime.InteropServices.GCHandleType.Pinned);
+System.Runtime.InteropServices.GCHandle handleBack_outputBuffer = System.Runtime.InteropServices.GCHandle.Alloc(outputBuffer, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_outputBuffer = handleBack_outputBuffer.AddrOfPinnedObject();
@@ -91,11 +93,12 @@ if (d_outputBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_outputBuffer);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Kernel_MacroTest_FillAndSingle_Device(IntPtr outputBuffer, int length, uint fillValue, uint singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
+public static unsafe void Launch_Kernel_MacroTest_FillAndSingle_Device(IntPtr outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MacroTest_FillAndSingle", global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + Kernel_MacroTest_FillAndSingle_Source, null, macros);
+System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MacroTest_FillAndSingle", Kernel_MacroTest_FillAndSingle_FullSource, __t_jitConstants, macros);
 try
 {
 void** kernelParams = stackalloc void*[4];
