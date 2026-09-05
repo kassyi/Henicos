@@ -34,8 +34,8 @@ public static readonly string ComplexSignatureKernel_FullSource = global::Kassyi
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
 {
-public int A;
-public float B;
+public global::System.Int32 A;
+public global::System.Single B;
 }
 public static unsafe __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct Marshal_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
@@ -51,7 +51,7 @@ host.B = native.B;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ComplexSignatureKernel(ref int scalarRef, out float scalarOut, int[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_ComplexSignatureKernel(ref global::System.Int32 scalarRef, out global::System.Single scalarOut, global::System.Int32[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 scalarOut = default;
 if (arrayVal.Length == 0){
@@ -72,20 +72,20 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal ref/out scalar: scalarRef
-int scalarRef_size = sizeof(int);
+int scalarRef_size = sizeof(global::System.Int32);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarRef, scalarRef_size));
 // Fast zero-allocation copy to device
-fixed (int* p_scalarRef_temp = &scalarRef)
+fixed (global::System.Int32* p_scalarRef_temp = &scalarRef)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_scalarRef, (IntPtr)p_scalarRef_temp, scalarRef_size));
 }
 kernelParams[0] = &d_scalarRef;
 // Marshal ref/out scalar: scalarOut
-int scalarOut_size = sizeof(float);
+int scalarOut_size = sizeof(global::System.Single);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarOut, scalarOut_size));
 kernelParams[1] = &d_scalarOut;
 // Marshal array: arrayVal
-int arrayVal_size = arrayVal.Length * sizeof(int);
+int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_arrayVal, arrayVal_size));
@@ -118,13 +118,13 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Fast zero-allocation copy from device for scalar: scalarRef
-fixed (int* ptr_scalarRef = &scalarRef)
+fixed (global::System.Int32* ptr_scalarRef = &scalarRef)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarRef, d_scalarRef, scalarRef_size));
 }
 scalarOut = default;
 // Fast zero-allocation copy from device for scalar: scalarOut
-fixed (float* ptr_scalarOut = &scalarOut)
+fixed (global::System.Single* ptr_scalarOut = &scalarOut)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarOut, d_scalarOut, scalarOut_size));
 }
@@ -158,7 +158,7 @@ if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structRef);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ComplexSignatureKernel_Device(IntPtr scalarRef, IntPtr scalarOut, IntPtr arrayVal, IntPtr structRef, uint constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_ComplexSignatureKernel_Device(IntPtr scalarRef, IntPtr scalarOut, IntPtr arrayVal, IntPtr structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {

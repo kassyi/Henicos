@@ -27,7 +27,7 @@ output[0]=s.A+s.B;
 ";
 public static readonly string AggregateInitKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + AggregateInitKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_AggregateInitKernel(int[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_AggregateInitKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
 return;
@@ -41,7 +41,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: output
-int output_size = output.Length * sizeof(int);
+int output_size = output.Length * sizeof(global::System.Int32);
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_output, output_size));

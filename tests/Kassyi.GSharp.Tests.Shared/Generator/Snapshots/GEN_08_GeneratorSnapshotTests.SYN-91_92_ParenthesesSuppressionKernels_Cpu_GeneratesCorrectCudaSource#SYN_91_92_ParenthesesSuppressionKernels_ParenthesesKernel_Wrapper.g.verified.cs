@@ -41,15 +41,15 @@ ParenthesesKernel(output, a, b, c);
 public static readonly string ParenthesesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ParenthesesKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ParenthesesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, int* output, int a, int b, int c);
-public static unsafe void Launch_ParenthesesKernel(int[] output, int a, int b, int c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private unsafe delegate void ParenthesesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output, global::System.Int32 a, global::System.Int32 b, global::System.Int32 c);
+public static unsafe void Launch_ParenthesesKernel(global::System.Int32[] output, global::System.Int32 a, global::System.Int32 b, global::System.Int32 c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
 return;
 }
 System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-        var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", ParenthesesKernel_FullSource, __t_jitConstants, macros);
-fixed (int* p_output = output)
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", ParenthesesKernel_FullSource, __t_jitConstants, macros);
+fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output, a, b, c);
 }

@@ -182,7 +182,7 @@ public static class MethodTranspiler
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
-                method.ReturnType.GetLocation(), method.Identifier.Text, returnType.ToDisplayString()));
+                method.ReturnType.GetLocation(), method.Identifier.Text, returnType.Name));
         }
 
         if (context.Dialect.IsCuda)

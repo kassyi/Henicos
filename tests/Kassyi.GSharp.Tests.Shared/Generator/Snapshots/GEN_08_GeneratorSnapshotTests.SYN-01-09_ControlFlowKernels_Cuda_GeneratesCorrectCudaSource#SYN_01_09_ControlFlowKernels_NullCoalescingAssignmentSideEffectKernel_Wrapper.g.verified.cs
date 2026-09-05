@@ -22,7 +22,7 @@ return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coale
 ";
 public static readonly string NullCoalescingAssignmentSideEffectKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NullCoalescingAssignmentSideEffectKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(int?[] targetArray, int[] sideEffectTracker, int[] values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(global::System.Nullable<global::System.Int32>[] targetArray, global::System.Int32[] sideEffectTracker, global::System.Int32[] values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length == 0){
 return;
@@ -38,7 +38,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: targetArray
-int targetArray_size = targetArray.Length * sizeof(int?);
+int targetArray_size = targetArray.Length * sizeof(global::System.Nullable<global::System.Int32>);
 if (targetArray_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_targetArray, targetArray_size));
@@ -55,7 +55,7 @@ handle_targetArray.Free();
 }
 kernelParams[0] = &d_targetArray;
 // Marshal array: sideEffectTracker
-int sideEffectTracker_size = sideEffectTracker.Length * sizeof(int);
+int sideEffectTracker_size = sideEffectTracker.Length * sizeof(global::System.Int32);
 if (sideEffectTracker_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_sideEffectTracker, sideEffectTracker_size));
@@ -72,7 +72,7 @@ handle_sideEffectTracker.Free();
 }
 kernelParams[1] = &d_sideEffectTracker;
 // Marshal array: values
-int values_size = values.Length * sizeof(int);
+int values_size = values.Length * sizeof(global::System.Int32);
 if (values_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_values, values_size));

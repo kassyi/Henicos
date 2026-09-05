@@ -16,7 +16,7 @@ result[tid]=(a[tid]>b[tid] ? a[tid] : b[tid]*1.5);
 ";
 public static readonly string SimpleTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SimpleTernaryKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_SimpleTernaryKernel(int[] a, int[] b, double[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_SimpleTernaryKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Double[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
@@ -32,7 +32,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: a
-int a_size = a.Length * sizeof(int);
+int a_size = a.Length * sizeof(global::System.Int32);
 if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
@@ -49,7 +49,7 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * sizeof(int);
+int b_size = b.Length * sizeof(global::System.Int32);
 if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
@@ -66,7 +66,7 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: result
-int result_size = result.Length * sizeof(double);
+int result_size = result.Length * sizeof(global::System.Double);
 if (result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_result, result_size));

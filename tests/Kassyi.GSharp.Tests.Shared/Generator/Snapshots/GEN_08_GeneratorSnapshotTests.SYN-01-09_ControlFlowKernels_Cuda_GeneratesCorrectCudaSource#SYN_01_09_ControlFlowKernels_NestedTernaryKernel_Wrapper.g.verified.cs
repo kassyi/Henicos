@@ -19,7 +19,7 @@ result[tid]=(x>y ? ((y>z ? 1 : 2)) : ((x>z ? 3 : 4)));
 ";
 public static readonly string NestedTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NestedTernaryKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_NestedTernaryKernel(int[] a, int[] b, int[] c, int[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_NestedTernaryKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || c.Length == 0 || result.Length == 0){
 return;
@@ -36,7 +36,7 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
-int a_size = a.Length * sizeof(int);
+int a_size = a.Length * sizeof(global::System.Int32);
 if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
@@ -53,7 +53,7 @@ handle_a.Free();
 }
 kernelParams[0] = &d_a;
 // Marshal array: b
-int b_size = b.Length * sizeof(int);
+int b_size = b.Length * sizeof(global::System.Int32);
 if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
@@ -70,7 +70,7 @@ handle_b.Free();
 }
 kernelParams[1] = &d_b;
 // Marshal array: c
-int c_size = c.Length * sizeof(int);
+int c_size = c.Length * sizeof(global::System.Int32);
 if (c_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, c_size));
@@ -87,7 +87,7 @@ handle_c.Free();
 }
 kernelParams[2] = &d_c;
 // Marshal array: result
-int result_size = result.Length * sizeof(int);
+int result_size = result.Length * sizeof(global::System.Int32);
 if (result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_result, result_size));

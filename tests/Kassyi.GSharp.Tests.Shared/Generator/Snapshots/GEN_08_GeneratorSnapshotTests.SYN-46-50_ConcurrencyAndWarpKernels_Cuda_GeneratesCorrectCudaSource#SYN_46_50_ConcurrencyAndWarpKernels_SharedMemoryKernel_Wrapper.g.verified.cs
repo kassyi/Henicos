@@ -29,7 +29,7 @@ data[tid]=sStatic[tid]+sDyn1[tid];
 ";
 public static readonly string SharedMemoryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SharedMemoryKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_SharedMemoryKernel(int[] data, int dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_SharedMemoryKernel(global::System.Int32[] data, global::System.Int32 dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
@@ -43,7 +43,7 @@ try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal array: data
-int data_size = data.Length * sizeof(int);
+int data_size = data.Length * sizeof(global::System.Int32);
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
@@ -93,7 +93,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_SharedMemoryKernel_Device(IntPtr data, int dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_SharedMemoryKernel_Device(IntPtr data, global::System.Int32 dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {

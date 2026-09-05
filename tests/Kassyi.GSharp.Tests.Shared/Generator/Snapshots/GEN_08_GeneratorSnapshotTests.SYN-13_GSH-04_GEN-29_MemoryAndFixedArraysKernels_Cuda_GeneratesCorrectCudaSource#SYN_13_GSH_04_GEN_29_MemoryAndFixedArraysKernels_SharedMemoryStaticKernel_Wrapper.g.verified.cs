@@ -45,7 +45,7 @@ pointOutput[0]=pointSmem[5];
 ";
 public static readonly string SharedMemoryStaticKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SharedMemoryStaticKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_SharedMemoryStaticKernel(global::System.Int32[] intOutput, global::System.Single[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
 return;
@@ -61,7 +61,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: intOutput
-int intOutput_size = intOutput.Length * sizeof(int);
+int intOutput_size = intOutput.Length * sizeof(global::System.Int32);
 if (intOutput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_intOutput, intOutput_size));
@@ -78,7 +78,7 @@ handle_intOutput.Free();
 }
 kernelParams[0] = &d_intOutput;
 // Marshal array: floatOutput
-int floatOutput_size = floatOutput.Length * sizeof(float);
+int floatOutput_size = floatOutput.Length * sizeof(global::System.Single);
 if (floatOutput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatOutput, floatOutput_size));
