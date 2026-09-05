@@ -47,7 +47,7 @@ public class GpuContextTests
     }
 
     [Fact]
-    public void Dispose_WhenUsingGSharpJit_ShouldClearProviderCaches()
+    public void Dispose_WhenUsingGSharpJit_ShouldNotClearSharedProviderCaches()
     {
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
@@ -66,7 +66,10 @@ public class GpuContextTests
         // Act
         context.Dispose();
 
-        // Assert
-        Assert.Empty(carryPool);
+        // Assert - Shared provider caches must not be cleared on individual context disposal
+        Assert.NotEmpty(carryPool);
+
+        // Cleanup dummy entry
+        carryPool.Clear();
     }
 }
