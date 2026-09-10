@@ -1,10 +1,14 @@
 #nullable enable
+using System.Threading.Tasks;
+using VerifyXunit;
+
 namespace Kassyi.GSharp.Tests.Generator;
 
 public class GEN_04_SourceWriterTests
 {
     [Fact]
-    [Trait("Category", "Unit")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
     public void Test_GEN04_SourceWriter_FluentChaining_BasicTokens()
     {
@@ -24,7 +28,8 @@ public class GEN_04_SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
     public void Test_GEN04_SourceWriter_FluentChaining_WithNullsAndConditionals()
     {
@@ -44,7 +49,8 @@ public class GEN_04_SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
     public void Test_GEN04_SourceWriter_FluentChaining_StructuralTokens()
     {
@@ -62,7 +68,8 @@ public class GEN_04_SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
     public void Test_GEN04_SourceWriter_FluentChaining_RepeatedNewlines()
     {
@@ -78,7 +85,8 @@ public class GEN_04_SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
     public void Test_GEN04_SourceWriter_FluentChaining_InterpolatedStrings()
     {
@@ -95,5 +103,26 @@ public class GEN_04_SourceWriterTests
 
         string result = writer.ToString().Replace("\r\n", "\n");
         Assert.Equal("// Header for Kernel\n__global__ void Kernel_42() {}", result);
+    }
+
+    [Fact]
+    [Trait("Category", "Transpiler")]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "GEN-04")]
+    public Task Test_GEN04_SourceWriter_NestedScopeAndIndentation_Snapshots()
+    {
+        using var writer = new SourceWriter();
+        writer.Line("void kernel()");
+        using (writer.Scope())
+        {
+            writer.Line("int x = 0;");
+            writer.Line("if (true)");
+            using (writer.Scope())
+            {
+                writer.Line("x++;");
+            }
+        }
+
+        return Verifier.Verify(writer.ToString());
     }
 }
