@@ -15,6 +15,20 @@ internal static class BclIntrinsicMapBuilder
     public static ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> GetOrBuildMap(Compilation compilation) =>
         s_cache.GetValue(compilation, static c => BuildMap(c));
 
+    private readonly struct IntrinsicAttributeData(
+        string bclTypeFullName,
+        string methodName,
+        ImmutableArray<TypedConstant> parameterTypes,
+        string cudaIntrinsicName,
+        string? castFirstArgumentTo)
+    {
+        public string BclTypeFullName { get; } = bclTypeFullName;
+        public string MethodName { get; } = methodName;
+        public ImmutableArray<TypedConstant> ParameterTypes { get; } = parameterTypes;
+        public string CudaIntrinsicName { get; } = cudaIntrinsicName;
+        public string? CastFirstArgumentTo { get; } = castFirstArgumentTo;
+    }
+
     private static ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> BuildMap(Compilation compilation)
     {
         var attributeSymbol = compilation.GetTypeByMetadataName(BclIntrinsicMapAttributeFullName);
@@ -29,82 +43,127 @@ internal static class BclIntrinsicMapBuilder
 
         foreach (var assembly in GetCandidateAssemblies(compilation))
         {
-            if (!ReferencesAssembly(assembly, TypeConstants.CoreNamespace))
+            if (ReferencesAssembly(assembly, TypeConstants.CoreNamespace))
             {
-                continue;
-            }
-
-            foreach (var attribute in assembly.GetAttributes())
-            {
-                if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeSymbol) ||
-                    attribute.ConstructorArguments.Length != 4 ||
-                    attribute.ConstructorArguments[0].Value is not string bclTypeFullName ||
-                    attribute.ConstructorArguments[1].Value is not string methodName ||
-                    attribute.ConstructorArguments[3].Value is not string cudaIntrinsicName ||
-                    string.IsNullOrEmpty(bclTypeFullName) ||
-                    string.IsNullOrEmpty(methodName) ||
-                    string.IsNullOrEmpty(cudaIntrinsicName))
-                {
-                    continue;
-                }
-
-                var parameterTypesArray = attribute.ConstructorArguments[2].Values;
-
-                if (!typeCache.TryGetValue(bclTypeFullName, out var bclType))
-                {
-                    bclType = compilation.GetTypeByMetadataName(bclTypeFullName);
-                    typeCache[bclTypeFullName] = bclType;
-                }
-
-                if (bclType == null)
-                {
-                    continue;
-                }
-
-                foreach (var member in bclType.GetMembers(methodName))
-                {
-                    if (member is not IMethodSymbol method || !IsMatch(compilation, typeCache, method, parameterTypesArray))
-                    {
-                        continue;
-                    }
-
-                    string? castFirstArgTo = null;
-                    foreach (var namedArg in attribute.NamedArguments)
-                    {
-                        if (namedArg is { Key: "CastFirstArgumentTo", Value.Value: string castVal })
-                        {
-                            castFirstArgTo = castVal;
-                        }
-                    }
-
-                    if (bclTypeFullName == "System.Numerics.BitOperations" &&
-                        parameterTypesArray.Length > 0 &&
-                        parameterTypesArray[0].Value is "System.UIntPtr" or "System.IntPtr")
-                    {
-                        var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
-                        if (is32Bit)
-                        {
-                            cudaIntrinsicName = cudaIntrinsicName.Replace("_64", "_32");
-                            if (cudaIntrinsicName == "__popcll")
-                            {
-                                cudaIntrinsicName = "__popc";
-                            }
-
-                            castFirstArgTo = "unsigned int";
-                        }
-                        else
-                        {
-                            castFirstArgTo = "unsigned long long int";
-                        }
-                    }
-
-                    builder[method.OriginalDefinition] =
-                        new IntrinsicMappingInfo(cudaIntrinsicName, castFirstArgTo);
-                }
+                ProcessAssemblyAttributes(assembly, attributeSymbol, compilation, typeCache, builder);
             }
         }
 
         return builder.ToImmutable();
+    }
+
+    private static void ProcessAssemblyAttributes(
+        IAssemblySymbol assembly,
+        INamedTypeSymbol attributeSymbol,
+        Compilation compilation,
+        Dictionary<string, INamedTypeSymbol?> typeCache,
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Builder builder)
+    {
+        foreach (var attribute in assembly.GetAttributes())
+        {
+            if (TryExtractIntrinsicAttribute(attribute, attributeSymbol, out var data))
+            {
+                RegisterMethodMappings(data, compilation, typeCache, builder);
+            }
+        }
+    }
+
+    private static bool TryExtractIntrinsicAttribute(
+        AttributeData attribute,
+        INamedTypeSymbol attributeSymbol,
+        out IntrinsicAttributeData data)
+    {
+        data = default;
+
+        if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeSymbol) ||
+            attribute.ConstructorArguments.Length != 4 ||
+            attribute.ConstructorArguments[0].Value is not string bclTypeFullName ||
+            attribute.ConstructorArguments[1].Value is not string methodName ||
+            attribute.ConstructorArguments[3].Value is not string cudaIntrinsicName ||
+            string.IsNullOrEmpty(bclTypeFullName) ||
+            string.IsNullOrEmpty(methodName) ||
+            string.IsNullOrEmpty(cudaIntrinsicName))
+        {
+            return false;
+        }
+
+        string? castFirstArgTo = null;
+        foreach (var namedArg in attribute.NamedArguments)
+        {
+            if (namedArg is { Key: "CastFirstArgumentTo", Value.Value: string castVal })
+            {
+                castFirstArgTo = castVal;
+            }
+        }
+
+        data = new IntrinsicAttributeData(
+            bclTypeFullName,
+            methodName,
+            attribute.ConstructorArguments[2].Values,
+            cudaIntrinsicName,
+            castFirstArgTo);
+
+        return true;
+    }
+
+    private static void RegisterMethodMappings(
+        IntrinsicAttributeData data,
+        Compilation compilation,
+        Dictionary<string, INamedTypeSymbol?> typeCache,
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Builder builder)
+    {
+        if (!typeCache.TryGetValue(data.BclTypeFullName, out var bclType))
+        {
+            bclType = compilation.GetTypeByMetadataName(data.BclTypeFullName);
+            typeCache[data.BclTypeFullName] = bclType;
+        }
+
+        if (bclType == null)
+        {
+            return;
+        }
+
+        var mapping = AdjustPlatformSpecificMapping(data, compilation);
+
+        foreach (var member in bclType.GetMembers(data.MethodName))
+        {
+            if (member is IMethodSymbol method &&
+                IsMatch(compilation, typeCache, method, data.ParameterTypes))
+            {
+                builder[method.OriginalDefinition] = mapping;
+            }
+        }
+    }
+
+    private static IntrinsicMappingInfo AdjustPlatformSpecificMapping(
+        IntrinsicAttributeData data,
+        Compilation compilation)
+    {
+        var cudaIntrinsicName = data.CudaIntrinsicName;
+        var castFirstArgTo = data.CastFirstArgumentTo;
+
+        if (data.BclTypeFullName == "System.Numerics.BitOperations" &&
+            data.ParameterTypes.Length > 0 &&
+            data.ParameterTypes[0].Value is "System.UIntPtr" or "System.IntPtr")
+        {
+            var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
+            if (is32Bit)
+            {
+                cudaIntrinsicName = cudaIntrinsicName.Replace("_64", "_32");
+                if (cudaIntrinsicName == "__popcll")
+                {
+                    cudaIntrinsicName = "__popc";
+                }
+
+                castFirstArgTo = "unsigned int";
+            }
+            else
+            {
+                castFirstArgTo = "unsigned long long int";
+            }
+        }
+
+        return new IntrinsicMappingInfo(cudaIntrinsicName, castFirstArgTo);
     }
 
     private static IEnumerable<IAssemblySymbol> GetCandidateAssemblies(Compilation compilation)
