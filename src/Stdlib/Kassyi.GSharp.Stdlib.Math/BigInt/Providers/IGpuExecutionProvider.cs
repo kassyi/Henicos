@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 /// <summary>
 /// Defines the contract for executing GPU-accelerated BigInteger arithmetic algorithms and managing device memory.

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
@@ -174,8 +174,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         public GBI_01_25_GpuBigIntTests()
         {
-            // Ensure CUDA context is initialized for GSharpJit tests
-            using var scope = new JitEngine.CudaContextScope();
+            // CUDA context is initialized automatically upon first kernel launch if supported.
+            // Do not initialize here to prevent xUnit discovery crashes on non-GPU CI runners.
         }
 
         private uint[] GenerateRandomArray(int numWords, int seed = 42)
@@ -822,7 +822,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var gpuA = new GpuUIntBigInteger(context, arrA);
             using var gpuResult = new GpuUIntBigInteger(context, sizeWords);
 
-            gpuResult.Value = GpuBigIntExpr.Sqrt(gpuA);
+            gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);
@@ -888,7 +888,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             int contextWords,
             Action<uint[], uint[]> prepareData,
             Func<BigInteger, BigInteger, BigInteger> cpuFunc,
-            Func<GpuUIntBigInteger, GpuUIntBigInteger, GpuBigIntExpr> gpuFunc,
+            Func<GpuUIntBigInteger, GpuUIntBigInteger, GpuBigUIntExpr> gpuFunc,
             int inputWords = -1)
         {
             var size = inputWords > 0 ? inputWords : TestSizeWords;
