@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>
@@ -19,8 +19,8 @@ public interface IGpuBigIntExpression
     /// </summary>
     /// <param name="context">The active GPU execution context.</param>
     /// <param name="targetResult">Optional target buffer to write the evaluated result into.</param>
-    /// <returns>The evaluated <see cref="GpuBigInteger"/> result buffer.</returns>
-    GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null);
+    /// <returns>The evaluated <see cref="GpuUIntBigInteger"/> result buffer.</returns>
+    GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null);
 }
 
 

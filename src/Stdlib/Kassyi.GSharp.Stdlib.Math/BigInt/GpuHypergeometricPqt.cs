@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
@@ -6,13 +6,21 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <summary>
 /// Represents the intermediate state (P, Q, T) of a hypergeometric series evaluated using Binary Splitting on the GPU.
 /// </summary>
+/// /// <remarks>
+/// Defined according to the Binary Splitting algorithm:
+/// <list type="bullet">
+///   <item><description><see cref="P"/>: <c>P(a, b) = \prod p(k)</c></description></item>
+///   <item><description><see cref="Q"/>: <c>Q(a, b) = \prod q(k)</c></description></item>
+///   <item><description><see cref="T"/>: <c>T(a, b) = \sum ...</c></description></item>
+/// </list>
+/// </remarks>
 public readonly struct GpuHypergeometricPqt : IDisposable
 {
-    public SignedGpuBigInteger P { get; }
-    public GpuBigInteger Q { get; }
-    public SignedGpuBigInteger T { get; }
+    public GpuBigInteger P { get; }
+    public GpuUIntBigInteger Q { get; }
+    public GpuBigInteger T { get; }
 
-    public GpuHypergeometricPqt(SignedGpuBigInteger p, GpuBigInteger q, SignedGpuBigInteger t)
+    public GpuHypergeometricPqt(GpuBigInteger p, GpuUIntBigInteger q, GpuBigInteger t)
     {
         P = p;
         Q = q ?? throw new ArgumentNullException(nameof(q));
@@ -36,30 +44,30 @@ public readonly struct GpuHypergeometricPqt : IDisposable
     {
         // P = Pl * Pr
         var pWords = left.P.Value.NumWords + right.P.Value.NumWords;
-        var resultP = new GpuBigInteger(context, pWords);
+        var resultP = new GpuUIntBigInteger(context, pWords);
         GpuBigIntMath.Mul(left.P.Value, right.P.Value, resultP);
         var pNegative = left.P.IsNegative ^ right.P.IsNegative;
 
         // Q = Ql * Qr
         var qWords = left.Q.NumWords + right.Q.NumWords;
-        var resultQ = new GpuBigInteger(context, qWords);
+        var resultQ = new GpuUIntBigInteger(context, qWords);
         GpuBigIntMath.Mul(left.Q, right.Q, resultQ);
 
         // T = Tl * Qr + Pl * Tr
         var wordsA = left.T.Value.NumWords + right.Q.NumWords;
-        using var rawTermA = new GpuBigInteger(context, wordsA);
+        using var rawTermA = new GpuUIntBigInteger(context, wordsA);
         GpuBigIntMath.Mul(left.T.Value, right.Q, rawTermA);
         var signA = left.T.IsNegative;
 
         var wordsB = left.P.Value.NumWords + right.T.Value.NumWords;
-        using var rawTermB = new GpuBigInteger(context, wordsB);
+        using var rawTermB = new GpuUIntBigInteger(context, wordsB);
         GpuBigIntMath.Mul(left.P.Value, right.T.Value, rawTermB);
         var signB = left.P.IsNegative ^ right.T.IsNegative;
 
         var maxTWords = System.Math.Max(wordsA, wordsB);
         using var termA = rawTermA.PadTo(maxTWords);
         using var termB = rawTermB.PadTo(maxTWords);
-        var resultT = new GpuBigInteger(context, maxTWords);
+        var resultT = new GpuUIntBigInteger(context, maxTWords);
 
         bool tNegative;
         if (signA == signB)
@@ -83,9 +91,9 @@ public readonly struct GpuHypergeometricPqt : IDisposable
         }
 
         return new GpuHypergeometricPqt(
-            new SignedGpuBigInteger(resultP, pNegative),
+            new GpuBigInteger(resultP, pNegative),
             resultQ,
-            new SignedGpuBigInteger(resultT, tNegative)
+            new GpuBigInteger(resultT, tNegative)
         );
     }
 }

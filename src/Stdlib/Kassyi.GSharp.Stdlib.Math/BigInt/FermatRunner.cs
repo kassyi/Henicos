@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Jit;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
@@ -23,15 +23,15 @@ public class FermatRunner : IDisposable
 
     private GpuContext _gpuContext;
 
-    // GpuBigInteger buffers for Host-side orchestration
-    private GpuBigInteger _valueT;
-    private GpuBigInteger _valueTReduced;
-    private GpuBigInteger _mulResult;
+    // GpuUIntBigInteger buffers for Host-side orchestration
+    private GpuUIntBigInteger _valueT;
+    private GpuUIntBigInteger _valueTReduced;
+    private GpuUIntBigInteger _mulResult;
 
-    private GpuBigInteger _quotient;
-    private GpuBigInteger _remainder;
-    private GpuBigInteger _remainderMask;
-    private GpuBigInteger _temp;
+    private GpuUIntBigInteger _quotient;
+    private GpuUIntBigInteger _remainder;
+    private GpuUIntBigInteger _remainderMask;
+    private GpuUIntBigInteger _temp;
 
     private int _bitOffset2E1;
     private int _exponent;
@@ -47,14 +47,14 @@ public class FermatRunner : IDisposable
         _exponent = E;
 
         _gpuContext = new GpuContext(_outNumWords);
-        _valueT = new GpuBigInteger(_gpuContext, _outNumWords);
-        _valueTReduced = new GpuBigInteger(_gpuContext, _numWords);
-        _mulResult = new GpuBigInteger(_gpuContext, _numWords * 2);
+        _valueT = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _valueTReduced = new GpuUIntBigInteger(_gpuContext, _numWords);
+        _mulResult = new GpuUIntBigInteger(_gpuContext, _numWords * 2);
 
-        _quotient = new GpuBigInteger(_gpuContext, _outNumWords);
-        _remainder = new GpuBigInteger(_gpuContext, _outNumWords);
-        _remainderMask = new GpuBigInteger(_gpuContext, _outNumWords);
-        _temp = new GpuBigInteger(_gpuContext, _outNumWords);
+        _quotient = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _remainder = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _remainderMask = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _temp = new GpuUIntBigInteger(_gpuContext, _outNumWords);
 
         // Init ValueT = 2
         var initArray = new uint[_outNumWords];
