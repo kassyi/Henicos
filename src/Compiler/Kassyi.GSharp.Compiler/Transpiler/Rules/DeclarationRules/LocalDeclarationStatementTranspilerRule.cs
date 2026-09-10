@@ -1,10 +1,18 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 
 /// <summary>
-/// Strategy rule for transpiling local declaration statements, including static/dynamic shared memory allocations.
+/// Transpiles C# local declaration statements into target dialect variable definitions,
+/// with special handling for static and dynamic GPU shared memory declarations (<c>SharedMemory&lt;T&gt;</c>).
 /// </summary>
+/// <remarks>
+/// <para><b>Thread Safety:</b> This rule is stateless and safe for concurrent execution across threads.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
 public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleBase<LocalDeclarationStatementSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="LocalDeclarationStatementTranspilerRule"/>.
+    /// </summary>
     public static readonly LocalDeclarationStatementTranspilerRule Instance = new();
 
     private LocalDeclarationStatementTranspilerRule() { }
@@ -21,6 +29,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         public int StaticSize => ConstantSize ?? 0;
     }
 
+    /// <inheritdoc />
     public override void Transpile(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;

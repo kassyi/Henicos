@@ -1,11 +1,23 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
+/// <summary>
+/// Transpiles C# assignment expressions into target dialect statements,
+/// supporting standard assignments, compound assignments, and deconstructing tuple assignments via immediately-invoked lambdas.
+/// </summary>
+/// <remarks>
+/// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
 public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<AssignmentExpressionSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="AssignmentExpressionTranspilerRule"/>.
+    /// </summary>
     public static readonly AssignmentExpressionTranspilerRule Instance = new();
 
     private AssignmentExpressionTranspilerRule() { }
 
+    /// <inheritdoc />
     public override void Transpile(AssignmentExpressionSyntax node, ref TranspileContext context)
     {
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
