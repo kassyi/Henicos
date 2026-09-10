@@ -20,8 +20,7 @@ case 2: return 20;
 case 3: return 30;
 default: return 99;
 }
-}
-());
+}());
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {

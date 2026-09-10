@@ -91,8 +91,7 @@ case 0: return 1.0f;
 case 1: return 2.0f;
 default: return 3.0f;
 }
-}
-());
+}());
 Kassyi_GSharp_Tests_Syntax_Tier1FixedArray arr = Kassyi_GSharp_Tests_Syntax_Tier1FixedArray{};
 arr[0]=mag;
 arr[1]=mag*2.0f;
