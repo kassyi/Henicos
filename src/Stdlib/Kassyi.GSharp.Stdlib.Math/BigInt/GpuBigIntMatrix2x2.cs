@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// Represents a 2x2 transition matrix of arbitrary-precision integers (<see cref="GpuUIntBigInteger"/>) allocated in GPU device memory.
@@ -124,15 +124,17 @@ public class GpuBigIntMatrix2x2 : IDisposable
     public static GpuBigIntMatrix2x2 Identity(GpuContext context, int numWords)
     {
         var mat = new GpuBigIntMatrix2x2(context, numWords, false);
-        var one = new uint[numWords];
-        one[0] = 1;
-        context.Provider.CopyHostToDevice(mat.M00.DevicePointer, one, numWords);
-        context.Provider.CopyHostToDevice(mat.M11.DevicePointer, one, numWords);
+        
+        mat.M00.Clear();
+        context.Provider.CopyHostToDevice(mat.M00.DevicePointer, [1u], 1);
+        
+        mat.M11.Clear();
+        context.Provider.CopyHostToDevice(mat.M11.DevicePointer, [1u], 1);
 
         // [WHY] Explicitly initialize off-diagonal elements to 0 on the GPU to ensure deterministic state regardless of driver-level allocation zeroing.
-        var zero = new uint[numWords];
-        context.Provider.CopyHostToDevice(mat.M01.DevicePointer, zero, numWords);
-        context.Provider.CopyHostToDevice(mat.M10.DevicePointer, zero, numWords);
+        mat.M01.Clear();
+        mat.M10.Clear();
+        
         return mat;
     }
 
@@ -280,12 +282,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
         }
 
         // [WHY] Destination buffers may have fewer limbs or need cleanup since reduced numbers decrease in magnitude.
-        var zeroA = new uint[outA.NumWords];
-        ctx.Provider.CopyHostToDevice(outA.DevicePointer, zeroA, outA.NumWords);
+        outA.Clear();
         outA.CopyFrom(resA, numWords: System.Math.Min(outA.NumWords, tempWords));
 
-        var zeroB = new uint[outB.NumWords];
-        ctx.Provider.CopyHostToDevice(outB.DevicePointer, zeroB, outB.NumWords);
+        outB.Clear();
         outB.CopyFrom(resB, numWords: System.Math.Min(outB.NumWords, tempWords));
     }
 
