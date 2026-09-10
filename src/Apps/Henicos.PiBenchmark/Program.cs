@@ -1,10 +1,12 @@
 
+using Kassyi.GSharp.Core;
+
 namespace Henicos.PiBenchmark;
 
 /// <summary>
 /// Console application entry point and command-line dispatcher for the Henicos Pi benchmark suite.
 /// </summary>
-internal static class Program
+internal class Program
 {
     private static int Main(string[] args)
     {
@@ -14,11 +16,12 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"\n[ERROR] An unhandled exception occurred: {ex.Message}");
-            Console.ResetColor();
-            Console.Error.WriteLine(ex.ToString());
+            Logger<Program>.Error(ex, "An unhandled exception occurred");
             return 1;
+        }
+        finally
+        {
+            Logger.Flush();
         }
     }
 
@@ -47,31 +50,32 @@ internal static class Program
 
     private static int PrintUsage()
     {
-        Console.WriteLine("Henicos.PiBenchmark - High-Performance GPU & CPU Number Theory Suite");
-        Console.WriteLine();
-        Console.WriteLine("Usage: dotnet run -c Release -- <command> [options]");
-        Console.WriteLine();
-        Console.WriteLine("Commands:");
-        Console.WriteLine("  gpu-pi [digits] [options]  GPU Chudnovsky Pi computation (default: 10,000)");
-        Console.WriteLine("                             Options:");
-        Console.WriteLine("                               --out <path>        Write result digits to file");
-        Console.WriteLine("                               --threshold <terms> CPU/GPU hybrid threshold (default: 8192)");
-        Console.WriteLine("                               --hex               Output in hexadecimal without decimal conversion");
-        Console.WriteLine("  cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)");
-        Console.WriteLine("  tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)");
-        Console.WriteLine("  prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)");
-        Console.WriteLine("  bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)");
-        Console.WriteLine("  help, -h, --help           Display this help message");
-        Console.WriteLine();
-        Console.WriteLine("Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).");
+        const string usage = """
+            Henicos.PiBenchmark - High-Performance GPU & CPU Number Theory Suite
+
+            Usage: dotnet run -c Release -- <command> [options]
+
+            Commands:
+              gpu-pi [digits] [options]  GPU Chudnovsky Pi computation (default: 10,000)
+                                         Options:
+                                           --out <path>        Write result digits to file
+                                           --threshold <terms> CPU/GPU hybrid threshold (default: 8192)
+                                           --hex               Output in hexadecimal without decimal conversion
+              cpu-pi [digits]            CPU Chudnovsky Pi baseline computation (default: 10,000)
+              tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
+              prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)
+              bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
+              help, -h, --help           Display this help message
+
+            Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
+            """;
+        Logger<Program>.Info(usage);
         return 0;
     }
 
     private static int HandleUnknownCommand(string command)
     {
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Error.WriteLine($"[WARNING] Unknown command: '{command}'\n");
-        Console.ResetColor();
+        Logger<Program>.Warning($"Unknown command: '{command}'\n");
         PrintUsage();
         return 1;
     }
@@ -99,7 +103,7 @@ internal static class Program
                 }
                 else
                 {
-                    Console.Error.WriteLine("Error: --threshold must be a positive integer greater than zero.");
+                    Logger<Program>.Error("Error: --threshold must be a positive integer greater than zero.");
                     return 1;
                 }
             }
@@ -119,20 +123,20 @@ internal static class Program
 
     private static int RunCpuPi(string[] args)
     {
-        Console.WriteLine("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
+        Logger<Program>.Info("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
 
         var digits = args.Length > 0 ? ParseDigits(args[0], 10000) : 10000;
 
-        Console.WriteLine($"Calculating {digits:N0} digits of Pi...");
+        Logger<Program>.Info($"Calculating {digits:N0} digits of Pi...");
 
         var sw = Stopwatch.StartNew();
         var pi = ChudnovskyPi.ComputePi(digits);
         sw.Stop();
 
-        Console.WriteLine(pi.Length > 100
+        Logger<Program>.Info(pi.Length > 100
             ? $"Result: {pi[..50]}...{pi[^50..]}"
             : $"Result: {pi}");
-        Console.WriteLine($"Total Time: {sw.ElapsedMilliseconds} ms");
+        Logger<Program>.Info($"Total Time: {sw.ElapsedMilliseconds} ms");
 
         return 0;
     }
@@ -190,65 +194,50 @@ internal static class Program
             count = c;
         }
 
-        Console.WriteLine(
+        Logger<Program>.Info(
             $"Extracting {count} hexadecimal digits of Pi starting at position {offset} (BBP Algorithm)...");
         var sw = Stopwatch.StartNew();
         var hex = BbpDigitExtractor.ExtractHexDigits(offset, count);
         sw.Stop();
 
-        Console.WriteLine($"Hex Digits : {hex}");
-        Console.WriteLine($"Time       : {sw.ElapsedMilliseconds} ms");
+        Logger<Program>.Info($"Hex Digits : {hex}");
+        Logger<Program>.Info($"Time       : {sw.ElapsedMilliseconds} ms");
         return 0;
     }
 
-    private static bool LooksLikeDigits(string s)
+    private static bool LooksLikeDigits(string s) => TryParseDigits(s, out _);
+
+    private static int ParseDigits(string s, int defaultDigits = 10000) =>
+        TryParseDigits(s, out var digits) ? digits : defaultDigits;
+
+    private static bool TryParseDigits(string? s, out int result)
     {
+        result = 0;
         if (string.IsNullOrWhiteSpace(s))
         {
             return false;
         }
 
         var trimmed = s.Trim().Replace("_", string.Empty).Replace(",", string.Empty);
-        if (trimmed.EndsWith('k') || trimmed.EndsWith('K') ||
-            trimmed.EndsWith('m') || trimmed.EndsWith('M') ||
-            trimmed.EndsWith('g') || trimmed.EndsWith('G'))
+        if (trimmed.Length == 0)
         {
-            trimmed = trimmed[..^1];
+            return false;
         }
 
-        return double.TryParse(trimmed, out _);
-    }
+        var (multiplier, numberPart) = char.ToUpperInvariant(trimmed[^1]) switch
+        {
+            'K' => (1_000.0, trimmed[..^1]),
+            'M' => (1_000_000.0, trimmed[..^1]),
+            'G' => (1_000_000_000.0, trimmed[..^1]),
+            _ => (1.0, trimmed)
+        };
 
-    private static int ParseDigits(string s, int defaultDigits = 10000)
-    {
-        if (string.IsNullOrWhiteSpace(s))
+        if (double.TryParse(numberPart, System.Globalization.CultureInfo.InvariantCulture, out var val))
         {
-            return defaultDigits;
-        }
-
-        var trimmed = s.Trim().Replace("_", string.Empty).Replace(",", string.Empty);
-        if (trimmed.EndsWith('k') || trimmed.EndsWith('K'))
-        {
-            if (double.TryParse(trimmed[..^1], out var val))
-            {
-                return (int)(val * 1_000);
-            }
-        }
-        else if (trimmed.EndsWith('m') || trimmed.EndsWith('M'))
-        {
-            if (double.TryParse(trimmed[..^1], out var val))
-            {
-                return (int)(val * 1_000_000);
-            }
-        }
-        else if (trimmed.EndsWith('g') || trimmed.EndsWith('G'))
-        {
-            if (double.TryParse(trimmed[..^1], out var val))
-            {
-                return (int)(val * 1_000_000_000);
-            }
+            result = (int)(val * multiplier);
+            return true;
         }
 
-        return int.TryParse(trimmed, out var parsed) ? parsed : defaultDigits;
+        return false;
     }
 }
