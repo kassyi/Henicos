@@ -51,7 +51,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
     [Trait("Category", "Stress")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "Stress")]
-    public void Test_Runtime_OutOfMemory_SadPath()
+    public void Test_GSH06_Runtime_OutOfMemory_SadPath()
     {
         // Require CUDA context for allocation
         using var scope = new JitEngine.CudaContextScope();
@@ -89,7 +89,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
     [Fact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "SadPath")]
-    public void Test_Runtime_MissingCudaToolkit_GracefulDegradation()
+    public void Test_GSH07_Runtime_MissingCudaToolkit_GracefulDegradation()
     {
         var originalEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
         try

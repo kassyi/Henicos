@@ -6,28 +6,26 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 public class RUN_02_BackendCompilerTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "RUN-02")]
-    public void Test_NvccCompiler_CompileToFatbin_ProducesOutput()
+    public void Test_RUN02_NvccCompiler_CompileToFatbin_ProducesOutput()
     {
-        if (!NvccCompiler.IsMsvcAvailable || !NvccCompiler.IsNvccAvailable)
-        {
-            return; // Skip if MSVC or NVCC is not available
-        }
+        Skip.If(!NvccCompiler.IsMsvcAvailable || !NvccCompiler.IsNvccAvailable, "MSVC or NVCC is not available");
 
-        var cuFile = Path.GetTempFileName() + ".cu";
-        var fatbinFile = Path.GetTempFileName() + ".fatbin";
         var tempDir = Path.GetTempPath();
+        var baseName = System.Guid.NewGuid().ToString("N");
+        var cuFile = Path.Combine(tempDir, baseName + ".cu");
+        var fatbinFile = Path.Combine(tempDir, baseName + ".fatbin");
 
         try
         {
-            var source = @"
-extern ""C"" __global__ void MyKernel(int* data) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    data[idx] = data[idx] * 2;
-}
-";
+            var source = """
+            extern "C" __global__ void MyKernel(int* data) {
+                int idx = threadIdx.x + blockIdx.x * blockDim.x;
+                data[idx] = data[idx] * 2;
+            }
+            """;
             File.WriteAllText(cuFile, source);
 
             var result = NvccCompiler.CompileToFatbin(cuFile, fatbinFile, null, tempDir, "sm_86");

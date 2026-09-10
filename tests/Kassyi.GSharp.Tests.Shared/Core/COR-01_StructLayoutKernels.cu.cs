@@ -7,9 +7,9 @@ namespace Kassyi.GSharp.Tests.Core;
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct CustomLayoutStruct
 {
-    public int A;
-    public float B;
-    public double C;
+    public byte A;
+    public double B;
+    public float C;
 }
 
 public class COR_01_StructLayoutKernels
@@ -20,7 +20,7 @@ public class COR_01_StructLayoutKernels
         int tid = ThreadIndex.X;
         
         data[tid].A += 10;
-        data[tid].B *= 2.0f;
-        data[tid].C -= 1.0;
+        data[tid].B *= 2.0;
+        data[tid].C -= 1.0f;
     }
 }

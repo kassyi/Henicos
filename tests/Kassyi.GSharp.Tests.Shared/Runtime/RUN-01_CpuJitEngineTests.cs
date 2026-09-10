@@ -13,7 +13,7 @@ public class RUN_01_CpuJitEngineTests
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "RUN-01")]
-    public void Test_CpuJitEngine_CompilesAndExecutes_Delegate()
+    public void Test_RUN01_CpuJitEngine_CompilesAndExecutes_Delegate()
     {
         var source = @"
 extern ""C"" __declspec(dllexport) int Add(int a, int b) {
@@ -28,7 +28,7 @@ extern ""C"" __declspec(dllexport) int Add(int a, int b) {
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "RUN-01")]
-    public void Test_CpuJitEngine_CompilesWithMacros()
+    public void Test_RUN01_CpuJitEngine_CompilesWithMacros()
     {
         var source = @"
 extern ""C"" __declspec(dllexport) int Add(int a, int b) {

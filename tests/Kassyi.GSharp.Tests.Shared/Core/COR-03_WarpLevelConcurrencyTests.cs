@@ -1,3 +1,4 @@
+#if GSHARP_CUDA
 using System;
 using System.Linq;
 using Xunit;
@@ -7,10 +8,11 @@ namespace Kassyi.GSharp.Tests.Core;
 [Trait("Category", "GpuExecution")]
 public class COR_03_WarpLevelConcurrencyTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "COR-03")]
-    public void Test_WarpReduceSum_CalculatesCorrectly()
+    public void Test_COR03_WarpReduceSum_CalculatesCorrectly()
     {
+        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
         int numWarps = 4;
         int threadsPerWarp = 32;
         int length = numWarps * threadsPerWarp;
@@ -36,4 +38,24 @@ public class COR_03_WarpLevelConcurrencyTests
             Assert.Equal(32, output[i]);
         }
     }
+
+    [SkippableFact]
+    [Trait("FeatureId", "COR-03")]
+    public void Test_COR03_WarpPrimitives_GenerateAndCompile()
+    {
+        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
+        int length = 32;
+        var input = new int[length];
+        var output = new int[length];
+        
+        COR_03_WarpLevelConcurrencyKernelsWrapper.Launch_WarpPrimitivesKernel(
+            input,
+            output,
+            blockDimX: 32
+        );
+        
+        // This test mostly verifies that all warp intrinsics can be transpiled and compiled by NVCC.
+        // It executes successfully without crashing.
+    }
 }
+#endif
