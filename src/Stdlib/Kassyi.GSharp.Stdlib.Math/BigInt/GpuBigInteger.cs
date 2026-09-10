@@ -1,31 +1,20 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// A lightweight value type wrapping a <see cref="GpuUIntBigInteger"/> with a sign bit,
 /// used for tracking alternating series or arbitrary signed integers on the GPU.
 /// </summary>
-public readonly struct GpuBigInteger : IDisposable
+public readonly struct GpuBigInteger(GpuUIntBigInteger value, bool isNegative) : IDisposable
 {
     /// <summary>
     /// Gets the underlying absolute value buffer on the GPU.
     /// </summary>
-    public GpuUIntBigInteger Value { get; }
+    public GpuUIntBigInteger Value { get; } = value ?? throw new ArgumentNullException(nameof(value));
     
     /// <summary>
     /// Gets a value indicating whether the integer is strictly negative.
     /// </summary>
-    public bool IsNegative { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigInteger"/> struct.
-    /// </summary>
-    /// <param name="value">The underlying GPU buffer representing the absolute value.</param>
-    /// <param name="isNegative"><see langword="true"/> if the number is negative; otherwise, <see langword="false"/>.</param>
-    public GpuBigInteger(GpuUIntBigInteger value, bool isNegative)
-    {
-        Value = value ?? throw new ArgumentNullException(nameof(value));
-        IsNegative = isNegative;
-    }
+    public bool IsNegative { get; } = isNegative;
 
     /// <summary>
     /// Disposes the underlying GPU buffer.

@@ -6,24 +6,14 @@ namespace Kassyi.GSharp.Stdlib.Math.IO;
 /// A memory-efficient TextWriter that only keeps track of the first N (Head) and last N (Tail) characters.
 /// Intermediate characters are discarded to prevent OutOfMemory exceptions on massive outputs (e.g. 100M+ digits).
 /// </summary>
-public class HeadTailTrackerWriter : TextWriter
+public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50) : TextWriter
 {
-    private readonly StringBuilder _head;
-    private readonly char[] _tailBuffer;
-    private readonly int _headCapacity;
-    private readonly int _tailCapacity;
+    private readonly StringBuilder _head = new(headCapacity);
+    private readonly char[] _tailBuffer = new char[tailCapacity];
 
     private int _tailIndex;
     private bool _tailFull;
     private long _totalWritten;
-
-    public HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
-    {
-        _headCapacity = headCapacity;
-        _tailCapacity = tailCapacity;
-        _head = new StringBuilder(headCapacity);
-        _tailBuffer = new char[tailCapacity];
-    }
 
     public override Encoding Encoding => Encoding.UTF8;
 
@@ -31,16 +21,16 @@ public class HeadTailTrackerWriter : TextWriter
 
     public override void Write(char value)
     {
-        if (_head.Length < _headCapacity)
+        if (_head.Length < headCapacity)
         {
             _head.Append(value);
         }
 
-        if (_tailCapacity > 0)
+        if (tailCapacity > 0)
         {
             _tailBuffer[_tailIndex] = value;
             _tailIndex++;
-            if (_tailIndex >= _tailCapacity)
+            if (_tailIndex >= tailCapacity)
             {
                 _tailIndex = 0;
                 _tailFull = true;
@@ -75,7 +65,7 @@ public class HeadTailTrackerWriter : TextWriter
 
     public string GetTail()
     {
-        if (_tailCapacity == 0)
+        if (tailCapacity == 0)
         {
             return string.Empty;
         }
@@ -85,12 +75,13 @@ public class HeadTailTrackerWriter : TextWriter
             return new string(_tailBuffer, 0, _tailIndex);
         }
 
-        var sb = new StringBuilder(_tailCapacity);
-        for (var i = 0; i < _tailCapacity; i++)
+        var sb = new StringBuilder(tailCapacity);
+        for (var i = 0; i < tailCapacity; i++)
         {
-            var idx = (_tailIndex + i) % _tailCapacity;
+            var idx = (_tailIndex + i) % tailCapacity;
             sb.Append(_tailBuffer[idx]);
         }
+
         return sb.ToString();
     }
 
@@ -99,16 +90,16 @@ public class HeadTailTrackerWriter : TextWriter
     /// </summary>
     public string GetPreview(string separator = "...")
     {
-        if (_totalWritten <= _headCapacity + _tailCapacity)
+        if (_totalWritten <= headCapacity + tailCapacity)
         {
             // If total written is small enough, it fits entirely in head or partly in head+tail
-            if (_totalWritten <= _headCapacity)
+            if (_totalWritten <= headCapacity)
             {
                 return _head.ToString();
             }
-            
+
             // Reconstruct exact string if it didn't overflow tail buffer
-            var remaining = (int)(_totalWritten - _headCapacity);
+            var remaining = (int)(_totalWritten - headCapacity);
             var tailStr = GetTail();
             return _head.ToString() + tailStr.Substring(tailStr.Length - remaining);
         }

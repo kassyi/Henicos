@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 using Kassyi.GSharp.Stdlib.Math.Interop;
@@ -146,7 +146,7 @@ public class GpuContext : IDisposable
     {
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var temp))
         {
-            temp._disposed = false;
+            temp.Disposed = false;
             temp.IsTemp = true; // ensure it's marked as temp again if needed
             return temp;
         }
