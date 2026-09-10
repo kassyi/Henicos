@@ -36,7 +36,7 @@ internal static class StatementTranspilers
 
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
     {
-        DeclarationTranspilers.HoistDeclarationExpressions(node.Condition, ref context);
+        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
         context.Writer.AppendKeyword("if");
         using (context.Writer.Parentheses())
         {
@@ -74,7 +74,7 @@ internal static class StatementTranspilers
 
     public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
     {
-        DeclarationTranspilers.HoistDeclarationExpressions(node.Expression, ref context);
+        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
         context.Writer.AppendKeyword("for");
         using (context.Writer.Parentheses())
         {
@@ -166,7 +166,7 @@ internal static class StatementTranspilers
 
     public static void TranspileWhileStatement(WhileStatementSyntax node, ref TranspileContext context)
     {
-        DeclarationTranspilers.HoistDeclarationExpressions(node.Condition, ref context);
+        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
         context.Writer.AppendKeyword("while");
         using (context.Writer.Parentheses())
         {
@@ -233,7 +233,7 @@ internal static class StatementTranspilers
     {
         if (node.Expression != null)
         {
-            DeclarationTranspilers.HoistDeclarationExpressions(node.Expression, ref context);
+            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
             context.Writer.Append("return ");
             context.Visitor.Visit(node.Expression);
         }
