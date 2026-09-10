@@ -170,8 +170,9 @@ public class GBF01_GpuBigFloatTests
     public void Test_GBF01_Normalization_UnderflowLeadingZeros_AlignsMsbAndDecrementsExponent_ViaStructApi(
         int leadingZeros, int expectedExpOffset)
     {
-        var dummySignificand = new GpuUIntBigInteger<LimbBuffer4>(default);
-        var uFloat = new GpuBigUFloat<LimbBuffer4>(dummySignificand, exponent: 0);
+        var limbs = CreateLimb4(1, 0, 0, 0); // Non-zero significand to avoid flush-to-zero during normalization
+        var nonZeroSignificand = new GpuUIntBigInteger<LimbBuffer4>(limbs);
+        var uFloat = new GpuBigUFloat<LimbBuffer4>(nonZeroSignificand, exponent: 0);
 
         var normalized = uFloat.Normalize(leadingZeros: leadingZeros, carryOut: false);
         Assert.Equal(expectedExpOffset, normalized.Exponent);
@@ -243,7 +244,10 @@ public class GBF01_GpuBigFloatTests
         var uSubResult = uFloatA - uFloatB;
 
         Assert.Equal(10, uAddResult.Exponent);
-        Assert.Equal(10, uSubResult.Exponent);
+        // After subtraction (100 - 40 = 60), the significand is normalized by shifting left.
+        // For LimbBuffer4 (128 bits), 60 has 122 leading zeros (96 + 26).
+        // Exponent 10 - 122 = -112
+        Assert.Equal(-112, uSubResult.Exponent);
 
         var floatA = new GpuBigFloat<LimbBuffer4>(uFloatA, isNegative: false);
         var floatB = new GpuBigFloat<LimbBuffer4>(uFloatB, isNegative: false);
@@ -252,7 +256,7 @@ public class GBF01_GpuBigFloatTests
         var subResult = floatA - floatB;
 
         Assert.Equal(10, addResult.UFloat.Exponent);
-        Assert.Equal(10, subResult.UFloat.Exponent);
+        Assert.Equal(-112, subResult.UFloat.Exponent);
 
         // #7 Verify arithmetic result
         Assert.True(addResult.UFloat.Significand.IsZero() == false || addResult.UFloat.Exponent == 0);

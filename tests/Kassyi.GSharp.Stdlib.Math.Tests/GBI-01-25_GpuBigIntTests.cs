@@ -174,8 +174,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         public GBI_01_25_GpuBigIntTests()
         {
-            // Ensure CUDA context is initialized for GSharpJit tests
-            using var scope = new JitEngine.CudaContextScope();
+            // CUDA context is initialized automatically upon first kernel launch if supported.
+            // Do not initialize here to prevent xUnit discovery crashes on non-GPU CI runners.
         }
 
         private uint[] GenerateRandomArray(int numWords, int seed = 42)
@@ -475,7 +475,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.True(gpuC <= gpuA);
         }
 
-        [Fact(Skip = "–¢ŽÀ‘•: GBI-16 (ƒCƒ“ƒNƒŠƒƒ“ƒg/ƒfƒNƒŠƒƒ“ƒg‰‰ŽZŽq ++, --)")]
+        [Fact(Skip = "æœªå®Ÿè£…: GBI-16 (ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ/ãƒ‡ã‚¯ãƒªãƒ¡ãƒ³ãƒˆæ¼”ç®—å­ ++, --)")]
         [Trait("RoadmapId", "GBI-16")]
         [Trait("Category", "Operator")]
         public void Test_GBI_Operator_IncrementDecrement()
@@ -650,7 +650,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedGcd, actualGcd);
         }
 
-        [Fact(Skip = "–¢ŽÀ‘•: GBI-21 (GpuUIntBigInteger.ModInverse ƒ‚ƒWƒ…ƒ‰‹t”)")]
+        [Fact(Skip = "æœªå®Ÿè£…: GBI-21 (GpuUIntBigInteger.ModInverse ãƒ¢ã‚¸ãƒ¥ãƒ©é€†æ•°)")]
         [Trait("RoadmapId", "GBI-21")]
         [Trait("Category", "Function")]
         public void Test_GBI_Function_ModInverse()
