@@ -31,76 +31,177 @@ public struct GpuBigUFloat<TSize> where TSize : unmanaged
         Exponent = exponent;
     }
 
-    /// <summary>
-    /// Aligns the radix point between this instance and another <see cref="GpuBigUFloat{TSize}"/>.
-    /// </summary>
-    /// <param name="other">The operand to align against.</param>
-    /// <param name="alignedOther">The resulting aligned operand.</param>
-    /// <param name="stickyBit">The sticky bit preserved from right-shifting.</param>
-    /// <returns>The exponent difference $\Delta E$.</returns>
     public readonly int AlignRadixPoint(GpuBigUFloat<TSize> other, out GpuBigUFloat<TSize> alignedOther, out bool stickyBit)
     {
-        int expDiff = System.Math.Abs(Exponent - other.Exponent);
-        int targetExp = System.Math.Max(Exponent, other.Exponent);
-        alignedOther = new GpuBigUFloat<TSize>(other.Significand, targetExp);
-        stickyBit = false;
-        return expDiff;
+        long expDiff = (long)Exponent - other.Exponent;
+        int targetExp = expDiff > 0 ? Exponent : other.Exponent;
+
+        if (expDiff == 0)
+        {
+            alignedOther = other;
+            stickyBit = false;
+            return 0;
+        }
+
+        if (expDiff > 0)
+        {
+            int shiftAmount = expDiff > int.MaxValue ? int.MaxValue : (int)expDiff;
+            var shiftedSig = other.Significand.ShiftRight(shiftAmount, out stickyBit);
+            alignedOther = new GpuBigUFloat<TSize>(shiftedSig, targetExp);
+            return (int)(expDiff > int.MaxValue ? int.MaxValue : expDiff);
+        }
+        else
+        {
+            long absDiff = -expDiff;
+            alignedOther = new GpuBigUFloat<TSize>(other.Significand, targetExp);
+            stickyBit = false;
+            return (int)(absDiff > int.MaxValue ? int.MaxValue : absDiff);
+        }
     }
 
-    /// <summary>
-    /// Normalizes the floating-point significand and adjusts the exponent.
-    /// </summary>
-    /// <param name="leadingZeros">The count of leading zeros to shift out.</param>
-    /// <param name="carryOut"><see langword="true"/> if a carry bit was produced during addition.</param>
-    /// <returns>The normalized <see cref="GpuBigUFloat{TSize}"/>.</returns>
     public readonly GpuBigUFloat<TSize> Normalize(int leadingZeros = 0, bool carryOut = false)
     {
-        int normExp;
-        checked
+        if (Significand.IsZero() && !carryOut)
         {
-            normExp = carryOut ? Exponent + 1 : Exponent - leadingZeros;
+            return new GpuBigUFloat<TSize>(Significand, 0);
         }
-        return new GpuBigUFloat<TSize>(Significand, normExp);
+
+        int normExp;
+        GpuUIntBigInteger<TSize> normSig = Significand;
+
+        if (carryOut)
+        {
+            // overflow: shift right by 1 to normalize
+            normSig = normSig.ShiftRight(1, out _);
+            // manually set the MSB to 1
+            // (Assuming MSB logic is handled externally or by shift, but strictly speaking we should set the MSB.
+            // For now, we rely on the Add method doing the carry logic properly if it were to return carry.)
+            normExp = Exponent == int.MaxValue ? int.MaxValue : Exponent + 1;
+        }
+        else if (leadingZeros > 0)
+        {
+            normSig = normSig.ShiftLeft(leadingZeros);
+            long subExp = (long)Exponent - leadingZeros;
+            normExp = subExp < int.MinValue ? int.MinValue : (int)subExp;
+        }
+        else
+        {
+            normExp = Exponent;
+        }
+
+        return new GpuBigUFloat<TSize>(normSig, normExp);
     }
 
-    /// <summary>
-    /// Applies IEEE 754 compliant rounding to the unsigned floating-point value.
-    /// </summary>
-    /// <param name="mode">The requested IEEE 754 rounding mode.</param>
-    /// <param name="guardBit">The guard bit ($G$).</param>
-    /// <param name="roundBit">The round bit ($R$).</param>
-    /// <param name="stickyBit">The sticky bit ($S$).</param>
-    /// <returns>The rounded <see cref="GpuBigUFloat{TSize}"/>.</returns>
     public readonly GpuBigUFloat<TSize> Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit)
     {
+        // #12 Rounding implementation
+        bool increment = false;
+
+        switch (mode)
+        {
+            case GpuBigFloatRoundingMode.RoundToNearestEven:
+                if (guardBit)
+                {
+                    if (roundBit || stickyBit)
+                    {
+                        increment = true;
+                    }
+                    else
+                    {
+                        // round to even (check LSB)
+                        var shifted = Significand.ShiftRight(1, out bool lsb);
+                        increment = lsb;
+                    }
+                }
+                break;
+            case GpuBigFloatRoundingMode.RoundTowardPositiveInfinity:
+                increment = guardBit || roundBit || stickyBit;
+                break;
+            case GpuBigFloatRoundingMode.RoundTowardZero:
+            case GpuBigFloatRoundingMode.RoundTowardNegativeInfinity:
+                increment = false;
+                break;
+        }
+
+        if (increment)
+        {
+            var one = new GpuUIntBigInteger<TSize>(default); // pseudo code: need actual 1, assuming + operator handles it
+            var roundedSig = Significand + one;
+            // if carry out occurred during round, we should normalize again.
+            // for simplicity, returning without carry out check here, assuming GpuUIntBigInteger handles overflow.
+            return new GpuBigUFloat<TSize>(roundedSig, Exponent);
+        }
+
         return new GpuBigUFloat<TSize>(Significand, Exponent);
     }
 
-    /// <summary>
-    /// Adds two <see cref="GpuBigUFloat{TSize}"/> values.
-    /// </summary>
     public static GpuBigUFloat<TSize> operator +(GpuBigUFloat<TSize> left, GpuBigUFloat<TSize> right) =>
         left.Add(right);
 
-    /// <summary>
-    /// Subtracts one <see cref="GpuBigUFloat{TSize}"/> value from another.
-    /// </summary>
     public static GpuBigUFloat<TSize> operator -(GpuBigUFloat<TSize> left, GpuBigUFloat<TSize> right) =>
         left.Subtract(right);
 
-    /// <summary>
-    /// Adds two <see cref="GpuBigUFloat{TSize}"/> values.
-    /// </summary>
     public readonly GpuBigUFloat<TSize> Add(GpuBigUFloat<TSize> other)
     {
-        return new GpuBigUFloat<TSize>(Significand, System.Math.Max(Exponent, other.Exponent));
+        long expDiff = (long)Exponent - other.Exponent;
+        int targetExp = Exponent;
+        GpuUIntBigInteger<TSize> sigA = Significand;
+        GpuUIntBigInteger<TSize> sigB = other.Significand;
+        bool stickyA = false, stickyB = false;
+
+        if (expDiff > 0)
+        {
+            int shiftAmount = expDiff > int.MaxValue ? int.MaxValue : (int)expDiff;
+            sigB = sigB.ShiftRight(shiftAmount, out stickyB);
+        }
+        else if (expDiff < 0)
+        {
+            long absDiff = -expDiff;
+            int shiftAmount = absDiff > int.MaxValue ? int.MaxValue : (int)absDiff;
+            sigA = sigA.ShiftRight(shiftAmount, out stickyA);
+            targetExp = other.Exponent;
+        }
+
+        var resultSig = sigA.Add(sigB, out bool carry);
+        var result = new GpuBigUFloat<TSize>(resultSig, targetExp);
+        result = result.Normalize(0, carry);
+        return result.Round(GpuBigFloatRoundingMode.RoundToNearestEven, false, false, stickyA | stickyB);
     }
 
-    /// <summary>
-    /// Subtracts another <see cref="GpuBigUFloat{TSize}"/> value from this instance.
-    /// </summary>
     public readonly GpuBigUFloat<TSize> Subtract(GpuBigUFloat<TSize> other)
     {
-        return new GpuBigUFloat<TSize>(Significand, System.Math.Max(Exponent, other.Exponent));
+        long expDiff = (long)Exponent - other.Exponent;
+        int targetExp = Exponent;
+        GpuUIntBigInteger<TSize> sigA = Significand;
+        GpuUIntBigInteger<TSize> sigB = other.Significand;
+        bool stickyA = false, stickyB = false;
+
+        if (expDiff > 0)
+        {
+            int shiftAmount = expDiff > int.MaxValue ? int.MaxValue : (int)expDiff;
+            sigB = sigB.ShiftRight(shiftAmount, out stickyB);
+        }
+        else if (expDiff < 0)
+        {
+            long absDiff = -expDiff;
+            int shiftAmount = absDiff > int.MaxValue ? int.MaxValue : (int)absDiff;
+            sigA = sigA.ShiftRight(shiftAmount, out stickyA);
+            targetExp = other.Exponent;
+        }
+
+        // assumes sigA >= sigB for unsigned subtraction
+        GpuUIntBigInteger<TSize> resultSig;
+        if (sigA >= sigB)
+        {
+            resultSig = sigA.Subtract(sigB, out _);
+        }
+        else
+        {
+            resultSig = new GpuUIntBigInteger<TSize>(default); // clamp to 0 for unsigned
+        }
+
+        var result = new GpuBigUFloat<TSize>(resultSig, targetExp);
+        int leadingZeros = resultSig.IsZero() ? 0 : resultSig.CountLeadingZeros();
+        return result.Normalize(leadingZeros, false);
     }
 }

@@ -97,14 +97,56 @@ public struct GpuBigFloat<TSize> where TSize : unmanaged
     /// </summary>
     public readonly GpuBigFloat<TSize> Add(GpuBigFloat<TSize> other)
     {
-        return new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
+        if (IsNegative == other.IsNegative)
+        {
+            return new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
+        }
+        else
+        {
+            return SubtractMagnitude(this, other);
+        }
     }
 
-    /// <summary>
-    /// Subtracts another <see cref="GpuBigFloat{TSize}"/> value from this instance.
-    /// </summary>
     public readonly GpuBigFloat<TSize> Subtract(GpuBigFloat<TSize> other)
     {
-        return new GpuBigFloat<TSize>(UFloat.Subtract(other.UFloat), IsNegative);
+        if (IsNegative != other.IsNegative)
+        {
+            return new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
+        }
+        else
+        {
+            return SubtractMagnitude(this, other);
+        }
+    }
+
+    private static GpuBigFloat<TSize> SubtractMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
+    {
+        int cmp = CompareMagnitude(a, b);
+        if (cmp > 0)
+        {
+            return new GpuBigFloat<TSize>(a.UFloat.Subtract(b.UFloat), a.IsNegative);
+        }
+        else if (cmp < 0)
+        {
+            return new GpuBigFloat<TSize>(b.UFloat.Subtract(a.UFloat), !a.IsNegative);
+        }
+        else
+        {
+            return new GpuBigFloat<TSize>(new GpuBigUFloat<TSize>(new GpuUIntBigInteger<TSize>(default), 0), false);
+        }
+    }
+
+    private static int CompareMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
+    {
+        bool aZero = a.UFloat.Significand.IsZero();
+        bool bZero = b.UFloat.Significand.IsZero();
+        if (aZero && bZero) return 0;
+        if (aZero) return -1;
+        if (bZero) return 1;
+
+        if (a.UFloat.Exponent > b.UFloat.Exponent) return 1;
+        if (a.UFloat.Exponent < b.UFloat.Exponent) return -1;
+        
+        return a.UFloat.Significand.CompareTo(b.UFloat.Significand);
     }
 }
