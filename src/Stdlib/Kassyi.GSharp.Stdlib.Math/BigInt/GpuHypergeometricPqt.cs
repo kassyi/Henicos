@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <summary>
 /// Represents the intermediate state (P, Q, T) of a hypergeometric series evaluated using Binary Splitting on the GPU.
 /// </summary>
-/// /// <remarks>
+/// <remarks>
 /// Defined according to the Binary Splitting algorithm:
 /// <list type="bullet">
 ///   <item><description><see cref="P"/>: <c>P(a, b) = \prod p(k)</c></description></item>
@@ -14,18 +14,11 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 ///   <item><description><see cref="T"/>: <c>T(a, b) = \sum ...</c></description></item>
 /// </list>
 /// </remarks>
-public readonly struct GpuHypergeometricPqt : IDisposable
+public readonly struct GpuHypergeometricPqt(GpuBigInteger p, GpuUIntBigInteger q, GpuBigInteger t) : IDisposable
 {
-    public GpuBigInteger P { get; }
-    public GpuUIntBigInteger Q { get; }
-    public GpuBigInteger T { get; }
-
-    public GpuHypergeometricPqt(GpuBigInteger p, GpuUIntBigInteger q, GpuBigInteger t)
-    {
-        P = p;
-        Q = q ?? throw new ArgumentNullException(nameof(q));
-        T = t;
-    }
+    public GpuBigInteger P { get; } = p;
+    public GpuUIntBigInteger Q { get; } = q ?? throw new ArgumentNullException(nameof(q));
+    public GpuBigInteger T { get; } = t;
 
     public void Dispose()
     {

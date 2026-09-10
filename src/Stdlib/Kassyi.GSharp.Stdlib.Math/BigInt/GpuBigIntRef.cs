@@ -10,16 +10,10 @@ using Kernels;
 /// <para>Overloads C# arithmetic operators to permit expressions like <c>a = b + c</c> inside GPU kernels. The GSharp Transpiler replaces these with optimized device function calls.</para>
 /// <para><b>Target:</b> GPU device functions and kernels only.</para>
 /// </remarks>
-public readonly ref struct GpuBigIntRef
+public readonly ref struct GpuBigIntRef(uint[] data)
 {
     /// <summary>Gets the raw underlying uint limb array buffer.</summary>
-    public readonly uint[] Data;
-
-    /// <summary>Initializes a new instance of the <see cref="GpuBigIntRef"/> struct wrapping the specified limb array.</summary>
-    public GpuBigIntRef(uint[] data)
-    {
-        Data = data;
-    }
+    public readonly uint[] Data = data;
 
     [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Add))]
     public static GpuBigIntRef operator +(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();

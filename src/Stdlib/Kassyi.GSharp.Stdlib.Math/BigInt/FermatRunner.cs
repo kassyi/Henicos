@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Jit;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
@@ -9,11 +9,14 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <remarks><para>Implements: <b>GEN-51</b></para></remarks>
 public class FermatRunner : IDisposable
 {
-    /// <summary>Gets the Fermat exponent parameter <c>E</c> (testing <c>F_n = 2^(2^E) + 1</c>).</summary>
-    public int E
-    {
-        get;
-    }
+    /// <summary>Gets the Fermat exponent parameter.</summary>
+    /// <remarks>
+    /// Defined according to the Fermat number Probable Prime (PRP) test:
+    /// <list type="bullet">
+    ///   <item><description><see cref="E"/>: <c>F_n = 2^(2^E) + 1</c></description></item>
+    /// </list>
+    /// </remarks>
+    public int E { get; }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
     public int OutNumWords => _outNumWords;
@@ -116,7 +119,7 @@ public class FermatRunner : IDisposable
     }
 
     /// <summary>Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.</summary>
-    public (uint[] Result, long EllapsedMs) RunFermatPrp()
+    public (uint[] Result, long ElapsedMs) RunFermatPrp()
     {
         var sw = Stopwatch.StartNew();
 
