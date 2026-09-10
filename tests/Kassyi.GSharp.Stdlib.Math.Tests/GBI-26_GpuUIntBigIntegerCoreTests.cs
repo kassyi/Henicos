@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
@@ -74,5 +74,21 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(1u, resultData[0]);
         Assert.Equal(2u, resultData[1]);
         Assert.Equal(3u, resultData[2]);
+    }
+    [Fact]
+    [Trait("FeatureId", "GBI-26")]
+    [Trait("Category", "HappyPath")]
+    public void Test_GBI26_Addition_EvaluatesCorrectly()
+    {
+        var originalA = BigInteger.Parse("1234567890123456789012345678901234567890");
+        var originalB = BigInteger.Parse("9876543210987654321098765432109876543210");
+        
+        using var a = GpuUIntBigInteger.FromBigInteger(_context, originalA);
+        using var b = GpuUIntBigInteger.FromBigInteger(_context, originalB);
+
+        var expr = a + b;
+        using var result = expr.Node.Evaluate(_context, null);
+
+        Assert.Equal(originalA + originalB, result.ToBigInteger());
     }
 }
