@@ -1,13 +1,25 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
+/// <summary>
+/// Transpiles anonymous function syntax nodes (simple lambdas, parenthesized lambdas, and anonymous methods)
+/// into target dialect C++ capture-by-reference lambdas (<c>[&amp;](...) { ... }</c>).
+/// </summary>
+/// <remarks>
+/// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
 public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<AnonymousFunctionExpressionSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="LambdaExpressionTranspilerRule"/>.
+    /// </summary>
     public static readonly LambdaExpressionTranspilerRule Instance = new();
 
     private LambdaExpressionTranspilerRule()
     {
     }
 
+    /// <inheritdoc />
     public override void Transpile(AnonymousFunctionExpressionSyntax node, ref TranspileContext context)
     {
         switch (node)

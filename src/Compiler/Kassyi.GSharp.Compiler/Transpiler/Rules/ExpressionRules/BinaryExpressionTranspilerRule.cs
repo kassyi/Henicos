@@ -1,11 +1,25 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
+/// <summary>
+/// Transpiles C# binary expressions (arithmetic, logical, bitwise, comparison, and null-coalescing <c>??</c>) into target dialect operations.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Null-coalescing expressions (<c>??</c>) are lowered into immediately invoked C++ lambdas with temporary value binding.
+/// </para>
+/// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
 public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<BinaryExpressionSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="BinaryExpressionTranspilerRule"/>.
+    /// </summary>
     public static readonly BinaryExpressionTranspilerRule Instance = new();
 
     private BinaryExpressionTranspilerRule() { }
 
+    /// <inheritdoc />
     public override void Transpile(BinaryExpressionSyntax node, ref TranspileContext context)
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))

@@ -1,14 +1,24 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
-public sealed class
-    ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<ObjectCreationExpressionSyntax>
+/// <summary>
+/// Transpiles explicit object creation expressions (<c>new MyStruct(...)</c>) into target dialect C++ struct constructor calls or brace initializers.
+/// </summary>
+/// <remarks>
+/// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
+public sealed class ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<ObjectCreationExpressionSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="ObjectCreationExpressionTranspilerRule"/>.
+    /// </summary>
     public static readonly ObjectCreationExpressionTranspilerRule Instance = new();
 
     private ObjectCreationExpressionTranspilerRule()
     {
     }
 
+    /// <inheritdoc />
     public override void Transpile(ObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
@@ -17,16 +27,25 @@ public sealed class
     }
 }
 
-public sealed class
-    ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
-    ImplicitObjectCreationExpressionSyntax>
+/// <summary>
+/// Transpiles target-typed implicit object creation expressions (<c>new(...)</c>) into target dialect C++ struct initializers.
+/// </summary>
+/// <remarks>
+/// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
+public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<ImplicitObjectCreationExpressionSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="ImplicitObjectCreationExpressionTranspilerRule"/>.
+    /// </summary>
     public static readonly ImplicitObjectCreationExpressionTranspilerRule Instance = new();
 
     private ImplicitObjectCreationExpressionTranspilerRule()
     {
     }
 
+    /// <inheritdoc />
     public override void Transpile(ImplicitObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
@@ -35,6 +54,9 @@ public sealed class
     }
 }
 
+/// <summary>
+/// Internal helper facilitating shared struct instantiation and brace-enclosed initialization logic.
+/// </summary>
 internal static class ObjectCreationHelper
 {
     public static void TryTranspileObjectCreationHelper(
