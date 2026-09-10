@@ -18,6 +18,15 @@ public class GSH_00_03_GpuKernelAnalyzerTests
 
     [Theory]
     [Trait("Category", "SadPath")]
+    [InlineData("GEN-36", "Analyzers/GEN-36_MacroArgumentSadPath.cs", new[] { "GSH0012", "GSH0006" })]
+    public async Task Test_GpuKernelAnalyzer_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expectedErrorIds)
+    {
+        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+                               .ReportsErrorsAsync(expectedErrorIds);
+    }
+
+    [Theory]
+    [Trait("Category", "SadPath")]
     [InlineData("GSH-00", "Analyzers/GpuKernel/GSH-00_ValidSyntax_InGpuKernel.cu.cs")]
     public async Task Test_GpuKernelAnalyzer_HasNoErrors(string featureId, string testCasePath)
     {
