@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Compiler.Transpiler.Rules;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -253,16 +255,16 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        => ExpressionTranspilers.TranspileAssignmentExpression(node, ref Context);
+        => AssignmentExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspileBinaryExpression(node, ref Context);
+        => BinaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitSwitchExpression(SwitchExpressionSyntax node)
-        => ExpressionTranspilers.TranspileSwitchExpression(node, ref Context);
+        => SwitchExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
-        => ExpressionTranspilers.TranspileConditionalExpression(node, ref Context);
+        => ConditionalExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
@@ -306,34 +308,34 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) => Context.Writer.AppendEmptyScope();
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
-        => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
+        => ElementAccessExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspilePrefixUnaryExpression(node, ref Context);
+        => PrefixUnaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitCastExpression(CastExpressionSyntax node)
-        => ExpressionTranspilers.TranspileCastExpression(node, ref Context);
+        => CastExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
-        => ExpressionTranspilers.TranspileParenthesizedExpression(node, ref Context);
+        => ParenthesizedExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspilePostfixUnaryExpression(node, ref Context);
+        => PostfixUnaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        => ExpressionTranspilers.TranspileMemberAccessExpression(node, ref Context);
+        => MemberAccessExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileInvocationExpression(node, ref Context);
+        => InvocationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitArgument(ArgumentSyntax node)
-        => ExpressionTranspilers.TranspileArgument(node, ref Context);
+        => ArgumentTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileObjectCreationExpression(node, ref Context);
+        => ObjectCreationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref Context);
+        => ImplicitObjectCreationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);
@@ -342,13 +344,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => Context.Writer.Append(node.Identifier.Text);
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
-        => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
+        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
-        => ExpressionTranspilers.TranspileParenthesizedLambdaExpression(node, ref Context);
+        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
-        => ExpressionTranspilers.TranspileAnonymousMethodExpression(node, ref Context);
+        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitCollectionExpression(CollectionExpressionSyntax node)
     {
@@ -358,11 +360,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             for (var i = 0; i < node.Elements.Count; i++)
             {
                 Visit(node.Elements[i]);
-                if (i < node.Elements.Count - 1)
+                if (i >= node.Elements.Count - 1)
                 {
-                    Context.Writer.AppendComma();
-                    Context.Writer.AppendSpace();
+                    continue;
                 }
+
+                Context.Writer.AppendComma();
+                Context.Writer.AppendSpace();
             }
 
             Context.Writer.AppendSpace();
