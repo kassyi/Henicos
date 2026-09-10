@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Runtime.Jit;
 
@@ -217,7 +217,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
-        using var scope_memset1 = new JitEngine.CudaContextScope();
+        using var scopeMemset1 = new JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
         GpuBigIntCmpKernelsWrapper.Launch_IsZeroKernel_Device(
@@ -234,7 +234,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
-        using var scope_memset2 = new JitEngine.CudaContextScope();
+        using var scopeMemset2 = new JitEngine.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
         GpuBigIntCmpKernelsWrapper.Launch_IsOneKernel_Device(
@@ -415,7 +415,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         try
         {
             var carryBufferSize = (numChunks + 1) * 8;
-            using var scope_memset5 = new JitEngine.CudaContextScope();
+            using var scopeMemset5 = new JitEngine.CudaContextScope();
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, carryBufferSize));
 
             GpuBigIntKernelsWrapper.Launch_ChunkAddKernel_Device(
@@ -445,7 +445,7 @@ public sealed class GSharpJitProvider : IGpuExecutionProvider
         try
         {
             var carryBufferSize = (numChunks + 1) * 8;
-            using var scope_memset6 = new JitEngine.CudaContextScope();
+            using var scopeMemset6 = new JitEngine.CudaContextScope();
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer, 0, carryBufferSize));
 
             GpuBigIntKernelsWrapper.Launch_ChunkSubKernel_Device(

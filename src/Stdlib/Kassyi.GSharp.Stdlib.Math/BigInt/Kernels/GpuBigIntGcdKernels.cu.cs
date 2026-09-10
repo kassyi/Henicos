@@ -60,11 +60,11 @@ public static class GpuBigIntGcdKernels
 
             var r = x - (ulong)q * y;
 
-            var next_u = u0 - q * u1;
-            var next_v = v0 - q * v1;
+            var nextU = u0 - q * u1;
+            var nextV = v0 - q * v1;
 
-            if (next_u > 0x7FFFFFFF || next_u < -0x7FFFFFFF ||
-                next_v > 0x7FFFFFFF || next_v < -0x7FFFFFFF)
+            if (nextU > 0x7FFFFFFF || nextU < -0x7FFFFFFF ||
+                nextV > 0x7FFFFFFF || nextV < -0x7FFFFFFF)
             {
                 break;
             }
@@ -73,8 +73,8 @@ public static class GpuBigIntGcdKernels
             y = r;
             u0 = u1;
             v0 = v1;
-            u1 = next_u;
-            v1 = next_v;
+            u1 = nextU;
+            v1 = nextV;
             progress = true;
         }
 
