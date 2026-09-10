@@ -1,7 +1,9 @@
+using Kassyi.GSharp.Core;
+
 namespace Henicos.Cli;
 
 /// <summary>End-to-end verification test comparing CPU BigInteger ModPow against GPU hybrid reduction loops.</summary>
-public static class FullLoopTest
+public class FullLoopTest
 {
     public static void Run()
     {
@@ -37,11 +39,11 @@ public static class FullLoopTest
         resBytes[data.Length * 4] = 0;
         var resultBigInt = new BigInteger(resBytes);
 
-        Console.WriteLine($"Hybrid CPU Full Loop: {resultBigInt % modulus}");
+        Logger<FullLoopTest>.Info($"Hybrid CPU Full Loop: {resultBigInt % modulus}");
 
         var expectedModPow = BigInteger.ModPow(2, modulus - 1, modulus);
-        Console.WriteLine($"Standard ModPow:      {expectedModPow}");
-        Console.WriteLine($"Match: {(resultBigInt % modulus) == expectedModPow}");
+        Logger<FullLoopTest>.Info($"Standard ModPow:      {expectedModPow}");
+        Logger<FullLoopTest>.Info($"Match: {(resultBigInt % modulus) == expectedModPow}");
         return;
 
         void squareAndReduce()
