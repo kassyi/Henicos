@@ -12,8 +12,8 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to ensure deterministic deallocation of GPU global memory allocated for all four matrix elements (<see cref="M00"/>, <see cref="M01"/>, <see cref="M10"/>, and <see cref="M11"/>).</para>
 /// <para><b>Execution Target:</b> Host-only (CPU) control API that dispatches arithmetic operations and memory transfers to the GPU.</para>
 /// </remarks>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public class GpuBigIntMatrix2x2 : IDisposable
 {
     /// <summary>

@@ -46,11 +46,9 @@ public static class GpuBigIntNttKernels
         return result;
     }
 
-    [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalse",
-        Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
+    // ReSharper disable once ConditionIsAlwaysTrueOrFalse -- Variables are modified via inline PTX assembly which ReSharper cannot detect
+    // ReSharper disable once UselessBinaryOperation -- Variables are modified via inline PTX assembly which ReSharper cannot detect
     [GpuDeviceFunction]
-    [SuppressMessage("ReSharper", "UselessBinaryOperation",
-        Justification = "Variables are modified via inline PTX assembly which ReSharper cannot detect")]
     public static uint ModMulBarrett(uint operandA, uint operandB, uint primeModulus, ulong barrettMagic)
     {
         ulong product = 0;
@@ -488,9 +486,8 @@ public static class GpuBigIntNttKernels
         Gpu.SyncGrid();
     }
 
+    // ReSharper disable once UnusedMember.Global -- Exists solely to trigger snapshot transpilation
     [GpuKernel]
-    [SuppressMessage("ReSharper", "UnusedMember.Global",
-        Justification = "Exists solely to trigger snapshot transpilation")]
     public static void _DiagnosticsWrapper_Device_NTT_Shared_Row(uint[] data)
     {
         // This is a dummy kernel wrapper that exists solely to force the compilation of

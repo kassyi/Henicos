@@ -185,7 +185,7 @@ public static class NttCpuReference
     /// <param name="operandA">The first operand array.</param>
     /// <param name="operandB">The second operand array.</param>
     /// <returns>An array containing the product.</returns>
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "External API used by test assemblies")]
+    // ReSharper disable once UnusedMember.Global -- External API used by test assemblies
     public static uint[] Multiply(uint[] operandA, uint[] operandB)
     {
         var combinedLength = operandA.Length + operandB.Length;
