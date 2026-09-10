@@ -12,8 +12,8 @@ public static class GpuBigIntKernels
     public static void ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords,
         int chunkSize)
     {
-        int numChunks = (numWords + chunkSize - 1) / chunkSize;
-        
+        var numChunks = (numWords + chunkSize - 1) / chunkSize;
+
         Gpu.GridStrideLoop(numChunks, chunkIdx =>
         {
             var start = chunkIdx * chunkSize;
@@ -72,8 +72,8 @@ public static class GpuBigIntKernels
     public static void ChunkSubKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords,
         int chunkSize)
     {
-        int numChunks = (numWords + chunkSize - 1) / chunkSize;
-        
+        var numChunks = (numWords + chunkSize - 1) / chunkSize;
+
         Gpu.GridStrideLoop(numChunks, chunkIdx =>
         {
             var start = chunkIdx * chunkSize;

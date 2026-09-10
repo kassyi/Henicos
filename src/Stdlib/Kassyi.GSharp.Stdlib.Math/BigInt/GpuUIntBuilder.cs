@@ -11,15 +11,16 @@ public static class GpuUIntBuilder
 {
     public static GpuUIntBigInteger<TSize> Create<TSize>(ReadOnlySpan<uint> elements) where TSize : unmanaged
     {
-        int maxLength = Unsafe.SizeOf<TSize>() / sizeof(uint);
+        var maxLength = Unsafe.SizeOf<TSize>() / sizeof(uint);
 
         if (elements.Length > maxLength)
         {
-            throw new ArgumentException($"The collection expression provided {elements.Length} elements, but the target fixed-size buffer can only hold {maxLength} elements.");
+            throw new ArgumentException(
+                $"The collection expression provided {elements.Length} elements, but the target fixed-size buffer can only hold {maxLength} elements.");
         }
 
         TSize limbs = default;
-        Span<uint> span = MemoryMarshal.CreateSpan(ref Unsafe.As<TSize, uint>(ref limbs), maxLength);
+        var span = MemoryMarshal.CreateSpan(ref Unsafe.As<TSize, uint>(ref limbs), maxLength);
         elements.CopyTo(span);
 
         return new GpuUIntBigInteger<TSize>(limbs);
