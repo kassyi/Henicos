@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigFloat;
@@ -8,7 +7,8 @@ namespace Kassyi.GSharp.Stdlib.Math.BigFloat;
 /// </summary>
 /// <typeparam name="TSize">The unmanaged struct type representing the significand storage size.</typeparam>
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuBigFloat<TSize> where TSize : unmanaged
+public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<GpuBigFloat<TSize>>
+    where TSize : unmanaged
 {
     /// <summary>
     /// The underlying unsigned floating-point value payload.
@@ -49,9 +49,10 @@ public struct GpuBigFloat<TSize> where TSize : unmanaged
     /// <param name="alignedOther">The resulting aligned operand.</param>
     /// <param name="stickyBit">The sticky bit preserved from right-shifting.</param>
     /// <returns>The exponent difference $\Delta E$.</returns>
-    public readonly int AlignRadixPoint(GpuBigFloat<TSize> other, out GpuBigFloat<TSize> alignedOther, out bool stickyBit)
+    public readonly int AlignRadixPoint(GpuBigFloat<TSize> other, out GpuBigFloat<TSize> alignedOther,
+        out bool stickyBit)
     {
-        int expDiff = UFloat.AlignRadixPoint(other.UFloat, out var alignedUFloat, out stickyBit);
+        var expDiff = UFloat.AlignRadixPoint(other.UFloat, out var alignedUFloat, out stickyBit);
         alignedOther = new GpuBigFloat<TSize>(alignedUFloat, other.IsNegative);
         return expDiff;
     }
@@ -121,7 +122,7 @@ public struct GpuBigFloat<TSize> where TSize : unmanaged
 
     private static GpuBigFloat<TSize> SubtractMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
     {
-        int cmp = CompareMagnitude(a, b);
+        var cmp = CompareMagnitude(a, b);
         if (cmp > 0)
         {
             return new GpuBigFloat<TSize>(a.UFloat.Subtract(b.UFloat), a.IsNegative);
@@ -138,15 +139,83 @@ public struct GpuBigFloat<TSize> where TSize : unmanaged
 
     private static int CompareMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
     {
-        bool aZero = a.UFloat.Significand.IsZero();
-        bool bZero = b.UFloat.Significand.IsZero();
-        if (aZero && bZero) return 0;
-        if (aZero) return -1;
-        if (bZero) return 1;
+        var aZero = a.UFloat.Significand.IsZero();
+        var bZero = b.UFloat.Significand.IsZero();
+        if (aZero && bZero)
+        {
+            return 0;
+        }
 
-        if (a.UFloat.Exponent > b.UFloat.Exponent) return 1;
-        if (a.UFloat.Exponent < b.UFloat.Exponent) return -1;
-        
+        if (aZero)
+        {
+            return -1;
+        }
+
+        if (bZero)
+        {
+            return 1;
+        }
+
+        if (a.UFloat.Exponent > b.UFloat.Exponent)
+        {
+            return 1;
+        }
+
+        if (a.UFloat.Exponent < b.UFloat.Exponent)
+        {
+            return -1;
+        }
+
         return a.UFloat.Significand.CompareTo(b.UFloat.Significand);
     }
+
+    public readonly int CompareTo(GpuBigFloat<TSize> other)
+    {
+        var thisZero = UFloat.Significand.IsZero();
+        var otherZero = other.UFloat.Significand.IsZero();
+
+        if (thisZero && otherZero)
+        {
+            return 0;
+        }
+
+        if (thisZero)
+        {
+            return other.IsNegative ? 1 : -1;
+        }
+
+        if (otherZero)
+        {
+            return IsNegative ? -1 : 1;
+        }
+
+        if (IsNegative != other.IsNegative)
+        {
+            return IsNegative ? -1 : 1;
+        }
+
+        var magCmp = CompareMagnitude(this, other);
+        return IsNegative ? -magCmp : magCmp;
+    }
+
+    public readonly bool Equals(GpuBigFloat<TSize> other) => CompareTo(other) == 0;
+
+    public readonly override bool Equals(object? obj) => obj is GpuBigFloat<TSize> other && Equals(other);
+
+    public readonly override int GetHashCode()
+    {
+        if (UFloat.Significand.IsZero())
+        {
+            return 0;
+        }
+
+        return HashCode.Combine(UFloat.Significand.GetHashCode(), UFloat.Exponent, IsNegative);
+    }
+
+    public static bool operator ==(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => left.Equals(right);
+    public static bool operator !=(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => !left.Equals(right);
+    public static bool operator <(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => left.CompareTo(right) < 0;
+    public static bool operator >(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => left.CompareTo(right) > 0;
+    public static bool operator <=(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => left.CompareTo(right) <= 0;
+    public static bool operator >=(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => left.CompareTo(right) >= 0;
 }
