@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
@@ -13,6 +13,17 @@ namespace Henicos.PiBenchmark;
 /// </summary>
 public static class GpuChudnovskyPi
 {
+    /// <summary>
+    /// Average number of decimal digits contributed per hypergeometric series term in the Chudnovsky algorithm.
+    /// Derived from log10(640320^3 / 24) ≈ 14.181647462725477.
+    /// </summary>
+    private const double DigitsPerTerm = 14.181647462725477;
+
+    /// <summary>
+    /// Conversion factor from decimal digits to bits (log2(10)).
+    /// </summary>
+    private const double BitsPerDecimalDigit = 3.321928094887362;
+
     private readonly struct CpuPqt
     {
         public BigInteger P { get; init; }
@@ -53,12 +64,12 @@ public static class GpuChudnovskyPi
             }
 
             var termsPerSec = currentB / elapsedSec;
-            var digitsPerSec = termsPerSec * 14.181647462725477;
+            var digitsPerSec = termsPerSec * DigitsPerTerm;
 
             var estimatedTotalSec = currentB > 0 ? elapsedSec / progress : 0;
             var etaSec = Math.Max(0, estimatedTotalSec - elapsedSec);
 
-            var currentDigits = (int)Math.Min(TotalDigits, currentB * 14.181647462725477);
+            var currentDigits = (int)Math.Min(TotalDigits, currentB * DigitsPerTerm);
 
             var barSize = 30;
             var filled = (int)(progress * barSize);
@@ -88,20 +99,20 @@ public static class GpuChudnovskyPi
 
         if (asHex)
         {
-            var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
+            var exactBits = (int)Math.Floor(digits * BitsPerDecimalDigit / 32) * 32;
             var extraBits = 1024; // Safe margin for series truncation error
             var marginBits = 256; // Division noise margin
             totalDigits = exactBits + extraBits + marginBits;
-            totalTerms = (int)Math.Ceiling(totalDigits / 14.181647462725477);
+            totalTerms = (int)Math.Ceiling(totalDigits / DigitsPerTerm);
         }
         else
         {
             totalDigits = digits + extraDigits;
-            totalTerms = digits / 14 + 1;
+            totalTerms = (int)Math.Ceiling(digits / DigitsPerTerm) + 1;
         }
 
         // Estimate max limb words for GPU workspace allocation
-        var estimatedWords = (int)((totalDigits * 3.32192809489) / 32) + 256;
+        var estimatedWords = (int)((totalDigits * BitsPerDecimalDigit) / 32) + 256;
         var maxContextWords = Math.Max(4096, 1 << (int)Math.Ceiling(Math.Log2(estimatedWords * 4)));
 
         Logger.Info("GPU-Pi",
