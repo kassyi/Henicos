@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
@@ -12,12 +13,12 @@ public class FermatPrpBenchmark
 
     public static void RunFermatTest(int E, int iterations)
     {
-        Console.WriteLine("==================================================");
-        Console.WriteLine(" G# Native Fermat PRP Test (Stdlib FermatRunner)");
-        Console.WriteLine("==================================================");
-        Console.WriteLine($"E       = {E}");
-        Console.WriteLine($"Digits  = {(2 * E * Math.Log10(2)):N0}");
-        Console.WriteLine("==================================================");
+        Logger<FermatPrpBenchmark>.Info("==================================================");
+        Logger<FermatPrpBenchmark>.Info(" G# Native Fermat PRP Test (Stdlib FermatRunner)");
+        Logger<FermatPrpBenchmark>.Info("==================================================");
+        Logger<FermatPrpBenchmark>.Info($"E       = {E}");
+        Logger<FermatPrpBenchmark>.Info($"Digits  = {(2 * E * Math.Log10(2)):N0}");
+        Logger<FermatPrpBenchmark>.Info("==================================================");
 
         using var scope = new JitEngine.CudaContextScope();
 
@@ -58,17 +59,17 @@ public class FermatPrpBenchmark
                 }
 
                 runner.LoadState(state);
-                Console.WriteLine($"Resuming from iteration {startIter} (Hash OK)...");
+                Logger<FermatPrpBenchmark>.Info($"Resuming from iteration {startIter} (Hash OK)...");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Warning: Failed to load checkpoint ({ex.Message}). Starting from scratch.");
+                Logger<FermatPrpBenchmark>.Warning($"Warning: Failed to load checkpoint ({ex.Message}). Starting from scratch.");
                 startIter = 0;
             }
         }
         else
         {
-            Console.WriteLine($"Starting {iterations} iterations of Fermat PRP Test from scratch...");
+            Logger<FermatPrpBenchmark>.Info($"Starting {iterations} iterations of Fermat PRP Test from scratch...");
         }
 
         var sw = Stopwatch.StartNew();
@@ -89,11 +90,11 @@ public class FermatPrpBenchmark
 
             // Save state to disk
             SaveCheckpoint(i, runner);
-            Console.WriteLine($"[Checkpoint] Saved state and hash at iteration {i}.");
+            Logger<FermatPrpBenchmark>.Info($"[Checkpoint] Saved state and hash at iteration {i}.");
         }
 
         sw.Stop();
-        Console.WriteLine($"Completed all requested iterations up to {iterations} in {sw.ElapsedMilliseconds} ms");
+        Logger<FermatPrpBenchmark>.Info($"Completed all requested iterations up to {iterations} in {sw.ElapsedMilliseconds} ms");
     }
 
     private static void SaveCheckpoint(int currentIteration, FermatRunner runner)

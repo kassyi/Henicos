@@ -1,4 +1,5 @@
 using System.Numerics;
+using Kassyi.GSharp.Core;
 
 namespace Henicos.PiBenchmark;
 
@@ -35,7 +36,7 @@ public class ChudnovskyPi
         var pi = piExt / BigInteger.Pow(10, extraDigits);
         sw.Stop();
 
-        Console.WriteLine($"Computed {digits} digits in {sw.ElapsedMilliseconds} ms");
+        Logger<ChudnovskyPi>.Info($"Computed {digits} digits in {sw.ElapsedMilliseconds} ms");
         return pi.ToString();
     }
 
