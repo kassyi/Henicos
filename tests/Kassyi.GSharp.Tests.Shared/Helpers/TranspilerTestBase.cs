@@ -1,3 +1,4 @@
+#nullable enable
 namespace Kassyi.GSharp.Tests.Helpers;
 
 public abstract class TranspilerTestBase
@@ -38,3 +39,4 @@ public abstract class TranspilerTestBase
         return VerifyXunit.Verifier.Verify(target).UseMethodName($"{methodName}_{DialectName}");
     }
 }
+

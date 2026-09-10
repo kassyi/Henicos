@@ -1,3 +1,4 @@
+#nullable enable
 namespace Kassyi.GSharp.Tests.Helpers;
 
 public static class MegaCompilationCache
@@ -13,7 +14,7 @@ public static class MegaCompilationCache
             .ToList();
 
         references.Add(MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.Gpu).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Stdlib.Math.BigInt.GpuBigInteger).Assembly.Location));
+        references.Add(MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Stdlib.Math.BigInt.GpuUIntBigInteger).Assembly.Location));
 
         var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
@@ -121,3 +122,4 @@ public static class MegaCompilationCache
         return (model, methodSymbol);
     }
 }
+

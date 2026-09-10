@@ -207,6 +207,7 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
             .Where(Directory.Exists)
             .SelectMany(dir => Directory.GetFiles(dir, "*.verified.cs", SearchOption.AllDirectories))
             .Select(Path.GetFileName)
+            .OfType<string>()
             .ToList();
 
         Assert.NotEmpty(snapshotFiles);
@@ -217,7 +218,7 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
         foreach (var pureName in mandatorySnapshotKernels)
         {
             var cleanName = GetPureName(pureName);
-            if (!snapshotFiles.Any(f => f.IndexOf(cleanName, StringComparison.OrdinalIgnoreCase) >= 0))
+            if (!snapshotFiles.Any(f => f.Contains(cleanName, StringComparison.OrdinalIgnoreCase)))
             {
                 missingSnapshots.Add("TestCase/Kernel '" + pureName + "' does not have any corresponding snapshot.");
             }
