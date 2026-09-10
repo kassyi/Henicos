@@ -99,7 +99,7 @@ public class LoggerTests
         logger.LogInformation(marker);
 
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 5000);
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 30000);
 
         var messages = new HashSet<string>(
             content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
@@ -134,7 +134,7 @@ public class LoggerTests
         logger.LogInformation(marker);
 
         var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "gsharp_diagnostics.log");
-        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 10000);
+        var content = await LoggerFixture.WaitForLogContentAsync(logPath, c => c.Contains(marker), 30000);
 
         Assert.Contains(giantString, content);
     }

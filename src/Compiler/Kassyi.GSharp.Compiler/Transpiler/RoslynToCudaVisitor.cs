@@ -1,15 +1,24 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-/// <summary>Pooled Roslyn syntax visitor that transpiles C# statements and expressions directly into CUDA C++.</summary>
-/// <remarks><para>Implements: <b>GEN-15</b></para></remarks>
+/// <summary>
+/// Traverses and transpiles Roslyn C# syntax nodes directly into CUDA C++ source representations using pooled visitor instances.
+/// </summary>
+/// <remarks>
+/// <para>Implements: <b>GEN-15</b></para>
+/// <para><b>Performance:</b> Instances are pooled via <see cref="Rent"/> and returned via <see cref="Dispose"/> to eliminate heap allocations during large-scale compilation passes.</para>
+/// <para><b>Thread Safety:</b> Individual visitor instances are mutable and not thread-safe. However, <see cref="Rent"/> and <see cref="Dispose"/> are safe for multi-threaded invocation.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment). Cannot be executed within GPU kernels.</para>
+/// </remarks>
 public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
     // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
     private static readonly ConcurrentBag<RoslynToCudaVisitor> s_pool = [];
 
-    // Pooled Collections to achieve true zero-allocation during generation
+    // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, OverrideValue> _localVariableOverrides = new();
 
@@ -20,11 +29,33 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
     }
 
+    /// <summary>
+    /// Rents an initialized <see cref="RoslynToCudaVisitor"/> instance from the internal object pool.
+    /// </summary>
+    /// <param name="dialect">The target language and hardware dialect controlling code emission.</param>
+    /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
+    /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
+    /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
+    /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para>The returned instance must be disposed using <see cref="Dispose"/> to return it to the pool.</para>
+    /// </remarks>
     public static RoslynToCudaVisitor Rent(
         ITranspilerDialect dialect,
         SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
         ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
+        if (dialect is null)
+        {
+            throw new ArgumentNullException(nameof(dialect));
+        }
+
+        if (semanticModel is null)
+        {
+            throw new ArgumentNullException(nameof(semanticModel));
+        }
+
         if (!s_pool.TryTake(out var visitor))
         {
             visitor = new RoslynToCudaVisitor();
@@ -48,6 +79,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         return visitor;
     }
 
+    /// <summary>
+    /// Releases the active transpilation context and returns this visitor instance to the object pool.
+    /// </summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _isRented, 0) != 1)
@@ -59,6 +93,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         s_pool.Add(this);
     }
 
+
+    /// <inheritdoc />
     public override void Visit(SyntaxNode? node)
     {
         if (node == null)
@@ -77,6 +113,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         base.Visit(node);
     }
 
+    /// <inheritdoc />
     public override void DefaultVisit(SyntaxNode node)
     {
         Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
@@ -84,6 +121,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         base.DefaultVisit(node);
     }
 
+    /// <inheritdoc />
     public override void VisitPredefinedType(PredefinedTypeSyntax node)
     {
         if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
@@ -103,6 +141,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
+    /// <inheritdoc />
     public override void VisitParameterList(ParameterListSyntax node)
     {
         using (Context.Writer.Parentheses())
@@ -119,6 +158,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
+    /// <inheritdoc />
     public override void VisitParameter(ParameterSyntax node)
     {
         if (node.Type != null)
@@ -142,6 +182,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Writer.Append($" {node.Identifier.Text}");
     }
 
+    /// <summary>
+    /// Transpiles a statement or block syntax node, automatically ensuring enclosing C++ braces are emitted for single statements.
+    /// </summary>
+    /// <param name="statement">The Roslyn statement syntax node to transpile.</param>
     public void VisitStatementOrBlock(StatementSyntax statement)
     {
         if (statement is BlockSyntax block)
@@ -168,6 +212,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             }
         }
     }
+
 
     // --- Statements ---
 
@@ -230,10 +275,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => StatementTranspilers.TranspileReturnStatement(node, ref Context);
 
     public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
-        => DeclarationTranspilers.TranspileLocalDeclarationStatement(node, ref Context);
+        => LocalDeclarationStatementTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
-        => DeclarationTranspilers.TranspileVariableDeclaration(node, ref Context);
+        => VariableDeclarationTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
         => StatementTranspilers.TranspileLocalFunctionStatement(node, ref Context);
@@ -247,22 +292,22 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        DeclarationTranspilers.HoistDeclarationExpressions(node, ref Context);
+        DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref Context);
         Visit(node.Expression);
         Context.Writer.AppendSemiColon();
     }
 
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        => ExpressionTranspilers.TranspileAssignmentExpression(node, ref Context);
+        => AssignmentExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspileBinaryExpression(node, ref Context);
+        => BinaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitSwitchExpression(SwitchExpressionSyntax node)
-        => ExpressionTranspilers.TranspileSwitchExpression(node, ref Context);
+        => SwitchExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
-        => ExpressionTranspilers.TranspileConditionalExpression(node, ref Context);
+        => ConditionalExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
@@ -306,34 +351,34 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) => Context.Writer.AppendEmptyScope();
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
-        => ExpressionTranspilers.TranspileElementAccessExpression(node, ref Context);
+        => ElementAccessExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspilePrefixUnaryExpression(node, ref Context);
+        => PrefixUnaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitCastExpression(CastExpressionSyntax node)
-        => ExpressionTranspilers.TranspileCastExpression(node, ref Context);
+        => CastExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
-        => ExpressionTranspilers.TranspileParenthesizedExpression(node, ref Context);
+        => ParenthesizedExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
-        => ExpressionTranspilers.TranspilePostfixUnaryExpression(node, ref Context);
+        => PostfixUnaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        => ExpressionTranspilers.TranspileMemberAccessExpression(node, ref Context);
+        => MemberAccessExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileInvocationExpression(node, ref Context);
+        => InvocationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitArgument(ArgumentSyntax node)
-        => ExpressionTranspilers.TranspileArgument(node, ref Context);
+        => ArgumentTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileObjectCreationExpression(node, ref Context);
+        => ObjectCreationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
-        => ExpressionTranspilers.TranspileImplicitObjectCreationExpression(node, ref Context);
+        => ImplicitObjectCreationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);
@@ -342,13 +387,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => Context.Writer.Append(node.Identifier.Text);
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
-        => ExpressionTranspilers.TranspileSimpleLambdaExpression(node, ref Context);
+        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
-        => ExpressionTranspilers.TranspileParenthesizedLambdaExpression(node, ref Context);
+        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
-        => ExpressionTranspilers.TranspileAnonymousMethodExpression(node, ref Context);
+        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitCollectionExpression(CollectionExpressionSyntax node)
     {
@@ -358,11 +403,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             for (var i = 0; i < node.Elements.Count; i++)
             {
                 Visit(node.Elements[i]);
-                if (i < node.Elements.Count - 1)
+                if (i >= node.Elements.Count - 1)
                 {
-                    Context.Writer.AppendComma();
-                    Context.Writer.AppendSpace();
+                    continue;
                 }
+
+                Context.Writer.AppendComma();
+                Context.Writer.AppendSpace();
             }
 
             Context.Writer.AppendSpace();

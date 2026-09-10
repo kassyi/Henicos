@@ -3,14 +3,51 @@ using Kassyi.GSharp.Compiler.Dialects;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-/// <summary>Transpiles C# methods and GPU kernels into CUDA C++ function definitions or forward signatures.</summary>
-/// <remarks><para>Implements: <b>GEN-20</b></para></remarks>
+/// <summary>
+/// Provides high-level compilation services to transpile C# method and GPU kernel declarations into CUDA C++ source definitions or forward declarations.
+/// </summary>
+/// <remarks>
+/// <para>Implements: <b>GEN-20</b></para>
+/// <para><b>Performance:</b> Utilizes pooled syntax walkers and string builders to achieve near zero-allocation transpilation.</para>
+/// <para><b>Thread Safety:</b> All static methods in this class are thread-safe and can be invoked concurrently across multiple compilation workers.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler-time execution). Cannot be invoked within GPU kernels.</para>
+/// </remarks>
 public static class MethodTranspiler
 {
+    /// <summary>
+    /// Transpiles a C# method declaration into a complete target dialect (CUDA C++ / host C++) implementation string,
+    /// including dependent struct definitions, parameter qualifiers, and the method body.
+    /// </summary>
+    /// <param name="methodDecl">The Roslyn method declaration syntax node to transpile.</param>
+    /// <param name="semanticModel">The semantic model bound to the compilation containing the method.</param>
+    /// <param name="reportDiagnostic">An optional callback delegate to receive emitted compiler diagnostics and warnings.</param>
+    /// <param name="isDevice">
+    /// <see langword="true"/> to emit a device-side function (<c>__device__</c>); 
+    /// <see langword="false"/> to emit a kernel entry point (<c>extern "C" __global__</c>).
+    /// </param>
+    /// <param name="dialect">
+    /// The target language dialect to use for code generation. If <see langword="null"/>, defaults to <see cref="GSharpCudaDialect"/>.
+    /// </param>
+    /// <returns>
+    /// A string containing the complete emitted source code, including topologically sorted struct dependencies and the function definition.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="methodDecl"/> or <paramref name="semanticModel"/> is <see langword="null"/>.
+    /// </exception>
     public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
         Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
         ITranspilerDialect? dialect = null)
     {
+        if (methodDecl is null)
+        {
+            throw new ArgumentNullException(nameof(methodDecl));
+        }
+
+        if (semanticModel is null)
+        {
+            throw new ArgumentNullException(nameof(semanticModel));
+        }
+
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
@@ -49,10 +86,40 @@ public static class MethodTranspiler
         return mainWriter + bodyWriter.ToString();
     }
 
+    /// <summary>
+    /// Transpiles a C# method declaration into a target dialect forward declaration signature,
+    /// along with forward declarations of referenced struct types.
+    /// </summary>
+    /// <param name="methodDecl">The Roslyn method declaration syntax node to transpile.</param>
+    /// <param name="semanticModel">The semantic model bound to the compilation containing the method.</param>
+    /// <param name="reportDiagnostic">An optional callback delegate to receive emitted compiler diagnostics and warnings.</param>
+    /// <param name="isDevice">
+    /// <see langword="true"/> to emit a device-side function forward signature; 
+    /// <see langword="false"/> to emit a kernel entry point signature.
+    /// </param>
+    /// <param name="dialect">
+    /// The target language dialect to use for code generation. If <see langword="null"/>, defaults to <see cref="GSharpCudaDialect"/>.
+    /// </param>
+    /// <returns>
+    /// A string containing the forward declaration statements suitable for header inclusion.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="methodDecl"/> or <paramref name="semanticModel"/> is <see langword="null"/>.
+    /// </exception>
     public static string GenerateCudaSignature(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
         Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
         ITranspilerDialect? dialect = null)
     {
+        if (methodDecl is null)
+        {
+            throw new ArgumentNullException(nameof(methodDecl));
+        }
+
+        if (semanticModel is null)
+        {
+            throw new ArgumentNullException(nameof(semanticModel));
+        }
+
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
@@ -75,6 +142,7 @@ public static class MethodTranspiler
         context.Writer.Append(sigWriter.ToString());
         return mainWriter.ToString();
     }
+
 
     private static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice,
         ref TranspileContext context)

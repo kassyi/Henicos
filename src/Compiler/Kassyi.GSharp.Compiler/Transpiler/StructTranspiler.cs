@@ -4,6 +4,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>GEN-33</b></para></remarks>
 internal static class StructTranspiler
 {
+    /// <summary>
+    /// Recursively registers referenced struct symbols and their field types to ensure necessary forward definitions are emitted.
+    /// </summary>
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
@@ -27,7 +30,9 @@ internal static class StructTranspiler
         }
     }
 
-    /// <summary>Topologically sorts referenced structs so that dependent nested structs are declared first in C++.</summary>
+    /// <summary>
+    /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
+    /// </summary>
     public static IEnumerable<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
@@ -81,6 +86,9 @@ internal static class StructTranspiler
         }
     }
 
+    /// <summary>
+    /// Checks whether a struct passed by value exceeds the 32-byte threshold and reports a performance warning diagnostic if applicable.
+    /// </summary>
     public static void CheckLargeStructByValue(ParameterSyntax p, ITypeSymbol? typeSymbol, bool isPointer,
         ref TranspileContext context)
     {
@@ -98,6 +106,9 @@ internal static class StructTranspiler
         }
     }
 
+    /// <summary>
+    /// Emits the C++ struct definition for the specified named struct symbol, handling InlineArray structures and operator overloads.
+    /// </summary>
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
         var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);
@@ -220,11 +231,16 @@ internal static class StructTranspiler
         if (structSym.TypeParameters.Length > 0)
         {
             context.Writer.Append("template <");
-            for (int i = 0; i < structSym.TypeParameters.Length; i++)
+            for (var i = 0; i < structSym.TypeParameters.Length; i++)
             {
-                if (i > 0) context.Writer.Append(", ");
+                if (i > 0)
+                {
+                    context.Writer.Append(", ");
+                }
+
                 context.Writer.Append("typename ").Append(structSym.TypeParameters[i].Name);
             }
+
             context.Writer.AppendLine(">");
         }
     }
@@ -312,39 +328,39 @@ internal static class StructTranspiler
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            {
+                VariableDeclaratorSyntax? syntax = null;
+                var syntaxRefs = field.DeclaringSyntaxReferences;
+                if (!syntaxRefs.IsEmpty)
                 {
-                    VariableDeclaratorSyntax? syntax = null;
-                    var syntaxRefs = field.DeclaringSyntaxReferences;
-                    if (!syntaxRefs.IsEmpty)
-                    {
-                        syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
-                    }
-
-                    ExpressionSyntax? sizeExp = null;
-                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                    {
-                        sizeExp = argList.Arguments[0].Expression;
-                    }
-
-                    if (sizeExp != null)
-                    {
-                        context.AppendType(ptrType.PointedAtType);
-                        context.Writer.Append($" {field.Name}");
-                        using (context.Writer.Brackets())
-                        {
-                            context.Visitor.Visit(sizeExp);
-                        }
-
-                        context.Writer.AppendSemiColonLine();
-                    }
-                    else
-                    {
-                        context.AppendType(ptrType.PointedAtType);
-                        context.Writer.AppendLine($"* {field.Name}; // ERROR: fixed size not found");
-                    }
-
-                    break;
+                    syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
                 }
+
+                ExpressionSyntax? sizeExp = null;
+                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+                {
+                    sizeExp = argList.Arguments[0].Expression;
+                }
+
+                if (sizeExp != null)
+                {
+                    context.AppendType(ptrType.PointedAtType);
+                    context.Writer.Append($" {field.Name}");
+                    using (context.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExp);
+                    }
+
+                    context.Writer.AppendSemiColonLine();
+                }
+                else
+                {
+                    context.AppendType(ptrType.PointedAtType);
+                    context.Writer.AppendLine($"* {field.Name}; // ERROR: fixed size not found");
+                }
+
+                break;
+            }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, field.Name, field, ref context);
                 break;

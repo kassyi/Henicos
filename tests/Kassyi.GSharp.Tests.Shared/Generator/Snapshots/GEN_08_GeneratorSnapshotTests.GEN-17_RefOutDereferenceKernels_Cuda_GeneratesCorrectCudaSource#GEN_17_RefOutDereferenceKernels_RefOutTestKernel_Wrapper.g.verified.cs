@@ -29,7 +29,7 @@ int a;
 int b;
 int val = 1;
 ChainedAssignmentRef(&val,&a,&b);
-data[0]=((flag ? 100 : 0))+s.Field+a+b+val;
+data[0]=((flag?100:0))+s.Field+a+b+val;
 }
 ";
 public static readonly string RefOutTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + RefOutTestKernel_Source;

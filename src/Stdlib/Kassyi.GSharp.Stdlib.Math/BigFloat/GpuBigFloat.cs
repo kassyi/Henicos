@@ -52,7 +52,8 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
     public readonly void AlignRadixPoint(GpuBigFloat<TSize> other, out GpuBigFloat<TSize> alignedThis,
         out GpuBigFloat<TSize> alignedOther, out bool stickyThis, out bool stickyOther)
     {
-        UFloat.AlignRadixPoint(other.UFloat, out var alignedUThis, out var alignedUOther, out stickyThis, out stickyOther);
+        UFloat.AlignRadixPoint(other.UFloat, out var alignedUThis, out var alignedUOther, out stickyThis,
+            out stickyOther);
         alignedThis = new GpuBigFloat<TSize>(alignedUThis, IsNegative);
         alignedOther = new GpuBigFloat<TSize>(alignedUOther, other.IsNegative);
     }
@@ -82,10 +83,15 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
         if (IsNegative)
         {
             if (mode == GpuBigFloatRoundingMode.RoundTowardPositiveInfinity)
+            {
                 effectiveMode = GpuBigFloatRoundingMode.RoundTowardNegativeInfinity;
+            }
             else if (mode == GpuBigFloatRoundingMode.RoundTowardNegativeInfinity)
+            {
                 effectiveMode = GpuBigFloatRoundingMode.RoundTowardPositiveInfinity;
+            }
         }
+
         return new GpuBigFloat<TSize>(UFloat.Round(effectiveMode, guardBit, roundBit, stickyBit), IsNegative);
     }
 

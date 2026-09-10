@@ -14,7 +14,7 @@ int tid = threadIdx.x;
 int x = a[tid];
 int y = b[tid];
 int z = c[tid];
-result[tid]=(x>y ? ((y>z ? 1 : 2)) : ((x>z ? 3 : 4)));
+result[tid]=(x>y?((y>z?1:2)):((x>z?3:4)));
 }
 ";
 public static readonly string NestedTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + NestedTernaryKernel_Source;

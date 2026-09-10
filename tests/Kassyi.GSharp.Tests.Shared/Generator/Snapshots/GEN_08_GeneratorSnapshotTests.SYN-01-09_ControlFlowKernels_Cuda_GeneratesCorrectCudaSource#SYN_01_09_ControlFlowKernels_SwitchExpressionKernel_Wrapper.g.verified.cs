@@ -20,8 +20,7 @@ case 2: return 20;
 case 3: return 30;
 default: return 99;
 }
-}
-());
+}());
 }
 ";
 public static readonly string SwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + SwitchExpressionKernel_Source;

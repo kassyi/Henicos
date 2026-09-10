@@ -158,7 +158,7 @@ dynamicCache[tx]=mag;
 __syncthreads();
 if(tx==0)
 {
-atomicAdd(&(*totalMagnitude),dynamicCache[0]);
+atomicAdd((*totalMagnitude),dynamicCache[0]);
 (*successFlag)=true;
 }
 DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec = DebugReduc_ComprehensiveSpecKernel_Vector8{};

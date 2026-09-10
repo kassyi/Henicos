@@ -1,7 +1,13 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>
+/// Formats Roslyn symbols and namespaces into safe, collision-free C++ identifiers and fully-qualified names.
+/// </summary>
 internal static class CppNameFormatter
 {
+    /// <summary>
+    /// Appends a sanitized, fully-qualified C++ identifier for the given symbol to the source writer.
+    /// </summary>
     public static ref readonly SourceWriter AppendFullyQualifiedCppName(this in SourceWriter writer, ISymbol symbol)
     {
         if (symbol is ITypeParameterSymbol)
