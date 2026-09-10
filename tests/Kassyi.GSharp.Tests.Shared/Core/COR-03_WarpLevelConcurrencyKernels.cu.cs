@@ -1,3 +1,4 @@
+#if GSHARP_CUDA
 using System;
 using Kassyi.GSharp.Core;
 
@@ -28,4 +29,24 @@ public class COR_03_WarpLevelConcurrencyKernels
             output[warpId] = val;
         }
     }
+
+    [GpuKernel]
+    public static void WarpPrimitivesKernel(int[] input, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        uint mask = Gpu.ActiveMask();
+        
+        int val = input[tid];
+        
+        // Test all primitives to ensure they emit correct C++ intrinsics
+        val = Gpu.ShflSync(mask, val, 0);
+        val = (int)Gpu.ShflSync(mask, (uint)val, 0);
+        val = Gpu.ShflDownSync(mask, val, 1);
+        val = (int)Gpu.ShflDownSync(mask, (uint)val, 1);
+        val = Gpu.ShflUpSync(mask, val, 1);
+        val = Gpu.ShflXorSync(mask, val, 1);
+        
+        output[tid] = val;
+    }
 }
+#endif

@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_49_InvocationTests
 :  TranspilerTestBase{
@@ -99,7 +99,7 @@ public class SYN_49_InvocationTests
     [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-49")]
-    public void Test_AtomicTestStruct_MemoryLayout()
+    public void Test_SYN49_AtomicTestStruct_MemoryLayout()
     {
         Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());
         Assert.Equal(0, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueI").ToInt32());

@@ -9,7 +9,7 @@ public class RUN_03_HeavyGpuStressTests
 {
     [Fact]
     [Trait("FeatureId", "RUN-03")]
-    public void Test_JitEngine_HandlesMultipleRepeatedLaunches()
+    public void Test_RUN03_JitEngine_HandlesMultipleRepeatedLaunches()
     {
         // Use a small matrix size to avoid excessive execution time, 
         // but launch it many times to stress the JIT engine and memory management.
