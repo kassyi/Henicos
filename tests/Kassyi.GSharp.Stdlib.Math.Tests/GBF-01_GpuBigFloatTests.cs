@@ -9,20 +9,17 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.BigFloat;
 /// <summary>
 /// Sample 128-bit limb storage buffer (4 x 32-bit uint) used as unmanaged TSize for GpuBigFloat testing.
 /// </summary>
-[StructLayout(LayoutKind.Sequential)]
+[System.Runtime.CompilerServices.InlineArray(4)]
 public struct LimbBuffer128Bit
 {
-    public uint Limb0;
-    public uint Limb1;
-    public uint Limb2;
-    public uint Limb3;
+    public uint Element;
 
     public LimbBuffer128Bit(uint l0, uint l1, uint l2, uint l3)
     {
-        Limb0 = l0;
-        Limb1 = l1;
-        Limb2 = l2;
-        Limb3 = l3;
+        this[0] = l0;
+        this[1] = l1;
+        this[2] = l2;
+        this[3] = l3;
     }
 }
 
@@ -83,8 +80,8 @@ public class GBF01_GpuBigFloatTests
         var uFloat = new GpuBigUFloat<LimbBuffer128Bit>(significand, exponent: 42);
         var bigFloat = new GpuBigFloat<LimbBuffer128Bit>(uFloat, isNegative: true);
 
-        Assert.Equal(0x11111111u, bigFloat.UFloat.Significand.Limbs.Limb0);
-        Assert.Equal(0x44444444u, bigFloat.UFloat.Significand.Limbs.Limb3);
+        Assert.Equal(0x11111111u, bigFloat.UFloat.Significand.Limbs[0]);
+        Assert.Equal(0x44444444u, bigFloat.UFloat.Significand.Limbs[3]);
         Assert.Equal(42, bigFloat.UFloat.Exponent);
         Assert.True(bigFloat.IsNegative);
 
@@ -225,7 +222,7 @@ public class GBF01_GpuBigFloatTests
         
         // #6 Verify numerical rounding result
         // Note: For now, the mock returns default/unchanged.
-        Assert.Equal(roundedFloat.UFloat.Significand.Limbs.Limb0, roundedFloat.UFloat.Significand.Limbs.Limb0);
+        Assert.Equal(roundedFloat.UFloat.Significand.Limbs[0], roundedFloat.UFloat.Significand.Limbs[0]);
     }
 
     [Fact]
@@ -279,7 +276,7 @@ public class GBF01_GpuBigFloatTests
         Assert.Equal(0, normNeg.UFloat.Exponent);
 
         // IEEE 754 zero equivalency check (+0 == -0)
-        Assert.Equal(normPos.UFloat.Significand.Limbs.Limb0, normNeg.UFloat.Significand.Limbs.Limb0);
+        Assert.Equal(normPos.UFloat.Significand.Limbs[0], normNeg.UFloat.Significand.Limbs[0]);
         Assert.Equal(normPos.UFloat.Exponent, normNeg.UFloat.Exponent);
     }
 
