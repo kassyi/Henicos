@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Kassyi.GSharp.Runtime.Interop;
 
 /// <summary>Represents NVRTC runtime compilation status codes.</summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Enum maps to native C++ API values")]
+// ReSharper disable once UnusedMember.Global -- Enum maps to native C++ API values
 public enum NvrtcResult
 {
     Success = 0,

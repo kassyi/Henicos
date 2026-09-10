@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// <summary>
 /// Runtime JIT compilation engine that compiles Standard C++ kernel strings into executable native CPU libraries and manages delegate bindings.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
 public sealed class CpuJitEngine
 {
     private static readonly string s_cacheDirectory = Path.Combine(
@@ -23,7 +23,7 @@ public sealed class CpuJitEngine
     /// <summary>
     /// Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
     /// </summary>
-    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
+    #pragma warning disable IDE0051 // Justification: Public API for library
     public static void Shutdown()
     {
         s_functionCache.Clear();

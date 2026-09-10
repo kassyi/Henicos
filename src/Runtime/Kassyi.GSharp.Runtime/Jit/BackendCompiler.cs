@@ -175,10 +175,8 @@ public sealed partial class NvccCompiler
     /// <remarks>
     /// <para><b>Execution Target:</b> Host-only (CPU). Spawns a synchronous sub-process.</para>
     /// </remarks>
-    [SuppressMessage("ReSharper", "UnusedMember.Global",
-        Justification = "Public API exposed for runtime consumers")]
-    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
-        Justification = "Public API for library")]
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    #pragma warning disable IDE0051 // Justification: Public API for library
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
         RunNvccInternal(cuFile, dllFile, includePath, tempDir, [
@@ -206,10 +204,8 @@ public sealed partial class NvccCompiler
     /// <remarks>
     /// <para><b>Execution Target:</b> Host-only (CPU). Spawns a synchronous sub-process.</para>
     /// </remarks>
-    [SuppressMessage("ReSharper", "UnusedMember.Global",
-        Justification = "Public API exposed for runtime consumers")]
-    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
-        Justification = "Public API for library")]
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    #pragma warning disable IDE0051 // Justification: Public API for library
     public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
         string tempDir, string smVersion = "sm_52")
     {
