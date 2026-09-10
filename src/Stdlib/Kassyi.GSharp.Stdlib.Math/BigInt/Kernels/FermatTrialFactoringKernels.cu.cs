@@ -14,33 +14,35 @@ public static class FermatTrialFactoringKernels
             {
                 res = (res * baseVal) % m;
             }
+
             baseVal = (baseVal * baseVal) % m;
             exp >>= 1;
         }
+
         return res;
     }
 
     [GpuKernel]
     public static void Kernel_SearchFactors32(
         uint startOdd,
-        uint E,
+        uint exp,
         uint[] results,
         uint[] resultCount,
         int maxResults)
     {
         var threadId = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        var k = (ulong)startOdd + ((ulong)threadId * 2UL);
+        var k = startOdd + ((ulong)threadId * 2UL);
 
-        // N(X) = 2X^2 - X + 11. X = 2^{E mod (k-1)} mod k
-        var e_prime = (ulong)E % (k - 1UL);
-        var X = Device_ModPow64_Under32Bit(2UL, e_prime, k);
+        // N(x) = 2x^2 - x + 11. x = 2^{exp mod (k-1)} mod k
+        var ePrime = exp % (k - 1UL);
+        var x = Device_ModPow64_Under32Bit(2UL, ePrime, k);
 
-        var x2 = (X * X) % k;
+        var x2 = (x * x) % k;
         var term1 = (2UL * x2) % k;
 
-        var N_mod_k = (term1 + k - X + 11UL) % k;
+        var nModK = (term1 + k - x + 11UL) % k;
 
-        if (N_mod_k == 0UL)
+        if (nModK == 0UL)
         {
             var idx = Gpu.AtomicAdd(ref resultCount[0], 1U);
             if (idx < (uint)maxResults)
