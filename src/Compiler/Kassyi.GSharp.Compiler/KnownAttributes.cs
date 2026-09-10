@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Defines well-known attribute names and reflection-free inspection helpers used during source generation.</summary>
 /// <seealso cref="TypeConstants"/>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public constants for compiler internals")]
+// ReSharper disable once UnusedMember.Global -- Public constants for compiler internals
 public static class KnownAttributes
 {
     public const string GpuKernel = nameof(GpuKernel);
