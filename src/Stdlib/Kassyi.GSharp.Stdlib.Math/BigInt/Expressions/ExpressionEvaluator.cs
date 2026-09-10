@@ -1,11 +1,11 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 internal static class ExpressionEvaluator
 {
     public static GpuUIntBigInteger EvaluateBinary(
         GpuContext context,
-        IGpuBigIntExpression left,
-        IGpuBigIntExpression right,
+        IGpuBigUIntExpression left,
+        IGpuBigUIntExpression right,
         GpuUIntBigInteger? targetResult,
         int numWords,
         Action<GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger> execute)
@@ -39,7 +39,7 @@ internal static class ExpressionEvaluator
 
     public static GpuUIntBigInteger EvaluateUnary(
         GpuContext context,
-        IGpuBigIntExpression target,
+        IGpuBigUIntExpression target,
         GpuUIntBigInteger? targetResult,
         int numWords,
         Action<GpuUIntBigInteger, GpuUIntBigInteger> execute)
