@@ -10,9 +10,10 @@ internal static class SyntaxExtensions
     /// </summary>
     public static bool IsKind(this SyntaxToken token, params SyntaxKind[] kinds)
     {
+        var tokenKind = token.Kind();
         foreach (var kind in kinds)
         {
-            if (token.IsKind(kind))
+            if (tokenKind == kind)
             {
                 return true;
             }
@@ -25,9 +26,10 @@ internal static class SyntaxExtensions
     /// </summary>
     public static bool IsKind(this SyntaxNode node, params SyntaxKind[] kinds)
     {
+        var nodeKind = node.Kind();
         foreach (var kind in kinds)
         {
-            if (node.IsKind(kind))
+            if (nodeKind == kind)
             {
                 return true;
             }
