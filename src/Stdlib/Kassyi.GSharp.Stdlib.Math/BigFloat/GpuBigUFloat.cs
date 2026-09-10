@@ -76,16 +76,12 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
         {
             // overflow: shift right by 1 to normalize
             normSig = normSig.ShiftRight(1, out _);
-            // manually set the MSB to 1
-            // (Assuming MSB logic is handled externally or by shift, but strictly speaking we should set the MSB.
-            // For now, we rely on the Add method doing the carry logic properly if it were to return carry.)
-            normExp = Exponent == int.MaxValue ? int.MaxValue : Exponent + 1;
+            normExp = Exponent + 1;
         }
         else if (leadingZeros > 0)
         {
             normSig = normSig.ShiftLeft(leadingZeros);
-            var subExp = (long)Exponent - leadingZeros;
-            normExp = subExp < int.MinValue ? int.MinValue : (int)subExp;
+            normExp = Exponent - leadingZeros;
         }
         else
         {
