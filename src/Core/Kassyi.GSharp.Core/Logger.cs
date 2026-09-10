@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Core;
 /// <summary>
 /// Specifies the severity and verbosity levels for diagnostic and performance logs.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 public enum LogLevel
 {
     /// <summary>Detailed diagnostic and tracing information.</summary>
@@ -34,8 +34,8 @@ public enum LogLevel
 /// <remarks>
 /// <para>Log messages are queued into a bounded lock-free channel and processed in a dedicated background task to eliminate I/O blocking in performance-critical execution paths.</para>
 /// </remarks>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public abstract class Logger : ILogger
 {
     private const int MaxRetries = 3;
@@ -303,8 +303,8 @@ public abstract class Logger : ILogger
     /// <summary>
     /// Utility for tracking and recording elapsed intervals across named pipeline stages.
     /// </summary>
-    [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+    // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
     public class PerformanceTimer
     {
         private readonly Stopwatch _sw = Stopwatch.StartNew();
@@ -370,8 +370,8 @@ public abstract class Logger : ILogger
 /// Provides strongly-typed static logging helpers tagged with the generic type name.
 /// </summary>
 /// <typeparam name="T">The type used to identify log message sources.</typeparam>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public class Logger<T> : Logger
 {
     protected override string GetTag() => typeof(T).Name;

@@ -12,8 +12,8 @@ public sealed class CudaIntrinsicAttribute(string targetName) : Attribute
     /// <summary>
     /// Gets the target CUDA C++ intrinsic or function name.
     /// </summary>
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global", Justification = "Consumed by GSharp Transpiler")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Consumed by GSharp Transpiler")]
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global -- Consumed by GSharp Transpiler
+    // ReSharper disable once UnusedMember.Global -- Consumed by GSharp Transpiler
     public string TargetName { get; } = targetName;
 }
 
@@ -30,7 +30,7 @@ public sealed class CudaIntrinsicPatternAttribute(string pattern) : Attribute
     /// <summary>
     /// Gets the composite format pattern string.
     /// </summary>
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global", Justification = "Consumed by GSharp Transpiler")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Consumed by GSharp Transpiler")]
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global -- Consumed by GSharp Transpiler
+    // ReSharper disable once UnusedMember.Global -- Consumed by GSharp Transpiler
     public string Pattern { get; } = pattern;
 }

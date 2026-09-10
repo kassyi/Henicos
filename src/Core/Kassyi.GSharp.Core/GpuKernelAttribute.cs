@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Core;
 /// <para>Kernel methods must return <see langword="void"/> and cannot use CPU-only constructs like reference heap allocations or standard interfaces.</para>
 /// </remarks>
 /// <remarks><para>Implements: <b>GEN-38</b></para></remarks>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 [AttributeUsage(AttributeTargets.Method)]
 public class GpuKernelAttribute : Attribute
 {
@@ -23,7 +23,7 @@ public class GpuKernelAttribute : Attribute
 /// <summary>
 /// Marks a C# method as a callable GPU device function (<c>__device__</c>) accessible from within GPU kernels.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 [AttributeUsage(AttributeTargets.Method)]
 public class GpuDeviceFunctionAttribute : Attribute;
 

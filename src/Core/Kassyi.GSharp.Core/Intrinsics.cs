@@ -6,9 +6,9 @@ namespace Kassyi.GSharp.Core;
 /// <remarks>
 /// This struct is a marker intercepted by the GSharp Transpiler and mapped to CUDA <c>dim3</c>.
 /// </remarks>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("IDE", "IDE0051", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
+#pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
 public struct Dim3
 {
     /// <summary>Gets the X component of the 3D vector.</summary>
@@ -27,8 +27,8 @@ public struct Dim3
 /// <summary>
 /// Provides access to the current GPU thread coordinates (<c>threadIdx</c>) within the thread block.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 [CudaIntrinsicPattern("threadIdx.{0}")]
 public static class ThreadIndex
 {
@@ -48,8 +48,8 @@ public static class ThreadIndex
 /// <summary>
 /// Provides access to the current thread block coordinates (<c>blockIdx</c>) within the grid.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 [CudaIntrinsicPattern("blockIdx.{0}")]
 public static class BlockIndex
 {
@@ -69,8 +69,8 @@ public static class BlockIndex
 /// <summary>
 /// Provides access to the dimensions of the thread block (<c>blockDim</c>).
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 [CudaIntrinsicPattern("blockDim.{0}")]
 public static class BlockDimension
 {
@@ -90,8 +90,8 @@ public static class BlockDimension
 /// <summary>
 /// Provides access to the dimensions of the grid (<c>gridDim</c>).
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 [CudaIntrinsicPattern("gridDim.{0}")]
 public static class GridDimension
 {
@@ -112,9 +112,9 @@ public static class GridDimension
 /// Provides hardware intrinsics, synchronization primitives, atomic operations, and macro markers for GPU kernels.
 /// </summary>
 /// <remarks><para>Implements: <b>GEN-52</b></para></remarks>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for GPU kernels")]
-[SuppressMessage("IDE", "IDE0051", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
+// ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
+#pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
 public static class Gpu
 {
     /// <summary>
