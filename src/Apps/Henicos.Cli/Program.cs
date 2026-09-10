@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Running;
 using Cocona;
 using Kassyi.GSharp.Runtime.Jit;
@@ -7,8 +6,8 @@ using Kassyi.GSharp.Runtime.Jit;
 namespace Henicos.Cli;
 
 /// <summary>Command-line interface entry point for executing Fermat tests, benchmarks, and profiling suites.</summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by CLI execution")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by CLI execution")]
+// ReSharper disable once UnusedMember.Global -- Used implicitly by CLI execution
+// ReSharper disable once UnusedType.Global -- Used implicitly by CLI execution
 internal class Program
 {
     private static void Main(string[] args) => CoconaApp.Run<Program>(args);

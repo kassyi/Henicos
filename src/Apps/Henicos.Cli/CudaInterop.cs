@@ -1,11 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
 namespace Henicos.Cli;
 
 /// <summary>P/Invoke bindings for executing legacy CUDA native tests in CLI benchmarks.</summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public interop methods")]
+// ReSharper disable once UnusedMember.Global -- Public interop methods
 public static class CudaInterop
 {
     private const string DllName = "Kassyi.GSharp.GpuBigInt.Cuda.dll";
