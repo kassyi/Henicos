@@ -1,4 +1,4 @@
-ï»¿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
@@ -475,7 +475,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.True(gpuC <= gpuA);
         }
 
-        [Fact(Skip = "æœªå®Ÿè£…: GBI-16 (ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ/ãƒ‡ã‚¯ãƒªãƒ¡ãƒ³ãƒˆæ¼”ç®—å­ ++, --)")]
+        [Fact(Skip = "–¢ŽÀ‘•: GBI-16 (ƒCƒ“ƒNƒŠƒƒ“ƒg/ƒfƒNƒŠƒƒ“ƒg‰‰ŽZŽq ++, --)")]
         [Trait("RoadmapId", "GBI-16")]
         [Trait("Category", "Operator")]
         public void Test_GBI_Operator_IncrementDecrement()
@@ -650,7 +650,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedGcd, actualGcd);
         }
 
-        [Fact(Skip = "æœªå®Ÿè£…: GBI-21 (GpuUIntBigInteger.ModInverse ãƒ¢ã‚¸ãƒ¥ãƒ©é€†æ•°)")]
+        [Fact(Skip = "–¢ŽÀ‘•: GBI-21 (GpuUIntBigInteger.ModInverse ƒ‚ƒWƒ…ƒ‰‹t”)")]
         [Trait("RoadmapId", "GBI-21")]
         [Trait("Category", "Function")]
         public void Test_GBI_Function_ModInverse()
@@ -822,7 +822,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var gpuA = new GpuUIntBigInteger(context, arrA);
             using var gpuResult = new GpuUIntBigInteger(context, sizeWords);
 
-            gpuResult.Value = GpuBigIntExpr.Sqrt(gpuA);
+            gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
 
             var resultArr = gpuResult.ToHostArray();
             var actualBig = ToBigInteger(resultArr);
@@ -888,7 +888,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             int contextWords,
             Action<uint[], uint[]> prepareData,
             Func<BigInteger, BigInteger, BigInteger> cpuFunc,
-            Func<GpuUIntBigInteger, GpuUIntBigInteger, GpuBigIntExpr> gpuFunc,
+            Func<GpuUIntBigInteger, GpuUIntBigInteger, GpuBigUIntExpr> gpuFunc,
             int inputWords = -1)
         {
             var size = inputWords > 0 ? inputWords : TestSizeWords;
