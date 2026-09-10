@@ -15,7 +15,9 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// </summary>
     public static readonly AssignmentExpressionTranspilerRule Instance = new();
 
-    private AssignmentExpressionTranspilerRule() { }
+    private AssignmentExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(AssignmentExpressionSyntax node, ref TranspileContext context)

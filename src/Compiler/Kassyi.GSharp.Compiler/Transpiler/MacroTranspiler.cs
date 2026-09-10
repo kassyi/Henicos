@@ -292,8 +292,7 @@ internal static class MacroTranspiler
         if (rightNode is BinaryExpressionSyntax binaryExpr)
         {
             leftOp = binaryExpr.Left;
-            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
-                !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
+            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression))
             {
                 rightOp = binaryExpr.Right;
             }

@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
-/// Transpiles method invocation argument syntax nodes into target dialect expressions,
-/// appropriately emitting address-of operators (<c>&amp;</c>) for <see langword="ref"/> and <see langword="out"/> arguments.
+/// Transpiles a C# argument into equivalent CUDA C++ representation.
+/// Specifically handles reference arguments (`ref`, `out`) by prefixing them with the address-of operator `&`.
 /// </summary>
 /// <remarks>
 /// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
@@ -20,9 +20,25 @@ public sealed class ArgumentTranspilerRule : SyntaxNodeTranspilerRuleBase<Argume
     /// <inheritdoc />
     public override void Transpile(ArgumentSyntax node, ref TranspileContext context)
     {
-        if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) || node.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
+        if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword))
         {
-            context.Writer.Append("&");
+            bool needsAddressOf = true;
+            var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+            
+            if (symbol is IParameterSymbol { RefKind: not RefKind.None } ||
+                symbol is ILocalSymbol { IsRef: true })
+            {
+                needsAddressOf = false;
+            }
+            else if (context.SemanticModel.GetTypeInfo(node.Expression).Type is IPointerTypeSymbol)
+            {
+                needsAddressOf = false;
+            }
+
+            if (needsAddressOf)
+            {
+                context.Writer.Append("&");
+            }
         }
 
         context.Visitor.Visit(node.Expression);

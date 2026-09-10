@@ -22,7 +22,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
         using (context.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);
-            context.Writer.Append(" ? ");
+            context.Writer.Append('?');
 
             // Handle 'ref' conditionals if present
             if (node.WhenTrue is RefExpressionSyntax refTrue)
@@ -34,7 +34,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
                 context.Visitor.Visit(node.WhenTrue);
             }
 
-            context.Writer.Append(" : ");
+            context.Writer.Append(':');
 
             if (node.WhenFalse is RefExpressionSyntax refFalse)
             {
