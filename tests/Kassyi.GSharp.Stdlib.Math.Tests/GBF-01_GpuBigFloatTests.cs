@@ -94,28 +94,27 @@ public class GBF01_GpuBigFloatTests
     [Theory]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "HappyPath")]
-    [InlineData(10, 10, 0)]
-    [InlineData(15, 10, 5)]
-    [InlineData(-5, 5, 10)]
-    [InlineData(100, -100, 200)]
-    [InlineData(int.MaxValue, int.MinValue, int.MaxValue)]
-    [InlineData(0, 1, 1)]
-    [InlineData(-1, 0, 1)]
-    [InlineData(int.MinValue, int.MinValue, 0)]
-    [InlineData(int.MaxValue, int.MaxValue, 0)]
-    public void Test_GBF01_RadixAlignment_ExponentDifference_CalculatesCorrectDelta_ViaStructApi(int expA, int expB,
-        int expectedDelta)
+    [InlineData(10, 10)]
+    [InlineData(15, 10)]
+    [InlineData(-5, 5)]
+    [InlineData(100, -100)]
+    [InlineData(int.MaxValue, int.MinValue)]
+    [InlineData(0, 1)]
+    [InlineData(-1, 0)]
+    [InlineData(int.MinValue, int.MinValue)]
+    [InlineData(int.MaxValue, int.MaxValue)]
+    public void Test_GBF01_RadixAlignment_ExponentDifference_AlignsToMaxExponent_ViaStructApi(int expA, int expB)
     {
         var dummySignificand = new GpuUIntBigInteger<LimbBuffer4>(default);
         var floatA = new GpuBigFloat<LimbBuffer4>(dummySignificand, expA, isNegative: false);
         var floatB = new GpuBigFloat<LimbBuffer4>(dummySignificand, expB, isNegative: false);
 
-        int actualDelta = floatA.AlignRadixPoint(floatB, out var alignedB, out _);
-        Assert.Equal(expectedDelta, actualDelta);
-
-        int uFloatDelta = floatA.UFloat.AlignRadixPoint(floatB.UFloat, out var alignedUB, out _);
-        Assert.Equal(expectedDelta, uFloatDelta);
+        floatA.AlignRadixPoint(floatB, out var alignedA, out var alignedB, out _, out _);
+        Assert.Equal(System.Math.Max(expA, expB), alignedA.UFloat.Exponent);
         Assert.Equal(System.Math.Max(expA, expB), alignedB.UFloat.Exponent);
+
+        floatA.UFloat.AlignRadixPoint(floatB.UFloat, out var alignedUA, out var alignedUB, out _, out _);
+        Assert.Equal(System.Math.Max(expA, expB), alignedUA.Exponent);
         Assert.Equal(System.Math.Max(expA, expB), alignedUB.Exponent);
     }
 
@@ -151,9 +150,9 @@ public class GBF01_GpuBigFloatTests
         var floatHighExp = new GpuBigFloat<LimbBuffer4>(significand, exponent: 100, isNegative: false);
         var floatLowExp = new GpuBigFloat<LimbBuffer4>(significand, exponent: 0, isNegative: false);
 
-        int deltaExp = floatHighExp.AlignRadixPoint(floatLowExp, out var alignedLowExp, out _);
+        floatHighExp.AlignRadixPoint(floatLowExp, out var alignedHighExp, out var alignedLowExp, out _, out _);
 
-        Assert.Equal(100, deltaExp);
+        Assert.Equal(100, alignedHighExp.UFloat.Exponent);
         Assert.Equal(100, alignedLowExp.UFloat.Exponent);
     }
 
@@ -202,29 +201,34 @@ public class GBF01_GpuBigFloatTests
     [Theory]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "EdgeCase")]
-    [InlineData(GpuBigFloatRoundingMode.RoundToNearestEven, true, true, false)]
-    [InlineData(GpuBigFloatRoundingMode.RoundToNearestEven, true, false, false)]
-    [InlineData(GpuBigFloatRoundingMode.RoundTowardZero, true, true, true)]
-    [InlineData(GpuBigFloatRoundingMode.RoundTowardPositiveInfinity, true, false, false)]
-    [InlineData(GpuBigFloatRoundingMode.RoundTowardNegativeInfinity, false, true, true)]
+    [InlineData(GpuBigFloatRoundingMode.RoundToNearestEven, true, true, false, 0u, 1u)]
+    [InlineData(GpuBigFloatRoundingMode.RoundToNearestEven, true, false, false, 0u, 0u)]
+    [InlineData(GpuBigFloatRoundingMode.RoundToNearestEven, true, false, false, 1u, 2u)]
+    [InlineData(GpuBigFloatRoundingMode.RoundTowardZero, true, true, true, 5u, 5u)]
+    [InlineData(GpuBigFloatRoundingMode.RoundTowardPositiveInfinity, true, false, false, 2u, 3u)]
+    [InlineData(GpuBigFloatRoundingMode.RoundTowardNegativeInfinity, false, true, true, 2u, 2u)]
     public void Test_GBF01_Ieee754Rounding_InvokesRoundingMode_ViaStructApi(GpuBigFloatRoundingMode mode, bool guard,
-        bool round, bool sticky)
+        bool round, bool sticky, uint initialLimb, uint expectedUFloatLimb)
     {
-        var dummySignificand = new GpuUIntBigInteger<LimbBuffer4>(default);
-        var uFloat = new GpuBigUFloat<LimbBuffer4>(dummySignificand, exponent: 10);
+        var limbs = CreateLimb4(initialLimb, 0, 0, 0);
+        var significand = new GpuUIntBigInteger<LimbBuffer4>(limbs);
+        var uFloat = new GpuBigUFloat<LimbBuffer4>(significand, exponent: 10);
 
         var roundedUFloat = uFloat.Round(mode, guard, round, sticky);
         Assert.Equal(10, roundedUFloat.Exponent);
+        Assert.Equal(expectedUFloatLimb, roundedUFloat.Significand.Limbs[0]);
 
         var bigFloat = new GpuBigFloat<LimbBuffer4>(uFloat, isNegative: true);
         var roundedFloat = bigFloat.Round(mode, guard, round, sticky);
 
+        // For negative values, directed rounding modes behave oppositely
+        uint expectedSignedLimb = expectedUFloatLimb;
+        if (mode == GpuBigFloatRoundingMode.RoundTowardPositiveInfinity) expectedSignedLimb = initialLimb; // truncates
+        if (mode == GpuBigFloatRoundingMode.RoundTowardNegativeInfinity) expectedSignedLimb = initialLimb + (guard || round || sticky ? 1u : 0u);
+
         Assert.Equal(10, roundedFloat.UFloat.Exponent);
         Assert.True(roundedFloat.IsNegative);
-
-        // #6 Verify numerical rounding result
-        // Note: For now, the mock returns default/unchanged.
-        Assert.Equal(roundedFloat.UFloat.Significand.Limbs[0], roundedFloat.UFloat.Significand.Limbs[0]);
+        Assert.Equal(expectedSignedLimb, roundedFloat.UFloat.Significand.Limbs[0]);
     }
 
     [Fact]
@@ -243,11 +247,18 @@ public class GBF01_GpuBigFloatTests
         var uAddResult = uFloatA + uFloatB;
         var uSubResult = uFloatA - uFloatB;
 
-        Assert.Equal(10, uAddResult.Exponent);
+        // 100 + 40 = 140 (10001100_2, 8 bits)
+        // 128 - 8 = 120 leading zeros -> Exponent 10 - 120 = -110
+        // 140 << 120 -> Limbs[3] = 140 << 24 = 0x8C00_0000u
+        Assert.Equal(-110, uAddResult.Exponent);
+        Assert.Equal(0x8C00_0000u, uAddResult.Significand.Limbs[3]);
+
         // After subtraction (100 - 40 = 60), the significand is normalized by shifting left.
-        // For LimbBuffer4 (128 bits), 60 has 122 leading zeros (96 + 26).
+        // For LimbBuffer4 (128 bits), 60 has 122 leading zeros (128 - 6).
         // Exponent 10 - 122 = -112
+        // Limbs[3] = 60 << 26 = 0xF000_0000u
         Assert.Equal(-112, uSubResult.Exponent);
+        Assert.Equal(0xF000_0000u, uSubResult.Significand.Limbs[3]);
 
         var floatA = new GpuBigFloat<LimbBuffer4>(uFloatA, isNegative: false);
         var floatB = new GpuBigFloat<LimbBuffer4>(uFloatB, isNegative: false);
@@ -255,11 +266,13 @@ public class GBF01_GpuBigFloatTests
         var addResult = floatA + floatB;
         var subResult = floatA - floatB;
 
-        Assert.Equal(10, addResult.UFloat.Exponent);
-        Assert.Equal(-112, subResult.UFloat.Exponent);
+        Assert.Equal(-110, addResult.UFloat.Exponent);
+        Assert.Equal(0x8C00_0000u, addResult.UFloat.Significand.Limbs[3]);
+        Assert.False(addResult.IsNegative);
 
-        // #7 Verify arithmetic result
-        Assert.True(addResult.UFloat.Significand.IsZero() == false || addResult.UFloat.Exponent == 0);
+        Assert.Equal(-112, subResult.UFloat.Exponent);
+        Assert.Equal(0xF000_0000u, subResult.UFloat.Significand.Limbs[3]);
+        Assert.False(subResult.IsNegative);
     }
 
     [Fact]

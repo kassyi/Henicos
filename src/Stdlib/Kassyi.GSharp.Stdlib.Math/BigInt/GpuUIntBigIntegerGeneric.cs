@@ -22,6 +22,18 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
         Limbs = limbs;
     }
 
+    public static GpuUIntBigInteger<TSize> Zero => default;
+
+    public static GpuUIntBigInteger<TSize> One
+    {
+        get
+        {
+            var result = default(GpuUIntBigInteger<TSize>);
+            result.GetSpan()[0] = 1;
+            return result;
+        }
+    }
+
     private readonly Span<uint> GetSpan()
     {
         ref var r = ref Unsafe.AsRef(in Limbs);
@@ -95,6 +107,14 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
 
     public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool stickyBit)
     {
+        return ShiftRight(bits, out _, out _, out stickyBit);
+    }
+
+    public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool guardBit, out bool roundBit, out bool stickyBit)
+    {
+        guardBit = false;
+        roundBit = false;
+
         if (bits == 0)
         {
             stickyBit = false;
@@ -111,7 +131,16 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
         uint sticky = 0;
         for (var i = 0; i < limbShift && i < src.Length; i++)
         {
-            sticky |= src[i];
+            if (i == limbShift - 1 && bitShift == 0)
+            {
+                guardBit = (src[i] & 0x8000_0000u) != 0;
+                roundBit = (src[i] & 0x4000_0000u) != 0;
+                sticky |= (src[i] & 0x3FFF_FFFFu);
+            }
+            else
+            {
+                sticky |= src[i];
+            }
         }
 
         if (limbShift >= src.Length)
@@ -137,7 +166,9 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
                 carry = val << (32 - bitShift);
             }
 
-            sticky |= carry;
+            guardBit = (carry & 0x8000_0000u) != 0;
+            roundBit = (carry & 0x4000_0000u) != 0;
+            sticky |= (carry & 0x3FFF_FFFFu);
         }
 
         stickyBit = sticky != 0;
@@ -182,6 +213,23 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
         }
 
         return result;
+    }
+
+    public GpuUIntBigInteger<TSize> SetMsb()
+    {
+        var result = this;
+        var span = result.GetSpan();
+        if (span.Length > 0)
+        {
+            span[^1] |= 0x80000000u;
+        }
+        return result;
+    }
+
+    public readonly bool IsOdd()
+    {
+        var span = GetSpan();
+        return span.Length > 0 && (span[0] & 1u) != 0;
     }
 
     public readonly int CountLeadingZeros()
