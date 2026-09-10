@@ -1,4 +1,3 @@
-#if GSHARP_CUDA
 using System;
 using Kassyi.GSharp.Core;
 
@@ -49,4 +48,3 @@ public class COR_03_WarpLevelConcurrencyKernels
         output[tid] = val;
     }
 }
-#endif

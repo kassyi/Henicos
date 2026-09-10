@@ -159,7 +159,7 @@ float* dynamicSharedMem = (float*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (dynamicSharedSize) * sizeof(float);
 dynamicSharedMem[threadIdx.x]=sum;
 __syncthreads();
-float finalVal = ((bitwise>0) ? ((dynamicSharedMem[threadIdx.x]>10.0f ? 10.0f : dynamicSharedMem[threadIdx.x])) : 0.0f);
+float finalVal = ((bitwise>0)?((dynamicSharedMem[threadIdx.x]>10.0f?10.0f:dynamicSharedMem[threadIdx.x])):0.0f);
 {
 Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct fbs = Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct{};
 fbs.Data[0]=bitwise;

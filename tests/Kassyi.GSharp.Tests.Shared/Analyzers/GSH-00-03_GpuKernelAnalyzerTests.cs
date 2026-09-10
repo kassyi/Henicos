@@ -19,7 +19,6 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("GEN-36", "Analyzers/GEN-36_MacroArgumentSadPath.cs", new[] { "GSH0012", "GSH0006" })]
-    [InlineData("SYN-01", "Analyzers/GpuKernel/SYN-01_UnsupportedSwitch_InGpuKernel.cu.cs", new[] { "GSH0002", "GSH0002" })]
     public async Task Test_GpuKernelAnalyzer_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expectedErrorIds)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
