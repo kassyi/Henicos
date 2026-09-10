@@ -194,6 +194,39 @@ public sealed partial class NvccCompiler
     }
 
     /// <summary>
+    /// Gets a value indicating whether NVCC is available on the current system.
+    /// </summary>
+    public static bool IsNvccAvailable
+    {
+        get
+        {
+            try
+            {
+                var nvcc = GetNvccPath();
+                if (FileSystem.File.Exists(nvcc))
+                {
+                    return true;
+                }
+
+                // Try to execute it to see if it's in PATH
+                var psi = new ProcessStartInfo(nvcc, "--version")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                ProcessRunner(psi);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
     /// Compiles a CUDA source file into a shared native library (.dll).
     /// </summary>
     /// <param name="cuFile">The input <c>.cu</c> source file path.</param>

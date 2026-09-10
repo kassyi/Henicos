@@ -11,9 +11,9 @@ public class RUN_02_BackendCompilerTests
     [Trait("FeatureId", "RUN-02")]
     public void Test_NvccCompiler_CompileToFatbin_ProducesOutput()
     {
-        if (!NvccCompiler.IsMsvcAvailable)
+        if (!NvccCompiler.IsMsvcAvailable || !NvccCompiler.IsNvccAvailable)
         {
-            return; // Skip if MSVC is not available
+            return; // Skip if MSVC or NVCC is not available
         }
 
         var cuFile = Path.GetTempFileName() + ".cu";
