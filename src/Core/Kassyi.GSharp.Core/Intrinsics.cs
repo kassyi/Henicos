@@ -246,6 +246,9 @@ public static class Gpu
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static void SingleThread(Action body) => GpuOnlyException.Throw();
 
+#pragma warning disable IDE0051 // Intended for external kernel consumers
+    // ReSharper disable UnusedMember.Global
+
     /// <summary>Returns a 32-bit mask of all currently active threads in the calling warp.</summary>
     [CudaIntrinsic("__activemask")]
     public static uint ActiveMask() => GpuOnlyException.Throw<uint>();
@@ -273,4 +276,7 @@ public static class Gpu
     /// <summary>Exchanges an integer variable based on a bitwise XOR of the caller's lane ID.</summary>
     [CudaIntrinsic("__shfl_xor_sync")]
     public static int ShflXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
+
+    // ReSharper restore UnusedMember.Global
+#pragma warning restore IDE0051
 }
