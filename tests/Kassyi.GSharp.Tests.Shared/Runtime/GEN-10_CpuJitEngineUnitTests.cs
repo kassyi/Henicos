@@ -5,21 +5,21 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN_42_CpuJitEngineTests
+public class GEN_10_CpuJitEngineUnitTests
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate int AddFunc(int a, int b);
 
     [Fact]
     [Trait("Category", "Unit")]
-    [Trait("FeatureId", "GEN-42")]
-    public void Test_GEN42_CpuJitEngine_CompilesAndExecutes_Delegate()
+    [Trait("FeatureId", "GEN-10")]
+    public void Test_GEN10_CpuJitEngine_CompilesAndExecutes_Delegate()
     {
-        var source = @"
-extern ""C"" __declspec(dllexport) int Add(int a, int b) {
-    return a + b;
-}
-";
+        var source = """
+            extern "C" __declspec(dllexport) int Add(int a, int b) {
+                return a + b;
+            }
+            """;
         var addFunc = CpuJitEngine.GetOrCompileKernel<AddFunc>("Add", source);
         var result = addFunc(2, 3);
         Assert.Equal(5, result);
@@ -27,14 +27,14 @@ extern ""C"" __declspec(dllexport) int Add(int a, int b) {
 
     [Fact]
     [Trait("Category", "Unit")]
-    [Trait("FeatureId", "GEN-42")]
-    public void Test_GEN42_CpuJitEngine_CompilesWithMacros()
+    [Trait("FeatureId", "GEN-10")]
+    public void Test_GEN10_CpuJitEngine_CompilesWithMacros()
     {
-        var source = @"
-extern ""C"" __declspec(dllexport) int Add(int a, int b) {
-    return a + b + MY_MACRO_OFFSET;
-}
-";
+        var source = """
+            extern "C" __declspec(dllexport) int Add(int a, int b) {
+                return a + b + MY_MACRO_OFFSET;
+            }
+            """;
         var macros = new[] { new KeyValuePair<string, string>("MY_MACRO_OFFSET", "10") };
         var addFunc = CpuJitEngine.GetOrCompileKernel<AddFunc>("Add", source, macros: macros);
         var result = addFunc(2, 3);

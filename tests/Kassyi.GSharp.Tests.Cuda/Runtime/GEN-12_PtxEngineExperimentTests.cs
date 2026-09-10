@@ -7,7 +7,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 :  TranspilerTestBase{
     private readonly ITestOutputHelper _output = output;
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
@@ -100,7 +100,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             if (module != IntPtr.Zero) CudaDriverApi.cuModuleUnload(module);
         }
     }
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "GpuExecution")]
@@ -122,7 +122,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         }
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Stress")]
     [Trait("Category", "GpuExecution")]

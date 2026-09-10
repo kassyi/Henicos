@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_73_78_ContractsAndPtxTests
@@ -30,7 +30,7 @@ public class SYN_73_78_ContractsAndPtxTests
     public void Test_SYN76_ConstexprPropagation_Transpilation()
     {
     }
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-77")]
     public void TestInlinePtxKernel()
