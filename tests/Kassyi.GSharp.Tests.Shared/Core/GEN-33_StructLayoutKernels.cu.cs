@@ -12,7 +12,7 @@ public struct CustomLayoutStruct
     public float C;
 }
 
-public class COR_01_StructLayoutKernels
+public class GEN_33_StructLayoutKernels
 {
     [GpuKernel]
     public static void ModifyStructLayoutKernel(CustomLayoutStruct[] data)

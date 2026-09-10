@@ -5,11 +5,11 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 [Trait("Category", "GpuExecution")]
 [Trait("Category", "Stress")]
-public class RUN_03_HeavyGpuStressTests
+public class GEN_43_HeavyGpuStressTests
 {
     [Fact]
-    [Trait("FeatureId", "RUN-03")]
-    public void Test_RUN03_JitEngine_HandlesMultipleRepeatedLaunches()
+    [Trait("FeatureId", "GEN-43")]
+    public void Test_GEN43_JitEngine_HandlesMultipleRepeatedLaunches()
     {
         // Use a small matrix size to avoid excessive execution time, 
         // but launch it many times to stress the JIT engine and memory management.
@@ -30,7 +30,7 @@ public class RUN_03_HeavyGpuStressTests
 
         for (int iter = 0; iter < iterations; iter++)
         {
-            RUN_03_HeavyGpuStressKernelsWrapper.Launch_MatrixMultiplyStressKernel(
+            GEN_43_HeavyGpuStressKernelsWrapper.Launch_MatrixMultiplyStressKernel(
                 a, b, c, n,
                 gridDimX: 1, gridDimY: 1,
                 blockDimX: (uint)n, blockDimY: (uint)n
