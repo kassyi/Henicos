@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
