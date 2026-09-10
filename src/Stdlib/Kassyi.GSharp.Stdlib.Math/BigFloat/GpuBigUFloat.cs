@@ -255,7 +255,8 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
             return 0;
         }
 
-        return HashCode.Combine(Significand.GetHashCode(), Exponent);
+        var normalized = Normalize(Significand.CountLeadingZeros(), false);
+        return HashCode.Combine(normalized.Significand.GetHashCode(), normalized.Exponent);
     }
 
     public static bool operator ==(GpuBigUFloat<TSize> left, GpuBigUFloat<TSize> right) => left.Equals(right);
