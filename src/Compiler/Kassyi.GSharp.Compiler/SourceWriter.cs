@@ -16,10 +16,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder
-    {
-        get;
-    }
+    private StringBuilder Builder { get; }
 
     public SourceWriter()
     {
@@ -368,7 +365,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private void AppendParentNamespaceOrTypeFromAst(SyntaxNode? parent)
     {
-        if (parent is null) return;
+        if (parent is null)
+        {
+            return;
+        }
 
         if (parent is BaseNamespaceDeclarationSyntax ns)
         {
