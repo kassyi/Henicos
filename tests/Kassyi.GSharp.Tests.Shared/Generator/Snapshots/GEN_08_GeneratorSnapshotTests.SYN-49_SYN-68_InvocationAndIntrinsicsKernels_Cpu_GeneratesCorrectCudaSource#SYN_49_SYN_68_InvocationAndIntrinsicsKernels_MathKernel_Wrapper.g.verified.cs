@@ -10,15 +10,15 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
 public const string MathKernel_Source = @"extern ""C"" __declspec(dllexport) void MathKernel(double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs){
-int tid=threadIdx.x;
-double dVal=doubleInputs[tid];
+int tid = threadIdx.x;
+double dVal = doubleInputs[tid];
 doubleOutputs[0]=sin(dVal);
 doubleOutputs[1]=cos(dVal);
 doubleOutputs[2]=__gsharp_clamp(dVal,0.0,10.0);
 doubleOutputs[3]=fmax(dVal,5.0);
 doubleOutputs[4]=fmin(dVal,5.0);
 doubleOutputs[5]=fabs(dVal);
-float fVal=floatInputs[tid];
+float fVal = floatInputs[tid];
 floatOutputs[0]=sinf(fVal);
 floatOutputs[1]=cosf(fVal);
 floatOutputs[2]=__gsharp_clamp(fVal,0.0f,10.0f);

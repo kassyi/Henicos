@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Core;
 /// <summary>
 /// Specifies the severity and verbosity levels for diagnostic and performance logs.
 /// </summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 public enum LogLevel
 {
     /// <summary>Detailed diagnostic and tracing information.</summary>
@@ -34,8 +34,8 @@ public enum LogLevel
 /// <remarks>
 /// <para>Log messages are queued into a bounded lock-free channel and processed in a dedicated background task to eliminate I/O blocking in performance-critical execution paths.</para>
 /// </remarks>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public abstract class Logger : ILogger
 {
     private const int MaxRetries = 3;
@@ -70,6 +70,11 @@ public abstract class Logger : ILogger
         get; set;
     } =
         LogLevel.Trace; // Trace by default to output everything during debugging
+
+    /// <summary>
+    /// Gets or sets a value indicating whether log entries are written to standard console output.
+    /// </summary>
+    public static bool WriteToConsole { get; set; } = true;
 
     /// <summary>
     /// Writes a log entry.
@@ -171,7 +176,7 @@ public abstract class Logger : ILogger
                             var errLine =
                                 $"[LOGGER_FALLBACK_ERROR] Failed to write logs (Reason: {ex.Message}){Environment.NewLine}{errBody}";
                             await Console.Error.WriteLineAsync(errLine).ConfigureAwait(false);
-                            Debug.WriteLine(errLine);
+                            System.Diagnostics.Debug.WriteLine(errLine);
                         }
                         else
                         {
@@ -182,7 +187,7 @@ public abstract class Logger : ILogger
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[LOGGER_FATAL] Background logging task iteration failed: {ex}");
+                System.Diagnostics.Debug.WriteLine($"[LOGGER_FATAL] Background logging task iteration failed: {ex}");
             }
             finally
             {
@@ -209,12 +214,28 @@ public abstract class Logger : ILogger
     }
 
     /// <summary>
-    /// Queues a formatted log message to the background logging channel.
+    /// Synchronously flushes the log queue and waits for pending writes to complete.
+    /// </summary>
+    /// <param name="timeoutMs">Maximum milliseconds to wait for the flush.</param>
+    public static void Flush(int timeoutMs = 3000)
+    {
+        try
+        {
+            ShutdownAsync().Wait(TimeSpan.FromMilliseconds(timeoutMs));
+        }
+        catch
+        {
+            // Ignore timeout on flush
+        }
+    }
+
+    /// <summary>
+    /// Queues a formatted log message to the background logging channel and writes to console if enabled.
     /// </summary>
     /// <param name="level">The severity level of the log.</param>
     /// <param name="tag">The component tag identifying the log source.</param>
     /// <param name="message">The message to log. If <see langword="null"/>, the operation is ignored.</param>
-    protected static void Log(LogLevel level, string tag, string? message)
+    public static void Log(LogLevel level, string tag, string? message)
     {
         if (level < ActiveLogLevel)
         {
@@ -231,12 +252,46 @@ public abstract class Logger : ILogger
 
         var logLine = $"{timestamp} [{levelStr}] [{tag}] {message}";
 
+        if (WriteToConsole)
+        {
+            if (level >= LogLevel.Error)
+            {
+                Console.Error.WriteLine(logLine);
+            }
+            else
+            {
+                Console.WriteLine(logLine);
+            }
+        }
+
         // Debug output for VS Code output window
-        Debug.WriteLine(logLine);
+        System.Diagnostics.Debug.WriteLine(logLine);
 
         // Queue plain text to file
         s_logChannel.Writer.TryWrite(logLine);
     }
+
+    /// <summary>Logs a trace message with a specified tag.</summary>
+    public static void Trace(string tag, string message) => Log(LogLevel.Trace, tag, message);
+
+    /// <summary>Logs a verbose message with a specified tag.</summary>
+    public static void Verbose(string tag, string message) => Log(LogLevel.Verbose, tag, message);
+
+    /// <summary>Logs a debug message with a specified tag.</summary>
+    public static void Debug(string tag, string message) => Log(LogLevel.Debug, tag, message);
+
+    /// <summary>Logs an informational message with a specified tag.</summary>
+    public static void Info(string tag, string message) => Log(LogLevel.Info, tag, message);
+
+    /// <summary>Logs a warning message with a specified tag.</summary>
+    public static void Warning(string tag, string message) => Log(LogLevel.Warning, tag, message);
+
+    /// <summary>Logs an error message with a specified tag.</summary>
+    public static void Error(string tag, string message) => Log(LogLevel.Error, tag, message);
+
+    /// <summary>Logs an exception and associated error message with a specified tag.</summary>
+    public static void Error(string tag, Exception ex, string message) =>
+        Log(LogLevel.Error, tag, $"{message}\nException: {ex.GetType().FullName} - {ex.Message}\nStack Trace: {ex.StackTrace}");
 
     /// <summary>
     /// Queues a command to clear the physical log file and flush the internal buffer.
@@ -303,8 +358,8 @@ public abstract class Logger : ILogger
     /// <summary>
     /// Utility for tracking and recording elapsed intervals across named pipeline stages.
     /// </summary>
-    [SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+    // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
     public class PerformanceTimer
     {
         private readonly Stopwatch _sw = Stopwatch.StartNew();
@@ -370,14 +425,16 @@ public abstract class Logger : ILogger
 /// Provides strongly-typed static logging helpers tagged with the generic type name.
 /// </summary>
 /// <typeparam name="T">The type used to identify log message sources.</typeparam>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public class Logger<T> : Logger
 {
     protected override string GetTag() => typeof(T).Name;
 
     /// <summary>Logs a trace message.</summary>
     public static void Trace(string message) => Log(LogLevel.Trace, typeof(T).Name, message);
+    /// <summary>Logs a verbose message.</summary>
+    public static void Verbose(string message) => Log(LogLevel.Verbose, typeof(T).Name, message);
     /// <summary>Logs a debug message.</summary>
     public static void Debug(string message) => Log(LogLevel.Debug, typeof(T).Name, message);
     /// <summary>Logs an informational message.</summary>

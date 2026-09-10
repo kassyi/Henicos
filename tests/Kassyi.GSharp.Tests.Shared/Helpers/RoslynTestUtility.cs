@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Helpers;
@@ -281,7 +282,9 @@ internal class TestAnalyzerConfigOptions : AnalyzerConfigOptions
         _targetDialect = targetDialect;
     }
 
+#pragma warning disable CS8765
     public override bool TryGetValue(string key, out string? value)
+#pragma warning restore CS8765
     {
         if (key == "build_property.GSharpTargetDialect")
         {
@@ -293,3 +296,4 @@ internal class TestAnalyzerConfigOptions : AnalyzerConfigOptions
     }
 }
 #nullable restore
+

@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
 public const string SimpleTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void SimpleTernaryKernel(int* __restrict__ a, int* __restrict__ b, double* __restrict__ result){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 result[tid]=(a[tid]>b[tid] ? a[tid] : b[tid]*1.5);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SimpleTernaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, double* __restrict__ result)

@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
@@ -9,12 +10,12 @@ public class TrialFactoringBenchmark
 {
     public static void RunTrialFactoring(int E, uint maxP)
     {
-        Console.WriteLine("==================================================");
-        Console.WriteLine(" G# Native Fermat Trial Factoring (GPU)");
-        Console.WriteLine("==================================================");
-        Console.WriteLine($"E       = {E}");
-        Console.WriteLine($"Max P   = {maxP:N0}");
-        Console.WriteLine("==================================================");
+        Logger<TrialFactoringBenchmark>.Info("==================================================");
+        Logger<TrialFactoringBenchmark>.Info(" G# Native Fermat Trial Factoring (GPU)");
+        Logger<TrialFactoringBenchmark>.Info("==================================================");
+        Logger<TrialFactoringBenchmark>.Info($"E       = {E}");
+        Logger<TrialFactoringBenchmark>.Info($"Max P   = {maxP:N0}");
+        Logger<TrialFactoringBenchmark>.Info("==================================================");
 
         using var scope = new JitEngine.CudaContextScope();
 
@@ -30,7 +31,7 @@ public class TrialFactoringBenchmark
         uint batchSize = 100_000_000;
         uint blockSize = 256;
 
-        Console.WriteLine($"Testing odd numbers from 3 up to {maxP:N0} in batches of {batchSize:N0}...");
+        Logger<TrialFactoringBenchmark>.Info($"Testing odd numbers from 3 up to {maxP:N0} in batches of {batchSize:N0}...");
 
         var sw = Stopwatch.StartNew();
 
@@ -55,7 +56,7 @@ public class TrialFactoringBenchmark
             var count = zeroCount[0];
             if (count > 0)
             {
-                Console.WriteLine($"\n[FOUND] GPU reported {count} potential matches in range!");
+                Logger<TrialFactoringBenchmark>.Info($"[FOUND] GPU reported {count} potential matches in range!");
                 var resultsHost = new uint[count];
                 gpuContext.Provider.CopyDeviceToHost(resultsHost, resultsBuffer.Pointer, (int)count);
 
@@ -63,13 +64,13 @@ public class TrialFactoringBenchmark
                 {
                     if (IsPrimeCPU(k))
                     {
-                        Console.WriteLine($"=> CONFIRMED PRIME FACTOR FOUND: {k}");
-                        Console.WriteLine($"=> N is COMPOSITE!");
+                        Logger<TrialFactoringBenchmark>.Info($"=> CONFIRMED PRIME FACTOR FOUND: {k}");
+                        Logger<TrialFactoringBenchmark>.Info("=> N is COMPOSITE!");
                         return;
                     }
                     else
                     {
-                        Console.WriteLine($"=> (False positive: {k} is composite, ignoring)");
+                        Logger<TrialFactoringBenchmark>.Info($"=> (False positive: {k} is composite, ignoring)");
                     }
                 }
 
@@ -80,13 +81,13 @@ public class TrialFactoringBenchmark
 
             if (startOdd % (batchSize * 10) == 3 && startOdd > 3)
             {
-                Console.WriteLine($"  ... reached {startOdd:N0}");
+                Logger<TrialFactoringBenchmark>.Info($"  ... reached {startOdd:N0}");
             }
         }
 
         sw.Stop();
-        Console.WriteLine($"\nTrial factoring up to {maxP:N0} completed in {sw.ElapsedMilliseconds} ms.");
-        Console.WriteLine("No factors found. N passed trial division screening.");
+        Logger<TrialFactoringBenchmark>.Info($"Trial factoring up to {maxP:N0} completed in {sw.ElapsedMilliseconds} ms.");
+        Logger<TrialFactoringBenchmark>.Info("No factors found. N passed trial division screening.");
     }
 
     private static bool IsPrimeCPU(uint n)

@@ -1,14 +1,14 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Running;
 using Cocona;
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos.Cli;
 
 /// <summary>Command-line interface entry point for executing Fermat tests, benchmarks, and profiling suites.</summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by CLI execution")]
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by CLI execution")]
+// ReSharper disable once UnusedMember.Global -- Used implicitly by CLI execution
+// ReSharper disable once UnusedType.Global -- Used implicitly by CLI execution
 internal class Program
 {
     private static void Main(string[] args) => CoconaApp.Run<Program>(args);
@@ -16,35 +16,35 @@ internal class Program
     [Command("run", Description = "Run Fermat PRP test for a given Exponent (E)")]
     public void Run([Option('e', Description = "Fermat Exponent (E)")] int e = 1000)
     {
-        Console.WriteLine($"Starting Fermat PRP test for E={e}...");
+        Logger<Program>.Info($"Starting Fermat PRP test for E={e}...");
         var x = BigInteger.One << e;
         var n = (BigInteger.One << (2 * e + 1)) - x + 11;
         BigInteger a = 2;
         var exponent = n - 1;
 
-        Console.WriteLine("Calculating expected result via CPU BigInteger...");
+        Logger<Program>.Info("Calculating expected result via CPU BigInteger...");
         var expected = BigInteger.ModPow(a, exponent, n);
 
-        Console.WriteLine("Executing GPU GSharp Runner...");
+        Logger<Program>.Info("Executing GPU GSharp Runner...");
         var runner = new FermatRunner(e);
         var (resultArray, _) = runner.RunFermatPrp();
 
         var actual = GetBigIntegerFromResult(resultArray, n);
 
-        Console.WriteLine($"Expected: {expected}");
-        Console.WriteLine($"Actual  : {actual}");
-        Console.WriteLine($"Match?  : {expected == actual}");
+        Logger<Program>.Info($"Expected: {expected}");
+        Logger<Program>.Info($"Actual  : {actual}");
+        Logger<Program>.Info($"Match?  : {expected == actual}");
     }
 
     [Command("profile", Description = "Profile the GSharp GPU execution and output M-Digit/s throughput")]
     public void Profile([Option('e', Description = "Fermat Exponent (E)")] int e = 10000,
                         [Option('i', Description = "Number of warmup/profile iterations")] int iterations = 2)
     {
-        Console.WriteLine($"Profiling GSharp FermatRunner for E={e} (Iterations: {iterations})...");
+        Logger<Program>.Info($"Profiling GSharp FermatRunner for E={e} (Iterations: {iterations})...");
 
         // Output for AI schedule hints
         var estimatedSeconds = 15 + (iterations * e / 500);
-        Console.WriteLine($"[INFO] Estimated max execution time: {estimatedSeconds} seconds.");
+        Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
         var runner = new FermatRunner(e);
 
@@ -57,7 +57,7 @@ internal class Program
         {
             if (globalSw.Elapsed.TotalMinutes > 5)
             {
-                Console.WriteLine("[WARN] Benchmark aborted: Reached 5 minute timeout limit.");
+                Logger<Program>.Warning("Benchmark aborted: Reached 5 minute timeout limit.");
                 break;
             }
 
@@ -66,7 +66,7 @@ internal class Program
             sw.Stop();
 
             var throughput = mDigitsPerLoop * e / (sw.Elapsed.TotalSeconds);
-            Console.WriteLine($"Iter {i}: Elapsed {sw.ElapsedMilliseconds} ms, Throughput: {throughput:F2} M-Digit/s");
+            Logger<Program>.Info($"Iter {i}: Elapsed {sw.ElapsedMilliseconds} ms, Throughput: {throughput:F2} M-Digit/s");
         }
     }
 
@@ -75,11 +75,11 @@ internal class Program
                              [Option('i', Description = "Number of warmup/profile iterations")] int iterations = 2,
                              [Option('c', Description = "Chunk Size (Loop iterations in kernel)")] int chunkSize = 100)
     {
-        Console.WriteLine($"Profiling GSharp Chunk Benchmark for E={e}, ChunkSize={chunkSize} (Iterations: {iterations})...");
+        Logger<Program>.Info($"Profiling GSharp Chunk Benchmark for E={e}, ChunkSize={chunkSize} (Iterations: {iterations})...");
 
         // Output for AI schedule hints
         var estimatedSeconds = 15 + (iterations * 2); // JIT comp (15s) + fast chunks (2s per iter)
-        Console.WriteLine($"[INFO] Estimated max execution time: {estimatedSeconds} seconds.");
+        Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
         var runner = new FermatRunner(e);
 
@@ -92,7 +92,7 @@ internal class Program
         {
             if (globalSw.Elapsed.TotalMinutes > 5)
             {
-                Console.WriteLine("[WARN] Benchmark aborted: Reached 5 minute timeout limit.");
+                Logger<Program>.Warning("Benchmark aborted: Reached 5 minute timeout limit.");
                 break;
             }
 
@@ -104,14 +104,14 @@ internal class Program
             sw.Stop();
 
             var throughput = mDigitsPerLoop * chunkSize / (sw.Elapsed.TotalSeconds);
-            Console.WriteLine($"Iter {i}: Elapsed {sw.Elapsed.TotalMilliseconds:F2} ms, Throughput: {throughput:F2} M-Digit/s");
+            Logger<Program>.Info($"Iter {i}: Elapsed {sw.Elapsed.TotalMilliseconds:F2} ms, Throughput: {throughput:F2} M-Digit/s");
         }
     }
 
     [Command("bench", Description = "Run BenchmarkDotNet metrics for the Fermat Pipeline")]
     public void Bench()
     {
-        Console.WriteLine("Starting BenchmarkDotNet...");
+        Logger<Program>.Info("Starting BenchmarkDotNet...");
         BenchmarkRunner.Run<FermatBenchmarks>();
     }
 

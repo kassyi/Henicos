@@ -49,11 +49,11 @@ public static class HalfGcdCpuReference
             }
             else
             {
-                var new_a = a * u0 + b * v0;
-                var new_b = a * u1 + b * v1;
+                var newA = a * u0 + b * v0;
+                var newB = a * u1 + b * v1;
 
                 // Safety fallback
-                if (new_a < 0 || new_b < 0 || new_b > new_a)
+                if (newA < 0 || newB < 0 || newB > newA)
                 {
                     var r = a % b;
                     a = b;
@@ -61,8 +61,8 @@ public static class HalfGcdCpuReference
                 }
                 else
                 {
-                    a = new_a;
-                    b = new_b;
+                    a = newA;
+                    b = newB;
                 }
             }
         }

@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_28_MethodAttributesKernelsWrapper
 {
 public const string MethodAttributesKernel_Source = @"extern ""C"" __global__ void MethodAttributesKernel(int* __restrict__ input, int* __restrict__ result){
-int tid=threadIdx.x;
-int sum=InlinedAdd(input[tid],100);
+int tid = threadIdx.x;
+int sum = InlinedAdd(input[tid],100);
 result[tid]=MultiAttributeMultiply(sum,2);
 }
 ";

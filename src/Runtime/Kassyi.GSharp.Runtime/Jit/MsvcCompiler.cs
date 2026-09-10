@@ -78,7 +78,7 @@ public sealed class MsvcCompiler
             : output;
     };
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Compile(string cppFile, string dllFile, string? includePath, string tempDir)
     {
         var vcvars = NvccCompiler.GetVcvarsPath();

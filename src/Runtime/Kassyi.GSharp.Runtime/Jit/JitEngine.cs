@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// <para><b>Thread Safety:</b> All public methods except <see cref="Shutdown"/> are safe for concurrent invocation from multiple threads.</para>
 /// </remarks>
 /// <remarks><para>Implements: <b>GEN-37, GEN-42, GEN-43</b></para></remarks>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
 public sealed class JitEngine
 {
     private static volatile bool s_isGlobalInit;
@@ -95,7 +95,7 @@ public sealed class JitEngine
     /// <para>Safe to call during application teardown or when changing GPU runtime contexts.</para>
     /// <para><b>Thread Safety:</b> This method is NOT safe to call concurrently with other engine operations.</para>
     /// </remarks>
-    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
+#pragma warning disable IDE0051 // Justification: Public API for library
     public static void Shutdown()
     {
         using var scope = new CudaContextScope();
@@ -120,10 +120,11 @@ public sealed class JitEngine
         s_functionCache.Clear();
     }
 
-    public static int CacheMissCount = 0;
+    public static int CacheMissCount;
 
     public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
-        ReadOnlySpan<JitConstantArg> jitConstants = default, ReadOnlySpan<KeyValuePair<string, string>> macros = default)
+        ReadOnlySpan<JitConstantArg> jitConstants = default,
+        ReadOnlySpan<KeyValuePair<string, string>> macros = default)
     {
         EnsureInitialized();
 
@@ -133,7 +134,7 @@ public sealed class JitEngine
         {
             return lazyHit.Value.Function;
         }
-        
+
         Interlocked.Increment(ref CacheMissCount);
 
         var jitArr = jitConstants.ToArray();
@@ -147,30 +148,31 @@ public sealed class JitEngine
         return lazyModule.Value.Function;
     }
 
-    private static Guid ComputeCacheKey(string kernelName, string baseSource, ReadOnlySpan<JitConstantArg> jitConstants, ReadOnlySpan<KeyValuePair<string, string>> macros)
+    private static Guid ComputeCacheKey(string kernelName, string baseSource, ReadOnlySpan<JitConstantArg> jitConstants,
+        ReadOnlySpan<KeyValuePair<string, string>> macros)
     {
         // Zero-allocation FNV-1a hash
-        const ulong offsetBasis = 14695981039346656037;
-        const ulong prime = 1099511628211;
-        var hash = offsetBasis;
+        const ulong OffsetBasis = 14695981039346656037;
+        const ulong Prime = 1099511628211;
+        var hash = OffsetBasis;
 
-        hash = HashString(hash, prime, kernelName);
-        hash = HashString(hash, prime, baseSource);
+        hash = HashString(hash, Prime, kernelName);
+        hash = HashString(hash, Prime, baseSource);
 
         foreach (var constant in jitConstants)
         {
-            hash = HashString(hash, prime, constant.Key);
-            hash = HashJitConstantType(hash, prime, constant.Type);
-            hash = HashJitConstantValue(hash, prime, in constant.Value);
+            hash = HashString(hash, Prime, constant.Key);
+            hash = HashJitConstantType(hash, Prime, constant.Type);
+            hash = HashJitConstantValue(hash, Prime, in constant.Value);
         }
 
         foreach (var macro in macros)
         {
-            hash = HashString(hash, prime, macro.Key);
-            hash = HashString(hash, prime, macro.Value);
+            hash = HashString(hash, Prime, macro.Key);
+            hash = HashString(hash, Prime, macro.Value);
         }
 
-        var hash2 = hash ^ prime; 
+        var hash2 = hash ^ Prime;
         unsafe
         {
             var b = stackalloc byte[16];
@@ -192,6 +194,7 @@ public sealed class JitEngine
             hash ^= c;
             hash *= prime;
         }
+
         return hash;
     }
 
@@ -211,10 +214,12 @@ public sealed class JitEngine
             hash *= prime;
             v >>= 8;
         }
+
         return hash;
     }
 
-    private static GpuModule CompileKernelInternal(string kernelName, string baseSource, JitConstantArg[]? jitConstants, KeyValuePair<string, string>[]? macros)
+    private static GpuModule CompileKernelInternal(string kernelName, string baseSource, JitConstantArg[]? jitConstants,
+        KeyValuePair<string, string>[]? macros)
     {
         var combinedMacros = new Dictionary<string, string>();
         if (jitConstants != null)
@@ -234,53 +239,53 @@ public sealed class JitEngine
         }
 
         var cppSource = PreprocessSource(baseSource, combinedMacros);
-            var sourceHash = ComputeHash(cppSource);
-            var toolkitHash = ComputeHash(GetCudaToolkitPath());
-            var nvrtcVersion = NvrtcApi.GetNvrtcVersion();
+        var sourceHash = ComputeHash(cppSource);
+        var toolkitHash = ComputeHash(GetCudaToolkitPath());
+        var nvrtcVersion = NvrtcApi.GetNvrtcVersion();
 
-            var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}_{nvrtcVersion}_{toolkitHash}.ptx";
-            var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
-            byte[]? ptxBytes = null;
+        var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}_{nvrtcVersion}_{toolkitHash}.ptx";
+        var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
+        byte[]? ptxBytes = null;
 
-            if (File.Exists(cacheFilePath))
+        if (File.Exists(cacheFilePath))
+        {
+            try
             {
-                try
+                var loadedBytes = File.ReadAllBytes(cacheFilePath);
+                if (loadedBytes.Length > 0)
                 {
-                    var loadedBytes = File.ReadAllBytes(cacheFilePath);
-                    if (loadedBytes.Length > 0)
-                    {
-                        ptxBytes = loadedBytes;
-                    }
-                    else
-                    {
-                        TryDeleteFile(cacheFilePath);
-                    }
+                    ptxBytes = loadedBytes;
                 }
-                catch
+                else
                 {
-                    // Ignore read errors and fallback to fresh compilation
                     TryDeleteFile(cacheFilePath);
                 }
             }
-
-            using var scope = new CudaContextScope();
-
-            if (ptxBytes != null)
+            catch
             {
-                try
-                {
-                    return LoadKernelFunction(ptxBytes, kernelName);
-                }
-                catch
-                {
-                    // Cached PTX is invalid or corrupt. Invalidate cache and fallback to recompile.
-                    TryDeleteFile(cacheFilePath);
-                }
+                // Ignore read errors and fallback to fresh compilation
+                TryDeleteFile(cacheFilePath);
             }
+        }
 
-            ptxBytes = CompileToPtx(cppSource, kernelName);
-            WriteCacheFileAtomic(cacheFilePath, ptxBytes);
-            return LoadKernelFunction(ptxBytes, kernelName);
+        using var scope = new CudaContextScope();
+
+        if (ptxBytes != null)
+        {
+            try
+            {
+                return LoadKernelFunction(ptxBytes, kernelName);
+            }
+            catch
+            {
+                // Cached PTX is invalid or corrupt. Invalidate cache and fallback to recompile.
+                TryDeleteFile(cacheFilePath);
+            }
+        }
+
+        ptxBytes = CompileToPtx(cppSource, kernelName);
+        WriteCacheFileAtomic(cacheFilePath, ptxBytes);
+        return LoadKernelFunction(ptxBytes, kernelName);
     }
 
     private static string PreprocessSource(string cppSource, Dictionary<string, string>? macros)

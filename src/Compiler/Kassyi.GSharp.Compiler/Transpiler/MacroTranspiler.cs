@@ -2,8 +2,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by Roslyn compiler infra")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by Roslyn compiler infra")]
+// ReSharper disable once UnusedType.Global -- Used implicitly by Roslyn compiler infra
+// ReSharper disable once UnusedMember.Global -- Used implicitly by Roslyn compiler infra
 internal static class MacroTranspiler
 {
     public static bool TryTranspileMacro(ExpressionStatementSyntax node, ref TranspileContext context)
@@ -123,9 +123,13 @@ internal static class MacroTranspiler
         }
 
         // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
-        context.Writer.Append($"for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < ");
-        context.Visitor.Visit(args[offset].Expression);
-        context.Writer.Append($"; {paramName} += gridDim.x * blockDim.x)");
+        context.Writer.AppendKeyword("for");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append($"int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < ");
+            context.Visitor.Visit(args[offset].Expression);
+            context.Writer.Append($"; {paramName} += gridDim.x * blockDim.x");
+        }
 
         context.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
@@ -146,7 +150,11 @@ internal static class MacroTranspiler
             return false;
         }
 
-        context.Writer.Append("if (threadIdx.x == 0 && blockIdx.x == 0)");
+        context.Writer.AppendKeyword("if");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
+        }
 
         context.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
@@ -319,7 +327,7 @@ internal static class MacroTranspiler
 
                 if (isPointer && rawString != null)
                 {
-                    localContext.Writer.Append("&").Append(rawString);
+                    localContext.Writer.Append($"&{rawString}");
                 }
                 else if (rawString != null)
                 {

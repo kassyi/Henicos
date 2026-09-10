@@ -19,7 +19,7 @@ int B;
 ;
 #endif
 extern ""C"" __declspec(dllexport) void AggregateInitKernel(int* __restrict__ output){
-Kassyi_GSharp_Tests_Syntax_AggregateStruct s=([&]() {
+Kassyi_GSharp_Tests_Syntax_AggregateStruct s = ([&]() {
 Kassyi_GSharp_Tests_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
 ());
 output[0]=s.A+s.B;

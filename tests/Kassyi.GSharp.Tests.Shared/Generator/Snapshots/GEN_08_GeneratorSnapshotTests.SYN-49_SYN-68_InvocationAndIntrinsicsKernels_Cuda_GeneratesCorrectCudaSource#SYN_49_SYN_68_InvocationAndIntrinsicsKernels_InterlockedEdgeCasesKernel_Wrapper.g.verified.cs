@@ -20,7 +20,7 @@ long long ValueL;
 ;
 #endif
 extern ""C"" __global__ void InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
 atomicExch(&structArray[tid].ValueU,42u);

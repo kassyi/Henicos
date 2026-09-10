@@ -3,10 +3,9 @@ using System.Text;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Library methods for Source Generators")]
-[SuppressMessage("ReSharper", "UnusedMethod.Global", Justification = "Library methods for Source Generators")]
-[SuppressMessage("CodeQuality", "IDE0051:Remove unused private members",
-    Justification = "Library methods for Source Generators")]
+// ReSharper disable once UnusedMember.Global -- Library methods for Source Generators
+// ReSharper disable once UnusedMethod.Global -- Library methods for Source Generators
+#pragma warning disable IDE0051 // Justification: Library methods for Source Generators
 public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 {
     [ThreadStatic]

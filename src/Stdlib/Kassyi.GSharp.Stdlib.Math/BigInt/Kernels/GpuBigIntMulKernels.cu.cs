@@ -1,8 +1,8 @@
 // ReSharper disable All
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntMulKernels
 {

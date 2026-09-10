@@ -27,7 +27,7 @@ int Y;
 ;
 #endif
 extern ""C"" __global__ void DeeplyNestedInitKernel(int* __restrict__ output){
-Kassyi_GSharp_Tests_Syntax_OuterStruct outer=([&]() {
+Kassyi_GSharp_Tests_Syntax_OuterStruct outer = ([&]() {
 Kassyi_GSharp_Tests_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
 Kassyi_GSharp_Tests_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
 ()); _tmp.Y = 10; return _tmp; }

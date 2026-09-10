@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_03_InlineOutVarKernelsWrapper
 {
 public const string IfConditionKernel_Source = @"extern ""C"" __global__ void IfConditionKernel(int* __restrict__ input, int* __restrict__ output){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 int val;
 if(TrySquare(input[tid],&val))
 {

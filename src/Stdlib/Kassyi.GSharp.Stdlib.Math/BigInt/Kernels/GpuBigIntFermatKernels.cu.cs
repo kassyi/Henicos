@@ -2,10 +2,9 @@
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for library consumers")]
-[SuppressMessage("GSharp", "GSH1002",
-    Justification = "Lambda capture limitations in source generation prevent passing context by reference.")]
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
+// ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+#pragma warning disable GSH1002 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntFermatKernels
 {

@@ -19,15 +19,15 @@ int Value;
 ;
 #endif
 extern ""C"" __global__ void RefOutTestKernel(int* __restrict__ data){
-bool flag=true;
+bool flag = true;
 ModifyRef(&flag);
-Kassyi_GSharp_Tests_Syntax_RefTestStruct s=([&]() {
+Kassyi_GSharp_Tests_Syntax_RefTestStruct s = ([&]() {
 Kassyi_GSharp_Tests_Syntax_RefTestStruct _tmp{}; _tmp.Field = 0; _tmp.Value = 10; return _tmp; }
 ());
 MemberAccessRef(&s);
 int a;
 int b;
-int val=1;
+int val = 1;
 ChainedAssignmentRef(&val,&a,&b);
 data[0]=((flag ? 100 : 0))+s.Field+a+b+val;
 }

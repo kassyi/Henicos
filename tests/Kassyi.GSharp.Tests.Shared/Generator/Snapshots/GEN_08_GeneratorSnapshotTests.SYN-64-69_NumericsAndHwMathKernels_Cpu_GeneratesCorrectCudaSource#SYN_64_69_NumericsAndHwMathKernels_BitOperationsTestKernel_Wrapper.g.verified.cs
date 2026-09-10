@@ -10,14 +10,14 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_64_69_NumericsAndHwMathKernelsWrapper
 {
 public const string BitOperationsTestKernel_Source = @"extern ""C"" __declspec(dllexport) void BitOperationsTestKernel(unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data){
-unsigned int u32Val=u32Data[0];
+unsigned int u32Val = u32Data[0];
 u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
 u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
 u32Data[3]=(unsigned int)__gsharp_tzc_32(u32Val);
 u32Data[4]=(unsigned int)__gsharp_log2_32(u32Val);
 u32Data[5]=__gsharp_rotl32(u32Val,5);
 u32Data[6]=__gsharp_rotr32(u32Val,3);
-unsigned long long u64Val=u64Data[0];
+unsigned long long u64Val = u64Data[0];
 u64Data[1]=(unsigned long long)__gsharp_lzc_64(u64Val);
 u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(u64Val));
 u64Data[3]=(unsigned long long)__gsharp_tzc_64(u64Val);

@@ -43,6 +43,29 @@ You must conform to these modern .NET guidelines, matching the project's `.edito
 - **ValueTask & Ref Structs:** Use `readonly ref struct` for zero-allocation scope managers.
 - **ArrayPool:** Use `System.Buffers.ArrayPool<T>` instead of `new T[]` in hot paths to prevent large GC allocations.
 
+### 2.3. Mathematical Domain Naming & Academic Conventions
+
+While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, specialized mathematical, cryptographic, and algorithmic notations (e.g., $P, Q, T$ in hypergeometric binary splitting, $X, Y, Z, W$ in vectors, $P, Q, D$ in `RSAParameters`) represent domain-standard exceptions. In these scenarios, adhere to the following scope separation principle:
+
+- **Type Names (Classes / Structs):** Must use full, descriptive words without abbreviations, accurately representing the overarching concept (e.g., prefer `GpuHypergeometricTerms` or concept-oriented type names over standalone acronyms).
+- **Member Names (Properties / Fields):** Preserve canonical mathematical symbols (e.g., `P`, `Q`, `T`, `X`, `Y`, `Z`, `M11`) when translating them into verbose English phrases would break 1:1 parity with underlying research papers or mathematical formulas.
+- **Parameters & Arguments:** Single-letter mathematical arguments (e.g., `x`, `y`) are permissible in arithmetic operations where they correspond directly to formal equations (matching `System.Math`).
+- **Mandatory XML Documentation:** Whenever single-letter symbols or domain-specific abbreviations are used for members, you **MUST** provide comprehensive XML documentation explicitly linking each symbol to its mathematical definition:
+
+```csharp
+/// <summary>
+/// Represents the binary splitting state <c>(P, Q, T)</c> for hypergeometric series summation.
+/// </summary>
+/// <remarks>
+/// Defined according to the Binary Splitting algorithm:
+/// <list type="bullet">
+///   <item><description><see cref="P"/>: <c>P(a, b) = \prod p(k)</c></description></item>
+///   <item><description><see cref="Q"/>: <c>Q(a, b) = \prod q(k)</c></description></item>
+///   <item><description><see cref="T"/>: <c>T(a, b) = \sum ...</c></description></item>
+/// </list>
+/// </remarks>
+```
+
 ---
 
 ## 3. GPU KERNEL DEVELOPMENT CONVENTIONS

@@ -9,11 +9,14 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <remarks><para>Implements: <b>GEN-51</b></para></remarks>
 public class FermatRunner : IDisposable
 {
-    /// <summary>Gets the Fermat exponent parameter <c>E</c> (testing <c>F_n = 2^(2^E) + 1</c>).</summary>
-    public int E
-    {
-        get;
-    }
+    /// <summary>Gets the Fermat exponent parameter.</summary>
+    /// <remarks>
+    /// Defined according to the Fermat number Probable Prime (PRP) test:
+    /// <list type="bullet">
+    ///   <item><description><see cref="E"/>: <c>F_n = 2^(2^E) + 1</c></description></item>
+    /// </list>
+    /// </remarks>
+    public int E { get; }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
     public int OutNumWords => _outNumWords;
@@ -23,15 +26,15 @@ public class FermatRunner : IDisposable
 
     private GpuContext _gpuContext;
 
-    // GpuBigInteger buffers for Host-side orchestration
-    private GpuBigInteger _valueT;
-    private GpuBigInteger _valueTReduced;
-    private GpuBigInteger _mulResult;
+    // GpuUIntBigInteger buffers for Host-side orchestration
+    private GpuUIntBigInteger _valueT;
+    private GpuUIntBigInteger _valueTReduced;
+    private GpuUIntBigInteger _mulResult;
 
-    private GpuBigInteger _quotient;
-    private GpuBigInteger _remainder;
-    private GpuBigInteger _remainderMask;
-    private GpuBigInteger _temp;
+    private GpuUIntBigInteger _quotient;
+    private GpuUIntBigInteger _remainder;
+    private GpuUIntBigInteger _remainderMask;
+    private GpuUIntBigInteger _temp;
 
     private int _bitOffset2E1;
     private int _exponent;
@@ -47,14 +50,14 @@ public class FermatRunner : IDisposable
         _exponent = E;
 
         _gpuContext = new GpuContext(_outNumWords);
-        _valueT = new GpuBigInteger(_gpuContext, _outNumWords);
-        _valueTReduced = new GpuBigInteger(_gpuContext, _numWords);
-        _mulResult = new GpuBigInteger(_gpuContext, _numWords * 2);
+        _valueT = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _valueTReduced = new GpuUIntBigInteger(_gpuContext, _numWords);
+        _mulResult = new GpuUIntBigInteger(_gpuContext, _numWords * 2);
 
-        _quotient = new GpuBigInteger(_gpuContext, _outNumWords);
-        _remainder = new GpuBigInteger(_gpuContext, _outNumWords);
-        _remainderMask = new GpuBigInteger(_gpuContext, _outNumWords);
-        _temp = new GpuBigInteger(_gpuContext, _outNumWords);
+        _quotient = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _remainder = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _remainderMask = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        _temp = new GpuUIntBigInteger(_gpuContext, _outNumWords);
 
         // Init ValueT = 2
         var initArray = new uint[_outNumWords];
@@ -116,7 +119,7 @@ public class FermatRunner : IDisposable
     }
 
     /// <summary>Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.</summary>
-    public (uint[] Result, long EllapsedMs) RunFermatPrp()
+    public (uint[] Result, long ElapsedMs) RunFermatPrp()
     {
         var sw = Stopwatch.StartNew();
 

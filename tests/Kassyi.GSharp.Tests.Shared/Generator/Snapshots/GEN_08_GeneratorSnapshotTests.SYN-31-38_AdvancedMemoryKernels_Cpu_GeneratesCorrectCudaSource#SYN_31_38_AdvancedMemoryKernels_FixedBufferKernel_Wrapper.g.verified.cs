@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
 public const string FixedBufferKernel_Source = @"extern ""C"" __declspec(dllexport) void FixedBufferKernel(unsigned int* __restrict__ data){
-unsigned int* p=&data[0];
+unsigned int* p = &data[0];
 {
 p[1]=p[0]+10;
 }

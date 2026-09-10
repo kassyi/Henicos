@@ -33,9 +33,9 @@ return this->Data;
 ;
 #endif
 extern ""C"" __declspec(dllexport) void MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult){
-TestNamespace_DummyRef a=dA;
-TestNamespace_DummyRef b=dB;
-TestNamespace_DummyRef c=dResult;
+TestNamespace_DummyRef a = dA;
+TestNamespace_DummyRef b = dB;
+TestNamespace_DummyRef c = dResult;
 DummyOp(&ctx,c,a,b);
 DummyUnaryOp(c,a);
 DummyShiftOp(ctx,c,a,5);
