@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// Provides static division and remainder operations, including Newton-Raphson approximation for <see cref="GpuUIntBigInteger"/>.
@@ -265,25 +265,34 @@ public static class GpuBigIntDivRem
 
     public static int GetActualBits(GpuUIntBigInteger gpuBigInt)
     {
-        var hostData = gpuBigInt.ToHostArray();
-        for (var i = hostData.Length - 1; i >= 0; i--)
+        var n = gpuBigInt.NumWords;
+        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(n);
+        try
         {
-            if (hostData[i] == 0)
+            gpuBigInt.Context.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n);
+            for (var i = n - 1; i >= 0; i--)
             {
-                continue;
+                if (hostData[i] == 0)
+                {
+                    continue;
+                }
+
+                var w = hostData[i];
+                var b = 31;
+                while ((w & (1u << b)) == 0)
+                {
+                    b--;
+                }
+
+                return i * 32 + b + 1;
             }
 
-            var w = hostData[i];
-            var b = 31;
-            while ((w & (1u << b)) == 0)
-            {
-                b--;
-            }
-
-            return i * 32 + b + 1;
+            return 0;
         }
-
-        return 0;
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+        }
     }
 
     /// <summary>Computes arbitrary-precision division (<c>leftOperand / rightOperand</c>) on the GPU.</summary>
@@ -323,9 +332,8 @@ public static class GpuBigIntDivRem
         mod2N.CopyFrom(mod, numWords: n);
 
         using var tempResult = new GpuUIntBigInteger(baseVal.Context, 2 * n);
-        var oneData = new uint[2 * n];
-        oneData[0] = 1;
-        tempResult.CopyFrom(new GpuUIntBigInteger(baseVal.Context, oneData));
+        tempResult.Clear();
+        tempResult.Context.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1);
 
         using var tempBase = new GpuUIntBigInteger(baseVal.Context, 2 * n);
         tempBase.CopyFrom(baseVal, numWords: n);
@@ -343,54 +351,62 @@ public static class GpuBigIntDivRem
         using var mod4N = new GpuUIntBigInteger(baseVal.Context, 4 * n);
         mod4N.CopyFrom(mod, numWords: n);
 
-        var hostExp = exp.ToHostArray();
-
-        for (var i = 0; i < expWords; i++)
+        var hostExp = System.Buffers.ArrayPool<uint>.Shared.Rent(expWords);
+        try
         {
-            var e = hostExp[i];
+            exp.Context.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords);
 
-            // Optimization: if remaining bits are 0, we can break
-            if (e == 0)
+            for (var i = 0; i < expWords; i++)
             {
-                var allZero = true;
-                for (var j = i; j < expWords; j++)
+                var e = hostExp[i];
+
+                // Optimization: if remaining bits are 0, we can break
+                if (e == 0)
                 {
-                    if (hostExp[j] == 0)
+                    var allZero = true;
+                    for (var j = i; j < expWords; j++)
                     {
-                        continue;
+                        if (hostExp[j] == 0)
+                        {
+                            continue;
+                        }
+
+                        allZero = false;
+                        break;
                     }
 
-                    allZero = false;
-                    break;
+                    if (allZero)
+                    {
+                        break;
+                    }
                 }
 
-                if (allZero)
+                for (var bit = 0; bit < 32; bit++)
                 {
-                    break;
-                }
-            }
+                    if ((e & 1) == 1)
+                    {
+                        GpuBigIntMath.Mul(tempResult, tempBase, tempMul);
+                        DivRem(tempMul, mod4N, tempQ, tempR);
+                        tempResult.CopyFrom(tempR, numWords: 2 * n);
+                    }
 
-            for (var bit = 0; bit < 32; bit++)
-            {
-                if ((e & 1) == 1)
-                {
-                    GpuBigIntMath.Mul(tempResult, tempBase, tempMul);
+                    GpuBigIntMath.Mul(tempBase, tempBase, tempMul);
                     DivRem(tempMul, mod4N, tempQ, tempR);
-                    tempResult.CopyFrom(tempR, numWords: 2 * n);
-                }
+                    tempBase.CopyFrom(tempR, numWords: 2 * n);
 
-                GpuBigIntMath.Mul(tempBase, tempBase, tempMul);
-                DivRem(tempMul, mod4N, tempQ, tempR);
-                tempBase.CopyFrom(tempR, numWords: 2 * n);
+                    e >>= 1;
 
-                e >>= 1;
-
-                // If e becomes 0 and there are no more words, we can break bit loop
-                if (e == 0 && i == expWords - 1)
-                {
-                    break;
+                    // If e becomes 0 and there are no more words, we can break bit loop
+                    if (e == 0 && i == expWords - 1)
+                    {
+                        break;
+                    }
                 }
             }
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostExp);
         }
 
         resultBuffer.CopyFrom(tempResult, numWords: n);
@@ -412,13 +428,22 @@ public static class GpuBigIntDivRem
         var actualBits = ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: true, marginBits);
 
         // 3. GPU Newton-Raphson iterations
-        using var constant3 = new GpuUIntBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
+        var constant3Words = 3 * n + 2 * marginWords;
+        using var constant3 = new GpuUIntBigInteger(targetOperand.Context, constant3Words);
         constant3.Clear();
-        var hostConstant3 = new uint[3 * n + 2 * marginWords];
-        var bit2B = 2 * actualBits + 2 * marginBits;
-        hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
-        hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
-        targetOperand.Context.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, 3 * n + 2 * marginWords);
+        var hostConstant3 = System.Buffers.ArrayPool<uint>.Shared.Rent(constant3Words);
+        try
+        {
+            Array.Clear(hostConstant3, 0, constant3Words);
+            var bit2B = 2 * actualBits + 2 * marginBits;
+            hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
+            hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
+            targetOperand.Context.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostConstant3);
+        }
 
         using var xSquared = new GpuUIntBigInteger(targetOperand.Context, 2 * n + 2 * marginWords);
         using var axSquared = new GpuUIntBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
@@ -472,32 +497,37 @@ public static class GpuBigIntDivRem
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
         var n = leftOperand.NumWords;
-        var hostData = leftOperand.ToHostArray();
         var highestBit = -1;
-        for (var i = n - 1; i >= 0; i--)
+        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(n);
+        try
         {
-            if (hostData[i] == 0)
+            leftOperand.Context.Provider.CopyDeviceToHost(hostData, leftOperand.DevicePointer, n);
+            for (var i = n - 1; i >= 0; i--)
             {
-                continue;
-            }
+                if (hostData[i] == 0)
+                {
+                    continue;
+                }
 
-            var w = hostData[i];
-            var b = 31;
-            while ((w & (1u << b)) == 0)
-            {
-                b--;
-            }
+                var w = hostData[i];
+                var b = 31;
+                while ((w & (1u << b)) == 0)
+                {
+                    b--;
+                }
 
-            highestBit = i * 32 + b;
-            break;
+                highestBit = i * 32 + b;
+                break;
+            }
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
         }
 
         if (highestBit == -1)
         {
-            resultBuffer.ClearWord(0);
-            resultBuffer.CopyFrom(resultBuffer, numWords: 0);
-            var zeros = new uint[n];
-            resultBuffer.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, zeros, n);
+            resultBuffer.Clear();
             return;
         }
 
@@ -612,13 +642,22 @@ public static class GpuBigIntDivRem
             throw new DivideByZeroException();
         }
 
-        var hostData = operand.ToHostArray();
-        var topIndex = (actualBits - 1) / 32;
+        var n = operand.NumWords;
+        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(n);
+        try
+        {
+            operand.Context.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n);
+            var topIndex = (actualBits - 1) / 32;
 
-        var wordsToExtract = System.Math.Min(4, topIndex + 1);
-        var extractBytes = new byte[wordsToExtract * 4 + 1];
-        Buffer.BlockCopy(hostData, (topIndex - wordsToExtract + 1) * 4, extractBytes, 0, wordsToExtract * 4);
-        return new BigInteger(extractBytes);
+            var wordsToExtract = System.Math.Min(4, topIndex + 1);
+            var extractBytes = new byte[wordsToExtract * 4 + 1];
+            Buffer.BlockCopy(hostData, (topIndex - wordsToExtract + 1) * 4, extractBytes, 0, wordsToExtract * 4);
+            return new BigInteger(extractBytes);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+        }
     }
 
     private static int ComputeInitialGuess(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, bool isSquareRoot, int marginBits = 0)
@@ -681,12 +720,19 @@ public static class GpuBigIntDivRem
             shiftedApproximation >>= -finalShift;
         }
 
-        var xData = new uint[resultBuffer.NumWords];
-        var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
-        Buffer.BlockCopy(xBytes, 0, xData, 0, System.Math.Min(xBytes.Length, xData.Length * 4));
-
-        using var temp = new GpuUIntBigInteger(targetOperand.Context, xData);
-        resultBuffer.CopyFrom(temp);
+        var numWords = resultBuffer.NumWords;
+        var xData = System.Buffers.ArrayPool<uint>.Shared.Rent(numWords);
+        try
+        {
+            Array.Clear(xData, 0, numWords);
+            var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
+            Buffer.BlockCopy(xBytes, 0, xData, 0, System.Math.Min(xBytes.Length, numWords * 4));
+            targetOperand.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(xData);
+        }
 
         return actualBits;
     }

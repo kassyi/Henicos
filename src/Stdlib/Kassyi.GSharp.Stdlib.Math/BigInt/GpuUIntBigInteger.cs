@@ -1,4 +1,4 @@
-﻿using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
@@ -44,7 +44,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
         get; set;
     }
 
-    internal bool _disposed;
+    internal bool Disposed;
 
     /// <summary>
     /// Allocates uninitialized GPU device memory for an integer of the specified limb length.
@@ -68,8 +68,16 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
         }
 
         // Zero-clear the newly allocated GPU memory to prevent uninitialized memory bugs
-        var zeroArray = new uint[numWords];
-        Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, numWords);
+        var zeroArray = System.Buffers.ArrayPool<uint>.Shared.Rent(numWords);
+        try
+        {
+            Array.Clear(zeroArray, 0, numWords);
+            Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, numWords);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(zeroArray);
+        }
     }
 
     /// <summary>
@@ -269,8 +277,16 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
             return;
         }
 
-        var zeroArray = new uint[wordsToClear];
-        Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
+        var zeroArray = System.Buffers.ArrayPool<uint>.Shared.Rent(wordsToClear);
+        try
+        {
+            Array.Clear(zeroArray, 0, wordsToClear);
+            Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(zeroArray);
+        }
     }
 
     /// <summary>
@@ -358,26 +374,35 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
     /// <returns>A new <see cref="GpuUIntBigInteger"/> holding the power of two value.</returns>
     public static GpuUIntBigInteger CreatePowerOfTwo(GpuContext context, int numWords, int bitIndex)
     {
-        var hostData = new uint[numWords];
+        var result = new GpuUIntBigInteger(context, numWords);
         var wordIndex = bitIndex / 32;
         var bitOffset = bitIndex % 32;
         if (wordIndex < numWords)
         {
-            hostData[wordIndex] = 1u << bitOffset;
+            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            try
+            {
+                word[0] = 1u << bitOffset;
+                context.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1);
+            }
+            finally
+            {
+                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+            }
         }
 
-        return new GpuUIntBigInteger(context, hostData);
+        return result;
     }
 
 
     internal void DisposeCore()
     {
-        if (_disposed)
+        if (Disposed)
         {
             return;
         }
 
-        _disposed = true;
+        Disposed = true;
 
         if (DevicePointer != IntPtr.Zero)
         {
@@ -427,9 +452,16 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
     {
         get
         {
-            var word = new uint[1];
-            Context.Provider.CopyDeviceToHost(word, DevicePointer, 1);
-            return (word[0] & 1) == 0;
+            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            try
+            {
+                Context.Provider.CopyDeviceToHost(word, DevicePointer, 1);
+                return (word[0] & 1) == 0;
+            }
+            finally
+            {
+                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+            }
         }
     }
 
@@ -438,25 +470,39 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
     {
         get
         {
-            var word = new uint[1];
-            Context.Provider.CopyDeviceToHost(word, IntPtr.Add(DevicePointer, (NumWords - 1) * 4), 1);
-            return (word[0] & 0x80000000) != 0;
+            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            try
+            {
+                Context.Provider.CopyDeviceToHost(word, IntPtr.Add(DevicePointer, (NumWords - 1) * 4), 1);
+                return (word[0] & 0x80000000) != 0;
+            }
+            finally
+            {
+                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+            }
         }
         set
         {
-            var word = new uint[1];
-            var ptr = IntPtr.Add(DevicePointer, (NumWords - 1) * 4);
-            Context.Provider.CopyDeviceToHost(word, ptr, 1);
-            if (value)
+            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            try
             {
-                word[0] |= 0x80000000;
-            }
-            else
-            {
-                word[0] &= 0x7FFFFFFF;
-            }
+                var ptr = IntPtr.Add(DevicePointer, (NumWords - 1) * 4);
+                Context.Provider.CopyDeviceToHost(word, ptr, 1);
+                if (value)
+                {
+                    word[0] |= 0x80000000;
+                }
+                else
+                {
+                    word[0] &= 0x7FFFFFFF;
+                }
 
-            Context.Provider.CopyHostToDevice(ptr, word, 1);
+                Context.Provider.CopyHostToDevice(ptr, word, 1);
+            }
+            finally
+            {
+                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+            }
         }
     }
 
@@ -505,11 +551,20 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
         var words = (byteCount + 3) / 4;
         var allocWords = System.Math.Max(words, minWords);
 
-        var hostData = new uint[allocWords];
-        var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
-        val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
+        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(allocWords);
+        try
+        {
+            var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+            val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
 
-        return new GpuUIntBigInteger(context, hostData);
+            var result = new GpuUIntBigInteger(context, allocWords);
+            context.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords);
+            return result;
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+        }
     }
 
     /// <summary>
@@ -517,12 +572,19 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
     /// </summary>
     public BigInteger ToBigInteger(bool isNegative = false)
     {
-        var hostData = new uint[NumWords];
-        Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
-        
-        var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
-        var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
-        return isNegative ? -big : big;
+        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(NumWords);
+        try
+        {
+            Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
+            
+            var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords));
+            var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
+            return isNegative ? -big : big;
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+        }
     }
 }
 
