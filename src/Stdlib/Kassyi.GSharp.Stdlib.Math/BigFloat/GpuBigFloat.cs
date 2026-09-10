@@ -130,7 +130,7 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
 
     private static GpuBigFloat<TSize> SubtractMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
     {
-        var cmp = CompareMagnitude(a, b);
+        var cmp = a.UFloat.CompareTo(b.UFloat);
         if (cmp > 0)
         {
             return new GpuBigFloat<TSize>(a.UFloat.Subtract(b.UFloat), a.IsNegative);
@@ -145,37 +145,6 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
         }
     }
 
-    private static int CompareMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
-    {
-        var aZero = a.UFloat.Significand.IsZero();
-        var bZero = b.UFloat.Significand.IsZero();
-        if (aZero && bZero)
-        {
-            return 0;
-        }
-
-        if (aZero)
-        {
-            return -1;
-        }
-
-        if (bZero)
-        {
-            return 1;
-        }
-
-        if (a.UFloat.Exponent > b.UFloat.Exponent)
-        {
-            return 1;
-        }
-
-        if (a.UFloat.Exponent < b.UFloat.Exponent)
-        {
-            return -1;
-        }
-
-        return a.UFloat.Significand.CompareTo(b.UFloat.Significand);
-    }
 
     public readonly int CompareTo(GpuBigFloat<TSize> other)
     {
@@ -202,7 +171,7 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
             return IsNegative ? -1 : 1;
         }
 
-        var magCmp = CompareMagnitude(this, other);
+        var magCmp = UFloat.CompareTo(other.UFloat);
         return IsNegative ? -magCmp : magCmp;
     }
 
@@ -217,7 +186,8 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
             return 0;
         }
 
-        return HashCode.Combine(UFloat.Significand.GetHashCode(), UFloat.Exponent, IsNegative);
+        var normalized = UFloat.Normalize(UFloat.Significand.CountLeadingZeros(), false);
+        return HashCode.Combine(normalized.Significand.GetHashCode(), normalized.Exponent, IsNegative);
     }
 
     public static bool operator ==(GpuBigFloat<TSize> left, GpuBigFloat<TSize> right) => left.Equals(right);
