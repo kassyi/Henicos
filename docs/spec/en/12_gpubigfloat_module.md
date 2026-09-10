@@ -132,3 +132,33 @@ Evaluated using Guard Bit ($G$), Round Bit ($R$), and Sticky Bit ($S$):
 1. **Unmanaged Type Constraint**: Type parameter `TSize` must be `unmanaged` to allow raw memory copy and GPU kernel execution.
 2. **Static Alignment Invariant**: Field offsets for `Significand`, `Exponent`, and `IsNegative` are fixed at compile time.
 3. **No Dynamic Allocation**: No `new` heap allocations occur inside device-side floating-point logic.
+
+---
+
+## 12.6 C# 12 Ergonomics & Developer Experience (DX)
+
+To provide an intuitive, zero-allocation developer experience natively in C#, the module leverages advanced C# 12 features such as `[InlineArray]` and `[CollectionBuilder]`.
+
+### 12.6.1 Concrete Fixed-Size Wrappers
+
+Instead of requiring users to specify generic size parameters (e.g., `GpuBigFloat<LimbBuffer4>`) and define `global using` aliases, the module provides ready-to-use concrete wrapper types for common precisions:
+
+- **Floating-Point**: `GpuFloat128`, `GpuFloat256`, `GpuFloat512`
+- **Integer (Significand)**: `GpuUInt128`, `GpuUInt256`, `GpuUInt512`
+
+These structs act as ultra-thin, zero-overhead wrappers around the generic `GpuBigFloat<TSize>` and `GpuUIntBigInteger<TSize>` types. They provide implicit conversions and operator overloads for seamless arithmetic.
+
+### 12.6.2 Zero-Allocation Collection Expressions
+
+Traditional C# arrays (`new uint[] { 1, 2 }`) allocate memory on the managed heap, which is strictly prohibited for GPU device-side execution. To solve this, the module implements zero-allocation initialization using C# 12 Collection Expressions:
+
+```csharp
+// Seamlessly initializes a 128-bit GPU float from an array-like syntax.
+// The C# compiler optimizes this into a stack/register allocated sequence.
+GpuUInt128 significand = [0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000];
+var myFloat = new GpuFloat128(significand, exponent: 10, isNegative: false);
+```
+
+This is achieved internally via:
+1. **`[InlineArray]`**: Defining zero-allocation, fixed-size backing buffers (`LimbBuffer4`, `LimbBuffer8`, `LimbBuffer16`).
+2. **`[CollectionBuilder]`**: Intercepting the `[ ... ]` syntax and safely copying a `ReadOnlySpan<uint>` into the inline arrays without ever triggering a heap allocation or relying on boxed `IEnumerable<T>` interfaces.

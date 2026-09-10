@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
 /// Provides static mathematical and bitwise operations for <see cref="GpuUIntBigInteger"/> on the GPU.
