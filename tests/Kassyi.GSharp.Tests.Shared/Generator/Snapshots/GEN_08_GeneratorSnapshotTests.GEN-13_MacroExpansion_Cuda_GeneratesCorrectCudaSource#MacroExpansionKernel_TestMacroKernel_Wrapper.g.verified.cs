@@ -10,12 +10,12 @@ namespace TestSpace
 public static partial class MacroExpansionKernelWrapper
 {
 public const string TestMacroKernel_Source = @"extern ""C"" __global__ void TestMacroKernel(int* __restrict__ data, int length){
-for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
+for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
 data[i]=i;
 }
 cg::this_grid().sync();
-if (threadIdx.x == 0 && blockIdx.x == 0)
+if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 data[0]=999;
 }

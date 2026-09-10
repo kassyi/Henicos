@@ -10,11 +10,11 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class GEN_18_VectorBuiltinKernelsWrapper
 {
 public const string Vector4AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length){
-auto tid=threadIdx.x+blockIdx.x*blockDim.x;
+auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
-auto va=a[tid];
-auto vb=b[tid];
+auto va = a[tid];
+auto vb = b[tid];
 result[tid]=float4{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z), (float)(va.w+vb.w)};
 }
 }

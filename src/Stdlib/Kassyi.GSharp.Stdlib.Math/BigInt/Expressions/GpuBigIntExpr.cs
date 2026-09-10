@@ -1,4 +1,4 @@
-
+﻿
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>
@@ -19,8 +19,8 @@ public readonly struct GpuBigIntExpr
         Node = node ?? throw new ArgumentNullException(nameof(node));
     }
 
-    /// <summary>Implicitly wraps a <see cref="GpuBigInteger"/> buffer as an expression leaf node.</summary>
-    public static implicit operator GpuBigIntExpr(GpuBigInteger b)
+    /// <summary>Implicitly wraps a <see cref="GpuUIntBigInteger"/> buffer as an expression leaf node.</summary>
+    public static implicit operator GpuBigIntExpr(GpuUIntBigInteger b)
         => new(b);
 
     /// <summary>Constructs a lazy addition expression.</summary>

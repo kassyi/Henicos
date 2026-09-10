@@ -10,10 +10,10 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
 public const string NestedTernaryKernel_Source = @"extern ""C"" __global__ void NestedTernaryKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result){
-int tid=threadIdx.x;
-int x=a[tid];
-int y=b[tid];
-int z=c[tid];
+int tid = threadIdx.x;
+int x = a[tid];
+int y = b[tid];
+int z = c[tid];
 result[tid]=(x>y ? ((y>z ? 1 : 2)) : ((x>z ? 3 : 4)));
 }
 ";

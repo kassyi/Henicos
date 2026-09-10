@@ -10,14 +10,14 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
 public const string SharedMemoryKernel_Source = @"extern ""C"" __global__ void SharedMemoryKernel(int* __restrict__ data, int dynSize){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 __shared__ int sStatic[256];
 extern __shared__ char __gsharp_dynamic_smem[];
 size_t __smem_offset = 0;
-__smem_offset=(__smem_offset+alignof(int)-1)&~(alignof(int)-1);
+__smem_offset = (__smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
 int* sDyn1 = (int*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (dynSize) * sizeof(int);
-__smem_offset=(__smem_offset+alignof(float)-1)&~(alignof(float)-1);
+__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
 float* sDyn2 = (float*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (dynSize) * sizeof(float);
 sStatic[tid]=data[tid];

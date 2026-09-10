@@ -10,8 +10,8 @@ namespace TestSpace
 public static partial class ErrorSpecKernelWrapper
 {
 public const string BadKernel_Source = @"extern ""C"" __global__ void BadKernel(){
-System_String s=""hello"";
-System_Object obj=object;
+System_String s = ""hello"";
+System_Object obj = object;
 return 0;
 }
 ";

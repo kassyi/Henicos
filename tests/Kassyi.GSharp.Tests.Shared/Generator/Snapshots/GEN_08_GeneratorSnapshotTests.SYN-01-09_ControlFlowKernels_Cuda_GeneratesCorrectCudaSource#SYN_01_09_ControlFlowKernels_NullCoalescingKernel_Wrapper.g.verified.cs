@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
 public const string NullCoalescingKernel_Source = @"extern ""C"" __global__ void NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results){
-int tid=threadIdx.x;
-System_Nullable<int> input=nullableInputs[tid];
+int tid = threadIdx.x;
+System_Nullable<int> input = nullableInputs[tid];
 results[tid]=[&]() {
 auto __coalesce_tmp = input;
 return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];

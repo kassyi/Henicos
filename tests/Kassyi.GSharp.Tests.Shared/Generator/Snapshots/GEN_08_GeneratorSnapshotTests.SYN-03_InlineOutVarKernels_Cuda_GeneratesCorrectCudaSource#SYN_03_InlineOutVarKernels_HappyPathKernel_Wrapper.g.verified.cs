@@ -10,9 +10,9 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_03_InlineOutVarKernelsWrapper
 {
 public const string HappyPathKernel_Source = @"extern ""C"" __global__ void HappyPathKernel(int* __restrict__ input, int* __restrict__ output, int* __restrict__ success){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 int res;
-bool ok=TrySquare(input[tid],&res);
+bool ok = TrySquare(input[tid],&res);
 output[tid]=res;
 if(ok)
 {

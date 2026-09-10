@@ -89,39 +89,39 @@ unsigned long long Flags;
 #endif
 extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount){
 (*successFlag)=false;
-float Gravity=9.8f;
-int tx=threadIdx.x;
-int ty=threadIdx.y;
-int tz=threadIdx.z;
-int bx=blockIdx.x;
-int by=blockIdx.y;
-int bz=blockIdx.z;
-int bdimX=blockDim.x;
-int bdimY=blockDim.y;
-int bdimZ=blockDim.z;
-int gdimX=gridDim.x;
-int gdimY=gridDim.y;
-int gdimZ=gridDim.z;
-int tid=tx+bx*bdimX;
+float Gravity = 9.8f;
+int tx = threadIdx.x;
+int ty = threadIdx.y;
+int tz = threadIdx.z;
+int bx = blockIdx.x;
+int by = blockIdx.y;
+int bz = blockIdx.z;
+int bdimX = blockDim.x;
+int bdimY = blockDim.y;
+int bdimZ = blockDim.z;
+int gdimX = gridDim.x;
+int gdimY = gridDim.y;
+int gdimZ = gridDim.z;
+int tid = tx+bx*bdimX;
 __shared__ int staticCache[10000];
 extern __shared__ char __gsharp_dynamic_smem[];
 size_t __smem_offset = 0;
-__smem_offset=(__smem_offset+alignof(float)-1)&~(alignof(float)-1);
+__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
 float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (particleCount) * sizeof(float);
 __shared__ int targetTypedCache[256];
 if(tid<particleCount)
 {
-DebugReduc_PhysicsVector p=particles[tid];
-DebugReduc_SpecTypes types=largeStructVal;
-auto origin=DebugReduc_Point{0, 0};
-auto distance=origin.X+p.X;
-auto nested=([&]() {
+DebugReduc_PhysicsVector p = particles[tid];
+DebugReduc_SpecTypes types = largeStructVal;
+auto origin = DebugReduc_Point{0, 0};
+auto distance = origin.X+p.X;
+auto nested = ([&]() {
 DebugReduc_NestedPhysicsState _tmp{}; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
 ());
-float mag=ComputeMagnitude(p);
+float mag = ComputeMagnitude(p);
 mag=(float)fabsf(mag);
-for(int i=0;i<unrollFactor;i++)
+for(int i = 0;i<unrollFactor;i++)
 {
 if(i==1)
 {
@@ -133,7 +133,7 @@ if(!IsPositive(mag))
 {
 mag=0;
 }
-int counter=0;
+int counter = 0;
 while(counter<2)
 {
 mag=(float)fminf(mag,mag+1);
@@ -161,28 +161,28 @@ if(tx==0)
 atomicAdd(&(*totalMagnitude),dynamicCache[0]);
 (*successFlag)=true;
 }
-DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec=DebugReduc_ComprehensiveSpecKernel_Vector8{};
+DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec = DebugReduc_ComprehensiveSpecKernel_Vector8{};
 inlineVec[0]=123;
 inlineVec[1]=456;
 {
-DebugReduc_ComprehensiveSpecKernel_PhysicsState state=DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
-DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState=&state;
+DebugReduc_ComprehensiveSpecKernel_PhysicsState state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
+DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState = &state;
 pState.Buffer[0]=inlineVec[0];
 (*pState).Buffer[1]=inlineVec[1];
-unsigned long long carry=0;
-unsigned int sum=__gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
-long long borrow=0;
-unsigned int diff=__gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
+unsigned long long carry = 0;
+unsigned int sum = __gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
+long long borrow = 0;
+unsigned int diff = __gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
 if(sum>diff)
 {
 pState.Flags=1;
 }
 }
-bool condition1=tx>0;
-bool condition2=ty==0;
+bool condition1 = tx>0;
+bool condition2 = ty==0;
 if(condition1&&condition2)
 {
-int bitwise=(tx<<2)|(ty>>1)^0xFF;
+int bitwise = (tx<<2)|(ty>>1)^0xFF;
 bitwise&=~1;
 }
 else

@@ -22,7 +22,7 @@ extern ""C"" __global__ void SharedMemoryStaticKernel(int* __restrict__ intOutpu
 __shared__ int intSmem[256];
 __shared__ float floatSmem[256];
 __shared__ Kassyi_GSharp_Tests_Syntax_CustomPoint pointSmem[64];
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 if(tid<256)
 {
 intSmem[tid]=tid*3;

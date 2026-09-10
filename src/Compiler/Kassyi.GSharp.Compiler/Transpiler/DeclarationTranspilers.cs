@@ -147,37 +147,26 @@ internal static class DeclarationTranspilers
             return;
         }
 
-        context.Writer
-            .Append("extern __shared__ char __gsharp_dynamic_smem[]")
-            .AppendLine(";")
-            .AppendLine("size_t __smem_offset = 0;");
+        context.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
+        context.Writer.AppendLine("size_t __smem_offset = 0;");
         context.HasEmittedDynamicSmemBase = true;
     }
 
     private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        context.Writer
-            .Append("__smem_offset")
-            .AppendOperator("=");
+        context.Writer.Append("__smem_offset = ");
         using (context.Writer.Parentheses())
         {
-            context.Writer
-                .Append("__smem_offset")
-                .AppendOperator("+")
-                .Append("alignof");
+            context.Writer.Append("__smem_offset + alignof");
             using (context.Writer.Parentheses())
             {
                 context.AppendType(typeArg);
             }
-
-            context.Writer.AppendOperator("-");
-            context.Writer.Append("1");
+            context.Writer.Append(" - 1");
         }
 
-        context.Writer
-            .AppendOperator("&")
-            .Append("~");
+        context.Writer.Append(" & ~");
         using (context.Writer.Parentheses())
         {
             context.Writer.Append("alignof");
@@ -185,9 +174,7 @@ internal static class DeclarationTranspilers
             {
                 context.AppendType(typeArg);
             }
-
-            context.Writer.AppendOperator("-");
-            context.Writer.Append("1");
+            context.Writer.Append(" - 1");
         }
 
         context.Writer.AppendSemiColonLine();
@@ -402,7 +389,7 @@ internal static class DeclarationTranspilers
             {
                 context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
             }
-            context.Writer.AppendOperator("=");
+            context.Writer.Append(" = ");
             context.Visitor.Visit(implStackAlloc.Initializer);
             return true;
         }
@@ -482,10 +469,13 @@ internal static class DeclarationTranspilers
             var v = variables[i];
             if (isPointer)
             {
-                context.Writer.Append("*");
+                context.Writer.Append($"*{v.Identifier.Text}");
+            }
+            else
+            {
+                context.Writer.Append(v.Identifier.Text);
             }
 
-            context.Writer.Append(v.Identifier.Text);
             WriteDeclaratorInitializer(v, ref context);
 
             if (i < variables.Count - 1)
@@ -509,7 +499,7 @@ internal static class DeclarationTranspilers
                 }
             }
 
-            context.Writer.AppendOperator("=");
+            context.Writer.Append(" = ");
             context.Visitor.Visit(variable.Initializer.Value);
         }
     }

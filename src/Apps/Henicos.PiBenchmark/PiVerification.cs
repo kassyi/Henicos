@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Core;
+
 namespace Henicos.PiBenchmark;
 
 /// <summary>
@@ -15,12 +17,12 @@ public static class PiVerification
     {
         if (string.IsNullOrEmpty(computedHexTail))
         {
-            Console.WriteLine("[Verification] FAIL: Empty computed string provided.");
+            Logger.Error("Verification", "FAIL: Empty computed string provided.");
             return false;
         }
 
         var count = computedHexTail.Length;
-        Console.WriteLine($"[Verification] Extracting {count} hex digits at offset {offset} via BBP...");
+        Logger.Info("Verification", $"Extracting {count} hex digits at offset {offset} via BBP...");
         
         var expectedHex = BbpDigitExtractor.ExtractHexDigits(offset, count);
         expectedHex = expectedHex.ToUpperInvariant();
@@ -28,16 +30,12 @@ public static class PiVerification
 
         if (computedHexTail == expectedHex)
         {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[Verification] PASS: Expected {expectedHex} == Computed {computedHexTail}");
-            Console.ResetColor();
+            Logger.Info("Verification", $"PASS: Expected {expectedHex} == Computed {computedHexTail}");
             return true;
         }
         else
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"[Verification] FAIL: Expected {expectedHex} != Computed {computedHexTail}");
-            Console.ResetColor();
+            Logger.Error("Verification", $"FAIL: Expected {expectedHex} != Computed {computedHexTail}");
             return false;
         }
     }

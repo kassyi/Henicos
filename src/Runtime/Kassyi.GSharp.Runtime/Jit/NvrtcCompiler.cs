@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Jit;
@@ -29,8 +30,7 @@ public static class NvrtcCompiler
                     throw new Exception($"NVRTC Compilation Failed:\n{log}");
                 }
 
-                // You could log warnings here if needed
-                // Console.WriteLine($"[NVRTC Log]:\n{log}");
+                Logger.Debug("NvrtcCompiler", $"[NVRTC Log]:\n{log}");
             }
 
             NvrtcException.ThrowIfError(compileResult, "Compilation failed (no log available).");

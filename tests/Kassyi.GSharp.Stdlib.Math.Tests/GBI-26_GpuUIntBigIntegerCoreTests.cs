@@ -1,13 +1,13 @@
-
+﻿
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GBI26_GpuBigIntegerCoreTests : IDisposable
+public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
 {
     private readonly JitEngine.CudaContextScope _scope;
     private readonly GpuContext _context;
 
-    public GBI26_GpuBigIntegerCoreTests()
+    public GBI26_GpuUIntBigIntegerCoreTests()
     {
         _scope = new JitEngine.CudaContextScope();
         _context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
@@ -28,7 +28,7 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
     public void Test_GBI26_FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
     {
         var original = BigInteger.Parse(valueStr);
-        using var gpuBigInt = GpuBigInteger.FromBigInteger(_context, original, minWords);
+        using var gpuBigInt = GpuUIntBigInteger.FromBigInteger(_context, original, minWords);
         
         Assert.True(gpuBigInt.NumWords >= minWords);
 
@@ -42,7 +42,7 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
     public void Test_GBI26_PadTo_LargerSize_ZeroPadsCorrectly()
     {
         var original = new BigInteger(0xDEADBEEF);
-        using var gpuBigInt = GpuBigInteger.FromBigInteger(_context, original, 1);
+        using var gpuBigInt = GpuUIntBigInteger.FromBigInteger(_context, original, 1);
         
         using var padded = gpuBigInt.PadTo(4);
         Assert.Equal(4, padded.NumWords);
@@ -61,7 +61,7 @@ public class GBI26_GpuBigIntegerCoreTests : IDisposable
     public void Test_GBI26_PadTo_SmallerSize_ReturnsTruncatedValue()
     {
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
-        using var original = new GpuBigInteger(_context, originalData);
+        using var original = new GpuUIntBigInteger(_context, originalData);
 
         using var padded = original.PadTo(3);
 

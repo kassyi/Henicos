@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_90_93_CoreSyntaxKernelsWrapper
 {
 public const string ControlFlowKernel_Source = @"extern ""C"" __global__ void ControlFlowKernel(int* __restrict__ data){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 switch(tid)
 {
 case 0:
@@ -24,7 +24,7 @@ default:
 data[tid]=30;
 break;
 }
-int count=0;
+int count = 0;
 do
 {
 count=count+1;

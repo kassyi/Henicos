@@ -51,7 +51,7 @@ public class GpuContext : IDisposable
     private bool _disposed;
 
     // Memory pooling for Lazy Evaluation
-    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuBigInteger>>> _tempPool = new();
+    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuUIntBigInteger>>> _tempPool = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuContext"/> class with the specified limb capacity and engine backend.
@@ -115,7 +115,7 @@ public class GpuContext : IDisposable
             while (bag.TryTake(out var temp))
             {
                 // Avoid circular calls since temp.Dispose() calls back into context or disposes native
-                // Normally GpuBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
+                // Normally GpuUIntBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
                 temp.DisposeCore();
             }
         }
@@ -142,31 +142,31 @@ public class GpuContext : IDisposable
         Dispose(false);
     }
 
-    internal GpuBigInteger RentTemp(int numWords)
+    internal GpuUIntBigInteger RentTemp(int numWords)
     {
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var temp))
         {
-            temp._disposed = false;
+            temp.Disposed = false;
             temp.IsTemp = true; // ensure it's marked as temp again if needed
             return temp;
         }
 
         // Allocate a new one if pool is empty
-        var newTemp = new GpuBigInteger(this, numWords)
+        var newTemp = new GpuUIntBigInteger(this, numWords)
         {
             IsTemp = true
         };
         return newTemp;
     }
 
-    internal void ReturnTemp(GpuBigInteger temp)
+    internal void ReturnTemp(GpuUIntBigInteger temp)
     {
         if (!temp.IsTemp)
         {
             return;
         }
 
-        var bag = _tempPool.GetOrAdd(temp.NumWords, _ => new Lazy<ConcurrentBag<GpuBigInteger>>(() => [])).Value;
+        var bag = _tempPool.GetOrAdd(temp.NumWords, _ => new Lazy<ConcurrentBag<GpuUIntBigInteger>>(() => [])).Value;
         bag.Add(temp);
     }
 }

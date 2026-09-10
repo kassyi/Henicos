@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
@@ -22,10 +22,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             {
                 try
                 {
-                    using var a = new GpuBigInteger(sharedCtx, new uint[] { (uint)i + 1, 0, 0, 0 });
-                    using var b = new GpuBigInteger(sharedCtx, new uint[] { (uint)i + 2, 0, 0, 0 });
-                    using var c = new GpuBigInteger(sharedCtx, 4);
-                    using var d = new GpuBigInteger(sharedCtx, 8);
+                    using var a = new GpuUIntBigInteger(sharedCtx, new uint[] { (uint)i + 1, 0, 0, 0 });
+                    using var b = new GpuUIntBigInteger(sharedCtx, new uint[] { (uint)i + 2, 0, 0, 0 });
+                    using var c = new GpuUIntBigInteger(sharedCtx, 4);
+                    using var d = new GpuUIntBigInteger(sharedCtx, 8);
                     
                     c.Value = a + b;
                     d.Value = c * a;
@@ -47,30 +47,30 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
             
             // Typical case
-            using var a = new GpuBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
-            using var b = new GpuBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
-            using var c = new GpuBigInteger(ctx, new uint[] { 101, 200, 300, 400 });
+            using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
+            using var b = new GpuUIntBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
+            using var c = new GpuUIntBigInteger(ctx, new uint[] { 101, 200, 300, 400 });
             
             Assert.Equal(0, a.CompareTo(b));
             Assert.Equal(-1, a.CompareTo(c));
             Assert.Equal(1, c.CompareTo(a));
 
             // Boundary case 1: Zero limbs comparison
-            using var zero1 = new GpuBigInteger(ctx, new uint[] { 0, 0, 0, 0 });
-            using var zero2 = new GpuBigInteger(ctx, new uint[] { 0, 0, 0, 0 });
+            using var zero1 = new GpuUIntBigInteger(ctx, new uint[] { 0, 0, 0, 0 });
+            using var zero2 = new GpuUIntBigInteger(ctx, new uint[] { 0, 0, 0, 0 });
             Assert.Equal(0, zero1.CompareTo(zero2));
 
             // Boundary case 2: Max value limbs (0xFFFFFFFF)
-            using var max1 = new GpuBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue });
-            using var max2 = new GpuBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue });
-            using var maxSub1 = new GpuBigInteger(ctx, new uint[] { uint.MaxValue - 1, uint.MaxValue, uint.MaxValue, uint.MaxValue });
+            using var max1 = new GpuUIntBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue });
+            using var max2 = new GpuUIntBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue });
+            using var maxSub1 = new GpuUIntBigInteger(ctx, new uint[] { uint.MaxValue - 1, uint.MaxValue, uint.MaxValue, uint.MaxValue });
             Assert.Equal(0, max1.CompareTo(max2));
             Assert.Equal(1, max1.CompareTo(maxSub1));
             Assert.Equal(-1, maxSub1.CompareTo(max1));
 
             // Boundary case 3: High-limb vs low-limb dominance
-            using var highDominant = new GpuBigInteger(ctx, new uint[] { 0, 0, 0, 1 });
-            using var lowDominant = new GpuBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, 0 });
+            using var highDominant = new GpuUIntBigInteger(ctx, new uint[] { 0, 0, 0, 1 });
+            using var lowDominant = new GpuUIntBigInteger(ctx, new uint[] { uint.MaxValue, uint.MaxValue, uint.MaxValue, 0 });
             Assert.Equal(1, highDominant.CompareTo(lowDominant));
             Assert.Equal(-1, lowDominant.CompareTo(highDominant));
         }
@@ -83,8 +83,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI04_DirectSquarePointwiseKernel()
         {
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
-            using var a = new GpuBigInteger(ctx, new uint[] { 123456789, 0, 0, 0 });
-            using var result = new GpuBigInteger(ctx, 8);
+            using var a = new GpuUIntBigInteger(ctx, new uint[] { 123456789, 0, 0, 0 });
+            using var result = new GpuUIntBigInteger(ctx, 8);
             
             // Should invoke direct square kernel instead of generic multiply
             result.Value = a * a;
@@ -108,9 +108,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigB = ToBigInteger(arrB);
             var expected = BigInteger.GreatestCommonDivisor(bigA, bigB);
 
-            using var gpuA = new GpuBigInteger(ctx, arrA);
-            using var gpuB = new GpuBigInteger(ctx, arrB);
-            using var result = new GpuBigInteger(ctx, 128);
+            using var gpuA = new GpuUIntBigInteger(ctx, arrA);
+            using var gpuB = new GpuUIntBigInteger(ctx, arrB);
+            using var result = new GpuUIntBigInteger(ctx, 128);
             
             GpuBigIntMath.Gcd(gpuA, gpuB, result);
             Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
@@ -123,10 +123,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
             // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
-            using var a = new GpuBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
-            using var b = new GpuBigInteger(ctx, new uint[] { 200, 0, 0, 0 });
-            using var c = new GpuBigInteger(ctx, new uint[] { 300, 0, 0, 0 });
-            using var result = new GpuBigInteger(ctx, 8); // Mul requires a+b size
+            using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
+            using var b = new GpuUIntBigInteger(ctx, new uint[] { 200, 0, 0, 0 });
+            using var c = new GpuUIntBigInteger(ctx, new uint[] { 300, 0, 0, 0 });
+            using var result = new GpuUIntBigInteger(ctx, 8); // Mul requires a+b size
             
             // (a + b) * c
             result.Value = (a + b) * c;
@@ -234,9 +234,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             // Scalar Add
             GpuBigIntMath.Add(gpuA, scalarAdd, gpuResult);
@@ -363,9 +363,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             gpuResult.Value = gpuA % gpuB;
             AssertGpuResultEqualsCpu(bigA % bigB, gpuResult);
@@ -380,9 +380,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var arrA = GenerateRandomArray(TestSizeWords, 22);
             var arrB = GenerateRandomArray(TestSizeWords, 23);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             // Test OR
             gpuResult.Value = gpuA | gpuB;
@@ -410,8 +410,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA << shiftBits;
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             gpuResult.Value = gpuA << shiftBits;
 
@@ -431,8 +431,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA >> shiftBits;
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             gpuResult.Value = gpuA >> shiftBits;
 
@@ -452,9 +452,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             arrB[TestSizeWords - 1] |= 0x40000000; // arrB must equal arrA
             arrC[TestSizeWords - 1] &= 0x3FFFFFFF; // Force A > C
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuC = new GpuBigInteger(context, arrC);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuC = new GpuUIntBigInteger(context, arrC);
 
             // Equal / NotEqual
             Assert.True(gpuA == gpuB);
@@ -500,11 +500,11 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigA = ToBigInteger(arrA);
             var bigB = ToBigInteger(arrB);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
 
-            using var gpuQ = new GpuBigInteger(context, TestSizeWords);
-            using var gpuR = new GpuBigInteger(context, TestSizeWords);
+            using var gpuQ = new GpuUIntBigInteger(context, TestSizeWords);
+            using var gpuR = new GpuUIntBigInteger(context, TestSizeWords);
 
             // DivRem
             GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
@@ -512,7 +512,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             AssertGpuResultEqualsCpu(bigA % bigB, gpuR);
 
             // Mod
-            using var gpuMod = new GpuBigInteger(context, TestSizeWords);
+            using var gpuMod = new GpuUIntBigInteger(context, TestSizeWords);
             GpuBigIntDivRem.Mod(gpuA, gpuB, gpuMod);
             AssertGpuResultEqualsCpu(bigA % bigB, gpuMod);
         }
@@ -526,8 +526,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var arrA = GenerateRandomArray(TestSizeWords, 90);
             var bigA = ToBigInteger(arrA);
 
-            using var gpuA = new GpuBigInteger(context, TestSizeWords * 4);
-            gpuA.CopyFrom(new GpuBigInteger(context, arrA));
+            using var gpuA = new GpuUIntBigInteger(context, TestSizeWords * 4);
+            gpuA.CopyFrom(new GpuUIntBigInteger(context, arrA));
             gpuA.Square(TestSizeWords);
             var actual = ToBigInteger(gpuA.ToHostArray().Take(TestSizeWords * 2).ToArray());
             var expected = bigA * bigA;
@@ -585,9 +585,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // Calculate expected GCD using System.Numerics.BigInteger
             var expectedGcd = BigInteger.GreatestCommonDivisor(bigA, bigB);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             GpuBigIntMath.Gcd(gpuA, gpuB, gpuResult);
 
@@ -606,9 +606,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             Assert.ThrowsAny<Exception>(() =>
             {
-                using var gpuA = new GpuBigInteger(context, arrEmpty);
-                using var gpuB = new GpuBigInteger(context, arrEmpty);
-                using var gpuResult = new GpuBigInteger(context, 0);
+                using var gpuA = new GpuUIntBigInteger(context, arrEmpty);
+                using var gpuB = new GpuUIntBigInteger(context, arrEmpty);
+                using var gpuResult = new GpuUIntBigInteger(context, 0);
 
                 GpuBigIntMath.Gcd(gpuA, gpuB, gpuResult);
             });
@@ -640,9 +640,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigB = ToBigInteger(arrB);
             var expectedGcd = BigInteger.GreatestCommonDivisor(bigA, bigB);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, 1);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, 1);
 
             GpuBigIntMath.Gcd(gpuA, gpuB, gpuResult);
 
@@ -650,7 +650,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedGcd, actualGcd);
         }
 
-        [Fact(Skip = "未実装: GBI-21 (GpuBigInteger.ModInverse モジュラ逆数)")]
+        [Fact(Skip = "未実装: GBI-21 (GpuUIntBigInteger.ModInverse モジュラ逆数)")]
         [Trait("RoadmapId", "GBI-21")]
         [Trait("Category", "Function")]
         public void Test_GBI_Function_ModInverse()
@@ -671,9 +671,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             arrA[TestSizeWords - 1] |= 0x40000000;
             arrC[TestSizeWords - 1] &= 0x3FFFFFFF;
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuC = new GpuBigInteger(context, arrC);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuC = new GpuUIntBigInteger(context, arrC);
 
             Assert.Equal(0, gpuA.CompareTo(gpuB));
             Assert.Equal(1, gpuA.CompareTo(gpuC));
@@ -693,7 +693,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             arrA[TestSizeWords - 2] = 0x80000000; // Exact length
             var bigA = ToBigInteger(arrA);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
 
             long expectedBits = bigA.GetBitLength();
             long expectedBytes = bigA.GetByteCount(isUnsigned: true);
@@ -703,7 +703,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             // Zero-value coverage
             var zeroArr = new uint[TestSizeWords];
-            using var gpuZero = new GpuBigInteger(context, zeroArr);
+            using var gpuZero = new GpuUIntBigInteger(context, zeroArr);
             var bigZero = BigInteger.Zero;
 
             Assert.Equal(bigZero.GetBitLength(), gpuZero.GetBitLength());
@@ -730,7 +730,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 arr[i] = 0;
             }
 
-            using var gpu = new GpuBigInteger(context, arr);
+            using var gpu = new GpuUIntBigInteger(context, arr);
             var bigInt = ToBigInteger(arr);
 
             Assert.Equal(bigInt.GetBitLength(), gpu.GetBitLength());
@@ -751,10 +751,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var negativeArr = new uint[TestSizeWords];
             negativeArr[TestSizeWords - 1] = 0x80000000; // Negative flag
 
-            using var gpuZero = new GpuBigInteger(context, zeroArr);
-            using var gpuOne = new GpuBigInteger(context, oneArr);
-            using var gpuEven = new GpuBigInteger(context, evenArr);
-            using var gpuNegative = new GpuBigInteger(context, negativeArr);
+            using var gpuZero = new GpuUIntBigInteger(context, zeroArr);
+            using var gpuOne = new GpuUIntBigInteger(context, oneArr);
+            using var gpuEven = new GpuUIntBigInteger(context, evenArr);
+            using var gpuNegative = new GpuUIntBigInteger(context, negativeArr);
 
             Assert.True(gpuZero.IsZero());
             Assert.False(gpuOne.IsZero());
@@ -819,8 +819,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 expectedSqrt = next;
             }
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuResult = new GpuBigInteger(context, sizeWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuResult = new GpuUIntBigInteger(context, sizeWords);
 
             gpuResult.Value = GpuBigIntExpr.Sqrt(gpuA);
 
@@ -850,12 +850,12 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
             var expected = BigInteger.ModPow(bigBase, bigExp, bigMod);
 
-            using var gpuBase = new GpuBigInteger(context, arrBase);
+            using var gpuBase = new GpuUIntBigInteger(context, arrBase);
             var arrExpPadded = new uint[TestSizeWords];
             Array.Copy(arrExp, arrExpPadded, arrExp.Length);
-            using var gpuExp = new GpuBigInteger(context, arrExpPadded);
-            using var gpuMod = new GpuBigInteger(context, arrMod);
-            using var gpuResult = new GpuBigInteger(context, TestSizeWords);
+            using var gpuExp = new GpuUIntBigInteger(context, arrExpPadded);
+            using var gpuMod = new GpuUIntBigInteger(context, arrMod);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
 
             GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
 
@@ -865,7 +865,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
 
-        private void AssertGpuResultEqualsCpu(BigInteger expected, GpuBigInteger actualGpu, int truncateWords = -1)
+        private void AssertGpuResultEqualsCpu(BigInteger expected, GpuUIntBigInteger actualGpu, int truncateWords = -1)
         {
             if (truncateWords > 0)
             {
@@ -888,7 +888,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             int contextWords,
             Action<uint[], uint[]> prepareData,
             Func<BigInteger, BigInteger, BigInteger> cpuFunc,
-            Func<GpuBigInteger, GpuBigInteger, GpuBigIntExpr> gpuFunc,
+            Func<GpuUIntBigInteger, GpuUIntBigInteger, GpuBigIntExpr> gpuFunc,
             int inputWords = -1)
         {
             var size = inputWords > 0 ? inputWords : TestSizeWords;
@@ -902,9 +902,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var bigB = ToBigInteger(arrB);
             var expected = cpuFunc(bigA, bigB);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
-            using var gpuResult = new GpuBigInteger(context, resultWords);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, resultWords);
 
             gpuResult.Value = gpuFunc(gpuA, gpuB);
 
@@ -973,11 +973,11 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var arrA = GenerateRandomArray(256, 42);
             var arrB = GenerateRandomArray(256, 43);
 
-            using var gpuA = new GpuBigInteger(context, arrA);
-            using var gpuB = new GpuBigInteger(context, arrB);
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
 
             // Compute expected single-threaded baseline result
-            using var expectedGpu = new GpuBigInteger(context, 256);
+            using var expectedGpu = new GpuUIntBigInteger(context, 256);
             expectedGpu.Value = gpuA + gpuB;
             var expectedHostResult = expectedGpu.ToHostArray();
 
@@ -992,7 +992,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                     // Ensure each worker thread has the CUDA context bound
                     using var threadScope = new JitEngine.CudaContextScope();
 
-                    using var gpuResult = new GpuBigInteger(context, 256);
+                    using var gpuResult = new GpuUIntBigInteger(context, 256);
                     gpuResult.Value = gpuA + gpuB;
 
                     var hostResult = gpuResult.ToHostArray();

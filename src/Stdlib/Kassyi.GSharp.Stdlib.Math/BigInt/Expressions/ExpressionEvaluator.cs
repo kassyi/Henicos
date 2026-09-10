@@ -1,14 +1,14 @@
-namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 internal static class ExpressionEvaluator
 {
-    public static GpuBigInteger EvaluateBinary(
+    public static GpuUIntBigInteger EvaluateBinary(
         GpuContext context,
         IGpuBigIntExpression left,
         IGpuBigIntExpression right,
-        GpuBigInteger? targetResult,
+        GpuUIntBigInteger? targetResult,
         int numWords,
-        Action<GpuBigInteger, GpuBigInteger, GpuBigInteger> execute)
+        Action<GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger> execute)
     {
         var leftResult = left.Evaluate(context);
         var rightResult = right.Evaluate(context);
@@ -37,12 +37,12 @@ internal static class ExpressionEvaluator
         }
     }
 
-    public static GpuBigInteger EvaluateUnary(
+    public static GpuUIntBigInteger EvaluateUnary(
         GpuContext context,
         IGpuBigIntExpression target,
-        GpuBigInteger? targetResult,
+        GpuUIntBigInteger? targetResult,
         int numWords,
-        Action<GpuBigInteger, GpuBigInteger> execute)
+        Action<GpuUIntBigInteger, GpuUIntBigInteger> execute)
     {
         var targetEval = target.Evaluate(context);
         var finalResult = targetResult ?? context.RentTemp(numWords);

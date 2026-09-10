@@ -10,8 +10,8 @@ namespace TestSpace
 public static partial class ErrorSpecKernelWrapper
 {
 public const string BadKernel_Source = @"extern ""C"" __declspec(dllexport) void BadKernel(){
-System_String s=""hello"";
-System_Object obj=object;
+System_String s = ""hello"";
+System_Object obj = object;
 return 0;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_BadKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)

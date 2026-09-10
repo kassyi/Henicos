@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Tests.Analyzers.Rules;
+namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 :  TranspilerTestBase{
@@ -49,11 +49,12 @@ class Dummy_GSH03
 {
     public void WithoutSuffix()
     {
-        var x = 1;
+        var x = 1; _ = x;
     }
 
     public void WithSuffix()
     {
-        var x = 1U;
+        var x = 1U; _ = x;
     }
 }
+

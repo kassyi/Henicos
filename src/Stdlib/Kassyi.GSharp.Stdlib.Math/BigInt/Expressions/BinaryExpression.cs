@@ -30,40 +30,40 @@ internal abstract class BinaryExpression : IGpuBigIntExpression
         NumWords = left.NumWords;
     }
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null) =>
         ExpressionEvaluator.EvaluateBinary(context, Left, Right, targetResult, NumWords, Execute);
 
-    protected abstract void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
+    protected abstract void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result);
 }
 
 internal class AddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Add(a, b, result);
 }
 
 internal class SubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Sub(a, b, result);
 }
 
 internal class MulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Mul(a, b, result);
 }
 
 internal class DivExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntDivRem.Div(a, b, result);
 }
 
 internal class BitwiseAndExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.BitwiseAnd(a, b, result);
 }
 
@@ -73,21 +73,21 @@ internal abstract class ShiftExpression(IGpuBigIntExpression target, int shiftBi
     protected int ShiftBits { get; } = shiftBits;
     public int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null) =>
         ExpressionEvaluator.EvaluateUnary(context, Target, targetResult, NumWords, Execute);
 
-    protected abstract void Execute(GpuBigInteger target, GpuBigInteger result);
+    protected abstract void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result);
 }
 
 internal class ShiftLeftExpression(IGpuBigIntExpression target, int shiftBits) : ShiftExpression(target, shiftBits)
 {
-    protected override void Execute(GpuBigInteger target, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result) =>
         GpuBigIntMath.ShiftLeft(target, ShiftBits, result);
 }
 
 internal class ShiftRightExpression(IGpuBigIntExpression target, int shiftBits) : ShiftExpression(target, shiftBits)
 {
-    protected override void Execute(GpuBigInteger target, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result) =>
         GpuBigIntMath.ShiftRight(target, ShiftBits, result);
 }
 
@@ -96,29 +96,29 @@ internal class SqrtExpression(IGpuBigIntExpression target) : IGpuBigIntExpressio
     protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null) =>
         ExpressionEvaluator.EvaluateUnary(context, Target, targetResult, NumWords, GpuBigIntDivRem.Sqrt);
 }
 
 internal class ModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result) =>
+    protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntDivRem.Mod(a, b, result);
 }
 
 internal class BitwiseOrExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger leftOperand, GpuBigInteger rightOperand,
-        GpuBigInteger resultBuffer) =>
+    protected override void Execute(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+        GpuUIntBigInteger resultBuffer) =>
         GpuBigIntMath.BitwiseOr(leftOperand, rightOperand, resultBuffer);
 }
 
 internal class BitwiseXorExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
     : BinaryExpression(left, right)
 {
-    protected override void Execute(GpuBigInteger leftOperand, GpuBigInteger rightOperand,
-        GpuBigInteger resultBuffer) =>
+    protected override void Execute(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+        GpuUIntBigInteger resultBuffer) =>
         GpuBigIntMath.BitwiseXor(leftOperand, rightOperand, resultBuffer);
 }
 
@@ -126,7 +126,7 @@ internal class BitwiseNotExpression(IGpuBigIntExpression left) : IGpuBigIntExpre
 {
     public int NumWords => left.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuBigInteger? targetResult = null) =>
+    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null) =>
         ExpressionEvaluator.EvaluateUnary(context, left, targetResult, NumWords, GpuBigIntMath.BitwiseNot);
 }
 

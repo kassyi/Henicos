@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
 public const string RefSwitchExpressionKernel_Source = @"extern ""C"" __global__ void RefSwitchExpressionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign){
-int tid=threadIdx.x;
+int tid = threadIdx.x;
 if(selectors[tid]==1)
 {
 a[tid]=valuesToAssign[tid];
