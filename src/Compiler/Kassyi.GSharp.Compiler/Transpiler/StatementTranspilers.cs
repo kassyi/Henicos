@@ -4,6 +4,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>SYN-01, SYN-70, SYN-71, SYN-72, SYN-84, SYN-91</b></para></remarks>
 internal static class StatementTranspilers
 {
+    /// <summary>
+    /// Transpiles a C# local function into a C++ capture-by-reference auto lambda expression.
+    /// </summary>
     public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.Append($"auto {node.Identifier.Text} = [&]");
@@ -34,6 +37,9 @@ internal static class StatementTranspilers
         context.Writer.AppendSemiColonLine();
     }
 
+    /// <summary>
+    /// Transpiles an if-else control-flow statement, hoisting inline declarations from the condition.
+    /// </summary>
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
     {
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
@@ -54,6 +60,9 @@ internal static class StatementTranspilers
         }
     }
 
+    /// <summary>
+    /// Transpiles a standard three-part for loop statement.
+    /// </summary>
     public static void TranspileForStatement(ForStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("for");
@@ -72,6 +81,9 @@ internal static class StatementTranspilers
         context.Visitor.VisitStatementOrBlock(node.Statement);
     }
 
+    /// <summary>
+    /// Transpiles a foreach statement into a C++ range-based for loop.
+    /// </summary>
     public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
     {
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
@@ -164,6 +176,9 @@ internal static class StatementTranspilers
         }
     }
 
+    /// <summary>
+    /// Transpiles a while loop statement, hoisting inline declarations from the condition expression.
+    /// </summary>
     public static void TranspileWhileStatement(WhileStatementSyntax node, ref TranspileContext context)
     {
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
@@ -177,6 +192,9 @@ internal static class StatementTranspilers
         context.Visitor.VisitStatementOrBlock(node.Statement);
     }
 
+    /// <summary>
+    /// Transpiles a do-while loop statement.
+    /// </summary>
     public static void TranspileDoStatement(DoStatementSyntax node, ref TranspileContext context)
     {
         context.Writer
@@ -192,6 +210,9 @@ internal static class StatementTranspilers
         context.Writer.AppendSemiColonLine();
     }
 
+    /// <summary>
+    /// Transpiles a switch statement and its case sections into C++ switch-case syntax.
+    /// </summary>
     public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
     {
         context.Writer.AppendKeyword("switch");
@@ -210,6 +231,9 @@ internal static class StatementTranspilers
         }
     }
 
+    /// <summary>
+    /// Transpiles the labels and statements within a switch case section.
+    /// </summary>
     public static void TranspileSwitchSection(SwitchSectionSyntax node, ref TranspileContext context)
     {
         foreach (var label in node.Labels)
@@ -225,10 +249,19 @@ internal static class StatementTranspilers
         }
     }
 
+    /// <summary>
+    /// Transpiles a break statement.
+    /// </summary>
     public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context) => context.Writer.Append("break;");
 
+    /// <summary>
+    /// Transpiles a continue statement.
+    /// </summary>
     public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context) => context.Writer.Append("continue;");
 
+    /// <summary>
+    /// Transpiles a return statement, hoisting any inline declarations from the returned expression.
+    /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
         if (node.Expression != null)

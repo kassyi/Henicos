@@ -4,6 +4,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <remarks><para>Implements: <b>GEN-33</b></para></remarks>
 internal static class StructTranspiler
 {
+    /// <summary>
+    /// Recursively registers referenced struct symbols and their field types to ensure necessary forward definitions are emitted.
+    /// </summary>
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
@@ -27,7 +30,9 @@ internal static class StructTranspiler
         }
     }
 
-    /// <summary>Topologically sorts referenced structs so that dependent nested structs are declared first in C++.</summary>
+    /// <summary>
+    /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
+    /// </summary>
     public static IEnumerable<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
@@ -81,6 +86,9 @@ internal static class StructTranspiler
         }
     }
 
+    /// <summary>
+    /// Checks whether a struct passed by value exceeds the 32-byte threshold and reports a performance warning diagnostic if applicable.
+    /// </summary>
     public static void CheckLargeStructByValue(ParameterSyntax p, ITypeSymbol? typeSymbol, bool isPointer,
         ref TranspileContext context)
     {
@@ -98,6 +106,9 @@ internal static class StructTranspiler
         }
     }
 
+    /// <summary>
+    /// Emits the C++ struct definition for the specified named struct symbol, handling InlineArray structures and operator overloads.
+    /// </summary>
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
         var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);

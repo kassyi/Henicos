@@ -1,31 +1,43 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
 
 /// <summary>
-/// Defines the capabilities and features supported by a specific transpiler dialect.
-/// Used to conditionally execute or skip tests and compiler features based on the target execution environment.
+/// Specifies the hardware and language capabilities supported by a specific transpiler dialect.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This enumeration is marked with <see cref="FlagsAttribute"/> to permit a bitwise combination of member values.
+/// It is evaluated during compilation and test execution to dynamically select or skip features that require
+/// specific hardware capabilities (such as GPU warp primitives or hardware-accelerated atomics).
+/// </para>
+/// <para><b>Execution Target:</b> Host-only (compiler-time analysis). Not executed within GPU kernels.</para>
+/// </remarks>
 [Flags]
 public enum DialectCapabilities
 {
+    /// <summary>
+    /// Indicates no specific hardware acceleration or extended language capabilities are available.
+    /// Represents standard portable C++ behavior.
+    /// </summary>
     None = 0,
 
     /// <summary>
-    /// Indicates that the dialect supports GPU Warp-level intrinsics (e.g., __syncwarp, __shfl).
+    /// Indicates that the dialect supports GPU warp-level communication intrinsics (e.g., <c>__syncwarp</c>, <c>__shfl_sync</c>).
     /// </summary>
     WarpIntrinsics = 1 << 0,
 
     /// <summary>
-    /// Indicates that the dialect supports highly concurrent hardware atomic operations (e.g., atomicAdd).
+    /// Indicates that the dialect supports hardware-accelerated memory atomic operations (e.g., <c>atomicAdd</c>, <c>atomicCAS</c>).
     /// </summary>
     HardwareAtomics = 1 << 1,
 
     /// <summary>
-    /// Indicates that the dialect supports explicitly managed thread-block shared memory.
+    /// Indicates that the dialect supports thread-block scoped shared memory declarations and dynamic allocation.
     /// </summary>
     SharedMemory = 1 << 2,
 
     /// <summary>
-    /// A convenience flag aggregating all standard GPU-accelerated execution features.
+    /// Aggregates all standard GPU hardware acceleration features (warp intrinsics, atomics, and shared memory).
     /// </summary>
     AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory
 }
+
