@@ -245,4 +245,38 @@ public static class Gpu
     /// <param name="body">The action to execute on a single thread.</param>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static void SingleThread(Action body) => GpuOnlyException.Throw();
+
+#pragma warning disable IDE0051 // Intended for external kernel consumers
+    // ReSharper disable UnusedMember.Global
+
+    /// <summary>Returns a 32-bit mask of all currently active threads in the calling warp.</summary>
+    [CudaIntrinsic("__activemask")]
+    public static uint ActiveMask() => GpuOnlyException.Throw<uint>();
+
+    /// <summary>Exchanges an integer variable between threads within a warp.</summary>
+    [CudaIntrinsic("__shfl_sync")]
+    public static int ShflSync(uint mask, int var, int srcLane, int width = 32) => GpuOnlyException.Throw<int>();
+
+    /// <summary>Exchanges an unsigned integer variable between threads within a warp.</summary>
+    [CudaIntrinsic("__shfl_sync")]
+    public static uint ShflSync(uint mask, uint var, int srcLane, int width = 32) => GpuOnlyException.Throw<uint>();
+
+    /// <summary>Exchanges an integer variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static int ShflDownSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
+
+    /// <summary>Exchanges an unsigned integer variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static uint ShflDownSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
+
+    /// <summary>Exchanges an integer variable from a thread with a lower ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_up_sync")]
+    public static int ShflUpSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
+
+    /// <summary>Exchanges an integer variable based on a bitwise XOR of the caller's lane ID.</summary>
+    [CudaIntrinsic("__shfl_xor_sync")]
+    public static int ShflXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
+
+    // ReSharper restore UnusedMember.Global
+#pragma warning restore IDE0051
 }

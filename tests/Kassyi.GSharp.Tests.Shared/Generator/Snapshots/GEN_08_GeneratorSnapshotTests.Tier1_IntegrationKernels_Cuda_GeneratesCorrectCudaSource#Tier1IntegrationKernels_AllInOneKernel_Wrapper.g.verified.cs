@@ -91,8 +91,7 @@ case 0: return 1.0f;
 case 1: return 2.0f;
 default: return 3.0f;
 }
-}
-());
+}());
 Kassyi_GSharp_Tests_Syntax_Tier1FixedArray arr = Kassyi_GSharp_Tests_Syntax_Tier1FixedArray{};
 arr[0]=mag;
 arr[1]=mag*2.0f;
@@ -160,7 +159,7 @@ float* dynamicSharedMem = (float*)(__gsharp_dynamic_smem + __smem_offset);
 __smem_offset += (dynamicSharedSize) * sizeof(float);
 dynamicSharedMem[threadIdx.x]=sum;
 __syncthreads();
-float finalVal = ((bitwise>0) ? ((dynamicSharedMem[threadIdx.x]>10.0f ? 10.0f : dynamicSharedMem[threadIdx.x])) : 0.0f);
+float finalVal = ((bitwise>0)?((dynamicSharedMem[threadIdx.x]>10.0f?10.0f:dynamicSharedMem[threadIdx.x])):0.0f);
 {
 Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct fbs = Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct{};
 fbs.Data[0]=bitwise;

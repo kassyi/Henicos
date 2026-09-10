@@ -31,6 +31,7 @@ public class GEN_01_09_GeneratorSadPathTests
     [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-08", "Analyzers/SYN-08_DelegateEscapeSadPath.cs", new[] { "GSH0001", "GSH0003" })]
+    [InlineData("SYN-01", "Analyzers/GpuKernel/SYN-01_UnsupportedSwitch_InGpuKernel.cu.cs", new[] { "GSH0003", "GSH0003" })]
     public async Task Test_GeneratorSadPath_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expectedErrorIds)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)

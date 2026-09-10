@@ -554,6 +554,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(allocWords);
         try
         {
+            hostData.AsSpan(0, allocWords).Clear();
             var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
             val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
 

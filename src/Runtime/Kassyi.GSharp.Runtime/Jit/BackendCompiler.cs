@@ -25,10 +25,7 @@ public sealed partial class NvccCompiler
     }
 
     /// <summary>Gets or sets the delegate used to execute external system processes.</summary>
-    public static Func<ProcessStartInfo, string> ProcessRunner
-    {
-        get; set;
-    } = psi =>
+    public static Func<ProcessStartInfo, string> ProcessRunner { get; set; } = psi =>
     {
         using var process = new Process();
         process.StartInfo = psi;
@@ -135,7 +132,11 @@ public sealed partial class NvccCompiler
             try
             {
                 var output = GetVswhereOutputFunc();
-                if (string.IsNullOrEmpty(output)) return false;
+                if (string.IsNullOrEmpty(output))
+                {
+                    return false;
+                }
+
                 var vcvars = FileSystem.Path.Combine(output, "VC", "Auxiliary", "Build", "vcvars64.bat");
                 return FileSystem.File.Exists(vcvars);
             }
@@ -193,6 +194,39 @@ public sealed partial class NvccCompiler
     }
 
     /// <summary>
+    /// Gets a value indicating whether NVCC is available on the current system.
+    /// </summary>
+    public static bool IsNvccAvailable
+    {
+        get
+        {
+            try
+            {
+                var nvcc = GetNvccPath();
+                if (FileSystem.File.Exists(nvcc))
+                {
+                    return true;
+                }
+
+                // Try to execute it to see if it's in PATH
+                var psi = new ProcessStartInfo(nvcc, "--version")
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                ProcessRunner(psi);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
     /// Compiles a CUDA source file into a shared native library (.dll).
     /// </summary>
     /// <param name="cuFile">The input <c>.cu</c> source file path.</param>
@@ -204,7 +238,7 @@ public sealed partial class NvccCompiler
     /// <para><b>Execution Target:</b> Host-only (CPU). Spawns a synchronous sub-process.</para>
     /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    #pragma warning disable IDE0051 // Justification: Public API for library
+#pragma warning disable IDE0051 // Justification: Public API for library
     public static void Compile(string cuFile, string dllFile, string? includePath, string tempDir)
     {
         RunNvccInternal(cuFile, dllFile, includePath, tempDir, [
@@ -233,7 +267,7 @@ public sealed partial class NvccCompiler
     /// <para><b>Execution Target:</b> Host-only (CPU). Spawns a synchronous sub-process.</para>
     /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    #pragma warning disable IDE0051 // Justification: Public API for library
+#pragma warning disable IDE0051 // Justification: Public API for library
     public static CompilationResult CompileToFatbin(string cuFile, string fatbinFile, string? includePath,
         string tempDir, string smVersion = "sm_52")
     {

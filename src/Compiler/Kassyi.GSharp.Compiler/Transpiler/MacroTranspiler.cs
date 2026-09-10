@@ -6,6 +6,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 // ReSharper disable once UnusedMember.Global -- Used implicitly by Roslyn compiler infra
 internal static class MacroTranspiler
 {
+    /// <summary>
+    /// Attempts to intercept and transpile a high-level GPU macro invocation or assignment expression into target dialect constructs.
+    /// </summary>
     public static bool TryTranspileMacro(ExpressionStatementSyntax node, ref TranspileContext context)
     {
         return node.Expression switch
@@ -289,8 +292,7 @@ internal static class MacroTranspiler
         if (rightNode is BinaryExpressionSyntax binaryExpr)
         {
             leftOp = binaryExpr.Left;
-            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression) &&
-                !binaryExpr.IsKind(SyntaxKind.RightShiftExpression))
+            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression))
             {
                 rightOp = binaryExpr.Right;
             }

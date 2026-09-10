@@ -16,10 +16,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder
-    {
-        get;
-    }
+    private StringBuilder Builder { get; }
 
     public SourceWriter()
     {
@@ -292,6 +289,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
+    public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda() => new(this);
 
     [UnscopedRef]
     public ref readonly SourceWriter AppendParentheses()
@@ -368,7 +366,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private void AppendParentNamespaceOrTypeFromAst(SyntaxNode? parent)
     {
-        if (parent is null) return;
+        if (parent is null)
+        {
+            return;
+        }
 
         if (parent is BaseNamespaceDeclarationSyntax ns)
         {
@@ -462,6 +463,20 @@ public readonly ref struct SourceWriterInlineScope
     }
 
     public void Dispose() => _writer.Append(_closingText);
+}
+
+/// <summary>A zero-allocation scope that wraps content in a C++ immediately invoked lambda ([&]() { ... }()).</summary>
+public readonly ref struct SourceWriterImmediatelyInvokedLambdaScope
+{
+    private readonly SourceWriter _writer;
+
+    public SourceWriterImmediatelyInvokedLambdaScope(SourceWriter writer)
+    {
+        _writer = writer;
+        _writer.AppendLine("([&]() {");
+    }
+
+    public void Dispose() => _writer.Append("}())");
 }
 
 #pragma warning disable IDE0060 // Remove unused parameter
