@@ -218,8 +218,20 @@ internal static class StructTranspiler
     private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
     {
         context.Writer.Append("#ifndef __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
-            .Append("#define __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
-            .Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
+            .Append("#define __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__");
+
+        if (structSym.TypeParameters.Length > 0)
+        {
+            context.Writer.Append("template <");
+            for (int i = 0; i < structSym.TypeParameters.Length; i++)
+            {
+                if (i > 0) context.Writer.Append(", ");
+                context.Writer.Append("typename ").Append(structSym.TypeParameters[i].Name);
+            }
+            context.Writer.AppendLine(">");
+        }
+
+        context.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
     }
 
     private static void WriteStructFooter(ref TranspileContext context)
