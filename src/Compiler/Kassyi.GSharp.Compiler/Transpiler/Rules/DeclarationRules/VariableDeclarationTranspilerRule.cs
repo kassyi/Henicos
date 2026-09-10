@@ -1,10 +1,18 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-/// <summary>
-/// Strategy rule for transpiling variable declarations, including stack allocations.
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;/// <summary>
+/// Transpiles C# variable declaration syntax nodes into target dialect variable definitions,
+/// supporting type inference (<c>auto</c>), pointer declarations, stack allocations, and multiple declarators.
 /// </summary>
+/// <remarks>
+/// <para><b>Thread Safety:</b> This rule is stateless and safe for concurrent execution across threads.</para>
+/// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
+/// </remarks>
 public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="VariableDeclarationTranspilerRule"/>.
+    /// </summary>
     public static readonly VariableDeclarationTranspilerRule Instance = new();
 
     private VariableDeclarationTranspilerRule() { }
@@ -21,6 +29,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         public bool ShouldSplit { get; } = shouldSplit;
     }
 
+    /// <inheritdoc />
     public override void Transpile(VariableDeclarationSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
@@ -97,164 +106,72 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
 
     private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
-        if (variable.Initializer == null)
+        if (variable.Initializer == null || !ArraySyntaxExtractor.TryGetArrayElementType(typeSymbol, out var elemType, out var isConst))
         {
             return false;
         }
 
-        var initVal = variable.Initializer.Value;
-
-        ITypeSymbol? elemType = null;
-        var isConst = false;
-
-        if (typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1, Name: "Span" or "ReadOnlySpan" } named)
-        {
-            elemType = named.TypeArguments[0];
-            isConst = named.Name == "ReadOnlySpan";
-        }
-        else if (typeSymbol is IArrayTypeSymbol arrayType)
-        {
-            elemType = arrayType.ElementType;
-        }
-
-        if (elemType == null)
+        if (!ArraySyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count, out var sizeExpr, out var initializerNode))
         {
             return false;
         }
 
-        // Case 1: CollectionExpression [10, 20, 30]
-        if (initVal is CollectionExpressionSyntax collectionExpr)
+        if (initializerNode != null && count.HasValue)
         {
-            if (isConst)
-            {
-                context.Writer.Append("const ");
-            }
-
-            context.AppendType(elemType);
-            context.Writer.Append($" {variable.Identifier.Text}");
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append(collectionExpr.Elements.Count);
-            }
-            context.Writer.AppendOperator("=");
-            context.Visitor.Visit(collectionExpr);
+            WriteArrayWithInitializer(variable, elemType, isConst, count.Value, initializerNode, ref context);
             return true;
         }
 
-        // Case 2: StackAllocArrayCreationExpression stackalloc int[4] or stackalloc int[] { 1, 2, 3 }
-        if (initVal is StackAllocArrayCreationExpressionSyntax stackAlloc)
+        return TryWriteFixedSizeArray(variable, elemType, isConst, sizeExpr, "dynamic array size", ref context);
+    }
+
+    private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, string identifier, bool isConst, ref TranspileContext context)
+    {
+        if (isConst)
         {
-            if (stackAlloc.Initializer != null)
-            {
-                if (isConst)
-                {
-                    context.Writer.Append("const ");
-                }
-
-                context.AppendType(elemType);
-                context.Writer.Append($" {variable.Identifier.Text}");
-                using (context.Writer.Brackets())
-                {
-                    context.Writer.Append(stackAlloc.Initializer.Expressions.Count);
-                }
-                context.Writer.AppendOperator("=");
-                context.Visitor.Visit(stackAlloc.Initializer);
-                return true;
-            }
-
-            if (stackAlloc.Type is ArrayTypeSyntax { RankSpecifiers.Count: > 0 } arrayTypeSyntax)
-            {
-                var sizeExpr = arrayTypeSyntax.RankSpecifiers[0].Sizes.FirstOrDefault();
-                if (sizeExpr != null)
-                {
-                    var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
-                    if (!constVal.HasValue)
-                    {
-                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                            GSharpDiagnostics.UnsupportedSyntax,
-                            sizeExpr.GetLocation(),
-                            "dynamic stackalloc size"));
-                        return true;
-                    }
-
-                    context.AppendType(elemType);
-                    context.Writer.Append($" {variable.Identifier.Text}");
-                    using (context.Writer.Brackets())
-                    {
-                        context.Visitor.Visit(sizeExpr);
-                    }
-                    return true;
-                }
-            }
+            context.Writer.Append("const ");
         }
 
-        // Case 3: ImplicitStackAllocArrayCreationExpression stackalloc[] { 1, 2, 3 }
-        if (initVal is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc)
-        {
-            if (isConst)
-            {
-                context.Writer.Append("const ");
-            }
+        context.AppendType(elemType);
+        context.Writer.Append($" {identifier}");
+    }
 
-            context.AppendType(elemType);
-            context.Writer.Append($" {variable.Identifier.Text}");
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
-            }
-            context.Writer.Append(" = ");
-            context.Visitor.Visit(implStackAlloc.Initializer);
+    private static void WriteArrayWithInitializer(VariableDeclaratorSyntax variable, ITypeSymbol elemType, bool isConst,
+        int count, SyntaxNode initializerNode, ref TranspileContext context)
+    {
+        WriteArrayDeclarationHeader(elemType, variable.Identifier.Text, isConst, ref context);
+        using (context.Writer.Brackets())
+        {
+            context.Writer.Append(count);
+        }
+        context.Writer.AppendOperator("=");
+        context.Visitor.Visit(initializerNode);
+    }
+
+    private static bool TryWriteFixedSizeArray(VariableDeclaratorSyntax variable, ITypeSymbol elemType, bool isConst,
+        ExpressionSyntax? sizeExpr, string errorLabel, ref TranspileContext context)
+    {
+        if (sizeExpr == null)
+        {
+            return false;
+        }
+
+        var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
+        if (!constVal.HasValue)
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnsupportedSyntax,
+                sizeExpr.GetLocation(),
+                errorLabel));
             return true;
         }
 
-        // Case 4: ArrayCreationExpression new int[] { 1, 2, 3 } or new int[4]
-        if (initVal is ArrayCreationExpressionSyntax arrayCreation)
+        WriteArrayDeclarationHeader(elemType, variable.Identifier.Text, isConst, ref context);
+        using (context.Writer.Brackets())
         {
-            if (arrayCreation.Initializer != null)
-            {
-                if (isConst)
-                {
-                    context.Writer.Append("const ");
-                }
-
-                context.AppendType(elemType);
-                context.Writer.Append($" {variable.Identifier.Text}");
-                using (context.Writer.Brackets())
-                {
-                    context.Writer.Append(arrayCreation.Initializer.Expressions.Count);
-                }
-                context.Writer.AppendOperator("=");
-                context.Visitor.Visit(arrayCreation.Initializer);
-                return true;
-            }
-
-            if (arrayCreation.Type.RankSpecifiers.Count > 0)
-            {
-                var sizeExpr = arrayCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
-                if (sizeExpr != null)
-                {
-                    var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
-                    if (!constVal.HasValue)
-                    {
-                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                            GSharpDiagnostics.UnsupportedSyntax,
-                            sizeExpr.GetLocation(),
-                            "dynamic array size"));
-                        return true;
-                    }
-
-                    context.AppendType(elemType);
-                    context.Writer.Append($" {variable.Identifier.Text}");
-                    using (context.Writer.Brackets())
-                    {
-                        context.Visitor.Visit(sizeExpr);
-                    }
-                    return true;
-                }
-            }
+            context.Visitor.Visit(sizeExpr);
         }
-
-        return false;
+        return true;
     }
 
     private static void TranspileCombinedVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,

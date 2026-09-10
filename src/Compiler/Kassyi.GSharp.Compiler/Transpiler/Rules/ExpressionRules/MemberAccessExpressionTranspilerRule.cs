@@ -1,10 +1,14 @@
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>
 {
     public static readonly MemberAccessExpressionTranspilerRule Instance = new();
 
-    private MemberAccessExpressionTranspilerRule() { }
+    private MemberAccessExpressionTranspilerRule()
+    {
+    }
 
     public override void Transpile(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
@@ -15,15 +19,57 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             symbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
         }
 
-        if (symbol != null)
+        if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
         {
-            if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
-            {
-                context.Writer.Append(mappedName);
-                return;
-            }
+            return;
         }
 
+        if (symbol != null && TryEnsureNotProhibitedApi(symbol, node, ref context))
+        {
+            return;
+        }
+
+        if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
+        {
+            context.Writer.AppendConstantField(field);
+            return;
+        }
+
+        var memberExprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        if (TryTranspileEnumAccess(memberExprSymbol, node, ref context))
+        {
+            return;
+        }
+
+        if (memberExprSymbol is ITypeSymbol)
+        {
+            // Skip class name for global static methods
+            context.Writer.Append(node.Name.Identifier.Text);
+            return;
+        }
+
+        if (TryTranspileStackArrayLength(node, ref context))
+        {
+            return;
+        }
+
+        TranspileMemberAccess(node, ref context);
+    }
+
+    private static bool TryTranspileIntrinsic(ISymbol symbol, ref TranspileContext context)
+    {
+        if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
+        {
+            context.Writer.Append(mappedName);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryEnsureNotProhibitedApi(ISymbol symbol, MemberAccessExpressionSyntax node,
+        ref TranspileContext context)
+    {
         if (symbol is
             {
                 ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
@@ -36,35 +82,27 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 node.GetLocation(),
                 $"{symbol.ContainingType.Name}.{symbol.Name}"));
             context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
-            return;
+            return true;
         }
 
-        if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
+        return false;
+    }
+
+    private static bool TryTranspileEnumAccess(ISymbol? memberExprSymbol, MemberAccessExpressionSyntax node,
+        ref TranspileContext context)
+    {
+        if (memberExprSymbol is ITypeSymbol { TypeKind: TypeKind.Enum })
         {
-            context.Writer.AppendConstantField(field);
-            return;
+            context.Visitor.Visit(node.Expression);
+            context.Writer.Append($"::{node.Name.Identifier.Text}");
+            return true;
         }
 
-        var memberExprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-        if (memberExprSymbol is ITypeSymbol typeSym)
-        {
-            if (typeSym.TypeKind == TypeKind.Enum)
-            {
-                context.Visitor.Visit(node.Expression);
-                context.Writer.Append($"::{node.Name.Identifier.Text}");
-                return;
-            }
+        return false;
+    }
 
-            // Skip class name for global static methods
-            context.Writer.Append(node.Name.Identifier.Text);
-            return;
-        }
-
-        if (TryTranspileStackArrayLength(node, ref context))
-        {
-            return;
-        }
-
+    private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ref TranspileContext context)
+    {
         context.Visitor.Visit(node.Expression);
         context.Writer.Append(".");
 
@@ -105,54 +143,29 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
         if (symbol is ILocalSymbol localSym)
         {
-            var decl = localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-            if (decl?.Initializer?.Value is CollectionExpressionSyntax collExpr)
+            if (localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is not VariableDeclaratorSyntax decl)
             {
-                context.Writer.Append(collExpr.Elements.Count);
-                return true;
+                return false;
             }
 
-            if (decl?.Initializer?.Value is StackAllocArrayCreationExpressionSyntax stackAlloc)
+            if (decl.Initializer == null)
             {
-                if (stackAlloc.Initializer != null)
+                return false;
+            }
+
+            if (ArraySyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
+                    out _))
+            {
+                if (count.HasValue)
                 {
-                    context.Writer.Append(stackAlloc.Initializer.Expressions.Count);
+                    context.Writer.Append(count.Value);
                     return true;
                 }
 
-                if (stackAlloc.Type is ArrayTypeSyntax { RankSpecifiers.Count: > 0 } ats)
+                if (sizeExpr != null)
                 {
-                    var sizeSyntax = ats.RankSpecifiers[0].Sizes.FirstOrDefault();
-                    if (sizeSyntax != null)
-                    {
-                        context.Visitor.Visit(sizeSyntax);
-                        return true;
-                    }
-                }
-            }
-
-            if (decl?.Initializer?.Value is ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc)
-            {
-                context.Writer.Append(implStackAlloc.Initializer.Expressions.Count);
-                return true;
-            }
-
-            if (decl?.Initializer?.Value is ArrayCreationExpressionSyntax arrCreation)
-            {
-                if (arrCreation.Initializer != null)
-                {
-                    context.Writer.Append(arrCreation.Initializer.Expressions.Count);
+                    context.Visitor.Visit(sizeExpr);
                     return true;
-                }
-
-                if (arrCreation.Type.RankSpecifiers.Count > 0)
-                {
-                    var sizeSyntax = arrCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
-                    if (sizeSyntax != null)
-                    {
-                        context.Visitor.Visit(sizeSyntax);
-                        return true;
-                    }
                 }
             }
         }
