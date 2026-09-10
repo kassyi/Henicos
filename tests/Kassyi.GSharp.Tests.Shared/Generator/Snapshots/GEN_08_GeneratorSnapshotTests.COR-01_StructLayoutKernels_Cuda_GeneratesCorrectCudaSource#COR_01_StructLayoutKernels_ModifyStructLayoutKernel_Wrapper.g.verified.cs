@@ -13,17 +13,17 @@ public const string ModifyStructLayoutKernel_Source = @"#ifndef __GSHARP_STRUCT_
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
 struct Kassyi_GSharp_Tests_Core_CustomLayoutStruct
 {
-int A;
-float B;
-double C;
+unsigned char A;
+double B;
+float C;
 }
 ;
 #endif
 extern ""C"" __global__ void ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Core_CustomLayoutStruct* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=10;
-data[tid].B*=2.0f;
-data[tid].C-=1.0;
+data[tid].B*=2.0;
+data[tid].C-=1.0f;
 }
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaCode.Source + ModifyStructLayoutKernel_Source;

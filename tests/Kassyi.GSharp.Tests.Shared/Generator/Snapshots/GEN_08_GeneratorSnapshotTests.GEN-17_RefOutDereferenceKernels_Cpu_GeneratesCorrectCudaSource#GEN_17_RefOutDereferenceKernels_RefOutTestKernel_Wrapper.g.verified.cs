@@ -29,7 +29,7 @@ int a;
 int b;
 int val = 1;
 ChainedAssignmentRef(&val,&a,&b);
-data[0]=((flag ? 100 : 0))+s.Field+a+b+val;
+data[0]=((flag?100:0))+s.Field+a+b+val;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_RefOutTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {

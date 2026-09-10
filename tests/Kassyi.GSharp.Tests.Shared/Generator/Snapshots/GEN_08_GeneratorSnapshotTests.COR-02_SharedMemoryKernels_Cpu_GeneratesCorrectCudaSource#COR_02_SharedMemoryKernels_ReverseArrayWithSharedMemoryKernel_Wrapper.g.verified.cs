@@ -11,15 +11,17 @@ public static partial class COR_02_SharedMemoryKernelsWrapper
 {
 public const string ReverseArrayWithSharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void ReverseArrayWithSharedMemoryKernel(int* __restrict__ input, int* __restrict__ output, int length){
 int tid = threadIdx.x;
-if(tid>=length)
-{
-return;
-}
 __shared__ int shared[256];
+if(tid<length)
+{
 shared[tid]=input[tid];
+}
 __syncthreads();
+if(tid<length)
+{
 int reversedIndex = length-1-tid;
-output[reversedIndex]=shared[tid];
+output[tid]=shared[reversedIndex];
+}
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ReverseArrayWithSharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output, int length)
 {

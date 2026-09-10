@@ -14,7 +14,7 @@ int tid = threadIdx.x;
 int x = a[tid];
 int y = b[tid];
 int z = c[tid];
-result[tid]=(x>y ? ((y>z ? 1 : 2)) : ((x>z ? 3 : 4)));
+result[tid]=(x>y?((y>z?1:2)):((x>z?3:4)));
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedTernaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result)
 {
