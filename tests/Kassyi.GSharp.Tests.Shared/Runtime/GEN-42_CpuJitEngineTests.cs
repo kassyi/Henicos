@@ -5,15 +5,15 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class RUN_01_CpuJitEngineTests
+public class GEN_42_CpuJitEngineTests
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate int AddFunc(int a, int b);
 
     [Fact]
     [Trait("Category", "Unit")]
-    [Trait("FeatureId", "RUN-01")]
-    public void Test_RUN01_CpuJitEngine_CompilesAndExecutes_Delegate()
+    [Trait("FeatureId", "GEN-42")]
+    public void Test_GEN42_CpuJitEngine_CompilesAndExecutes_Delegate()
     {
         var source = @"
 extern ""C"" __declspec(dllexport) int Add(int a, int b) {
@@ -27,8 +27,8 @@ extern ""C"" __declspec(dllexport) int Add(int a, int b) {
 
     [Fact]
     [Trait("Category", "Unit")]
-    [Trait("FeatureId", "RUN-01")]
-    public void Test_RUN01_CpuJitEngine_CompilesWithMacros()
+    [Trait("FeatureId", "GEN-42")]
+    public void Test_GEN42_CpuJitEngine_CompilesWithMacros()
     {
         var source = @"
 extern ""C"" __declspec(dllexport) int Add(int a, int b) {

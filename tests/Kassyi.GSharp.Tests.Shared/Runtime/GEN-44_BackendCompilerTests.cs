@@ -4,12 +4,12 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class RUN_02_BackendCompilerTests
+public class GEN_44_BackendCompilerTests
 {
     [SkippableFact]
     [Trait("Category", "Unit")]
-    [Trait("FeatureId", "RUN-02")]
-    public void Test_RUN02_NvccCompiler_CompileToFatbin_ProducesOutput()
+    [Trait("FeatureId", "GEN-44")]
+    public void Test_GEN44_NvccCompiler_CompileToFatbin_ProducesOutput()
     {
         Skip.If(!NvccCompiler.IsMsvcAvailable || !NvccCompiler.IsNvccAvailable, "MSVC or NVCC is not available");
 

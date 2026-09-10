@@ -4,15 +4,15 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Core;
 
 [Trait("Category", "GpuExecution")]
-public class COR_02_SharedMemoryTests
+public class GEN_29_SharedMemoryTests
 {
     [Theory]
     [InlineData(1)]
     [InlineData(128)]
     [InlineData(255)]
     [InlineData(256)]
-    [Trait("FeatureId", "COR-02")]
-    public void Test_COR02_SharedMemory_ReversesArrayCorrectly(int length)
+    [Trait("FeatureId", "GEN-29")]
+    public void Test_GEN29_SharedMemory_ReversesArrayCorrectly(int length)
     {
         var input = new int[length];
         var output = new int[length];
@@ -23,7 +23,7 @@ public class COR_02_SharedMemoryTests
         }
 
         // SourceGenerator emits this wrapper class and method.
-        COR_02_SharedMemoryKernelsWrapper.Launch_ReverseArrayWithSharedMemoryKernel(
+        GEN_29_SharedMemoryKernelsWrapper.Launch_ReverseArrayWithSharedMemoryKernel(
             input,
             output,
             length,
