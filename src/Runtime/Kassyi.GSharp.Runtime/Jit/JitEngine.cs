@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// <para><b>Thread Safety:</b> All public methods except <see cref="Shutdown"/> are safe for concurrent invocation from multiple threads.</para>
 /// </remarks>
 /// <remarks><para>Implements: <b>GEN-37, GEN-42, GEN-43</b></para></remarks>
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Public API exposed for runtime consumers")]
+// ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
 public sealed class JitEngine
 {
     private static volatile bool s_isGlobalInit;
@@ -95,7 +95,7 @@ public sealed class JitEngine
     /// <para>Safe to call during application teardown or when changing GPU runtime contexts.</para>
     /// <para><b>Thread Safety:</b> This method is NOT safe to call concurrently with other engine operations.</para>
     /// </remarks>
-    [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Public API for library")]
+    #pragma warning disable IDE0051 // Justification: Public API for library
     public static void Shutdown()
     {
         using var scope = new CudaContextScope();

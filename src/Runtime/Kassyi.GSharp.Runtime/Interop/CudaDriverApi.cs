@@ -59,7 +59,7 @@ public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
 }
 
 /// <summary>P/Invoke bindings for NVIDIA CUDA Driver API functions (<c>nvcuda.dll</c> / <c>libcuda.so</c>).</summary>
-[SuppressMessage("ReSharper", "InconsistentNaming", Justification = "P/Invoke matches native CUDA API naming")]
+// ReSharper disable once InconsistentNaming -- P/Invoke matches native CUDA API naming
 public static partial class CudaDriverApi
 {
     private const string DllName = "nvcuda.dll";
@@ -90,12 +90,12 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxDestroy_v2(IntPtr ctx);
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Exposed for runtime context management")]
+    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPushCurrent_v2(IntPtr ctx);
 
-    [SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Exposed for runtime context management")]
+    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPopCurrent_v2(out IntPtr pctx);
