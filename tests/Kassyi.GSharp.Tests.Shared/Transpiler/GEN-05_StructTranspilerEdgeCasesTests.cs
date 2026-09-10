@@ -1,3 +1,4 @@
+#pragma warning disable CS0649
 namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_05_StructTranspilerEdgeCasesTests
@@ -103,3 +104,4 @@ struct MyStruct
 {
     public System.DateTime time;
 }
+
