@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 
 /// <summary>
