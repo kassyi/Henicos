@@ -215,11 +215,8 @@ internal static class StructTranspiler
         WriteStructFooter(ref context);
     }
 
-    private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
+    public static void WriteTemplatePrefix(ref TranspileContext context, INamedTypeSymbol structSym)
     {
-        context.Writer.Append("#ifndef __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
-            .Append("#define __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__");
-
         if (structSym.TypeParameters.Length > 0)
         {
             context.Writer.Append("template <");
@@ -230,6 +227,16 @@ internal static class StructTranspiler
             }
             context.Writer.AppendLine(">");
         }
+    }
+
+    private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
+    {
+        var guardName = $"__GSHARP_STRUCT_{structSym.ToSafeCppIdentifier()}_{structSym.TypeParameters.Length}__";
+
+        context.Writer.Append("#ifndef ").AppendLine(guardName)
+            .Append("#define ").AppendLine(guardName);
+
+        WriteTemplatePrefix(ref context, structSym);
 
         context.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
     }
