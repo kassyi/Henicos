@@ -8,11 +8,10 @@ namespace Kassyi.GSharp.Tests.Core;
 [Trait("Category", "GpuExecution")]
 public class GEN_16_WarpLevelConcurrencyTests
 {
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-16")]
     public void Test_GEN16_WarpReduceSum_CalculatesCorrectly()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
         int numWarps = 4;
         int threadsPerWarp = 32;
         int length = numWarps * threadsPerWarp;
@@ -39,11 +38,10 @@ public class GEN_16_WarpLevelConcurrencyTests
         }
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-16")]
     public void Test_GEN16_WarpPrimitives_GenerateAndCompile()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
         int length = 32;
         var input = new int[length];
         var output = new int[length];

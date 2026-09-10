@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests;
 
 public class ArchitectureAndOptimizationTests
@@ -10,7 +10,7 @@ public class ArchitectureAndOptimizationTests
         _output = output;
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "GpuExecution")]
@@ -30,7 +30,7 @@ public class ArchitectureAndOptimizationTests
         Assert.True(ptx86.Length > 0);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "GpuExecution")]
@@ -52,7 +52,7 @@ public class ArchitectureAndOptimizationTests
         Assert.True(ex.Message.Contains("NVRTC", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("Simulated missing library"), $"Unexpected exception message: {ex.Message}");
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "GpuExecution")]

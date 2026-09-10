@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Syntax;
 
 public partial class SYN_28_MethodAttributesTests
 :  TranspilerTestBase{
@@ -113,7 +113,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(expectedVal, result[0]);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice()
@@ -124,7 +124,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Matches(AggressiveInlinedRegex(), cudaSource);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_NoInlining_TranspilesWithNoinlineDevice()
@@ -135,7 +135,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Matches(NoInlinedRegex(), cudaSource);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates()
@@ -149,7 +149,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Single(matches);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError()
@@ -162,7 +162,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.DoesNotMatch(NoinlineModifier, cudaSource);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()

@@ -7,16 +7,15 @@ using System.Collections.Generic;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
+[Trait("Category", "GpuExecution")]
 public class GBI_46_WrapperAllocationTests : TranspilerTestBase
 {
     private static readonly global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[] s_constArray = new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GBI-46")]
-    [Trait("Category", "GpuExecution")]
     public void Test_GBI46_LaunchDevice_ShouldNotAllocateOnHotPath()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
         using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
         // Setup
         int ioVal = 5;
@@ -70,12 +69,10 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
         }
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GBI-46")]
-    [Trait("Category", "GpuExecution")]
     public void Test_GBI46_Launch_EmptyArray_ShouldReturnEarlyAndSetDefaultOut()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
         using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
 
         int ioVal = 42;
@@ -91,13 +88,10 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
         Assert.Equal(0f, outVal);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GBI-46")]
-    [Trait("Category", "GpuExecution")]
     public void Test_GBI46_LaunchDevice_ConcurrentAccess_ShouldBeThreadSafe()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
-
         // Warm up and JIT compile on primary thread
         using (var _initCtx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
         {

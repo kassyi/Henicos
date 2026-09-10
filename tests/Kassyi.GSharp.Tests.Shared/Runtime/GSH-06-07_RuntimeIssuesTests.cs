@@ -13,7 +13,7 @@ public partial class Gsh06_07_RuntimeIssuesTests
     {
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "GpuExecution")]
