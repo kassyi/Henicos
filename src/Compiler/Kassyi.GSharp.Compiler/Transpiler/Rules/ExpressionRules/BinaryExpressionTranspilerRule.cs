@@ -17,7 +17,9 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// </summary>
     public static readonly BinaryExpressionTranspilerRule Instance = new();
 
-    private BinaryExpressionTranspilerRule() { }
+    private BinaryExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(BinaryExpressionSyntax node, ref TranspileContext context)
