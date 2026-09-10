@@ -1,10 +1,10 @@
-﻿
+
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>
 /// Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated GPU BigInteger expression.
 /// </summary>
-public interface IGpuBigIntExpression
+public interface IGpuBigUIntExpression
 {
     /// <summary>
     /// Gets the word length (limb count) resulting from this expression.

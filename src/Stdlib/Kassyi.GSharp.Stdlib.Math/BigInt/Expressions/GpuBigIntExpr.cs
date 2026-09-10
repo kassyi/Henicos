@@ -1,71 +1,80 @@
-﻿
+using System;
+
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>
-/// A value type wrapper that builds a lazy expression tree of GPU BigInteger arithmetic and bitwise operations.
+/// A value type wrapper that builds a lazy expression tree of GPU signed BigInteger arithmetic.
+/// Note that due to the lazy evaluation of absolute magnitudes, operations where the resulting
+/// sign cannot be predicted (e.g., adding a positive and negative number) are not supported.
 /// </summary>
 public readonly struct GpuBigIntExpr
 {
     /// <summary>
-    /// Gets the root AST node of this expression tree.
+    /// Gets the underlying unsigned expression representing the absolute value.
     /// </summary>
-    public IGpuBigIntExpression Node
+    public GpuBigUIntExpr AbsoluteExpr { get; }
+
+    /// <summary>
+    /// Gets the predicted sign flag of the evaluated result.
+    /// </summary>
+    public bool IsNegative { get; }
+
+    internal GpuBigIntExpr(GpuBigUIntExpr absoluteExpr, bool isNegative)
     {
-        get;
+        AbsoluteExpr = absoluteExpr;
+        IsNegative = isNegative;
     }
 
-    internal GpuBigIntExpr(IGpuBigIntExpression node)
-    {
-        Node = node ?? throw new ArgumentNullException(nameof(node));
-    }
+    /// <summary>Implicitly wraps a <see cref="GpuBigInteger"/> as a signed expression leaf node.</summary>
+    public static implicit operator GpuBigIntExpr(GpuBigInteger b)
+        => new(b.Value, b.IsNegative);
 
-    /// <summary>Implicitly wraps a <see cref="GpuUIntBigInteger"/> buffer as an expression leaf node.</summary>
-    public static implicit operator GpuBigIntExpr(GpuUIntBigInteger b)
-        => new(b);
-
-    /// <summary>Constructs a lazy addition expression.</summary>
-    public static GpuBigIntExpr operator +(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new AddExpression(left.Node, right.Node));
-
-    /// <summary>Constructs a lazy subtraction expression.</summary>
-    public static GpuBigIntExpr operator -(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new SubExpression(left.Node, right.Node));
-
-    /// <summary>Constructs a lazy multiplication expression.</summary>
+    /// <summary>Constructs a lazy multiplication expression. Sign is determined by XOR.</summary>
     public static GpuBigIntExpr operator *(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new MulExpression(left.Node, right.Node));
+        => new(left.AbsoluteExpr * right.AbsoluteExpr, left.IsNegative ^ right.IsNegative);
 
-    /// <summary>Constructs a lazy division expression.</summary>
+    /// <summary>Constructs a lazy division expression. Sign is determined by XOR.</summary>
     public static GpuBigIntExpr operator /(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new DivExpression(left.Node, right.Node));
+        => new(left.AbsoluteExpr / right.AbsoluteExpr, left.IsNegative ^ right.IsNegative);
 
-    /// <summary>Constructs a lazy square root expression.</summary>
-    public static GpuBigIntExpr Sqrt(GpuBigIntExpr expr)
-        => new(new SqrtExpression(expr.Node));
+    /// <summary>Constructs a lazy addition expression for operands with the same sign.</summary>
+    public static GpuBigIntExpr operator +(GpuBigIntExpr left, GpuBigIntExpr right)
+    {
+        if (left.IsNegative == right.IsNegative)
+        {
+            return new GpuBigIntExpr(left.AbsoluteExpr + right.AbsoluteExpr, left.IsNegative);
+        }
+        
+        throw new NotSupportedException("Signed addition with different signs cannot be represented in a lazy AST because the resulting sign depends on the magnitudes, which are not yet evaluated.");
+    }
 
-    /// <summary>Constructs a lazy bitwise AND expression.</summary>
-    public static GpuBigIntExpr operator &(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new BitwiseAndExpression(left.Node, right.Node));
+    /// <summary>Constructs a lazy subtraction expression for operands with different signs.</summary>
+    public static GpuBigIntExpr operator -(GpuBigIntExpr left, GpuBigIntExpr right)
+    {
+        if (left.IsNegative != right.IsNegative)
+        {
+            return new GpuBigIntExpr(left.AbsoluteExpr + right.AbsoluteExpr, left.IsNegative);
+        }
 
-    /// <summary>Constructs a lazy bitwise OR expression.</summary>
-    public static GpuBigIntExpr operator |(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new BitwiseOrExpression(left.Node, right.Node));
+        throw new NotSupportedException("Signed subtraction with the same signs cannot be represented in a lazy AST because the resulting sign depends on the magnitudes, which are not yet evaluated.");
+    }
 
-    /// <summary>Constructs a lazy bitwise XOR expression.</summary>
-    public static GpuBigIntExpr operator ^(GpuBigIntExpr left, GpuBigIntExpr right)
-        => new(new BitwiseXorExpression(left.Node, right.Node));
+    /// <summary>Constructs a lazy negation expression.</summary>
+    public static GpuBigIntExpr operator -(GpuBigIntExpr left)
+        => new(left.AbsoluteExpr, !left.IsNegative);
 
     /// <summary>Constructs a lazy bitwise NOT expression.</summary>
     public static GpuBigIntExpr operator ~(GpuBigIntExpr left)
-        => new(new BitwiseNotExpression(left.Node));
+        => new(~left.AbsoluteExpr, left.IsNegative);
 
-    /// <summary>Constructs a lazy left shift expression.</summary>
-    public static GpuBigIntExpr operator <<(GpuBigIntExpr left, int shiftBits)
-        => new(new ShiftLeftExpression(left.Node, shiftBits));
-
-    /// <summary>Constructs a lazy right shift expression.</summary>
-    public static GpuBigIntExpr operator >>(GpuBigIntExpr left, int shiftBits)
-        => new(new ShiftRightExpression(left.Node, shiftBits));
+    /// <summary>
+    /// Evaluates this signed expression into the provided destination buffer.
+    /// </summary>
+    /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
+    /// <returns>A new <see cref="GpuBigInteger"/> instance wrapping the destination buffer with the evaluated sign.</returns>
+    public GpuBigInteger Evaluate(GpuUIntBigInteger destination)
+    {
+        destination.Value = AbsoluteExpr;
+        return new GpuBigInteger(destination, IsNegative);
+    }
 }
-
-

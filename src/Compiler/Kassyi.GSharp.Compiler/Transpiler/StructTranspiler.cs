@@ -215,11 +215,30 @@ internal static class StructTranspiler
         WriteStructFooter(ref context);
     }
 
+    public static void WriteTemplatePrefix(ref TranspileContext context, INamedTypeSymbol structSym)
+    {
+        if (structSym.TypeParameters.Length > 0)
+        {
+            context.Writer.Append("template <");
+            for (int i = 0; i < structSym.TypeParameters.Length; i++)
+            {
+                if (i > 0) context.Writer.Append(", ");
+                context.Writer.Append("typename ").Append(structSym.TypeParameters[i].Name);
+            }
+            context.Writer.AppendLine(">");
+        }
+    }
+
     private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
     {
-        context.Writer.Append("#ifndef __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
-            .Append("#define __GSHARP_STRUCT_").AppendFullyQualifiedCppName(structSym).AppendLine("__")
-            .Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
+        var guardName = $"__GSHARP_STRUCT_{structSym.ToSafeCppIdentifier()}__";
+
+        context.Writer.Append("#ifndef ").AppendLine(guardName)
+            .Append("#define ").AppendLine(guardName);
+
+        WriteTemplatePrefix(ref context, structSym);
+
+        context.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
     }
 
     private static void WriteStructFooter(ref TranspileContext context)

@@ -2,13 +2,13 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 /// <summary>Abstract base AST node representing a binary GPU BigInteger operation.</summary>
-internal abstract class BinaryExpression : IGpuBigIntExpression
+internal abstract class BinaryExpression : IGpuBigUIntExpression
 {
-    protected IGpuBigIntExpression Left
+    protected IGpuBigUIntExpression Left
     {
         get;
     }
-    protected IGpuBigIntExpression Right
+    protected IGpuBigUIntExpression Right
     {
         get;
     }
@@ -18,7 +18,7 @@ internal abstract class BinaryExpression : IGpuBigIntExpression
         get;
     }
 
-    protected BinaryExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    protected BinaryExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right)
     {
         Left = left ?? throw new ArgumentNullException(nameof(left));
         Right = right ?? throw new ArgumentNullException(nameof(right));
@@ -36,40 +36,40 @@ internal abstract class BinaryExpression : IGpuBigIntExpression
     protected abstract void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result);
 }
 
-internal class AddExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+internal class AddExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right) : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Add(a, b, result);
 }
 
-internal class SubExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+internal class SubExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right) : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Sub(a, b, result);
 }
 
-internal class MulExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+internal class MulExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right) : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Mul(a, b, result);
 }
 
-internal class DivExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+internal class DivExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right) : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntDivRem.Div(a, b, result);
 }
 
-internal class BitwiseAndExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+internal class BitwiseAndExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right)
     : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.BitwiseAnd(a, b, result);
 }
 
-internal abstract class ShiftExpression(IGpuBigIntExpression target, int shiftBits) : IGpuBigIntExpression
+internal abstract class ShiftExpression(IGpuBigUIntExpression target, int shiftBits) : IGpuBigUIntExpression
 {
-    protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
+    protected IGpuBigUIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     protected int ShiftBits { get; } = shiftBits;
     public int NumWords => Target.NumWords;
 
@@ -79,34 +79,34 @@ internal abstract class ShiftExpression(IGpuBigIntExpression target, int shiftBi
     protected abstract void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result);
 }
 
-internal class ShiftLeftExpression(IGpuBigIntExpression target, int shiftBits) : ShiftExpression(target, shiftBits)
+internal class ShiftLeftExpression(IGpuBigUIntExpression target, int shiftBits) : ShiftExpression(target, shiftBits)
 {
     protected override void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result) =>
         GpuBigIntMath.ShiftLeft(target, ShiftBits, result);
 }
 
-internal class ShiftRightExpression(IGpuBigIntExpression target, int shiftBits) : ShiftExpression(target, shiftBits)
+internal class ShiftRightExpression(IGpuBigUIntExpression target, int shiftBits) : ShiftExpression(target, shiftBits)
 {
     protected override void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result) =>
         GpuBigIntMath.ShiftRight(target, ShiftBits, result);
 }
 
-internal class SqrtExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
+internal class SqrtExpression(IGpuBigUIntExpression target) : IGpuBigUIntExpression
 {
-    protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
+    protected IGpuBigUIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
 
     public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null) =>
         ExpressionEvaluator.EvaluateUnary(context, Target, targetResult, NumWords, GpuBigIntDivRem.Sqrt);
 }
 
-internal class ModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right) : BinaryExpression(left, right)
+internal class ModExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right) : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntDivRem.Mod(a, b, result);
 }
 
-internal class BitwiseOrExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+internal class BitwiseOrExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right)
     : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
@@ -114,7 +114,7 @@ internal class BitwiseOrExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
         GpuBigIntMath.BitwiseOr(leftOperand, rightOperand, resultBuffer);
 }
 
-internal class BitwiseXorExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+internal class BitwiseXorExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right)
     : BinaryExpression(left, right)
 {
     protected override void Execute(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
@@ -122,7 +122,7 @@ internal class BitwiseXorExpression(IGpuBigIntExpression left, IGpuBigIntExpress
         GpuBigIntMath.BitwiseXor(leftOperand, rightOperand, resultBuffer);
 }
 
-internal class BitwiseNotExpression(IGpuBigIntExpression left) : IGpuBigIntExpression
+internal class BitwiseNotExpression(IGpuBigUIntExpression left) : IGpuBigUIntExpression
 {
     public int NumWords => left.NumWords;
 

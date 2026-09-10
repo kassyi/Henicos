@@ -103,7 +103,7 @@ public sealed partial class NvccCompiler
 
         if (!FileSystem.File.Exists(vswhere))
         {
-            throw new Exception("vswhere.exe not found.");
+            return string.Empty;
         }
 
         var psi = new ProcessStartInfo(vswhere,
@@ -115,8 +115,36 @@ public sealed partial class NvccCompiler
             CreateNoWindow = true
         };
 
-        return ProcessRunner(psi).Trim();
+        try
+        {
+            return ProcessRunner(psi).Trim();
+        }
+        catch
+        {
+            return string.Empty;
+        }
     });
+
+    /// <summary>
+    /// Gets a value indicating whether MSVC (vcvars64.bat) is available on the current system.
+    /// </summary>
+    public static bool IsMsvcAvailable
+    {
+        get
+        {
+            try
+            {
+                var output = GetVswhereOutputFunc();
+                if (string.IsNullOrEmpty(output)) return false;
+                var vcvars = FileSystem.Path.Combine(output, "VC", "Auxiliary", "Build", "vcvars64.bat");
+                return FileSystem.File.Exists(vcvars);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
 
     /// <summary>Gets or sets the factory retrieving the Visual Studio installation directory from vswhere.</summary>
     public static Func<string> GetVswhereOutputFunc { get; set; } = () => s_vswhereCache.Value;

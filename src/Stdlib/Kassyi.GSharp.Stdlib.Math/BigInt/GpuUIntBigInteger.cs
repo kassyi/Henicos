@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <remarks><para>Implements: <b>GBI-01, GBI-02, GBI-03, GBI-04, GBI-05, GBI-06, GBI-10, GBI-11, GBI-12, GBI-13, GBI-14, GBI-15, GBI-16, GBI-17, GBI-18, GBI-19, GBI-20, GBI-21, GBI-22, GBI-23, GBI-24, GBI-25, GBI-26, GBI-27, GBI-28, GBI-30, GBI-31, GBI-32, GBI-33, GBI-34</b></para></remarks>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
-public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
+public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
 {
     /// <summary>
     /// Gets the native GPU global device memory pointer (<c>CUdeviceptr</c>) holding the integer limb data.
@@ -110,7 +110,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
     /// <summary>
     /// Gets or sets the lazy expression wrapper assigned to this big integer buffer.
     /// </summary>
-    public GpuBigIntExpr Value
+    public GpuBigUIntExpr Value
     {
         get => new(this);
         set => value.Node.Evaluate(Context, this);
@@ -120,76 +120,76 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigIntExpression
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A deferred expression representing the addition.</returns>
-    public static GpuBigIntExpr operator +(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator +(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new AddExpression(leftOperand, rightOperand));
 
     /// <summary>Subtracts one big integer from another using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A deferred expression representing the subtraction.</returns>
-    public static GpuBigIntExpr operator -(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator -(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new SubExpression(leftOperand, rightOperand));
 
     /// <summary>Multiplies two big integers using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A deferred expression representing the multiplication.</returns>
-    public static GpuBigIntExpr operator *(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator *(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new MulExpression(leftOperand, rightOperand));
 
     /// <summary>Divides one big integer by another using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The dividend.</param>
     /// <param name="rightOperand">The divisor.</param>
     /// <returns>A deferred expression representing the division.</returns>
-    public static GpuBigIntExpr operator /(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator /(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new DivExpression(leftOperand, rightOperand));
 
     /// <summary>Computes the remainder of dividing one big integer by another using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The dividend.</param>
     /// <param name="rightOperand">The divisor.</param>
     /// <returns>A deferred expression representing the modulo.</returns>
-    public static GpuBigIntExpr operator %(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator %(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new ModExpression(leftOperand, rightOperand));
 
     /// <summary>Performs bitwise AND on two big integers using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A deferred expression representing the bitwise AND.</returns>
-    public static GpuBigIntExpr operator &(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator &(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new BitwiseAndExpression(leftOperand, rightOperand));
 
     /// <summary>Shifts a big integer left by a specified number of bits using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The value to shift.</param>
     /// <param name="shiftBits">The number of bits to shift.</param>
     /// <returns>A deferred expression representing the left shift.</returns>
-    public static GpuBigIntExpr operator <<(GpuUIntBigInteger leftOperand, int shiftBits) =>
+    public static GpuBigUIntExpr operator <<(GpuUIntBigInteger leftOperand, int shiftBits) =>
         new(new ShiftLeftExpression(leftOperand, shiftBits));
 
     /// <summary>Shifts a big integer right by a specified number of bits using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The value to shift.</param>
     /// <param name="shiftBits">The number of bits to shift.</param>
     /// <returns>A deferred expression representing the right shift.</returns>
-    public static GpuBigIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) =>
+    public static GpuBigUIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) =>
         new(new ShiftRightExpression(leftOperand, shiftBits));
 
     /// <summary>Performs bitwise OR on two big integers using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A deferred expression representing the bitwise OR.</returns>
-    public static GpuBigIntExpr operator |(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator |(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new BitwiseOrExpression(leftOperand, rightOperand));
 
     /// <summary>Performs bitwise exclusive OR on two big integers using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A deferred expression representing the bitwise XOR.</returns>
-    public static GpuBigIntExpr operator ^(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public static GpuBigUIntExpr operator ^(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         new(new BitwiseXorExpression(leftOperand, rightOperand));
 
     /// <summary>Performs bitwise NOT on a big integer using lazy expression evaluation.</summary>
     /// <param name="leftOperand">The operand.</param>
     /// <returns>A deferred expression representing the bitwise NOT.</returns>
-    public static GpuBigIntExpr operator ~(GpuUIntBigInteger leftOperand) =>
+    public static GpuBigUIntExpr operator ~(GpuUIntBigInteger leftOperand) =>
         new(new BitwiseNotExpression(leftOperand));
 
     /// <summary>Determines whether two big integers represent the same value on the GPU.</summary>
