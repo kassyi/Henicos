@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
@@ -9,7 +9,7 @@ namespace Henicos.PiBenchmark;
 
 /// <summary>
 /// GPU-accelerated Chudnovsky binary splitting algorithm for ultra-fast high-precision Pi computation.
-/// Utilizes G# <see cref="GpuBigInteger"/> and NTT multiplication kernels with Zero-PCIe intermediate merges.
+/// Utilizes G# <see cref="GpuUIntBigInteger"/> and NTT multiplication kernels with Zero-PCIe intermediate merges.
 /// </summary>
 public static class GpuChudnovskyPi
 {
@@ -143,7 +143,7 @@ public static class GpuChudnovskyPi
     /// Pi = (426880 * Sqrt(10005 * 10^(2*totalDigits)) * Q) / T
     /// using GPU-accelerated NTT multiplication, Sqrt, and Newton-Raphson division.
     /// </summary>
-    private static GpuBigInteger ComputeFinalPiFraction(GpuContext context, GpuHypergeometricPqt pqt, int digits,
+    private static GpuUIntBigInteger ComputeFinalPiFraction(GpuContext context, GpuHypergeometricPqt pqt, int digits,
         int totalDigits,
         bool asHex)
     {
@@ -159,10 +159,10 @@ public static class GpuChudnovskyPi
         return gpuPiExt;
     }
 
-    private static GpuBigInteger ComputeSqrtBase(GpuContext context, int digits, int totalDigits, bool asHex)
+    private static GpuUIntBigInteger ComputeSqrtBase(GpuContext context, int digits, int totalDigits, bool asHex)
     {
         var swPow = Stopwatch.StartNew();
-        GpuBigInteger gpuSqrtBase;
+        GpuUIntBigInteger gpuSqrtBase;
 
         if (asHex)
         {
@@ -178,10 +178,10 @@ public static class GpuChudnovskyPi
             var bitIndex = bitShift % 32;
             var pow2Data = new uint[wordIndex + 1];
             pow2Data[wordIndex] = 1u << bitIndex;
-            using var gpuPow2 = new GpuBigInteger(context, pow2Data);
+            using var gpuPow2 = new GpuUIntBigInteger(context, pow2Data);
 
-            using var const10005 = GpuBigInteger.FromBigInteger(context, 10005, 0);
-            gpuSqrtBase = new GpuBigInteger(context, gpuPow2.NumWords + const10005.NumWords);
+            using var const10005 = GpuUIntBigInteger.FromBigInteger(context, 10005, 0);
+            gpuSqrtBase = new GpuUIntBigInteger(context, gpuPow2.NumWords + const10005.NumWords);
             GpuBigIntMath.Mul(gpuPow2, const10005, gpuSqrtBase);
         }
         else
@@ -189,8 +189,8 @@ public static class GpuChudnovskyPi
             // Decimal mode: Shift by 10^(2 * totalDigits)
             Logger.Info("GPU-Pi", $"Computing Sqrt base (10005 * 10^{2 * totalDigits})...");
             using var gpuPow10 = GpuBigIntMath.Pow10(context, 2 * totalDigits);
-            using var const10005 = GpuBigInteger.FromBigInteger(context, 10005, 0);
-            gpuSqrtBase = new GpuBigInteger(context, gpuPow10.NumWords + const10005.NumWords);
+            using var const10005 = GpuUIntBigInteger.FromBigInteger(context, 10005, 0);
+            gpuSqrtBase = new GpuUIntBigInteger(context, gpuPow10.NumWords + const10005.NumWords);
             GpuBigIntMath.Mul(gpuPow10, const10005, gpuSqrtBase);
         }
 
@@ -199,9 +199,9 @@ public static class GpuChudnovskyPi
         return gpuSqrtBase;
     }
 
-    private static GpuBigInteger ComputeNumerator(GpuContext context, GpuBigInteger gpuSqrtBase, GpuBigInteger pqtQ)
+    private static GpuUIntBigInteger ComputeNumerator(GpuContext context, GpuUIntBigInteger gpuSqrtBase, GpuUIntBigInteger pqtQ)
     {
-        using var gpuSqrtResult = new GpuBigInteger(context, gpuSqrtBase.NumWords);
+        using var gpuSqrtResult = new GpuUIntBigInteger(context, gpuSqrtBase.NumWords);
         var swSqrt = Stopwatch.StartNew();
         GpuBigIntDivRem.Sqrt(gpuSqrtBase, gpuSqrtResult);
         swSqrt.Stop();
@@ -209,9 +209,9 @@ public static class GpuChudnovskyPi
         Logger.Info("GPU-Pi", $"Final division (Sqrt) computed in {swSqrt.ElapsedMilliseconds} ms");
 
         var swMul1 = Stopwatch.StartNew();
-        using var gpuConstant = GpuBigInteger.FromBigInteger(context, 426880, 0);
+        using var gpuConstant = GpuUIntBigInteger.FromBigInteger(context, 426880, 0);
         var mulWords1 = gpuSqrtResult.NumWords + gpuConstant.NumWords;
-        using var gpuSqrtWithConstant = new GpuBigInteger(context, mulWords1);
+        using var gpuSqrtWithConstant = new GpuUIntBigInteger(context, mulWords1);
         GpuBigIntMath.Mul(gpuSqrtResult, gpuConstant, gpuSqrtWithConstant);
         swMul1.Stop();
         Logger.Info("GPU-Pi",
@@ -219,7 +219,7 @@ public static class GpuChudnovskyPi
 
         var swMul2 = Stopwatch.StartNew();
         var mulWords2 = gpuSqrtWithConstant.NumWords + pqtQ.NumWords;
-        var gpuNumerator = new GpuBigInteger(context, mulWords2);
+        var gpuNumerator = new GpuUIntBigInteger(context, mulWords2);
         GpuBigIntMath.Mul(gpuSqrtWithConstant, pqtQ, gpuNumerator);
         swMul2.Stop();
         Logger.Info("GPU-Pi", $"Final division (Mul2: * Q) computed in {swMul2.ElapsedMilliseconds} ms");
@@ -227,15 +227,15 @@ public static class GpuChudnovskyPi
         return gpuNumerator;
     }
 
-    private static GpuBigInteger ExecuteFinalDivision(GpuContext context, GpuBigInteger numerator,
-        GpuBigInteger denominator)
+    private static GpuUIntBigInteger ExecuteFinalDivision(GpuContext context, GpuUIntBigInteger numerator,
+        GpuUIntBigInteger denominator)
     {
         var targetWords = Math.Max(numerator.NumWords, denominator.NumWords);
         using var paddedNumerator = numerator.PadTo(targetWords);
         using var paddedDenominator = denominator.PadTo(targetWords);
 
-        var gpuPiExt = new GpuBigInteger(context, targetWords);
-        using var remainder = new GpuBigInteger(context, targetWords);
+        var gpuPiExt = new GpuUIntBigInteger(context, targetWords);
+        using var remainder = new GpuUIntBigInteger(context, targetWords);
 
         // Execute Final Division entirely on GPU via Newton-Raphson NTT Division
         GpuBigIntDivRem.DivRem(paddedNumerator, paddedDenominator, gpuPiExt, remainder);
@@ -249,7 +249,7 @@ public static class GpuChudnovskyPi
     /// </summary>
     private static void WritePiOutput(
         GpuContext context,
-        GpuBigInteger gpuPiExt,
+        GpuUIntBigInteger gpuPiExt,
         int targetWords,
         int digits,
         int extraDigits,
@@ -276,7 +276,7 @@ public static class GpuChudnovskyPi
         }
     }
 
-    private static void WriteHexPiOutput(GpuBigInteger gpuPiExt, int digits, string? outputPath)
+    private static void WriteHexPiOutput(GpuUIntBigInteger gpuPiExt, int digits, string? outputPath)
     {
         // Exact bits that are guaranteed to be correct (word-aligned)
         var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
@@ -340,7 +340,7 @@ public static class GpuChudnovskyPi
 
     private static void WriteDecimalPiOutput(
         GpuContext context,
-        GpuBigInteger gpuPiExt,
+        GpuUIntBigInteger gpuPiExt,
         int targetWords,
         int digits,
         int extraDigits,
@@ -348,9 +348,9 @@ public static class GpuChudnovskyPi
     {
         // Remove extra digits from result by integer division: piExt = piExt / 10^extraDigits
         var extraDivisor = BigInteger.Pow(10, extraDigits);
-        using var extraDivGpu = GpuBigInteger.FromBigInteger(context, extraDivisor, targetWords);
-        using var finalPi = new GpuBigInteger(context, targetWords);
-        using var finalRem = new GpuBigInteger(context, targetWords);
+        using var extraDivGpu = GpuUIntBigInteger.FromBigInteger(context, extraDivisor, targetWords);
+        using var finalPi = new GpuUIntBigInteger(context, targetWords);
+        using var finalRem = new GpuUIntBigInteger(context, targetWords);
         using var paddedPiExt = gpuPiExt.PadTo(targetWords);
         GpuBigIntDivRem.DivRem(paddedPiExt, extraDivGpu, finalPi, finalRem);
 
@@ -444,18 +444,18 @@ public static class GpuChudnovskyPi
         var sw = Stopwatch.StartNew();
         var pNeg = cpu.P < 0;
         var absP = BigInteger.Abs(cpu.P);
-        var gpuP = GpuBigInteger.FromBigInteger(context, absP, 0);
+        var gpuP = GpuUIntBigInteger.FromBigInteger(context, absP, 0);
 
-        var gpuQ = GpuBigInteger.FromBigInteger(context, cpu.Q, 0);
+        var gpuQ = GpuUIntBigInteger.FromBigInteger(context, cpu.Q, 0);
 
         var tNeg = cpu.T < 0;
         var absT = BigInteger.Abs(cpu.T);
-        var gpuT = GpuBigInteger.FromBigInteger(context, absT, 0);
+        var gpuT = GpuUIntBigInteger.FromBigInteger(context, absT, 0);
 
         var result = new GpuHypergeometricPqt(
-            new SignedGpuBigInteger(gpuP, pNeg),
+            new GpuBigInteger(gpuP, pNeg),
             gpuQ,
-            new SignedGpuBigInteger(gpuT, tNeg)
+            new GpuBigInteger(gpuT, tNeg)
         );
         sw.Stop();
         Logger.Debug("GPU-Pi", $"UploadToGpu took {sw.ElapsedMilliseconds} ms");

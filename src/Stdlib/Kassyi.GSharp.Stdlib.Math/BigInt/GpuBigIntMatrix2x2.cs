@@ -1,7 +1,7 @@
-namespace Kassyi.GSharp.Stdlib.Math.BigInt;
+﻿namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
-/// Represents a 2x2 transition matrix of arbitrary-precision integers (<see cref="GpuBigInteger"/>) allocated in GPU device memory.
+/// Represents a 2x2 transition matrix of arbitrary-precision integers (<see cref="GpuUIntBigInteger"/>) allocated in GPU device memory.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,45 +17,45 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 public class GpuBigIntMatrix2x2 : IDisposable
 {
     /// <summary>
-    /// Gets the <see cref="GpuBigInteger"/> element located at row 0, column 0 ($M_{00}$) in GPU device memory.
+    /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 0, column 0 ($M_{00}$) in GPU device memory.
     /// </summary>
     /// <value>
     /// The arbitrary-precision integer representing the top-left element of the matrix.
     /// </value>
-    public GpuBigInteger M00
+    public GpuUIntBigInteger M00
     {
         get;
     }
 
     /// <summary>
-    /// Gets the <see cref="GpuBigInteger"/> element located at row 0, column 1 ($M_{01}$) in GPU device memory.
+    /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 0, column 1 ($M_{01}$) in GPU device memory.
     /// </summary>
     /// <value>
     /// The arbitrary-precision integer representing the top-right element of the matrix.
     /// </value>
-    public GpuBigInteger M01
+    public GpuUIntBigInteger M01
     {
         get;
     }
 
     /// <summary>
-    /// Gets the <see cref="GpuBigInteger"/> element located at row 1, column 0 ($M_{10}$) in GPU device memory.
+    /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 1, column 0 ($M_{10}$) in GPU device memory.
     /// </summary>
     /// <value>
     /// The arbitrary-precision integer representing the bottom-left element of the matrix.
     /// </value>
-    public GpuBigInteger M10
+    public GpuUIntBigInteger M10
     {
         get;
     }
 
     /// <summary>
-    /// Gets the <see cref="GpuBigInteger"/> element located at row 1, column 1 ($M_{11}$) in GPU device memory.
+    /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 1, column 1 ($M_{11}$) in GPU device memory.
     /// </summary>
     /// <value>
     /// The arbitrary-precision integer representing the bottom-right element of the matrix.
     /// </value>
-    public GpuBigInteger M11
+    public GpuUIntBigInteger M11
     {
         get;
     }
@@ -101,10 +101,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
 
         Context = context;
         IsOddStep = isOddStep;
-        M00 = new GpuBigInteger(context, numWords);
-        M01 = new GpuBigInteger(context, numWords);
-        M10 = new GpuBigInteger(context, numWords);
-        M11 = new GpuBigInteger(context, numWords);
+        M00 = new GpuUIntBigInteger(context, numWords);
+        M01 = new GpuUIntBigInteger(context, numWords);
+        M10 = new GpuUIntBigInteger(context, numWords);
+        M11 = new GpuUIntBigInteger(context, numWords);
     }
 
     /// <summary>
@@ -176,8 +176,8 @@ public class GpuBigIntMatrix2x2 : IDisposable
         var outWords = v.M00.NumWords + u.M00.NumWords;
         var result = new GpuBigIntMatrix2x2(ctx, outWords, v.IsOddStep ^ u.IsOddStep);
 
-        using var temp1 = new GpuBigInteger(ctx, outWords);
-        using var temp2 = new GpuBigInteger(ctx, outWords);
+        using var temp1 = new GpuUIntBigInteger(ctx, outWords);
+        using var temp2 = new GpuUIntBigInteger(ctx, outWords);
 
         // M00 = v00 * u00 + v01 * u10
         GpuBigIntMath.Mul(v.M00, u.M00, temp1);
@@ -205,10 +205,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <summary>
     /// Applies this 2x2 reduction matrix to a pair of GPU integers (<paramref name="a"/> and <paramref name="b"/>), storing the reduced outputs in <paramref name="outA"/> and <paramref name="outB"/>.
     /// </summary>
-    /// <param name="a">The first operand <see cref="GpuBigInteger"/> in the vector $\begin{pmatrix} a \\ b \end{pmatrix}$. Cannot be <see langword="null"/>.</param>
-    /// <param name="b">The second operand <see cref="GpuBigInteger"/> in the vector $\begin{pmatrix} a \\ b \end{pmatrix}$. Cannot be <see langword="null"/>.</param>
-    /// <param name="outA">The destination <see cref="GpuBigInteger"/> to receive the transformed first element $A'$. Cannot be <see langword="null"/>.</param>
-    /// <param name="outB">The destination <see cref="GpuBigInteger"/> to receive the transformed second element $B'$. Cannot be <see langword="null"/>.</param>
+    /// <param name="a">The first operand <see cref="GpuUIntBigInteger"/> in the vector $\begin{pmatrix} a \\ b \end{pmatrix}$. Cannot be <see langword="null"/>.</param>
+    /// <param name="b">The second operand <see cref="GpuUIntBigInteger"/> in the vector $\begin{pmatrix} a \\ b \end{pmatrix}$. Cannot be <see langword="null"/>.</param>
+    /// <param name="outA">The destination <see cref="GpuUIntBigInteger"/> to receive the transformed first element $A'$. Cannot be <see langword="null"/>.</param>
+    /// <param name="outB">The destination <see cref="GpuUIntBigInteger"/> to receive the transformed second element $B'$. Cannot be <see langword="null"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="a"/>, <paramref name="b"/>, <paramref name="outA"/>, or <paramref name="outB"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuContext"/> as this matrix.</exception>
     /// <remarks>
@@ -235,7 +235,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// Destination buffers <paramref name="outA"/> and <paramref name="outB"/> are zero-cleared prior to copying the lower limbs of the calculated results.
     /// </para>
     /// </remarks>
-    public void Apply(GpuBigInteger a, GpuBigInteger b, GpuBigInteger outA, GpuBigInteger outB)
+    public void Apply(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger outA, GpuUIntBigInteger outB)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
@@ -250,10 +250,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
         var ctx = Context;
         var tempWords = M00.NumWords + System.Math.Max(a.NumWords, b.NumWords);
 
-        using var tempA1 = new GpuBigInteger(ctx, tempWords);
-        using var tempA2 = new GpuBigInteger(ctx, tempWords);
-        using var tempB1 = new GpuBigInteger(ctx, tempWords);
-        using var tempB2 = new GpuBigInteger(ctx, tempWords);
+        using var tempA1 = new GpuUIntBigInteger(ctx, tempWords);
+        using var tempA2 = new GpuUIntBigInteger(ctx, tempWords);
+        using var tempB1 = new GpuUIntBigInteger(ctx, tempWords);
+        using var tempB2 = new GpuUIntBigInteger(ctx, tempWords);
 
         GpuBigIntMath.Mul(M00, a, tempA1);
         GpuBigIntMath.Mul(M01, b, tempA2);
@@ -261,8 +261,8 @@ public class GpuBigIntMatrix2x2 : IDisposable
         GpuBigIntMath.Mul(M10, a, tempB1);
         GpuBigIntMath.Mul(M11, b, tempB2);
 
-        using var resA = new GpuBigInteger(ctx, tempWords);
-        using var resB = new GpuBigInteger(ctx, tempWords);
+        using var resA = new GpuUIntBigInteger(ctx, tempWords);
+        using var resB = new GpuUIntBigInteger(ctx, tempWords);
 
         if (!IsOddStep)
         {
@@ -291,7 +291,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
 
     /// <inheritdoc />
     /// <remarks>
-    /// Disposes all four constituent <see cref="GpuBigInteger"/> instances (<see cref="M00"/>, <see cref="M01"/>, <see cref="M10"/>, and <see cref="M11"/>) and releases their GPU device memory allocations.
+    /// Disposes all four constituent <see cref="GpuUIntBigInteger"/> instances (<see cref="M00"/>, <see cref="M01"/>, <see cref="M10"/>, and <see cref="M11"/>) and releases their GPU device memory allocations.
     /// </remarks>
     public void Dispose()
     {

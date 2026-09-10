@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Runtime.Jit;
+﻿using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos.Cli;
 
@@ -15,13 +15,13 @@ public class GpuBigIntBenchmark : IDisposable
     private GpuContext _contextJit = null!;
     private GpuContext _contextLegacy = null!;
 
-    private GpuBigInteger _gpuAJit = null!;
-    private GpuBigInteger _gpuBJit = null!;
-    private GpuBigInteger _gpuResultJit = null!;
+    private GpuUIntBigInteger _gpuAJit = null!;
+    private GpuUIntBigInteger _gpuBJit = null!;
+    private GpuUIntBigInteger _gpuResultJit = null!;
 
-    private GpuBigInteger _gpuALegacy = null!;
-    private GpuBigInteger _gpuBLegacy = null!;
-    private GpuBigInteger _gpuResultLegacy = null!;
+    private GpuUIntBigInteger _gpuALegacy = null!;
+    private GpuUIntBigInteger _gpuBLegacy = null!;
+    private GpuUIntBigInteger _gpuResultLegacy = null!;
 
     private JitEngine.CudaContextScope _scope;
 
@@ -46,13 +46,13 @@ public class GpuBigIntBenchmark : IDisposable
         hostA[NumWords - 1] |= 0x40000000;
         hostB[NumWords - 1] &= 0x3FFFFFFF;
 
-        _gpuAJit = new GpuBigInteger(_contextJit, hostA);
-        _gpuBJit = new GpuBigInteger(_contextJit, hostB);
-        _gpuResultJit = new GpuBigInteger(_contextJit, NumWords);
+        _gpuAJit = new GpuUIntBigInteger(_contextJit, hostA);
+        _gpuBJit = new GpuUIntBigInteger(_contextJit, hostB);
+        _gpuResultJit = new GpuUIntBigInteger(_contextJit, NumWords);
 
-        _gpuALegacy = new GpuBigInteger(_contextLegacy, hostA);
-        _gpuBLegacy = new GpuBigInteger(_contextLegacy, hostB);
-        _gpuResultLegacy = new GpuBigInteger(_contextLegacy, NumWords);
+        _gpuALegacy = new GpuUIntBigInteger(_contextLegacy, hostA);
+        _gpuBLegacy = new GpuUIntBigInteger(_contextLegacy, hostB);
+        _gpuResultLegacy = new GpuUIntBigInteger(_contextLegacy, NumWords);
     }
 
     [GlobalCleanup]

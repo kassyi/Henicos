@@ -1,18 +1,18 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Kassyi.GSharp.Stdlib.Math.IO;
 
 /// <summary>
 /// Provides high-performance GPU-accelerated Divide and Conquer (D&amp;C) radix conversion
-/// for streaming arbitrary-precision <see cref="GpuBigInteger"/> to decimal text.
+/// for streaming arbitrary-precision <see cref="GpuUIntBigInteger"/> to decimal text.
 /// </summary>
 public static class GpuRadixConverter
 {
     private const int LeafThresholdDigits = 10_000;
 
     /// <summary>
-    /// Converts a <see cref="GpuBigInteger"/> to decimal digits using GPU-accelerated divide-and-conquer division,
+    /// Converts a <see cref="GpuUIntBigInteger"/> to decimal digits using GPU-accelerated divide-and-conquer division,
     /// streaming the output directly to a <see cref="TextWriter"/>.
     /// </summary>
     /// <param name="context">The GPU computation context.</param>
@@ -22,7 +22,7 @@ public static class GpuRadixConverter
     /// <param name="isMostSignificant">True if formatting the integer part with a decimal point (e.g. "3.1415...").</param>
     public static void ConvertAndWrite(
         GpuContext context,
-        GpuBigInteger value,
+        GpuUIntBigInteger value,
         int targetDigits,
         TextWriter writer,
         bool isMostSignificant = false)
@@ -32,8 +32,8 @@ public static class GpuRadixConverter
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits);
 
-        var radixCache = new Dictionary<int, GpuBigInteger>();
-        var activePointers = new List<GpuBigInteger>();
+        var radixCache = new Dictionary<int, GpuUIntBigInteger>();
+        var activePointers = new List<GpuUIntBigInteger>();
 
         try
         {
@@ -50,11 +50,11 @@ public static class GpuRadixConverter
 
     private static void ConvertAndWriteInternal(
         GpuContext context,
-        GpuBigInteger value,
+        GpuUIntBigInteger value,
         int targetDigits,
         TextWriter writer,
-        Dictionary<int, GpuBigInteger> radixCache,
-        List<GpuBigInteger> activePointers,
+        Dictionary<int, GpuUIntBigInteger> radixCache,
+        List<GpuUIntBigInteger> activePointers,
         bool isMostSignificant)
     {
         var actualWords = (GpuBigIntDivRem.GetActualBits(value) + 31) / 32;
@@ -111,8 +111,8 @@ public static class GpuRadixConverter
         using var paddedValue = value.PadTo(targetWords);
         using var paddedDivisor = divisorGpu.PadTo(targetWords);
 
-        using var quotient = new GpuBigInteger(context, targetWords);
-        using var remainder = new GpuBigInteger(context, targetWords);
+        using var quotient = new GpuUIntBigInteger(context, targetWords);
+        using var remainder = new GpuUIntBigInteger(context, targetWords);
 
         GpuBigIntDivRem.DivRem(paddedValue, paddedDivisor, quotient, remainder);
 

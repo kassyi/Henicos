@@ -1,4 +1,4 @@
-// ReSharper disable All
+﻿// ReSharper disable All
 
 using System;
 using Kassyi.GSharp.Core;
@@ -247,9 +247,9 @@ public static partial class ComprehensiveSpecKernel
     {
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
 
-        using var a = new GpuBigInteger(context, 1024);
-        using var b = new GpuBigInteger(context, 1024);
-        using var result = new GpuBigInteger(context, 1024);
+        using var a = new GpuUIntBigInteger(context, 1024);
+        using var b = new GpuUIntBigInteger(context, 1024);
+        using var result = new GpuUIntBigInteger(context, 1024);
 
         // AST Construction: evaluated lazily and dispatched to GPU
         result.Value = a + b;
