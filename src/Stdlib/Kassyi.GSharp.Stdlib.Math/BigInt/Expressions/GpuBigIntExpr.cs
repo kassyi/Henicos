@@ -66,4 +66,15 @@ public readonly struct GpuBigIntExpr
     /// <summary>Constructs a lazy bitwise NOT expression.</summary>
     public static GpuBigIntExpr operator ~(GpuBigIntExpr left)
         => new(~left.AbsoluteExpr, left.IsNegative);
+
+    /// <summary>
+    /// Evaluates this signed expression into the provided destination buffer.
+    /// </summary>
+    /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
+    /// <returns>A new <see cref="GpuBigInteger"/> instance wrapping the destination buffer with the evaluated sign.</returns>
+    public GpuBigInteger Evaluate(GpuUIntBigInteger destination)
+    {
+        destination.Value = AbsoluteExpr;
+        return new GpuBigInteger(destination, IsNegative);
+    }
 }

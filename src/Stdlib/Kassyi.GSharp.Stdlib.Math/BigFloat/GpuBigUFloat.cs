@@ -33,32 +33,36 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
         Exponent = exponent;
     }
 
-    public readonly int AlignRadixPoint(GpuBigUFloat<TSize> other, out GpuBigUFloat<TSize> alignedOther,
-        out bool stickyBit)
+    public readonly void AlignRadixPoint(GpuBigUFloat<TSize> other, out GpuBigUFloat<TSize> alignedThis,
+        out GpuBigUFloat<TSize> alignedOther, out bool stickyThis, out bool stickyOther)
     {
         var expDiff = (long)Exponent - other.Exponent;
         var targetExp = expDiff > 0 ? Exponent : other.Exponent;
 
+        stickyThis = false;
+        stickyOther = false;
+
         if (expDiff == 0)
         {
+            alignedThis = this;
             alignedOther = other;
-            stickyBit = false;
-            return 0;
+            return;
         }
 
         if (expDiff > 0)
         {
             var shiftAmount = expDiff > int.MaxValue ? int.MaxValue : (int)expDiff;
-            var shiftedSig = other.Significand.ShiftRight(shiftAmount, out stickyBit);
+            var shiftedSig = other.Significand.ShiftRight(shiftAmount, out stickyOther);
+            alignedThis = this;
             alignedOther = new GpuBigUFloat<TSize>(shiftedSig, targetExp);
-            return (int)(expDiff > int.MaxValue ? int.MaxValue : expDiff);
         }
         else
         {
             var absDiff = -expDiff;
-            alignedOther = new GpuBigUFloat<TSize>(other.Significand, targetExp);
-            stickyBit = false;
-            return (int)(absDiff > int.MaxValue ? int.MaxValue : absDiff);
+            var shiftAmount = absDiff > int.MaxValue ? int.MaxValue : (int)absDiff;
+            var shiftedSig = Significand.ShiftRight(shiftAmount, out stickyThis);
+            alignedThis = new GpuBigUFloat<TSize>(shiftedSig, targetExp);
+            alignedOther = other;
         }
     }
 
@@ -76,16 +80,19 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
         {
             // overflow: shift right by 1 to normalize
             normSig = normSig.ShiftRight(1, out _);
-            // manually set the MSB to 1
-            // (Assuming MSB logic is handled externally or by shift, but strictly speaking we should set the MSB.
-            // For now, we rely on the Add method doing the carry logic properly if it were to return carry.)
-            normExp = Exponent == int.MaxValue ? int.MaxValue : Exponent + 1;
+            normSig = normSig.SetMsb();
+            checked
+            {
+                normExp = Exponent + 1;
+            }
         }
         else if (leadingZeros > 0)
         {
             normSig = normSig.ShiftLeft(leadingZeros);
-            var subExp = (long)Exponent - leadingZeros;
-            normExp = subExp < int.MinValue ? int.MinValue : (int)subExp;
+            checked
+            {
+                normExp = Exponent - leadingZeros;
+            }
         }
         else
         {
@@ -113,8 +120,7 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
                     else
                     {
                         // round to even (check LSB)
-                        var shifted = Significand.ShiftRight(1, out var lsb);
-                        increment = lsb;
+                        increment = Significand.IsOdd();
                     }
                 }
 
@@ -130,12 +136,14 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
 
         if (increment)
         {
-            var one = new GpuUIntBigInteger<TSize>(
-                default); // pseudo code: need actual 1, assuming + operator handles it
-            var roundedSig = Significand + one;
-            // if carry out occurred during round, we should normalize again.
-            // for simplicity, returning without carry out check here, assuming GpuUIntBigInteger handles overflow.
-            return new GpuBigUFloat<TSize>(roundedSig, Exponent);
+            var one = GpuUIntBigInteger<TSize>.One;
+            var roundedSig = Significand.Add(one, out var carryOut);
+            var result = new GpuBigUFloat<TSize>(roundedSig, Exponent);
+            if (carryOut)
+            {
+                return result.Normalize(0, true);
+            }
+            return result;
         }
 
         return new GpuBigUFloat<TSize>(Significand, Exponent);
@@ -153,25 +161,26 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
         var targetExp = Exponent;
         var sigA = Significand;
         var sigB = other.Significand;
-        bool stickyA = false, stickyB = false;
+        bool guard = false, round = false, stickyA = false, stickyB = false;
 
         if (expDiff > 0)
         {
             var shiftAmount = expDiff > int.MaxValue ? int.MaxValue : (int)expDiff;
-            sigB = sigB.ShiftRight(shiftAmount, out stickyB);
+            sigB = sigB.ShiftRight(shiftAmount, out guard, out round, out stickyB);
         }
         else if (expDiff < 0)
         {
             var absDiff = -expDiff;
             var shiftAmount = absDiff > int.MaxValue ? int.MaxValue : (int)absDiff;
-            sigA = sigA.ShiftRight(shiftAmount, out stickyA);
+            sigA = sigA.ShiftRight(shiftAmount, out guard, out round, out stickyA);
             targetExp = other.Exponent;
         }
 
         var resultSig = sigA.Add(sigB, out var carry);
         var result = new GpuBigUFloat<TSize>(resultSig, targetExp);
-        result = result.Normalize(0, carry);
-        return result.Round(GpuBigFloatRoundingMode.RoundToNearestEven, false, false, stickyA | stickyB);
+        var leadingZeros = carry || resultSig.IsZero() ? 0 : resultSig.CountLeadingZeros();
+        result = result.Normalize(leadingZeros, carry);
+        return result.Round(GpuBigFloatRoundingMode.RoundToNearestEven, guard, round, stickyA | stickyB);
     }
 
     public readonly GpuBigUFloat<TSize> Subtract(GpuBigUFloat<TSize> other)
@@ -231,17 +240,8 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
             return 1;
         }
 
-        if (Exponent > other.Exponent)
-        {
-            return 1;
-        }
-
-        if (Exponent < other.Exponent)
-        {
-            return -1;
-        }
-
-        return Significand.CompareTo(other.Significand);
+        AlignRadixPoint(other, out var alignedThis, out var alignedOther, out _, out _);
+        return alignedThis.Significand.CompareTo(alignedOther.Significand);
     }
 
     public readonly bool Equals(GpuBigUFloat<TSize> other) => CompareTo(other) == 0;
@@ -255,7 +255,8 @@ public struct GpuBigUFloat<TSize> : IEquatable<GpuBigUFloat<TSize>>, IComparable
             return 0;
         }
 
-        return HashCode.Combine(Significand.GetHashCode(), Exponent);
+        var normalized = Normalize(Significand.CountLeadingZeros(), false);
+        return HashCode.Combine(normalized.Significand.GetHashCode(), normalized.Exponent);
     }
 
     public static bool operator ==(GpuBigUFloat<TSize> left, GpuBigUFloat<TSize> right) => left.Equals(right);
