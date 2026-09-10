@@ -231,7 +231,7 @@ internal static class StructTranspiler
 
     private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
     {
-        var guardName = $"__GSHARP_STRUCT_{structSym.ToSafeCppIdentifier()}_{structSym.TypeParameters.Length}__";
+        var guardName = $"__GSHARP_STRUCT_{structSym.ToSafeCppIdentifier()}__";
 
         context.Writer.Append("#ifndef ").AppendLine(guardName)
             .Append("#define ").AppendLine(guardName);
