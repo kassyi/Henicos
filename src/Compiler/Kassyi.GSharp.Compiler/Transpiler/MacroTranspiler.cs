@@ -2,8 +2,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
-[SuppressMessage("ReSharper", "UnusedType.Global", Justification = "Used implicitly by Roslyn compiler infra")]
-[SuppressMessage("ReSharper", "UnusedMember.Global", Justification = "Used implicitly by Roslyn compiler infra")]
+// ReSharper disable once UnusedType.Global -- Used implicitly by Roslyn compiler infra
+// ReSharper disable once UnusedMember.Global -- Used implicitly by Roslyn compiler infra
 internal static class MacroTranspiler
 {
     public static bool TryTranspileMacro(ExpressionStatementSyntax node, ref TranspileContext context)
