@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Compiler.Transpiler.Rules;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -232,10 +232,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => StatementTranspilers.TranspileReturnStatement(node, ref Context);
 
     public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
-        => DeclarationTranspilers.TranspileLocalDeclarationStatement(node, ref Context);
+        => LocalDeclarationStatementTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
-        => DeclarationTranspilers.TranspileVariableDeclaration(node, ref Context);
+        => VariableDeclarationTranspilerRule.Instance.Transpile(node, ref Context);
 
     public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
         => StatementTranspilers.TranspileLocalFunctionStatement(node, ref Context);
@@ -249,7 +249,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        DeclarationTranspilers.HoistDeclarationExpressions(node, ref Context);
+        DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref Context);
         Visit(node.Expression);
         Context.Writer.AppendSemiColon();
     }

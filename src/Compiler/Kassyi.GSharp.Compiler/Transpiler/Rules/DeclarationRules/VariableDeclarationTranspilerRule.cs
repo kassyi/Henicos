@@ -1,20 +1,13 @@
-namespace Kassyi.GSharp.Compiler.Transpiler;
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 
-/// <summary>Transpiles C# variable declarations and static/dynamic shared memory allocations to CUDA C++.</summary>
-/// <remarks><para>Implements: <b>SYN-03, SYN-18, SYN-20, SYN-23, SYN-24, SYN-30, SYN-33, SYN-74, SYN-79</b></para></remarks>
-internal static class DeclarationTranspilers
+/// <summary>
+/// Strategy rule for transpiling variable declarations, including stack allocations.
+/// </summary>
+public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
-    private readonly struct SharedMemoryAllocation(
-        VariableDeclaratorSyntax declarator,
-        ExpressionSyntax sizeArgument,
-        int? constantSize)
-    {
-        public VariableDeclaratorSyntax Declarator { get; } = declarator;
-        public ExpressionSyntax SizeArgument { get; } = sizeArgument;
-        public int? ConstantSize { get; } = constantSize;
-        public bool IsDynamic => !ConstantSize.HasValue;
-        public int StaticSize => ConstantSize ?? 0;
-    }
+    public static readonly VariableDeclarationTranspilerRule Instance = new();
+
+    private VariableDeclarationTranspilerRule() { }
 
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,
@@ -28,187 +21,7 @@ internal static class DeclarationTranspilers
         public bool ShouldSplit { get; } = shouldSplit;
     }
 
-    public static void TranspileLocalDeclarationStatement(LocalDeclarationStatementSyntax node,
-        ref TranspileContext context)
-    {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-        if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
-            typeSymbol.ContainingNamespace.IsCoreNamespace())
-        {
-            ProcessSharedMemoryDeclaration(node, (INamedTypeSymbol)typeSymbol, ref context);
-            return;
-        }
-
-        HoistDeclarationExpressions(node, ref context);
-        context.Visitor.VisitVariableDeclaration(node.Declaration);
-        context.Writer.AppendSemiColon();
-    }
-
-    private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
-        INamedTypeSymbol typeSymbol, ref TranspileContext context)
-    {
-        var typeArg = typeSymbol.TypeArguments[0];
-
-        for (var i = 0; i < node.Declaration.Variables.Count; i++)
-        {
-            var alloc = AnalyzeSharedMemoryAllocation(node.Declaration.Variables[i], context.SemanticModel);
-            if (alloc == null)
-            {
-                continue;
-            }
-
-            if (alloc.Value.IsDynamic)
-            {
-                WriteDynamicSharedMemory(alloc.Value, typeArg, node, i, ref context);
-            }
-            else
-            {
-                WriteStaticSharedMemory(alloc.Value, typeArg, node, i, ref context);
-            }
-        }
-    }
-
-    private static SharedMemoryAllocation? AnalyzeSharedMemoryAllocation(VariableDeclaratorSyntax declarator,
-        SemanticModel semanticModel)
-    {
-        ExpressionSyntax? sizeArg = null;
-
-        if (declarator.Initializer?.Value is ObjectCreationExpressionSyntax objCreation)
-        {
-            sizeArg = objCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-        }
-        else if (declarator.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
-        {
-            sizeArg = implCreation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-        }
-
-        if (sizeArg == null)
-        {
-            return null;
-        }
-
-        var constantValue = semanticModel.GetConstantValue(sizeArg);
-        return new SharedMemoryAllocation(
-            declarator,
-            sizeArg,
-            constantValue.HasValue ? Convert.ToInt32(constantValue.Value!) : null
-        );
-    }
-
-    private static void WriteStaticSharedMemory(SharedMemoryAllocation alloc,
-        ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i, ref TranspileContext context)
-    {
-        CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
-
-        context.Writer.Append("__shared__ ");
-        context.AppendType(typeArg);
-        context.Writer.Append($" {alloc.Declarator.Identifier.Text}");
-        using (context.Writer.Brackets())
-        {
-            context.Visitor.Visit(alloc.SizeArgument);
-        }
-
-        context.Writer.Append(";");
-        if (i < node.Declaration.Variables.Count - 1)
-        {
-            context.Writer.AppendLine();
-        }
-    }
-
-    private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
-        ITypeSymbol typeArg, ref TranspileContext context)
-    {
-        var elemSize = context.Dialect.GetApproximateSize(typeArg);
-        var byteSize = elementCount * elemSize;
-        if (byteSize > 32768)
-        {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning,
-                sizeArg.GetLocation(), byteSize, 32768));
-        }
-    }
-
-    private static void WriteDynamicSharedMemory(SharedMemoryAllocation alloc, ITypeSymbol typeArg,
-        LocalDeclarationStatementSyntax node, int index, ref TranspileContext context)
-    {
-        EnsureDynamicSharedMemoryBase(ref context);
-        AlignDynamicSharedMemoryOffset(typeArg, ref context);
-        EmitDynamicSharedMemoryPointerAndAdvance(alloc, typeArg, ref context);
-
-        if (index < node.Declaration.Variables.Count - 1)
-        {
-            context.Writer.AppendLine();
-        }
-    }
-
-    private static void EnsureDynamicSharedMemoryBase(ref TranspileContext context)
-    {
-        if (context.HasEmittedDynamicSmemBase)
-        {
-            return;
-        }
-
-        context.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
-        context.Writer.AppendLine("size_t __smem_offset = 0;");
-        context.HasEmittedDynamicSmemBase = true;
-    }
-
-    private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
-    {
-        // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        context.Writer.Append("__smem_offset = ");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("__smem_offset + alignof");
-            using (context.Writer.Parentheses())
-            {
-                context.AppendType(typeArg);
-            }
-            context.Writer.Append(" - 1");
-        }
-
-        context.Writer.Append(" & ~");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append("alignof");
-            using (context.Writer.Parentheses())
-            {
-                context.AppendType(typeArg);
-            }
-            context.Writer.Append(" - 1");
-        }
-
-        context.Writer.AppendSemiColonLine();
-    }
-
-    private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
-        ITypeSymbol typeArg, ref TranspileContext context)
-    {
-        context.AppendType(typeArg);
-        context.Writer.Append($"* {alloc.Declarator.Identifier.Text} = ");
-        using (context.Writer.Parentheses())
-        {
-            context.AppendType(typeArg);
-            context.Writer.Append("*");
-        }
-
-        context.Writer.Append("(__gsharp_dynamic_smem + __smem_offset)");
-
-        context.Writer.AppendLine(";");
-        context.Writer.Append("__smem_offset += ");
-        using (context.Writer.Parentheses())
-        {
-            context.Visitor.Visit(alloc.SizeArgument);
-        }
-
-        context.Writer.Append(" * sizeof");
-        using (context.Writer.Parentheses())
-        {
-            context.AppendType(typeArg);
-        }
-        context.Writer.AppendSemiColon();
-    }
-
-    public static void TranspileVariableDeclaration(VariableDeclarationSyntax node, ref TranspileContext context)
+    public override void Transpile(VariableDeclarationSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
@@ -501,26 +314,6 @@ internal static class DeclarationTranspilers
 
             context.Writer.Append(" = ");
             context.Visitor.Visit(variable.Initializer.Value);
-        }
-    }
-
-    public static void HoistDeclarationExpressions(SyntaxNode node, ref TranspileContext context)
-    {
-        foreach (var desc in node.DescendantNodes(n => n == node || n is not BlockSyntax))
-        {
-            if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
-            {
-                var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
-                if (typeSymbol != null)
-                {
-                    context.AppendType(typeSymbol);
-                }
-                else
-                {
-                    context.Writer.Append("auto");
-                }
-                context.Writer.AppendLine($" {singleVar.Identifier.Text};");
-            }
         }
     }
 }
