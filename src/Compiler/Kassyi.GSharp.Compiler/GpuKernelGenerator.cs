@@ -6,7 +6,6 @@ namespace Kassyi.GSharp.Compiler;
 
 internal record struct GeneratorConfig(
     string TargetDialect,
-    bool IsAotEnabled,
     bool EmitSource,
     string? IntermediateOutputPath,
     string? CustomEncryptionKey);
@@ -27,12 +26,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     dialect = "Cpu";
                 }
 
-                options.GlobalOptions.TryGetValue("build_property.GSharpAotEnabled", out var aotStr);
-                bool isAotEnabled = string.Equals(aotStr, "true", StringComparison.OrdinalIgnoreCase);
-
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
-                bool emitSource =
-                    !isAotEnabled || string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
+                bool emitSource = string.IsNullOrWhiteSpace(emitSrcStr) || string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
 
                 options.GlobalOptions.TryGetValue("build_property.IntermediateOutputPath", out var objPath);
                 options.GlobalOptions.TryGetValue("build_property.ProjectDir", out var projDir);
@@ -42,7 +37,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpAotEncryptionKey", out var customEncryptionKey);
 
-                return new GeneratorConfig(dialect!, isAotEnabled, emitSource, intermediatePath, customEncryptionKey);
+                return new GeneratorConfig(dialect!, emitSource, intermediatePath, customEncryptionKey);
             });
 
         var kernelMethods = context.SyntaxProvider
@@ -220,7 +215,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         byte[]? aesKey = null;
         string? keyProvider = null;
 
-        if (config.IsAotEnabled && !string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
+        if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
         {
             keyProvider = ResolveKeyProvider(method);
 
@@ -299,7 +294,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var fullCudaSource = preludeSource + commonDeviceSource + kernelSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"{method.ContainingType.Name}_{method.Name}_Wrapper{ext}";
+        var fileName = $"{method.ContainingType.Name}_{method.Name}{ext}";
         var filePath = Path.Combine(config.IntermediateOutputPath!, fileName);
         var keyFilePath = filePath + ".key";
 
