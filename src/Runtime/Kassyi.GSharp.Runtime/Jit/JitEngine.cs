@@ -126,7 +126,9 @@ public sealed class JitEngine
     {
         EnsureInitialized();
 
-        if (s_functionCache.TryGetValue(kernelName, out var lazyHit))
+        var cacheKey = expectedHash != null ? $"{expectedHash}::{kernelName}" : kernelName;
+
+        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
         {
             return lazyHit.Value.Function;
         }
@@ -167,7 +169,7 @@ public sealed class JitEngine
             }
         }
 
-        var lazyModule = s_functionCache.GetOrAdd(kernelName, _ => new Lazy<GpuModule>(() =>
+        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
         {
             using var scope = new CudaContextScope();
             return LoadKernelFunction(processed, kernelName);
