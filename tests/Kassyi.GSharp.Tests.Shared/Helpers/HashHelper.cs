@@ -8,6 +8,7 @@ public static class HashHelper
     /// </summary>
     public static string ComputeShortHash(string text)
     {
+        ArgumentNullException.ThrowIfNull(text);
         ulong hash = 14695981039346656037UL;
         foreach (char c in text)
         {

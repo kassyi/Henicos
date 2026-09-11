@@ -1,5 +1,7 @@
 <Project>
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- 恒久対策: Smart App Control / Defender等によるジェネレーターのロードブロックを回避するため共有コンパイルを無効化 -->
+    <UseSharedCompilation>false</UseSharedCompilation>
   </PropertyGroup>
 </Project>

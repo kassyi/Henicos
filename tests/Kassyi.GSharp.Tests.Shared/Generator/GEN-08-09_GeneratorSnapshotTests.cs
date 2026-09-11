@@ -158,11 +158,8 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
         }
 
         var runResult = driver.GetRunResult();
-        foreach (var t in runResult.GeneratedTrees) {
-            System.IO.File.AppendAllText("dump_trees.txt", testName + " -> " + t.FilePath + "\n");
-        }
         var nonSharedTrees = runResult.GeneratedTrees
-            .Where(t => !t.FilePath.Contains("GSharpShared"))
+            .Where(t => !t.FilePath.Contains("GSharpShared") || t.FilePath.Contains("DeviceCode"))
             .OrderBy(t => t.FilePath)
             .Select(t => $"// File: {System.IO.Path.GetFileName(t.FilePath)}\n{t.GetText().ToString()}");
         var combinedSource = string.Join("\n\n", nonSharedTrees);
@@ -199,12 +196,15 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
 
     [Fact]
     [Trait("FeatureId", "GEN-08")]
-    public async Task Test_SharedPreludeHeader_Snapshot()
+    public async Task Test_GEN08_SharedPreludeHeader_Snapshot()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
         var src = @"using Kassyi.GSharp.Core; public class Dummy { [GpuKernel] public static void Kernel() {} }";
         var syntaxTrees = new List<SyntaxTree> { CSharpSyntaxTree.ParseText(src, options: parseOptions) };
-        var compilation = CSharpCompilation.Create("DummyCompilation").AddSyntaxTrees(syntaxTrees);
+        var compilation = CSharpCompilation.Create("DummyCompilation")
+            .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
+            .AddReferences(Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.BaseCompilation.References)
+            .AddSyntaxTrees(syntaxTrees);
 
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
@@ -217,8 +217,11 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
         
         var runResult = driver.GetRunResult();
         var sharedHeader = runResult.GeneratedTrees
-            .FirstOrDefault(t => t.FilePath.Contains("Shared"))
-            ?.GetText().ToString() ?? "";
+            .FirstOrDefault(t => t.FilePath.Contains("Prelude"))
+            ?.GetText().ToString();
+            
+        Assert.NotNull(sharedHeader);
+        Assert.NotEmpty(sharedHeader);
 
         await Verifier.Verify(sharedHeader, "cs")
             .UseDirectory(GetSnapshotsDirectory())

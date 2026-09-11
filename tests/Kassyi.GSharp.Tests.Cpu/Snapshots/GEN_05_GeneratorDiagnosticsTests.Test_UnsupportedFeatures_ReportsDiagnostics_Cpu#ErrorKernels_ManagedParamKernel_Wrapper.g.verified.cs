@@ -25,7 +25,7 @@ ManagedParamKernel(obj);
 }
 }
 ";
-public static readonly string ManagedParamKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + ManagedParamKernel_Source;
+public static readonly string ManagedParamKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ManagedParamKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ManagedParamKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestSpace.ManagedClass obj);
