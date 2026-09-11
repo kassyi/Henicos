@@ -148,6 +148,97 @@ public sealed class JitEngine
         return lazyModule.Value.Function;
     }
 
+    /// <summary>
+    /// Loads an Ahead-Of-Time (AOT) compiled Fatbin or Cubin binary directly into the CUDA driver.
+    /// Bypasses NVRTC compilation entirely. Validates binary integrity and supports optional decryption.
+    /// </summary>
+    public static IntPtr GetOrLoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName,
+        string? expectedHash = null, string? decryptionKey = null)
+    {
+        EnsureInitialized();
+
+        // Use the kernelName as the primary cache key for AOT modules
+        const ulong OffsetBasis = 14695981039346656037;
+        const ulong Prime = 1099511628211;
+        var hash = HashString(OffsetBasis, Prime, kernelName);
+
+        // Differentiate AOT keys from JIT keys slightly to avoid collisions if they share the same name
+        hash = HashString(hash, Prime, "__AOT__");
+
+        var hash2 = hash ^ Prime;
+        Guid cacheKey;
+        unsafe
+        {
+            var b = stackalloc byte[16];
+            *(ulong*)b = hash;
+            *(ulong*)(b + 8) = hash2;
+            cacheKey = new Guid(new ReadOnlySpan<byte>(b, 16));
+        }
+
+        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
+        {
+            return lazyHit.Value.Function;
+        }
+
+        var fatbinCopy = ProcessAotBinary(aotFatbin, expectedHash, decryptionKey);
+
+        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
+        {
+            using var scope = new CudaContextScope();
+            return LoadKernelFunction(fatbinCopy, kernelName);
+        }));
+
+        return lazyModule.Value.Function;
+    }
+
+    private static byte[] ProcessAotBinary(ReadOnlySpan<byte> binary, string? expectedHash, string? decryptionKey)
+    {
+        byte[] processed = binary.ToArray();
+
+        // 1. Optional Decryption (AES CBC)
+        if (!string.IsNullOrEmpty(decryptionKey))
+        {
+            try
+            {
+                using var sha256Key = SHA256.Create();
+                var keyBytes = sha256Key.ComputeHash(Encoding.UTF8.GetBytes(decryptionKey!));
+
+                using var aes = Aes.Create();
+                aes.Key = keyBytes;
+
+                // Read IV from the first 16 bytes
+                var iv = new byte[16];
+                Array.Copy(processed, 0, iv, 0, 16);
+                aes.IV = iv;
+
+                using var decryptor = aes.CreateDecryptor();
+                using var ms = new MemoryStream(processed, 16, processed.Length - 16);
+                using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+                using var output = new MemoryStream();
+                cs.CopyTo(output);
+                processed = output.ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    "Failed to decrypt AOT binary. Ensure the GSHARP_AOT_DECRYPTION_KEY is correct.", ex);
+            }
+        }
+
+        // 2. Hash Validation
+        if (!string.IsNullOrEmpty(expectedHash))
+        {
+            var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
+            if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    $"AOT Binary hash mismatch. Expected: {expectedHash}, Actual: {actualHash}. The binary may be corrupted or tampered with.");
+            }
+        }
+
+        return processed;
+    }
+
     private static Guid ComputeCacheKey(string kernelName, string baseSource, ReadOnlySpan<JitConstantArg> jitConstants,
         ReadOnlySpan<KeyValuePair<string, string>> macros)
     {
