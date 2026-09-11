@@ -81,7 +81,10 @@ if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0)
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", $"Kassyi.GSharp.Kernels.SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel{archSuffix}.dll");
+var dllName = $"SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_intOutput = intOutput)
 fixed (global::System.Single* p_floatOutput = floatOutput)
 fixed (global::Kassyi.GSharp.Tests.Syntax.CustomPoint* p_pointOutput = pointOutput)

@@ -273,7 +273,10 @@ if (particles.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", $"Kassyi.GSharp.Kernels.ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll");
+var dllName = $"ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, decryptionKey);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)

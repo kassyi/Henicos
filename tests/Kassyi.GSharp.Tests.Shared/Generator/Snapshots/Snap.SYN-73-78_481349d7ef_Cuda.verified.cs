@@ -38,25 +38,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_73_78_ContractsAndPtxKernelsWrapper).Assembly.GetManifestResourceStream("SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin");
-var hashStream = typeof(SYN_73_78_ContractsAndPtxKernelsWrapper).Assembly.GetManifestResourceStream("SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InlinePtxKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InlinePtxKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_data = IntPtr.Zero;
 try
@@ -115,25 +107,17 @@ public static unsafe void Launch_InlinePtxKernel_Device(IntPtr data, uint gridDi
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_73_78_ContractsAndPtxKernelsWrapper).Assembly.GetManifestResourceStream("SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin");
-var hashStream = typeof(SYN_73_78_ContractsAndPtxKernelsWrapper).Assembly.GetManifestResourceStream("SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InlinePtxKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InlinePtxKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

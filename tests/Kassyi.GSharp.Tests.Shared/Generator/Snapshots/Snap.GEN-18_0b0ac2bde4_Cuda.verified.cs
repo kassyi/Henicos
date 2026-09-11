@@ -32,25 +32,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin");
-var hashStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector2AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector2AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
@@ -177,25 +169,17 @@ public static unsafe void Launch_Vector2AddKernel_Device(IntPtr a, IntPtr b, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin");
-var hashStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector2AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector2AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -262,25 +246,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin");
-var hashStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector3AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector3AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
@@ -407,25 +383,17 @@ public static unsafe void Launch_Vector3AddKernel_Device(IntPtr a, IntPtr b, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin");
-var hashStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector3AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector3AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -492,25 +460,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin");
-var hashStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector4AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector4AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
@@ -637,25 +597,17 @@ public static unsafe void Launch_Vector4AddKernel_Device(IntPtr a, IntPtr b, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin");
-var hashStream = typeof(GEN_18_VectorBuiltinKernelsWrapper).Assembly.GetManifestResourceStream("GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector4AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Vector4AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

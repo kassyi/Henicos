@@ -43,25 +43,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin");
-var hashStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachCollectionExpressionKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachCollectionExpressionKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_output = IntPtr.Zero;
 try
@@ -120,25 +112,17 @@ public static unsafe void Launch_ForeachCollectionExpressionKernel_Device(IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin");
-var hashStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachCollectionExpressionKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachCollectionExpressionKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -223,25 +207,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin");
-var hashStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachInlineArrayKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachInlineArrayKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_output = IntPtr.Zero;
 try
@@ -300,25 +276,17 @@ public static unsafe void Launch_ForeachInlineArrayKernel_Device(IntPtr output, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin");
-var hashStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachInlineArrayKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachInlineArrayKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -379,25 +347,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin");
-var hashStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachStackAllocKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachStackAllocKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_output = IntPtr.Zero;
 try
@@ -456,25 +416,17 @@ public static unsafe void Launch_ForeachStackAllocKernel_Device(IntPtr output, u
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin");
-var hashStream = typeof(SYN_70_72_LoopsAndJumpsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachStackAllocKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ForeachStackAllocKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

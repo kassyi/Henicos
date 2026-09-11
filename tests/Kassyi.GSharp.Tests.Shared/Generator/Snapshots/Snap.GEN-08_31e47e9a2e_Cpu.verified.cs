@@ -58,7 +58,10 @@ if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Lengt
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", $"Kassyi.GSharp.Kernels.GpuBigIntKernels_ChunkAddKernel{archSuffix}.dll");
+var dllName = $"GpuBigIntKernels_ChunkAddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", dllPath, decryptionKey);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)

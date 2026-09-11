@@ -42,25 +42,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ImmediatelyEvaluatedLambdaKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ImmediatelyEvaluatedLambdaKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_data = IntPtr.Zero;
 try
@@ -119,25 +111,17 @@ public static unsafe void Launch_ImmediatelyEvaluatedLambdaKernel_Device(IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ImmediatelyEvaluatedLambdaKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ImmediatelyEvaluatedLambdaKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -197,25 +181,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonCapturingLambdaKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonCapturingLambdaKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_data = IntPtr.Zero;
 try
@@ -274,25 +250,17 @@ public static unsafe void Launch_NonCapturingLambdaKernel_Device(IntPtr data, ui
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonCapturingLambdaKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonCapturingLambdaKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -353,25 +321,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ShadowedVariableCaptureKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ShadowedVariableCaptureKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_data = IntPtr.Zero;
 try
@@ -430,25 +390,17 @@ public static unsafe void Launch_ShadowedVariableCaptureKernel_Device(IntPtr dat
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ShadowedVariableCaptureKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ShadowedVariableCaptureKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -508,25 +460,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ValueCapturingLambdaKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ValueCapturingLambdaKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_data = IntPtr.Zero;
 try
@@ -587,25 +531,17 @@ public static unsafe void Launch_ValueCapturingLambdaKernel_Device(IntPtr data, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
-var hashStream = typeof(SYN_08_LambdaAndLocalFunctionsKernelsWrapper).Assembly.GetManifestResourceStream("SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ValueCapturingLambdaKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ValueCapturingLambdaKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

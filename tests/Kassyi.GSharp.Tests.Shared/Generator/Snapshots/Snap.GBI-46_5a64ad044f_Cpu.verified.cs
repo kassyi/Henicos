@@ -60,7 +60,10 @@ if (arrayVal.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", $"Kassyi.GSharp.Kernels.WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll");
+var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_ioVal = &ioVal)
 fixed (global::System.Single* p_outVal = &outVal)

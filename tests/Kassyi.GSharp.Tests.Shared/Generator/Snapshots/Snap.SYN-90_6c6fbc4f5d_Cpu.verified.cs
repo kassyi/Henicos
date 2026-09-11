@@ -63,7 +63,10 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_AggregateInitKernel", $"Kassyi.GSharp.Kernels.SYN_90_StructAggregateInitKernels_AggregateInitKernel{archSuffix}.dll");
+var dllName = $"SYN_90_StructAggregateInitKernels_AggregateInitKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_AggregateInitKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -138,7 +141,10 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_DeeplyNestedInitKernel", $"Kassyi.GSharp.Kernels.SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel{archSuffix}.dll");
+var dllName = $"SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_DeeplyNestedInitKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

@@ -46,7 +46,10 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", $"Kassyi.GSharp.Kernels.GEN_18_VectorBuiltinKernels_Vector2AddKernel{archSuffix}.dll");
+var dllName = $"GEN_18_VectorBuiltinKernels_Vector2AddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", dllPath, decryptionKey);
 fixed (global::System.Numerics.Vector2* p_a = a)
 fixed (global::System.Numerics.Vector2* p_b = b)
 fixed (global::System.Numerics.Vector2* p_result = result)
@@ -107,7 +110,10 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_Vector3AddKernel", $"Kassyi.GSharp.Kernels.GEN_18_VectorBuiltinKernels_Vector3AddKernel{archSuffix}.dll");
+var dllName = $"GEN_18_VectorBuiltinKernels_Vector3AddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_Vector3AddKernel", dllPath, decryptionKey);
 fixed (global::System.Numerics.Vector3* p_a = a)
 fixed (global::System.Numerics.Vector3* p_b = b)
 fixed (global::System.Numerics.Vector3* p_result = result)
@@ -168,7 +174,10 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_Vector4AddKernel", $"Kassyi.GSharp.Kernels.GEN_18_VectorBuiltinKernels_Vector4AddKernel{archSuffix}.dll");
+var dllName = $"GEN_18_VectorBuiltinKernels_Vector4AddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_Vector4AddKernel", dllPath, decryptionKey);
 fixed (global::System.Numerics.Vector4* p_a = a)
 fixed (global::System.Numerics.Vector4* p_b = b)
 fixed (global::System.Numerics.Vector4* p_result = result)

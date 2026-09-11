@@ -50,25 +50,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_64_69_NumericsAndHwMathKernelsWrapper).Assembly.GetManifestResourceStream("SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
-var hashStream = typeof(SYN_64_69_NumericsAndHwMathKernelsWrapper).Assembly.GetManifestResourceStream("SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOperationsTestKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOperationsTestKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
@@ -160,25 +152,17 @@ public static unsafe void Launch_BitOperationsTestKernel_Device(IntPtr u32Data, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_64_69_NumericsAndHwMathKernelsWrapper).Assembly.GetManifestResourceStream("SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
-var hashStream = typeof(SYN_64_69_NumericsAndHwMathKernelsWrapper).Assembly.GetManifestResourceStream("SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOperationsTestKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOperationsTestKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

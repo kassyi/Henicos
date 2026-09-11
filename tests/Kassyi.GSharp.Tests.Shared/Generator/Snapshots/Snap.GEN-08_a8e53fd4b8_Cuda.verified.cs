@@ -72,25 +72,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin");
-var hashStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "WrapperOptimizationKernels_ComplexSignatureKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ComplexSignatureKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ComplexSignatureKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'WrapperOptimizationKernels_ComplexSignatureKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'WrapperOptimizationKernels_ComplexSignatureKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
@@ -191,25 +183,17 @@ public static unsafe void Launch_ComplexSignatureKernel_Device(IntPtr scalarRef,
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin");
-var hashStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "WrapperOptimizationKernels_ComplexSignatureKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ComplexSignatureKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ComplexSignatureKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'WrapperOptimizationKernels_ComplexSignatureKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'WrapperOptimizationKernels_ComplexSignatureKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
