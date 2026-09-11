@@ -25,7 +25,8 @@ public class TestClass_GEN17
 }
 
 public partial class GEN_17_RefOutDereferenceTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     [GeneratedRegex(@"\(\*successFlag\)\s*=\s*false;")]
     private static partial Regex SuccessFlagRegex();
 
@@ -40,8 +41,8 @@ public partial class GEN_17_RefOutDereferenceTests
     [Trait("Category", "Syntax")]
     public void Test_GEN17_RefOutDereferencing_HappyPath_ModifyingRefArgument()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
+        var (cudaSource, diagnostics) =
+            RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
 
         Assert.Empty(diagnostics);
         Assert.Matches(SuccessFlagRegex(), cudaSource);
@@ -52,12 +53,13 @@ public partial class GEN_17_RefOutDereferenceTests
     [Trait("Category", "Syntax")]
     public void Test_GEN17_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
-        var (cudaSourceMember, diagnosticsMember) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
+        var (cudaSourceMember, diagnosticsMember) =
+            RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
         Assert.Empty(diagnosticsMember);
         Assert.Matches(RefArgFieldRegex(), cudaSourceMember);
 
-        var (cudaSourceChained, diagnosticsChained) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
+        var (cudaSourceChained, diagnosticsChained) =
+            RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
         Assert.Empty(diagnosticsChained);
         Assert.Matches(ChainedRefRegex(), cudaSourceChained);
     }
