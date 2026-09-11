@@ -44,7 +44,7 @@ internal static class WrapperEmitter
                 WriteKernelSource(writer, method, source, config);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
-                if (aesKey != null && config.IsAotEnabled)
+                if (aesKey != null)
                 {
                     if (string.IsNullOrWhiteSpace(keyProvider))
                     {
@@ -258,23 +258,18 @@ internal static class WrapperEmitter
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method,
         bool hasAesKey, string? keyProvider)
     {
-        writer.AppendLine(
-            $"var aotStream = typeof({method.ContainingType.Name}Wrapper).Assembly.GetManifestResourceStream(\"{method.ContainingType.Name}_{method.Name}.fatbin\");");
-        writer.AppendLine(
-            $"var hashStream = typeof({method.ContainingType.Name}Wrapper).Assembly.GetManifestResourceStream(\"{method.ContainingType.Name}_{method.Name}.fatbin.hash\");");
+        writer.AppendLine($"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
+        writer.AppendLine($"var hashPath = fatbinPath + \".hash\";");
         writer.AppendLine("IntPtr hfunc = IntPtr.Zero;");
-        writer.AppendLine("if (aotStream != null)");
+        writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
         using (writer.Scope())
         {
-            writer.AppendLine("var fatbinData = new byte[aotStream.Length];");
-            writer.AppendLine("aotStream.Read(fatbinData, 0, (int)aotStream.Length);");
-
+            writer.AppendLine("var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);");
             writer.AppendLine("string expectedHash = null;");
-            writer.AppendLine("if (hashStream != null)");
+            writer.AppendLine("if (System.IO.File.Exists(hashPath))");
             using (writer.Scope())
             {
-                writer.AppendLine("using var reader = new System.IO.StreamReader(hashStream);");
-                writer.AppendLine("expectedHash = reader.ReadToEnd().Trim();");
+                writer.AppendLine("expectedHash = System.IO.File.ReadAllText(hashPath).Trim();");
             }
 
             if (hasAesKey)
@@ -300,7 +295,7 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendLine(
-                $"throw new System.InvalidOperationException(\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found in the embedded resources.\");");
+                $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
         }
 
         writer.AppendLine();
@@ -357,7 +352,11 @@ internal static class WrapperEmitter
         writer.AppendLine(
             "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", $\"Kassyi.GSharp.Kernels.{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\");");
+            $"var dllName = $\"{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\";");
+        writer.AppendLine(
+            $"var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
+        writer.AppendLine(
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath);");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
