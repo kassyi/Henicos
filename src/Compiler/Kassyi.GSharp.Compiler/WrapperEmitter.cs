@@ -70,7 +70,7 @@ internal static class WrapperEmitter
         var escapedSource = source.Replace("\"", "\"\"");
         writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
         writer.AppendLine(
-            $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{targetDialect}Code.Source + {method.Name}_Source;");
+            $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{targetDialect}Prelude.Source + global::Kassyi.GSharp.Generated.GSharpShared{targetDialect}DeviceCode.Source + {method.Name}_Source;");
         writer.AppendLine();
     }
 

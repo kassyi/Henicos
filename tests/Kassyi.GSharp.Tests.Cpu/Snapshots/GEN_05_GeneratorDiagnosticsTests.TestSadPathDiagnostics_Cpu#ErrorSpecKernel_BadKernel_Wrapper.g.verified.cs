@@ -28,7 +28,7 @@ BadKernel();
 }
 }
 ";
-public static readonly string BadKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + BadKernel_Source;
+public static readonly string BadKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + BadKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void BadKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);
