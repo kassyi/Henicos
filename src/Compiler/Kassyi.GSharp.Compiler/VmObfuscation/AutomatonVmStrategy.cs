@@ -22,46 +22,38 @@ internal class AutomatonVmStrategy : IVmStrategy
 
         var nodes = new List<VmNode>();
         var nextNodeId = 1;
-
-        void addNode(byte op, int a1, int a2)
-        {
-            var n = new VmNode { Id = nextNodeId++, Opcode = op, Arg1 = a1, Arg2 = a2 };
-            nodes.Add(n);
-        }
-
-        void addJunk()
-        {
-            var num = rng.Next(1, 3);
-            for (var j = 0; j < num; j++)
-            {
-                addNode(opJnk, rng.Next(150, 201), rng.Next());
-            }
-        }
+        var memMap = Enumerable.Range(0, 32).Concat(Enumerable.Range(32, 224).OrderBy(_ => rng.Next())).ToArray();
 
         for (var i = 0; i < aesKey.Length; i++)
         {
             addJunk();
             var target = aesKey[i];
+            var memAddrTemp0 = memMap[50];
+            var memAddrTemp1 = memMap[51];
+            var memAddrTemp2 = memMap[52];
+
             if (rng.Next(2) == 0)
             {
                 var rand = (byte)rng.Next(256);
-                addNode(opSet, 50, rand);
-                addNode(opSet, 51, (byte)(target ^ rand));
-                addNode(opXor, 50, 51);
+                addNode(opSet, memAddrTemp0, rand);
+                addNode(opSet, memAddrTemp1, (byte)(target ^ rand));
+                addNode(opXor, memAddrTemp0, memAddrTemp1);
                 addNode(opSet, i, 0);
-                addNode(opXor, i, 50);
+                addNode(opXor, i, memAddrTemp0);
             }
             else
             {
                 var mtMask = (byte)rng.Next(256);
                 var diff = (byte)(target ^ mtMask);
-                addNode(opLmt, 50, 0);
-                addNode(opSet, 51, mtMask);
-                addNode(opXor, 50, 51);
-                addNode(opSet, 52, diff ^ (VmObfuscatorEmitter.GetDeterministicHashCode(method.Name) ^ mtMask));
-                addNode(opXor, 50, 52);
+                addNode(opLmt, memAddrTemp0, 0);
+                addNode(opSet, memAddrTemp1, mtMask);
+                addNode(opXor, memAddrTemp0, memAddrTemp1);
+                addNode(opSet, memAddrTemp2,
+                    diff ^ (VmObfuscatorEmitter.GetDeterministicHashCode(method.Name) ^ mtMask));
+                addNode(opXor, memAddrTemp0, memAddrTemp2);
+                addNode(opXor, memAddrTemp0, memAddrTemp1);
                 addNode(opSet, i, 0);
-                addNode(opXor, i, 50);
+                addNode(opXor, i, memAddrTemp0);
             }
 
             addJunk();
@@ -107,6 +99,22 @@ internal class AutomatonVmStrategy : IVmStrategy
         writer.AppendLine("int[] mem = new int[256];");
         writer.AppendLine($"mem[101] = {VmObfuscatorEmitter.GetDeterministicHashCode(method.Name)};");
         writer.AppendLine($"int ip = {idToOffset[initialId]};");
+        return;
+
+        void addNode(byte op, int a1, int a2)
+        {
+            var n = new VmNode { Id = nextNodeId++, Opcode = op, Arg1 = a1, Arg2 = a2 };
+            nodes.Add(n);
+        }
+
+        void addJunk()
+        {
+            var num = rng.Next(1, 3);
+            for (var j = 0; j < num; j++)
+            {
+                addNode(opJnk, rng.Next(150, 201), rng.Next());
+            }
+        }
     }
 
     public void EmitVmExecution(SourceWriter writer, IMethodSymbol method, byte[] opcodes)

@@ -11,8 +11,54 @@ internal class RegisterVmStrategy : IVmStrategy
         var opStm = opcodes[3];
 
         var regMap = Enumerable.Range(0, 16).OrderBy(_ => rng.Next()).ToArray();
-        var addrNameHash = 101;
+        var memMap = Enumerable.Range(0, 32).Concat(Enumerable.Range(32, 224).OrderBy(_ => rng.Next())).ToArray();
+        var addrNameHash = memMap[101];
         var bytecode = new List<byte>();
+
+        for (var i = 0; i < aesKey.Length; i++)
+        {
+            emitJunk();
+            var target = aesKey[i];
+            const int RegTemp0 = 0;
+            const int RegTemp1 = 1;
+            const int RegNameHashAddr = 2;
+            const int RegMask = 3;
+            const int RegDiff = 4;
+            const int RegIndex = 15;
+
+            if (rng.Next(2) == 0)
+            {
+                var rand = (byte)rng.Next(256);
+                emitLdi(RegTemp0, rand);
+                emitLdi(RegTemp1, (byte)(target ^ rand));
+                emitXor(RegTemp0, RegTemp1);
+            }
+            else
+            {
+                var mtMask = (byte)rng.Next(256);
+                var diff = (byte)(target ^ mtMask);
+                emitLdi(RegNameHashAddr, addrNameHash);
+                emitLdm(RegTemp1, RegNameHashAddr);
+                emitLdi(RegMask, mtMask);
+                emitXor(RegTemp1, RegMask);
+                emitLdi(RegDiff, diff ^ (VmObfuscatorEmitter.GetDeterministicHashCode(method.Name) ^ mtMask));
+                emitXor(RegTemp1, RegDiff);
+                emitXor(RegTemp1, RegMask);
+                emitLdi(RegTemp0, 0);
+                emitXor(RegTemp0, RegTemp1);
+            }
+
+            emitLdi(RegIndex, i);
+            emitStm(RegIndex, RegTemp0);
+            emitJunk();
+        }
+
+        writer.AppendLine($"byte[] bc = new byte[] {{ {string.Join(", ", bytecode)} }};");
+        writer.AppendLine("int[] mem = new int[256];");
+        writer.AppendLine($"mem[{addrNameHash}] = {VmObfuscatorEmitter.GetDeterministicHashCode(method.Name)};");
+        writer.AppendLine("int[] regs = new int[16];");
+        writer.AppendLine("int ip = 0;");
+        return;
 
         void emitLdi(int logicalReg, int value)
         {
@@ -55,42 +101,6 @@ internal class RegisterVmStrategy : IVmStrategy
                 emitXor(junkReg, rng.Next(10, 16));
             }
         }
-
-        for (var i = 0; i < aesKey.Length; i++)
-        {
-            emitJunk();
-            var target = aesKey[i];
-            if (rng.Next(2) == 0)
-            {
-                var rand = (byte)rng.Next(256);
-                emitLdi(0, rand);
-                emitLdi(1, (byte)(target ^ rand));
-                emitXor(0, 1);
-            }
-            else
-            {
-                var mtMask = (byte)rng.Next(256);
-                var diff = (byte)(target ^ mtMask);
-                emitLdi(2, addrNameHash);
-                emitLdm(1, 2);
-                emitLdi(3, mtMask);
-                emitXor(1, 3);
-                emitLdi(4, diff ^ (VmObfuscatorEmitter.GetDeterministicHashCode(method.Name) ^ mtMask));
-                emitXor(1, 4);
-                emitLdi(0, 0);
-                emitXor(0, 1);
-            }
-
-            emitLdi(15, i);
-            emitStm(15, 0);
-            emitJunk();
-        }
-
-        writer.AppendLine($"byte[] bc = new byte[] {{ {string.Join(", ", bytecode)} }};");
-        writer.AppendLine("int[] mem = new int[256];");
-        writer.AppendLine($"mem[101] = {VmObfuscatorEmitter.GetDeterministicHashCode(method.Name)};");
-        writer.AppendLine("int[] regs = new int[16];");
-        writer.AppendLine("int ip = 0;");
     }
 
     public void EmitVmExecution(SourceWriter writer, IMethodSymbol method, byte[] opcodes)

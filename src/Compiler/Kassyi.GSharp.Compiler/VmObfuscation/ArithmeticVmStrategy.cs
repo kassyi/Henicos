@@ -14,6 +14,56 @@ internal class ArithmeticVmStrategy : IVmStrategy
 
         var bytecode = new List<byte>();
 
+        for (var i = 0; i < aesKey.Length; i++)
+        {
+            emitJunk();
+            var target = aesKey[i];
+            if (rng.Next(2) == 0)
+            {
+                var r = rng.Next(1, 1000);
+                var m = rng.Next(1, 100);
+                var a = target - ((r * m) % 256);
+                if (a < 0)
+                {
+                    a += 256;
+                }
+
+                emit(opLdc, r);
+                emit(opMul, m);
+                emit(opAdd, a);
+                emit(opMod, 256);
+            }
+            else
+            {
+                var nameHash = VmObfuscatorEmitter.GetDeterministicHashCode(method.Name);
+                var r = rng.Next(1, 1000);
+                var baseVal = (r + nameHash) % 256;
+                if (baseVal < 0)
+                {
+                    baseVal += 256;
+                }
+
+                var a = target - baseVal;
+                if (a < 0)
+                {
+                    a += 256;
+                }
+
+                emit(opLdc, r);
+                emit(opLmt, 0);
+                emit(opAdd, a);
+                emit(opMod, 256);
+            }
+
+            emit(opStm, i);
+        }
+
+        writer.AppendLine($"byte[] bc = new byte[] {{ {string.Join(", ", bytecode)} }};");
+        writer.AppendLine("int[] mem = new int[256];");
+        writer.AppendLine("int acc = 0;");
+        writer.AppendLine("int ip = 0;");
+        return;
+
         void emit(byte op, int val)
         {
             bytecode.Add(op);
@@ -46,49 +96,6 @@ internal class ArithmeticVmStrategy : IVmStrategy
                 }
             }
         }
-
-        for (var i = 0; i < aesKey.Length; i++)
-        {
-            emitJunk();
-            var target = aesKey[i];
-            if (rng.Next(2) == 0)
-            {
-                var r = rng.Next(1, 1000);
-                var m = rng.Next(1, 100);
-                var a = target - ((r * m) % 256);
-                if (a < 0)
-                {
-                    a += 256;
-                }
-
-                emit(opLdc, r);
-                emit(opMul, m);
-                emit(opAdd, a);
-                emit(opMod, 256);
-            }
-            else
-            {
-                var nameHash = VmObfuscatorEmitter.GetDeterministicHashCode(method.Name);
-                var r = rng.Next(1, 1000);
-                var a = target - ((r + nameHash) % 256);
-                if (a < 0)
-                {
-                    a += 256;
-                }
-
-                emit(opLdc, r);
-                emit(opLmt, 0);
-                emit(opAdd, a);
-                emit(opMod, 256);
-            }
-
-            emit(opStm, i);
-        }
-
-        writer.AppendLine($"byte[] bc = new byte[] {{ {string.Join(", ", bytecode)} }};");
-        writer.AppendLine("int[] mem = new int[256];");
-        writer.AppendLine("int acc = 0;");
-        writer.AppendLine("int ip = 0;");
     }
 
     public void EmitVmExecution(SourceWriter writer, IMethodSymbol method, byte[] opcodes)
@@ -103,7 +110,8 @@ internal class ArithmeticVmStrategy : IVmStrategy
             writer.AppendLine($"else if (op == {opcodes[1]}) acc += val;");
             writer.AppendLine($"else if (op == {opcodes[2]}) acc *= val;");
             writer.AppendLine($"else if (op == {opcodes[3]}) acc %= (val == 0 ? 1 : val);");
-            writer.AppendLine($"else if (op == {opcodes[4]}) acc += {VmObfuscatorEmitter.GetDeterministicHashCode(method.Name)};");
+            writer.AppendLine(
+                $"else if (op == {opcodes[4]}) acc += {VmObfuscatorEmitter.GetDeterministicHashCode(method.Name)};");
             writer.AppendLine($"else if (op == {opcodes[5]}) mem[val] = acc & 0xFF;");
             writer.AppendLine("}");
         }
