@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Compiler;
 internal static class WrapperEmitter
 {
     public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config,
-        byte[]? aesKey = null)
+        byte[]? aesKey = null, string? keyProvider = null)
     {
         var className = method.ContainingType.Name + "Wrapper";
 
@@ -41,32 +41,25 @@ internal static class WrapperEmitter
             writer.AppendLine(className);
             using (writer.Scope())
             {
-                if (HasJitConstants(method))
-                {
-                    writer.AppendLine("[System.ThreadStatic]");
-                    writer.Append(
-                        "private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_");
-                    writer.Append(method.Name);
-                    writer.AppendLine(";");
-                    writer.AppendLine();
-                }
-
                 WriteKernelSource(writer, method, source, config);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
                 if (aesKey != null && config.IsAotEnabled)
                 {
-                    VmObfuscatorEmitter.EmitKeyDerivationVm(writer, method, aesKey);
+                    if (string.IsNullOrWhiteSpace(keyProvider))
+                    {
+                        VmObfuscatorEmitter.EmitKeyDerivationVm(writer, method, aesKey);
+                    }
                 }
 
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    WriteLaunchMethod(writer, method, false, config, aesKey != null);
-                    WriteLaunchMethod(writer, method, true, config, aesKey != null);
+                    WriteLaunchMethod(writer, method, false, config, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, true, config, aesKey != null, keyProvider);
                 }
                 else
                 {
-                    WriteLaunchMethodCpu(writer, method, config);
+                    WriteLaunchMethodCpu(writer, method);
                 }
             }
         }
@@ -88,7 +81,7 @@ internal static class WrapperEmitter
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
-        GeneratorConfig config, bool hasAesKey)
+        GeneratorConfig config, bool hasAesKey, string? keyProvider)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -105,8 +98,7 @@ internal static class WrapperEmitter
                 "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())");
             using (writer.Scope())
             {
-                WriteJitConstantsArray(writer, method);
-                WriteCudaKernelCompilationCall(writer, method, config, hasAesKey);
+                WriteCudaKernelCompilationCall(writer, method, hasAesKey, keyProvider);
                 MarshalingEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
 
                 writer.AppendLine("try");
@@ -126,7 +118,7 @@ internal static class WrapperEmitter
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method, GeneratorConfig config)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method)
     {
         writer.AppendLine("#pragma warning disable CS8500");
         WriteCpuDelegateDeclaration(writer, method);
@@ -135,7 +127,6 @@ internal static class WrapperEmitter
         {
             WriteOutParameterDefaults(writer, method);
             WriteEmptyArrayGuards(writer, method);
-            WriteJitConstantsArray(writer, method);
             WriteCpuDelegateGetOrCompile(writer, method);
             WriteCpuFixedBlocksAndInvoke(writer, method);
         }
@@ -263,121 +254,53 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteJitConstantsArray(SourceWriter writer, IMethodSymbol method)
-    {
-        var jitConstantCount = 0;
-        foreach (var p in method.Parameters)
-        {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                jitConstantCount++;
-            }
-        }
-
-        if (jitConstantCount > 0)
-        {
-            writer.AppendLine(
-                $"__t_jitConstants_array_{method.Name} ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[{jitConstantCount}];");
-
-            var index = 0;
-            foreach (var p in method.Parameters)
-            {
-                if (p.HasAttribute(KnownAttributes.JitConstant))
-                {
-                    writer.AppendLine(
-                        $"__t_jitConstants_array_{method.Name}[{index}] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create(\"{p.Name}\", {p.Name});");
-                    index++;
-                }
-            }
-
-            writer.AppendLine(
-                $"System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_{method.Name}, 0, {jitConstantCount});");
-        }
-        else
-        {
-            writer.AppendLine(
-                "System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;");
-        }
-    }
 
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method,
-        GeneratorConfig config, bool hasAesKey)
+        bool hasAesKey, string? keyProvider)
     {
-        if (config.IsAotEnabled)
+        writer.AppendLine(
+            $"var aotStream = typeof({method.ContainingType.Name}Wrapper).Assembly.GetManifestResourceStream(\"{method.ContainingType.Name}_{method.Name}.fatbin\");");
+        writer.AppendLine(
+            $"var hashStream = typeof({method.ContainingType.Name}Wrapper).Assembly.GetManifestResourceStream(\"{method.ContainingType.Name}_{method.Name}.fatbin.hash\");");
+        writer.AppendLine("IntPtr hfunc = IntPtr.Zero;");
+        writer.AppendLine("if (aotStream != null)");
+        using (writer.Scope())
         {
-            writer.AppendLine(
-                $"var aotStream = typeof({method.ContainingType.Name}Wrapper).Assembly.GetManifestResourceStream(\"{method.ContainingType.Name}_{method.Name}.fatbin\");");
-            writer.AppendLine(
-                $"var hashStream = typeof({method.ContainingType.Name}Wrapper).Assembly.GetManifestResourceStream(\"{method.ContainingType.Name}_{method.Name}.fatbin.hash\");");
-            writer.AppendLine("IntPtr hfunc = IntPtr.Zero;");
-            writer.AppendLine("if (aotStream != null)");
+            writer.AppendLine("var fatbinData = new byte[aotStream.Length];");
+            writer.AppendLine("aotStream.Read(fatbinData, 0, (int)aotStream.Length);");
+
+            writer.AppendLine("string expectedHash = null;");
+            writer.AppendLine("if (hashStream != null)");
             using (writer.Scope())
             {
-                writer.AppendLine("var fatbinData = new byte[aotStream.Length];");
-                writer.AppendLine("aotStream.Read(fatbinData, 0, (int)aotStream.Length);");
+                writer.AppendLine("using var reader = new System.IO.StreamReader(hashStream);");
+                writer.AppendLine("expectedHash = reader.ReadToEnd().Trim();");
+            }
 
-                writer.AppendLine("string expectedHash = null;");
-                writer.AppendLine("if (hashStream != null)");
-                using (writer.Scope())
+            if (hasAesKey)
+            {
+                if (!string.IsNullOrWhiteSpace(keyProvider))
                 {
-                    writer.AppendLine("using var reader = new System.IO.StreamReader(hashStream);");
-                    writer.AppendLine("expectedHash = reader.ReadToEnd().Trim();");
-                }
-
-                if (hasAesKey)
-                {
-                    writer.AppendLine("byte[] decryptionKey = DeriveObfuscatedKey();");
+                    writer.AppendLine($"byte[] decryptionKey = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
                 }
                 else
                 {
-                    writer.AppendLine("byte[] decryptionKey = null;");
-                }
-
-                writer.AppendLine(
-                    $"hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrLoadAotKernel(fatbinData, \"{method.Name}\", expectedHash, decryptionKey);");
-            }
-
-            if (config.EmitSource)
-            {
-                writer.AppendLine("else");
-                using (writer.Scope())
-                {
-                    writer.Append("hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
-                    using (writer.Parentheses())
-                    {
-                        writer.Append("\"");
-                        writer.Append(method.Name);
-                        writer.Append("\", ");
-                        writer.Append(method.Name);
-                        writer.Append("_FullSource, __t_jitConstants, macros");
-                    }
-
-                    writer.AppendLine(";");
+                    writer.AppendLine("byte[] decryptionKey = DeriveObfuscatedKey();");
                 }
             }
             else
             {
-                writer.AppendLine("else");
-                using (writer.Scope())
-                {
-                    writer.AppendLine(
-                        $"throw new System.InvalidOperationException(\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found in the embedded resources.\");");
-                }
-            }
-        }
-        else
-        {
-            writer.Append("IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel");
-            using (writer.Parentheses())
-            {
-                writer.Append("\"");
-                writer.Append(method.Name);
-                writer.Append("\", ");
-                writer.Append(method.Name);
-                writer.Append("_FullSource, __t_jitConstants, macros");
+                writer.AppendLine("byte[] decryptionKey = null;");
             }
 
-            writer.AppendLine(";");
+            writer.AppendLine(
+                $"hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, \"{method.Name}\", expectedHash, decryptionKey);");
+        }
+        writer.AppendLine("else");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"throw new System.InvalidOperationException(\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found in the embedded resources.\");");
         }
 
         writer.AppendLine();
@@ -432,7 +355,9 @@ internal static class WrapperEmitter
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
     {
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", {method.Name}_FullSource, __t_jitConstants, macros);");
+            "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
+        writer.AppendLine(
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", $\"Kassyi.GSharp.Kernels.{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\");");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
@@ -528,16 +453,5 @@ internal static class WrapperEmitter
         writer.Append(ns.Name);
     }
 
-    private static bool HasJitConstants(IMethodSymbol method)
-    {
-        foreach (var p in method.Parameters)
-        {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                return true;
-            }
-        }
 
-        return false;
-    }
 }

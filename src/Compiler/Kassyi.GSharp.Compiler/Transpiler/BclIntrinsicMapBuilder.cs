@@ -142,8 +142,7 @@ internal static class BclIntrinsicMapBuilder
         var cudaIntrinsicName = data.CudaIntrinsicName;
         var castFirstArgTo = data.CastFirstArgumentTo;
 
-        if (data.BclTypeFullName == "System.Numerics.BitOperations" &&
-            data.ParameterTypes.Length > 0 &&
+        if (data is { BclTypeFullName: "System.Numerics.BitOperations", ParameterTypes.Length: > 0 } &&
             data.ParameterTypes[0].Value is "System.UIntPtr" or "System.IntPtr")
         {
             var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
