@@ -40,11 +40,12 @@ public partial class SYN_28_MethodAttributesTests
         return (cudaSource, diagnostics);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_Execution()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [0, 5, 10, 20];
         int[] result = new int[4];
 
@@ -60,11 +61,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(240, result[3]);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MethodAttributes_EmptyArray_Execution()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [];
         int[] result = [];
 
@@ -74,11 +76,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Null(exception);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MethodAttributes_SingleElement_Execution()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [42];
         int[] result = new int[1];
 
@@ -88,7 +91,7 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(284, result[0]);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-28")]
     [InlineData(0, (0 + 100) * 2)]
@@ -105,6 +108,7 @@ public partial class SYN_28_MethodAttributesTests
     [InlineData(-1000000, (-1000000 + 100) * 2)]
     public void Test_SYN28_AggressiveInlining_NumericBoundaries_Execution(int inputVal, int expectedVal)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] result = new int[1];
 
@@ -113,33 +117,36 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Equal(expectedVal, result[0]);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
         Assert.Empty(diagnostics);
         Assert.Matches(AggressiveInlinedRegex(), cudaSource);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_NoInlining_TranspilesWithNoinlineDevice()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
         Assert.Empty(diagnostics);
         Assert.Matches(NoInlinedRegex(), cudaSource);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
         Assert.Empty(diagnostics);
@@ -149,11 +156,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.Single(matches);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
         Assert.Empty(diagnostics);
@@ -162,11 +170,12 @@ public partial class SYN_28_MethodAttributesTests
         Assert.DoesNotMatch(NoinlineModifier, cudaSource);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
 
         Assert.Empty(diagnostics);

@@ -53,10 +53,11 @@ public class LoggerTests
         protected override string GetTag() => "TestLogger";
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ShouldFormatAndWriteMessagesAsync()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Trace;
         logger.LogInformation("Test Info Message");
@@ -74,11 +75,12 @@ public class LoggerTests
         Assert.Contains("[ERROR]", content);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Stress")]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
         int threadCount = 50;
@@ -119,10 +121,11 @@ public class LoggerTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ExtremeMessageSize_EdgeCase()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
 
@@ -139,10 +142,11 @@ public class LoggerTests
         Assert.Contains(giantString, content);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_LogLevelNone_EdgeCase()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.None;
         var uniqueGuid = Guid.NewGuid().ToString();
@@ -159,10 +163,11 @@ public class LoggerTests
         Assert.DoesNotContain(uniqueGuid, content);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-04")]
     public async Task MeasureScope_ShouldLogDuration()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         Logger.ActiveLogLevel = LogLevel.Trace;
 
         using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", LogLevel.Info))

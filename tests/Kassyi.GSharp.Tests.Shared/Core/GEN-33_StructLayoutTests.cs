@@ -5,11 +5,12 @@ namespace Kassyi.GSharp.Tests.Core;
 
 public class GEN_33_StructLayoutTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "GEN-33")]
     public void Test_GEN33_StructLayout_IsMaintained_InGpuKernel()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var data = new CustomLayoutStruct[1] 
         { 
             new CustomLayoutStruct { A = 5, B = 10.0, C = 3.0f } 

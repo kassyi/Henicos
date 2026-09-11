@@ -10,12 +10,15 @@ public class ArchitectureAndOptimizationTests
         _output = output;
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "GpuExecution")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        Skip.IfNot(Kassyi.GSharp.Runtime.Jit.NvccCompiler.IsNvccAvailable, "NVCC / NVRTC is required");
+
         var source = """
             extern "C" __global__ void TestKernel(int* data) {
                 int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -30,12 +33,15 @@ public class ArchitectureAndOptimizationTests
         Assert.True(ptx86.Length > 0);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-10")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "GpuExecution")]
     public void CompileToPtx_InvalidArchitecture_ThrowsException()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        Skip.IfNot(Kassyi.GSharp.Runtime.Jit.NvccCompiler.IsNvccAvailable, "NVCC / NVRTC is required");
+
         var source = """
             extern "C" __global__ void TestKernel(int* data) {
                 int idx = threadIdx.x;
@@ -52,12 +58,15 @@ public class ArchitectureAndOptimizationTests
         Assert.True(ex.Message.Contains("NVRTC", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("Simulated missing library"), $"Unexpected exception message: {ex.Message}");
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-11")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "GpuExecution")]
     public void JitConstant_Unroll_AltersPtxOutput()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        Skip.IfNot(Kassyi.GSharp.Runtime.Jit.NvccCompiler.IsNvccAvailable, "NVCC / NVRTC is required");
+
         var srcDynamic = """
             extern "C" __global__ void TestKernelDynamic(int* data, int limit) {
                 int sum = 0;

@@ -10,11 +10,12 @@ public class GEN_10_CpuJitEngineUnitTests
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate int AddFunc(int a, int b);
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-10")]
     public void Test_GEN10_CpuJitEngine_CompilesAndExecutes_Delegate()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var source = """
             extern "C" __declspec(dllexport) int Add(int a, int b) {
                 return a + b;
@@ -25,11 +26,12 @@ public class GEN_10_CpuJitEngineUnitTests
         Assert.Equal(5, result);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Unit")]
     [Trait("FeatureId", "GEN-10")]
     public void Test_GEN10_CpuJitEngine_CompilesWithMacros()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var source = """
             extern "C" __declspec(dllexport) int Add(int a, int b) {
                 return a + b + MY_MACRO_OFFSET;

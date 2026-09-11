@@ -11,6 +11,7 @@ public class GEN_44_BackendCompilerTests
     [Trait("FeatureId", "GEN-44")]
     public void Test_GEN44_NvccCompiler_CompileToFatbin_ProducesOutput()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         Skip.If(!NvccCompiler.IsMsvcAvailable || !NvccCompiler.IsNvccAvailable, "MSVC or NVCC is not available");
 
         var tempDir = Path.GetTempPath();

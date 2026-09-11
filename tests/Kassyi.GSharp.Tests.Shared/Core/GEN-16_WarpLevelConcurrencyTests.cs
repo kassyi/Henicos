@@ -8,10 +8,11 @@ namespace Kassyi.GSharp.Tests.Core;
 [Trait("Category", "GpuExecution")]
 public class GEN_16_WarpLevelConcurrencyTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-16")]
     public void Test_GEN16_WarpReduceSum_CalculatesCorrectly()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int numWarps = 4;
         int threadsPerWarp = 32;
         int length = numWarps * threadsPerWarp;
@@ -38,10 +39,11 @@ public class GEN_16_WarpLevelConcurrencyTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-16")]
     public void Test_GEN16_WarpPrimitives_GenerateAndCompile()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int length = 32;
         var input = new int[length];
         var output = new int[length];

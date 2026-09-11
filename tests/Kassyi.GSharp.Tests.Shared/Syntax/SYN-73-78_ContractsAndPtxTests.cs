@@ -30,11 +30,12 @@ public class SYN_73_78_ContractsAndPtxTests
     public void Test_SYN76_ConstexprPropagation_Transpilation()
     {
     }
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-77")]
     public void TestInlinePtxKernel()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] data = [0];
         SYN_73_78_ContractsAndPtxKernelsWrapper.Launch_InlinePtxKernel(data);
         Assert.Equal(999u, data[0]);
