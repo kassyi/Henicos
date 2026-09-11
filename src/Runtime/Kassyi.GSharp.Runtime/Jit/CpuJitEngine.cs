@@ -23,7 +23,7 @@ public sealed class CpuJitEngine
     /// <summary>
     /// Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
     /// </summary>
-    #pragma warning disable IDE0051 // Justification: Public API for library
+#pragma warning disable IDE0051 // Justification: Public API for library
     public static void Shutdown()
     {
         s_functionCache.Clear();
@@ -39,6 +39,7 @@ public sealed class CpuJitEngine
                 // Ignore unload errors during shutdown
             }
         }
+
         s_loadedModules.Clear();
     }
 
@@ -46,7 +47,8 @@ public sealed class CpuJitEngine
     /// JIT-compiles Standard C++ source text into a native DLL, loads it, and returns a raw function pointer.
     /// </summary>
     public static IntPtr GetOrCompileKernelPtr(string kernelName, string baseSource,
-        ReadOnlySpan<JitConstantArg> jitConstants = default, ReadOnlySpan<KeyValuePair<string, string>> macros = default)
+        ReadOnlySpan<JitConstantArg> jitConstants = default,
+        ReadOnlySpan<KeyValuePair<string, string>> macros = default)
     {
         var cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
 
@@ -166,7 +168,14 @@ public sealed class CpuJitEngine
         }
         finally
         {
-            try { File.Delete(cppFile); } catch { /* Ignore */ }
+            try
+            {
+                File.Delete(cppFile);
+            }
+            catch
+            {
+                /* Ignore */
+            }
         }
     }
 
@@ -177,13 +186,16 @@ public sealed class CpuJitEngine
 
         if (!NativeLibrary.TryGetExport(module, kernelName, out var hfunc))
         {
-            throw new Exception($"Failed to find exported function '{kernelName}' in {dllPath}. Did you forget extern \"C\" __declspec(dllexport)?");
+            throw new Exception(
+                $"Failed to find exported function '{kernelName}' in {dllPath}. Did you forget extern \"C\" __declspec(dllexport)?");
         }
 
         return hfunc;
     }
 
-    private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName) where TDelegate : Delegate => Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName));
+    private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName)
+        where TDelegate : Delegate =>
+        Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName));
 
     private static string ComputeHash(string input)
     {
@@ -215,12 +227,6 @@ public sealed class CpuJitEngine
         {
             var offset = 0;
 
-            static void Append(ref Span<byte> buf, ref int off, ReadOnlySpan<byte> data)
-            {
-                data.CopyTo(buf.Slice(off));
-                off += data.Length;
-            }
-
             Append(ref buffer, ref offset, MemoryMarshal.AsBytes(kernelName.AsSpan()));
             Append(ref buffer, ref offset, MemoryMarshal.AsBytes(baseSource.AsSpan()));
 
@@ -242,6 +248,12 @@ public sealed class CpuJitEngine
             Span<byte> hashBytes = stackalloc byte[32];
             SHA256.HashData(buffer.Slice(0, offset), hashBytes);
             return new Guid(hashBytes.Slice(0, 16));
+
+            static void Append(ref Span<byte> buf, ref int off, ReadOnlySpan<byte> data)
+            {
+                data.CopyTo(buf.Slice(off));
+                off += data.Length;
+            }
         }
         finally
         {
