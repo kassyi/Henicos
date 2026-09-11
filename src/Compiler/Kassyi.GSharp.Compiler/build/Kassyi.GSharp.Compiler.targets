@@ -37,15 +37,11 @@
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
     </CompileCudaToFatbinTask>
 
-    <!-- Copy compiled fatbins (and hashes) to output directory as Content -->
+    <!-- Copy compiled fatbins to output directory as Content -->
     <ItemGroup>
       <Content Include="@(_GSharpCompiledFatbins)">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Link>%(Filename)%(Extension)</Link>
-      </Content>
-      <Content Include="@(_GSharpCompiledFatbins->'%(FullPath).hash')">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Link>%(Filename)%(Extension).hash</Link>
       </Content>
     </ItemGroup>
   </Target>

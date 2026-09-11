@@ -6,13 +6,10 @@ using Microsoft.Build.Utilities;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-public class CompileCudaToFatbinTask : Microsoft.Build.Utilities.Task
+public class CompileCudaToFatbinTask : CompileKernelTaskBase
 {
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
-
-    [Required]
-    public string OutputDirectory { get; set; } = string.Empty;
 
     public string TargetArchitectures { get; set; } =
         "compute_50,sm_50;compute_70,sm_70;compute_80,sm_80;compute_86,sm_86";
@@ -22,58 +19,37 @@ public class CompileCudaToFatbinTask : Microsoft.Build.Utilities.Task
     [Output]
     public ITaskItem[] OutputFatbins { get; set; } = [];
 
-    public override bool Execute()
+    private string[] _architectures = [];
+
+    protected override ITaskItem[] GetSources() => CudaSources;
+    protected override void SetOutputItems(ITaskItem[] outputItems) => OutputFatbins = outputItems;
+
+    protected override bool OnBeforeExecute()
     {
-        if (CudaSources.Length == 0)
-        {
-            return true;
-        }
-
-        if (!Directory.Exists(OutputDirectory))
-        {
-            Directory.CreateDirectory(OutputDirectory);
-        }
-
-        var outputItems = new List<ITaskItem>();
-        var architectures = TargetArchitectures.Split([';'], StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var sourceItem in CudaSources)
-        {
-            var taskItem = ProcessSourceItem(sourceItem, architectures);
-            if (taskItem == null)
-            {
-                return false;
-            }
-
-            outputItems.Add(taskItem);
-        }
-
-        OutputFatbins = [.. outputItems];
+        _architectures = TargetArchitectures.Split([';'], StringSplitOptions.RemoveEmptyEntries);
         return true;
     }
 
-    private ITaskItem? ProcessSourceItem(ITaskItem sourceItem, string[] architectures)
+    protected override ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem)
     {
         var sourcePath = sourceItem.GetMetadata("FullPath");
-        var fileName = GetCleanKernelFileName(sourcePath);
+        var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
         var keyFilePath = sourcePath + ".key";
 
-        if (!CompileWithNvcc(sourcePath, outputFatbinPath, architectures))
+        if (!CompileWithNvcc(sourcePath, outputFatbinPath, _architectures))
         {
             return null;
         }
 
-        var fatbinHash = ProcessFatbinArtifact(outputFatbinPath, keyFilePath);
-        if (fatbinHash == null)
+        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, keyFilePath, Log))
         {
             return null;
         }
 
         var taskItem = new TaskItem(outputFatbinPath);
-        taskItem.SetMetadata("Hash", fatbinHash);
         taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
-        return taskItem;
+        return [taskItem];
     }
 
     private bool CompileWithNvcc(string sourcePath, string outputFatbinPath, string[] architectures)
@@ -155,70 +131,4 @@ public class CompileCudaToFatbinTask : Microsoft.Build.Utilities.Task
         return false;
     }
 
-    private string? ProcessFatbinArtifact(string outputFatbinPath, string keyFilePath)
-    {
-        var fatbinData = File.ReadAllBytes(outputFatbinPath);
-
-        if (File.Exists(keyFilePath))
-        {
-            Log.LogMessage(MessageImportance.Normal, $"Encrypting fatbin using key from '{keyFilePath}'");
-            var rawKey = File.ReadAllBytes(keyFilePath);
-
-            if (rawKey.Length != 32)
-            {
-                Log.LogError($"Invalid AES key length in '{keyFilePath}'. Expected 32 bytes, got {rawKey.Length}.");
-                return null;
-            }
-
-            var fatbinHash = ComputeSha256Hex(fatbinData);
-            var encryptedData = EncryptAes256Cbc(fatbinData, rawKey);
-
-            File.WriteAllBytes(outputFatbinPath, encryptedData);
-            File.WriteAllText(outputFatbinPath + ".hash", fatbinHash);
-            return fatbinHash;
-        }
-
-        Log.LogMessage(MessageImportance.Low, $"No .key file found at '{keyFilePath}'. Skipping encryption.");
-        var plaintextHash = ComputeSha256Hex(fatbinData);
-        File.WriteAllText(outputFatbinPath + ".hash", plaintextHash);
-        return plaintextHash;
-    }
-
-    private static byte[] EncryptAes256Cbc(byte[] plainData, byte[] key)
-    {
-        using var aes = Aes.Create();
-        aes.Key = key;
-        aes.GenerateIV();
-        var iv = aes.IV;
-
-        using var ms = new MemoryStream();
-        ms.Write([.. "GSHPENC1"u8], 0, 8);
-        ms.Write(iv, 0, iv.Length);
-
-        using (var encryptor = aes.CreateEncryptor())
-        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-        {
-            cs.Write(plainData, 0, plainData.Length);
-            cs.FlushFinalBlock();
-        }
-
-        return ms.ToArray();
-    }
-
-    private static string ComputeSha256Hex(byte[] data)
-    {
-        using var sha256 = SHA256.Create();
-        return BitConverter.ToString(sha256.ComputeHash(data)).Replace("-", "").ToLowerInvariant();
-    }
-
-    private static string GetCleanKernelFileName(string sourcePath)
-    {
-        var fileName = Path.GetFileNameWithoutExtension(sourcePath);
-        if (fileName.EndsWith(".g", StringComparison.OrdinalIgnoreCase))
-        {
-            fileName = fileName.Substring(0, fileName.Length - 2);
-        }
-
-        return fileName;
-    }
 }
