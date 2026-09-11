@@ -26,7 +26,7 @@ NonVoidReturnKernel();
 }
 }
 ";
-public static readonly string NonVoidReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + NonVoidReturnKernel_Source;
+public static readonly string NonVoidReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NonVoidReturnKernel_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NonVoidReturnKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);

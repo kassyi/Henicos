@@ -28,7 +28,7 @@ CooperativePhysicsProcess(data);
 }
 }
 ";
-public static readonly string CooperativePhysicsProcess_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuCode.Source + CooperativePhysicsProcess_Source;
+public static readonly string CooperativePhysicsProcess_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + CooperativePhysicsProcess_Source;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void CooperativePhysicsProcess_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
