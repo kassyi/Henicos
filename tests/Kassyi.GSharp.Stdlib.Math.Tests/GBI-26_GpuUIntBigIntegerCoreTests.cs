@@ -9,6 +9,7 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
 
     public GBI26_GpuUIntBigIntegerCoreTests()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         _scope = new JitEngine.CudaContextScope();
         _context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
     }
@@ -19,7 +20,7 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         _scope.Dispose();
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "HappyPath")]
     [InlineData("0", 1)]
@@ -27,6 +28,7 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
     [InlineData("-123456789012345678901234567890", 4)] // Should take absolute value
     public void Test_GBI26_FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var original = BigInteger.Parse(valueStr);
         using var gpuBigInt = GpuUIntBigInteger.FromBigInteger(_context, original, minWords);
         
@@ -36,11 +38,12 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(BigInteger.Abs(original), roundTripped);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "EdgeCase")]
     public void Test_GBI26_PadTo_LargerSize_ZeroPadsCorrectly()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var original = new BigInteger(0xDEADBEEF);
         using var gpuBigInt = GpuUIntBigInteger.FromBigInteger(_context, original, 1);
         
@@ -56,10 +59,11 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(original, padded.ToBigInteger());
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-26")]
     public void Test_GBI26_PadTo_SmallerSize_ReturnsTruncatedValue()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
         using var original = new GpuUIntBigInteger(_context, originalData);
 
@@ -75,11 +79,12 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(2u, resultData[1]);
         Assert.Equal(3u, resultData[2]);
     }
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "HappyPath")]
     public void Test_GBI26_Addition_EvaluatesCorrectly()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var originalA = BigInteger.Parse("1234567890123456789012345678901234567890");
         var originalB = BigInteger.Parse("9876543210987654321098765432109876543210");
         
