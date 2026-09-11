@@ -3,7 +3,6 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// <summary>
 /// Runtime JIT compilation engine that compiles Standard C++ kernel strings into executable native CPU libraries and manages delegate bindings.
 /// </summary>
-// ReSharper disable UnusedMember.Global -- Public API exposed for runtime consumers
 public sealed class CpuJitEngine
 {
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>
@@ -15,6 +14,7 @@ public sealed class CpuJitEngine
     /// <summary>
     /// Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
     /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {
         s_functionCache.Clear();
@@ -37,6 +37,7 @@ public sealed class CpuJitEngine
     /// <summary>
     /// Loads an AOT-compiled native CPU library and returns a raw function pointer.
     /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static IntPtr LoadAotKernelPtr(string kernelName, string dllPath)
     {
         var cacheKey = dllPath + "::" + kernelName;
@@ -57,6 +58,7 @@ public sealed class CpuJitEngine
     /// <summary>
     /// Loads an AOT-compiled native CPU library and returns a strongly-typed delegate.
     /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static TDelegate LoadAotKernel<TDelegate>(string kernelName, string dllPath) where TDelegate : Delegate
     {
         var cacheKey = dllPath + "::" + kernelName;
