@@ -24,7 +24,7 @@ public class GBF01_GpuBigFloatTests
     }
     #region 1. Structural Layout & Offset Validation Tests (Zero-Reflection Unsafe Pointer Arithmetic)
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "Syntax")]
     [Trait("Category", "HappyPath")]
@@ -67,11 +67,12 @@ public class GBF01_GpuBigFloatTests
         Assert.Equal(20, floatIsNegativeOffset);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "HappyPath")]
     public void Test_GBF01_ConstructorAndFieldInitialization_StoresCorrectValues()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var limbs = CreateLimb4(0x11111111, 0x22222222, 0x33333333, 0x44444444);
         var significand = new GpuUIntBigInteger<LimbBuffer4>(limbs);
         var uFloat = new GpuBigUFloat<LimbBuffer4>(significand, exponent: 42);
@@ -91,7 +92,7 @@ public class GBF01_GpuBigFloatTests
 
     #region 2. Radix Point Alignment Logic Tests via Struct Member Invocations
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "HappyPath")]
     [InlineData(10, 10)]
@@ -105,6 +106,7 @@ public class GBF01_GpuBigFloatTests
     [InlineData(int.MaxValue, int.MaxValue)]
     public void Test_GBF01_RadixAlignment_ExponentDifference_AlignsToMaxExponent_ViaStructApi(int expA, int expB)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var dummySignificand = new GpuUIntBigInteger<LimbBuffer4>(default);
         var floatA = new GpuBigFloat<LimbBuffer4>(dummySignificand, expA, isNegative: false);
         var floatB = new GpuBigFloat<LimbBuffer4>(dummySignificand, expB, isNegative: false);
@@ -118,7 +120,7 @@ public class GBF01_GpuBigFloatTests
         Assert.Equal(System.Math.Max(expA, expB), alignedUB.Exponent);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "EdgeCase")]
     [InlineData(0b11000000u, 2, 0b00110000u, false)]
@@ -131,6 +133,7 @@ public class GBF01_GpuBigFloatTests
     public void Test_GBF01_RadixAlignment_SignificandRightShift_PreservesStickyBitContract(uint initialValue,
         int shiftBits, uint expectedShiftedValue, bool expectedStickyBit)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         uint shiftedValue = shiftBits >= 32 ? 0u : initialValue >> shiftBits;
         uint mask = (1u << shiftBits) - 1u;
         bool stickyBit = shiftBits >= 32 ? (initialValue != 0u) : ((initialValue & mask) != 0u);
@@ -139,11 +142,12 @@ public class GBF01_GpuBigFloatTests
         Assert.Equal(expectedStickyBit, stickyBit);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "EdgeCase")]
     public void Test_GBF01_RadixAlignment_DeltaExponentExceedsPrecision_FlushesToZeroWithStickyBitContract()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var limbs = CreateLimb4(0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu);
         var significand = new GpuUIntBigInteger<LimbBuffer4>(limbs);
 
@@ -160,7 +164,7 @@ public class GBF01_GpuBigFloatTests
 
     #region 3. Normalization & IEEE 754 Rounding Tests via Struct Member Invocations
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "HappyPath")]
     [InlineData(0, 0)] // Carry out = false, 0 leading zeros
@@ -169,6 +173,7 @@ public class GBF01_GpuBigFloatTests
     public void Test_GBF01_Normalization_UnderflowLeadingZeros_AlignsMsbAndDecrementsExponent_ViaStructApi(
         int leadingZeros, int expectedExpOffset)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var limbs = CreateLimb4(1, 0, 0, 0); // Non-zero significand to avoid flush-to-zero during normalization
         var nonZeroSignificand = new GpuUIntBigInteger<LimbBuffer4>(limbs);
         var uFloat = new GpuBigUFloat<LimbBuffer4>(nonZeroSignificand, exponent: 0);
@@ -181,11 +186,12 @@ public class GBF01_GpuBigFloatTests
         Assert.Equal(expectedExpOffset, normFloat.UFloat.Exponent);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "HappyPath")]
     public void Test_GBF01_Normalization_CarryOverflow_ShiftsRightAndIncrementsExponent_ViaStructApi()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var dummySignificand = new GpuUIntBigInteger<LimbBuffer4>(default);
         var uFloat = new GpuBigUFloat<LimbBuffer4>(dummySignificand, exponent: 5);
 
@@ -198,7 +204,7 @@ public class GBF01_GpuBigFloatTests
         Assert.True(normFloat.IsNegative);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "EdgeCase")]
     [InlineData(GpuBigFloatRoundingMode.RoundToNearestEven, true, true, false, 0u, 1u)]
@@ -210,6 +216,7 @@ public class GBF01_GpuBigFloatTests
     public void Test_GBF01_Ieee754Rounding_InvokesRoundingMode_ViaStructApi(GpuBigFloatRoundingMode mode, bool guard,
         bool round, bool sticky, uint initialLimb, uint expectedUFloatLimb)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var limbs = CreateLimb4(initialLimb, 0, 0, 0);
         var significand = new GpuUIntBigInteger<LimbBuffer4>(limbs);
         var uFloat = new GpuBigUFloat<LimbBuffer4>(significand, exponent: 10);
@@ -231,11 +238,12 @@ public class GBF01_GpuBigFloatTests
         Assert.Equal(expectedSignedLimb, roundedFloat.UFloat.Significand.Limbs[0]);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "HappyPath")]
     public void Test_GBF01_ArithmeticOperatorAndMethodDeclarations_ExistAndAreCallable()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var limbsA = CreateLimb4(100, 0, 0, 0);
         var limbsB = CreateLimb4(40, 0, 0, 0);
         var sigA = new GpuUIntBigInteger<LimbBuffer4>(limbsA);
@@ -275,11 +283,12 @@ public class GBF01_GpuBigFloatTests
         Assert.False(subResult.IsNegative);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     [Trait("Category", "EdgeCase")]
     public void Test_GBF01_ZeroSignificand_NormalizesToZeroExponentAndPositiveSign()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var zeroLimbs = CreateLimb4(0, 0, 0, 0);
         var zeroUInt = new GpuUIntBigInteger<LimbBuffer4>(zeroLimbs);
         var zeroUFloat = new GpuBigUFloat<LimbBuffer4>(zeroUInt, exponent: 5);

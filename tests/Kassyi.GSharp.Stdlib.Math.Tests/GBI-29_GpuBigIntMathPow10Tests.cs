@@ -8,7 +8,7 @@ public class GBI29_GpuBigIntMathPow10Tests
 
     [Trait("FeatureId", "GBI-29")]
     [Trait("Category", "HappyPath")]
-    [Theory]
+    [SkippableTheory]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(9)]
@@ -23,6 +23,7 @@ public class GBI29_GpuBigIntMathPow10Tests
     [InlineData(1000)]
     public void Test_GBI29_Pow10_ReturnsCorrectResult(int exponent)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
         using var context = new GpuContext(1024, engine);
 
@@ -33,13 +34,14 @@ public class GBI29_GpuBigIntMathPow10Tests
     
     [Trait("FeatureId", "GBI-29")]
     [Trait("Category", "SadPath")]
-    [Theory]
+    [SkippableTheory]
     [InlineData(-1)]
     [InlineData(int.MinValue)]
     [InlineData(50_000_001)]
     [InlineData(int.MaxValue)]
     public void Test_GBI29_Pow10_InvalidExponent_ThrowsArgumentOutOfRangeException(int exponent)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
         using var context = new GpuContext(1024, engine);
 
