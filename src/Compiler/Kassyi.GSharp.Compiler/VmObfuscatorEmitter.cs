@@ -8,6 +8,14 @@ namespace Kassyi.GSharp.Compiler;
 /// </summary>
 internal static class VmObfuscatorEmitter
 {
+    private static readonly IVmStrategy[] s_strategies =
+    [
+        new NandStackVmStrategy(),
+        new RegisterVmStrategy(),
+        new AutomatonVmStrategy(),
+        new ArithmeticVmStrategy()
+    ];
+
     internal static int GetDeterministicHashCode(string? str)
     {
         if (str == null)
@@ -28,23 +36,15 @@ internal static class VmObfuscatorEmitter
         }
     }
 
-    public static void EmitKeyDerivationVm(SourceWriter writer, IMethodSymbol method, byte[] aesKey)
+    public static void EmitKeyDerivationVm(SourceWriter writer, IMethodSymbol method, byte[] aesKey, int? seed = null)
     {
-        var rng = new Random(aesKey.Sum(b => b) + GetDeterministicHashCode(method.Name));
+        var rng = new Random(seed ?? (aesKey.Sum(b => b) + GetDeterministicHashCode(method.Name)));
 
-        // 1. Opcode Shuffling (Common)
+        // 1. Opcode Shuffling
         var opcodes = Enumerable.Range(1, 250).OrderBy(_ => rng.Next()).Select(x => (byte)x).ToArray();
 
-        // 2. Select Strategy (No Reflection)
-        var strategies = new IVmStrategy[]
-        {
-            new NandStackVmStrategy(),
-            new RegisterVmStrategy(),
-            new AutomatonVmStrategy(),
-            new ArithmeticVmStrategy()
-        };
-
-        var strategy = strategies[rng.Next(strategies.Length)];
+        // 2. Select Strategy
+        var strategy = s_strategies[rng.Next(s_strategies.Length)];
 
         writer.AppendLine(
             "[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining | System.Runtime.CompilerServices.MethodImplOptions.NoOptimization)]");
