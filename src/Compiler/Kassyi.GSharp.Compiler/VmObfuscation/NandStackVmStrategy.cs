@@ -137,7 +137,7 @@ internal class NandStackVmStrategy : IVmStrategy
             var numJunk = rng.Next(2, 5);
             for (var j = 0; j < numJunk; j++)
             {
-                var junkAddr = rng.Next(150, 201);
+                var junkAddr = memMap[rng.Next(150, 200)];
                 emitPush(rng.Next(256));
                 emitPush(rng.Next(256));
                 emitNand();

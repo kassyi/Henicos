@@ -59,14 +59,16 @@ internal class AutomatonVmStrategy : IVmStrategy
             addJunk();
         }
 
-        for (var i = 0; i < nodes.Count - 1; i++)
+        if (nodes.Count > 0)
         {
-            nodes[i].NextId = nodes[i + 1].Id;
+            for (var i = 0; i < nodes.Count - 1; i++)
+            {
+                nodes[i].NextId = nodes[i + 1].Id;
+            }
+            nodes[nodes.Count - 1].NextId = -1;
         }
 
-        nodes[nodes.Count - 1].NextId = -1;
-
-        var initialId = nodes[0].Id;
+        var initialId = nodes.Count > 0 ? nodes[0].Id : 0;
         var shuffledNodes = nodes.OrderBy(_ => rng.Next()).ToList();
         for (var i = 0; i < shuffledNodes.Count; i++)
         {
@@ -75,6 +77,7 @@ internal class AutomatonVmStrategy : IVmStrategy
 
         var idToOffset = shuffledNodes.ToDictionary(n => n.Id, n => n.ByteOffset);
         idToOffset[-1] = -1;
+        idToOffset[0] = 0;
 
         var bytecode = new List<byte>();
         foreach (var n in shuffledNodes)

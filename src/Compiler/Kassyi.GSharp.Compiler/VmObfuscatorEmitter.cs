@@ -41,7 +41,17 @@ internal static class VmObfuscatorEmitter
         var rng = new Random(seed ?? (aesKey.Sum(b => b) + GetDeterministicHashCode(method.Name)));
 
         // 1. Opcode Shuffling
-        var opcodes = Enumerable.Range(1, 250).OrderBy(_ => rng.Next()).Select(x => (byte)x).ToArray();
+        var opcodes = new byte[250];
+        for (int i = 0; i < 250; i++)
+        {
+            opcodes[i] = (byte)(i + 1);
+        }
+
+        for (int i = opcodes.Length - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (opcodes[i], opcodes[j]) = (opcodes[j], opcodes[i]);
+        }
 
         // 2. Select Strategy
         var strategy = s_strategies[rng.Next(s_strategies.Length)];
