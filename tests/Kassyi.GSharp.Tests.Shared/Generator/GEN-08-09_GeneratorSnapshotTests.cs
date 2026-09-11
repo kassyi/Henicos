@@ -157,9 +157,23 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
             Assert.Fail($"Generator failed with errors:\n{errorMessages}");
         }
 
-        await Verifier.Verify(driver)
+        var runResult = driver.GetRunResult();
+        foreach (var t in runResult.GeneratedTrees) {
+            System.IO.File.AppendAllText("dump_trees.txt", testName + " -> " + t.FilePath + "\n");
+        }
+        var nonSharedTrees = runResult.GeneratedTrees
+            .Where(t => !t.FilePath.Contains("GSharpShared"))
+            .OrderBy(t => t.FilePath)
+            .Select(t => $"// File: {System.IO.Path.GetFileName(t.FilePath)}\n{t.GetText().ToString()}");
+        var combinedSource = string.Join("\n\n", nonSharedTrees);
+
+        var prefix = testName.Split('_')[0];
+        var hash10 = Kassyi.GSharp.Tests.Helpers.HashHelper.ComputeShortHash(testName);
+        var snapshotName = $"Snap.{prefix}_{hash10}_{DialectName}";
+
+        await Verifier.Verify(combinedSource, "cs")
             .UseDirectory(GetSnapshotsDirectory())
-            .UseMethodName($"{testName}_{DialectName}_GeneratesCorrectCudaSource");
+            .UseFileName(snapshotName);
     }
 
     [SkippableTheory]
@@ -181,6 +195,34 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
         var testName = Path.GetFileNameWithoutExtension(sourcePath).Replace(".cu", "");
 
         await VerifyGeneratorAsync(source, testName, sourceDir!);
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GEN-08")]
+    public async Task Test_SharedPreludeHeader_Snapshot()
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+        var src = @"using Kassyi.GSharp.Core; public class Dummy { [GpuKernel] public static void Kernel() {} }";
+        var syntaxTrees = new List<SyntaxTree> { CSharpSyntaxTree.ParseText(src, options: parseOptions) };
+        var compilation = CSharpCompilation.Create("DummyCompilation").AddSyntaxTrees(syntaxTrees);
+
+        var generator = new GpuKernelGenerator();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: new[] { generator.AsSourceGenerator() },
+            additionalTexts: null,
+            parseOptions: parseOptions,
+            optionsProvider: new Kassyi.GSharp.Tests.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
+
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+        
+        var runResult = driver.GetRunResult();
+        var sharedHeader = runResult.GeneratedTrees
+            .FirstOrDefault(t => t.FilePath.Contains("Shared"))
+            ?.GetText().ToString() ?? "";
+
+        await Verifier.Verify(sharedHeader, "cs")
+            .UseDirectory(GetSnapshotsDirectory())
+            .UseFileName($"Snap.SharedHeader_{DialectName}");
     }
 
     [Fact]
@@ -212,15 +254,16 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
 
         Assert.NotEmpty(snapshotFiles);
 
-        string GetPureName(string name) => PureNameRegex().Replace(name, "");
-
         var missingSnapshots = new List<string>();
         foreach (var pureName in mandatorySnapshotKernels)
         {
-            var cleanName = GetPureName(pureName);
-            if (!snapshotFiles.Any(f => f.Contains(cleanName, StringComparison.OrdinalIgnoreCase)))
+            var prefix = pureName.Split('_')[0];
+            var hash10 = Kassyi.GSharp.Tests.Helpers.HashHelper.ComputeShortHash(pureName);
+            var expectedPattern = $"{prefix}_{hash10}";
+
+            if (!snapshotFiles.Any(f => f.Contains(expectedPattern, StringComparison.OrdinalIgnoreCase)))
             {
-                missingSnapshots.Add("TestCase/Kernel '" + pureName + "' does not have any corresponding snapshot.");
+                missingSnapshots.Add($"TestCase/Kernel '{pureName}' does not have any corresponding snapshot ({expectedPattern}).");
             }
         }
 
