@@ -36,6 +36,7 @@ public sealed class JitEngine
         }
     }
 
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static bool IsDriverAvailable
     {
         get
@@ -58,6 +59,7 @@ public sealed class JitEngine
 
     private static void EnsureInitialized()
     {
+        // ReSharper disable once InconsistentlySynchronizedField -- Double-checked locking pattern
         if (s_isGlobalInit)
         {
             return;
@@ -88,6 +90,7 @@ public sealed class JitEngine
     private static readonly ConcurrentDictionary<string, Lazy<GpuModule>> s_functionCache = new();
 
 #pragma warning disable IDE0051 // Justification: Public API for library
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {
         using var scope = new CudaContextScope();
@@ -112,6 +115,7 @@ public sealed class JitEngine
         s_functionCache.Clear();
     }
 
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void SynchronizeDevice()
     {
         using var scope = new CudaContextScope();
@@ -121,19 +125,27 @@ public sealed class JitEngine
     /// <summary>
     /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
     /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName,
-        string? expectedHash = null, byte[]? decryptionKey = null)
+        byte[]? decryptionKey = null)
     {
         EnsureInitialized();
 
-        var cacheKey = expectedHash != null ? $"{expectedHash}::{kernelName}" : kernelName;
+        if (aotFatbin.Length < 32)
+        {
+            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid hash.");
+        }
+
+        var embeddedHashBytes = aotFatbin.Slice(aotFatbin.Length - 32);
+        var expectedHash = Convert.ToHexStringLower(embeddedHashBytes);
+        var cacheKey = $"{expectedHash}::{kernelName}";
 
         if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
         {
             return lazyHit.Value.Function;
         }
 
-        byte[] processed = [.. aotFatbin];
+        byte[] processed = [.. aotFatbin.Slice(0, aotFatbin.Length - 32)];
         var isEncrypted = processed.Length > 8 && Encoding.ASCII.GetString(processed, 0, 8) == "GSHPENC1";
 
         // 1. Decryption if required
@@ -160,13 +172,10 @@ public sealed class JitEngine
         }
 
         // 2. Hash Validation
-        if (!string.IsNullOrEmpty(expectedHash))
+        var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
+        if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
         {
-            var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
-            if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHash}");
-            }
+            throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHash}");
         }
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
