@@ -41,25 +41,17 @@ public static unsafe void Launch_MyKernel(uint gridDimX = 1, uint gridDimY = 1, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_35_MacroTranspiler_InGpuKernelWrapper).Assembly.GetManifestResourceStream("GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin");
-var hashStream = typeof(GEN_35_MacroTranspiler_InGpuKernelWrapper).Assembly.GetManifestResourceStream("GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MyKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MyKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -85,25 +77,17 @@ public static unsafe void Launch_MyKernel_Device(uint gridDimX = 1, uint gridDim
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(GEN_35_MacroTranspiler_InGpuKernelWrapper).Assembly.GetManifestResourceStream("GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin");
-var hashStream = typeof(GEN_35_MacroTranspiler_InGpuKernelWrapper).Assembly.GetManifestResourceStream("GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MyKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MyKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

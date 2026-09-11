@@ -39,25 +39,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(BitOpsTestKernelsWrapper).Assembly.GetManifestResourceStream("BitOpsTestKernels_BitOpsKernel.fatbin");
-var hashStream = typeof(BitOpsTestKernelsWrapper).Assembly.GetManifestResourceStream("BitOpsTestKernels_BitOpsKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "BitOpsTestKernels_BitOpsKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOpsKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOpsKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'BitOpsTestKernels_BitOpsKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'BitOpsTestKernels_BitOpsKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
@@ -149,25 +141,17 @@ public static unsafe void Launch_BitOpsKernel_Device(IntPtr u32Data, IntPtr u64D
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(BitOpsTestKernelsWrapper).Assembly.GetManifestResourceStream("BitOpsTestKernels_BitOpsKernel.fatbin");
-var hashStream = typeof(BitOpsTestKernelsWrapper).Assembly.GetManifestResourceStream("BitOpsTestKernels_BitOpsKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "BitOpsTestKernels_BitOpsKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOpsKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOpsKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'BitOpsTestKernels_BitOpsKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'BitOpsTestKernels_BitOpsKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

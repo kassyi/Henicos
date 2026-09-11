@@ -37,25 +37,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(PtxEngineExperimentKernelsWrapper).Assembly.GetManifestResourceStream("PtxEngineExperimentKernels_AddKernel.fatbin");
-var hashStream = typeof(PtxEngineExperimentKernelsWrapper).Assembly.GetManifestResourceStream("PtxEngineExperimentKernels_AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "PtxEngineExperimentKernels_AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'PtxEngineExperimentKernels_AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'PtxEngineExperimentKernels_AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
@@ -180,25 +172,17 @@ public static unsafe void Launch_AddKernel_Device(IntPtr a, IntPtr b, IntPtr c, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(PtxEngineExperimentKernelsWrapper).Assembly.GetManifestResourceStream("PtxEngineExperimentKernels_AddKernel.fatbin");
-var hashStream = typeof(PtxEngineExperimentKernelsWrapper).Assembly.GetManifestResourceStream("PtxEngineExperimentKernels_AddKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "PtxEngineExperimentKernels_AddKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AddKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AddKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'PtxEngineExperimentKernels_AddKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'PtxEngineExperimentKernels_AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

@@ -23,25 +23,17 @@ public static unsafe void Launch_NonVoidReturnKernel(uint gridDimX = 1, uint gri
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_NonVoidReturnKernel.fatbin");
-var hashStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_NonVoidReturnKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorKernels_NonVoidReturnKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonVoidReturnKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonVoidReturnKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'ErrorKernels_NonVoidReturnKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_NonVoidReturnKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {
@@ -67,25 +59,17 @@ public static unsafe void Launch_NonVoidReturnKernel_Device(uint gridDimX = 1, u
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_NonVoidReturnKernel.fatbin");
-var hashStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_NonVoidReturnKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorKernels_NonVoidReturnKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonVoidReturnKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NonVoidReturnKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'ErrorKernels_NonVoidReturnKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_NonVoidReturnKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

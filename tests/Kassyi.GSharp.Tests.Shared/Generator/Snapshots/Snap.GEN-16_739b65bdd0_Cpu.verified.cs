@@ -49,7 +49,10 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpPrimitivesKernel", $"Kassyi.GSharp.Kernels.GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel{archSuffix}.dll");
+var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpPrimitivesKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
@@ -116,7 +119,10 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpReduceSumKernel", $"Kassyi.GSharp.Kernels.GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel{archSuffix}.dll");
+var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpReduceSumKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

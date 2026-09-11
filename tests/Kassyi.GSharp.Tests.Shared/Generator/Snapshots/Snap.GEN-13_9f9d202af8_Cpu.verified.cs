@@ -51,7 +51,10 @@ if (outputBuffer.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_Kernel_MacroTest_FillAndSingle", $"Kassyi.GSharp.Kernels.GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle{archSuffix}.dll");
+var dllName = $"GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_Kernel_MacroTest_FillAndSingle", dllPath, decryptionKey);
 fixed (global::System.UInt32* p_outputBuffer = outputBuffer)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_outputBuffer, length, fillValue, singleValue);

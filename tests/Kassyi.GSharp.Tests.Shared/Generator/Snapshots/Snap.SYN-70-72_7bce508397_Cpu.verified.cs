@@ -57,7 +57,10 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachCollectionExpressionKernel_Delegate>("__gsharp_launch_ForeachCollectionExpressionKernel", $"Kassyi.GSharp.Kernels.SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel{archSuffix}.dll");
+var dllName = $"SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachCollectionExpressionKernel_Delegate>("__gsharp_launch_ForeachCollectionExpressionKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -140,7 +143,10 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachInlineArrayKernel_Delegate>("__gsharp_launch_ForeachInlineArrayKernel", $"Kassyi.GSharp.Kernels.SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel{archSuffix}.dll");
+var dllName = $"SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachInlineArrayKernel_Delegate>("__gsharp_launch_ForeachInlineArrayKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -199,7 +205,10 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachStackAllocKernel_Delegate>("__gsharp_launch_ForeachStackAllocKernel", $"Kassyi.GSharp.Kernels.SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel{archSuffix}.dll");
+var dllName = $"SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachStackAllocKernel_Delegate>("__gsharp_launch_ForeachStackAllocKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

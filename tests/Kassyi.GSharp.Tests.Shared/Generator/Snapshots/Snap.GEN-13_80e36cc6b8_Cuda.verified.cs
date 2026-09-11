@@ -47,25 +47,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(MacroExpansionKernelWrapper).Assembly.GetManifestResourceStream("MacroExpansionKernel_TestMacroKernel.fatbin");
-var hashStream = typeof(MacroExpansionKernelWrapper).Assembly.GetManifestResourceStream("MacroExpansionKernel_TestMacroKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "MacroExpansionKernel_TestMacroKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "TestMacroKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "TestMacroKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'MacroExpansionKernel_TestMacroKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'MacroExpansionKernel_TestMacroKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_data = IntPtr.Zero;
 try
@@ -126,25 +118,17 @@ public static unsafe void Launch_TestMacroKernel_Device(IntPtr data, global::Sys
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(MacroExpansionKernelWrapper).Assembly.GetManifestResourceStream("MacroExpansionKernel_TestMacroKernel.fatbin");
-var hashStream = typeof(MacroExpansionKernelWrapper).Assembly.GetManifestResourceStream("MacroExpansionKernel_TestMacroKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "MacroExpansionKernel_TestMacroKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "TestMacroKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "TestMacroKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'MacroExpansionKernel_TestMacroKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'MacroExpansionKernel_TestMacroKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

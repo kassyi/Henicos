@@ -76,7 +76,10 @@ if (input.Length == 0 || output.Length == 0 || success.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", $"Kassyi.GSharp.Kernels.SYN_03_InlineOutVarKernels_HappyPathKernel{archSuffix}.dll");
+var dllName = $"SYN_03_InlineOutVarKernels_HappyPathKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 fixed (global::System.Int32* p_success = success)
@@ -140,7 +143,10 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", $"Kassyi.GSharp.Kernels.SYN_03_InlineOutVarKernels_IfConditionKernel{archSuffix}.dll");
+var dllName = $"SYN_03_InlineOutVarKernels_IfConditionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
@@ -203,7 +209,10 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", $"Kassyi.GSharp.Kernels.SYN_03_InlineOutVarKernels_WhileConditionKernel{archSuffix}.dll");
+var dllName = $"SYN_03_InlineOutVarKernels_WhileConditionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

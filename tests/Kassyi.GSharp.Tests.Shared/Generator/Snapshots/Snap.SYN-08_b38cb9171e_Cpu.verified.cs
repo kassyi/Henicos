@@ -56,7 +56,10 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel{archSuffix}.dll");
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -114,7 +117,10 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel{archSuffix}.dll");
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -173,7 +179,10 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel{archSuffix}.dll");
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -231,7 +240,10 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel{archSuffix}.dll");
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, factor);

@@ -42,7 +42,10 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", $"Kassyi.GSharp.Kernels.ComprehensiveSpecKernel_CooperativePhysicsProcess{archSuffix}.dll");
+var dllName = $"ComprehensiveSpecKernel_CooperativePhysicsProcess{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", dllPath, decryptionKey);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

@@ -278,7 +278,10 @@ if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || glo
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", $"Kassyi.GSharp.Kernels.Tier1IntegrationKernels_AllInOneKernel{archSuffix}.dll");
+var dllName = $"Tier1IntegrationKernels_AllInOneKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_intInput = intInput)
 fixed (global::System.Single* p_floatInput = floatInput)
 fixed (global::System.Single* p_results = results)

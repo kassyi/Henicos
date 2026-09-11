@@ -67,25 +67,17 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper).Assembly.GetManifestResourceStream("SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin");
-var hashStream = typeof(SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper).Assembly.GetManifestResourceStream("SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SharedMemoryStaticKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SharedMemoryStaticKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 IntPtr d_intOutput = IntPtr.Zero;
 IntPtr d_floatOutput = IntPtr.Zero;
@@ -210,25 +202,17 @@ public static unsafe void Launch_SharedMemoryStaticKernel_Device(IntPtr intOutpu
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-var aotStream = typeof(SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper).Assembly.GetManifestResourceStream("SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin");
-var hashStream = typeof(SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper).Assembly.GetManifestResourceStream("SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin.hash");
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin");
 IntPtr hfunc = IntPtr.Zero;
-if (aotStream != null)
+if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = new byte[aotStream.Length];
-aotStream.Read(fatbinData, 0, (int)aotStream.Length);
-string expectedHash = null;
-if (hashStream != null)
-{
-using var reader = new System.IO.StreamReader(hashStream);
-expectedHash = reader.ReadToEnd().Trim();
-}
+var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
 byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SharedMemoryStaticKernel", expectedHash, decryptionKey);
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SharedMemoryStaticKernel", decryptionKey);
 }
 else
 {
-throw new System.InvalidOperationException("AOT kernel binary 'SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin' was not found in the embedded resources.");
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel.fatbin' was not found at '{fatbinPath}'.");
 }
 try
 {

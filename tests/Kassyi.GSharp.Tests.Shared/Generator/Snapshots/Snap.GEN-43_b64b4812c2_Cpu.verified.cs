@@ -50,7 +50,10 @@ if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MatrixMultiplyStressKernel_Delegate>("__gsharp_launch_MatrixMultiplyStressKernel", $"Kassyi.GSharp.Kernels.GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel{archSuffix}.dll");
+var dllName = $"GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MatrixMultiplyStressKernel_Delegate>("__gsharp_launch_MatrixMultiplyStressKernel", dllPath, decryptionKey);
 fixed (global::System.Single* p_a = a)
 fixed (global::System.Single* p_b = b)
 fixed (global::System.Single* p_c = c)

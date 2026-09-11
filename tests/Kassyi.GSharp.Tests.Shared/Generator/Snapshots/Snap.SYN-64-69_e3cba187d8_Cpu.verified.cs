@@ -64,7 +64,10 @@ if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", $"Kassyi.GSharp.Kernels.SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel{archSuffix}.dll");
+var dllName = $"SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", dllPath, decryptionKey);
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)
 {

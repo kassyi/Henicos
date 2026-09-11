@@ -53,7 +53,10 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_ModifyStructLayoutKernel", $"Kassyi.GSharp.Kernels.GEN_33_StructLayoutKernels_ModifyStructLayoutKernel{archSuffix}.dll");
+var dllName = $"GEN_33_StructLayoutKernels_ModifyStructLayoutKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_ModifyStructLayoutKernel", dllPath, decryptionKey);
 fixed (global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

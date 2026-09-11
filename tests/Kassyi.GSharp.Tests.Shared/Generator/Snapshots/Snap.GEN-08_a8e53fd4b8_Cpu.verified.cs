@@ -86,7 +86,10 @@ if (arrayVal.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", $"Kassyi.GSharp.Kernels.WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll");
+var dllName = $"WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+byte[] decryptionKey = null;
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", dllPath, decryptionKey);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_scalarRef = &scalarRef)
 fixed (global::System.Single* p_scalarOut = &scalarOut)
