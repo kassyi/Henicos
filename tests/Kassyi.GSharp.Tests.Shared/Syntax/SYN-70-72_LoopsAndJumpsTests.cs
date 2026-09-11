@@ -1,13 +1,14 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_70_72_LoopsAndJumpsTests
 :  TranspilerTestBase{
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-70")]
     [Trait("Category", "GpuExecution")]
     public void Test_SYN70_ForeachInlineArray_Execution()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = [0];
         SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachInlineArrayKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);

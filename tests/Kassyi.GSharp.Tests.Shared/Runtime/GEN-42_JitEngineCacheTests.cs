@@ -22,10 +22,11 @@ public class GEN_42_JitEngineCacheTests
         }
         """;
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-42")]
     public void Test_GEN42_JitEngine_ReturnsCachedFunctionPointerOnRepeatedCalls()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // First call: compiles and caches the function
         var initialMissCount = JitEngine.CacheMissCount;
         var funcPtr1 = JitEngine.GetOrCompileKernel("TestCacheKernel", SimpleKernelSource);
@@ -40,10 +41,11 @@ public class GEN_42_JitEngineCacheTests
         Assert.Equal(missCountAfterFirst, missCountAfterSecond);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-42")]
     public void Test_GEN42_JitEngine_DistinguishesDifferentKernelSources()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var funcPtr1 = JitEngine.GetOrCompileKernel("TestCacheKernel", SimpleKernelSource);
         var funcPtr2 = JitEngine.GetOrCompileKernel("TestAnotherKernel", AnotherKernelSource);
 

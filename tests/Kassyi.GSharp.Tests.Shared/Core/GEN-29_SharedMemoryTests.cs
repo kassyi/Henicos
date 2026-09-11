@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Core;
 [Trait("Category", "GpuExecution")]
 public class GEN_29_SharedMemoryTests
 {
-    [Theory]
+    [SkippableTheory]
     [InlineData(1)]
     [InlineData(128)]
     [InlineData(255)]
@@ -14,6 +14,7 @@ public class GEN_29_SharedMemoryTests
     [Trait("FeatureId", "GEN-29")]
     public void Test_GEN29_SharedMemory_ReversesArrayCorrectly(int length)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var input = new int[length];
         var output = new int[length];
 

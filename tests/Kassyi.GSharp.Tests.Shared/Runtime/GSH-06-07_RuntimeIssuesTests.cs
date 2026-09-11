@@ -13,12 +13,13 @@ public partial class Gsh06_07_RuntimeIssuesTests
     {
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "GpuExecution")]
     public void Test_GSH07_JitDiskCache_RecoversFromCorruptedCache()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         const string kernelName = "CacheTestKernel";
         const string kernelSource = @"extern ""C"" __global__ void CacheTestKernel(int* a) { *a = 42; }";
 
@@ -86,11 +87,12 @@ public partial class Gsh06_07_RuntimeIssuesTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GSH-07")]
     [Trait("Category", "SadPath")]
     public void Test_GSH07_Runtime_MissingCudaToolkit_GracefulDegradation()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var originalEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
         try
         {

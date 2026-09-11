@@ -1,8 +1,8 @@
-﻿namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_03_InlineOutVarTests
 :  TranspilerTestBase{
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(5, 25, 1)]
@@ -12,6 +12,7 @@ public class SYN_03_InlineOutVarTests
     [InlineData(-3, 9, 0)]
     public void Test_SYN03_HappyPath_InlineOutVarInArguments(int val, int expectedOutput, int expectedSuccess)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [val];
         int[] output = [0];
         int[] success = [0];
@@ -22,7 +23,7 @@ public class SYN_03_InlineOutVarTests
         Assert.Equal(expectedSuccess, success[0]);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(4, 26)]  // 4 > 0 -> 16 + 10 = 26
@@ -32,6 +33,7 @@ public class SYN_03_InlineOutVarTests
     [InlineData(-5, 15)] // -5 <= 0 -> 25 - 10 = 15
     public void Test_SYN03_EdgeCase_IfConditionInlineOutVar(int val, int expectedOutput)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [val];
         int[] output = [0];
 
@@ -40,7 +42,7 @@ public class SYN_03_InlineOutVarTests
         Assert.Equal(expectedOutput, output[0]);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-03")]
     [InlineData(4, 6)] // 4 -> steps: 3, 2, 1 -> sum = 6
@@ -48,6 +50,7 @@ public class SYN_03_InlineOutVarTests
     [InlineData(0, 0)] // 0 -> step: -1 -> while condition false -> sum = 0
     public void Test_SYN03_EdgeCase_WhileConditionInlineOutVar(int val, int expectedOutput)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [val];
         int[] output = [0];
 

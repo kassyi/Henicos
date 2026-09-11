@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public struct DummyStruct_GEN17
@@ -35,22 +35,24 @@ public partial class GEN_17_RefOutDereferenceTests
     [GeneratedRegex(@"\(\*a\)\s*=\s*\(\*b\)\s*=\s*\(\*refArg\)\s*=\s*10;")]
     private static partial Regex ChainedRefRegex();
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-17")]
     [Trait("Category", "Syntax")]
     public void Test_GEN17_RefOutDereferencing_HappyPath_ModifyingRefArgument()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
 
         Assert.Empty(diagnostics);
         Assert.Matches(SuccessFlagRegex(), cudaSource);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-17")]
     [Trait("Category", "Syntax")]
     public void Test_GEN17_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var (cudaSourceMember, diagnosticsMember) = RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
         Assert.Empty(diagnosticsMember);
         Assert.Matches(RefArgFieldRegex(), cudaSourceMember);

@@ -7,11 +7,12 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
 :  TranspilerTestBase{
     private readonly ITestOutputHelper _output = output;
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (context, smVersion) = InitializeCuda();
         try
         {
@@ -100,12 +101,13 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
             if (module != IntPtr.Zero) CudaDriverApi.cuModuleUnload(module);
         }
     }
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "SadPath")]
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (context, _) = InitializeCuda();
         try
         {
@@ -122,12 +124,13 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-12")]
     [Trait("Category", "Stress")]
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (context, smVersion) = InitializeCuda();
         try
         {
