@@ -55,8 +55,8 @@ public static unsafe void Launch_ImmediatelyEvaluatedLambdaKernel(global::System
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", ImmediatelyEvaluatedLambdaKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -113,8 +113,8 @@ public static unsafe void Launch_NonCapturingLambdaKernel(global::System.Int32[]
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", NonCapturingLambdaKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -172,8 +172,8 @@ public static unsafe void Launch_ShadowedVariableCaptureKernel(global::System.In
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", ShadowedVariableCaptureKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -230,8 +230,8 @@ public static unsafe void Launch_ValueCapturingLambdaKernel(global::System.Int32
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", ValueCapturingLambdaKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", $"Kassyi.GSharp.Kernels.SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, factor);

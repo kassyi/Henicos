@@ -57,8 +57,8 @@ public static unsafe void Launch_ChunkAddKernel(global::System.UInt32[] dA, glob
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", ChunkAddKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", $"Kassyi.GSharp.Kernels.GpuBigIntKernels_ChunkAddKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)

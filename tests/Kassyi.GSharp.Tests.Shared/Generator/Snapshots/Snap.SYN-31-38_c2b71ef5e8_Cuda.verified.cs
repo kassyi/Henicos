@@ -40,8 +40,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("FixedBufferKernel", FixedBufferKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "FixedBufferKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -99,8 +117,26 @@ public static unsafe void Launch_FixedBufferKernel_Device(IntPtr data, uint grid
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("FixedBufferKernel", FixedBufferKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "FixedBufferKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -163,8 +199,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerComplexAssignmentKernel", PointerComplexAssignmentKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "PointerComplexAssignmentKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_idx = IntPtr.Zero;
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
@@ -288,8 +342,26 @@ public static unsafe void Launch_PointerComplexAssignmentKernel_Device(IntPtr id
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerComplexAssignmentKernel", PointerComplexAssignmentKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "PointerComplexAssignmentKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -356,8 +428,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerDecrementKernel", PointerDecrementKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "PointerDecrementKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_src = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
 try
@@ -448,8 +538,26 @@ public static unsafe void Launch_PointerDecrementKernel_Device(IntPtr src, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerDecrementKernel", PointerDecrementKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "PointerDecrementKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -514,8 +622,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerIncrementKernel", PointerIncrementKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "PointerIncrementKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_src = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
 try
@@ -606,8 +732,26 @@ public static unsafe void Launch_PointerIncrementKernel_Device(IntPtr src, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("PointerIncrementKernel", PointerIncrementKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin");
+var hashStream = typeof(SYN_31_38_AdvancedMemoryKernelsWrapper).Assembly.GetManifestResourceStream("SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "PointerIncrementKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];

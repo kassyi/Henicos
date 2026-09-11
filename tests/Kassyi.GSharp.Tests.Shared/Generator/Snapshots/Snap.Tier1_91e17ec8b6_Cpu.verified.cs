@@ -277,8 +277,8 @@ public static unsafe void Launch_AllInOneKernel(global::System.Int32[] intInput,
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", AllInOneKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", $"Kassyi.GSharp.Kernels.Tier1IntegrationKernels_AllInOneKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_intInput = intInput)
 fixed (global::System.Single* p_floatInput = floatInput)
 fixed (global::System.Single* p_results = results)

@@ -51,8 +51,8 @@ public static unsafe void Launch_InlinePtxKernel(global::System.UInt32[] data, u
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", InlinePtxKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", $"Kassyi.GSharp.Kernels.SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

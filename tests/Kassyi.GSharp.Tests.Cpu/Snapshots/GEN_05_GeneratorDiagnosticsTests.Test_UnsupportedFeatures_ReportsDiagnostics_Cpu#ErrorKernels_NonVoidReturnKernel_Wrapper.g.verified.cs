@@ -36,8 +36,8 @@ public static readonly string NonVoidReturnKernel_FullSource = global::Kassyi.GS
 private unsafe delegate void NonVoidReturnKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);
 public static unsafe void Launch_NonVoidReturnKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NonVoidReturnKernel_Delegate>("__gsharp_launch_NonVoidReturnKernel", NonVoidReturnKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonVoidReturnKernel_Delegate>("__gsharp_launch_NonVoidReturnKernel", $"Kassyi.GSharp.Kernels.ErrorKernels_NonVoidReturnKernel{archSuffix}.dll");
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }
 #pragma warning restore CS8500

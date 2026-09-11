@@ -50,8 +50,8 @@ public static unsafe void Launch_ReverseArrayWithSharedMemoryKernel(global::Syst
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ReverseArrayWithSharedMemoryKernel_Delegate>("__gsharp_launch_ReverseArrayWithSharedMemoryKernel", ReverseArrayWithSharedMemoryKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ReverseArrayWithSharedMemoryKernel_Delegate>("__gsharp_launch_ReverseArrayWithSharedMemoryKernel", $"Kassyi.GSharp.Kernels.GEN_29_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

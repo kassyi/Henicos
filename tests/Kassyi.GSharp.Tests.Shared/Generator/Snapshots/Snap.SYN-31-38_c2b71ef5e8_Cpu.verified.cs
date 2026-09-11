@@ -53,8 +53,8 @@ public static unsafe void Launch_FixedBufferKernel(global::System.UInt32[] data,
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", FixedBufferKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", $"Kassyi.GSharp.Kernels.SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -115,8 +115,8 @@ public static unsafe void Launch_PointerComplexAssignmentKernel(global::System.U
 if (idx.Length == 0 || val.Length == 0 || dest.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", PointerComplexAssignmentKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", $"Kassyi.GSharp.Kernels.SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_idx = idx)
 fixed (global::System.UInt32* p_val = val)
 fixed (global::System.UInt32* p_dest = dest)
@@ -179,8 +179,8 @@ public static unsafe void Launch_PointerDecrementKernel(global::System.UInt32[] 
 if (src.Length == 0 || dest.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", PointerDecrementKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", $"Kassyi.GSharp.Kernels.SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {
@@ -242,8 +242,8 @@ public static unsafe void Launch_PointerIncrementKernel(global::System.UInt32[] 
 if (src.Length == 0 || dest.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PointerIncrementKernel_Delegate>("__gsharp_launch_PointerIncrementKernel", PointerIncrementKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerIncrementKernel_Delegate>("__gsharp_launch_PointerIncrementKernel", $"Kassyi.GSharp.Kernels.SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {

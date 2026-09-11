@@ -52,8 +52,8 @@ public static unsafe void Launch_ModifyStructLayoutKernel(global::Kassyi.GSharp.
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_ModifyStructLayoutKernel", ModifyStructLayoutKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_ModifyStructLayoutKernel", $"Kassyi.GSharp.Kernels.GEN_33_StructLayoutKernels_ModifyStructLayoutKernel{archSuffix}.dll");
 fixed (global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

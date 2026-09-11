@@ -24,8 +24,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class WrapperAllocationKernelsWrapper
 {
-[System.ThreadStatic]
-private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_AllocationTestKernel;
 public const string AllocationTestKernel_Source = @"extern ""C"" __declspec(dllexport) void AllocationTestKernel(int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal){
 if((*ioVal)>constantVal)
 {
@@ -61,10 +59,8 @@ outVal = default;
 if (arrayVal.Length == 0){
 return;
 }
-__t_jitConstants_array_AllocationTestKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_AllocationTestKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_AllocationTestKernel, 0, 1);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", AllocationTestKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", $"Kassyi.GSharp.Kernels.WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_ioVal = &ioVal)
 fixed (global::System.Single* p_outVal = &outVal)

@@ -36,8 +36,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MatrixMultiplyStressKernel", MatrixMultiplyStressKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_43_HeavyGpuStressKernelsWrapper).Assembly.GetManifestResourceStream("GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel.fatbin");
+var hashStream = typeof(GEN_43_HeavyGpuStressKernelsWrapper).Assembly.GetManifestResourceStream("GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MatrixMultiplyStressKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -163,8 +181,26 @@ public static unsafe void Launch_MatrixMultiplyStressKernel_Device(IntPtr a, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MatrixMultiplyStressKernel", MatrixMultiplyStressKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_43_HeavyGpuStressKernelsWrapper).Assembly.GetManifestResourceStream("GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel.fatbin");
+var hashStream = typeof(GEN_43_HeavyGpuStressKernelsWrapper).Assembly.GetManifestResourceStream("GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MatrixMultiplyStressKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[4];

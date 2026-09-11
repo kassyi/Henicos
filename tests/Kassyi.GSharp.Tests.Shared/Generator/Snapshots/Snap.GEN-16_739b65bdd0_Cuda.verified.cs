@@ -35,8 +35,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("WarpPrimitivesKernel", WarpPrimitivesKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin");
+var hashStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "WarpPrimitivesKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -127,8 +145,26 @@ public static unsafe void Launch_WarpPrimitivesKernel_Device(IntPtr input, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("WarpPrimitivesKernel", WarpPrimitivesKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin");
+var hashStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "WarpPrimitivesKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -197,8 +233,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("WarpReduceSumKernel", WarpReduceSumKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin");
+var hashStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "WarpReduceSumKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -289,8 +343,26 @@ public static unsafe void Launch_WarpReduceSumKernel_Device(IntPtr input, IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("WarpReduceSumKernel", WarpReduceSumKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin");
+var hashStream = typeof(GEN_16_WarpLevelConcurrencyKernelsWrapper).Assembly.GetManifestResourceStream("GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "WarpReduceSumKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];

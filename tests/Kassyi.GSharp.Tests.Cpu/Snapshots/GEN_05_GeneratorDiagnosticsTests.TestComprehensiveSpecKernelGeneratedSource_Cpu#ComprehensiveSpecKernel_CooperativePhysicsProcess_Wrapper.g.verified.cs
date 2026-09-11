@@ -41,8 +41,8 @@ public static unsafe void Launch_CooperativePhysicsProcess(global::System.Int32[
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", CooperativePhysicsProcess_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", $"Kassyi.GSharp.Kernels.ComprehensiveSpecKernel_CooperativePhysicsProcess{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

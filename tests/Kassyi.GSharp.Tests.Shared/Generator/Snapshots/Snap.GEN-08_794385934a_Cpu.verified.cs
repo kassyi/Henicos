@@ -52,8 +52,8 @@ public static unsafe void Launch_BitOpsKernel(global::System.UInt32[] u32Data, g
 if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsKernel", BitOpsKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsKernel", $"Kassyi.GSharp.Kernels.BitOpsTestKernels_BitOpsKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)
 {

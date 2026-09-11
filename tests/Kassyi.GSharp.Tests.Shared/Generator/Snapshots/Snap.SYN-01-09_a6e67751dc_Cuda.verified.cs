@@ -41,8 +41,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NestedTernaryKernel", NestedTernaryKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NestedTernaryKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -199,8 +217,26 @@ public static unsafe void Launch_NestedTernaryKernel_Device(IntPtr a, IntPtr b, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NestedTernaryKernel", NestedTernaryKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NestedTernaryKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -267,8 +303,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingAssignmentSideEffectKernel", NullCoalescingAssignmentSideEffectKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NullCoalescingAssignmentSideEffectKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_targetArray = IntPtr.Zero;
 IntPtr d_sideEffectTracker = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -392,8 +446,26 @@ public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel_Device
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingAssignmentSideEffectKernel", NullCoalescingAssignmentSideEffectKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NullCoalescingAssignmentSideEffectKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -457,8 +529,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingKernel", NullCoalescingKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NullCoalescingKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_nullableInputs = IntPtr.Zero;
 IntPtr d_fallbackValues = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -582,8 +672,26 @@ public static unsafe void Launch_NullCoalescingKernel_Device(IntPtr nullableInpu
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("NullCoalescingKernel", NullCoalescingKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NullCoalescingKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -649,8 +757,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("RefSwitchExpressionKernel", RefSwitchExpressionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "RefSwitchExpressionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_selectors = IntPtr.Zero;
@@ -807,8 +933,26 @@ public static unsafe void Launch_RefSwitchExpressionKernel_Device(IntPtr a, IntP
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("RefSwitchExpressionKernel", RefSwitchExpressionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "RefSwitchExpressionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -869,8 +1013,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SimpleTernaryKernel", SimpleTernaryKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SimpleTernaryKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -994,8 +1156,26 @@ public static unsafe void Launch_SimpleTernaryKernel_Device(IntPtr a, IntPtr b, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SimpleTernaryKernel", SimpleTernaryKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SimpleTernaryKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1063,8 +1243,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SwitchExpressionKernel", SwitchExpressionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SwitchExpressionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -1155,8 +1353,26 @@ public static unsafe void Launch_SwitchExpressionKernel_Device(IntPtr input, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("SwitchExpressionKernel", SwitchExpressionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin");
+var hashStream = typeof(SYN_01_09_ControlFlowKernelsWrapper).Assembly.GetManifestResourceStream("SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "SwitchExpressionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];

@@ -39,8 +39,8 @@ public static unsafe void Launch_MyTestKernel(global::System.Int32[] a, global::
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MyTestKernel_Delegate>("__gsharp_launch_MyTestKernel", MyTestKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MyTestKernel_Delegate>("__gsharp_launch_MyTestKernel", $"Kassyi.GSharp.Kernels.GEN_01_SourceGeneratorTestKernels_MyTestKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)

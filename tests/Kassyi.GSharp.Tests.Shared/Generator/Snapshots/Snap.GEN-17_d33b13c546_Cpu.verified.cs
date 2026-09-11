@@ -58,8 +58,8 @@ public static unsafe void Launch_RefOutTestKernel(global::System.Int32[] data, u
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<RefOutTestKernel_Delegate>("__gsharp_launch_RefOutTestKernel", RefOutTestKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<RefOutTestKernel_Delegate>("__gsharp_launch_RefOutTestKernel", $"Kassyi.GSharp.Kernels.GEN_17_RefOutDereferenceKernels_RefOutTestKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

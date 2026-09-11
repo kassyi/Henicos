@@ -60,8 +60,8 @@ public static unsafe void Launch_TestMacroKernel(global::System.Int32[] data, gl
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<TestMacroKernel_Delegate>("__gsharp_launch_TestMacroKernel", TestMacroKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<TestMacroKernel_Delegate>("__gsharp_launch_TestMacroKernel", $"Kassyi.GSharp.Kernels.MacroExpansionKernel_TestMacroKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, length);

@@ -63,8 +63,8 @@ public static unsafe void Launch_BitOperationsTestKernel(global::System.UInt32[]
 if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", BitOperationsTestKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", $"Kassyi.GSharp.Kernels.SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)
 {

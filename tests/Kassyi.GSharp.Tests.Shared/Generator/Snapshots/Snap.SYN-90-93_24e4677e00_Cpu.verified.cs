@@ -66,8 +66,8 @@ public static unsafe void Launch_ComplexLogicKernel(global::System.Int32[] a, gl
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ComplexLogicKernel_Delegate>("__gsharp_launch_ComplexLogicKernel", ComplexLogicKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ComplexLogicKernel_Delegate>("__gsharp_launch_ComplexLogicKernel", $"Kassyi.GSharp.Kernels.SYN_90_93_CoreSyntaxKernels_ComplexLogicKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)
@@ -149,8 +149,8 @@ public static unsafe void Launch_ControlFlowKernel(global::System.Int32[] data, 
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ControlFlowKernel_Delegate>("__gsharp_launch_ControlFlowKernel", ControlFlowKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ControlFlowKernel_Delegate>("__gsharp_launch_ControlFlowKernel", $"Kassyi.GSharp.Kernels.SYN_90_93_CoreSyntaxKernels_ControlFlowKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -203,8 +203,8 @@ public static unsafe void Launch_DeviceMethodKernel(global::System.Int32[] data,
 if (data.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<DeviceMethodKernel_Delegate>("__gsharp_launch_DeviceMethodKernel", DeviceMethodKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<DeviceMethodKernel_Delegate>("__gsharp_launch_DeviceMethodKernel", $"Kassyi.GSharp.Kernels.SYN_90_93_CoreSyntaxKernels_DeviceMethodKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -276,8 +276,8 @@ public static unsafe void Launch_PaddedStructKernel(global::Kassyi.GSharp.Tests.
 if (items.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", PaddedStructKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", $"Kassyi.GSharp.Kernels.SYN_90_93_CoreSyntaxKernels_PaddedStructKernel{archSuffix}.dll");
 fixed (global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* p_items = items)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_items, length);
@@ -345,8 +345,8 @@ public static unsafe void Launch_StructKernel(global::Kassyi.GSharp.Tests.Syntax
 if (vectors.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<StructKernel_Delegate>("__gsharp_launch_StructKernel", StructKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<StructKernel_Delegate>("__gsharp_launch_StructKernel", $"Kassyi.GSharp.Kernels.SYN_90_93_CoreSyntaxKernels_StructKernel{archSuffix}.dll");
 fixed (global::Kassyi.GSharp.Tests.Syntax.Vector2* p_vectors = vectors)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_vectors, length);

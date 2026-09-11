@@ -75,8 +75,8 @@ public static unsafe void Launch_HappyPathKernel(global::System.Int32[] input, g
 if (input.Length == 0 || output.Length == 0 || success.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", HappyPathKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", $"Kassyi.GSharp.Kernels.SYN_03_InlineOutVarKernels_HappyPathKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 fixed (global::System.Int32* p_success = success)
@@ -139,8 +139,8 @@ public static unsafe void Launch_IfConditionKernel(global::System.Int32[] input,
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", IfConditionKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", $"Kassyi.GSharp.Kernels.SYN_03_InlineOutVarKernels_IfConditionKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
@@ -202,8 +202,8 @@ public static unsafe void Launch_WhileConditionKernel(global::System.Int32[] inp
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", WhileConditionKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", $"Kassyi.GSharp.Kernels.SYN_03_InlineOutVarKernels_WhileConditionKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

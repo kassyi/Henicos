@@ -49,8 +49,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ParenthesesKernel", ParenthesesKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_91_92_ParenthesesSuppressionKernelsWrapper).Assembly.GetManifestResourceStream("SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel.fatbin");
+var hashStream = typeof(SYN_91_92_ParenthesesSuppressionKernelsWrapper).Assembly.GetManifestResourceStream("SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ParenthesesKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -114,8 +132,26 @@ public static unsafe void Launch_ParenthesesKernel_Device(IntPtr output, global:
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ParenthesesKernel", ParenthesesKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_91_92_ParenthesesSuppressionKernelsWrapper).Assembly.GetManifestResourceStream("SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel.fatbin");
+var hashStream = typeof(SYN_91_92_ParenthesesSuppressionKernelsWrapper).Assembly.GetManifestResourceStream("SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ParenthesesKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[4];
