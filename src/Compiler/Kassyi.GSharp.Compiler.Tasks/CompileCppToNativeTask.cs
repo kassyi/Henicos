@@ -2,60 +2,72 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-public class CompileCppToNativeTask : Microsoft.Build.Utilities.Task
+public class CompileCppToNativeTask : CompileKernelTaskBase
 {
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
-
-    [Required]
-    public string OutputDirectory { get; set; } = string.Empty;
 
     public bool GSharpMultiTarget { get; set; }
 
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];
 
-    public override bool Execute()
+    private string[] _architectures = [];
+    private string? _vcvarsPath;
+
+    protected override ITaskItem[] GetSources() => CppSources;
+    protected override void SetOutputItems(ITaskItem[] outputItems) => OutputDlls = outputItems;
+
+    protected override bool OnBeforeExecute()
     {
-        if (CppSources.Length == 0)
-        {
-            return true;
-        }
+        _architectures = GetTargetArchitectures();
+        _vcvarsPath = FindVcvarsall();
 
-        if (!Directory.Exists(OutputDirectory))
-        {
-            Directory.CreateDirectory(OutputDirectory);
-        }
-
-        var outputItems = new List<ITaskItem>();
-        var architectures = GetTargetArchitectures();
-        var vcvarsPath = FindVcvarsall();
-
-        if (string.IsNullOrEmpty(vcvarsPath))
+        if (string.IsNullOrEmpty(_vcvarsPath))
         {
             Log.LogError(
                 "Could not locate vcvarsall.bat via vswhere.exe. Please ensure MSVC C++ Build Tools are installed.");
             return false;
         }
+        return true;
+    }
 
-        foreach (var sourceItem in CppSources)
+    protected override ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem)
+    {
+        var sourcePath = sourceItem.GetMetadata("FullPath");
+        var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
+        var keyFilePath = sourcePath + ".key";
+        var items = new List<ITaskItem>();
+
+        foreach (var arch in _architectures)
         {
-            var taskItems = ProcessSourceItem(sourceItem, architectures, vcvarsPath!);
-            if (taskItems == null)
+            // cl.exe architecture argument
+            var vcvarsArch = arch == "x64" ? "x64" : (arch == "arm64" ? "x64_arm64" : "x64");
+
+            var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
+
+            if (!CompileWithMsvc(sourcePath, outputDllPath, _vcvarsPath!, vcvarsArch))
             {
-                return false;
+                return null;
             }
 
-            outputItems.AddRange(taskItems);
+            if (!ArtifactHelper.ProcessArtifact(outputDllPath, keyFilePath, Log))
+            {
+                return null;
+            }
+
+            var taskItem = new TaskItem(outputDllPath);
+            taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
+            items.Add(taskItem);
         }
 
-        OutputDlls = [.. outputItems];
-        return true;
+        return [.. items];
     }
 
     private string[] GetTargetArchitectures()
@@ -108,31 +120,7 @@ public class CompileCppToNativeTask : Microsoft.Build.Utilities.Task
         return File.Exists(vcvars) ? vcvars : null;
     }
 
-    private ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem, string[] architectures, string vcvarsPath)
-    {
-        var sourcePath = sourceItem.GetMetadata("FullPath");
-        var fileName = GetCleanKernelFileName(sourcePath);
-        var items = new List<ITaskItem>();
 
-        foreach (var arch in architectures)
-        {
-            // cl.exe architecture argument
-            var vcvarsArch = arch == "x64" ? "x64" : (arch == "arm64" ? "x64_arm64" : "x64");
-
-            var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
-
-            if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsPath, vcvarsArch))
-            {
-                return null;
-            }
-
-            var taskItem = new TaskItem(outputDllPath);
-            taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-            items.Add(taskItem);
-        }
-
-        return [.. items];
-    }
 
     private bool CompileWithMsvc(string sourcePath, string outputDllPath, string vcvarsPath, string vcvarsArch)
     {
@@ -201,37 +189,5 @@ public class CompileCppToNativeTask : Microsoft.Build.Utilities.Task
         return false;
     }
 
-    private static void SafeDeleteFiles(params string[] paths)
-    {
-        foreach (var path in paths)
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                continue;
-            }
 
-            try
-            {
-                if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
-            }
-            catch
-            {
-                // Ignore cleanup errors on best-effort basis
-            }
-        }
-    }
-
-    private static string GetCleanKernelFileName(string sourcePath)
-    {
-        var fileName = Path.GetFileNameWithoutExtension(sourcePath);
-        if (fileName.EndsWith(".g", StringComparison.OrdinalIgnoreCase))
-        {
-            fileName = fileName.Substring(0, fileName.Length - 2);
-        }
-
-        return fileName;
-    }
 }
