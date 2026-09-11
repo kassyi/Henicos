@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests;
 
 public class ArchitectureAndOptimizationTests
@@ -16,6 +16,9 @@ public class ArchitectureAndOptimizationTests
     [Trait("Category", "GpuExecution")]
     public void CompileToPtx_DifferentArchitectures_GeneratesDifferentSizes()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        Skip.IfNot(Kassyi.GSharp.Runtime.Jit.NvccCompiler.IsNvccAvailable, "NVCC / NVRTC is required");
+
         var source = """
             extern "C" __global__ void TestKernel(int* data) {
                 int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -36,6 +39,9 @@ public class ArchitectureAndOptimizationTests
     [Trait("Category", "GpuExecution")]
     public void CompileToPtx_InvalidArchitecture_ThrowsException()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        Skip.IfNot(Kassyi.GSharp.Runtime.Jit.NvccCompiler.IsNvccAvailable, "NVCC / NVRTC is required");
+
         var source = """
             extern "C" __global__ void TestKernel(int* data) {
                 int idx = threadIdx.x;
@@ -58,6 +64,9 @@ public class ArchitectureAndOptimizationTests
     [Trait("Category", "GpuExecution")]
     public void JitConstant_Unroll_AltersPtxOutput()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        Skip.IfNot(Kassyi.GSharp.Runtime.Jit.NvccCompiler.IsNvccAvailable, "NVCC / NVRTC is required");
+
         var srcDynamic = """
             extern "C" __global__ void TestKernelDynamic(int* data, int limit) {
                 int sum = 0;

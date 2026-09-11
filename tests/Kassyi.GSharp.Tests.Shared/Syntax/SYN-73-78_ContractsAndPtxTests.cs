@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_73_78_ContractsAndPtxTests
@@ -35,6 +35,7 @@ public class SYN_73_78_ContractsAndPtxTests
     [Trait("FeatureId", "SYN-77")]
     public void TestInlinePtxKernel()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] data = [0];
         SYN_73_78_ContractsAndPtxKernelsWrapper.Launch_InlinePtxKernel(data);
         Assert.Equal(999u, data[0]);

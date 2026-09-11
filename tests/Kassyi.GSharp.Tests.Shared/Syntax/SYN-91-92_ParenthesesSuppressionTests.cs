@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class TestClass_SYN91_92
@@ -28,22 +28,24 @@ public partial class SYN_91_92_ParenthesesSuppressionTests
     [GeneratedRegex(@"(int32_t|int)\s+r2\s*=\s*a\s*\*\s*\(b\s*\+\s*c\);")]
     private static partial Regex IntAssignmentRegex();
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-91")]
     [Trait("Category", "Syntax")]
     public void Test_SYN91_RedundantParenthesesSuppression_HappyPath()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
 
         Assert.Empty(diagnostics);
         Assert.Matches(IfConditionRegex(), cudaSource);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-92")]
     [Trait("Category", "Syntax")]
     public void Test_SYN92_ParenthesesPreservation_EdgeCases_PrecedenceAndMixedOperators()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
 
         Assert.Empty(diagnostics);

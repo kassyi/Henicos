@@ -12,6 +12,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ShouldAddNumbersOnGpu()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (context, smVersion) = InitializeCuda();
         try
         {
@@ -106,6 +107,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_InvalidPtx_ThrowsException()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (context, _) = InitializeCuda();
         try
         {
@@ -128,6 +130,7 @@ public class PtxEngineExperimentTests(ITestOutputHelper output)
     [Trait("Category", "GpuExecution")]
     public void ExecutePtxInMemory_ConcurrentExecution_StressTest()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (context, smVersion) = InitializeCuda();
         try
         {

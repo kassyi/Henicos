@@ -6,13 +6,13 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Core;
 
 [Trait("Category", "GpuExecution")]
-public class COR_03_WarpLevelConcurrencyTests
+public class GEN_16_WarpLevelConcurrencyTests
 {
     [SkippableFact]
-    [Trait("FeatureId", "COR-03")]
-    public void Test_COR03_WarpReduceSum_CalculatesCorrectly()
+    [Trait("FeatureId", "GEN-16")]
+    public void Test_GEN16_WarpReduceSum_CalculatesCorrectly()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int numWarps = 4;
         int threadsPerWarp = 32;
         int length = numWarps * threadsPerWarp;
@@ -26,7 +26,7 @@ public class COR_03_WarpLevelConcurrencyTests
         }
 
         // Output array initialized to 0
-        COR_03_WarpLevelConcurrencyKernelsWrapper.Launch_WarpReduceSumKernel(
+        GEN_16_WarpLevelConcurrencyKernelsWrapper.Launch_WarpReduceSumKernel(
             input,
             output,
             blockDimX: (uint)length
@@ -40,15 +40,15 @@ public class COR_03_WarpLevelConcurrencyTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "COR-03")]
-    public void Test_COR03_WarpPrimitives_GenerateAndCompile()
+    [Trait("FeatureId", "GEN-16")]
+    public void Test_GEN16_WarpPrimitives_GenerateAndCompile()
     {
-        Skip.If(Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1", "CUDA execution is disabled in this environment.");
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int length = 32;
         var input = new int[length];
         var output = new int[length];
         
-        COR_03_WarpLevelConcurrencyKernelsWrapper.Launch_WarpPrimitivesKernel(
+        GEN_16_WarpLevelConcurrencyKernelsWrapper.Launch_WarpPrimitivesKernel(
             input,
             output,
             blockDimX: 32
