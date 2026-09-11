@@ -20,6 +20,7 @@ public class CpuJitEngineTests : TranspilerTestBase
     [Trait("Category", "GpuExecution")]
     public void CpuJitEngine_CompileAndExecute_Success()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         Skip.IfNot(IsCpuDialect, "CpuJitEngine tests only run under CPU dialect.");
 
         var source = """
@@ -58,6 +59,7 @@ public class CpuJitEngineTests : TranspilerTestBase
     [Trait("Category", "GpuExecution")]
     public void CpuJitEngine_WithJitConstants_EvaluatesCorrectly()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         Skip.IfNot(IsCpuDialect, "CpuJitEngine tests only run under CPU dialect.");
 
         var source = """
@@ -106,6 +108,7 @@ public class CpuJitEngineTests : TranspilerTestBase
     [Trait("Category", "GpuExecution")]
     public void CpuJitEngine_InvalidSyntax_ThrowsException()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         Skip.IfNot(IsCpuDialect, "CpuJitEngine tests only run under CPU dialect.");
 
         var source = """

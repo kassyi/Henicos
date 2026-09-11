@@ -3,20 +3,21 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Core;
 
-public class COR_01_StructLayoutTests
+public class GEN_33_StructLayoutTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "COR-01")]
-    public void Test_COR01_StructLayout_IsMaintained_InGpuKernel()
+    [Trait("FeatureId", "GEN-33")]
+    public void Test_GEN33_StructLayout_IsMaintained_InGpuKernel()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var data = new CustomLayoutStruct[1] 
         { 
             new CustomLayoutStruct { A = 5, B = 10.0, C = 3.0f } 
         };
 
         // SourceGenerator should emit this wrapper class and method.
-        COR_01_StructLayoutKernelsWrapper.Launch_ModifyStructLayoutKernel(
+        GEN_33_StructLayoutKernelsWrapper.Launch_ModifyStructLayoutKernel(
             data,
             blockDimX: 1
         );

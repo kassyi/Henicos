@@ -5,10 +5,11 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.Interop;
 [Trait("Category", "GpuExecution")]
 public class GBI31_NativeMethodsTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-31")]
     public void Test_GBI31_NativeMethods_TypeInit_ShouldNotThrowIfCudaFound()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         // Simply access the type to ensure static constructor runs without unhandled exceptions
         var type = typeof(NativeMethods);
         Assert.NotNull(type);

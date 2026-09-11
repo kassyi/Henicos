@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.IO;
 
 public class GBI27_HeadTailTrackerWriterTests
 {
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "HappyPath")]
     [InlineData("12345", 5, 5, "12345", "12345", "12345")]
@@ -12,6 +12,7 @@ public class GBI27_HeadTailTrackerWriterTests
     [InlineData("1234567890123", 5, 5, "12345", "90123", "12345...90123")]
     public void Test_GBI27_Write_String_TracksHeadAndTailCorrectly(string input, int headCap, int tailCap, string expectedHead, string expectedTail, string expectedPreview)
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(headCap, tailCap);
         writer.Write(input);
 
@@ -21,11 +22,12 @@ public class GBI27_HeadTailTrackerWriterTests
         Assert.Equal(expectedPreview, writer.GetPreview());
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "EdgeCase")]
     public void Test_GBI27_Write_ZeroCapacity_DoesNotThrowAndTracksLength()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(0, 0);
         writer.Write("1234567890");
 
@@ -35,11 +37,12 @@ public class GBI27_HeadTailTrackerWriterTests
         Assert.Equal("...", writer.GetPreview());
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "EdgeCase")]
     public void Test_GBI27_Write_CharByChar_MatchesStringOutput()
     {
+        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(3, 3);
         var input = "abcdefghijklmnopqrstuvwxyz";
         foreach (var c in input)

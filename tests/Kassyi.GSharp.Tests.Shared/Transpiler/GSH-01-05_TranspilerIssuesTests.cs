@@ -1,8 +1,8 @@
-﻿namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GSH_01_05_TranspilerIssuesTests
 :  TranspilerTestBase{
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GSH-01")]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "GpuExecution")]
@@ -12,6 +12,7 @@ public class GSH_01_05_TranspilerIssuesTests
     [InlineData(2, 5, 3, 4)]
     public void Test_GSH01_ComplexConditionalExpression(int x, int y, int z, int expectedResult)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] a = [x];
         int[] b = [y];
         int[] c = [z];

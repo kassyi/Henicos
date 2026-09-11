@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Core;
 
-public class COR_03_WarpLevelConcurrencyKernels
+public class GEN_16_WarpLevelConcurrencyKernels
 {
     [GpuKernel]
     public static void WarpReduceSumKernel(int[] input, int[] output)
