@@ -543,7 +543,7 @@ internal static class MarshalingEmitter
         {
             foreach (var namedArg in kernelAttr.NamedArguments)
             {
-                if (namedArg.Key == "Cooperative" && namedArg.Value.Value is true)
+                if (namedArg is { Key: "Cooperative", Value.Value: true })
                 {
                     isCooperative = true;
                     break;
