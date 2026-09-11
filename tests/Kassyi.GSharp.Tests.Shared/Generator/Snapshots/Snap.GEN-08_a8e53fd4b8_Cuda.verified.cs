@@ -24,8 +24,6 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class WrapperOptimizationKernelsWrapper
 {
-[System.ThreadStatic]
-private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_ComplexSignatureKernel;
 public const string ComplexSignatureKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 struct Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -74,10 +72,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-__t_jitConstants_array_ComplexSignatureKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_ComplexSignatureKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ComplexSignatureKernel, 0, 1);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ComplexSignatureKernel", ComplexSignatureKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin");
+var hashStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ComplexSignatureKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'WrapperOptimizationKernels_ComplexSignatureKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_scalarRef = IntPtr.Zero;
 IntPtr d_scalarOut = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -177,10 +191,26 @@ public static unsafe void Launch_ComplexSignatureKernel_Device(IntPtr scalarRef,
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-__t_jitConstants_array_ComplexSignatureKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_ComplexSignatureKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ComplexSignatureKernel, 0, 1);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ComplexSignatureKernel", ComplexSignatureKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin");
+var hashStream = typeof(WrapperOptimizationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperOptimizationKernels_ComplexSignatureKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ComplexSignatureKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'WrapperOptimizationKernels_ComplexSignatureKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[4];

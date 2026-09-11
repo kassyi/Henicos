@@ -50,8 +50,8 @@ public static unsafe void Launch_AddKernel(global::System.Int32[] a, global::Sys
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", AddKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", $"Kassyi.GSharp.Kernels.TestKernels_AddKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)

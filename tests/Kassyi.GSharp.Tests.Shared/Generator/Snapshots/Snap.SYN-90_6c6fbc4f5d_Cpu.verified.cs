@@ -62,8 +62,8 @@ public static unsafe void Launch_AggregateInitKernel(global::System.Int32[] outp
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<AggregateInitKernel_Delegate>("__gsharp_launch_AggregateInitKernel", AggregateInitKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_AggregateInitKernel", $"Kassyi.GSharp.Kernels.SYN_90_StructAggregateInitKernels_AggregateInitKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -137,8 +137,8 @@ public static unsafe void Launch_DeeplyNestedInitKernel(global::System.Int32[] o
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_DeeplyNestedInitKernel", DeeplyNestedInitKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_DeeplyNestedInitKernel", $"Kassyi.GSharp.Kernels.SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

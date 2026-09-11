@@ -128,8 +128,8 @@ public static unsafe void Launch_MacroKernel(global::TestNamespace.DummyContext 
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MacroKernel_Delegate>("__gsharp_launch_MacroKernel", MacroKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MacroKernel_Delegate>("__gsharp_launch_MacroKernel", $"Kassyi.GSharp.Kernels.TestKernels_MacroKernel{archSuffix}.dll");
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)

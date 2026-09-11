@@ -13,8 +13,6 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
-[System.ThreadStatic]
-private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_ProcessPhysics;
 public const string ProcessPhysics_Source = @"#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 struct DebugReduc_PhysicsVector
@@ -274,10 +272,8 @@ successFlag = default;
 if (particles.Length == 0){
 return;
 }
-__t_jitConstants_array_ProcessPhysics ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_ProcessPhysics[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("unrollFactor", unrollFactor);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ProcessPhysics, 0, 1);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", ProcessPhysics_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", $"Kassyi.GSharp.Kernels.ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll");
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)

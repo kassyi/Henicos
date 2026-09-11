@@ -25,8 +25,26 @@ public static unsafe void Launch_BadKernel(uint gridDimX = 1, uint gridDimY = 1,
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BadKernel", BadKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(ErrorSpecKernelWrapper).Assembly.GetManifestResourceStream("ErrorSpecKernel_BadKernel.fatbin");
+var hashStream = typeof(ErrorSpecKernelWrapper).Assembly.GetManifestResourceStream("ErrorSpecKernel_BadKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BadKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'ErrorSpecKernel_BadKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[0];
@@ -51,8 +69,26 @@ public static unsafe void Launch_BadKernel_Device(uint gridDimX = 1, uint gridDi
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("BadKernel", BadKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(ErrorSpecKernelWrapper).Assembly.GetManifestResourceStream("ErrorSpecKernel_BadKernel.fatbin");
+var hashStream = typeof(ErrorSpecKernelWrapper).Assembly.GetManifestResourceStream("ErrorSpecKernel_BadKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BadKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'ErrorSpecKernel_BadKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[0];

@@ -62,8 +62,8 @@ public static unsafe void Launch_ParenthesesKernel(global::System.Int32[] output
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", ParenthesesKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", $"Kassyi.GSharp.Kernels.SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output, a, b, c);

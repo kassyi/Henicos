@@ -24,8 +24,6 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class WrapperAllocationKernelsWrapper
 {
-[System.ThreadStatic]
-private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_AllocationTestKernel;
 public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void AllocationTestKernel(int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal){
 if((*ioVal)>constantVal)
 {
@@ -48,10 +46,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-__t_jitConstants_array_AllocationTestKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_AllocationTestKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_AllocationTestKernel, 0, 1);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AllocationTestKernel", AllocationTestKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(WrapperAllocationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperAllocationKernels_AllocationTestKernel.fatbin");
+var hashStream = typeof(WrapperAllocationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperAllocationKernels_AllocationTestKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AllocationTestKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'WrapperAllocationKernels_AllocationTestKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_ioVal = IntPtr.Zero;
 IntPtr d_outVal = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -137,10 +151,26 @@ public static unsafe void Launch_AllocationTestKernel_Device(IntPtr ioVal, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-__t_jitConstants_array_AllocationTestKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_AllocationTestKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_AllocationTestKernel, 0, 1);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("AllocationTestKernel", AllocationTestKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(WrapperAllocationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperAllocationKernels_AllocationTestKernel.fatbin");
+var hashStream = typeof(WrapperAllocationKernelsWrapper).Assembly.GetManifestResourceStream("WrapperAllocationKernels_AllocationTestKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AllocationTestKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'WrapperAllocationKernels_AllocationTestKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];

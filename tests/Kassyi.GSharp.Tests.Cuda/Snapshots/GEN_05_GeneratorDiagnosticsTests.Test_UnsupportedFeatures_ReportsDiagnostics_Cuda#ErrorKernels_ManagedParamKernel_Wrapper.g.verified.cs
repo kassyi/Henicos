@@ -22,8 +22,26 @@ public static unsafe void Launch_ManagedParamKernel(global::TestSpace.ManagedCla
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ManagedParamKernel", ManagedParamKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_ManagedParamKernel.fatbin");
+var hashStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_ManagedParamKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ManagedParamKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'ErrorKernels_ManagedParamKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -50,8 +68,26 @@ public static unsafe void Launch_ManagedParamKernel_Device(global::TestSpace.Man
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ManagedParamKernel", ManagedParamKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_ManagedParamKernel.fatbin");
+var hashStream = typeof(ErrorKernelsWrapper).Assembly.GetManifestResourceStream("ErrorKernels_ManagedParamKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ManagedParamKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'ErrorKernels_ManagedParamKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[1];

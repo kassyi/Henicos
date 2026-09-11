@@ -24,8 +24,6 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class WrapperOptimizationKernelsWrapper
 {
-[System.ThreadStatic]
-private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_ComplexSignatureKernel;
 public const string ComplexSignatureKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 struct Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -87,10 +85,8 @@ scalarOut = default;
 if (arrayVal.Length == 0){
 return;
 }
-__t_jitConstants_array_ComplexSignatureKernel ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_ComplexSignatureKernel[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("constantVal", constantVal);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ComplexSignatureKernel, 0, 1);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", ComplexSignatureKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", $"Kassyi.GSharp.Kernels.WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_scalarRef = &scalarRef)
 fixed (global::System.Single* p_scalarOut = &scalarOut)

@@ -54,8 +54,8 @@ public static unsafe void Launch_NestedTernaryKernel(global::System.Int32[] a, g
 if (a.Length == 0 || b.Length == 0 || c.Length == 0 || result.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", NestedTernaryKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", $"Kassyi.GSharp.Kernels.SYN_01_09_ControlFlowKernels_NestedTernaryKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)
@@ -117,8 +117,8 @@ public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(global
 if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_NullCoalescingAssignmentSideEffectKernel", NullCoalescingAssignmentSideEffectKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_NullCoalescingAssignmentSideEffectKernel", $"Kassyi.GSharp.Kernels.SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel{archSuffix}.dll");
 fixed (global::System.Nullable<global::System.Int32>* p_targetArray = targetArray)
 fixed (global::System.Int32* p_sideEffectTracker = sideEffectTracker)
 fixed (global::System.Int32* p_values = values)
@@ -178,8 +178,8 @@ public static unsafe void Launch_NullCoalescingKernel(global::System.Nullable<gl
 if (nullableInputs.Length == 0 || fallbackValues.Length == 0 || results.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NullCoalescingKernel_Delegate>("__gsharp_launch_NullCoalescingKernel", NullCoalescingKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NullCoalescingKernel_Delegate>("__gsharp_launch_NullCoalescingKernel", $"Kassyi.GSharp.Kernels.SYN_01_09_ControlFlowKernels_NullCoalescingKernel{archSuffix}.dll");
 fixed (global::System.Nullable<global::System.Int32>* p_nullableInputs = nullableInputs)
 fixed (global::System.Int32* p_fallbackValues = fallbackValues)
 fixed (global::System.Int32* p_results = results)
@@ -241,8 +241,8 @@ public static unsafe void Launch_RefSwitchExpressionKernel(global::System.Int32[
 if (a.Length == 0 || b.Length == 0 || selectors.Length == 0 || valuesToAssign.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", RefSwitchExpressionKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", $"Kassyi.GSharp.Kernels.SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_selectors = selectors)
@@ -298,8 +298,8 @@ public static unsafe void Launch_SimpleTernaryKernel(global::System.Int32[] a, g
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SimpleTernaryKernel_Delegate>("__gsharp_launch_SimpleTernaryKernel", SimpleTernaryKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SimpleTernaryKernel_Delegate>("__gsharp_launch_SimpleTernaryKernel", $"Kassyi.GSharp.Kernels.SYN_01_09_ControlFlowKernels_SimpleTernaryKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Double* p_result = result)
@@ -363,8 +363,8 @@ public static unsafe void Launch_SwitchExpressionKernel(global::System.Int32[] i
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", SwitchExpressionKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", $"Kassyi.GSharp.Kernels.SYN_01_09_ControlFlowKernels_SwitchExpressionKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

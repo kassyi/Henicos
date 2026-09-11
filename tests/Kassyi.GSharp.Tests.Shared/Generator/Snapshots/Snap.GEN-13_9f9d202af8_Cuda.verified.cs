@@ -37,8 +37,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MacroTest_FillAndSingle", Kernel_MacroTest_FillAndSingle_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GpuMacroTestKernelsWrapper).Assembly.GetManifestResourceStream("GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle.fatbin");
+var hashStream = typeof(GpuMacroTestKernelsWrapper).Assembly.GetManifestResourceStream("GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Kernel_MacroTest_FillAndSingle", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_outputBuffer = IntPtr.Zero;
 try
 {
@@ -101,8 +119,26 @@ public static unsafe void Launch_Kernel_MacroTest_FillAndSingle_Device(IntPtr ou
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("Kernel_MacroTest_FillAndSingle", Kernel_MacroTest_FillAndSingle_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GpuMacroTestKernelsWrapper).Assembly.GetManifestResourceStream("GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle.fatbin");
+var hashStream = typeof(GpuMacroTestKernelsWrapper).Assembly.GetManifestResourceStream("GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "Kernel_MacroTest_FillAndSingle", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[4];

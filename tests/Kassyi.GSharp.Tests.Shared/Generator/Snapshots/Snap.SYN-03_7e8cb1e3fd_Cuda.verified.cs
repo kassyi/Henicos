@@ -62,8 +62,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("HappyPathKernel", HappyPathKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin");
+var hashStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "HappyPathKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_success = IntPtr.Zero;
@@ -187,8 +205,26 @@ public static unsafe void Launch_HappyPathKernel_Device(IntPtr input, IntPtr out
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("HappyPathKernel", HappyPathKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin");
+var hashStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "HappyPathKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -255,8 +291,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("IfConditionKernel", IfConditionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin");
+var hashStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "IfConditionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -347,8 +401,26 @@ public static unsafe void Launch_IfConditionKernel_Device(IntPtr input, IntPtr o
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("IfConditionKernel", IfConditionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin");
+var hashStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "IfConditionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -413,8 +485,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("WhileConditionKernel", WhileConditionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin");
+var hashStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "WhileConditionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -505,8 +595,26 @@ public static unsafe void Launch_WhileConditionKernel_Device(IntPtr input, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("WhileConditionKernel", WhileConditionKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin");
+var hashStream = typeof(SYN_03_InlineOutVarKernelsWrapper).Assembly.GetManifestResourceStream("SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "WhileConditionKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[2];

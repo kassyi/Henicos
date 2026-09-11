@@ -64,8 +64,8 @@ public static unsafe void Launch_MethodAttributesKernel(global::System.Int32[] i
 if (input.Length == 0 || result.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", MethodAttributesKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", $"Kassyi.GSharp.Kernels.SYN_28_MethodAttributesKernels_MethodAttributesKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_result = result)
 {

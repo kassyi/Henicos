@@ -48,8 +48,8 @@ public static unsafe void Launch_WarpPrimitivesKernel(global::System.Int32[] inp
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpPrimitivesKernel", WarpPrimitivesKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpPrimitivesKernel", $"Kassyi.GSharp.Kernels.GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
@@ -115,8 +115,8 @@ public static unsafe void Launch_WarpReduceSumKernel(global::System.Int32[] inpu
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpReduceSumKernel", WarpReduceSumKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpReduceSumKernel", $"Kassyi.GSharp.Kernels.GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

@@ -56,8 +56,8 @@ public static unsafe void Launch_ForeachCollectionExpressionKernel(global::Syste
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ForeachCollectionExpressionKernel_Delegate>("__gsharp_launch_ForeachCollectionExpressionKernel", ForeachCollectionExpressionKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachCollectionExpressionKernel_Delegate>("__gsharp_launch_ForeachCollectionExpressionKernel", $"Kassyi.GSharp.Kernels.SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -139,8 +139,8 @@ public static unsafe void Launch_ForeachInlineArrayKernel(global::System.Int32[]
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ForeachInlineArrayKernel_Delegate>("__gsharp_launch_ForeachInlineArrayKernel", ForeachInlineArrayKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachInlineArrayKernel_Delegate>("__gsharp_launch_ForeachInlineArrayKernel", $"Kassyi.GSharp.Kernels.SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -198,8 +198,8 @@ public static unsafe void Launch_ForeachStackAllocKernel(global::System.Int32[] 
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<ForeachStackAllocKernel_Delegate>("__gsharp_launch_ForeachStackAllocKernel", ForeachStackAllocKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ForeachStackAllocKernel_Delegate>("__gsharp_launch_ForeachStackAllocKernel", $"Kassyi.GSharp.Kernels.SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

@@ -78,8 +78,8 @@ public static unsafe void Launch_HappyPathKernel(global::System.Int32[] output, 
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", HappyPathKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", $"Kassyi.GSharp.Kernels.SYN_17_TargetTypedNewKernels_HappyPathKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -153,8 +153,8 @@ public static unsafe void Launch_NestedInitializerKernel(global::System.Int32[] 
 if (output.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", NestedInitializerKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", $"Kassyi.GSharp.Kernels.SYN_17_TargetTypedNewKernels_NestedInitializerKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

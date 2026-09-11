@@ -39,8 +39,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ModifyStructLayoutKernel", ModifyStructLayoutKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_33_StructLayoutKernelsWrapper).Assembly.GetManifestResourceStream("GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
+var hashStream = typeof(GEN_33_StructLayoutKernelsWrapper).Assembly.GetManifestResourceStream("GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ModifyStructLayoutKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -98,8 +116,26 @@ public static unsafe void Launch_ModifyStructLayoutKernel_Device(IntPtr data, ui
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ModifyStructLayoutKernel", ModifyStructLayoutKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_33_StructLayoutKernelsWrapper).Assembly.GetManifestResourceStream("GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
+var hashStream = typeof(GEN_33_StructLayoutKernelsWrapper).Assembly.GetManifestResourceStream("GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ModifyStructLayoutKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[1];

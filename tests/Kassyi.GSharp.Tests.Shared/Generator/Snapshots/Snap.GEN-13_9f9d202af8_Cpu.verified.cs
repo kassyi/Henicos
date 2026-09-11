@@ -50,8 +50,8 @@ public static unsafe void Launch_Kernel_MacroTest_FillAndSingle(global::System.U
 if (outputBuffer.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_Kernel_MacroTest_FillAndSingle", Kernel_MacroTest_FillAndSingle_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_Kernel_MacroTest_FillAndSingle", $"Kassyi.GSharp.Kernels.GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle{archSuffix}.dll");
 fixed (global::System.UInt32* p_outputBuffer = outputBuffer)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_outputBuffer, length, fillValue, singleValue);

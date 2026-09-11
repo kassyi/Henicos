@@ -13,8 +13,6 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
-[System.ThreadStatic]
-private static global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[]? __t_jitConstants_array_ProcessPhysics;
 public const string ProcessPhysics_Source = @"#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 struct DebugReduc_PhysicsVector
@@ -261,10 +259,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-__t_jitConstants_array_ProcessPhysics ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_ProcessPhysics[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("unrollFactor", unrollFactor);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ProcessPhysics, 0, 1);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(ComprehensiveSpecKernelWrapper).Assembly.GetManifestResourceStream("ComprehensiveSpecKernel_ProcessPhysics.fatbin");
+var hashStream = typeof(ComprehensiveSpecKernelWrapper).Assembly.GetManifestResourceStream("ComprehensiveSpecKernel_ProcessPhysics.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ProcessPhysics", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'ComprehensiveSpecKernel_ProcessPhysics.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -358,10 +372,26 @@ public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-__t_jitConstants_array_ProcessPhysics ??= new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
-__t_jitConstants_array_ProcessPhysics[0] = global::Kassyi.GSharp.Runtime.Jit.JitConstantArg.Create("unrollFactor", unrollFactor);
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = new System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg>(__t_jitConstants_array_ProcessPhysics, 0, 1);
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("ProcessPhysics", ProcessPhysics_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(ComprehensiveSpecKernelWrapper).Assembly.GetManifestResourceStream("ComprehensiveSpecKernel_ProcessPhysics.fatbin");
+var hashStream = typeof(ComprehensiveSpecKernelWrapper).Assembly.GetManifestResourceStream("ComprehensiveSpecKernel_ProcessPhysics.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ProcessPhysics", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'ComprehensiveSpecKernel_ProcessPhysics.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[5];

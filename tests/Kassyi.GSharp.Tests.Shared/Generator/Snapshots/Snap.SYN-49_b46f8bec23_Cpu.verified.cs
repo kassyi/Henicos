@@ -64,8 +64,8 @@ public static unsafe void Launch_InterlockedEdgeCasesKernel(global::System.Int32
 if (array.Length == 0 || structArray.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", InterlockedEdgeCasesKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", $"Kassyi.GSharp.Kernels.SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_array = array)
 fixed (global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
@@ -134,8 +134,8 @@ public static unsafe void Launch_InterlockedKernel(global::System.Int32[] intBuf
 if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", InterlockedKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", $"Kassyi.GSharp.Kernels.SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel{archSuffix}.dll");
 fixed (global::System.Int32* p_intBuf = intBuf)
 fixed (global::System.UInt32* p_uintBuf = uintBuf)
 fixed (global::System.Int64* p_longBuf = longBuf)
@@ -198,8 +198,8 @@ public static unsafe void Launch_MathEdgeCasesKernel(global::System.Single[] flo
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", MathEdgeCasesKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", $"Kassyi.GSharp.Kernels.SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel{archSuffix}.dll");
 fixed (global::System.Single* p_floatSpecialInputs = floatSpecialInputs)
 fixed (global::System.Single* p_floatSpecialResults = floatSpecialResults)
 fixed (global::System.Double* p_doubleSpecialInputs = doubleSpecialInputs)
@@ -268,8 +268,8 @@ public static unsafe void Launch_MathKernel(global::System.Double[] doubleInputs
 if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
 return;
 }
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.GetOrCompileKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", MathKernel_FullSource, __t_jitConstants, macros);
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", $"Kassyi.GSharp.Kernels.SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel{archSuffix}.dll");
 fixed (global::System.Double* p_doubleInputs = doubleInputs)
 fixed (global::System.Double* p_doubleOutputs = doubleOutputs)
 fixed (global::System.Single* p_floatInputs = floatInputs)

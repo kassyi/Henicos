@@ -26,8 +26,26 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MyTestKernel", MyTestKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_01_SourceGeneratorTestKernelsWrapper).Assembly.GetManifestResourceStream("GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin");
+var hashStream = typeof(GEN_01_SourceGeneratorTestKernelsWrapper).Assembly.GetManifestResourceStream("GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MyTestKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin' was not found in the embedded resources.");
+}
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -151,8 +169,26 @@ public static unsafe void Launch_MyTestKernel_Device(IntPtr a, IntPtr b, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
-System.ReadOnlySpan<global::Kassyi.GSharp.Runtime.Jit.JitConstantArg> __t_jitConstants = default;
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel("MyTestKernel", MyTestKernel_FullSource, __t_jitConstants, macros);
+var aotStream = typeof(GEN_01_SourceGeneratorTestKernelsWrapper).Assembly.GetManifestResourceStream("GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin");
+var hashStream = typeof(GEN_01_SourceGeneratorTestKernelsWrapper).Assembly.GetManifestResourceStream("GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin.hash");
+IntPtr hfunc = IntPtr.Zero;
+if (aotStream != null)
+{
+var fatbinData = new byte[aotStream.Length];
+aotStream.Read(fatbinData, 0, (int)aotStream.Length);
+string expectedHash = null;
+if (hashStream != null)
+{
+using var reader = new System.IO.StreamReader(hashStream);
+expectedHash = reader.ReadToEnd().Trim();
+}
+byte[] decryptionKey = null;
+hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MyTestKernel", expectedHash, decryptionKey);
+}
+else
+{
+throw new System.InvalidOperationException("AOT kernel binary 'GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin' was not found in the embedded resources.");
+}
 try
 {
 void** kernelParams = stackalloc void*[3];
