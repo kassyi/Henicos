@@ -31,11 +31,13 @@ public class TestClass_SYN90
 }
 
 public partial class SYN_90_StructAggregateInitTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     [GeneratedRegex(@"MyStruct_SYN90\s+_tmp\{\};\s*_tmp\.A\s*=\s*1;\s*_tmp\.B\s*=\s*2;")]
     private static partial Regex MyStructInitRegex();
 
-    [GeneratedRegex(@"AStruct_SYN90\s+_tmp\{\};\s*_tmp\.B\s*=\s*\(\[\&\]\(\)\s*\{[\s\S]*?BStruct_SYN90\s+_tmp\{\};\s*_tmp\.X\s*=\s*1;\s*return\s*_tmp;\s*\}")]
+    [GeneratedRegex(
+        @"AStruct_SYN90\s+_tmp\{\};\s*_tmp\.B\s*=\s*\(\[\&\]\(\)\s*\{[\s\S]*?BStruct_SYN90\s+_tmp\{\};\s*_tmp\.X\s*=\s*1;\s*return\s*_tmp;\s*\}")]
     private static partial Regex NestedStructInitRegex();
 
     [SkippableFact]
@@ -43,8 +45,8 @@ public partial class SYN_90_StructAggregateInitTests
     [Trait("Category", "Syntax")]
     public void Test_SYN90_StructAggregateInitialization_HappyPath()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
+        var (cudaSource, diagnostics) =
+            RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
 
         Assert.Empty(diagnostics);
         Assert.Matches(MyStructInitRegex(), cudaSource);
@@ -55,8 +57,8 @@ public partial class SYN_90_StructAggregateInitTests
     [Trait("Category", "Syntax")]
     public void Test_SYN90_StructAggregateInitialization_EdgeCase_DeeplyNested()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
+        var (cudaSource, diagnostics) =
+            RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
 
         Assert.Empty(diagnostics);
         Assert.Matches(NestedStructInitRegex(), cudaSource);
