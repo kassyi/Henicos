@@ -55,6 +55,8 @@ public class GEN_34_VmObfuscationTests
 
         var keyPatterns = new List<byte[]>
         {
+            Array.Empty<byte>(), // empty collection
+            new byte[] { 42 }, // single-element collection
             new byte[32], // all zeros
             Enumerable.Repeat((byte)0xFF, 32).ToArray(), // all 0xFF
             Enumerable.Range(0, 32).Select(i => (byte)(i % 2 == 0 ? 0xAA : 0x55)).ToArray(), // alternating bits
@@ -126,17 +128,26 @@ public class GEN_34_VmObfuscationTests
         var sourceCode = writer.ToString();
 
         // Dynamically compile and execute the generated VM
+        var expectedKey = new byte[32];
+        Array.Copy(aesKey, expectedKey, Math.Min(aesKey.Length, 32));
         var actualKey = CompileAndExecuteDeriveKey(sourceCode);
-        Assert.Equal(aesKey, actualKey);
+        Assert.Equal(expectedKey, actualKey);
     }
 
     [Theory]
     [Trait("FeatureId", "GEN-34")]
     [Trait("Category", "Transpiler")]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(-1)]
+    [InlineData(int.MinValue)]
+    [InlineData(int.MaxValue)]
     [InlineData(100)]
     [InlineData(200)]
     [InlineData(300)]
     [InlineData(400)]
+    [InlineData(unchecked((int)0xAAAAAAAA))]
+    [InlineData(unchecked((int)0x55555555))]
     public void Test_GEN34_VmObfuscatorEmitter_EmitKeyDerivationVm_CompilesAndExecutes(int seed)
     {
         var (_, methodSymbol) = MegaCompilationCache.GetMethodContext<GEN_34_VmObfuscationTests>(nameof(DummyTargetMethod));
