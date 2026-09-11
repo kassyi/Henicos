@@ -6,6 +6,7 @@
     <Project Path="src/Runtime/Kassyi.GSharp.Runtime/Kassyi.GSharp.Runtime.csproj" />
     <Project Path="src/Core/Kassyi.GSharp.Core/Kassyi.GSharp.Core.csproj" />
     <Project Path="src/Stdlib/Kassyi.GSharp.Stdlib.Math/Kassyi.GSharp.Stdlib.Math.csproj" />
+    <Project Path="src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
