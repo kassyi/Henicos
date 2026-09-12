@@ -2,25 +2,6 @@
   Diagnostics: [
     {
       Location: /*
-    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
-        public static int BadKernel()
-                      ^^^
-        {
-*/
- : (8,22)-(8,25),
-      Message: Method 'BadKernel' is marked with [GpuKernel] but returns 'Int32'. GpuKernel methods must return void.,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0004,
-        Title: GpuKernel must return void,
-        MessageFormat: Method '{0}' is marked with [GpuKernel] but returns '{1}'. GpuKernel methods must return void.,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
-    },
-    {
-      Location: /*
         {
             string s = "hello";
             ^^^^^^

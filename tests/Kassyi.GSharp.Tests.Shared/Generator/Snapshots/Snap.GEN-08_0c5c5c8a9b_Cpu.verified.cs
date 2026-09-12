@@ -13,12 +13,12 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class AutoAllocateReturnTestWrapper
 {
-public const string ComputeInt_Source = @"extern ""C"" __declspec(dllexport) void ComputeInt(int* __restrict__ a, int b){
+public const string ComputeInt_Source = @"extern ""C"" __declspec(dllexport) void ComputeInt(int* __restrict__ a, int b, int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = a[0]+b;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ComputeInt(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int b)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ComputeInt(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int b, int* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -28,7 +28,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ComputeInt(a, b);
+ComputeInt(a, b, __gsharp_auto_result);
 }
 }
 ";
@@ -41,7 +41,7 @@ public static unsafe global::System.Int32[] Launch_ComputeInt(global::System.Int
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"AutoAllocateReturnTest_ComputeInt{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
+byte[]? decryptionKey = null;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComputeInt_Delegate>("__gsharp_launch_ComputeInt", dllPath, decryptionKey);
 uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
@@ -71,13 +71,13 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class AutoAllocateReturnTestWrapper
 {
-public const string ComputeMag_Source = @"extern ""C"" __declspec(dllexport) void ComputeMag(float* __restrict__ a){
+public const string ComputeMag_Source = @"extern ""C"" __declspec(dllexport) void ComputeMag(float* __restrict__ a, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 int tid = threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = a[tid]*2.0f;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ComputeMag(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ComputeMag(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -87,7 +87,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ComputeMag(a);
+ComputeMag(a, __gsharp_auto_result);
 }
 }
 ";
@@ -100,7 +100,7 @@ public static unsafe global::System.Single[] Launch_ComputeMag(global::System.Si
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"AutoAllocateReturnTest_ComputeMag{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
+byte[]? decryptionKey = null;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComputeMag_Delegate>("__gsharp_launch_ComputeMag", dllPath, decryptionKey);
 uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
