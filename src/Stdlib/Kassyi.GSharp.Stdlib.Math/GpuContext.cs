@@ -14,7 +14,7 @@ public enum GpuExecutionEngine
     LegacyNative,
 
     /// <summary>Executes kernels via the GSharp JIT transpilation and NVRTC runtime compiler.</summary>
-    GSharpJit
+    GSharpAot
 }
 
 /// <summary>
@@ -44,8 +44,8 @@ public class GpuContext : IDisposable
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
     /// </summary>
-    public IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpJit
-        ? GSharpJitProvider.Instance
+    public IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpAot
+        ? GSharpAotProvider.Instance
         : NativeProvider.Instance;
 
     private bool _disposed;
@@ -59,11 +59,11 @@ public class GpuContext : IDisposable
     /// <param name="maxWords">The maximum word count for BigInteger operations.</param>
     /// <param name="engine">The GPU execution backend engine to utilize.</param>
     /// <exception cref="InvalidOperationException">Thrown when CUDA context or native workspace allocation fails.</exception>
-    public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpJit)
+    public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot)
     {
         MaxWords = maxWords;
         Engine = engine;
-        if (Engine == GpuExecutionEngine.GSharpJit)
+        if (Engine == GpuExecutionEngine.GSharpAot)
         {
             // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
         }
@@ -122,7 +122,7 @@ public class GpuContext : IDisposable
 
         _tempPool.Clear();
 
-        if (Engine == GpuExecutionEngine.GSharpJit)
+        if (Engine == GpuExecutionEngine.GSharpAot)
         {
             // JIT-specific cleanup
         }
