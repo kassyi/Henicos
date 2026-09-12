@@ -374,7 +374,8 @@ internal static class MarshalingEmitter
             writer.AppendLine("if (__gsharp_auto_result_size > 0)");
             using (writer.Scope())
             {
-                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d___gsharp_auto_result, __gsharp_auto_result_size));");
+                writer.AppendLine(
+                    "CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d___gsharp_auto_result, __gsharp_auto_result_size));");
                 writer.AppendLine("kernelParams[" + paramIndex + "] = &d___gsharp_auto_result;");
             }
         }
@@ -405,12 +406,15 @@ internal static class MarshalingEmitter
                 writer.AppendLine("if (size > 0)");
                 using (writer.Scope())
                 {
-                    writer.AppendLine("var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                    writer.AppendLine(
+                        "var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);");
                     writer.AppendLine("try");
                     using (writer.Scope())
                     {
-                        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, size));");
+                        writer.AppendLine(
+                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, size));");
                     }
+
                     writer.AppendLine("finally");
                     using (writer.Scope())
                     {
@@ -445,17 +449,25 @@ internal static class MarshalingEmitter
 
     private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
     {
+        if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
+        {
+            var kind = p.Type is IArrayTypeSymbol ? "array" : IsCustomStruct(p.Type) ? "struct" : "scalar";
+            writer.AppendLine($"// Marshal device {kind}: {p.Name}");
+            writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
+            return;
+        }
+
         if (IsCustomStruct(p.Type))
         {
             WriteCustomStructMarshal(writer, p, paramIndex, isDevicePtr);
         }
         else if (p.Type is IArrayTypeSymbol arrayType)
         {
-            WriteArrayMarshal(writer, p, arrayType, paramIndex, isDevicePtr);
+            WriteArrayMarshal(writer, p, arrayType, paramIndex);
         }
         else if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            WriteRefOrOutScalarMarshal(writer, p, paramIndex, isDevicePtr);
+            WriteRefOrOutScalarMarshal(writer, p, paramIndex);
         }
         else
         {
@@ -466,46 +478,33 @@ internal static class MarshalingEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        var isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
-
-        if (!isDevicePointerStruct)
+        writer.Append($"var native_{p.Name} = Marshal_");
+        writer.AppendFullyQualifiedCppName(p.Type);
+        using (writer.Parentheses())
         {
-            writer.Append($"var native_{p.Name} = Marshal_");
-            writer.AppendFullyQualifiedCppName(p.Type);
-            using (writer.Parentheses())
-            {
-                writer.Append(
-                    $"ref {p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}");
-            }
-
-            writer.AppendLine(";");
+            writer.Append(
+                $"ref {p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}");
         }
+
+        writer.AppendLine(";");
 
         if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            if (isDevicePtr)
-            {
-                writer.AppendLine($"// Marshal device struct: {p.Name}");
-                writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
-            }
-            else
-            {
-                writer.AppendLine($"// Marshal ref/out struct: {p.Name}");
-                writer.Append($"int {p.Name}_size = sizeof(__Native_");
-                writer.AppendFullyQualifiedCppName(p.Type);
-                writer.AppendLine(");");
+            writer.AppendLine($"// Marshal ref/out struct: {p.Name}");
+            writer.Append($"int {p.Name}_size = sizeof(__Native_");
+            writer.AppendFullyQualifiedCppName(p.Type);
+            writer.AppendLine(");");
 
+            writer.AppendLine(
+                $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
+            if (p.RefKind == RefKind.Ref)
+            {
+                writer.AppendLine("// Fast zero-allocation copy to device");
                 writer.AppendLine(
-                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
-                if (p.RefKind == RefKind.Ref)
-                {
-                    writer.AppendLine("// Fast zero-allocation copy to device");
-                    writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, (IntPtr)(&native_{p.Name}), {p.Name}_size));");
-                }
-
-                writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
+                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, (IntPtr)(&native_{p.Name}), {p.Name}_size));");
             }
+
+            writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
         }
         else
         {
@@ -515,79 +514,62 @@ internal static class MarshalingEmitter
     }
 
     private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, IArrayTypeSymbol arrayType,
-        int paramIndex, bool isDevicePtr)
+        int paramIndex)
     {
-        if (isDevicePtr)
-        {
-            writer.AppendLine($"// Marshal device array: {p.Name}");
-            writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
-        }
-        else
-        {
-            writer.AppendLine($"// Marshal array: {p.Name}");
-            writer.Append($"int {p.Name}_size = {p.Name}.Length * sizeof(");
-            writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
-            writer.AppendLine(");");
+        writer.AppendLine($"// Marshal array: {p.Name}");
+        writer.Append($"int {p.Name}_size = {p.Name}.Length * sizeof(");
+        writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
+        writer.AppendLine(");");
 
-            writer.AppendLine($"if ({p.Name}_size > 0)");
+        writer.AppendLine($"if ({p.Name}_size > 0)");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
+            writer.AppendLine(
+                $"System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+
+            writer.AppendLine("try");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
+                writer.AppendLine(
+                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));");
+            }
+
+            writer.AppendLine("finally");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"handle_{p.Name}.Free();");
+            }
+        }
+
+        writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
+    }
+
+    private static void WriteRefOrOutScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
+    {
+        writer.AppendLine($"// Marshal ref/out scalar: {p.Name}");
+        writer.Append($"int {p.Name}_size = sizeof(");
+        writer.AppendFullyQualifiedCsharpName(p.Type);
+        writer.AppendLine(");");
+        writer.AppendLine(
+            $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
+
+        if (p.RefKind == RefKind.Ref)
+        {
+            writer.AppendLine("// Fast zero-allocation copy to device");
+            writer.Append("fixed (");
+            writer.AppendFullyQualifiedCsharpName(p.Type);
+            writer.AppendLine($"* p_{p.Name}_temp = &{p.Name})");
             using (writer.Scope())
             {
                 writer.AppendLine(
-                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
-                writer.AppendLine(
-                    $"System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-
-                writer.AppendLine("try");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
-                    writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));");
-                }
-
-                writer.AppendLine("finally");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"handle_{p.Name}.Free();");
-                }
+                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, (IntPtr)p_{p.Name}_temp, {p.Name}_size));");
             }
-
-            writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
         }
-    }
 
-    private static void WriteRefOrOutScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
-        bool isDevicePtr)
-    {
-        if (isDevicePtr)
-        {
-            writer.AppendLine($"// Marshal device scalar: {p.Name}");
-            writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
-        }
-        else
-        {
-            writer.AppendLine($"// Marshal ref/out scalar: {p.Name}");
-            writer.Append($"int {p.Name}_size = sizeof(");
-            writer.AppendFullyQualifiedCsharpName(p.Type);
-            writer.AppendLine(");");
-            writer.AppendLine(
-                $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
-
-            if (p.RefKind == RefKind.Ref)
-            {
-                writer.AppendLine("// Fast zero-allocation copy to device");
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(p.Type);
-                writer.AppendLine($"* p_{p.Name}_temp = &{p.Name})");
-                using (writer.Scope())
-                {
-                    writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, (IntPtr)p_{p.Name}_temp, {p.Name}_size));");
-                }
-            }
-
-            writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
-        }
+        writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
     }
 
     private static void WriteScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
@@ -741,30 +723,19 @@ internal static class MarshalingEmitter
 
     internal static void WriteParameterFree(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
+        if (isDevicePtr)
+        {
+            return;
+        }
+
         if (IsCustomStruct(p.Type))
         {
-            if (!isDevicePtr)
-            {
-                writer.AppendLine($"foreach (var ptr in {p.Name}_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);");
-                if (p.RefKind is RefKind.Ref or RefKind.Out)
-                {
-                    writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
-                }
-            }
+            writer.AppendLine($"foreach (var ptr in {p.Name}_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);");
         }
-        else if (p.Type is IArrayTypeSymbol)
+
+        if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            if (!isDevicePtr)
-            {
-                writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
-            }
-        }
-        else if (p.RefKind is RefKind.Ref or RefKind.Out)
-        {
-            if (!isDevicePtr)
-            {
-                writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
-            }
+            writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
         }
     }
 }
