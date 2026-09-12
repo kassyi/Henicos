@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using System.Security.Cryptography;
 using Microsoft.Build.Utilities;
 using Microsoft.Build.Framework;
