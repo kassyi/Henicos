@@ -17,7 +17,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
             // across multiple concurrent threads sharing the same GpuContext instance.
             var exceptions = new ConcurrentBag<Exception>();
-            using var sharedCtx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var sharedCtx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
 
             Parallel.For(0, 100, i =>
             {
@@ -46,7 +46,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
-            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
             
             // Typical case
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
@@ -85,7 +85,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI04_DirectSquarePointwiseKernel()
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
-            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 123456789, 0, 0, 0 });
             using var result = new GpuUIntBigInteger(ctx, 8);
             
@@ -103,7 +103,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
             // Issue #112 & #117: Test large GCD to trigger pipeline stalls / TDR issues.
-            using var ctx = new GpuContext(128, GpuExecutionEngine.GSharpJit);
+            using var ctx = new GpuContext(128, GpuExecutionEngine.GSharpAot);
             
             var arrA = GenerateRandomArray(128, 42); // 4096-bit number
             var arrB = GenerateRandomArray(128, 43);
@@ -127,7 +127,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
             // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
-            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpJit);
+            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
             using var b = new GpuUIntBigInteger(ctx, new uint[] { 200, 0, 0, 0 });
             using var c = new GpuUIntBigInteger(ctx, new uint[] { 300, 0, 0, 0 });
@@ -142,7 +142,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-10")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Add_Correctness(GpuExecutionEngine engine)
         {
@@ -159,7 +159,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-10")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
@@ -218,7 +218,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-10")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Scalar_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -323,7 +323,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-11")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Mul_Correctness(GpuExecutionEngine engine)
         {
@@ -343,7 +343,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-12")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Div_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -363,7 +363,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-12")]
         public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
         {
@@ -387,7 +387,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-13")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -414,7 +414,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-14")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine)
         {
@@ -436,7 +436,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-14")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_ShiftRight_Correctness(GpuExecutionEngine engine)
         {
@@ -457,7 +457,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-15")]
         public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
         {
@@ -503,7 +503,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-17")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -537,7 +537,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-19")]
         public void Test_Square_Correctness(GpuExecutionEngine engine)
         {
@@ -591,7 +591,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-20")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Gcd_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -620,7 +620,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-20")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_GBI20_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -640,19 +640,19 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-20")]
         [SkippableTheory]
         // Happy path
-        [InlineData(GpuExecutionEngine.GSharpJit, 48u, 18u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 48u, 18u)]
         // Edge cases: 0
-        [InlineData(GpuExecutionEngine.GSharpJit, 0u, 0u)]
-        [InlineData(GpuExecutionEngine.GSharpJit, 0u, 10u)]
-        [InlineData(GpuExecutionEngine.GSharpJit, 10u, 0u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0u, 0u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0u, 10u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 10u, 0u)]
         // Edge cases: 1
-        [InlineData(GpuExecutionEngine.GSharpJit, 1u, 1u)]
-        [InlineData(GpuExecutionEngine.GSharpJit, 1u, 100u)]
-        [InlineData(GpuExecutionEngine.GSharpJit, 100u, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 1u, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 1u, 100u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 100u, 1u)]
         // Edge cases: MaxValue and Alternating Bits
-        [InlineData(GpuExecutionEngine.GSharpJit, uint.MaxValue, uint.MaxValue)]
-        [InlineData(GpuExecutionEngine.GSharpJit, uint.MaxValue, 1u)]
-        [InlineData(GpuExecutionEngine.GSharpJit, 0x80000000u, 0x55555555u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, uint.MaxValue, uint.MaxValue)]
+        [InlineData(GpuExecutionEngine.GSharpAot, uint.MaxValue, 1u)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0x80000000u, 0x55555555u)]
         public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -683,7 +683,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-22")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -706,7 +706,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-23")]
         public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
         {
@@ -737,7 +737,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-23")]
         public void Test_GBI23_GetBitLength_AtomicStress(GpuExecutionEngine engine)
         {
@@ -766,7 +766,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-24")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_State_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -806,7 +806,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-25")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
@@ -862,7 +862,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Theory(Skip =
             "Extremely slow due to cuMemAlloc overhead without memory pooling. Enable when memory pool is implemented.")]
-        [InlineData(GpuExecutionEngine.GSharpJit)]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_ModPow_Correctness(GpuExecutionEngine engine)
         {
             using var context = new GpuContext(TestSizeWords * 13, engine);
@@ -999,8 +999,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
         {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
-            using var scope = new JitEngine.CudaContextScope();
-            var engine = GpuExecutionEngine.GSharpJit;
+            using var scope = new GpuKernelLoader.CudaContextScope();
+            var engine = GpuExecutionEngine.GSharpAot;
             using var context = new GpuContext(1024, engine);
 
             var arrA = GenerateRandomArray(256, 42);
@@ -1023,7 +1023,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
                 try
                 {
                     // Ensure each worker thread has the CUDA context bound
-                    using var threadScope = new JitEngine.CudaContextScope();
+                    using var threadScope = new GpuKernelLoader.CudaContextScope();
 
                     using var gpuResult = new GpuUIntBigInteger(context, 256);
                     gpuResult.Value = gpuA + gpuB;

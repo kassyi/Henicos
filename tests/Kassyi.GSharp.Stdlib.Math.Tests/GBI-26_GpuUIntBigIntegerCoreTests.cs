@@ -4,14 +4,14 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 [Trait("Category", "GpuExecution")]
 public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
 {
-    private readonly JitEngine.CudaContextScope _scope;
+    private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuContext _context;
 
     public GBI26_GpuUIntBigIntegerCoreTests()
     {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
-        _scope = new JitEngine.CudaContextScope();
-        _context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+        _scope = new GpuKernelLoader.CudaContextScope();
+        _context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
     }
 
     public void Dispose()
