@@ -15,20 +15,20 @@ This phase aimed to eliminate the final remaining overheads in the G# C#-to-CUDA
 | Method | NumWords | Mean | Ratio |
 | :--- | :--- | ---: | ---: |
 | Sub_LegacyNative | 1024 | 21.56 us | 1.00 |
-| Sub_GSharpJit | 1024 | 21.79 us | 1.01 |
+| Sub_GSharpAot | 1024 | 21.79 us | 1.01 |
 | | | | |
 | Sub_LegacyNative | 4096 | 31.69 us | 1.00 |
-| Sub_GSharpJit | 4096 | 31.38 us | 0.99 |
+| Sub_GSharpAot | 4096 | 31.38 us | 0.99 |
 | | | | |
 | Sub_LegacyNative | 16384 | 59.19 us | 1.00 |
-| Sub_GSharpJit | 16384 | 54.55 us | 0.92 |
+| Sub_GSharpAot | 16384 | 54.55 us | 0.92 |
 
 *Benchmark Environment: BenchmarkDotNet v0.15.8, Windows 11, AMD Ryzen 9 7900X*
 
 ## Conclusion
 
-The execution speed gap between C# invocations (GSharpJit) and raw CUDA (LegacyNative) has been **completely closed (Ratio 0.99x ~ 1.01x)**.
+The execution speed gap between C# invocations (GSharpAot) and raw CUDA (LegacyNative) has been **completely closed (Ratio 0.99x ~ 1.01x)**.
 
-At data sizes of 16384 words, GSharpJit demonstrated a slight performance advantage (`54.55 us` vs `59.19 us`, **Ratio 0.92x**). This inversion implies that `cuMemsetD8_v2` zero-clearing operates extremely efficiently, and the P/Invoke code paths generated on the C# side incur less overhead than the native API wrappers.
+At data sizes of 16384 words, GSharpAot demonstrated a slight performance advantage (`54.55 us` vs `59.19 us`, **Ratio 0.92x**). This inversion implies that `cuMemsetD8_v2` zero-clearing operates extremely efficiently, and the P/Invoke code paths generated on the C# side incur less overhead than the native API wrappers.
 
 **Ultimately, G# has proven capable of writing pure C# syntax and achieving performance equal to or strictly better than hand-written, native CUDA code.**

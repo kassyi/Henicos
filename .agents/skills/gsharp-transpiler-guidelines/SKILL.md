@@ -96,8 +96,8 @@ The repository provides several `just` commands to run tests grouped by category
 
 The GSharp generator pipeline strictly enforces several architectural rules. You **MUST** abide by these when modifying the transpiler logic:
 
-1. **`[JitConstant]` Signature Exclusion**:
-   Parameters decorated with `[JitConstant]` exist exclusively for runtime macro injection (`#define`). They **MUST NOT** be included in the generated C++ `__global__ void` kernel signature, nor in the host-side array marshaling logic. Always filter them using `!WrapperEmitter.IsJitConstant(p)`.
+1. **`[Constant]` Signature Exclusion**:
+   Parameters decorated with `[Constant]` exist exclusively for runtime macro injection (`#define`). They **MUST NOT** be included in the generated C++ `__global__ void` kernel signature, nor in the host-side array marshaling logic. Always filter them using `!WrapperEmitter.IsConstant(p)`.
 
 2. **No Silent Failures (Strict Diagnostics)**:
    If the transpiler encounters unsupported C# syntax (e.g., `new`, `string`, `LINQ`, recursion), it **MUST NOT** silently ignore it, output empty strings, or throw raw exceptions. Instead, it must gracefully report the issue via `context.ReportDiagnostic` using the appropriate `GSharpDiagnostics` (e.g., `GSH0001`, `GSH0003`).
