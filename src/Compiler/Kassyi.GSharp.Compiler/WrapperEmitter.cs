@@ -94,14 +94,7 @@ internal static class WrapperEmitter
                 WriteEmptyArrayGuards(writer, method);
             }
 
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
-            {
-                writer.AppendLine(
-                    "uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);");
-                writer.Append("var __gsharp_auto_result = new ");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine("[__gsharp_total_threads];");
-            }
+            WriteAutoResultAllocation(writer, method);
 
             writer.AppendLine(
                 "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
@@ -123,10 +116,7 @@ internal static class WrapperEmitter
                 }
             }
 
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
-            {
-                writer.AppendLine("return __gsharp_auto_result;");
-            }
+            WriteAutoResultReturn(writer, method);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
@@ -301,22 +291,7 @@ internal static class WrapperEmitter
         {
             writer.AppendLine("var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);");
 
-            if (hasAesKey)
-            {
-                if (!string.IsNullOrWhiteSpace(keyProvider))
-                {
-                    writer.AppendLine(
-                        $"byte[] decryptionKey = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
-                }
-                else
-                {
-                    writer.AppendLine("byte[] decryptionKey = DeriveObfuscatedKey();");
-                }
-            }
-            else
-            {
-                writer.AppendLine("byte[]? decryptionKey = null;");
-            }
+            WriteDecryptionKeySetup(writer, method, hasAesKey, keyProvider);
 
             writer.AppendLine(
                 $"hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, \"{method.Name}\", decryptionKey);");
@@ -396,22 +371,7 @@ internal static class WrapperEmitter
         writer.AppendLine(
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
-        if (hasAesKey)
-        {
-            if (!string.IsNullOrWhiteSpace(keyProvider))
-            {
-                writer.AppendLine(
-                    $"byte[] decryptionKey = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
-            }
-            else
-            {
-                writer.AppendLine("byte[] decryptionKey = DeriveObfuscatedKey();");
-            }
-        }
-        else
-        {
-            writer.AppendLine("byte[]? decryptionKey = null;");
-        }
+        WriteDecryptionKeySetup(writer, method, hasAesKey, keyProvider);
 
         writer.AppendLine(
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, decryptionKey);");
@@ -419,14 +379,17 @@ internal static class WrapperEmitter
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
     {
-        var hasFixed = false;
-        foreach (var p in method.Parameters)
+        var hasFixed = method.ReturnType.SpecialType != SpecialType.System_Void;
+        if (!hasFixed)
         {
-            if (p.Type is IArrayTypeSymbol ||
-                (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
+            foreach (var p in method.Parameters)
             {
-                hasFixed = true;
-                break;
+                if (p.Type is IArrayTypeSymbol ||
+                    (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
+                {
+                    hasFixed = true;
+                    break;
+                }
             }
         }
 
@@ -446,11 +409,7 @@ internal static class WrapperEmitter
 
             if (method.ReturnType.SpecialType != SpecialType.System_Void)
             {
-                writer.AppendLine(
-                    "uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);");
-                writer.Append("var __gsharp_auto_result = new ");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine("[__gsharp_total_threads];");
+                WriteAutoResultAllocation(writer, method);
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(method.ReturnType);
                 writer.AppendLine("* p___gsharp_auto_result = __gsharp_auto_result)");
@@ -475,31 +434,10 @@ internal static class WrapperEmitter
         }
         else
         {
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
-            {
-                writer.AppendLine(
-                    "uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);");
-                writer.Append("var __gsharp_auto_result = new ");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine("[__gsharp_total_threads];");
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine("* p___gsharp_auto_result = __gsharp_auto_result)");
-                using (writer.Scope())
-                {
-                    WriteDelegateInvocation(writer, method);
-                }
-            }
-            else
-            {
-                WriteDelegateInvocation(writer, method);
-            }
+            WriteDelegateInvocation(writer, method);
         }
 
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
-        {
-            writer.AppendLine("return __gsharp_auto_result;");
-        }
+        WriteAutoResultReturn(writer, method);
     }
 
     private static void WriteDelegateInvocation(SourceWriter writer, IMethodSymbol method)
@@ -539,6 +477,46 @@ internal static class WrapperEmitter
         }
 
         writer.AppendLine(";");
+    }
+
+    private static void WriteDecryptionKeySetup(SourceWriter writer, IMethodSymbol method, bool hasAesKey, string? keyProvider)
+    {
+        if (hasAesKey)
+        {
+            if (!string.IsNullOrWhiteSpace(keyProvider))
+            {
+                writer.AppendLine(
+                    $"byte[] decryptionKey = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+            }
+            else
+            {
+                writer.AppendLine("byte[] decryptionKey = DeriveObfuscatedKey();");
+            }
+        }
+        else
+        {
+            writer.AppendLine("byte[]? decryptionKey = null;");
+        }
+    }
+
+    private static void WriteAutoResultAllocation(SourceWriter writer, IMethodSymbol method)
+    {
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendLine(
+                "uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);");
+            writer.Append("var __gsharp_auto_result = new ");
+            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
+            writer.AppendLine("[__gsharp_total_threads];");
+        }
+    }
+
+    private static void WriteAutoResultReturn(SourceWriter writer, IMethodSymbol method)
+    {
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendLine("return __gsharp_auto_result;");
+        }
     }
 
     private static void WriteNamespace(SourceWriter writer, INamespaceSymbol ns)
