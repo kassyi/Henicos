@@ -95,7 +95,7 @@ internal static class WrapperEmitter
             }
 
             writer.AppendLine(
-                "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())");
+                "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, method, hasAesKey, keyProvider);
@@ -283,7 +283,7 @@ internal static class WrapperEmitter
             }
 
             writer.AppendLine(
-                $"hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, \"{method.Name}\", decryptionKey);");
+                $"hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, \"{method.Name}\", decryptionKey);");
         }
         writer.AppendLine("else");
         using (writer.Scope())
@@ -309,7 +309,7 @@ internal static class WrapperEmitter
                 "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.JitConstant))
+                if (p.HasAttribute(KnownAttributes.Constant))
                 {
                     continue;
                 }
@@ -368,7 +368,7 @@ internal static class WrapperEmitter
         }
 
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, decryptionKey);");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, decryptionKey);");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
@@ -430,7 +430,7 @@ internal static class WrapperEmitter
 
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.JitConstant))
+                if (p.HasAttribute(KnownAttributes.Constant))
                 {
                     continue;
                 }

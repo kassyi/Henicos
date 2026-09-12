@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 
-/// <summary>Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.JitConstant macro expansions.</summary>
+/// <summary>Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions.</summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
     public static readonly GpuMacroTranspilerRule Instance = new();
@@ -22,9 +22,9 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             return true;
         }
 
-        if (symbol.Name == "JitConstant")
+        if (symbol.Name == "Constant")
         {
-            TranspileJitConstant(node, ref context);
+            TranspileConstant(node, ref context);
             return true;
         }
 
@@ -77,7 +77,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
         context.Writer.AppendLine();
     }
 
-    private static void TranspileJitConstant(InvocationExpressionSyntax node, ref TranspileContext context)
+    private static void TranspileConstant(InvocationExpressionSyntax node, ref TranspileContext context)
     {
         if (node.ArgumentList.Arguments.Count == 1)
         {
