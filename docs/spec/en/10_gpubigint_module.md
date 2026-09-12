@@ -48,7 +48,7 @@ The module utilizes a highly decoupled architecture with a **Dual-Engine Executi
 
 1.  **C# GpuBigInteger (Host Wrapper)**: A `IDisposable` C# class that manages the `IntPtr` to the GPU device memory. It provides the high-level API for the host application to allocate, copy, and invoke operations.
 2.  **Native C++ Backend (`GpuExecutionEngine.LegacyNative`)**: Handled via `Providers/NativeProvider.cs` and `Interop/NativeMethods.cs`, this exposes the legacy hand-written CUDA C++ library for memory management (`cudaMalloc`) and executing NTT/FFT kernels.
-3.  **G# Kernels (`GpuExecutionEngine.GSharpJit`)**: Handled via `Providers/GSharpJitProvider.cs`, this is a pure C# JIT backend where the mathematical operations are natively written in C# using `[GpuKernel]` inside the `Kernels/` directory (e.g., `GpuBigIntFermatKernels.cu.cs`, `GpuBigIntMulKernels.cu.cs`). **By convention, all C# files containing G# GPU kernels must use the `.cu.cs` file extension.** In this mode, the managed code directly performs CUDA allocations (`cuMemAlloc_v2`) and dispatches the kernels dynamically, bypassing the C++ DLL completely.
+3.  **G# Kernels (`GpuExecutionEngine.GSharpAot`)**: Handled via `Providers/GSharpAotProvider.cs`, this is a pure C# JIT backend where the mathematical operations are natively written in C# using `[GpuKernel]` inside the `Kernels/` directory (e.g., `GpuBigIntFermatKernels.cu.cs`, `GpuBigIntMulKernels.cu.cs`). **By convention, all C# files containing G# GPU kernels must use the `.cu.cs` file extension.** In this mode, the managed code directly performs CUDA allocations (`cuMemAlloc_v2`) and dispatches the kernels dynamically, bypassing the C++ DLL completely.
 
 _Complex kernel signatures are neatly encapsulated by utilizing `ref struct` wrappers (e.g., `ref FermatContext` inside `Contexts/`) powered by the Deep Struct Marshaling engine, eliminating the need to pass dozens of arrays manually._
 
@@ -57,7 +57,7 @@ _Complex kernel signatures are neatly encapsulated by utilizing `ref struct` wra
 Because initializing large buffers for big integers on the GPU is expensive, `GpuBigInt` requires a `GpuContext` object.
 ```csharp
 // Context: Host C# (CPU)
-using var context = new GpuContext(MaxWords, GpuExecutionEngine.GSharpJit);
+using var context = new GpuContext(MaxWords, GpuExecutionEngine.GSharpAot);
 ```
 The context routes execution to the specified engine and performs the following roles:
 * Manages a `WorkspacePointer` (`IntPtr`), entirely eliminating GPU global state. This makes parallel processing completely thread-safe across multiple CUDA contexts.

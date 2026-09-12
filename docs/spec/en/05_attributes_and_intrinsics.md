@@ -34,28 +34,28 @@ The transpiler respects standard C# `[MethodImpl]` attributes to provide fine-gr
 * `[MethodImpl(MethodImplOptions.AggressiveInlining)]`: Transpiled to `__forceinline__ __device__`. Instructs NVCC to always inline the method, eliminating function call overhead.
 * `[MethodImpl(MethodImplOptions.NoInlining)]`: Transpiled to `__noinline__ __device__`. Prevents NVCC from automatically inlining large helper functions, keeping them as separate device function calls to conserve registers in the main kernel.
 
-## 3.3 `[JitConstant]`
+## 3.3 `[Constant]`
 
-The `[JitConstant]` attribute marks a kernel argument as a compile-time constant for the JIT engine. This enables aggressive hardware-level optimizations, particularly register minimization through loop unrolling.
+The `[Constant]` attribute marks a kernel argument as an Ahead-Of-Time (AOT) preprocessor constant. This enables aggressive hardware-level optimizations, particularly register minimization through loop unrolling.
 
 ### 3.3.1 Semantic Rules
 * **Target**: Kernel parameters only.
 * **Allowed Types**: Must be a primitive integral type (e.g., `int`, `uint`).
 * **Behavior**:
   1. The parameter is completely removed from the generated C++ function signature.
-  2. The source generator injects a preprocessor macro (`#define [ParamName] [Value]`) at the top of the C++ source string during runtime.
-  3. The JIT runtime calculates a unique hash for the resulting C++ string. Therefore, invoking the same kernel with different `[JitConstant]` values produces and caches physically distinct GPU binaries.
+  2. The source generator injects a preprocessor macro (`#define [ParamName] [Value]`) at the top of the C++ source string during generation.
+  3. The AOT MSBuild phase calculates a unique hash for the resulting C++ string. (Note: The attribute was historically named `[JitConstant]`, but macro injection is now entirely resolved AOT).
 
 ### 3.3.2 Automatic Loop Unrolling (`#pragma unroll`)
 The G# transpiler unconditionally prepends `#pragma unroll` to every `for` loop encountered in the syntax tree.
-* If a loop bound utilizes a `[JitConstant]`, the CUDA compiler (NVCC) evaluates the macro substitution at compile time. Identifying a constant trip count, NVCC fully unrolls the loop.
+* If a loop bound utilizes a `[Constant]`, the CUDA compiler (NVCC) evaluates the macro substitution at compile time. Identifying a constant trip count, NVCC fully unrolls the loop.
 * If the loop bound is dynamic, NVCC ignores the `#pragma unroll` directive safely.
 
 **Example C# Input:**
 ```csharp
 // Context: G# Kernel (GPU)
 [GpuKernel]
-public static unsafe void MultiplyKernel(int* data, [JitConstant] int iterations)
+public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
 {
     int sum = 0;
     for (int i = 0; i < iterations; i++)
@@ -128,7 +128,7 @@ The `Gpu` static class also provides highly optimized multi-precision arithmetic
 The `SharedMemory<T>` struct is a C# `ref struct` that abstracts CUDA's `__shared__` memory space. 
 
 ### 7.4.1 Static Shared Memory
-If instantiated with a compile-time constant size, the transpiler emits a static shared memory declaration. The semantic model automatically evaluates constant arguments and mathematical expressions (AST evaluation), enabling the use of both explicit arrays, Target-typed `new` (`new()`), and formulas involving `const` variables or `[JitConstant]` parameters.
+If instantiated with a compile-time constant size, the transpiler emits a static shared memory declaration. The semantic model automatically evaluates constant arguments and mathematical expressions (AST evaluation), enabling the use of both explicit arrays, Target-typed `new` (`new()`), and formulas involving `const` variables or `[Constant]` parameters.
 ```csharp
 // Context: G# Kernel (GPU)
 SharedMemory<int> smem1 = new SharedMemory<int>(256);
@@ -140,7 +140,7 @@ __shared__ int smem[256];
 ```
 
 ### 7.4.2 Dynamic Shared Memory
-If instantiated with a dynamic variable (or a parameter not marked as `[JitConstant]`), the transpiler utilizes a highly sophisticated dynamic shared memory allocator. Because CUDA restricts a kernel to a single `extern __shared__` array, G# generates a single byte buffer (`__gsharp_dynamic_smem`) and automatically manages aligned pointer arithmetic (`__smem_offset`) to allow multiple dynamic `SharedMemory<T>` instantiations in the same kernel.
+If instantiated with a dynamic variable (or a parameter not marked as `[Constant]`), the transpiler utilizes a highly sophisticated dynamic shared memory allocator. Because CUDA restricts a kernel to a single `extern __shared__` array, G# generates a single byte buffer (`__gsharp_dynamic_smem`) and automatically manages aligned pointer arithmetic (`__smem_offset`) to allow multiple dynamic `SharedMemory<T>` instantiations in the same kernel.
 
 ```csharp
 // Context: G# Kernel (GPU)

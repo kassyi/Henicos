@@ -28,15 +28,15 @@ This causes a combinatorial explosion in the PTX optimization graph:
 1. **NVRTC / NVCC Optimizer Hangs**: The JIT compilation process hangs indefinitely (often triggering timeouts if not manually aborted).
 2. **WDDM TDR Timeouts**: If a massively unrolled kernel does somehow compile, its execution time easily exceeds the Windows 2-second limit (TDR), causing the GPU driver to forcefully kill the process.
 
-Initially, we attempted to measure performance by executing smaller "Chunks" (e.g., 100 iterations per kernel launch). We used `[JitConstant] string GSHARP_CHUNK_SIZE` to pass the loop count. 
+Initially, we attempted to measure performance by executing smaller "Chunks" (e.g., 100 iterations per kernel launch). We used `[Constant] string GSHARP_CHUNK_SIZE` to pass the loop count. 
 However, **the compiler still hung**.
 
 #### Root Cause: Aggressive Unrolling of "Fixed" Loops
-The G# Transpiler passes `[JitConstant]` values to the PTX compiler as `#define` macros. For a chunk of size 100, the kernel essentially contained `for (int iter = 0; iter < 100; iter++)`. 
+The G# Transpiler passes `[Constant]` values to the PTX compiler as `#define` macros. For a chunk of size 100, the kernel essentially contained `for (int iter = 0; iter < 100; iter++)`. 
 Because the upper bound was a known constant at compile-time, the NVCC optimizer aggressively attempted to unroll or deeply analyze the 100 iterations of our massive `MultiplySquareAndReduce` logic. The sheer size of the resulting AST/CFG caused the optimizer to explode, leading to infinite compilation times.
 
 ### The Solution: Dynamic Parameterization for Benchmarking
-To circumvent the compiler hang while still avoiding WDDM TDR, we changed the `chunkSize` from a `[JitConstant]` macro to a **standard runtime parameter** (`int chunkSize`).
+To circumvent the compiler hang while still avoiding WDDM TDR, we changed the `chunkSize` from a `[Constant]` macro to a **standard runtime parameter** (`int chunkSize`).
 By doing so, the loop bound became unknown at compile time. NVCC instantly abandoned any attempt to unroll the loop, reducing the PTX compilation time to a mere ~3.8 seconds even for $E=10000$.
 
 With the chunking strategy successfully bypassing both compiler hangs and WDDM TDR, we achieved the following throughput for $E=10000$:

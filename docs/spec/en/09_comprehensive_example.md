@@ -1,6 +1,6 @@
 # 8. Comprehensive Example
 
-This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[JitConstant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
+This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[Constant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
 
 ## 8.1 The G# Source Code
 
@@ -83,7 +83,7 @@ public static partial class ComprehensiveSpecKernel
         out bool successFlag,
         SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
         int particleCount,
-        [JitConstant] int unrollFactor)
+        [Constant] int unrollFactor)
     {
         successFlag = false;
 
@@ -135,7 +135,7 @@ public static partial class ComprehensiveSpecKernel
             float mag = ComputeMagnitude(p);
             mag = (float)Math.Abs(mag);
 
-            // 5. Automatic Loop Unrolling via JitConstant (for)
+            // 5. Automatic Loop Unrolling via Constant (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
@@ -245,7 +245,7 @@ public static partial class ComprehensiveSpecKernel
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
         using var a = new GpuBigInteger(context, 1024);
         using var b = new GpuBigInteger(context, 1024);
@@ -582,7 +582,7 @@ host.DoubleValue = native.DoubleValue;
 }
 public static unsafe void Launch_ProcessPhysics(DebugReduc.PhysicsVector[] particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var __gsharp_dynamic_src = string.Join
 (System.Environment.NewLine, new string[]
 {
@@ -590,7 +590,7 @@ var __gsharp_dynamic_src = string.Join
 ProcessPhysics_CudaSource
 }
 );
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics", macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics", macros);
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -685,7 +685,7 @@ foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr
 }
 public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, float totalMagnitude, bool successFlag, DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.Collections.Generic.Dictionary<string, string>? macros = null)
 {
-using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+using var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 var __gsharp_dynamic_src = string.Join
 (System.Environment.NewLine, new string[]
 {
@@ -693,7 +693,7 @@ var __gsharp_dynamic_src = string.Join
 ProcessPhysics_CudaSource
 }
 );
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics", macros);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetOrCompileKernel(__gsharp_dynamic_src, "ProcessPhysics", macros);
 System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
@@ -791,7 +791,7 @@ The G# compiler natively intercepts these syntax tree nodes and fails the build 
 
 This explicit trace proves that:
 
-1. `JitConstant` uses preprocessor macros.
+1. `Constant` uses preprocessor macros.
 2. Custom Structs map flawlessly, and all 11 primitive C# types align to their C++ equivalents.
 3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004` and `GSH1001` - `GSH1002`) to act as strict guardrails.
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.

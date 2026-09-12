@@ -51,4 +51,4 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 ## 2.4 Preprocessor Directives
 
 C# preprocessor directives (e.g., `#if`, `#define`) are **not** translated into CUDA C++ preprocessor directives. They are evaluated by the Roslyn compiler during the AOT phase.
-To inject C++ preprocessor macros (like `#define`) into the generated CUDA code, you must use the `[JitConstant]` attribute on kernel parameters.
+To inject C++ preprocessor macros (like `#define`) into the generated CUDA code, you must use the `[Constant]` attribute on kernel parameters.

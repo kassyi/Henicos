@@ -13,7 +13,7 @@ This file gives agents enough repository context to work safely and follow proje
 
 ### Working Summary
 
-Henicos (GSharp) is a framework that allows executing C# code directly on NVIDIA GPUs. It transpiles C# code into CUDA C++ / PTX using Roslyn Source Generators and provides a Runtime (`JitEngine`, `BackendCompiler`) to compile and launch kernels natively.
+Henicos (GSharp) is a framework that allows executing C# code directly on NVIDIA GPUs. It transpiles C# code into CUDA C++ / PTX using Roslyn Source Generators and provides a Runtime (`GpuKernelLoader`, `BackendCompiler`) to compile and launch kernels natively.
 
 <!-- END GENERATED PORTFOLIO CONTEXT -->
 
