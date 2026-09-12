@@ -19,7 +19,7 @@ public class GEN_13_GpuMacroTests
     {
         Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
         // Edge cases and stress testing for macro kernels
-        using var scope = new JitEngine.CudaContextScope();
+        using var scope = new GpuKernelLoader.CudaContextScope();
 
         var actualLength = System.Math.Max(0, length);
         var output = new uint[actualLength];

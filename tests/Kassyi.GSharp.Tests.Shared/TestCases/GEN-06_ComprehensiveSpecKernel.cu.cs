@@ -1,4 +1,4 @@
-﻿// ReSharper disable All
+// ReSharper disable All
 
 using System;
 using Kassyi.GSharp.Core;
@@ -83,7 +83,7 @@ public static partial class ComprehensiveSpecKernel
         out bool successFlag,
         SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
         int particleCount,
-        [JitConstant] int unrollFactor)
+        [Constant] int unrollFactor)
     {
         successFlag = false;
 
@@ -135,7 +135,7 @@ public static partial class ComprehensiveSpecKernel
             float mag = ComputeMagnitude(p);
             mag = (float)System.Math.Abs(mag);
 
-            // 5. Automatic Loop Unrolling via JitConstant (for)
+            // 5. Automatic Loop Unrolling via Constant (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
@@ -245,7 +245,7 @@ public static partial class ComprehensiveSpecKernel
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
         using var a = new GpuUIntBigInteger(context, 1024);
         using var b = new GpuUIntBigInteger(context, 1024);

@@ -9,7 +9,7 @@ public static class WrapperAllocationKernels
         ref int ioVal,
         out float outVal,
         int[] arrayVal,
-        [JitConstant] uint constantVal)
+        [Constant] uint constantVal)
     {
         if (ioVal > constantVal)
         {
