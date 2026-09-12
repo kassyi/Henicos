@@ -23,20 +23,6 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 > [!NOTE]
 > `nint` and `nuint` are unsupported due to the ambiguity of target pointer sizes between host and device architectures. Use explicit `long` or `ulong` for 64-bit address offsets.
 
-### 2.1.1 Built-in Vector Types (`System.Numerics`)
-
-G# provides first-class support for .NET standard vector types (`System.Numerics.Vector2`, `Vector3`, and `Vector4`). These types are transparently mapped to CUDA C++ native vector types (`float2`, `float3`, and `float4`).
-
-| C# Type | CUDA C++ Type | Components | CUDA Constructor Equivalent |
-| :--- | :--- | :--- | :--- |
-| `System.Numerics.Vector2` | `float2` | `x`, `y` | `make_float2(x, y)` |
-| `System.Numerics.Vector3` | `float3` | `x`, `y`, `z` | `make_float3(x, y, z)` |
-| `System.Numerics.Vector4` | `float4` | `x`, `y`, `z`, `w` | `make_float4(x, y, z, w)` |
-
-* **Component Access Mapping**: C# fields (`vec.X`, `vec.Y`, `vec.Z`, `vec.W`) are automatically normalized to CUDA lowercase field accessors (`vec.x`, `vec.y`, `vec.z`, `vec.w`).
-* **Instantiation**: Initializing vectors via `new Vector2(x, y)`, `new Vector3(x, y, z)`, or `new Vector4(x, y, z, w)` safely transpiles into C++ uniform brace initialization (`float2{x, y}`).
-* **Kernel & Buffer Interop**: Managed vector arrays (e.g., `Vector3[] buffer`) passed as kernel arguments are marshaled seamlessly as device pointers (`float3* buffer`).
-
 ## 2.2 Custom Structs (User-Defined Types)
 
 G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel. 
@@ -100,7 +86,7 @@ G# fully supports implicitly typed local variables (`var`). The transpiler now m
 var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
 var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
 ```
-This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the JIT phase.
+This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the AOT phase.
 
 > [!WARNING]
 > **Literal Initialization Constraints**: To prevent subtle type-casting bugs in CUDA C++ (where `auto` might mistakenly infer a signed `int` for `0` when an `unsigned int` was expected), G# prohibits initializing `var` with untyped bare literals. You must use explicit literal suffixes.

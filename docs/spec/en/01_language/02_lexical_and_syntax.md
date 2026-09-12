@@ -12,14 +12,15 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `for` loop | Yes | `for` loop | Automatically prefixed with `#pragma unroll` during transpilation. |
 | `while` loop | Yes | `while` loop | Supported. |
 | `do...while` loop | Yes | `do...while` loop | Supported. |
-| `switch` statement | Yes | `switch` statement | Pattern matching is **not** supported (only basic value switches). |
-| `switch` expression | Yes | Lambda (IIFE) | Supported for basic value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
+| `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). |
+| `switch` expression | Yes | Lambda (IIFE) | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
-| `return` | Yes | `return` | Kernels (`[GpuKernel]`) must return `void`. Helpers (`[GpuDeviceFunction]`) can return values. |
+| `return` | Yes | `return` | Kernels (`[GpuKernel]`) can return value types, which are automatically allocated as arrays by the host launcher. Helpers (`[GpuDeviceFunction]`) can also return values. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
+| Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
 | `goto` | No | - | Strictly prohibited to ensure static analyzability and structured control flow. |
 | `try` / `catch` / `finally` | No | - | GPU execution does not support C++ exception handling for performance reasons. |
-| `yield return` | No | - | Iterators and state machines are unsupported. |
+| `yield return` | Yes | - | Supported for coroutines and collection dispose routing. |
 | `await` / `async` | No | - | Asynchronous execution within a kernel is unsupported. |
 | `lock` | No | - | Use `Gpu.AtomicAdd` or `Gpu.SyncThreads` for synchronization instead. |
 
@@ -29,9 +30,11 @@ Variables in G# are strictly translated to native C++ variables.
 
 * **`var` keyword:** Fully supported. The transpiler infers the equivalent C++ type (e.g., `auto`).
 * **Variable Shadowing:** Supported, following standard C# scope rules.
+* **Inline `out var`:** Supported. Generates the equivalent variable declaration and reference pass in C++.
 * **Tuple Swaps / Assignments:** Supported for simple tuple swaps `(a, b) = (b, a)` via generated C++ IIFE (Immediately Invoked Lambda Expressions). Full C# tuple deconstruction into managed types remains unsupported.
+* **Target-Typed `new()`:** Fully supported. The transpiler infers the correct structural type instantiation.
 * **Heap Allocation (`new Class()`):** Prohibited. All local variables must be primitive types or value types (`struct`), which are allocated in GPU registers or local memory.
-* **Arrays (`T[]`):** Local instantiation (`new int[10]`) is prohibited inside a kernel. Arrays must be passed in as arguments (allocated via `__shared__` or globally in device memory).
+* **Arrays (`T[]`) and Collections:** Explicit local instantiation on the managed heap (`new int[10]`) is prohibited. However, implicit stack arrays (`stackalloc[]`) and C# 12 collection expressions (`[]`) are fully supported and optimized into C++ local stack arrays. Heap-backed arrays must be passed in as arguments.
 * **Default Literal (`default`):** Fully supported. Transpiles to zero-initialization or C++ default constructors (e.g., `{}`).
 * **Extension Methods:** Supported. Invocation via `this` arguments (e.g., `obj.Method()`) correctly transpiles to standard static C++ function calls.
 

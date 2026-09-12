@@ -42,4 +42,12 @@ The G# framework strictly operates on a **Pure AOT (Ahead-Of-Time) Static Execut
 - The **AOT Generator (`Kassyi.Generators.GSharp`)** translates C# syntax into CUDA C++ and orchestrates the native compilation into machine code (`.fatbin`) during the standard MSBuild process.
 - The **Runtime Loader (`Kassyi.GSharp.Runtime`)** serves as an ultra-lightweight loader that validates, decrypts, and loads the precompiled AOT binaries directly into the NVIDIA driver, instantly dispatching the kernel with zero compilation overhead.
 
-> For deep internal architecture details of the transpiler and runtime execution, refer to **Part II: Implementation Overview** (`07_aot_generator_architecture.md` and `08_aot_runtime_loader.md`).
+## 1.3 Transpiler Dialect Architecture (Two-Tier Design)
+
+A defining strength of G# is its **Two-Tier Transpiler Architecture**. Rather than hardcoding C# directly to NVIDIA CUDA C++, G# separates the Abstract Syntax Tree (AST) analysis engine from the backend syntax generation via the `ITranspilerDialect` interface.
+
+- **Primary Dialect**: The default `CudaCppDialect` acts as a language overlay, mapping C# constructs to highly optimized NVIDIA CUDA C++ and PTX.
+- **Backend Agnosticism**: By simply swapping the active Dialect, the identical Roslyn AST engine can target entirely different GPU backends (e.g., OpenCL C, Apple Metal Shading Language, or Vulkan GLSL) without rewriting the core compilation logic.
+
+> For deep internal architecture details of the transpiler and runtime execution, refer to **Part II: Implementation Overview** (`../02_architecture/01_aot_transpiler.md` and `../02_architecture/02_runtime_loader.md`).
+
