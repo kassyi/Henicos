@@ -1,13 +1,13 @@
 using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Interop;
 
-namespace Kassyi.GSharp.Runtime.Jit;
+namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
 /// Runtime JIT/AOT compilation engine that manages thread contexts and loads executable GPU modules.
 /// </summary>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-public sealed class JitEngine
+public sealed class GpuKernelLoader
 {
     private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
