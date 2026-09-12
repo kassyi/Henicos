@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -44,9 +44,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="Dialects\**\*.yml" />
+    <DialectYamlFiles Include="Dialects\**\*.yml" />
+    <DialectYamlFiles Include="Dialects\**\*.yaml" />
     <EmbeddedResource Include="Resources\Prelude.cu" />
     <EmbeddedResource Include="Resources\Prelude.cpp" />
   </ItemGroup>
+
+  <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll&quot; &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
+    <Touch Files="$(IntermediateOutputPath)GeneratedDialects.stamp" AlwaysCreate="true" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects.stamp" />
+    </ItemGroup>
+  </Target>
 
 </Project>

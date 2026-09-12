@@ -1,52 +1,60 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using Kassyi.GSharp.Compiler;
-using Microsoft.CodeAnalysis.Text;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace Kassyi.GSharp.Compiler.Generators;
 
-[Generator]
-public class YamlDialectGenerator : IIncrementalGenerator
+public static class YamlDialectGenerator
 {
     private static readonly IDeserializer s_deserializer = new DeserializerBuilder()
         .WithNamingConvention(PascalCaseNamingConvention.Instance)
         .IgnoreUnmatchedProperties()
         .Build();
 
-    public void Initialize(IncrementalGeneratorInitializationContext context)
+    public static void Main(string[] args)
     {
-        var yamlFiles = context.AdditionalTextsProvider
-            .Where(text => text.Path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) || text.Path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            .Select((text, cancellationToken) => text.GetText(cancellationToken)?.ToString())
-            .Where(text => text != null);
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: YamlDialectGenerator <inputDir> <outputDir>");
+            return;
+        }
 
-        var dialectDefinitions = yamlFiles.Select((text, _) =>
+        string inputDir = args[0];
+        string outputDir = args[1];
+
+        Directory.CreateDirectory(outputDir);
+
+        var yamlFiles = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories)
+            .Where(path => path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            .Select(path => File.ReadAllText(path));
+
+        var dialectDefinitions = yamlFiles.Select(text =>
         {
             try
             {
-                return s_deserializer.Deserialize<DialectDefinition>(text!);
+                return s_deserializer.Deserialize<DialectDefinition>(text);
             }
             catch
             {
                 return null;
             }
-        }).Where(def => def != null && !string.IsNullOrEmpty(def.Name));
+        }).Where(def => def != null && !string.IsNullOrEmpty(def.Name)).ToList();
 
-        var allDefinitions = dialectDefinitions.Collect();
+        var defMap = dialectDefinitions.ToDictionary(d => d!.Name, d => d!);
 
-        context.RegisterSourceOutput(allDefinitions, (spc, definitions) =>
+        foreach (var def in dialectDefinitions)
         {
-            var defMap = definitions.ToDictionary(d => d!.Name, d => d!);
-
-            foreach (var def in definitions)
-            {
-                string source = GenerateDialectClass(def!, defMap);
-                spc.AddSource($"{def!.Name}Dialect.g.cs", SourceText.From(source, Encoding.UTF8));
-            }
-        });
+            string source = GenerateDialectClass(def!, defMap);
+            File.WriteAllText(Path.Combine(outputDir, $"{def!.Name}Dialect.g.cs"), source, Encoding.UTF8);
+        }
     }
 
-    private string GenerateDialectClass(DialectDefinition def, Dictionary<string, DialectDefinition> definitions)
+    private static string GenerateDialectClass(DialectDefinition def, Dictionary<string, DialectDefinition> definitions)
     {
         using var writer = new SourceWriter();
 
@@ -134,7 +142,7 @@ public class YamlDialectGenerator : IIncrementalGenerator
         return writer.ToString();
     }
 
-    private void CollectHeaders(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, HashSet<string> headers)
+    private static void CollectHeaders(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, HashSet<string> headers)
     {
         if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits!, out var parent))
         {
@@ -149,7 +157,7 @@ public class YamlDialectGenerator : IIncrementalGenerator
         }
     }
 
-    private string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, Func<DialectDefinition, string?> selector)
+    private static string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, Func<DialectDefinition, string?> selector)
     {
         var val = selector(def);
         if (!string.IsNullOrEmpty(val))
