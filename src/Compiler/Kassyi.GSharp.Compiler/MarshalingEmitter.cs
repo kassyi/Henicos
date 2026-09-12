@@ -326,6 +326,11 @@ internal static class MarshalingEmitter
                 writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
             }
         }
+
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendLine("IntPtr d___gsharp_auto_result = IntPtr.Zero;");
+        }
     }
 
     internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
@@ -337,6 +342,11 @@ internal static class MarshalingEmitter
             {
                 nonJitParamCount++;
             }
+        }
+
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            nonJitParamCount++;
         }
 
         writer.Append("void** kernelParams = stackalloc void*[");
@@ -354,6 +364,21 @@ internal static class MarshalingEmitter
             WriteParameterMarshal(writer, p, paramIndex++, isDevicePtr);
         }
 
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendLine("// Marshal auto result array");
+            writer.Append("int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(");
+            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
+            writer.AppendLine(");");
+
+            writer.AppendLine("if (__gsharp_auto_result_size > 0)");
+            using (writer.Scope())
+            {
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d___gsharp_auto_result, __gsharp_auto_result_size));");
+                writer.AppendLine("kernelParams[" + paramIndex + "] = &d___gsharp_auto_result;");
+            }
+        }
+
         writer.AppendLine();
 
         WriteLaunchKernelCall(writer, method);
@@ -367,6 +392,33 @@ internal static class MarshalingEmitter
 
             WriteParameterUnmarshal(writer, p, isDevicePtr);
         }
+
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendLine("if (__gsharp_auto_result != null && d___gsharp_auto_result != IntPtr.Zero)");
+            using (writer.Scope())
+            {
+                writer.Append("int size = __gsharp_auto_result.Length * sizeof(");
+                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
+                writer.AppendLine(");");
+
+                writer.AppendLine("if (size > 0)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine("var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                    writer.AppendLine("try");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, size));");
+                    }
+                    writer.AppendLine("finally");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("handle.Free();");
+                    }
+                }
+            }
+        }
     }
 
     internal static void WriteCleanup(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
@@ -379,6 +431,15 @@ internal static class MarshalingEmitter
             }
 
             WriteParameterFree(writer, p, isDevicePtr);
+        }
+
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendLine("if (d___gsharp_auto_result != IntPtr.Zero)");
+            using (writer.Scope())
+            {
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemFree_v2(d___gsharp_auto_result));");
+            }
         }
     }
 
