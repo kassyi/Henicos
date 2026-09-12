@@ -1,6 +1,6 @@
 // ReSharper disable All
 
-#pragma warning disable GSH1002
+#pragma warning disable GSH0014
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 

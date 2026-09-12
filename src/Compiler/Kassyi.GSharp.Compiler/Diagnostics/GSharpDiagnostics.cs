@@ -41,7 +41,7 @@ public static class GSharpDiagnostics
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
-        id: "GSH1001",
+        id: "GSH0013",
         title: "Excessive static shared memory usage",
         messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
         category: Category,
@@ -49,9 +49,17 @@ public static class GSharpDiagnostics
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
-        id: "GSH1002",
+        id: "GSH0014",
         title: "Large struct passed by value",
         messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
+        id: "GSH0015",
+        title: "Auto-allocated array in loop",
+        messageFormat: "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
