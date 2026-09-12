@@ -15,6 +15,6 @@ public class GSH_10_HostLoopAnalyzerTests : TranspilerTestBase
     public async Task Test_HostLoopAnalyzer_ReportsExpectedWarning(string featureId, string testCasePath, string expectedErrorId)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
-                               .ReportsErrorsAsync(expectedErrorId);
+                               .ReportsDiagnosticsAsync(expectedErrorId);
     }
 }
