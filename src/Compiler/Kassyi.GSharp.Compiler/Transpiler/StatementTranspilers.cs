@@ -264,6 +264,24 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
+        var methodNode = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
+        if (methodNode != null)
+        {
+            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodNode);
+            if (methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
+            {
+                if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void && node.Expression != null)
+                {
+                    DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+                    context.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
+                    context.Visitor.Visit(node.Expression);
+                    context.Writer.AppendSemiColonLine();
+                    context.Writer.AppendKeyword("return").AppendSemiColon();
+                    return;
+                }
+            }
+        }
+
         if (node.Expression != null)
         {
             DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
