@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const specFilePath = path.join(__dirname, '..', 'docs', 'spec', 'en', '09_comprehensive_example.md');
-const sourceFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests', 'TestCases', 'ComprehensiveSpecKernel.cs');
-const generatedFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests', 'Snapshots', 'GeneratorSnapshotTests.ComprehensiveSpecKernel_GeneratesCorrectCudaSource#ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs');
+const sourceFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'GEN-06_ComprehensiveSpecKernel.cu.cs');
+const generatedFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'Generator', 'Snapshots', 'Snap.Test_46261f8a84_Cpu#ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs');
 
 console.log("Syncing comprehensive spec...");
 
