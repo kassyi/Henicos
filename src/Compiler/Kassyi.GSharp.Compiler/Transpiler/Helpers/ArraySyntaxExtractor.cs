@@ -50,6 +50,12 @@ internal static class ArraySyntaxExtractor
             ArrayCreationExpressionSyntax { Type.RankSpecifiers.Count: > 0 } arrCreation
                 => (true, null, arrCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault(), null),
 
+            ImplicitArrayCreationExpressionSyntax implicitArray
+                => (true, implicitArray.Initializer.Expressions.Count, null, implicitArray.Initializer),
+
+            InitializerExpressionSyntax initExpr
+                => (true, initExpr.Expressions.Count, null, initExpr),
+
             _ => (false, (int?)null, (ExpressionSyntax?)null, (SyntaxNode?)null)
         };
 
