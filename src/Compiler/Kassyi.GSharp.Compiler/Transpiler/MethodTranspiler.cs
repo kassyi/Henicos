@@ -290,7 +290,7 @@ public static class MethodTranspiler
         var validParameters = new List<ParameterSyntax>(parameters.Count);
         foreach (var p in parameters)
         {
-            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.JitConstant) ==
+            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.Constant) ==
                               true;
             if (!paramSymbol)
             {
@@ -370,7 +370,7 @@ public static class MethodTranspiler
 
                     foreach (var parameter in method.ParameterList.Parameters)
                     {
-                        if (semanticModel.GetDeclaredSymbol(parameter)?.HasAttribute(KnownAttributes.JitConstant) == true)
+                        if (semanticModel.GetDeclaredSymbol(parameter)?.HasAttribute(KnownAttributes.Constant) == true)
                         {
                             continue;
                         }

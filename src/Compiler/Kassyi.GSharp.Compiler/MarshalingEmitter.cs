@@ -297,7 +297,7 @@ internal static class MarshalingEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
+            if (p.HasAttribute(KnownAttributes.Constant))
             {
                 continue;
             }
@@ -333,7 +333,7 @@ internal static class MarshalingEmitter
         var nonJitParamCount = 0;
         foreach (var p in method.Parameters)
         {
-            if (!p.HasAttribute(KnownAttributes.JitConstant))
+            if (!p.HasAttribute(KnownAttributes.Constant))
             {
                 nonJitParamCount++;
             }
@@ -346,7 +346,7 @@ internal static class MarshalingEmitter
         var paramIndex = 0;
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
+            if (p.HasAttribute(KnownAttributes.Constant))
             {
                 continue;
             }
@@ -360,7 +360,7 @@ internal static class MarshalingEmitter
 
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
+            if (p.HasAttribute(KnownAttributes.Constant))
             {
                 continue;
             }
@@ -373,7 +373,7 @@ internal static class MarshalingEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
+            if (p.HasAttribute(KnownAttributes.Constant))
             {
                 continue;
             }
