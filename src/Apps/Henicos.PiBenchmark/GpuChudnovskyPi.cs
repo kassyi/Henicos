@@ -125,7 +125,7 @@ public static class GpuChudnovskyPi
 
         try
         {
-            using var context = new GpuContext(maxContextWords, GpuExecutionEngine.GSharpJit);
+            using var context = new GpuContext(maxContextWords, GpuExecutionEngine.GSharpAot);
             var totalStopwatch = Stopwatch.StartNew();
 
             // 1. Compute Binary Splitting tree using Hybrid CPU/GPU execution

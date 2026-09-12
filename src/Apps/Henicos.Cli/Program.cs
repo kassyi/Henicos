@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BenchmarkDotNet.Running;
 using Cocona;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Runtime.Jit;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Henicos.Cli;
 
@@ -100,7 +100,7 @@ internal class Program
             runner.RunBenchmarkChunk(chunkSize);
 
             // Wait for GPU sync since the wrapper might only queue the launch
-            JitEngine.SynchronizeDevice();
+            GpuKernelLoader.SynchronizeDevice();
             sw.Stop();
 
             var throughput = mDigitsPerLoop * chunkSize / (sw.Elapsed.TotalSeconds);
@@ -171,7 +171,7 @@ public class FermatBenchmarks
     }
 
     [Benchmark]
-    public BigInteger GSharpJitPhase12()
+    public BigInteger GSharpAotPhase12()
     {
         if (E >= 5000)
         {
@@ -198,7 +198,7 @@ public class FermatBenchmarks
     }
 
     [Benchmark]
-    public void GSharpJitChunk100()
+    public void GSharpAotChunk100()
     {
         if (E >= 5000)
         {
