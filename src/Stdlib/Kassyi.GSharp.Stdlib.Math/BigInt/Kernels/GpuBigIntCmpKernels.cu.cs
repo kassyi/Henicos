@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 // ReSharper disable once NotAccessedVariable -- Variables are accessed within inline PTX assembly blocks
 // ReSharper disable once RedundantAssignment -- Assignments are consumed by inline PTX assembly blocks
-#pragma warning disable GSH1002 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
+#pragma warning disable GSH0014 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntCmpKernels
 {
