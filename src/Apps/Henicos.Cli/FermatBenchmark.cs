@@ -40,6 +40,6 @@ public class FermatBenchmark
     }
 
     [Benchmark]
-    public void GSharpJitChunk100() => _runner.RunBenchmarkChunk();
+    public void GSharpAotChunk100() => _runner.RunBenchmarkChunk();
 }
 
