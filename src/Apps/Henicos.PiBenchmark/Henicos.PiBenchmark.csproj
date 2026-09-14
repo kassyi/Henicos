@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\Stdlib\Kassyi.GSharp.Stdlib.Math\Kassyi.GSharp.Stdlib.Math.csproj" />
+    <ProjectReference Include="..\..\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,7 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
+    <GSharpTargetDialect>Cpu</GSharpTargetDialect>
   </PropertyGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
