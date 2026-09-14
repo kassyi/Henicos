@@ -1,7 +1,8 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import fs from 'fs'
+import fs from 'fs/promises'
+import fsSync from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -18,13 +19,13 @@ export default defineConfig({
     {
       name: 'roadmap-api',
       configureServer(server) {
-        server.middlewares.use((req, res, next) => {
+        server.middlewares.use(async (req, res, next) => {
           const dataPath = path.resolve(__dirname, '../../docs/data/roadmap_tasks.json');
           
           if (req.url === '/api/load' && req.method === 'GET') {
             try {
-              if (fs.existsSync(dataPath)) {
-                const data = fs.readFileSync(dataPath, 'utf-8');
+              if (fsSync.existsSync(dataPath)) {
+                const data = await fs.readFile(dataPath, 'utf-8');
                 res.setHeader('Content-Type', 'application/json');
                 res.end(data);
               } else {
@@ -43,7 +44,7 @@ export default defineConfig({
             req.on('data', chunk => {
               body += chunk.toString();
             });
-            req.on('end', () => {
+            req.on('end', async () => {
               try {
                 // Parse to validate JSON format
                 const parsed = JSON.parse(body);
@@ -55,7 +56,7 @@ export default defineConfig({
                   return;
                 }
 
-                fs.writeFileSync(dataPath, JSON.stringify(parsed, null, 2), 'utf-8');
+                await fs.writeFile(dataPath, JSON.stringify(parsed, null, 2), 'utf-8');
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ success: true }));
               } catch (err) {
