@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Typography, Button, Chip } from '@mui/material';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Box, Typography, Button, Chip, Skeleton, CircularProgress } from '@mui/material';
 import { AddShoppingCart as AddCartIcon, RemoveShoppingCart as RemoveCartIcon } from '@mui/icons-material';
 import type { RoadmapTask, TaskStatus } from '../types';
 import { TaskCard } from './TaskCard';
@@ -10,7 +10,7 @@ interface TierSectionProps {
   tasks: RoadmapTask[];
   cartIds: string[];
   selectedTaskId?: string | null;
-  exitingIds: Set<string>;
+  filterKey: string;
   onCartClick: (id: string, shiftKey: boolean) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
   onSelectTask?: (id: string) => void;
@@ -23,7 +23,7 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
   tasks,
   cartIds,
   selectedTaskId,
-  exitingIds,
+  filterKey,
   onCartClick,
   onStatusChange,
   onSelectTask,
@@ -68,9 +68,17 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
           </Button>
 
           <Chip
+            icon={undefined}
             label={`${tasks.length} 件`}
             size="small"
-            sx={{ bgcolor: '#49454f', color: '#e6e0e9', fontWeight: 600 }}
+            sx={{ 
+              bgcolor: '#49454f', 
+              color: '#e6e0e9', 
+              fontWeight: 600,
+              transition: 'all 0.3s ease',
+              width: 'auto',
+              justifyContent: 'center',
+            }}
           />
         </Box>
       </Box>
@@ -82,17 +90,17 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
           gap: 2,
         }}
       >
-        {tasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            inCart={cartIds.includes(task.id)}
-            isSelected={selectedTaskId === task.id}
-            isExiting={exitingIds.has(task.id)}
-            onCartClick={onCartClick}
-            onStatusChange={onStatusChange}
-            onSelectTask={onSelectTask}
-          />
+        {tasks.map((t) => (
+          <Box key={t.id}>
+            <TaskCard
+              task={t}
+              inCart={cartIds.includes(t.id)}
+              isSelected={selectedTaskId === t.id}
+              onCartClick={onCartClick}
+              onStatusChange={onStatusChange}
+              onSelectTask={onSelectTask}
+            />
+          </Box>
         ))}
       </Box>
     </Box>
