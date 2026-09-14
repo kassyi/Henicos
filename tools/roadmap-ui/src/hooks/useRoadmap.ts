@@ -1,6 +1,27 @@
-import { useState, useEffect, useRef, useMemo, useDeferredValue } from "react";
+import { useState, useEffect, useRef, useMemo, useDeferredValue, useCallback } from "react";
 import type { RoadmapTask, TaskStatus, ProgressFilter, ToastState } from "../types";
 import julesPromptTemplate from "../templates/jules-prompt-template.md?raw";
+
+// Helper hook to stabilize callback references (prevents massive re-renders in child components)
+function useEvent<T extends (...args: any[]) => any>(handler: T) {
+  const handlerRef = useRef(handler);
+  useEffect(() => {
+    handlerRef.current = handler;
+  });
+  return useCallback((...args: Parameters<T>) => {
+    return handlerRef.current(...args);
+  }, []);
+}
+
+const matchesProgressFilter = (status: TaskStatus, filter: ProgressFilter): boolean => {
+  if (filter === "all") return true;
+  if (filter === "incomplete") return status === "incomplete";
+  if (filter === "planned") return status === "planned";
+  if (filter === "implemented_plus") return status === "implemented" || status === "tuned";
+  if (filter === "tuned") return status === "tuned";
+  if (filter === "rejected") return status === "rejected";
+  return false;
+};
 
 export function useRoadmap() {
   const [tasks, setTasks] = useState<RoadmapTask[]>([]);
@@ -17,11 +38,6 @@ export function useRoadmap() {
     future: [],
   });
 
-  // Google Keep-like Slide Out Animation & Grace Period
-  const [gracePeriodIds, setGracePeriodIds] = useState<Set<string>>(new Set());
-  const [exitingIds, setExitingIds] = useState<Set<string>>(new Set());
-  const exitTimers = useRef<Record<string, number>>({});
-
   const [searchQuery, setSearchQuery] = useState("");
   const [minBlocker, setMinBlocker] = useState<number>(1);
   const [minDifficulty, setMinDifficulty] = useState<number>(1);
@@ -33,13 +49,6 @@ export function useRoadmap() {
     open: false,
     message: "",
   });
-
-  // Retained IDs when transitioning in filtered views
-  const [retainedIds, setRetainedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    setRetainedIds(new Set());
-  }, [progressFilter]);
 
   // AI Cart Feature
   const [cartIds, setCartIds] = useState<string[]>([]);
@@ -54,7 +63,7 @@ export function useRoadmap() {
       .then((data: any[]) => {
         const normalized: RoadmapTask[] = data.map((t) => {
           const status: TaskStatus =
-            t.status === "tuned" || t.status === "implemented" || t.status === "rejected"
+            t.status === "tuned" || t.status === "implemented" || t.status === "rejected" || t.status === "planned"
               ? t.status
               : "incomplete";
           const metrics = {
@@ -64,11 +73,16 @@ export function useRoadmap() {
             score: t.metrics?.score ?? t.score ?? 30,
           };
           const details = t.details || (t.notes ? { notes: t.notes } : undefined);
+          
+          const notesText = details?.notes || "";
+          const _searchableText = `${t.id} ${t.title} ${notesText}`.toLowerCase().replace(/[\s\-_]/g, "");
+
           return {
             ...t,
             status,
             metrics,
             details,
+            _searchableText,
           };
         });
         setTasks(normalized);
@@ -168,62 +182,6 @@ export function useRoadmap() {
       pushHistory(tasks);
     }
 
-    // Determine if task will leave current progressFilter view
-    let willDisappear = false;
-    if (progressFilter === "incomplete" && newStatus !== "incomplete") {
-      willDisappear = true;
-    } else if (progressFilter === "implemented_plus" && newStatus === "incomplete") {
-      willDisappear = true;
-    } else if (progressFilter === "tuned" && newStatus !== "tuned") {
-      willDisappear = true;
-    }
-
-    if (willDisappear) {
-      if (exitTimers.current[id]) {
-        clearTimeout(exitTimers.current[id]);
-      }
-
-      setGracePeriodIds((prev) => new Set(prev).add(id));
-
-      exitTimers.current[id] = window.setTimeout(() => {
-        setExitingIds((prev) => new Set(prev).add(id));
-
-        setTimeout(() => {
-          setGracePeriodIds((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-          });
-          setExitingIds((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-          });
-          delete exitTimers.current[id];
-        }, 400);
-      }, 2500);
-    } else {
-      if (exitTimers.current[id]) {
-        clearTimeout(exitTimers.current[id]);
-        delete exitTimers.current[id];
-      }
-      setGracePeriodIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      setExitingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      setRetainedIds((prev) => {
-        const next = new Set(prev);
-        next.add(id);
-        return next;
-      });
-    }
-
     isDirty.current = true;
     setTasks((prev) =>
       prev.map((t) =>
@@ -237,7 +195,11 @@ export function useRoadmap() {
     );
 
     const statusLabel =
-      newStatus === "implemented" ? "🛠️ 実装完了" : newStatus === "tuned" ? "⚡ パフォ完了" : "未完了";
+      newStatus === "implemented" ? "🛠️ 実装完了" 
+      : newStatus === "tuned" ? "⚡ パフォ完了" 
+      : newStatus === "planned" ? "📅 計画済"
+      : newStatus === "rejected" ? "❌ 却下"
+      : "未完了";
 
     setToast({
       open: true,
@@ -273,37 +235,14 @@ export function useRoadmap() {
         let matchesSearch = true;
 
         if (query) {
-          const notesText = t.details?.notes || "";
-          const normalizedId = t.id.toLowerCase().replace(/[\s\-_]/g, "");
-          const normalizedTitle = t.title.toLowerCase().replace(/[\s\-_]/g, "");
-          const normalizedNotes = notesText.toLowerCase().replace(/[\s\-_]/g, "");
-
+          const searchableText = t._searchableText || "";
+          
           if (query.includes(",")) {
-            const subQueries = query.split(",").map((s) => s.trim()).filter(Boolean);
-            matchesSearch = subQueries.some((sq) => {
-              const normSub = sq.replace(/[\s\-_]/g, "");
-              return (
-                t.id.toLowerCase().includes(sq) ||
-                normalizedId.includes(normSub) ||
-                t.title.toLowerCase().includes(sq) ||
-                normalizedTitle.includes(normSub) ||
-                notesText.toLowerCase().includes(sq) ||
-                normalizedNotes.includes(normSub)
-              );
-            });
+            const subQueries = query.split(",").map((s) => s.trim().replace(/[\s\-_]/g, "")).filter(Boolean);
+            matchesSearch = subQueries.some((sq) => searchableText.includes(sq));
           } else {
-            const tokens = query.split(/\s+/).filter(Boolean);
-            matchesSearch = tokens.every((token) => {
-              const normToken = token.replace(/[\s\-_]/g, "");
-              return (
-                t.id.toLowerCase().includes(token) ||
-                normalizedId.includes(normToken) ||
-                t.title.toLowerCase().includes(token) ||
-                normalizedTitle.includes(normToken) ||
-                notesText.toLowerCase().includes(token) ||
-                normalizedNotes.includes(normToken)
-              );
-            });
+            const tokens = query.split(/\s+/).map(s => s.replace(/[\s\-_]/g, "")).filter(Boolean);
+            matchesSearch = tokens.every((token) => searchableText.includes(token));
           }
         }
 
@@ -313,23 +252,9 @@ export function useRoadmap() {
         }
 
         const taskStatus = t.status || "incomplete";
-        const isExiting = exitingIds.has(t.id);
 
         // Progress-based Filtering (Pattern A)
-        let matchesProgress = false;
-        if (isExiting || gracePeriodIds.has(t.id) || retainedIds.has(t.id)) {
-          matchesProgress = true;
-        } else if (deferredProgressFilter === "all") {
-          matchesProgress = true;
-        } else if (deferredProgressFilter === "incomplete") {
-          matchesProgress = taskStatus === "incomplete";
-        } else if (deferredProgressFilter === "implemented_plus") {
-          matchesProgress = taskStatus === "implemented" || taskStatus === "tuned";
-        } else if (deferredProgressFilter === "tuned") {
-          matchesProgress = taskStatus === "tuned";
-        } else if (deferredProgressFilter === "rejected") {
-          matchesProgress = taskStatus === "rejected";
-        }
+        const matchesProgress = matchesProgressFilter(taskStatus, deferredProgressFilter);
 
         const matchesBlocker = t.metrics.blocker >= deferredMinBlocker;
         const matchesDifficulty = t.metrics.difficulty >= deferredMinDifficulty;
@@ -350,9 +275,6 @@ export function useRoadmap() {
     deferredMinBlocker,
     deferredMinDifficulty,
     deferredMinGenerality,
-    gracePeriodIds,
-    exitingIds,
-    retainedIds,
   ]);
 
   const tasksByTier = useMemo(() => {
@@ -436,18 +358,21 @@ ${details.csharp_example || "// N/A"}
 
   const statusCounts = useMemo(() => {
     let incomplete = 0;
+    let planned = 0;
     let implemented = 0;
     let tuned = 0;
     let rejected = 0;
     tasks.forEach((t) => {
       if (t.status === "tuned") tuned++;
       else if (t.status === "implemented") implemented++;
+      else if (t.status === "planned") planned++;
       else if (t.status === "rejected") rejected++;
       else incomplete++;
     });
     return {
       all: tasks.length,
       incomplete,
+      planned,
       implemented_plus: implemented + tuned,
       tuned,
       rejected,
@@ -461,8 +386,8 @@ ${details.csharp_example || "// N/A"}
     selectedTaskId,
     setSelectedTaskId,
     history,
-    handleUndo,
-    handleRedo,
+    handleUndo: useEvent(handleUndo),
+    handleRedo: useEvent(handleRedo),
     searchQuery,
     setSearchQuery,
     progressFilter,
@@ -479,15 +404,15 @@ ${details.csharp_example || "// N/A"}
     setToast,
     cartIds,
     setCartIds,
-    handleCartClick,
-    updateTaskStatus,
-    updateNotes,
-    toggleTierCart,
-    copyJulesPrompt,
-    copyCartIdsOnly,
+    handleCartClick: useEvent(handleCartClick),
+    updateTaskStatus: useEvent(updateTaskStatus),
+    updateNotes: useEvent(updateNotes),
+    toggleTierCart: useEvent(toggleTierCart),
+    copyJulesPrompt: useEvent(copyJulesPrompt),
+    copyCartIdsOnly: useEvent(copyCartIdsOnly),
     filteredTasks,
     tasksByTier,
-    exitingIds,
     statusCounts,
+    deferredFilterKey: `${deferredProgressFilter}-${deferredSearchQuery}-${deferredMinBlocker}-${deferredMinDifficulty}-${deferredMinGenerality}`,
   };
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box } from '@mui/material';
 
 interface CsCodeHighlighterProps {
@@ -123,6 +123,8 @@ function highlightCsCode(rawCode: string): React.ReactNode[] {
 }
 
 export const CsCodeHighlighter: React.FC<CsCodeHighlighterProps> = ({ code }) => {
+  const highlightedCode = useMemo(() => highlightCsCode(code), [code]);
+
   return (
     <Box
       sx={{
@@ -139,7 +141,7 @@ export const CsCodeHighlighter: React.FC<CsCodeHighlighterProps> = ({ code }) =>
         whiteSpace: 'pre',
       }}
     >
-      {highlightCsCode(code)}
+      {highlightedCode}
     </Box>
   );
 };
