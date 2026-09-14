@@ -60,7 +60,7 @@ public static class BbpDigitExtractor
         var s4 = Series(6, id);
 
         var pid = 4.0 * s1 - 2.0 * s2 - s3 - s4;
-        pid = pid - Math.Floor(pid);
+        pid -= Math.Floor(pid);
         if (pid < 0.0)
         {
             pid += 1.0;
@@ -85,22 +85,22 @@ public static class BbpDigitExtractor
         if (id >= 10000)
         {
             var lockObj = new object();
-            Parallel.For(0, id + 1, () => 0.0, (k, loopState, localSum) =>
-            {
-                var ak = 8L * k + m;
-                long p = id - k;
-                var t = ModExp16(p, ak);
-                localSum += (double)t / ak;
-                return localSum - Math.Floor(localSum);
-            },
-            localSum =>
-            {
-                lock (lockObj)
+            Parallel.For(0, id + 1, () => 0.0, (k, _, localSum) =>
                 {
-                    s += localSum;
-                    s -= Math.Floor(s);
-                }
-            });
+                    var ak = 8L * k + m;
+                    long p = id - k;
+                    var t = ModExp16(p, ak);
+                    localSum += (double)t / ak;
+                    return localSum - Math.Floor(localSum);
+                },
+                localSum =>
+                {
+                    lock (lockObj)
+                    {
+                        s += localSum;
+                        s -= Math.Floor(s);
+                    }
+                });
         }
         else
         {
@@ -115,7 +115,7 @@ public static class BbpDigitExtractor
         }
 
         // Compute terms where k > id (Converges extremely fast; typically <= 25 terms)
-        for (var k = id + 1; ; k++)
+        for (var k = id + 1;; k++)
         {
             var ak = 8L * k + m;
             var t = Math.Pow(16.0, id - k) / ak;
