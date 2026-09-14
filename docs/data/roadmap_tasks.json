@@ -2708,10 +2708,11 @@
       "score": 45
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "// [Kernel Side] \n[GpuKernel]\npublic static void BitwiseKernel(uint u32Val, ulong u64Val, uint[] output)\n{\n    // Translates to native CUDA instructions, backed by safe Prelude helpers\n    output[0] = (uint)BitOperations.TrailingZeroCount(u32Val);\n    output[1] = (uint)(BitOperations.RotateLeft(u64Val, 10) & 0xFFFFFFFF);\n}",
       "current_behavior": "Implementation complete. Added safe helper functions (__gsharp_rotl64, __gsharp_tzc_32, etc.) to Prelude.cu to ensure full compatibility with C# specifications (behavior with 0 input).",
-      "target_cuda": "Fully comprehensive replacement to CUDA built-in functions (__clz, __popc, __funnelshift_l, __funnelshift_r).",
-      "strategy": "Mapped System.Numerics.BitOperations intrinsic methods to native CUDA / PTX bitwise instructions (e.g., __popc)."
+      "target_cuda": "Safe helper functions (__gsharp_rotl64, __gsharp_tzc_32) mitigating C++ UB (Undefined Behavior).",
+      "strategy": "Mapped System.Numerics.BitOperations intrinsic methods to native CUDA / PTX bitwise instructions (e.g., __popc).",
+      "cpp_example": "extern \"C\" __global__ void BitwiseKernel(unsigned int u32Val, unsigned long long u64Val, unsigned int* __restrict__ output)\n{\n    // __gsharp_tzc_32 and __gsharp_rotl64 are safe helpers defined in Prelude.cu \n    // avoiding undefined behavior for '0' inputs typical in plain __ffs.\n    output[0] = (unsigned int)__gsharp_tzc_32(u32Val);\n    output[1] = (unsigned int)(__gsharp_rotl64(u64Val, 10) & 4294967295ULL);\n}"
     },
     "score": 45,
     "files": [
@@ -7331,10 +7332,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "lock (syncRoot) {\n    // critical section\n}",
+      "csharp_example": "using Kassyi.GSharp.Core;\n\n// [Kernel Side] GPU Built-in Variables\n[GpuKernel]\npublic static void ThreadInfoKernel(int[] output)\n{\n    // Accessed via static structs decorated with [CudaIntrinsicPattern]\n    int tidX = ThreadIndex.X;\n    int blockIdX = BlockIndex.X;\n    int globalIdx = (BlockIndex.X * BlockDimension.X) + ThreadIndex.X;\n    output[globalIdx] = GridDimension.X;\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Direct mapping to predefined variables like threadIdx.x, blockIdx.x.",
-      "strategy": "Mapped BitOperations methods (PopCount, TrailingZeroCount, etc.) to CUDA bitwise intrinsics for fast BigInt routines."
+      "target_cuda": "Direct mapping to predefined CUDA variables like threadIdx.x, blockIdx.x, blockDim.x.",
+      "strategy": "Mapped BitOperations methods (PopCount, TrailingZeroCount, etc.) to CUDA bitwise intrinsics for fast BigInt routines.",
+      "cpp_example": "extern \"C\" __global__ void ThreadInfoKernel(int* __restrict__ output)\n{\n    // Mapped directly to CUDA built-in variables\n    int tidX = threadIdx.x;\n    int blockIdX = blockIdx.x;\n    int globalIdx = ((blockIdx.x * blockDim.x) + threadIdx.x);\n    output[globalIdx] = gridDim.x;\n}"
     },
     "score": 39,
     "files": [
@@ -7358,10 +7360,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "Gpu.SyncThreads();",
+      "csharp_example": "// [Kernel Side] Synchronization Primitives\n[GpuKernel]\npublic static void SyncKernel(float[] sharedCache)\n{\n    int tid = ThreadIndex.X;\n    sharedCache[tid] = tid * 2.0f;\n    \n    // Enforce thread-block level memory synchronization\n    Gpu.SyncThreads();\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Mapped to __syncthreads() etc.",
-      "strategy": "Implemented trailing zero count algorithms utilizing CUDA __ffs / __brev intrinsics for GpuBigInteger."
+      "target_cuda": "Mapped to __syncthreads() and cg::this_grid().sync().",
+      "strategy": "Implemented trailing zero count algorithms utilizing CUDA __ffs / __brev intrinsics for GpuBigInteger.",
+      "cpp_example": "extern \"C\" __global__ void SyncKernel(float* __restrict__ sharedCache)\n{\n    int tid = threadIdx.x;\n    sharedCache[tid] = (tid * 2.0f);\n    \n    // Directly emits the PTX/CUDA barrier intrinsic\n    __syncthreads();\n}"
     },
     "score": 39,
     "files": [
@@ -7388,10 +7391,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{",
+      "csharp_example": "// [Kernel Side] Atomic Operations\n[GpuKernel]\npublic static void AtomicKernel(int[] globalSum, int value)\n{\n    // Passing the target address by 'ref' correctly maps to pointers in C++\n    Gpu.AtomicAdd(ref globalSum[0], value);\n    Gpu.AtomicMax(ref globalSum[1], value);\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Mapped to built-in functions like atomicAdd, atomicMax, etc.",
-      "strategy": "Implemented leading zero count and bit length calculations utilizing CUDA __clz intrinsic."
+      "target_cuda": "Mapped to built-in atomic functions like atomicAdd, atomicMax, etc.",
+      "strategy": "Implemented leading zero count and bit length calculations utilizing CUDA __clz intrinsic.",
+      "cpp_example": "extern \"C\" __global__ void AtomicKernel(int* __restrict__ globalSum, int value)\n{\n    // Emits CUDA native atomic functions operating on memory addresses\n    atomicAdd(&globalSum[0], value);\n    atomicMax(&globalSum[1], value);\n}"
     },
     "score": 39,
     "files": [
@@ -7419,10 +7423,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{",
+      "csharp_example": "// [Kernel Side / High-Level] Friendly operator overloads\n// Developer uses +, -, *, which the Transpiler replaces with device intrinsics\n[GpuKernel]\npublic static void FriendlyMathKernel(GpuBigIntRef a, GpuBigIntRef b, GpuBigIntRef result)\n{\n    result = a + b; // Transpiled to AddWithCarry internally\n}\n\n// [Kernel Side / Low-Level Intrinsic] Explicit intrinsic usage\n[GpuKernel]\npublic static void IntrinsicMathKernel(uint[] left, uint[] right, uint[] result)\n{\n    ulong carry = 0;\n    int i = Gpu.ThreadIndex.X;\n    result[i] = Gpu.AddWithCarry(left[i], right[i], ref carry);\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Mapped to PTX level carry/borrow instructions.",
-      "strategy": "Implemented Population Count (PopCount) for GpuBigInteger utilizing CUDA __popc."
+      "target_cuda": "Mapped to PTX level carry/borrow intrinsic functions (__builtin_addc etc.).",
+      "strategy": "Implemented Population Count (PopCount) for GpuBigInteger utilizing CUDA __popc.",
+      "cpp_example": "extern \"C\" __global__ void IntrinsicMathKernel(unsigned int* __restrict__ left, unsigned int* __restrict__ right, unsigned int* __restrict__ result)\n{\n    unsigned long long carry = 0;\n    int i = threadIdx.x;\n    // Both friendly operators and intrinsics map to hardware carry instructions\n    result[i] = __builtin_addc(left[i], right[i], &carry); \n}"
     },
     "score": 39,
     "files": [
@@ -7451,10 +7456,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");",
+      "csharp_example": "// [Kernel Side] Direct insertion of inline PTX assembly\n[GpuKernel]\npublic static void InlinePtxKernel(uint[] data)\n{\n    Gpu.InlinePtx(\"data[0] = 999;\");\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Output directly as C++ inline assembly or macros.",
-      "strategy": "Implemented LogBase2 calculation leveraging LeadingZeroCount mapping to __clz."
+      "target_cuda": "Output directly as C++ inline assembly or statements.",
+      "strategy": "Implemented LogBase2 calculation leveraging LeadingZeroCount mapping to __clz.",
+      "cpp_example": "extern \"C\" __global__ void InlinePtxKernel(unsigned int* __restrict__ data)\n{\n    // Emitted directly as C++ statements or inline assembly\n    data[0] = 999;\n}"
     },
     "score": 39,
     "files": [
@@ -7484,10 +7490,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "internal static class BclIntrinsicMapBuilder\n{",
+      "csharp_example": "// [Kernel Side] Usage of standard BCL methods\n[GpuKernel]\npublic static void BitOperationsTestKernel(uint[] u32Data)\n{\n    uint u32Val = u32Data[0];\n    // System.Numerics.BitOperations can be seamlessly used on the GPU\n    u32Data[1] = (uint)BitOperations.LeadingZeroCount(u32Val);\n    u32Data[2] = (uint)BitOperations.PopCount(u32Val);\n    u32Data[3] = (uint)BitOperations.TrailingZeroCount(u32Val);\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "Mapped to CUDA built-in functions like __popc, __popcll.",
-      "strategy": "Implemented dialect mapping for System.Numerics.BitOperations (LeadingZeroCount, PopCount, TrailingZeroCount) to CUDA bitwise intrinsics."
+      "target_cuda": "Mapped to CUDA built-in functions like __popc, __clz, __ffs.",
+      "strategy": "Implemented dialect mapping for System.Numerics.BitOperations (LeadingZeroCount, PopCount, TrailingZeroCount) to CUDA bitwise intrinsics.",
+      "cpp_example": "extern \"C\" __global__ void BitOperationsTestKernel(unsigned int* __restrict__ u32Data)\n{\n    unsigned int u32Val = u32Data[0];\n    // Mapped seamlessly to CUDA bitwise built-in functions\n    u32Data[1] = __clz(u32Val);\n    u32Data[2] = __popc(u32Val);\n    u32Data[3] = __ffs(u32Val) - 1;\n}"
     },
     "score": 39,
     "files": [
@@ -7511,10 +7518,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "internal static class BclIntrinsicMapBuilder\n{",
+      "csharp_example": "// [Kernel Side] Usage of standard BCL methods\n[GpuKernel]\npublic static void BitOperationsTestKernel(uint[] u32Data)\n{\n    uint u32Val = u32Data[0];\n    // Handled identically to CPU side\n    u32Data[4] = (uint)BitOperations.Log2(u32Val);\n    u32Data[5] = BitOperations.RotateLeft(u32Val, 5);\n    u32Data[6] = BitOperations.RotateRight(u32Val, 3);\n}",
       "current_behavior": "Successfully transpiled and executed",
-      "target_cuda": "BitOperations.Log2 is mapped to predefined macros like __gsharp_log2_32.",
-      "strategy": "Implemented mapping for System.Numerics.BitOperations (Log2, RotateLeft, RotateRight) using __clz and shifts."
+      "target_cuda": "Mapped to bitwise shift operations and combination with __clz.",
+      "strategy": "Implemented mapping for System.Numerics.BitOperations (Log2, RotateLeft, RotateRight) using __clz and shifts.",
+      "cpp_example": "extern \"C\" __global__ void BitOperationsTestKernel(unsigned int* __restrict__ u32Data)\n{\n    unsigned int u32Val = u32Data[0];\n    // Mapped to equivalent macro implementations or bitwise shifts\n    u32Data[4] = 31 - __clz(u32Val); // log2 implementation\n    u32Data[5] = (u32Val << 5) | (u32Val >> (32 - 5));\n    u32Data[6] = (u32Val >> 3) | (u32Val << (32 - 3));\n}"
     },
     "score": 39,
     "files": [
@@ -7541,10 +7549,11 @@
       "score": 39
     },
     "details": {
-      "csharp_example": "var sin = Math.Sin(x);\nvar cos = MathF.Cos(y);",
+      "csharp_example": "// [Kernel Side] BCL Math mappings\n[GpuKernel]\npublic static void MathKernel(double[] dOut, float[] fOut, double dVal, float fVal)\n{\n    // Standard BCL mathematical functions are transparently supported\n    dOut[0] = Math.Sin(dVal);\n    fOut[1] = MathF.Cos(fVal);\n}",
       "current_behavior": "Only partially supported or unsupported.",
-      "target_cuda": "Planned mapping to sinf(x), cosf(x), etc.",
-      "strategy": "Defined fast native math mappings in StandardCpp.yml for System.Math and System.MathF functions."
+      "target_cuda": "Mapped to native CUDA math functions (sinf, cosf, etc.) via StandardCpp.yml.",
+      "strategy": "Defined fast native math mappings in StandardCpp.yml for System.Math and System.MathF functions.",
+      "cpp_example": "extern \"C\" __global__ void MathKernel(double* __restrict__ dOut, float* __restrict__ fOut, double dVal, float fVal)\n{\n    // Mapped to standard CUDA fast math intrinsics natively\n    dOut[0] = sin(dVal);\n    fOut[1] = cosf(fVal);\n}"
     },
     "score": 39,
     "files": [
@@ -7575,7 +7584,9 @@
     "details": {
       "current_behavior": "Because C++ requires declaration before use, forward declarations (signatures) of all __device__ functions are generated and embedded at the top of the source along with the common Prelude.cu header.",
       "strategy": "Implemented automatic generation of method forward declarations and unified source concatenation with Prelude header (WrapperEmitter).",
-      "csharp_example": "public static class MethodTranspiler\n{"
+      "csharp_example": "// [Transpiler Core] C# multiple methods\n[GpuKernel]\npublic static void KernelA() { KernelB(); }\n[GpuKernel]\npublic static void KernelB() { }",
+      "cpp_example": "/* Generator Output (MethodTranspiler):\n * Forward declarations generated at the top to satisfy C++ requirements\n * along with Prelude header inclusion.\n */\n#ifndef __GSHARP_PRELUDE__\n// ... (Prelude contents) ...\n#endif\n\nextern \"C\" __global__ void KernelA();\nextern \"C\" __global__ void KernelB();\n\nextern \"C\" __global__ void KernelA() { KernelB(); }\nextern \"C\" __global__ void KernelB() { }",
+      "target_cuda": "AST transformation emitting forward declarations and Prelude headers automatically."
     },
     "score": 39,
     "files": [
@@ -7602,7 +7613,9 @@
     "details": {
       "current_behavior": "if or for statements omitting {} in C# break their scope when expanded to C++ if internal macro expansion occurs, leading to critical bugs.",
       "strategy": "Implemented VisitStatementOrBlock in RoslynToCudaVisitor to automatically wrap C# single statements in C++ curly braces {}.",
-      "csharp_example": "// Example for automatic wrapping of single statements with C++ curly braces {}\n// Implements: GEN-21"
+      "csharp_example": "// [Transpiler Core / Kernel Side]\n[GpuKernel]\npublic static void ConditionKernel(int x)\n{\n    // C# allows single-statement bodies without braces\n    if (x > 0)\n        Gpu.SyncThreads();\n    else\n        Gpu.AtomicAdd(ref x, 1);\n}",
+      "cpp_example": "extern \"C\" __global__ void ConditionKernel(int x)\n{\n    // RoslynToCudaVisitor.VisitStatementOrBlock automatically injects braces\n    // preventing scope drift during internal macro expansions\n    if (x > 0)\n    {\n        __syncthreads();\n    }\n    else\n    {\n        atomicAdd(&x, 1);\n    }\n}",
+      "target_cuda": "N/A (Compile-time AST adjustment)."
     },
     "score": 40,
     "files": [],
@@ -7648,7 +7661,9 @@
     "details": {
       "current_behavior": "Mapping C# array arguments (T[]) to C++ pointers T* __restrict__.",
       "strategy": "Implemented logic in MethodTranspiler and Dialect to automatically inject __restrict__ qualifiers for array parameters to optimize memory aliases.",
-      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}"
+      "csharp_example": "// [Kernel Side] C# Array Arguments\n[GpuKernel]\npublic static void VectorAddKernel(float[] a, float[] b, float[] result)\n{\n    int tid = Gpu.ThreadIndex.X;\n    result[tid] = a[tid] + b[tid];\n}",
+      "cpp_example": "// The transpiler automatically qualifies array arguments with __restrict__\n// This informs the NVCC optimizer that memory aliases do not overlap.\nextern \"C\" __global__ void VectorAddKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ result)\n{\n    int tid = threadIdx.x;\n    result[tid] = (a[tid] + b[tid]);\n}",
+      "target_cuda": "Appends __restrict__ qualifiers to array-mapped pointers in C++ signatures."
     },
     "score": 42,
     "files": [],
@@ -7780,7 +7795,9 @@
     "details": {
       "current_behavior": "Prevents Misaligned Access violations (memory access exceptions) when allocating multiple types to the dynamic shared memory extern __shared__ char __gsharp_dynamic_smem[].",
       "strategy": "Implemented automatic alignof(T) boundary alignment calculation for dynamic SharedMemory allocation in LocalDeclarationStatementTranspilerRule.",
-      "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
+      "csharp_example": "// [Kernel Side] Dynamic SharedMemory with multiple types\n[GpuKernel]\npublic static void MultiSharedMemKernel(int dynamicSize)\n{\n    // Multiple dynamic shared memory arrays share a single allocation.\n    // Their boundaries must be correctly aligned to prevent access violations.\n    SharedMemory<int> dynInts = new(dynamicSize);\n    SharedMemory<float> dynFloats = new(dynamicSize);\n}",
+      "cpp_example": "extern \"C\" __global__ void MultiSharedMemKernel(int dynamicSize)\n{\n    extern __shared__ char __gsharp_dynamic_smem[];\n    unsigned int __smem_offset = 0;\n    \n    // alignof(T) is injected automatically for safe memory offsetting\n    __smem_offset = (__smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);\n    int* dynInts = (int*)(__gsharp_dynamic_smem + __smem_offset);\n    __smem_offset += (dynamicSize * sizeof(int));\n    \n    __smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);\n    float* dynFloats = (float*)(__gsharp_dynamic_smem + __smem_offset);\n}",
+      "target_cuda": "Safely calculates memory offsets using alignof(T) inside dynamic extern __shared__ char[]."
     },
     "score": 36,
     "files": [
@@ -7809,7 +7826,9 @@
     "details": {
       "current_behavior": "When a constant is passed, such as SharedMemory<T> smem = new(256);, it is expanded as a static-sized shared memory.",
       "strategy": "Implemented and tested Memory & Fixed Arrays kernels following G# test architecture guidelines (Pattern A/B).",
-      "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
+      "csharp_example": "// [Kernel Side] Static SharedMemory instantiation\n[GpuKernel]\npublic static void StaticSharedMemKernel()\n{\n    // A compile-time constant size instructs the transpiler to bypass dynamic allocation.\n    SharedMemory<int> staticCache = new SharedMemory<int>(256);\n    \n    staticCache[Gpu.ThreadIndex.X] = 42;\n}",
+      "cpp_example": "extern \"C\" __global__ void StaticSharedMemKernel()\n{\n    // Directly expanded as a standard static CUDA shared memory array\n    __shared__ int staticCache[256];\n    \n    staticCache[threadIdx.x] = 42;\n}",
+      "target_cuda": "Expands new SharedMemory<T>(Const) to __shared__ T name[Const];."
     },
     "score": 36,
     "files": [
@@ -7845,7 +7864,9 @@
     "details": {
       "current_behavior": "Maps C# structs with [InlineArray] applied to C++ fixed-length array fields (T field[N]).",
       "strategy": "Supported C# 12 [InlineArray] by transpiling them directly to C++ fixed-length arrays in StructTranspiler.",
-      "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
+      "csharp_example": "// [Kernel Side] C# 12 InlineArray support\n[System.Runtime.CompilerServices.InlineArray(4)]\npublic struct LimbBuffer4\n{\n    private uint _element0;\n}\n\n[GpuKernel]\npublic static void InlineArrayKernel(LimbBuffer4 buffer)\n{\n    buffer[0] = 42;\n}",
+      "cpp_example": "// Struct mapped natively to a C++ fixed-size array struct\nstruct __align__(4) LimbBuffer4 {\n    unsigned int _element0[4];\n};\n\nextern \"C\" __global__ void InlineArrayKernel(LimbBuffer4 buffer)\n{\n    buffer._element0[0] = 42;\n}",
+      "target_cuda": "Mapped C# [InlineArray(N)] directly to C++ T field[N]."
     },
     "score": 39,
     "files": [
@@ -7876,7 +7897,9 @@
     "details": {
       "current_behavior": "C++ cannot hold an undefined struct as a value type field, so declaring structs out of order like in C# results in compilation errors.",
       "strategy": "Implemented StructTranspiler.GetTopologicallySortedStructs to output C++ struct definitions in strict dependency order.",
-      "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
+      "csharp_example": "// [C# Side] Definitions can be out of order in C#\npublic struct ParentStruct\n{\n    public ChildStruct Child;\n}\npublic struct ChildStruct\n{\n    public int Value;\n}",
+      "cpp_example": "/* Generator Output (StructTranspiler):\n * StructTranspiler.GetTopologicallySortedStructs resolves dependency graphs \n * so ChildStruct is declared BEFORE ParentStruct in C++.\n */\nstruct ChildStruct {\n    int Value;\n};\nstruct ParentStruct {\n    ChildStruct Child;\n};",
+      "target_cuda": "AST Struct sorting via StructTranspiler.GetTopologicallySortedStructs prior to generation."
     },
     "score": 36,
     "files": [
@@ -7940,7 +7963,9 @@
     "details": {
       "current_behavior": "Automatically generates a structurally equivalent __Native_StructName with StructLayout(Sequential) to pass structs containing reference type arrays to CUDA.",
       "strategy": "Implemented robust unit tests for GEN-33 (__Native_ struct generation for P/Invoke).",
-      "csharp_example": "internal static class StructTranspiler\n{"
+      "csharp_example": "// [C# Host/Interop Side] \npublic struct MyStruct\n{\n    public int X;\n    public float Y;\n}\n\n// Used natively in C# host-side code to setup buffers for Launch_MyKernel",
+      "cpp_example": "// Generator injects an equivalent __Native_ struct with StructLayout(Sequential)\n// to ensure safe P/Invoke passing across the C++ DLL boundary.\n[StructLayout(LayoutKind.Sequential)]\npublic struct __Native_MyStruct\n{\n    public int X;\n    public float Y;\n}",
+      "target_cuda": "Interoperability bridge creating __Native_Struct for safe marshaling to CUDA/C++ __declspec(dllexport)."
     },
     "score": 37,
     "files": [
@@ -7967,7 +7992,9 @@
     "details": {
       "current_behavior": "When passing managed arrays to the GPU, GCHandleType.Pinned locks GC movement, transferring with cuMemAlloc_v2 and cuMemcpyHtoD_v2. They are written back post-execution with cuMemcpyDtoH_v2.",
       "strategy": "Implemented device-pointer marshaling bypass mechanism. Redundant cuMemAlloc/cuMemcpy calls are completely skipped for pre-allocated pointers.",
-      "csharp_example": "internal static class MarshalingEmitter\n{"
+      "csharp_example": "// [C# Host Side] Wrapper Emitter Generation\npublic static unsafe void Launch_MyKernel(int[] data)\n{\n    // The wrapper automatically pins managed arrays preventing GC relocation\n    GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);\n    \n    // Allocates device memory and copies from Host to Device\n    CudaDriverApi.cuMemAlloc_v2(out IntPtr d_data, data.Length * sizeof(int));\n    \n    // NOTE: Overloads taking IntPtr bypass this marshaling logic entirely\n    // public static unsafe void Launch_MyKernel_Device(IntPtr data) { ... }\n}",
+      "cpp_example": "/* Generator Interop Output:\n * Automatic marshaling ensures memory safety without unsafe user code.\n * Device memory is automatically freed (cuMemFree) and copied back \n * to the Host after kernel execution.\n */",
+      "target_cuda": "Safely bridges C# managed arrays to C++ T* using cuMemAlloc_v2 and GCHandleType.Pinned."
     },
     "score": 36,
     "files": [
@@ -8107,7 +8134,9 @@
     "details": {
       "current_behavior": "Scans for the [assembly: BclIntrinsicMap] attribute and transparently replaces calls like Math.Sin with CUDA built-in functions like sinf.",
       "strategy": "Implemented BclIntrinsicMapBuilder to dynamically parse BclIntrinsicMapAttribute and map standard BCL methods to target dialect intrinsics.",
-      "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
+      "csharp_example": "// [Transpiler Core] Assembly-level attributes map BCL to CUDA\n[assembly: BclIntrinsicMap(\n    \"System.Math\", \n    \"Sin\", \n    new[] { \"System.Double\" }, \n    \"sin\" // The target CUDA C++ intrinsic\n)]\n\n[GpuKernel]\npublic static void MathKernel(double x, double[] y)\n{\n    y[0] = Math.Sin(x);\n}",
+      "cpp_example": "extern \"C\" __global__ void MathKernel(double x, double* __restrict__ y)\n{\n    // BclIntrinsicMapBuilder detects the mapped attribute and replaces Math.Sin\n    // transparently in the AST with the CUDA intrinsic 'sin'\n    y[0] = sin(x);\n}",
+      "target_cuda": "Intercepts C# .NET static calls and substitutes them with [CudaIntrinsic] equivalents."
     },
     "score": 36,
     "files": [
@@ -8190,7 +8219,9 @@
     "details": {
       "current_behavior": "Detects ForEachStatementSyntax and issues a compilation error.",
       "strategy": "Implemented Roslyn Analyzer GSH0007 to explicitly prohibit foreach loops to prevent hidden IEnumerator heap allocations.",
-      "csharp_example": "// Error: NotSupportedException (ForEachStatementSyntax)\nforeach (var item in array) { }"
+      "csharp_example": "// [Kernel Side] Usage of foreach triggers GSH0007\n[GpuKernel]\npublic static void DiagnosticKernel(int[] array)\n{\n    // ERROR: GSH0007: Foreach is not allowed in GPU kernels.\n    // Use a standard for-loop to avoid IEnumerator heap allocation.\n    foreach (var item in array) \n    {\n    }\n}",
+      "cpp_example": "/* Generator Diagnostic Output:\n * [GSH0007] Error: The GPU method 'DiagnosticKernel' uses a foreach loop. \n * Use a standard for loop instead to avoid IEnumerator allocation overhead.\n */",
+      "target_cuda": "N/A (Compile-time Analyzer Block)."
     },
     "score": 40,
     "files": [],
@@ -8214,7 +8245,9 @@
     "details": {
       "current_behavior": "Detects QueryExpressionSyntax and issues a compilation error.",
       "strategy": "Implemented Roslyn Analyzer GSH0008 to block LINQ query syntaxes enforcing zero-allocation guarantees.",
-      "csharp_example": "// Error: NotSupportedException (QueryExpressionSyntax)\nvar query = from x in array select x;"
+      "csharp_example": "// [Kernel Side] Usage of LINQ queries triggers GSH0008\n[GpuKernel]\npublic static void DiagnosticKernel(int[] array)\n{\n    // ERROR: GSH0008: LINQ is not allowed in GPU kernels\n    var query = from x in array select x;\n}",
+      "cpp_example": "/* Generator Diagnostic Output:\n * [GSH0008] Error: The GPU method 'DiagnosticKernel' uses LINQ query expressions, \n * which are not supported on the GPU.\n */",
+      "target_cuda": "N/A (Compile-time Analyzer Block)."
     },
     "score": 43,
     "files": [],
@@ -8574,7 +8607,9 @@
     "details": {
       "current_behavior": "By attaching attributes to C# signatures like Gpu.SyncThreads or ThreadIndex.X, the transpiler transparently replaces them with PTX/CUDA syntaxes such as __syncthreads() or threadIdx.x.",
       "strategy": "Implemented [CudaIntrinsic] and [BclIntrinsicMap] attributes for transparent AST mapping and C++ proxy generation.",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for GPU kernels\")]\n[SuppressMessage(\"IDE\", \"IDE0051\", Justification = \"Public API exposed for library consumers\")]\npublic static class Gpu\n{"
+      "csharp_example": "// [Core API Design]\npublic static class Gpu\n{\n    // Attributes instruct the transpiler to bypass method invocation\n    // and inline the specified target directly.\n    [CudaIntrinsic(\"__syncthreads\")]\n    public static void SyncThreads() => throw new GpuOnlyException();\n}\n\n[CudaIntrinsicPattern(\"threadIdx.{0}\")]\npublic static class ThreadIndex\n{\n    public static int X => throw new GpuOnlyException();\n}",
+      "cpp_example": "// When C# calls Gpu.SyncThreads() or ThreadIndex.X:\n// Emitted by Transpiler natively bypassing standard AST invocation:\n__syncthreads();\nint x = threadIdx.x;",
+      "target_cuda": "Emits native PTX/CUDA tokens through transpiler attribute mapping mechanisms."
     },
     "score": 39,
     "files": [
