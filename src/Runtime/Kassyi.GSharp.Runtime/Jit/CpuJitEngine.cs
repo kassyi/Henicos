@@ -10,8 +10,8 @@ namespace Kassyi.GSharp.Runtime.Jit;
 public sealed class CpuJitEngine
 {
     private static readonly string s_cacheDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Kassyi", "GSharp", "Cache", "CpuDlls"
+        Path.GetDirectoryName(typeof(CpuJitEngine).Assembly.Location) ?? Environment.CurrentDirectory,
+        ".gsharp_cache", "CpuDlls"
     );
 
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>
