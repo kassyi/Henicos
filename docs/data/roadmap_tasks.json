@@ -957,7 +957,7 @@
     "title": "Attribute-based intrinsic mapping ([CudaIntrinsic], [CudaIntrinsicPattern])",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
@@ -966,9 +966,9 @@
     },
     "details": {
       "current_behavior": "Eliminates hardcoded mappings, allowing declarative replacement of external libraries and BCL type methods with CUDA C++ / Intrinsics.",
-      "strategy": "Implementation complete via CudaIntrinsicsMapper attribute resolution and zero-allocation traversal.",
+      "strategy": "Rejected: Duplicate of already implemented CudaIntrinsic mapping feature.",
       "notes": "Declarative replacement of external types and methods via attribute resolution in CudaIntrinsicsMapper",
-      "csharp_example": "internal static class BclIntrinsicMapBuilder\n{"
+      "csharp_example": "// Rejected: Duplicate of already implemented CudaIntrinsic mapping feature."
     },
     "score": 32,
     "files": [
@@ -1156,10 +1156,11 @@
       "score": 35
     },
     "details": {
-      "csharp_example": "while (condition) {\n    // loop body\n}",
+      "csharp_example": "[GpuFunction]\npublic static bool IsValid(int value)\n{\n    return value is >= 0 and < 1024 or -1;\n}",
       "current_behavior": "Parse error except for BinaryExpression.",
       "target_cuda": "Expanded to simple logical expressions (val >= 0 && val < 1024). Type patterns are bound to C++ auto.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Not yet supported by Transpiler. Currently incomplete.",
+      "cpp_example": "__device__ bool IsValid(int value)\n{\n    return ((value >= 0 && value < 1024) || value == -1);\n}"
     },
     "score": 35,
     "files": [
@@ -1511,10 +1512,11 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "[GpuKernel]\npublic static void RangeKernel(Span<int> array)\n{\n    // 1. 後ろからのインデックス (^1 は最後の要素)\n    int last = array[^1];\n    \n    // 2. 範囲指定 (1..5 は index=1 から 長さ=4 のスライス)\n    Span<int> slice = array[1..5];\n}",
       "current_behavior": "IndexExpressionSyntax / RangeExpressionSyntax are unsupported.",
       "target_cuda": "Expanded to offset calculation buffer[length - 1] or pointer offset (buffer + 1).",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Expand C# 8.0 Index (^1) and Range (1..5) operators into inline pointer arithmetic and length calculations (slicing) for spans and arrays on the GPU.",
+      "cpp_example": "extern \"C\" __global__ void RangeKernel(GSharpSpan<int32_t> array)\n{\n    // ^1 は (length - 1) に展開される\n    int32_t last = array.ptr[array.length - 1];\n    \n    // 1..5 はポインタのオフセット加算と、新たな length(5 - 1 = 4) の計算に展開される\n    GSharpSpan<int32_t> slice;\n    slice.ptr = array.ptr + 1;\n    slice.length = 4;\n}"
     },
     "score": 29,
     "files": [
@@ -1703,10 +1705,11 @@
       "score": 33
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "[GpuKernel]\npublic static void SpanKernel(Span<float> data, ReadOnlySpan<int> indices)\n{\n    int tid = Gpu.ThreadIndex.X;\n    if (tid < indices.Length)\n    {\n        data[tid] = indices[tid] * 2.0f;\n    }\n}",
       "current_behavior": "Struct definition and pass-by-reference lack native mapping.",
       "target_cuda": "Mapped to a pointer-and-length pair, or a lightweight struct equivalent to C++20 std::span.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Not yet supported by Transpiler. Currently incomplete.",
+      "cpp_example": "extern \"C\" __global__ void SpanKernel(GSharpSpan<float> data, GSharpReadOnlySpan<int> indices)\n{\n    int tid = threadIdx.x;\n    if (tid < indices.length)\n    {\n        data.ptr[tid] = (float)(indices.ptr[tid] * 2);\n    }\n}"
     },
     "score": 33,
     "files": [
@@ -1870,10 +1873,11 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "public struct Vector3(float X, float Y, float Z)\n{\n    public float LengthSquared => X * X + Y * Y + Z * Z;\n}\n\n[GpuKernel]\npublic static void VectorKernel()\n{\n    var v = new Vector3(1.0f, 2.0f, 3.0f);\n}",
       "current_behavior": "C# 12 primary constructor syntax is unsupported.",
       "target_cuda": "Automatic output of C++ constructors like Point(int X, int Y) : X(X), Y(Y) {}.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Support C# 12 primary constructors by expanding constructor parameters into C++ struct member variables and automatically generating a matching C++ constructor with an initializer list.",
+      "cpp_example": "struct Vector3\n{\n    float X;\n    float Y;\n    float Z;\n    \n    // トランスパイラがプライマリコンストラクタと等価なC++コンストラクタを自動生成\n    __device__ Vector3(float X, float Y, float Z) : X(X), Y(Y), Z(Z) {}\n    \n    __device__ inline float get_LengthSquared() const {\n        return X * X + Y * Y + Z * Z;\n    }\n};\n\nextern \"C\" __global__ void VectorKernel()\n{\n    Vector3 v = Vector3(1.0f, 2.0f, 3.0f);\n}"
     },
     "score": 30,
     "files": [
@@ -2022,10 +2026,11 @@
       "score": 33
     },
     "details": {
-      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)",
+      "csharp_example": "public struct Point\n{\n    public float X, Y;\n    \n    // Operator overloading inside a struct\n    public static Point operator +(Point a, Point b)\n    {\n        return new Point { X = a.X + b.X, Y = a.Y + b.Y };\n    }\n}",
       "current_behavior": "User-defined operators are not mapped to C++ operators.",
       "target_cuda": "Expanded to C++ Point operator+(const Point& a, const Point& b).",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Mapped user-defined operator overloading inside structs to C++ friend operator overloads.",
+      "cpp_example": "struct Point\n{\n    float X;\n    float Y;\n    \n    // Expanded to C++ friend operator overload\n    __device__ friend Point operator+(const Point& a, const Point& b)\n    {\n        Point _tmp;\n        _tmp.X = a.X + b.X;\n        _tmp.Y = a.Y + b.Y;\n        return _tmp;\n    }\n};"
     },
     "score": 33,
     "files": [
@@ -2067,10 +2072,11 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "internal static class DeclarationTranspilers\n{",
+      "csharp_example": "public readonly struct ImmutableVector\n{\n    public readonly float X;\n    public readonly float Y;\n\n    // readonly修飾子が付与されたメソッド\n    public readonly float GetLengthSq() => X * X + Y * Y;\n}",
       "current_behavior": "Modifiers are not completely reflected in C++ const.",
       "target_cuda": "Appends the const modifier to C++ struct member functions.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Map C# readonly struct modifiers and readonly method modifiers to C++ const member functions to guarantee immutability on the GPU and encourage compiler optimizations for registers and caching.",
+      "cpp_example": "struct ImmutableVector\n{\n    float X;\n    float Y;\n\n    // readonly メソッドは C++ の const メンバ関数として展開される\n    __device__ inline float get_GetLengthSq() const {\n        return X * X + Y * Y;\n    }\n};"
     },
     "score": 29,
     "files": [
@@ -2106,10 +2112,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "internal static class DeclarationTranspilers\n{",
+      "csharp_example": "[Flags]\npublic enum RenderState : byte\n{\n    None = 0,\n    Visible = 1 << 0,\n    Transparent = 1 << 1\n}\n\n[GpuKernel]\npublic static void EnumKernel(RenderState state)\n{\n    bool isVisible = (state & RenderState.Visible) != 0;\n}",
       "current_behavior": "Explicit cast issues with underlying types and bitwise operations.",
       "target_cuda": "Expanded to C++ enum class State : uint8_t or scoped enums.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Translating enum declarations with specific underlying types and [Flags] into scoped C++ enum class with the correct backing integer type, and handling required casting for bitwise operations.",
+      "cpp_example": "enum class RenderState : uint8_t\n{\n    None = 0,\n    Visible = 1,\n    Transparent = 2\n};\n\nextern \"C\" __global__ void EnumKernel(RenderState state)\n{\n    bool isVisible = (static_cast<uint8_t>(state) & static_cast<uint8_t>(RenderState::Visible)) != 0;\n}"
     },
     "score": 32,
     "files": [
@@ -2142,10 +2149,11 @@
       "score": 31
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "[GpuKernel]\npublic static void PrintKernel(int val)\n{\n    int threadId = Gpu.ThreadIndex.X;\n    \n    // 補間文字列がコンパイル時にフォーマットと引数に分解される\n    Gpu.Print($\"Thread {threadId}: val={val}\");\n}",
       "current_behavior": "Strings are prohibited on the GPU, so compilation fails.",
       "target_cuda": "Automatic format decomposition to CUDA printf(\"Thread %d: val=%u\\n\", threadIdx.x, val);.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Automatically decomposes string interpolation ($\"\") passed to Gpu.Print into a format string and argument list for C++ printf mapping at compile time.",
+      "cpp_example": "extern \"C\" __global__ void PrintKernel(int val)\n{\n    int threadId = threadIdx.x;\n    \n    // トランスパイラがC++ printf用に適切なフォーマット指定子(%dなど)を自動生成\n    printf(\"Thread %d: val=%d\\n\", threadId, val);\n}"
     },
     "score": 31,
     "files": [
@@ -2271,7 +2279,7 @@
     "title": "Static string resolution of nameof(...) expressions",
     "domain": "SYN",
     "category": "Strings, Debugging, and Metaprogramming",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
@@ -2279,10 +2287,10 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "string name = nameof(value);",
+      "csharp_example": "// Rejected: String evaluation and assembly inside GPU kernels have minimal utility and are not idiomatic for CUDA.",
       "current_behavior": "Syntax tree resolution is unimplemented.",
       "target_cuda": "Replaces identifier strings via constant folding on the Roslyn side at compile time.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Rejected: String evaluation and assembly inside GPU kernels have minimal utility and are not idiomatic for CUDA."
     },
     "score": 32,
     "files": [
@@ -2380,7 +2388,7 @@
   },
   {
     "id": "SYN-29",
-    "title": "Unroll control via [LoopUnroll(N)] attribute",
+    "title": "Unroll control via Gpu.ForUnroll extension (previously [LoopUnroll(N)])",
     "domain": "SYN",
     "category": "Strings, Debugging, and Metaprogramming",
     "status": "incomplete",
@@ -2391,10 +2399,11 @@
       "score": 35
     },
     "details": {
-      "csharp_example": "Gpu.ForUnroll(0, 10, i => { });",
+      "csharp_example": "[GpuKernel]\npublic static void UnrollKernel(float[] data)\n{\n    Gpu.ForUnroll(0, 16, unrollFactor: 4, i =>\n    {\n        data[i] *= 2.0f;\n    });\n}",
       "current_behavior": "Uniformly applies #pragma unroll.",
       "target_cuda": "Outputting #pragma unroll N or #pragma unroll 1 (disable) depending on the specified number.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Extend the existing Gpu.ForUnroll macro DSL to accept an unroll factor argument instead of a statement attribute, since C# syntax prohibits attributes on statements.",
+      "cpp_example": "extern \"C\" __global__ void UnrollKernel(float* __restrict__ data)\n{\n    #pragma unroll 4\n    for (int i = 0; i < 16; i++)\n    {\n        data[i] *= 2.0f;\n    }\n}"
     },
     "score": 35,
     "files": [
@@ -2562,10 +2571,11 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "using System.Runtime.InteropServices;\n\n[GpuKernel]\npublic static void MarshalKernel(Span<byte> bytes)\n{\n    // Span<byte> を Span<uint> へキャスト (C#の公式・最速な手法)\n    Span<uint> uints = MemoryMarshal.Cast<byte, uint>(bytes);\n}",
       "current_behavior": "Unresolved error as a BCL call.",
       "target_cuda": "Inline cast expansion to C++ reinterpret_cast<uint64_t*>.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Expand MemoryMarshal.Cast<TFrom, TTo>(Span<TFrom>) into inline C++ pointer reinterpret_cast and length recalculation based on sizeof ratios. Interface-based casting (IConvertible) is rejected to enforce zero-allocation guarantees.",
+      "cpp_example": "extern \"C\" __global__ void MarshalKernel(GSharpSpan<uint8_t> bytes)\n{\n    // C++側でポインタのreinterpret_castと、sizeofを用いた配列長の再計算をインライン展開\n    GSharpSpan<uint32_t> uints;\n    uints.ptr = reinterpret_cast<uint32_t*>(bytes.ptr);\n    uints.length = (bytes.length * sizeof(uint8_t)) / sizeof(uint32_t);\n}"
     },
     "score": 30,
     "files": [
@@ -2662,10 +2672,11 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "using System.Runtime.Intrinsics;\n\n[GpuKernel]\npublic static unsafe void SimdKernel(Vector128<float>* src, Vector128<float>* dst)\n{\n    // 128-bit SIMDベクトルへのロードとストア\n    Vector128<float> vec = src[0];\n    dst[0] = vec;\n}",
       "current_behavior": "System.Runtime.Intrinsics is unmapped.",
       "target_cuda": "Replacement with CUDA vector built-in types (uint4, ulonglong2, int4).",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Map .NET hardware SIMD types (e.g., Vector128<T>, Vector4) directly to CUDA built-in vector types (e.g., float4, uint4, ulonglong2) to enable 128-bit wide vectorized memory accesses from global memory.",
+      "cpp_example": "extern \"C\" __global__ void SimdKernel(float4* src, float4* dst)\n{\n    // Vector128<float> は CUDAの 128-bit 型である float4 にマップされ、\n    // 1回の命令で4つのfloatを効率よくメモリアクセスする\n    float4 vec = src[0];\n    dst[0] = vec;\n}"
     },
     "score": 29,
     "files": [
@@ -2794,10 +2805,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
+      "csharp_example": "[GpuKernel]\npublic static unsafe void UnsafeKernel(int* ptr)\n{\n    // unsafeキーワードフォーカス内で自然にアドレスを加算・参照する\n    int* nextPtr = ptr + 1;\n    *nextPtr = 42;\n}",
       "current_behavior": "System.Runtime.CompilerServices.Unsafe is unresolved.",
       "target_cuda": "Inline expansion to native C++ pointer addition and address difference calculations.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Map raw pointer arithmetic (ptr + 1, *ptr) inside unsafe blocks directly to native C++ pointer arithmetic.",
+      "cpp_example": "extern \"C\" __global__ void UnsafeKernel(int* ptr)\n{\n    // C#の生ポインタ演算は、C++のポインタ演算へそのままシームレスに変換される\n    int* nextPtr = ptr + 1;\n    *nextPtr = 42;\n}"
     },
     "score": 32,
     "files": [
@@ -2858,10 +2870,11 @@
       "score": 31
     },
     "details": {
-      "csharp_example": "fixed (int* ptr = &array[0]) {\n    // use ptr\n}",
+      "csharp_example": "public unsafe struct StateBlock\n{\n    // C#における構造体内の固定長バッファ\n    public fixed uint Buffer[64];\n}",
       "current_behavior": "FixedSizeBufferDeclarationSyntax is unsupported.",
       "target_cuda": "Expanded to C++ struct-embedded arrays uint32_t Buffer[64];.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Expands C# fixed-size buffers inside unsafe structs directly into C++ embedded arrays (e.g., uint32_t Buffer[64];). Constraints: The length must be a compile-time constant expression; variables are not allowed, though const fields are permitted.",
+      "cpp_example": "struct StateBlock\n{\n    // C++の標準的な構造体埋め込み配列として展開\n    uint32_t Buffer[64];\n};"
     },
     "score": 31,
     "files": [
@@ -2898,7 +2911,7 @@
     "title": "Explicit / implicit type conversion operators",
     "domain": "SYN",
     "category": "C# Advanced Operators, Properties, and Interfaces",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 3,
@@ -2906,10 +2919,10 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "public static implicit operator int(MyStruct s)",
+      "csharp_example": "// Rejected: Duplicate of GEN-32 which already handles explicit and implicit conversion operators comprehensively.",
       "current_behavior": "ConversionOperatorDeclarationSyntax is unsupported.",
       "target_cuda": "Expanded to C++ user-defined type conversion operators operator uint32_t() const.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Rejected: Duplicate of GEN-32 which already handles explicit and implicit conversion operators comprehensively."
     },
     "score": 29,
     "files": [
@@ -2970,10 +2983,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "public struct Config\n{\n    // Auto-implemented property\n    public float Threshold { get; set; }\n}\n\n[GpuKernel]\npublic static void PropertyKernel(Config cfg)\n{\n    cfg.Threshold = 1.0f;\n}",
       "current_behavior": "Auto-properties inside structs are not expanded to C++.",
       "target_cuda": "Expanded to C++ public member variables or inline getters/setters.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Auto-properties inside structs are expanded directly to C++ public member variables (fields) to minimize overhead and align with C++ struct paradigms.",
+      "cpp_example": "struct Config\n{\n    // オーバーヘッドを無くすため、単純なフィールドとして展開\n    float Threshold;\n};\n\nextern \"C\" __global__ void PropertyKernel(Config cfg)\n{\n    cfg.Threshold = 1.0f;\n}"
     },
     "score": 32,
     "files": [
@@ -3035,10 +3049,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "public struct DataBlock\n{\n    public int WordCount;\n    \n    // Expression-bodied property\n    public int ByteCount => WordCount * 4;\n}\n\n[GpuKernel]\npublic static void PropertyAccessKernel(DataBlock data)\n{\n    int bytes = data.ByteCount;\n}",
       "current_behavior": "Expression bodies for PropertyDeclarationSyntax are unsupported.",
       "target_cuda": "Expanded to C++ const member functions int ByteCount() const { return WordCount * 4; }.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Expression-bodied properties (=>) are expanded to inline const C++ member functions, and C# property access is transparently converted to C++ function calls.",
+      "cpp_example": "struct DataBlock\n{\n    int WordCount;\n    \n    // インラインな const C++ メンバ関数として展開\n    __device__ inline int get_ByteCount() const\n    {\n        return WordCount * 4;\n    }\n};\n\nextern \"C\" __global__ void PropertyAccessKernel(DataBlock data)\n{\n    // プロパティアクセスをゲッターの関数呼び出しに変換\n    int bytes = data.get_ByteCount();\n}"
     },
     "score": 32,
     "files": [
@@ -4188,7 +4203,7 @@
   },
   {
     "id": "SYN-63",
-    "title": "Unsafe.NullRef<T>() / IsNullRef",
+    "title": "Null pointer assignments and checks in unsafe contexts",
     "domain": "SYN",
     "category": "Functional, Expression, and Modern Control Syntax",
     "status": "incomplete",
@@ -4199,10 +4214,11 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "[GpuKernel]\npublic static unsafe void NullPointerKernel(int* ptr)\n{\n    // Unsafeクラスではなく、unsafeコンテキスト内で自然にポインタ比較を行う\n    if (ptr == null)\n    {\n        // nullを代入\n        int* newPtr = null;\n    }\n}",
       "current_behavior": "Null-reference idiom is unresolved.",
       "target_cuda": "Inline expansion to C++ nullptr / pointer comparison.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Map C# null pointer checks (ptr == null) and assignments (ptr = null) within unsafe contexts seamlessly to C++ nullptr. Rejects unnatural Unsafe.NullRef API usages.",
+      "cpp_example": "extern \"C\" __global__ void NullPointerKernel(int* ptr)\n{\n    // C#の null とのポインタ比較は、C++の nullptr 比較へと自然に展開される\n    if (ptr == nullptr)\n    {\n        int* newPtr = nullptr;\n    }\n}"
     },
     "score": 30,
     "files": [
@@ -4354,10 +4370,11 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "[GpuKernel]\npublic static void NativeIntKernel(nuint size, nint offset)\n{\n    nuint next = size + (nuint)offset;\n}",
       "current_behavior": "Platform-dependent integers are unsupported.",
       "target_cuda": "Mapped to CUDA size_t / uintptr_t.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Map C# platform-dependent native integers (nint, nuint) to CUDA-appropriate 64-bit integer types (ptrdiff_t/intptr_t and size_t/uintptr_t).",
+      "cpp_example": "extern \"C\" __global__ void NativeIntKernel(size_t size, ptrdiff_t offset)\n{\n    // nuint -> size_t (または uintptr_t)\n    // nint -> ptrdiff_t (または intptr_t)\n    size_t next = size + static_cast<size_t>(offset);\n}"
     },
     "score": 30,
     "files": [
@@ -4734,10 +4751,11 @@
       "score": 35
     },
     "details": {
-      "csharp_example": "// Error: NotSupportedException (ForEachStatementSyntax)\nforeach (var item in array) { }",
+      "csharp_example": "[GpuKernel]\npublic static void ForEachKernel(Span<float> data)\n{\n    foreach (var item in data)\n    {\n        // Loop body\n    }\n}",
       "current_behavior": "ForEachStatementSyntax is unsupported.",
       "target_cuda": "Expanded to C++ range-based for (const auto& item : buffer) or indexed for loops.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Loosen GpuKernelAnalyzer explicitly blocking ForEachStatementSyntax to permit foreach ONLY on a strict whitelist of natively supported contiguous memory types (Span<T>, ReadOnlySpan<T>, T[], InlineArray).\nConstraints:\n1. Custom types are NOT supported: Even if a custom type implements a valid C# pattern-based ref struct enumerator, it is blocked. The transpiler hardcodes the mapping to C++ range-based for loops (which rely on predefined begin()/end() pointers).\n2. IEnumerable<T> and LINQ are strictly prohibited as they require heap allocation and virtual dispatch (violating ZERO-ALLOCATION).\n3. Transpiler must enforce 'const auto&' to mimic C#'s read-only foreach iteration variable constraints.",
+      "cpp_example": "extern \"C\" __global__ void ForEachKernel(GSharpSpan<float> data)\n{\n    for (const auto& item : data)\n    {\n        // Loop body\n    }\n}"
     },
     "score": 35,
     "files": [
@@ -4827,10 +4845,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "using System.Diagnostics;\n\n[GpuKernel]\npublic static void AssertKernel(int x)\n{\n    // Debug.Assert mapped to CUDA assert\n    Debug.Assert(x > 0, \"x must be positive\");\n}",
       "current_behavior": "Debug asserts are unresolved.",
       "target_cuda": "Outputs assert(...) only during debug builds, with zero-cost removal for release builds.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Map System.Diagnostics.Debug.Assert to CUDA device assert. Output assert only during debug builds, with zero-cost removal for release builds.",
+      "cpp_example": "#include <cassert> // Required for device assert\n\nextern \"C\" __global__ void AssertKernel(int x)\n{\n    // Debugビルド時のみC++のassertに変換される\n    assert(x > 0);\n}"
     },
     "score": 32,
     "files": [
@@ -4935,10 +4954,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "internal static class ExpressionTranspilers\n{",
+      "csharp_example": "using System.Diagnostics;\n\npublic struct Logger\n{\n    [Conditional(\"DEBUG\")]\n    public static void LogTrace(int value)\n    {\n        Gpu.Print(\"Trace: %d\", value);\n    }\n}\n\n[GpuKernel]\npublic static void ConditionalKernel(int x)\n{\n    // \"DEBUG\" シンボルがない場合、この呼び出しはASTレベルで完全に消去される\n    Logger.LogTrace(x);\n}",
       "current_behavior": "Conditional compilation attributes are unexpanded.",
       "target_cuda": "Completely removes method calls at the AST level when the specified symbol is undefined.",
-      "strategy": "Not yet supported by Transpiler. Currently incomplete."
+      "strategy": "Honor [Conditional] attributes when resolving method calls. Completely remove method calls at the AST level when the specified symbol (e.g. DEBUG) is undefined.",
+      "cpp_example": "// LogTraceメソッドは生成されず、呼び出しも除去される\nextern \"C\" __global__ void ConditionalKernel(int x)\n{\n    // 空（呼び出しが除去されている）\n}"
     },
     "score": 32,
     "files": [
@@ -6927,8 +6947,9 @@
     },
     "details": {
       "current_behavior": "Modular Inverse",
-      "strategy": "Not yet implemented in GPU kernel layer. Currently incomplete.",
-      "csharp_example": "GpuBigInteger.ModInverse(a, mod);"
+      "strategy": "Implement parallel modular multiplicative inverse algorithm (e.g., Extended Euclidean) for multi-limb GpuBigInteger numbers within the device mathematics library.",
+      "csharp_example": "[GpuKernel]\npublic static void ModInverseKernel(GpuBigInteger a, GpuBigInteger mod)\n{\n    // モジュラ逆数を計算\n    GpuBigInteger inv = GpuBigInteger.ModInverse(a, mod);\n}",
+      "cpp_example": "extern \"C\" __global__ void ModInverseKernel(GpuBigInteger* a, GpuBigInteger* mod)\n{\n    // 内部的なGPUカーネル (拡張ユークリッド等) への展開\n    GpuBigInteger inv = Device_BigInt_ModInverse(a, mod);\n}"
     },
     "score": 30,
     "files": [
@@ -7629,7 +7650,7 @@
     "title": "Overriding per AST node using TranspileContext.OverrideValue",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 4,
       "difficulty": 4,
@@ -7638,8 +7659,8 @@
     },
     "details": {
       "current_behavior": "When replacing loop variables i with compile-time constants (literals) in Gpu.ForUnroll, etc., override values are output during node evaluation without destroying the existing AST.",
-      "strategy": "Provides the TranspileContext with an OverrideValue dictionary, and the Visitor prioritizes outputting it when visiting nodes.",
-      "csharp_example": "// Example for overriding per AST node using TranspileContext.OverrideValue\n// Implements: GEN-22"
+      "strategy": "Rejected: C++ preprocessor (#pragma unroll) handles loop unrolling natively, making AST-level node overriding unnecessary.",
+      "csharp_example": "// Rejected: C++ preprocessor (#pragma unroll) handles loop unrolling natively, making AST-level node overriding unnecessary."
     },
     "score": 32,
     "files": [],
@@ -7686,8 +7707,9 @@
     },
     "details": {
       "current_behavior": "Normally, C# local variables generate zero-initialization code via = on the C++ side, but this is skipped if the [SkipLocalsInit] attribute is applied.",
-      "strategy": "Detects attributes at the method, type, and module levels to suppress generation via the TranspileContext.SkipLocalsInit flag.",
-      "csharp_example": "[SkipLocalsInit]\npublic static void FastFunc() { }"
+      "strategy": "Detect [SkipLocalsInit] attributes via TranspileContext to suppress the default zero-initialization output for local variables, reducing PTX instructions and register pressure.",
+      "csharp_example": "using System.Runtime.CompilerServices;\n\n[GpuKernel]\n[SkipLocalsInit]\npublic static void UninitializedKernel()\n{\n    // [SkipLocalsInit]下では意図的に初期化されないローカル変数\n    int uninit;\n    \n    uninit = 42;\n}",
+      "cpp_example": "extern \"C\" __global__ void UninitializedKernel()\n{\n    // トランスパイラは '= 0' によるゼロ初期化コードの出力をスキップする\n    int32_t uninit; \n    \n    uninit = 42;\n}"
     },
     "score": 30,
     "files": [],
@@ -7699,7 +7721,7 @@
     "title": "Function inlining control via [GpuInline] / [GpuNoInline]",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 1,
@@ -7708,8 +7730,8 @@
     },
     "details": {
       "current_behavior": "Directly maps [GpuInline] and [GpuNoInline] attributes on C# methods to CUDA's __forceinline__ and __noinline__ compiler directives.",
-      "strategy": "Scans attributes during method signature generation to switch C++ prefixes.",
-      "csharp_example": "[Generator]\npublic class GpuKernelGenerator : IIncrementalGenerator\n{"
+      "strategy": "Duplicate of SYN-29 which already implements __forceinline__ and __noinline__ via [MethodImpl(AggressiveInlining)] and [GpuInline].",
+      "csharp_example": "// Rejected: Duplicate of SYN-29"
     },
     "score": 35,
     "files": [
@@ -7741,7 +7763,7 @@
     "title": "Immediately Invoked Function Expressions (IIFE) for preventing value swap destruction in tuple assignments",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
@@ -7750,8 +7772,8 @@
     },
     "details": {
       "current_behavior": "For swap assignments like (a, b) = (b, a), a simple expansion to C++ destroys the value on the right side due to the assignment on the left side.",
-      "strategy": "Generates an IIFE [&]() { auto _t0 = b; auto _t1 = a; a = _t0; b = _t1; }() to protect values with temporary variables.",
-      "csharp_example": "(int, float) GetData() => (1, 2.0f);\nvar (a, b) = GetData();"
+      "strategy": "Rejected: Duplicate of existing tuple swap implementation (e.g., GSH-02).",
+      "csharp_example": "// Rejected: Duplicate of existing tuple swap implementation (e.g., GSH-02)."
     },
     "score": 31,
     "files": [],
@@ -7772,8 +7794,9 @@
     },
     "details": {
       "current_behavior": "To safely evaluate creation expressions with initializers like new Struct { A = 1 } in C++.",
-      "strategy": "Expands scope-isolated IIFEs like [&]() { Struct _tmp; _tmp.A = 1; return _tmp; }() to match C# side effects and evaluation order.",
-      "csharp_example": "Func<int, int> square = x => x * x;"
+      "strategy": "Expands scope-isolated IIFEs like [&]() { Struct _tmp; _tmp.A = 1; return _tmp; }() to match C# side effects and evaluation order for object initializers.",
+      "csharp_example": "[GpuKernel]\npublic static void StructInitKernel()\n{\n    // Object creation with initializer syntax\n    var pt = new Point { X = 1.0f, Y = 2.0f };\n}",
+      "cpp_example": "extern \"C\" __global__ void StructInitKernel()\n{\n    // Expands to an IIFE to safely handle initialization order and side effects\n    Point pt = [&]() { \n        Point _tmp; \n        _tmp.X = 1.0f; \n        _tmp.Y = 2.0f; \n        return _tmp; \n    }();\n}"
     },
     "score": 33,
     "files": [],
@@ -7928,8 +7951,9 @@
     },
     "details": {
       "current_behavior": "Matches the implicit operator of structs to the C++ native cast specification.",
-      "strategy": "Automatically expands to C++ constructors with arguments if casting to a target struct, or to operator T() const conversion operators if casting to a different type.",
-      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
+      "strategy": "Automatically expands C# implicit operators (public static implicit operator TargetType) into C++ implicit constructors or conversion operators (operator T() const).",
+      "csharp_example": "public struct Half\n{\n    public short Value;\n    \n    // floatからHalfへの暗黙の変換\n    public static implicit operator Half(float f)\n    {\n        return new Half { Value = (short)f }; \n    }\n}",
+      "cpp_example": "struct Half\n{\n    short Value;\n    \n    // C#のimplicit operatorに相当するC++のコンストラクタとして展開\n    __device__ Half(float f)\n    {\n        Value = (short)f;\n    }\n};"
     },
     "score": 31,
     "files": [
@@ -8068,7 +8092,7 @@
     "title": "Runtime constant expansion of macro arguments using [JitConstant]",
     "domain": "GEN",
     "category": "JIT Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 4,
       "difficulty": 3,
@@ -8077,8 +8101,8 @@
     },
     "details": {
       "current_behavior": "Arguments with IsJitConstant are excluded from the CUDA kernel signature, passed to JitEngine via the __gsharp_jit_constants dictionary, and injected into PTX as C++ macros (#define).",
-      "strategy": "Enables compile-time loop unrolling for dynamic block sizes and iteration counts.",
-      "csharp_example": "[AttributeUsage(AttributeTargets.Parameter)]\npublic sealed class JitConstantAttribute : Attribute;"
+      "strategy": "Rejected: Duplicate of SYN-29 (Unroll control using [JitConstant]).",
+      "csharp_example": "// Rejected: Duplicate of SYN-29"
     },
     "score": 33,
     "files": [
@@ -8157,7 +8181,7 @@
   },
   {
     "id": "GEN-40",
-    "title": "AST expansion of C# string interpolation ($) in Gpu.InlinePtx",
+    "title": "Comprehensive AST expansion of C# string representations (@, $, \"\"\") in compile-time contexts (e.g., Gpu.InlinePtx)",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
     "status": "incomplete",
@@ -8169,8 +8193,9 @@
     },
     "details": {
       "current_behavior": "Recursively traverses InterpolatedStringExpressionSyntax, outputting plain text parts as-is and falling back to C++ AST expansion for interpolated parts ({x + 1}).",
-      "strategy": "Hybrid expansion to safely embed C# variables into PTX inline assembly.",
-      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
+      "strategy": "Comprehensive AST expansion of all C# string representations (literal, verbatim, interpolated, raw, interpolated raw) to safely parse and bind C# variables into C++ inline assembly operands (e.g. asm volatile).",
+      "csharp_example": "[GpuKernel]\npublic static void PtxStringRepresentationsKernel(int offset)\n{\n    // 1. 通常の文字列 (StringLiteralExpression)\n    Gpu.InlinePtx(\"nop;\");\n\n    // 2. 逐語的文字列 (@\"...\") - エスケープシーケンスを無視\n    Gpu.InlinePtx(@\"add.u32 %r1, %r1, 1; // \\n is ignored here\");\n\n    // 3. 文字列補間 ($\"...\") - 変数をオペランドとして展開\n    Gpu.InlinePtx($\"add.u32 %r2, %r2, {offset};\");\n\n    // 4. 生文字列リテラル (\"\"\"...\"\"\") - 複数行のインデントを維持した記述\n    Gpu.InlinePtx(\"\"\"\n        add.u32 %r3, %r3, 1;\n        sub.u32 %r3, %r3, 2;\n    \"\"\");\n\n    // 5. 補間生文字列 ($\"\"\"...\"\"\") - 複数行かつ変数の埋め込み\n    const string reg = \"r4\";\n    Gpu.InlinePtx($\"\"\"\n        add.u32 %{reg}, %{reg}, {offset};\n        mul.wide.u32 %{reg}, %{reg}, 2;\n    \"\"\");\n}",
+      "cpp_example": "extern \"C\" __global__ void PtxStringRepresentationsKernel(int offset)\n{\n    // トランスパイラがすべてのC#文字列表現を解釈し、適切なC++マクロやasm文に変換\n    asm volatile (\"nop;\");\n    \n    asm volatile (\"add.u32 %r1, %r1, 1; // \\n is ignored here\");\n    \n    asm volatile (\"add.u32 %r2, %r2, %0;\" : : \"r\"(offset));\n    \n    asm volatile (\"add.u32 %r3, %r3, 1;\\nsub.u32 %r3, %r3, 2;\");\n    \n    asm volatile (\"add.u32 %r4, %r4, %0;\\nmul.wide.u32 %r4, %r4, 2;\" : : \"r\"(offset));\n}"
     },
     "score": 32,
     "files": [],
@@ -8182,7 +8207,7 @@
     "title": "PTX macro expansion of compile-time constants using Gpu.JitConstant(\"Name\")",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
@@ -8191,8 +8216,8 @@
     },
     "details": {
       "current_behavior": "Replaces Gpu.JitConstant calls with a simple identifier name (Name) defined via #define on the PTX side and outputs it.",
-      "strategy": "Static expansion combined with __gsharp_jit_constants in JitEngine.",
-      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
+      "strategy": "Rejected: JIT compilation is being abolished in favor of AOT architecture. Standard C# compile-time 'const' variables fulfill this role natively during Source Generation.",
+      "csharp_example": "// Rejected: JIT compilation is being abolished in favor of AOT architecture. Standard C# compile-time 'const' variables fulfill this role natively during Source Generation."
     },
     "score": 30,
     "files": [
@@ -8257,11 +8282,11 @@
     "_searchableText": "gsh0008gsh0008:prohibitionoflinqquerysyntax"
   },
   {
-    "id": "GSH-0009",
+    "id": "GSH-13",
     "title": "GSH0009: Prohibition of combining var with numeric literals without suffixes",
     "domain": "GSH",
     "category": "Diagnostics",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -8270,8 +8295,8 @@
     },
     "details": {
       "current_behavior": "Statements like var x = 10; trigger an error to prevent incorrect 32-bit signed integer inference by auto in C++ (forcing 10U, etc.).",
-      "strategy": "Guarantees the safety of type inference.",
-      "csharp_example": "// Error: Implicit 32-bit signed integer inference\nvar x = 10;\n// Solution: Use explicit uint suffix\nvar x = 10U;"
+      "strategy": "Rejected: Duplicate of already documented var constraints and analyzer rules (e.g. GSH-00).",
+      "csharp_example": "// Rejected: Duplicate of already documented var constraints and analyzer rules (e.g. GSH-00)."
     },
     "score": 34,
     "files": [],
@@ -8279,8 +8304,8 @@
     "_searchableText": "gsh0009gsh0009:prohibitionofcombiningvarwithnumericliteralswithoutsuffixes"
   },
   {
-    "id": "GSH-0012",
-    "title": "GSH0012/0006: Compile-time constant and string literal constraints for Gpu macro arguments",
+    "id": "GSH-12",
+    "title": "GSH012/0006: Compile-time constant and string literal constraints for Gpu macro arguments",
     "domain": "GSH",
     "category": "Diagnostics",
     "status": "incomplete",
@@ -8293,7 +8318,8 @@
     "details": {
       "current_behavior": "The argument for Gpu.ForUnroll must be a constant, and the argument for Gpu.InlinePtx must be a string literal/interpolation.",
       "strategy": "Only allows values that can be determined during the AST evaluation phase.",
-      "csharp_example": "[DiagnosticAnalyzer(LanguageNames.CSharp)]\npublic class GpuKernelAnalyzer : DiagnosticAnalyzer\n{"
+      "csharp_example": "[GpuKernel]\npublic static void AnalyzerConstraintKernel(int dynamicCount)\n{\n    // Error: GSH012 - The argument must be a compile-time constant.\n    Gpu.ForUnroll(0, dynamicCount, 4, i => { });\n\n    // Error: GSH006 - The argument must be a string literal.\n    string asm = \"nop;\";\n    Gpu.InlinePtx(asm);\n}",
+      "cpp_example": "/* Analyzer Diagnostic Output (No C++ generated):\n * [GSH0012] Error: The argument \"count\" for Gpu.ForUnroll must be a compile-time constant.\n * [GSH0006] Error: The argument for Gpu.InlinePtx must be a string literal or interpolation.\n */"
     },
     "score": 33,
     "files": [],
@@ -8390,7 +8416,7 @@
     "title": "Profile extraction of registers and shared memory consumption via PTXAS log analysis",
     "domain": "GEN",
     "category": "JIT Infrastructure",
-    "status": "incomplete",
+    "status": "rejected",
     "metrics": {
       "blocker": 3,
       "difficulty": 2,
@@ -8399,8 +8425,8 @@
     },
     "details": {
       "current_behavior": "Parses ptxas output logs during nvcc compilation with regular expressions to automatically extract RegistersUsed, SharedMemoryBytes, etc., as CompilationResult.",
-      "strategy": "Feeds back kernel tuning metrics to the runtime.",
-      "csharp_example": "Gpu.InlinePtx(\"asm volatile (\"nop;\");\");"
+      "strategy": "Rejected: JIT compilation is being abolished in favor of pure AOT (Source Generator) architecture, rendering runtime PTXAS parsing obsolete.",
+      "csharp_example": "// Rejected: JIT compilation is being abolished in favor of pure AOT (Source Generator) architecture, rendering runtime PTXAS parsing obsolete."
     },
     "score": 32,
     "files": [
