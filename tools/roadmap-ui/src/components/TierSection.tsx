@@ -86,7 +86,7 @@ export const TierSection: React.FC<TierSectionProps> = React.memo(({
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(275px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
           gap: 2,
         }}
       >

@@ -111,14 +111,14 @@ export const App: React.FC = () => {
         }
       : dockPosition === 'left'
       ? {
-          width: { xs: '100%', md: 'calc(100% - 460px)' },
-          ml: { xs: 0, md: '460px' },
+          width: { xs: '100%', md: 'calc(100% - 600px)' },
+          ml: { xs: 0, md: '600px' },
           pb: 6,
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }
       : {
-          width: { xs: '100%', md: 'calc(100% - 460px)' },
-          mr: { xs: 0, md: '460px' },
+          width: { xs: '100%', md: 'calc(100% - 600px)' },
+          mr: { xs: 0, md: '600px' },
           pb: 6,
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         };
