@@ -34,8 +34,50 @@ const KNOWN_TYPES = new Set([
   'Gpu', 'MemoryMarshal', 'Unsafe', 'BitOperations', 'Interlocked', 'Warp', 'Wmma', 'DynamicSharedMemory', 'State', 'Point', 'Context', 'Holder'
 ]);
 
+interface TokenStyle {
+  color: string;
+  fontWeight?: number;
+}
+
+function classifyIdentifier(token: string, isCall: boolean): TokenStyle {
+  if (CONTROL_KEYWORDS.has(token)) {
+    return { color: COLORS.controlKeyword, fontWeight: 600 };
+  }
+  if (GENERAL_KEYWORDS.has(token)) {
+    return { color: COLORS.keyword, fontWeight: 600 };
+  }
+  if (KNOWN_TYPES.has(token)) {
+    return { color: COLORS.type, fontWeight: 600 };
+  }
+  if (isCall) {
+    return { color: COLORS.method };
+  }
+  if (token[0] >= 'A' && token[0] <= 'Z') {
+    return { color: COLORS.type, fontWeight: 600 };
+  }
+  return { color: COLORS.identifier };
+}
+
+function resolveTokenStyle(token: string, remainingCode: string): TokenStyle {
+  // String / char literals
+  if (token.startsWith('"') || token.startsWith('$"') || token.startsWith("'") || token.endsWith('u8')) {
+    return { color: COLORS.string };
+  }
+  // Number literals (hex or decimal)
+  if (/^(?:0x|\d)/.test(token)) {
+    return { color: COLORS.number };
+  }
+  // Word / Identifiers
+  if (/^[a-zA-Z_]/.test(token)) {
+    const isCall = remainingCode.trimStart().startsWith('(');
+    return classifyIdentifier(token, isCall);
+  }
+  // Operators / punctuation
+  return { color: COLORS.operator };
+}
+
 function tokenizeCodePart(codePart: string, lineIdx: number, offset: number): React.ReactNode[] {
-  const tokenRegex = /(\$?"(?:[^"\\]|\\.)*"u8|\$?"(?:[^"\\]|\\.)*"|'[^\']+'|\b0x[0-9a-fA-F]+\b|\b\d+(?:\.\d+)?(?:f|u|U|L|UL)?\b|\b[a-zA-Z_]\w*\b|[^\s\w])/g;
+  const tokenRegex = /(\$?"(?:[^"\\]|\\.)*"u8|\$?"(?:[^"\\]|\\.)*"|'[^']+'|\b0x[0-9a-fA-F]+\b|\b\d+(?:\.\d+)?(?:f|u|U|L|UL)?\b|\b[a-zA-Z_]\w*\b|[^\s\w])/g;
   
   const tokens: React.ReactNode[] = [];
   let match: RegExpExecArray | null;
@@ -47,37 +89,14 @@ function tokenizeCodePart(codePart: string, lineIdx: number, offset: number): Re
     }
     const token = match[0];
     const key = `${lineIdx}-${offset + match.index}`;
+    const style = resolveTokenStyle(token, codePart.slice(tokenRegex.lastIndex));
 
-    if (token.startsWith('"') || token.startsWith('$"') || token.startsWith("'") || token.endsWith('u8')) {
-      tokens.push(<span key={key} style={{ color: COLORS.string }}>{token}</span>);
-    }
-    else if (/^\d/.test(token) || /^0x/.test(token)) {
-      tokens.push(<span key={key} style={{ color: COLORS.number }}>{token}</span>);
-    }
-    else if (/^[a-zA-Z_]/.test(token)) {
-      if (CONTROL_KEYWORDS.has(token)) {
-        tokens.push(<span key={key} style={{ color: COLORS.controlKeyword, fontWeight: 600 }}>{token}</span>);
-      } else if (GENERAL_KEYWORDS.has(token)) {
-        tokens.push(<span key={key} style={{ color: COLORS.keyword, fontWeight: 600 }}>{token}</span>);
-      } else if (KNOWN_TYPES.has(token) || (token.length > 1 && token[0] === token[0].toUpperCase() && !/^\(/.test(token))) {
-        const nextChars = codePart.substring(tokenRegex.lastIndex).trim();
-        if (nextChars.startsWith('(') && !KNOWN_TYPES.has(token)) {
-          tokens.push(<span key={key} style={{ color: COLORS.method }}>{token}</span>);
-        } else {
-          tokens.push(<span key={key} style={{ color: COLORS.type, fontWeight: 600 }}>{token}</span>);
-        }
-      } else {
-        const nextChars = codePart.substring(tokenRegex.lastIndex).trim();
-        if (nextChars.startsWith('(')) {
-          tokens.push(<span key={key} style={{ color: COLORS.method }}>{token}</span>);
-        } else {
-          tokens.push(<span key={key} style={{ color: COLORS.identifier }}>{token}</span>);
-        }
-      }
-    }
-    else {
-      tokens.push(<span key={key} style={{ color: COLORS.operator }}>{token}</span>);
-    }
+    tokens.push(
+      <span key={key} style={style}>
+        {token}
+      </span>
+    );
+
     lastIndex = tokenRegex.lastIndex;
   }
 
@@ -177,7 +196,7 @@ function highlightCsCode(rawCode: string): React.ReactNode[] {
     }
 
     return (
-      <div key={lineIdx} style={{ minHeight: '1.3em', whiteSpace: 'pre' }}>
+      <div key={lineIdx} style={{ minHeight: '1.3em', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
         {tokens.length === 0 ? ' ' : tokens}
       </div>
     );
@@ -199,8 +218,9 @@ export const CsCodeHighlighter: React.FC<CsCodeHighlighterProps> = ({ code }) =>
         borderRadius: 2,
         border: '1px solid #333333',
         boxShadow: 'inset 0 0 12px rgba(0, 0, 0, 0.5)',
-        overflowX: 'auto',
-        whiteSpace: 'pre',
+        overflowX: 'hidden',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
       }}
     >
       {highlightedCode}

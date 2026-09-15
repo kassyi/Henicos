@@ -216,7 +216,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
             Score: <span style={{ color: '#d0bcff', fontWeight: 700 }}>{metrics.score.toFixed(1)}</span> (B:{metrics.blocker} D:{metrics.difficulty} G:{metrics.generality})
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 0.4, flexShrink: 0 }}>
+          <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', flexShrink: 0, justifyContent: 'flex-end' }}>
             {STATUS_CHIP_OPTIONS.map((s) => (
               <Chip
                 key={s.val}
