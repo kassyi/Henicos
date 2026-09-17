@@ -41,10 +41,15 @@
     <ProjectReference Include="..\..\src\Stdlib\Kassyi.GSharp.Stdlib.Math\Kassyi.GSharp.Stdlib.Math.csproj" />
     <ProjectReference Include="..\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
+    <ProjectReference Include="..\..\src\Apps\Henicos.PiBenchmark\Henicos.PiBenchmark.csproj" />
+    <_GSharpCudaSources Include="..\..\src\Apps\Henicos.PiBenchmark\ComputeBenchmarks\Native\*.cu" />
   </ItemGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
   </ItemGroup>
 
+
+  <Import Project="..\..\src\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
 </Project>
+

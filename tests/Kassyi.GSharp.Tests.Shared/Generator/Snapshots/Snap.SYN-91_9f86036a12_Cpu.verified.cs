@@ -54,6 +54,9 @@ ParenthesesKernel(output, a, b, c);
 }
 ";
 public static readonly string ParenthesesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ParenthesesKernel_Source;
+private static byte[]? s_decryptionKey_ParenthesesKernel;
+private static byte[]? s_binaryData_ParenthesesKernel;
+private static bool s_isLoaded_ParenthesesKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ParenthesesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output, global::System.Int32 a, global::System.Int32 b, global::System.Int32 c);
@@ -62,11 +65,15 @@ public static unsafe void Launch_ParenthesesKernel(global::System.Int32[] output
 if (output.Length == 0){
 return;
 }
+if (!s_isLoaded_ParenthesesKernel)
+{
+s_decryptionKey_ParenthesesKernel = null;
+s_isLoaded_ParenthesesKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", dllPath, s_decryptionKey_ParenthesesKernel);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output, a, b, c);

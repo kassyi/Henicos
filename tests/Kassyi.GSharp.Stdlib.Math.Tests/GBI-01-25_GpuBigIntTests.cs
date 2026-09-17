@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
@@ -13,7 +14,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("Category", "Memory")]
         public void Test_GBI01_MemoryPoolAllocation()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
             // across multiple concurrent threads sharing the same GpuContext instance.
             var exceptions = new ConcurrentBag<Exception>();
@@ -45,7 +46,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("Category", "Performance")]
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
             
             // Typical case
@@ -84,7 +85,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("Category", "Optimization")]
         public void Test_GBI04_DirectSquarePointwiseKernel()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 123456789, 0, 0, 0 });
             using var result = new GpuUIntBigInteger(ctx, 8);
@@ -101,7 +102,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("Category", "Algorithm")]
         public void Test_GBI05_ParallelGcdLargeDigits()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             // Issue #112 & #117: Test large GCD to trigger pipeline stalls / TDR issues.
             using var ctx = new GpuContext(128, GpuExecutionEngine.GSharpAot);
             
@@ -125,7 +126,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("Category", "Runtime")]
         public void Test_GBI06_ExpressionKernelFusion()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
             using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
@@ -146,7 +147,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Add_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             RunBinaryOpTest(
                 engine,
                 resultWords: TestSizeWords,
@@ -163,7 +164,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             RunBinaryOpTest(
                 engine,
                 resultWords: TestSizeWords,
@@ -181,7 +182,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         public GBI_01_25_GpuBigIntTests()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             // CUDA context is initialized automatically upon first kernel launch if supported.
             // Do not initialize here to prevent xUnit discovery crashes on non-GPU CI runners.
         }
@@ -221,7 +222,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Scalar_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 40);
 
@@ -264,7 +265,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableFact]
         public void Test_NttReference_Correctness()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var rand = new Random(42);
             int testSize = 256; // 8192 bits
             var aWords = new uint[testSize];
@@ -315,7 +316,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(4294967294u, 1u, 4294967295u)] // Wraps to 0
         public void Test_ModAdd_BoundaryConditions(uint a, uint b, uint p)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var expected = (uint)(((ulong)a + b) % p);
             var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
             Assert.Equal(expected, actual);
@@ -327,7 +328,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Mul_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             if (engine == GpuExecutionEngine.LegacyNative)
                 return;
 
@@ -346,7 +347,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Div_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var sizeWords = 16;
             RunBinaryOpTest(
                 engine,
@@ -367,7 +368,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-12")]
         public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 3, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 62);
             var arrB = GenerateRandomArray(TestSizeWords, 63);
@@ -390,7 +391,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 22);
             var arrB = GenerateRandomArray(TestSizeWords, 23);
@@ -418,7 +419,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 5);
             int shiftBits = 143; // Random shift
@@ -440,7 +441,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_ShiftRight_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 6);
             int shiftBits = 143; // Random shift
@@ -461,7 +462,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-15")]
         public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 70);
             var arrB = GenerateRandomArray(TestSizeWords, 70); // Same for equal tests
@@ -506,7 +507,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 3, engine);
 
             var arrA = GenerateRandomArray(TestSizeWords, 60);
@@ -541,7 +542,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-19")]
         public void Test_Square_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 4, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 90);
             var bigA = ToBigInteger(arrA);
@@ -562,7 +563,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableFact]
         public void Test_HalfGcdReference_Correctness()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var rand = new Random(42);
             for (int i = 0; i < 20; i++)
             {
@@ -594,7 +595,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Gcd_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
 
             // Generate two random big integers
@@ -623,7 +624,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_GBI20_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(10, engine);
             var arrEmpty = Array.Empty<uint>();
 
@@ -655,7 +656,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot, 0x80000000u, 0x55555555u)]
         public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(10, engine);
             var arrA = new uint[] { valA };
             var arrB = new uint[] { valB };
@@ -686,7 +687,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 20);
             var arrB = GenerateRandomArray(TestSizeWords, 20); // Same array
@@ -710,7 +711,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-23")]
         public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 80);
 
@@ -741,7 +742,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-23")]
         public void Test_GBI23_GetBitLength_AtomicStress(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             const int stressWords = 65536;
             using var context = new GpuContext(stressWords, engine);
             var arr = new uint[stressWords];
@@ -769,7 +770,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_State_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var zeroArr = new uint[TestSizeWords];
             var oneArr = new uint[TestSizeWords];
@@ -809,7 +810,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var sizeWords = 16;
             using var context = new GpuContext(sizeWords * 8, engine);
 
@@ -818,35 +819,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             arrA[sizeWords - 1] |= 0x40000000;
 
             var bigA = ToBigInteger(arrA);
-
-            // Expected Sqrt (using BigInteger.Log approx or similar)
-            // System.Numerics does not have BigInteger.Sqrt natively in net10.0
-            // (it does in .NET 9+ actually as BigInteger.IsPowerOfTwo/etc but BigInteger.Sqrt is not always available depending on TFM).
-            // Let's compute expected Sqrt manually with Heron's method.
-            BigInteger expectedSqrt = 1;
-            int bytes = bigA.GetByteCount(isUnsigned: true);
-            int bits = (bytes - 1) * 8;
-            BigInteger temp = bigA >> bits;
-            while (temp > 0)
-            {
-                bits++;
-                temp >>= 1;
-            }
-
-            expectedSqrt = BigInteger.One << (bits / 2);
-            for (int i = 0; i < 20; i++)
-            {
-                BigInteger next = (expectedSqrt + bigA / expectedSqrt) >> 1;
-                if (next == expectedSqrt || next > expectedSqrt && next - expectedSqrt == 1 ||
-                    expectedSqrt > next && expectedSqrt - next <= 1)
-                {
-                    expectedSqrt = BigInteger.Min(expectedSqrt, next);
-                    if (expectedSqrt * expectedSqrt > bigA) expectedSqrt--;
-                    break;
-                }
-
-                expectedSqrt = next;
-            }
+            var expectedSqrt = bigA.Sqrt();
 
             using var gpuA = new GpuUIntBigInteger(context, arrA);
             using var gpuResult = new GpuUIntBigInteger(context, sizeWords);
@@ -950,7 +923,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(0xC0000000u, 0xC0000000u, 4293918721u, 2148532223u)] // 6442450944 - 4293918721 = 2148532223
         public void Test_ModAdd_OverflowSafe(uint a, uint b, uint prime, uint expected)
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var actual = GpuBigIntNttKernels.ModAdd(a, b, prime);
             Assert.Equal(expected, actual);
         }
@@ -958,7 +931,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableFact]
         public void Test_NttCarryResolver_ZeroLengthBuffers_ReturnsEarly()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var low = Array.Empty<uint>();
             var high = Array.Empty<uint>();
             var output = Array.Empty<uint>();
@@ -977,7 +950,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableFact]
         public void Test_NttCarryResolver_SingleWord_ValidatesCarryCalculation()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
             var low = new uint[] { 0x12345678, 0x9ABCDEF0 };
             var high = new uint[] { 0, 0 };
             var output = new uint[1];
@@ -998,7 +971,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("Category", "Stress")]
         public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
         {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var scope = new GpuKernelLoader.CudaContextScope();
             var engine = GpuExecutionEngine.GSharpAot;
             using var context = new GpuContext(1024, engine);

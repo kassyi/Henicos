@@ -34,12 +34,12 @@ internal static class CppNameFormatter
 
     public static string ToSafeCppIdentifier(this ISymbol symbol)
     {
-        var sb = new System.Text.StringBuilder();
+        var sb = new StringBuilder();
         AppendSafeIdentifierRecursive(symbol, sb);
         return sb.ToString();
     }
 
-    private static void AppendSafeIdentifierRecursive(ISymbol symbol, System.Text.StringBuilder sb)
+    private static void AppendSafeIdentifierRecursive(ISymbol symbol, StringBuilder sb)
     {
         if (symbol is ITypeParameterSymbol)
         {

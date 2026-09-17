@@ -7,6 +7,7 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// </summary>
 public sealed class CpuKernelLoader
 {
+
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>
     private static readonly ConcurrentDictionary<string, Lazy<Delegate>> s_functionCache = new();
 

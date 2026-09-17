@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const specFilePath = path.join(__dirname, '..', 'docs', 'spec', 'en', '09_comprehensive_example.md');
+const specFilePath = path.join(__dirname, '..', 'docs', 'spec', 'en', '04_guides', '01_comprehensive_example.md');
 const sourceFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'GEN-06_ComprehensiveSpecKernel.cu.cs');
 function findSnapshotFile(filenamePattern) {
     const candidateDirs = [

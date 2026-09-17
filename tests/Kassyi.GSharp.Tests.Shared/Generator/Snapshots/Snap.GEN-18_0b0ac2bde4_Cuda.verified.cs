@@ -24,6 +24,9 @@ result[tid]=float2{(float)(va.x+vb.x), (float)(va.y+vb.y)};
 }
 ";
 public static readonly string Vector2AddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Vector2AddKernel_Source;
+private static byte[]? s_decryptionKey_Vector2AddKernel;
+private static byte[]? s_binaryData_Vector2AddKernel;
+private static bool s_isLoaded_Vector2AddKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_Vector2AddKernel(global::System.Numerics.Vector2[] a, global::System.Numerics.Vector2[] b, global::System.Numerics.Vector2[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -32,18 +35,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_Vector2AddKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "Vector2AddKernel", decryptionKey);
+s_binaryData_Vector2AddKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_Vector2AddKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_Vector2AddKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Vector2AddKernel, "Vector2AddKernel", s_decryptionKey_Vector2AddKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -169,18 +175,21 @@ public static unsafe void Launch_Vector2AddKernel_Device(IntPtr a, IntPtr b, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_Vector2AddKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "Vector2AddKernel", decryptionKey);
+s_binaryData_Vector2AddKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_Vector2AddKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector2AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_Vector2AddKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Vector2AddKernel, "Vector2AddKernel", s_decryptionKey_Vector2AddKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -238,6 +247,9 @@ result[tid]=float3{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z)};
 }
 ";
 public static readonly string Vector3AddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Vector3AddKernel_Source;
+private static byte[]? s_decryptionKey_Vector3AddKernel;
+private static byte[]? s_binaryData_Vector3AddKernel;
+private static bool s_isLoaded_Vector3AddKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_Vector3AddKernel(global::System.Numerics.Vector3[] a, global::System.Numerics.Vector3[] b, global::System.Numerics.Vector3[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -246,18 +258,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_Vector3AddKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "Vector3AddKernel", decryptionKey);
+s_binaryData_Vector3AddKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_Vector3AddKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_Vector3AddKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Vector3AddKernel, "Vector3AddKernel", s_decryptionKey_Vector3AddKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -383,18 +398,21 @@ public static unsafe void Launch_Vector3AddKernel_Device(IntPtr a, IntPtr b, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_Vector3AddKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "Vector3AddKernel", decryptionKey);
+s_binaryData_Vector3AddKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_Vector3AddKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector3AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_Vector3AddKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Vector3AddKernel, "Vector3AddKernel", s_decryptionKey_Vector3AddKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -452,6 +470,9 @@ result[tid]=float4{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z), (
 }
 ";
 public static readonly string Vector4AddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Vector4AddKernel_Source;
+private static byte[]? s_decryptionKey_Vector4AddKernel;
+private static byte[]? s_binaryData_Vector4AddKernel;
+private static bool s_isLoaded_Vector4AddKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_Vector4AddKernel(global::System.Numerics.Vector4[] a, global::System.Numerics.Vector4[] b, global::System.Numerics.Vector4[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -460,18 +481,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_Vector4AddKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "Vector4AddKernel", decryptionKey);
+s_binaryData_Vector4AddKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_Vector4AddKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_Vector4AddKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Vector4AddKernel, "Vector4AddKernel", s_decryptionKey_Vector4AddKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -597,18 +621,21 @@ public static unsafe void Launch_Vector4AddKernel_Device(IntPtr a, IntPtr b, Int
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_Vector4AddKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "Vector4AddKernel", decryptionKey);
+s_binaryData_Vector4AddKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_Vector4AddKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_18_VectorBuiltinKernels_Vector4AddKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_Vector4AddKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Vector4AddKernel, "Vector4AddKernel", s_decryptionKey_Vector4AddKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

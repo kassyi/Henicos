@@ -58,8 +58,25 @@ internal static class MarshalingEmitter
 
     private static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
     {
-        writer.AppendLine(
-            "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
+        int? packValue = null;
+        var structLayoutAttr = s.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Runtime.InteropServices.StructLayoutAttribute");
+        if (structLayoutAttr != null)
+        {
+            var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;
+            if (packArg is { IsNull: false, Value: int p and > 0 })
+            {
+                packValue = p;
+            }
+        }
+
+        if (packValue.HasValue)
+        {
+            writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = {packValue.Value})]");
+        }
+        else
+        {
+            writer.AppendLine("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
+        }
         writer.Append("public struct __Native_");
         writer.AppendFullyQualifiedCppName(s);
         writer.AppendLine();
@@ -297,11 +314,6 @@ internal static class MarshalingEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.Constant))
-            {
-                continue;
-            }
-
             if (IsCustomStruct(p.Type))
             {
                 if (!isDevicePtr)
@@ -335,14 +347,7 @@ internal static class MarshalingEmitter
 
     internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        var nonJitParamCount = 0;
-        foreach (var p in method.Parameters)
-        {
-            if (!p.HasAttribute(KnownAttributes.Constant))
-            {
-                nonJitParamCount++;
-            }
-        }
+        var nonJitParamCount = method.Parameters.Length;
 
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
@@ -356,11 +361,6 @@ internal static class MarshalingEmitter
         var paramIndex = 0;
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.Constant))
-            {
-                continue;
-            }
-
             WriteParameterMarshal(writer, p, paramIndex++, isDevicePtr);
         }
 
@@ -386,11 +386,6 @@ internal static class MarshalingEmitter
 
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.Constant))
-            {
-                continue;
-            }
-
             WriteParameterUnmarshal(writer, p, isDevicePtr);
         }
 
@@ -429,11 +424,6 @@ internal static class MarshalingEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.Constant))
-            {
-                continue;
-            }
-
             WriteParameterFree(writer, p, isDevicePtr);
         }
 

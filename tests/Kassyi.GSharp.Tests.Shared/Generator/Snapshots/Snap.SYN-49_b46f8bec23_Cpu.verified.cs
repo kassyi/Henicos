@@ -56,6 +56,9 @@ InterlockedEdgeCasesKernel(array, structArray);
 }
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + InterlockedEdgeCasesKernel_Source;
+private static byte[]? s_decryptionKey_InterlockedEdgeCasesKernel;
+private static byte[]? s_binaryData_InterlockedEdgeCasesKernel;
+private static bool s_isLoaded_InterlockedEdgeCasesKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void InterlockedEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* structArray);
@@ -64,11 +67,15 @@ public static unsafe void Launch_InterlockedEdgeCasesKernel(global::System.Int32
 if (array.Length == 0 || structArray.Length == 0){
 return;
 }
+if (!s_isLoaded_InterlockedEdgeCasesKernel)
+{
+s_decryptionKey_InterlockedEdgeCasesKernel = null;
+s_isLoaded_InterlockedEdgeCasesKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", dllPath, s_decryptionKey_InterlockedEdgeCasesKernel);
 fixed (global::System.Int32* p_array = array)
 fixed (global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
@@ -129,6 +136,9 @@ InterlockedKernel(intBuf, uintBuf, longBuf, ulongBuf);
 }
 ";
 public static readonly string InterlockedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + InterlockedKernel_Source;
+private static byte[]? s_decryptionKey_InterlockedKernel;
+private static byte[]? s_binaryData_InterlockedKernel;
+private static bool s_isLoaded_InterlockedKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void InterlockedKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* intBuf, global::System.UInt32* uintBuf, global::System.Int64* longBuf, global::System.UInt64* ulongBuf);
@@ -137,11 +147,15 @@ public static unsafe void Launch_InterlockedKernel(global::System.Int32[] intBuf
 if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf.Length == 0){
 return;
 }
+if (!s_isLoaded_InterlockedKernel)
+{
+s_decryptionKey_InterlockedKernel = null;
+s_isLoaded_InterlockedKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", dllPath, s_decryptionKey_InterlockedKernel);
 fixed (global::System.Int32* p_intBuf = intBuf)
 fixed (global::System.UInt32* p_uintBuf = uintBuf)
 fixed (global::System.Int64* p_longBuf = longBuf)
@@ -176,10 +190,16 @@ float f = floatSpecialInputs[tid];
 floatSpecialResults[0]=fabsf(f);
 floatSpecialResults[1]=fmaxf(f,0.0f);
 floatSpecialResults[2]=fminf(f,0.0f);
+floatSpecialResults[3]=expf(f);
+floatSpecialResults[4]=sqrtf(f);
+floatSpecialResults[5]=logf(f);
 double d = doubleSpecialInputs[tid];
 doubleSpecialResults[0]=fabs(d);
 doubleSpecialResults[1]=fmax(d,0.0);
 doubleSpecialResults[2]=fmin(d,0.0);
+doubleSpecialResults[3]=exp(d);
+doubleSpecialResults[4]=sqrt(d);
+doubleSpecialResults[5]=log(d);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_MathEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults)
 {
@@ -196,6 +216,9 @@ MathEdgeCasesKernel(floatSpecialInputs, floatSpecialResults, doubleSpecialInputs
 }
 ";
 public static readonly string MathEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MathEdgeCasesKernel_Source;
+private static byte[]? s_decryptionKey_MathEdgeCasesKernel;
+private static byte[]? s_binaryData_MathEdgeCasesKernel;
+private static bool s_isLoaded_MathEdgeCasesKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MathEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* floatSpecialInputs, global::System.Single* floatSpecialResults, global::System.Double* doubleSpecialInputs, global::System.Double* doubleSpecialResults);
@@ -204,11 +227,15 @@ public static unsafe void Launch_MathEdgeCasesKernel(global::System.Single[] flo
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
 }
+if (!s_isLoaded_MathEdgeCasesKernel)
+{
+s_decryptionKey_MathEdgeCasesKernel = null;
+s_isLoaded_MathEdgeCasesKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", dllPath, s_decryptionKey_MathEdgeCasesKernel);
 fixed (global::System.Single* p_floatSpecialInputs = floatSpecialInputs)
 fixed (global::System.Single* p_floatSpecialResults = floatSpecialResults)
 fixed (global::System.Double* p_doubleSpecialInputs = doubleSpecialInputs)
@@ -246,6 +273,9 @@ doubleOutputs[2]=__gsharp_clamp(dVal,0.0,10.0);
 doubleOutputs[3]=fmax(dVal,5.0);
 doubleOutputs[4]=fmin(dVal,5.0);
 doubleOutputs[5]=fabs(dVal);
+doubleOutputs[6]=exp(dVal);
+doubleOutputs[7]=sqrt(fabs(dVal));
+doubleOutputs[8]=log(fabs(dVal)+1.0);
 float fVal = floatInputs[tid];
 floatOutputs[0]=sinf(fVal);
 floatOutputs[1]=cosf(fVal);
@@ -253,6 +283,9 @@ floatOutputs[2]=__gsharp_clamp(fVal,0.0f,10.0f);
 floatOutputs[3]=fmaxf(fVal,5.0f);
 floatOutputs[4]=fminf(fVal,5.0f);
 floatOutputs[5]=fabsf(fVal);
+floatOutputs[6]=expf(fVal);
+floatOutputs[7]=sqrtf(fabsf(fVal));
+floatOutputs[8]=logf(fabsf(fVal)+1.0f);
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_MathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs)
 {
@@ -269,6 +302,9 @@ MathKernel(doubleInputs, doubleOutputs, floatInputs, floatOutputs);
 }
 ";
 public static readonly string MathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MathKernel_Source;
+private static byte[]? s_decryptionKey_MathKernel;
+private static byte[]? s_binaryData_MathKernel;
+private static bool s_isLoaded_MathKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Double* doubleInputs, global::System.Double* doubleOutputs, global::System.Single* floatInputs, global::System.Single* floatOutputs);
@@ -277,11 +313,15 @@ public static unsafe void Launch_MathKernel(global::System.Double[] doubleInputs
 if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
 return;
 }
+if (!s_isLoaded_MathKernel)
+{
+s_decryptionKey_MathKernel = null;
+s_isLoaded_MathKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", dllPath, s_decryptionKey_MathKernel);
 fixed (global::System.Double* p_doubleInputs = doubleInputs)
 fixed (global::System.Double* p_doubleOutputs = doubleOutputs)
 fixed (global::System.Single* p_floatInputs = floatInputs)
