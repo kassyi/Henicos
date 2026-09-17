@@ -9,9 +9,8 @@ import {
     Badge,
     Tooltip,
     Typography,
-    ToggleButton,
-    ToggleButtonGroup,
     Collapse,
+    Chip,
 } from "@mui/material";
 import {
     Search as SearchIcon,
@@ -26,15 +25,8 @@ import {
 } from "@mui/icons-material";
 import type { ProgressFilter } from "../types";
 import { JulesIcon } from "./JulesIcon";
-
-interface FilterOption<T> {
-    val: T;
-    label: string;
-    subLabel: string;
-    color: string;
-    selectedBg: string;
-    selectedText: string;
-}
+import { FactorFilterControl } from "./FactorFilterControl";
+import type { FilterOption } from "./FactorFilterControl";
 
 const PROGRESS_OPTIONS: FilterOption<ProgressFilter>[] = [
     {
@@ -44,6 +36,14 @@ const PROGRESS_OPTIONS: FilterOption<ProgressFilter>[] = [
         color: "#90a4ae",
         selectedBg: "#455a64",
         selectedText: "#eceff1",
+    },
+    {
+        val: "planned",
+        label: "計画済",
+        subLabel: "計画済",
+        color: "#64b5f6",
+        selectedBg: "#1565c0",
+        selectedText: "#e3f2fd",
     },
     {
         val: "implemented_plus",
@@ -143,6 +143,7 @@ interface ControlsBarProps {
     statusCounts?: {
         all: number;
         incomplete: number;
+        planned: number;
         implemented_plus: number;
         tuned: number;
         rejected: number;
@@ -175,10 +176,6 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
     statusCounts,
 }) => {
     const currentProgressOpt = PROGRESS_OPTIONS.find((p) => p.val === progressFilter) || PROGRESS_OPTIONS[0];
-    const currentBlockerOpt = BLOCKER_OPTIONS.find((b) => b.val === minBlocker) || BLOCKER_OPTIONS[0];
-    const currentDifficultyOpt = DIFFICULTY_OPTIONS.find((d) => d.val === minDifficulty) || DIFFICULTY_OPTIONS[0];
-    const currentGeneralityOpt = GENERALITY_OPTIONS.find((g) => g.val === minGenerality) || GENERALITY_OPTIONS[0];
-
     const hasActiveFilters = progressFilter !== "all" || minBlocker > 1 || minDifficulty > 1 || minGenerality > 1;
 
     return (
@@ -397,190 +394,65 @@ export const ControlsBar: React.FC<ControlsBarProps> = ({
                                     {currentProgressOpt.subLabel}
                                 </Typography>
                             </Box>
-                            <ToggleButtonGroup
-                                value={progressFilter}
-                                exclusive
-                                onChange={(_, val: ProgressFilter | null) => val && setProgressFilter(val)}
-                                fullWidth
-                                size="small"
+                            <Box
                                 sx={{
-                                    bgcolor: "#1e1a24",
-                                    "& .MuiToggleButton-root": {
-                                        py: 0.4,
-                                        px: 0.6,
-                                        fontSize: "0.72rem",
-                                        color: "text.secondary",
-                                        borderColor: "#332d41",
-                                        fontWeight: 600,
-                                        whiteSpace: "nowrap",
-                                    },
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 1,
+                                    pt: 0.5,
                                 }}
                             >
                                 {PROGRESS_OPTIONS.map((opt) => {
                                     const count = statusCounts ? statusCounts[opt.val] : undefined;
+                                    const isSelected = progressFilter === opt.val;
                                     return (
-                                        <ToggleButton
+                                        <Chip
                                             key={opt.val}
-                                            value={opt.val}
-                                            title={opt.subLabel}
+                                            label={`${opt.label} ${count !== undefined ? `(${count})` : ""}`}
+                                            onClick={() => setProgressFilter(opt.val)}
+                                            size="small"
                                             sx={{
-                                                "&.Mui-selected": {
-                                                    bgcolor: `${opt.selectedBg} !important`,
-                                                    color: `${opt.selectedText} !important`,
-                                                    fontWeight: 800,
+                                                bgcolor: isSelected ? opt.selectedBg : "rgba(255, 255, 255, 0.05)",
+                                                color: isSelected ? opt.selectedText : "text.secondary",
+                                                border: "1px solid",
+                                                borderColor: isSelected ? opt.selectedBg : "rgba(255, 255, 255, 0.1)",
+                                                fontWeight: isSelected ? 800 : 500,
+                                                fontSize: "0.75rem",
+                                                transition: "all 0.2s ease",
+                                                "&:hover": {
+                                                    bgcolor: isSelected ? opt.selectedBg : "rgba(255, 255, 255, 0.1)",
+                                                    borderColor: isSelected ? opt.selectedBg : "rgba(255, 255, 255, 0.2)",
                                                 },
                                             }}
-                                        >
-                                            {opt.label} {count !== undefined ? `(${count})` : ""}
-                                        </ToggleButton>
+                                        />
                                     );
                                 })}
-                            </ToggleButtonGroup>
+                            </Box>
                         </Box>
 
                         {/* 2. Blocker Filter Card */}
-                        <Box sx={{ bgcolor: "#141218", p: 1.5, borderRadius: 2, border: "1px solid #332d41" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                                    Blocker (依存度) : <strong>{minBlocker} 以上</strong>
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    sx={{ color: currentBlockerOpt.color, fontSize: "0.7rem", fontWeight: 700 }}
-                                >
-                                    {currentBlockerOpt.subLabel}
-                                </Typography>
-                            </Box>
-                            <ToggleButtonGroup
-                                value={minBlocker}
-                                exclusive
-                                onChange={(_, val) => val !== null && setMinBlocker(val)}
-                                fullWidth
-                                size="small"
-                                sx={{
-                                    bgcolor: "#1e1a24",
-                                    "& .MuiToggleButton-root": {
-                                        py: 0.4,
-                                        fontSize: "0.75rem",
-                                        color: "text.secondary",
-                                        borderColor: "#332d41",
-                                    },
-                                }}
-                            >
-                                {BLOCKER_OPTIONS.map((opt) => (
-                                    <ToggleButton
-                                        key={opt.val}
-                                        value={opt.val}
-                                        title={opt.subLabel}
-                                        sx={{
-                                            "&.Mui-selected": {
-                                                bgcolor: `${opt.selectedBg} !important`,
-                                                color: `${opt.selectedText} !important`,
-                                                fontWeight: 800,
-                                            },
-                                        }}
-                                    >
-                                        {opt.label}
-                                    </ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
-                        </Box>
+                        <FactorFilterControl
+                            title={`Blocker (依存度) : ${minBlocker} 以上`}
+                            value={minBlocker}
+                            onChange={(val) => setMinBlocker(val as number)}
+                            options={BLOCKER_OPTIONS}
+                        />
 
                         {/* 3. Difficulty Filter Card */}
-                        <Box sx={{ bgcolor: "#141218", p: 1.5, borderRadius: 2, border: "1px solid #332d41" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                                    Difficulty (難易度) : <strong>{minDifficulty} 以上</strong>
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    sx={{ color: currentDifficultyOpt.color, fontSize: "0.7rem", fontWeight: 700 }}
-                                >
-                                    {currentDifficultyOpt.subLabel}
-                                </Typography>
-                            </Box>
-                            <ToggleButtonGroup
-                                value={minDifficulty}
-                                exclusive
-                                onChange={(_, val) => val !== null && setMinDifficulty(val)}
-                                fullWidth
-                                size="small"
-                                sx={{
-                                    bgcolor: "#1e1a24",
-                                    "& .MuiToggleButton-root": {
-                                        py: 0.4,
-                                        fontSize: "0.75rem",
-                                        color: "text.secondary",
-                                        borderColor: "#332d41",
-                                    },
-                                }}
-                            >
-                                {DIFFICULTY_OPTIONS.map((opt) => (
-                                    <ToggleButton
-                                        key={opt.val}
-                                        value={opt.val}
-                                        title={opt.subLabel}
-                                        sx={{
-                                            "&.Mui-selected": {
-                                                bgcolor: `${opt.selectedBg} !important`,
-                                                color: `${opt.selectedText} !important`,
-                                                fontWeight: 800,
-                                            },
-                                        }}
-                                    >
-                                        {opt.label}
-                                    </ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
-                        </Box>
+                        <FactorFilterControl
+                            title={`Difficulty (難易度) : ${minDifficulty} 以上`}
+                            value={minDifficulty}
+                            onChange={(val) => setMinDifficulty(val as number)}
+                            options={DIFFICULTY_OPTIONS}
+                        />
 
                         {/* 4. Generality Filter Card */}
-                        <Box sx={{ bgcolor: "#141218", p: 1.5, borderRadius: 2, border: "1px solid #332d41" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                                    Generality (汎用性) : <strong>{minGenerality} 以上</strong>
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    sx={{ color: currentGeneralityOpt.color, fontSize: "0.7rem", fontWeight: 700 }}
-                                >
-                                    {currentGeneralityOpt.subLabel}
-                                </Typography>
-                            </Box>
-                            <ToggleButtonGroup
-                                value={minGenerality}
-                                exclusive
-                                onChange={(_, val) => val !== null && setMinGenerality(val)}
-                                fullWidth
-                                size="small"
-                                sx={{
-                                    bgcolor: "#1e1a24",
-                                    "& .MuiToggleButton-root": {
-                                        py: 0.4,
-                                        fontSize: "0.75rem",
-                                        color: "text.secondary",
-                                        borderColor: "#332d41",
-                                    },
-                                }}
-                            >
-                                {GENERALITY_OPTIONS.map((opt) => (
-                                    <ToggleButton
-                                        key={opt.val}
-                                        value={opt.val}
-                                        title={opt.subLabel}
-                                        sx={{
-                                            "&.Mui-selected": {
-                                                bgcolor: `${opt.selectedBg} !important`,
-                                                color: `${opt.selectedText} !important`,
-                                                fontWeight: 800,
-                                            },
-                                        }}
-                                    >
-                                        {opt.label}
-                                    </ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
-                        </Box>
+                        <FactorFilterControl
+                            title={`Generality (汎用性) : ${minGenerality} 以上`}
+                            value={minGenerality}
+                            onChange={(val) => setMinGenerality(val as number)}
+                            options={GENERALITY_OPTIONS}
+                        />
                     </Box>
 
                     {/* Reset Filters Control */}

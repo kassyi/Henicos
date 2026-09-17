@@ -1,6 +1,6 @@
-export type TaskStatus = 'incomplete' | 'implemented' | 'tuned' | 'rejected';
+export type TaskStatus = 'incomplete' | 'planned' | 'implemented' | 'tuned' | 'rejected';
 
-export type ProgressFilter = 'incomplete' | 'implemented_plus' | 'tuned' | 'rejected' | 'all';
+export type ProgressFilter = 'incomplete' | 'planned' | 'implemented_plus' | 'tuned' | 'rejected' | 'all';
 
 export type DockPosition = 'bottom' | 'left' | 'right';
 
@@ -13,6 +13,7 @@ export interface TaskMetrics {
 
 export interface TaskDetails {
   csharp_example?: string;
+  cpp_example?: string;
   current_behavior?: string;
   target_cuda?: string;
   strategy?: string;
@@ -29,6 +30,8 @@ export interface RoadmapTask {
   metrics: TaskMetrics;
   details?: TaskDetails;
   files?: string[];
+  pr?: number[];
+  _searchableText?: string;
 }
 
 export interface ToastState {
@@ -41,7 +44,9 @@ export interface ToastState {
 
 export const DOMAIN_LABELS: Record<string, string> = {
   SYN: 'SYN (構文)',
-  GBI: 'GBI (GPU基盤)',
   GSH: 'GSH (トランスパイラ)',
   GEN: 'GEN (ジェネレータ基盤)',
+  GBI: 'GBI (GpuBigInteger)',
+  GBF: 'GBF (GpuBigFloat)',
+  BCL: 'BCL (基本クラスライブラリ)',
 };
