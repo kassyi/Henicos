@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Security.Cryptography;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -19,7 +14,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     public ITaskItem[] OutputDlls { get; set; } = [];
 
     private string[] _architectures = [];
-    private string? _vcvarsPath;
+    private readonly Dictionary<string, Dictionary<string, string>> _vcvarsEnvs = [];
 
     protected override ITaskItem[] GetSources() => CppSources;
     protected override void SetOutputItems(ITaskItem[] outputItems) => OutputDlls = outputItems;
@@ -27,14 +22,27 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     protected override bool OnBeforeExecute()
     {
         _architectures = GetTargetArchitectures();
-        _vcvarsPath = FindVcvarsall();
 
-        if (string.IsNullOrEmpty(_vcvarsPath))
+        foreach (var arch in _architectures)
         {
-            Log.LogError(
-                "Could not locate vcvarsall.bat via vswhere.exe. Please ensure MSVC C++ Build Tools are installed.");
-            return false;
+            var vcvarsArch = arch switch
+            {
+                "x64" => "x64",
+                "arm64" => "x64_arm64",
+                _ => "x64"
+            };
+            var env = GetVcvarsEnvironment(vcvarsArch);
+
+            if (env == null)
+            {
+                Log.LogError(
+                    $"Could not locate vcvarsall.bat via vswhere.exe for architecture {vcvarsArch}. Please ensure MSVC C++ Build Tools are installed.");
+                return false;
+            }
+
+            _vcvarsEnvs[vcvarsArch] = env;
         }
+
         return true;
     }
 
@@ -51,8 +59,13 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             var vcvarsArch = arch == "x64" ? "x64" : (arch == "arm64" ? "x64_arm64" : "x64");
 
             var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
+            
+            if (!Directory.Exists(OutputDirectory))
+            {
+                Directory.CreateDirectory(OutputDirectory);
+            }
 
-            if (!CompileWithMsvc(sourcePath, outputDllPath, _vcvarsPath!, vcvarsArch))
+            if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
             {
                 return null;
             }
@@ -78,82 +91,78 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         }
 
         // Determine current host architecture
-        var arch = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture;
-        return arch == System.Runtime.InteropServices.Architecture.Arm64 ? ["arm64"] : ["x64"];
+        var arch = RuntimeInformation.ProcessArchitecture;
+        return arch == Architecture.Arm64 ? ["arm64"] : ["x64"];
     }
 
-    private string? FindVcvarsall()
-    {
-        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-        var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
-
-        if (!File.Exists(vswhere))
-        {
-            return null;
-        }
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = vswhere,
-            Arguments =
-                "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(startInfo);
-        if (process == null)
-        {
-            return null;
-        }
-
-        var output = process.StandardOutput.ReadToEnd().Trim();
-        process.WaitForExit();
-
-        if (string.IsNullOrEmpty(output))
-        {
-            return null;
-        }
-
-        var vcvars = Path.Combine(output, "VC", "Auxiliary", "Build", "vcvarsall.bat");
-        return File.Exists(vcvars) ? vcvars : null;
-    }
-
-
-
-    private bool CompileWithMsvc(string sourcePath, string outputDllPath, string vcvarsPath, string vcvarsArch)
+    private bool CompileWithMsvc(string sourcePath, string outputDllPath, string vcvarsArch)
     {
         // /O2 = Optimize for speed
         // /LD = Create DLL
         // /Fe = Output file name
         // /nologo = Suppress copyright message
+        // /Zc:preprocessor = Fix CUDA 13.3+ fatal error C1189 with MSVC
+        // /std:c++17 = Fix CUDA 13.3+ libcu++ requirement
 
-        var clArgs = $"/O2 /LD /nologo \"{sourcePath}\" /Fe:\"{outputDllPath}\"";
-        var arguments = $"/c \"call \"{vcvarsPath}\" {vcvarsArch} >nul && cl.exe {clArgs}\"";
+        var clArgs = $"/O2 /LD /nologo /std:c++17 /Zc:preprocessor \"{sourcePath}\" /Fe:\"{outputDllPath}\"";
 
         Log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 
+        var clExePath = "cl.exe";
+        if (_vcvarsEnvs.TryGetValue(vcvarsArch, out var env))
+        {
+            if (env.TryGetValue("PATH", out var pathEnv))
+            {
+                foreach (var path in pathEnv.Split(Path.PathSeparator))
+                {
+                    var fullPath = Path.Combine(path, "cl.exe");
+                    if (File.Exists(fullPath))
+                    {
+                        clExePath = fullPath;
+                        break;
+                    }
+                }
+            }
+        }
+
         var startInfo = new ProcessStartInfo
         {
-            FileName = "cmd.exe",
-            Arguments = arguments,
+            FileName = clExePath,
+            Arguments = clArgs,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true
         };
 
+        if (env != null)
+        {
+            foreach (var kvp in env)
+            {
+                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
+            }
+        }
+
         using var process = Process.Start(startInfo);
         if (process == null)
         {
-            Log.LogError("Failed to start cmd.exe to invoke MSVC.");
+            Log.LogError("Failed to start cl.exe. Ensure MSVC is installed.");
             return false;
         }
 
+        var errorBuilder = new StringBuilder();
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+            {
+                errorBuilder.AppendLine(e.Data);
+            }
+        };
+        process.BeginErrorReadLine();
+
         var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
+        var error = errorBuilder.ToString();
 
         if (process.ExitCode == 0 && File.Exists(outputDllPath))
         {
@@ -188,6 +197,4 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
         return false;
     }
-
-
 }

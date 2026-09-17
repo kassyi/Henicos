@@ -163,7 +163,7 @@ public class GEN_34_VmObfuscationTests
             VmObfuscatorEmitter.EmitKeyDerivationVm(writer, methodSymbol, aesKey, seed: seed);
             
             // Expose public method to call the private one
-            writer.AppendLine("public static byte[] CallDeriveObfuscatedKey() => DeriveObfuscatedKey();");
+            writer.AppendLine($"public static byte[] CallDeriveObfuscatedKey() => DeriveObfuscatedKey_{methodSymbol.Name}();");
         }
 
         var sourceCode = writer.ToString();

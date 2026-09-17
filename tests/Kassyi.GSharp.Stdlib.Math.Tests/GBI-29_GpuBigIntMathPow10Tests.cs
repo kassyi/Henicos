@@ -23,7 +23,7 @@ public class GBI29_GpuBigIntMathPow10Tests
     [InlineData(1000)]
     public void Test_GBI29_Pow10_ReturnsCorrectResult(int exponent)
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
         using var context = new GpuContext(1024, engine);
 
@@ -41,7 +41,7 @@ public class GBI29_GpuBigIntMathPow10Tests
     [InlineData(int.MaxValue)]
     public void Test_GBI29_Pow10_InvalidExponent_ThrowsArgumentOutOfRangeException(int exponent)
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
         using var context = new GpuContext(1024, engine);
 

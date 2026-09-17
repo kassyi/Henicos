@@ -69,7 +69,7 @@ public static class SYN_49_SYN_68_InvocationAndIntrinsicsKernels
     {
         int tid = ThreadIndex.X;
 
-        // Double (System.Math) -> sin, cos, clamp, max, min, abs
+        // Double (System.Math) -> sin, cos, clamp, max, min, abs, exp, sqrt, log
         double dVal = doubleInputs[tid];
         doubleOutputs[0] = Math.Sin(dVal);
         doubleOutputs[1] = Math.Cos(dVal);
@@ -77,8 +77,11 @@ public static class SYN_49_SYN_68_InvocationAndIntrinsicsKernels
         doubleOutputs[3] = Math.Max(dVal, 5.0);
         doubleOutputs[4] = Math.Min(dVal, 5.0);
         doubleOutputs[5] = Math.Abs(dVal);
+        doubleOutputs[6] = Math.Exp(dVal);
+        doubleOutputs[7] = Math.Sqrt(Math.Abs(dVal)); // Ensure no domain error for general test
+        doubleOutputs[8] = Math.Log(Math.Abs(dVal) + 1.0); // Ensure no domain error
 
-        // Float (System.MathF) -> sinf, cosf, maxf, minf, absf; Math.Clamp for float
+        // Float (System.MathF) -> sinf, cosf, maxf, minf, absf, expf, sqrtf, logf; Math.Clamp for float
         float fVal = floatInputs[tid];
         floatOutputs[0] = MathF.Sin(fVal);
         floatOutputs[1] = MathF.Cos(fVal);
@@ -86,6 +89,9 @@ public static class SYN_49_SYN_68_InvocationAndIntrinsicsKernels
         floatOutputs[3] = MathF.Max(fVal, 5.0f);
         floatOutputs[4] = MathF.Min(fVal, 5.0f);
         floatOutputs[5] = MathF.Abs(fVal);
+        floatOutputs[6] = MathF.Exp(fVal);
+        floatOutputs[7] = MathF.Sqrt(MathF.Abs(fVal));
+        floatOutputs[8] = MathF.Log(MathF.Abs(fVal) + 1.0f);
     }
 
     // SYN-68 Edge Cases: NaN / Infinity / 境界値
@@ -101,11 +107,17 @@ public static class SYN_49_SYN_68_InvocationAndIntrinsicsKernels
         floatSpecialResults[0] = MathF.Abs(f);
         floatSpecialResults[1] = MathF.Max(f, 0.0f);
         floatSpecialResults[2] = MathF.Min(f, 0.0f);
+        floatSpecialResults[3] = MathF.Exp(f);
+        floatSpecialResults[4] = MathF.Sqrt(f);
+        floatSpecialResults[5] = MathF.Log(f);
 
         // Double NaN / Infinity / Extremes
         double d = doubleSpecialInputs[tid];
         doubleSpecialResults[0] = Math.Abs(d);
         doubleSpecialResults[1] = Math.Max(d, 0.0);
         doubleSpecialResults[2] = Math.Min(d, 0.0);
+        doubleSpecialResults[3] = Math.Exp(d);
+        doubleSpecialResults[4] = Math.Sqrt(d);
+        doubleSpecialResults[5] = Math.Log(d);
     }
 }

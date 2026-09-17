@@ -42,14 +42,14 @@ internal static class VmObfuscatorEmitter
 
         // 1. Opcode Shuffling
         var opcodes = new byte[250];
-        for (int i = 0; i < 250; i++)
+        for (var i = 0; i < 250; i++)
         {
             opcodes[i] = (byte)(i + 1);
         }
 
-        for (int i = opcodes.Length - 1; i > 0; i--)
+        for (var i = opcodes.Length - 1; i > 0; i--)
         {
-            int j = rng.Next(i + 1);
+            var j = rng.Next(i + 1);
             (opcodes[i], opcodes[j]) = (opcodes[j], opcodes[i]);
         }
 
@@ -58,7 +58,7 @@ internal static class VmObfuscatorEmitter
 
         writer.AppendLine(
             "[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining | System.Runtime.CompilerServices.MethodImplOptions.NoOptimization)]");
-        writer.AppendLine("private static byte[] DeriveObfuscatedKey()");
+        writer.AppendLine("private static byte[] DeriveObfuscatedKey_" + method.Name + "()");
         using (writer.Scope())
         {
             strategy.EmitBytecodeGeneration(writer, method, aesKey, rng, opcodes);
