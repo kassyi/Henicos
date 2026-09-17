@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useRoadmap } from "./useRoadmap";
+import { useRoadmap } from "../../src/hooks/useRoadmap";
 
 describe("useRoadmap hook", () => {
   beforeEach(() => {
@@ -180,5 +180,76 @@ describe("useRoadmap hook", () => {
     expect(copiedText).toContain("### 【SYN-01】Switch Expression Support");
     expect(copiedText).toContain("var x = a switch { 1 => 10, _ => 0 };");
   });
-});
+  it("filters tasks by search query ignoring case and spaces", async () => {
+    const mockData = [
+      {
+        id: "TEST-01",
+        title: "Hello World Task",
+        details: { notes: "Some notes" },
+        status: "incomplete",
+        metrics: { blocker: 1, difficulty: 1, generality: 1, score: 10 },
+      },
+      {
+        id: "TEST-02",
+        title: "Another Task",
+        status: "incomplete",
+        metrics: { blocker: 1, difficulty: 1, generality: 1, score: 10 },
+      },
+    ];
 
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const { result } = renderHook(() => useRoadmap());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    act(() => {
+      result.current.setSearchQuery("hello world"); // Should match TEST-01 ignoring space/case
+    });
+
+    expect(result.current.filteredTasks.length).toBe(1);
+    expect(result.current.filteredTasks[0].id).toBe("TEST-01");
+
+    act(() => {
+      result.current.setSearchQuery("test02"); // Should match TEST-02 (TEST-02 without hyphen)
+    });
+
+    expect(result.current.filteredTasks.length).toBe(1);
+    expect(result.current.filteredTasks[0].id).toBe("TEST-02");
+  });
+
+  it("updateTaskStatus correctly updates task status", async () => {
+    const mockData = [
+      {
+        id: "T1",
+        title: "Task 1",
+        status: "incomplete",
+        metrics: { blocker: 1, difficulty: 1, generality: 1, score: 10 },
+      },
+    ];
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockData,
+    });
+
+    const { result } = renderHook(() => useRoadmap());
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.tasks[0].status).toBe("incomplete");
+
+    act(() => {
+      result.current.updateTaskStatus("T1", "implemented");
+    });
+
+    expect(result.current.tasks[0].status).toBe("implemented");
+  });
+});
