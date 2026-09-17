@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Core;
 
 namespace Henicos.PiBenchmark;
 

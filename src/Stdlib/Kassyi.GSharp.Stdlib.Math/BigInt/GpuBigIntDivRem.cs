@@ -1,3 +1,4 @@
+using System.Buffers;
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
@@ -266,7 +267,7 @@ public static class GpuBigIntDivRem
     public static int GetActualBits(GpuUIntBigInteger gpuBigInt)
     {
         var n = gpuBigInt.NumWords;
-        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(n);
+        var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
             gpuBigInt.Context.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n);
@@ -291,7 +292,7 @@ public static class GpuBigIntDivRem
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+            ArrayPool<uint>.Shared.Return(hostData);
         }
     }
 
@@ -351,7 +352,7 @@ public static class GpuBigIntDivRem
         using var mod4N = new GpuUIntBigInteger(baseVal.Context, 4 * n);
         mod4N.CopyFrom(mod, numWords: n);
 
-        var hostExp = System.Buffers.ArrayPool<uint>.Shared.Rent(expWords);
+        var hostExp = ArrayPool<uint>.Shared.Rent(expWords);
         try
         {
             exp.Context.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords);
@@ -406,7 +407,7 @@ public static class GpuBigIntDivRem
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostExp);
+            ArrayPool<uint>.Shared.Return(hostExp);
         }
 
         resultBuffer.CopyFrom(tempResult, numWords: n);
@@ -431,7 +432,7 @@ public static class GpuBigIntDivRem
         var constant3Words = 3 * n + 2 * marginWords;
         using var constant3 = new GpuUIntBigInteger(targetOperand.Context, constant3Words);
         constant3.Clear();
-        var hostConstant3 = System.Buffers.ArrayPool<uint>.Shared.Rent(constant3Words);
+        var hostConstant3 = ArrayPool<uint>.Shared.Rent(constant3Words);
         try
         {
             Array.Clear(hostConstant3, 0, constant3Words);
@@ -442,7 +443,7 @@ public static class GpuBigIntDivRem
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostConstant3);
+            ArrayPool<uint>.Shared.Return(hostConstant3);
         }
 
         using var xSquared = new GpuUIntBigInteger(targetOperand.Context, 2 * n + 2 * marginWords);
@@ -498,7 +499,7 @@ public static class GpuBigIntDivRem
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
         var n = leftOperand.NumWords;
         var highestBit = -1;
-        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(n);
+        var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
             leftOperand.Context.Provider.CopyDeviceToHost(hostData, leftOperand.DevicePointer, n);
@@ -522,7 +523,7 @@ public static class GpuBigIntDivRem
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+            ArrayPool<uint>.Shared.Return(hostData);
         }
 
         if (highestBit == -1)
@@ -643,7 +644,7 @@ public static class GpuBigIntDivRem
         }
 
         var n = operand.NumWords;
-        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(n);
+        var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
             operand.Context.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n);
@@ -656,7 +657,7 @@ public static class GpuBigIntDivRem
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+            ArrayPool<uint>.Shared.Return(hostData);
         }
     }
 
@@ -721,7 +722,7 @@ public static class GpuBigIntDivRem
         }
 
         var numWords = resultBuffer.NumWords;
-        var xData = System.Buffers.ArrayPool<uint>.Shared.Rent(numWords);
+        var xData = ArrayPool<uint>.Shared.Rent(numWords);
         try
         {
             Array.Clear(xData, 0, numWords);
@@ -731,7 +732,7 @@ public static class GpuBigIntDivRem
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(xData);
+            ArrayPool<uint>.Shared.Return(xData);
         }
 
         return actualBits;
