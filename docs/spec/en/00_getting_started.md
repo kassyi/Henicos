@@ -26,9 +26,8 @@ namespace MyGpuApp;
 public static partial class MathKernels
 {
     // 1. Mark the method with [GpuKernel] to tell G# this runs on the GPU.
-    // 2. Use 'unsafe' and pointers to achieve Zero-Allocation memory access.
     [GpuKernel]
-    public static unsafe void AddVectors(float* a, float* b, float* result, int length)
+    public static void AddVectors(float[] a, float[] b, float[] result, int length)
     {
         // 3. Use the GridStrideLoop macro. 
         // You do NOT need to calculate thread indices manually!
@@ -49,7 +48,7 @@ If you are coming from a traditional CUDA C++ background, you might be wondering
 
 ```csharp
 [GpuKernel]
-public static unsafe void AddVectorsManual(float* a, float* b, float* result, int length)
+public static void AddVectorsManual(float[] a, float[] b, float[] result, int length)
 {
     // Direct equivalent to: int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
@@ -96,19 +95,17 @@ public class Program
 
         Console.WriteLine("Launching GPU Kernel...");
 
-        // 2. Pin the arrays in memory so the GPU can safely access them
-        // The transpiler automatically generates this 'Launch_AddVectors' wrapper!
+        // 2. The transpiler automatically generates this 'Launch_AddVectors' wrapper!
         MathKernels.Launch_AddVectors(
             a: arrayA,
             b: arrayB,
-            result: ref result[0],  // Pass by ref to avoid copying the entire array
-            successFlag: out bool success,
+            result: result,
             length: length,
             gridDimX: 256,          // Customize CUDA Grid dimensions here
             blockDimX: 256          // Customize CUDA Block dimensions here
         );
 
-        // 3. The GPU modifies the pinned memory directly.
+        // 3. The GPU modifies the memory directly.
         Console.WriteLine($"Result[0] = {result[0]}"); // Output: 3.0
     }
 }
@@ -119,33 +116,33 @@ public class Program
 
 ---
 
-## 0.3 The Magic of Kernel Return Values
+## 0.3 The Explicit Output Buffer Pattern
 
-Traditional CUDA kernels must return `void`. However, G# introduces a massive quality-of-life feature: **Kernels can return values!**
-
-If your kernel declares a return type (e.g., `float`), the G# Transpiler will automatically orchestrate the allocation of an array on the host, sized exactly to `Grid * Block` threads. Each thread will write its return value into its respective index in the array.
+Traditional CUDA kernels must return `void`. G# enforces this same contract. To return values from a kernel, you allocate an output buffer (array) on the host and pass it directly to the generated launcher.
 
 ```csharp
 [GpuKernel]
-public static unsafe float ComputeMagnitude(PhysicsVector* particles, int length)
+public static void ComputeMagnitude(PhysicsVector[] particles, float[] output, int length)
 {
     int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
     if (tid < length)
     {
         var p = particles[tid];
-        return MathF.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
+        output[tid] = MathF.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
     }
-    return 0;
 }
 ```
 
-On the host side, you simply call the `Launch_` method, and it returns a fully populated standard C# array!
+On the host side, you simply allocate the array and pass it to the `Launch_` method, and the GPU populates it directly!
 
 ```csharp
-// 1. The transpiler generates a Launch_ wrapper that returns float[]
-// 2. It auto-allocates a float[] exactly matching the total threads (100 * 256 = 25600)
-float[] magnitudes = MathKernels.Launch_ComputeMagnitude(
+// 1. Allocate an array exactly matching the total items to process
+float[] magnitudes = new float[25600];
+
+// 2. Pass the output array to the generated Launch_ wrapper
+MathKernels.Launch_ComputeMagnitude(
     particles: particlesArray,
+    output: magnitudes,
     length: 25600,
     gridDimX: 100,
     blockDimX: 256
@@ -153,7 +150,7 @@ float[] magnitudes = MathKernels.Launch_ComputeMagnitude(
 ```
 
 > [!WARNING]
-> **Diagnostic GSH0015**: Since returning a value automatically allocates an array using `new T[...]` under the hood, calling such a `Launch_` method inside a game loop (e.g., `Update()`) will cause GC allocations every frame. G# will emit a strict warning (`GSH0015`) if it detects this usage.
+> Ensure your output array is sized correctly for your calculation, and avoid reallocating it inside a hot game loop (e.g., `Update()`). Pre-allocate output buffers once to adhere to **Zero-Allocation** best practices.
 
 ---
 
