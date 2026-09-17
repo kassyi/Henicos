@@ -21,9 +21,9 @@ public class GpuKernelLoaderAotTests
     }
 
     [Fact]
-    [Trait("FeatureId", "RT-AOT")]
+    [Trait("FeatureId", "GEN-43")]
     [Trait("Category", "Runtime")]
-    public void Test_LoadAotKernel_ParallelContention()
+    public void Test_GEN43_LoadAotKernel_ParallelContention()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
 
