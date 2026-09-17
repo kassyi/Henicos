@@ -32,7 +32,7 @@
 
     <!-- Run nvcc via the custom task -->
     <CompileCudaToFatbinTask 
-        Condition="'@(_GSharpCudaSources)' != ''"
+        Condition="'@(_GSharpCudaSources)' != '' And '$(GSharpSkipCudaCompilation)' != 'true' And '$(GSHARP_TEST_NO_CUDA)' != '1'"
         CudaSources="@(_GSharpCudaSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" 
         TargetArchitectures="$(GSharpTargetArchitectures)" >
