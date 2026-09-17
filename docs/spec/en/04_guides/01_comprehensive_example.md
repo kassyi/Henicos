@@ -394,18 +394,18 @@ public static partial class ComprehensiveSpecKernel
                 PhysicsState* pState = &state;
                 // int stateSize = sizeof(PhysicsState); // GSH0003
 
-                pState->Buffer[0] = inlineVec[0];
-                (*pState).Buffer[1] = inlineVec[1];
+                state.Buffer[0] = inlineVec[0];
+                state.Buffer[1] = inlineVec[1];
 
                 ulong carry = 0;
-                uint sum = Gpu.AddWithCarry(pState->Buffer[0], pState->Buffer[1], ref carry);
+                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
 
                 long borrow = 0;
-                uint diff = Gpu.SubWithBorrow(sum, pState->Buffer[1], ref borrow);
+                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
 
                 if (sum > diff)
                 {
-                    pState->Flags = 1;
+                    state.Flags = 1;
                 }
             }
 
@@ -425,7 +425,7 @@ public static partial class ComprehensiveSpecKernel
             }
 
             // 11.5 Inline PTX
-            Intrinsics.InlinePtx("/* test ptx inline */");
+            Gpu.InlinePtx("/* test ptx inline */");
 
             // 12. Early return
             if (ty > 0)
@@ -649,15 +649,15 @@ inlineVec[1]=456;
 {
 DebugReduc_ComprehensiveSpecKernel_PhysicsState state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
 DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState = &state;
-pState.Buffer[0]=inlineVec[0];
-(*pState).Buffer[1]=inlineVec[1];
+state.Buffer[0]=inlineVec[0];
+state.Buffer[1]=inlineVec[1];
 unsigned long long carry = 0;
-unsigned int sum = __gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
+unsigned int sum = __gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
 long long borrow = 0;
-unsigned int diff = __gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
+unsigned int diff = __gsharp_sub_cc(sum,state.Buffer[1],&borrow);
 if(sum>diff)
 {
-pState.Flags=1;
+state.Flags=1;
 }
 }
 bool condition1 = tx>0;
