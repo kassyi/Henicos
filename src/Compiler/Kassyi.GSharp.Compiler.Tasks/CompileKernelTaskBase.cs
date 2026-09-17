@@ -1,4 +1,3 @@
-using Microsoft.Build.Framework;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -76,7 +75,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             return null;
         }
 
-        var vswhereStartInfo = new System.Diagnostics.ProcessStartInfo
+        var vswhereStartInfo = new ProcessStartInfo
         {
             FileName = vswhere,
             Arguments = "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath",
@@ -85,7 +84,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             CreateNoWindow = true
         };
 
-        using var vswhereProcess = System.Diagnostics.Process.Start(vswhereStartInfo);
+        using var vswhereProcess = Process.Start(vswhereStartInfo);
         if (vswhereProcess == null)
         {
             return null;
@@ -105,7 +104,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             return null;
         }
 
-        var envStartInfo = new System.Diagnostics.ProcessStartInfo
+        var envStartInfo = new ProcessStartInfo
         {
             FileName = "cmd.exe",
             Arguments = $"/c \"call \"{vcvarsPath}\" {vcvarsArch} >nul && set\"",
@@ -114,7 +113,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             CreateNoWindow = true
         };
 
-        using var envProcess = System.Diagnostics.Process.Start(envStartInfo);
+        using var envProcess = Process.Start(envStartInfo);
         if (envProcess == null)
         {
             return null;
