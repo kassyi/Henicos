@@ -1,4 +1,4 @@
-using System.Text;
+using System.Security.Cryptography;
 using Kassyi.GSharp.Compiler.Dialects;
 using Microsoft.CodeAnalysis.Text;
 
@@ -27,7 +27,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 }
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
-                bool emitSource = string.IsNullOrWhiteSpace(emitSrcStr) || string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
+                bool emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
+                                  string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
 
                 options.GlobalOptions.TryGetValue("build_property.IntermediateOutputPath", out var objPath);
                 options.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projDir);
@@ -35,6 +36,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 {
                     options.GlobalOptions.TryGetValue("build_property.ProjectDir", out projDir);
                 }
+
                 var intermediatePath = !string.IsNullOrWhiteSpace(objPath) && !string.IsNullOrWhiteSpace(projDir)
                     ? Path.Combine(projDir, objPath)
                     : null;
@@ -248,15 +250,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var attrData = method.GetAttributes().FirstOrDefault(a =>
             a.AttributeClass != null &&
             KnownAttributes.IsAttributeName(a.AttributeClass.Name, KnownAttributes.GpuKernel));
-        if (attrData != null)
+        if (attrData == null)
         {
-            foreach (var namedArg in attrData.NamedArguments)
+            return null;
+        }
+
+        foreach (var namedArg in attrData.NamedArguments)
+        {
+            if (namedArg is { Key: "EncryptionKeyProvider", Value.Value: string providerName } &&
+                !string.IsNullOrWhiteSpace(providerName))
             {
-                if (namedArg is { Key: "EncryptionKeyProvider", Value.Value: string providerName } &&
-                    !string.IsNullOrWhiteSpace(providerName))
-                {
-                    return providerName;
-                }
+                return providerName;
             }
         }
 
@@ -281,7 +285,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 // Fallback to hashing below
             }
 
-            using var sha = System.Security.Cryptography.SHA256.Create();
+            using var sha = SHA256.Create();
             return sha.ComputeHash(Encoding.UTF8.GetBytes(config.CustomEncryptionKey!));
         }
 
@@ -289,10 +293,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // Generating random numbers in a Roslyn Source Generator breaks determinism
         // and causes the MSBuild task (which encrypts the fatbin) to use a different key
         // than the generated C# wrapper code (which decrypts it at runtime), leading to CryptographicException.
-        using (var sha = System.Security.Cryptography.SHA256.Create())
+        using (var sha = SHA256.Create())
         {
-            var defaultKeyHash = sha.ComputeHash(Encoding.UTF8.GetBytes("GSharp_Default_VBO_Key_Fallback_" + config.TargetDialect));
-            System.Array.Copy(defaultKeyHash, aesKey, 32);
+            var defaultKeyHash =
+                sha.ComputeHash(Encoding.UTF8.GetBytes("GSharp_Default_VBO_Key_Fallback_" + config.TargetDialect));
+            Array.Copy(defaultKeyHash, aesKey, 32);
         }
 
         return aesKey;
