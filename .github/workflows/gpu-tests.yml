@@ -14,6 +14,8 @@ jobs:
   test-static-cloud:
     name: Run Static & Syntax Tests on Cloud
     runs-on: windows-latest
+    env:
+      GSHARP_TEST_NO_CUDA: "1"
     # Runs on all pushes and PRs safely because it is sandboxed in GitHub's cloud
 
     steps:

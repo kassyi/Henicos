@@ -36,7 +36,11 @@ public abstract class TranspilerTestBase
 
     protected VerifyTests.SettingsTask Verify(object? target, [System.Runtime.CompilerServices.CallerMemberName] string methodName = "")
     {
-        return VerifyXunit.Verifier.Verify(target).UseMethodName($"{methodName}_{DialectName}");
+        var prefixParts = methodName.Split('_');
+        var prefix = prefixParts.Length > 1 ? prefixParts[1] : "Test";
+        var hash10 = HashHelper.ComputeShortHash(methodName);
+        var snapshotName = $"Snap.{prefix}_{hash10}_{DialectName}";
+        return VerifyXunit.Verifier.Verify(target).UseFileName(snapshotName);
     }
 }
 

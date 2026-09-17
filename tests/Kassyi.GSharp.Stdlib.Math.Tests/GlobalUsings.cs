@@ -9,4 +9,5 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Kassyi.GSharp.Runtime.Jit;
 global using Kassyi.GSharp.Stdlib.Math.BigInt;
+global using Kassyi.GSharp.Stdlib.Math.Tests;
 global using Xunit;

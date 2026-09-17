@@ -83,9 +83,9 @@ public class SYN_64_69_NumericsAndHwMathTests
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         double[] doubleInputs = [dVal];
-        double[] doubleOutputs = new double[6];
+        double[] doubleOutputs = new double[9];
         float[] floatInputs = [fVal];
-        float[] floatOutputs = new float[6];
+        float[] floatOutputs = new float[9];
 
         SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
             doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 1);
@@ -97,6 +97,9 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Equal(Math.Max(dVal, 5.0), doubleOutputs[3]);
         Assert.Equal(Math.Min(dVal, 5.0), doubleOutputs[4]);
         Assert.Equal(Math.Abs(dVal), doubleOutputs[5]);
+        Assert.Equal(Math.Exp(dVal), doubleOutputs[6], precision: 5);
+        Assert.Equal(Math.Sqrt(Math.Abs(dVal)), doubleOutputs[7], precision: 5);
+        Assert.Equal(Math.Log(Math.Abs(dVal) + 1.0), doubleOutputs[8], precision: 5);
 
         // Float assertions
         Assert.Equal(MathF.Sin(fVal), floatOutputs[0], precision: 4);
@@ -105,6 +108,9 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Equal(MathF.Max(fVal, 5.0f), floatOutputs[3]);
         Assert.Equal(MathF.Min(fVal, 5.0f), floatOutputs[4]);
         Assert.Equal(MathF.Abs(fVal), floatOutputs[5]);
+        Assert.Equal(MathF.Exp(fVal), floatOutputs[6], precision: 1);
+        Assert.Equal(MathF.Sqrt(MathF.Abs(fVal)), floatOutputs[7], precision: 4);
+        Assert.Equal(MathF.Log(MathF.Abs(fVal) + 1.0f), floatOutputs[8], precision: 4);
     }
 
         [SkippableTheory]
@@ -121,9 +127,9 @@ public class SYN_64_69_NumericsAndHwMathTests
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         float[] floatInputs = [fInput];
-        float[] floatResults = new float[3];
+        float[] floatResults = new float[6];
         double[] doubleInputs = [dInput];
-        double[] doubleResults = new double[3];
+        double[] doubleResults = new double[6];
 
         SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathEdgeCasesKernel(
             floatInputs, floatResults, doubleInputs, doubleResults, blockDimX: 1);
@@ -133,12 +139,18 @@ public class SYN_64_69_NumericsAndHwMathTests
             Assert.True(float.IsNaN(floatResults[0])); // Abs(NaN) is NaN
             Assert.Equal(0.0f, floatResults[1]); // fmaxf(NaN, 0) is 0
             Assert.Equal(0.0f, floatResults[2]); // fminf(NaN, 0) is 0
+            Assert.True(float.IsNaN(floatResults[3]));
+            Assert.True(float.IsNaN(floatResults[4]));
+            Assert.True(float.IsNaN(floatResults[5]));
         }
         else
         {
             Assert.Equal(MathF.Abs(fInput), floatResults[0]);
             Assert.Equal(MathF.Max(fInput, 0.0f), floatResults[1]);
             Assert.Equal(MathF.Min(fInput, 0.0f), floatResults[2]);
+            Assert.Equal(MathF.Exp(fInput), floatResults[3]);
+            Assert.Equal(MathF.Sqrt(fInput), floatResults[4]);
+            Assert.Equal(MathF.Log(fInput), floatResults[5]);
         }
 
         if (double.IsNaN(dInput))
@@ -146,21 +158,27 @@ public class SYN_64_69_NumericsAndHwMathTests
             Assert.True(double.IsNaN(doubleResults[0])); // Abs(NaN) is NaN
             Assert.Equal(0.0, doubleResults[1]); // fmax(NaN, 0) is 0
             Assert.Equal(0.0, doubleResults[2]); // fmin(NaN, 0) is 0
+            Assert.True(double.IsNaN(doubleResults[3]));
+            Assert.True(double.IsNaN(doubleResults[4]));
+            Assert.True(double.IsNaN(doubleResults[5]));
         }
         else
         {
             Assert.Equal(Math.Abs(dInput), doubleResults[0]);
             Assert.Equal(Math.Max(dInput, 0.0), doubleResults[1]);
             Assert.Equal(Math.Min(dInput, 0.0), doubleResults[2]);
+            Assert.Equal(Math.Exp(dInput), doubleResults[3]);
+            Assert.Equal(Math.Sqrt(dInput), doubleResults[4]);
+            Assert.Equal(Math.Log(dInput), doubleResults[5]);
         }
     }
 
-        [SkippableFact]
+    [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "SYN-68")]
     public void Test_SYN68_MathAndMathF_EmptyArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         double[] doubleInputs = [];
         double[] doubleOutputs = [];
         float[] floatInputs = [];
