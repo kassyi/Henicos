@@ -33,6 +33,9 @@ ComputeInt(a, b, __gsharp_auto_result);
 }
 ";
 public static readonly string ComputeInt_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ComputeInt_Source;
+private static byte[]? s_decryptionKey_ComputeInt;
+private static byte[]? s_binaryData_ComputeInt;
+private static bool s_isLoaded_ComputeInt;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ComputeInt_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32 b, global::System.Int32* __gsharp_auto_result);
@@ -41,8 +44,12 @@ public static unsafe global::System.Int32[] Launch_ComputeInt(global::System.Int
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"AutoAllocateReturnTest_ComputeInt{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComputeInt_Delegate>("__gsharp_launch_ComputeInt", dllPath, decryptionKey);
+if (!s_isLoaded_ComputeInt)
+{
+s_decryptionKey_ComputeInt = null;
+s_isLoaded_ComputeInt = true;
+}
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComputeInt_Delegate>("__gsharp_launch_ComputeInt", dllPath, s_decryptionKey_ComputeInt);
 uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 fixed (global::System.Int32* p___gsharp_auto_result = __gsharp_auto_result)
@@ -92,6 +99,9 @@ ComputeMag(a, __gsharp_auto_result);
 }
 ";
 public static readonly string ComputeMag_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ComputeMag_Source;
+private static byte[]? s_decryptionKey_ComputeMag;
+private static byte[]? s_binaryData_ComputeMag;
+private static bool s_isLoaded_ComputeMag;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ComputeMag_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* a, global::System.Single* __gsharp_auto_result);
@@ -100,8 +110,12 @@ public static unsafe global::System.Single[] Launch_ComputeMag(global::System.Si
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"AutoAllocateReturnTest_ComputeMag{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComputeMag_Delegate>("__gsharp_launch_ComputeMag", dllPath, decryptionKey);
+if (!s_isLoaded_ComputeMag)
+{
+s_decryptionKey_ComputeMag = null;
+s_isLoaded_ComputeMag = true;
+}
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComputeMag_Delegate>("__gsharp_launch_ComputeMag", dllPath, s_decryptionKey_ComputeMag);
 uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 fixed (global::System.Single* p___gsharp_auto_result = __gsharp_auto_result)

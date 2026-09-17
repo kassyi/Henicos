@@ -62,14 +62,14 @@ outVal = default;
 if (arrayVal.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_AllocationTestKernel)
 {
 s_decryptionKey_AllocationTestKernel = null;
 s_isLoaded_AllocationTestKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath, s_decryptionKey_AllocationTestKernel);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_ioVal = &ioVal)

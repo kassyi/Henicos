@@ -70,14 +70,14 @@ public static unsafe void Launch_ReductionKernel(global::System.Single[] input, 
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"ReductionKernels_ReductionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ReductionKernel)
 {
 s_decryptionKey_ReductionKernel = null;
 s_isLoaded_ReductionKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"ReductionKernels_ReductionKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernel", dllPath, s_decryptionKey_ReductionKernel);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)

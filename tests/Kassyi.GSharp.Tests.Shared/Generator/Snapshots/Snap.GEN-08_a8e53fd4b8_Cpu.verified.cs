@@ -56,9 +56,6 @@ ComplexSignatureKernel(scalarRef, scalarOut, arrayVal, structRef, constantVal);
 }
 ";
 public static readonly string ComplexSignatureKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ComplexSignatureKernel_Source;
-private static byte[]? s_decryptionKey_ComplexSignatureKernel;
-private static byte[]? s_binaryData_ComplexSignatureKernel;
-private static bool s_isLoaded_ComplexSignatureKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -79,6 +76,9 @@ host.A = native.A;
 host.B = native.B;
 }
 #pragma warning restore CS8500
+private static byte[]? s_decryptionKey_ComplexSignatureKernel;
+private static byte[]? s_binaryData_ComplexSignatureKernel;
+private static bool s_isLoaded_ComplexSignatureKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ComplexSignatureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* scalarRef, global::System.Single* scalarOut, global::System.Int32* arrayVal, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* structRef);
@@ -88,14 +88,14 @@ scalarOut = default;
 if (arrayVal.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ComplexSignatureKernel)
 {
 s_decryptionKey_ComplexSignatureKernel = null;
 s_isLoaded_ComplexSignatureKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", dllPath, s_decryptionKey_ComplexSignatureKernel);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_scalarRef = &scalarRef)

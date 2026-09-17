@@ -48,14 +48,14 @@ public static unsafe void Launch_Vector2AddKernel(global::System.Numerics.Vector
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_18_VectorBuiltinKernels_Vector2AddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Vector2AddKernel)
 {
 s_decryptionKey_Vector2AddKernel = null;
 s_isLoaded_Vector2AddKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_18_VectorBuiltinKernels_Vector2AddKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", dllPath, s_decryptionKey_Vector2AddKernel);
 fixed (global::System.Numerics.Vector2* p_a = a)
 fixed (global::System.Numerics.Vector2* p_b = b)
@@ -119,14 +119,14 @@ public static unsafe void Launch_Vector3AddKernel(global::System.Numerics.Vector
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_18_VectorBuiltinKernels_Vector3AddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Vector3AddKernel)
 {
 s_decryptionKey_Vector3AddKernel = null;
 s_isLoaded_Vector3AddKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_18_VectorBuiltinKernels_Vector3AddKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_Vector3AddKernel", dllPath, s_decryptionKey_Vector3AddKernel);
 fixed (global::System.Numerics.Vector3* p_a = a)
 fixed (global::System.Numerics.Vector3* p_b = b)
@@ -190,14 +190,14 @@ public static unsafe void Launch_Vector4AddKernel(global::System.Numerics.Vector
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_18_VectorBuiltinKernels_Vector4AddKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Vector4AddKernel)
 {
 s_decryptionKey_Vector4AddKernel = null;
 s_isLoaded_Vector4AddKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_18_VectorBuiltinKernels_Vector4AddKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_Vector4AddKernel", dllPath, s_decryptionKey_Vector4AddKernel);
 fixed (global::System.Numerics.Vector4* p_a = a)
 fixed (global::System.Numerics.Vector4* p_b = b)

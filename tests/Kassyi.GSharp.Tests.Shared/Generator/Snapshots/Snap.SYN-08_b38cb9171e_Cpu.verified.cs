@@ -58,14 +58,14 @@ public static unsafe void Launch_ImmediatelyEvaluatedLambdaKernel(global::System
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ImmediatelyEvaluatedLambdaKernel)
 {
 s_decryptionKey_ImmediatelyEvaluatedLambdaKernel = null;
 s_isLoaded_ImmediatelyEvaluatedLambdaKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", dllPath, s_decryptionKey_ImmediatelyEvaluatedLambdaKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -126,14 +126,14 @@ public static unsafe void Launch_NonCapturingLambdaKernel(global::System.Int32[]
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_NonCapturingLambdaKernel)
 {
 s_decryptionKey_NonCapturingLambdaKernel = null;
 s_isLoaded_NonCapturingLambdaKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", dllPath, s_decryptionKey_NonCapturingLambdaKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -195,14 +195,14 @@ public static unsafe void Launch_ShadowedVariableCaptureKernel(global::System.In
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ShadowedVariableCaptureKernel)
 {
 s_decryptionKey_ShadowedVariableCaptureKernel = null;
 s_isLoaded_ShadowedVariableCaptureKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", dllPath, s_decryptionKey_ShadowedVariableCaptureKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -263,14 +263,14 @@ public static unsafe void Launch_ValueCapturingLambdaKernel(global::System.Int32
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ValueCapturingLambdaKernel)
 {
 s_decryptionKey_ValueCapturingLambdaKernel = null;
 s_isLoaded_ValueCapturingLambdaKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", dllPath, s_decryptionKey_ValueCapturingLambdaKernel);
 fixed (global::System.Int32* p_data = data)
 {

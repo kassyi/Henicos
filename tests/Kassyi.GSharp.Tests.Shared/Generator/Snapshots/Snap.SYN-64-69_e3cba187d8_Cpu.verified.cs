@@ -66,14 +66,14 @@ public static unsafe void Launch_BitOperationsTestKernel(global::System.UInt32[]
 if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_BitOperationsTestKernel)
 {
 s_decryptionKey_BitOperationsTestKernel = null;
 s_isLoaded_BitOperationsTestKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", dllPath, s_decryptionKey_BitOperationsTestKernel);
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)

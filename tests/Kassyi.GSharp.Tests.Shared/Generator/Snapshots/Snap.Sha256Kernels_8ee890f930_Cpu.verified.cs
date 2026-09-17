@@ -137,14 +137,14 @@ public static unsafe void Launch_Sha256Kernel(global::System.Byte[] input, globa
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"Sha256Kernels_Sha256Kernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Sha256Kernel)
 {
 s_decryptionKey_Sha256Kernel = null;
 s_isLoaded_Sha256Kernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"Sha256Kernels_Sha256Kernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Sha256Kernel_Delegate>("__gsharp_launch_Sha256Kernel", dllPath, s_decryptionKey_Sha256Kernel);
 fixed (global::System.Byte* p_input = input)
 fixed (global::System.UInt32* p_output = output)
