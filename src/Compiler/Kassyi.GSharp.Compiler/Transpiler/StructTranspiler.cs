@@ -203,7 +203,24 @@ internal static class StructTranspiler
 
     private static void WriteStandardStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
+        int? packValue = null;
+        var structLayoutAttr = structSym.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Runtime.InteropServices.StructLayoutAttribute");
+        if (structLayoutAttr != null)
+        {
+            var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;
+            if (!packArg.IsNull && packArg.Value is int p && p > 0)
+            {
+                packValue = p;
+            }
+        }
+
+        if (packValue.HasValue)
+        {
+            context.Writer.AppendLine($"#pragma pack(push, {packValue.Value})");
+        }
+
         WriteStructHeader(ref context, structSym);
+
         using (context.Writer.Scope())
         {
             foreach (var member in structSym.GetMembers())
@@ -224,6 +241,11 @@ internal static class StructTranspiler
         }
 
         WriteStructFooter(ref context);
+
+        if (packValue.HasValue)
+        {
+            context.Writer.AppendLine("#pragma pack(pop)");
+        }
     }
 
     public static void WriteTemplatePrefix(ref TranspileContext context, INamedTypeSymbol structSym)

@@ -13,7 +13,8 @@ namespace Kassyi.GSharp.Tests.Core
 {
 public static partial class GEN_33_StructLayoutKernelsWrapper
 {
-public const string ModifyStructLayoutKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
+public const string ModifyStructLayoutKernel_Source = @"#pragma pack(push, 1)
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
 struct Kassyi_GSharp_Tests_Core_CustomLayoutStruct
 {
@@ -23,6 +24,7 @@ float C;
 }
 ;
 #endif
+#pragma pack(pop)
 extern ""C"" __declspec(dllexport) void ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Core_CustomLayoutStruct* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=10;
