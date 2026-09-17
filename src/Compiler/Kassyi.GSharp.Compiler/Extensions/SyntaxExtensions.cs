@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-
 namespace Kassyi.GSharp.Compiler.Extensions;
 
 internal static class SyntaxExtensions
@@ -18,6 +15,7 @@ internal static class SyntaxExtensions
                 return true;
             }
         }
+
         return false;
     }
 
@@ -34,6 +32,7 @@ internal static class SyntaxExtensions
                 return true;
             }
         }
+
         return false;
     }
 }

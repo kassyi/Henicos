@@ -100,6 +100,13 @@ inline void __syncthreads() {}
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }
 
+// Warp primitives polyfill (Single-thread dummy execution)
+inline unsigned __activemask() { return 0xFFFFFFFF; }
+template <typename T> inline T __shfl_sync(unsigned mask, T var, int srcLane, int width=32) { return var; }
+template <typename T> inline T __shfl_up_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
+template <typename T> inline T __shfl_down_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
+template <typename T> inline T __shfl_xor_sync(unsigned mask, T var, int laneMask, int width=32) { return var; }
+
 __forceinline__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }

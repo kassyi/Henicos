@@ -1,5 +1,5 @@
 using Kassyi.GSharp.Core;
-
+using System.Runtime.InteropServices;
 namespace Kassyi.GSharp.Tests.GeneratorTestCode;
 
 public struct ChildStruct
@@ -20,6 +20,13 @@ public struct StructWithArrayOfStructs
     public int Count;
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
+public struct PackedShadowStruct
+{
+    public float[] Data;
+    public byte Flag;
+}
+
 public static class GEN_33_TestKernels
 {
     [GpuKernel]
@@ -31,6 +38,12 @@ public static class GEN_33_TestKernels
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
     public static void KernelWithStructArray(StructWithArrayOfStructs container)
+    {
+    }
+
+    [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
+    public static void KernelWithPackedShadowStruct(PackedShadowStruct data)
     {
     }
 }

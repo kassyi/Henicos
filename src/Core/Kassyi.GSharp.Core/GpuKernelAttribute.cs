@@ -18,6 +18,16 @@ public class GpuKernelAttribute : Attribute
     {
         get; set;
     }
+
+    /// <summary>
+    /// Gets or sets the name of a static method that provides the AES decryption key for AOT kernels.
+    /// If left null, a Virtualization-Based Obfuscation (VBO) VM will automatically derive the key at runtime.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+    public string? EncryptionKeyProvider
+    {
+        get; set;
+    }
 }
 
 /// <summary>
@@ -30,11 +40,13 @@ public class GpuDeviceFunctionAttribute : Attribute;
 /// <summary>
 /// Requests force-inlining (<c>__forceinline__</c>) of the annotated device function in the transpiled CUDA C++ code.
 /// </summary>
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class GpuInlineAttribute : Attribute;
 
 /// <summary>
 /// Prevents inlining (<c>__noinline__</c>) of the annotated device function in the transpiled CUDA C++ code.
 /// </summary>
+// ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class GpuNoInlineAttribute : Attribute;
