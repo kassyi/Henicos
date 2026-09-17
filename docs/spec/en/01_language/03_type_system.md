@@ -54,7 +54,9 @@ Point p = new Point(0, 0); // record struct / Primary Constructor
 *Note: The transpiler converts constructor arguments (like `new Point(0, 0)`) into C++ brace initialization (`Point{0, 0}`). For C# Object Initializers (e.g., `new() { X = 1 }`), the transpiler emits an Immediately Invoked Function Expression (IIFE) using a C++ lambda (e.g., `[&]() { Point _tmp; _tmp.X = 1; return _tmp; }()`) to safely execute arbitrary member assignments in C++ without requiring explicit constructors.*
 
 ### 2.2.4 P/Invoke and Layout Compatibility (`__Native_Struct`)
-G# generates structurally compatible C++ definitions for C# custom structs. To ensure exact binary layout compatibility during memory transfers (marshaling) and P/Invoke boundary crossings, the generator natively aligns with C#'s `[StructLayout]` configurations (e.g., Sequential or Explicit). The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
+G# generates structurally compatible C++ definitions for C# custom structs. To ensure exact binary layout compatibility during memory transfers (marshaling) and P/Invoke boundary crossings, the generator natively aligns with C#'s `[StructLayout]` configurations (e.g., Sequential or Explicit).
+* **Explicit Packing**: If a `Pack = X` property is defined on `[StructLayout]`, the transpiler translates this accurately into `#pragma pack(push, X)` and `#pragma pack(pop)` blocks surrounding the C++ struct.
+* **Alignment Guarantees**: The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
 
 ## 2.3 Memory Model and Pointers
 
@@ -107,7 +109,13 @@ The following C# memory operations are strictly prohibited within a G# kernel:
 
 All dynamic heap memory allocations (`new`) must occur strictly on the host (CPU) before the kernel is launched. The generated launcher stubs automatically handle the marshaling of these host arrays to device pointers.
 
-## 2.4 Constants (`const`)
+## 2.5 Local Initialization and `[SkipLocalsInit]`
+
+By default, standard C# variables are expected to be initialized. 
+However, for high-performance GPU kernels, unnecessary zero-initialization of large structs or buffers can waste registers and instructions.
+When a kernel method or module is annotated with `[SkipLocalsInit]`, the transpiler explicitly optimizes away the output of `default` or parameterless `new()` assignment code (e.g., `= ...;`). The local variables are emitted as uninitialized declarations in C++, matching the performance characteristics of raw C++ while relying on the compiler for optimal register allocation.
+
+## 2.6 Constants (`const`)
 
 G# fully supports the use of `const` fields and local variables. The AST transpiler resolves C# constants at compile time and emits them as hardcoded literals in the resulting CUDA C++ code.
 

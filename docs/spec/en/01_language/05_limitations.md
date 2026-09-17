@@ -11,7 +11,7 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Object Instantiation (`new`)** | Lack of a managed heap and garbage collector on the GPU. (Note: Stack-allocated `struct` instantiation, `SharedMemory<T>`, `stackalloc` implicit arrays, and C# 12 Collection Expressions `[]` are exceptions and fully supported). |
 | **Strings (`string`)** | Strings are managed reference types. Fixed-size character arrays must be used instead, though not natively supported yet. |
 | **LINQ (`System.Linq`)** | Relies heavily on delegates, iterators, and dynamic allocations. (Enforced by **GSH0008**) |
-| **`foreach` Loops** | Implicitly allocates `IEnumerator` instances on the managed heap, which is incompatible with GPU memory execution. (Enforced by **GSH0007**) |
+| **`foreach` Loops** | Implicitly allocates `IEnumerator` instances on the managed heap, which is generally incompatible with GPU memory execution. However, iterating over `Span<T>`, `ReadOnlySpan<T>`, `InlineArray`, or fixed arrays does NOT allocate and is explicitly supported. (Enforced by **GSH0007**) |
 | **Virtual Methods / Interfaces** | Dynamic dispatch (v-tables) is unsupported in the current AOT transpiler. |
 | **Exceptions (`throw`, `try-catch`)** | Exception unwinding is not supported in CUDA device code. |
 | **Recursion** | Heavily restricted due to the highly limited thread stack size (typically a few kilobytes per thread) on GPUs. |
@@ -52,10 +52,15 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | **GSH0001** | Error | Object creation not supported | Triggered when `new` or `new()` is used on anything other than `SharedMemory<T>` or unmanaged `struct` types. |
 | **GSH0002** | Error | String usage not supported | Triggered when the `string` keyword is used. |
 | **GSH0003** | Error | Unsupported syntax | Triggered when unknown/unsupported C# syntax nodes are encountered. |
-| **GSH0004** | Error | GpuKernel unsupported return type | Triggered when a `[GpuKernel]` method declares a return type that cannot be auto-allocated (e.g. references). Value types and structs are allowed. |
-| **GSH0013** | Warning | Excessive static shared memory | Triggered when a static `SharedMemory<T>` allocation exceeds 32,768 bytes, which can reduce warp occupancy. |
-| **GSH0014** | Warning | Large struct passed by value | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by array pointer or `ref` to conserve constant memory. |
+| **GSH0004** | Error | GpuKernel unsupported return type | Triggered when a `[GpuKernel]` method declares a return type other than `void`. Output buffers must be passed via explicit array pointers. |
 | **GSH0005** | Error | GpuBigIntExpr Direct Assignment | Triggered when a `GpuBigIntExpr` (from lazy evaluation operators) is assigned to a local variable (`var x = a + b;`) without being resolved into `.Value`. Prevents silent "computation lost" bugs. |
-| **GSH0007** | Error | `foreach` loop not supported | Triggered when a `foreach` loop is used. Prevents implicit `IEnumerator` allocation on the GPU heap. |
+| **GSH0006** | Error | InlinePtx non-constant argument | Triggered when `Gpu.InlinePtx` receives a dynamic string instead of a compile-time string literal. |
+| **GSH0007** | Error | `foreach` loop not supported | Triggered when a `foreach` loop is used on a type that allocates an `IEnumerator`. Spans and Arrays are safely excluded. |
 | **GSH0008** | Error | LINQ syntax not supported | Triggered when LINQ query syntax or methods are used. |
+| **GSH0009** | Error | Implicit var requires explicit literal suffix | Triggered when `var` is initialized with an untyped bare literal (e.g., `var x = 0;`), which can cause C++ `auto` type inference bugs. |
+| **GSH0010** | Error | GSharp Prelude missing | Triggered when the AOT transpiler fails to locate the necessary C++ runtime prelude headers. |
+| **GSH0011** | Error | Macro lambda requires a parameter | Triggered when a `[GpuOperatorMacro]` lambda mapping does not declare expected parameters. |
+| **GSH0012** | Error | Macro arguments must be compile-time constants | Triggered when a macro argument cannot be folded into a constant value during transpilation. |
+| **GSH1001** | Warning | Excessive static shared memory | Triggered when a static `SharedMemory<T>` allocation exceeds 32,768 bytes, which can reduce warp occupancy. |
+| **GSH1002** | Warning | Large struct passed by value | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by array pointer or `ref` to conserve constant memory. |
 

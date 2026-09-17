@@ -15,7 +15,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). |
 | `switch` expression | Yes | Lambda (IIFE) | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
-| `return` | Yes | `return` | Kernels (`[GpuKernel]`) can return value types, which are automatically allocated as arrays by the host launcher. Helpers (`[GpuDeviceFunction]`) can also return values. |
+| `return` | Yes | `return` | Kernels (`[GpuKernel]`) must return `void` to enforce zero-allocation output buffer contracts (enforced by **GSH0004**). Helpers (`[GpuDeviceFunction]`) can return value types. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
 | Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
 | `goto` | No | - | Strictly prohibited to ensure static analyzability and structured control flow. |
@@ -34,7 +34,8 @@ Variables in G# are strictly translated to native C++ variables.
 * **Tuple Swaps / Assignments:** Supported for simple tuple swaps `(a, b) = (b, a)` via generated C++ IIFE (Immediately Invoked Lambda Expressions). Full C# tuple deconstruction into managed types remains unsupported.
 * **Target-Typed `new()`:** Fully supported. The transpiler infers the correct structural type instantiation.
 * **Heap Allocation (`new Class()`):** Prohibited. All local variables must be primitive types or value types (`struct`), which are allocated in GPU registers or local memory.
-* **Arrays (`T[]`) and Collections:** Explicit local instantiation on the managed heap (`new int[10]`) is prohibited. However, implicit stack arrays (`stackalloc[]`) and C# 12 collection expressions (`[]`) are fully supported and optimized into C++ local stack arrays. Heap-backed arrays must be passed in as arguments.
+* **Arrays (`T[]`) and Collections:** Explicit local instantiation on the managed heap (`new int[10]`) is prohibited. Implicit stack arrays (`stackalloc[]`) and C# 12 collection expressions (`[]`) are fully supported and optimized into C++ local stack arrays. However, **zero-length arrays** (e.g., `stackalloc int[0]`) are explicitly unsupported due to C++ compilation constraints.
+* **Array `.Length` Property:** The `.Length` property of local constant-sized arrays (or `[InlineArray]`) is aggressively optimized; it is folded into a compile-time constant or evaluated as `.size()` without generating runtime field accesses.
 * **Default Literal (`default`):** Fully supported. Transpiles to zero-initialization or C++ default constructors (e.g., `{}`).
 * **Extension Methods:** Supported. Invocation via `this` arguments (e.g., `obj.Method()`) correctly transpiles to standard static C++ function calls.
 
@@ -46,8 +47,8 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 * **Bitwise:** `&`, `|`, `^`, `~`, `<<`, `>>`
 * **Logical:** `&&`, `||`, `!` (Short-circuit evaluation is fully supported)
 * **Relational:** `==`, `!=`, `<`, `>`, `<=`, `>=`
-* **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`, plus Tuple Swap `(a, b) = (b, a)`
-* **Ternary Conditional:** `? :`
+* **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`. Tuple Swaps `(a, b) = (b, a)` are safely lowered into Immediately Invoked Function Expressions (IIFE) using temporary variables to prevent destructive assignments.
+* **Ternary Conditional & Null-Coalescing:** `? :`, `??`, `??=`. Null-coalescing operators are fully supported and lowered into C++ IIFE closures (e.g., `[&]() { auto tmp = ...; return tmp.HasValue ? tmp.Value : ...; }()`).
 * **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.
 
