@@ -86,6 +86,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         args.Append("--fatbin ");
         args.Append("-std=c++17 ");
         args.Append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING ");
+        args.Append("-Xcompiler \"/wd4819\" ");
         foreach (var arch in architectures)
         {
             var parts = arch.Split(',');
