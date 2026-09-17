@@ -63,7 +63,7 @@ internal static class MarshalingEmitter
         if (structLayoutAttr != null)
         {
             var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;
-            if (!packArg.IsNull && packArg.Value is int p && p > 0)
+            if (packArg is { IsNull: false, Value: int p and > 0 })
             {
                 packValue = p;
             }
@@ -342,11 +342,7 @@ internal static class MarshalingEmitter
 
     internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        var nonJitParamCount = 0;
-        foreach (var p in method.Parameters)
-        {
-            nonJitParamCount++;
-        }
+        var nonJitParamCount = method.Parameters.Length;
 
         writer.Append("void** kernelParams = stackalloc void*[");
         writer.Append(nonJitParamCount.ToString());
