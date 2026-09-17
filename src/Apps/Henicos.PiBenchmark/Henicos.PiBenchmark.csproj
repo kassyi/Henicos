@@ -9,9 +9,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GSharpTargetDialect>Cpu</GSharpTargetDialect>
+    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
     <GSharpEmitSource>true</GSharpEmitSource>
-    <DefineConstants>GSHARP_CPU</DefineConstants>
+    <DefineConstants>GSHARP_CUDA</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
+    <_GSharpCudaSources Include="ComputeBenchmarks\Native\*.cu" />
   </ItemGroup>
 
   <Import Project="..\..\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
