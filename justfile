@@ -42,8 +42,13 @@ test-alignment *args="":
     dotnet test --filter "Category=Alignment" {{args}}
 
 
-run-bench:
-    dotnet run --project src/Henicos -c Release -- bench
+# Run compute benchmarks (sgemm, sha256, bs, reduce, all)
+run-bench suite="all" *args="":
+    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- compute-bench {{suite}} {{args}}
+
+# Alias for run-bench
+bench suite="all" *args="":
+    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- compute-bench {{suite}} {{args}}
 
 update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy

@@ -27,6 +27,9 @@ import {
 import { DOMAIN_LABELS } from '../types';
 import type { RoadmapTask, TaskStatus, DockPosition } from '../types';
 import { CsCodeHighlighter } from './CsCodeHighlighter';
+import { TaskStatusSelector } from './TaskStatusSelector';
+import { TaskMetricsDisplay } from './TaskMetricsDisplay';
+import { TaskNotesEditor } from './TaskNotesEditor';
 
 interface TaskDetailPanelProps {
   task: RoadmapTask | null;
@@ -40,6 +43,7 @@ interface TaskDetailPanelProps {
 
 const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: string; border: string }[] = [
   { val: 'incomplete', label: '未完', color: '#9e9e9e', bg: 'rgba(255, 255, 255, 0.04)', border: 'rgba(255, 255, 255, 0.12)' },
+  { val: 'planned', label: '📅 計画', color: '#64b5f6', bg: 'rgba(100, 181, 246, 0.12)', border: 'rgba(100, 181, 246, 0.3)' },
   { val: 'implemented', label: '🛠️ 実装', color: '#81c784', bg: 'rgba(129, 199, 132, 0.12)', border: 'rgba(129, 199, 132, 0.3)' },
   { val: 'tuned', label: '⚡ パフォ', color: '#ce93d8', bg: 'rgba(206, 147, 216, 0.12)', border: 'rgba(206, 147, 216, 0.3)' },
   { val: 'rejected', label: '❌ 却下', color: '#ef9a9a', bg: 'rgba(239, 83, 80, 0.12)', border: 'rgba(239, 83, 80, 0.3)' },
@@ -145,7 +149,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             bottom: 0,
             left: dockPosition === 'left' ? 0 : 'auto',
             right: dockPosition === 'right' ? 0 : 'auto',
-            width: { xs: '100vw', sm: 420, md: 460 },
+            width: { xs: '100vw', sm: 500, md: 600 },
             zIndex: 1200,
             bgcolor: 'rgba(20, 18, 24, 0.95)',
             backdropFilter: 'blur(16px)',
@@ -233,7 +237,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
         bottom: 0,
         left: dockPosition === 'left' ? 0 : 'auto',
         right: dockPosition === 'right' ? 0 : 'auto',
-        width: { xs: '100vw', sm: 420, md: 460 },
+        width: { xs: '100vw', sm: 500, md: 600 },
         height: '100vh',
         zIndex: 1200,
         bgcolor: '#141218',
@@ -306,6 +310,27 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             title={DOMAIN_LABELS[task.domain] || task.domain}
             sx={{ fontSize: '0.7rem', color: 'text.secondary', borderColor: '#49454f', height: 22 }}
           />
+          {task.pr && task.pr.map((prNum) => (
+            <Chip
+              key={prNum}
+              label={`#${prNum}`}
+              size="small"
+              variant="outlined"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(`https://github.com/kassyi/Henicos/pull/${prNum}`, '_blank');
+              }}
+              title={`PR #${prNum}`}
+              sx={{
+                fontSize: '0.7rem',
+                color: '#81c784',
+                borderColor: 'rgba(129, 199, 132, 0.3)',
+                height: 22,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(129, 199, 132, 0.12)' },
+              }}
+            />
+          ))}
           <Typography
             variant="subtitle1"
             noWrap
@@ -356,44 +381,11 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             flex: 1,
           }}
         >
-          {/* Status Chip Options (Full Width in Vertical Dock) */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: 'rgba(255, 255, 255, 0.02)', p: 1, borderRadius: 2 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem', pl: 0.5 }}>
-              進捗ステータス:
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 0.6 }}>
-              {STATUS_CHIP_OPTIONS.map((s) => (
-                <Chip
-                  key={s.val}
-                  label={s.label}
-                  size="small"
-                  onClick={() => onStatusChange(task.id, s.val)}
-                  sx={{
-                    bgcolor: currentStatus === s.val ? s.bg : 'transparent',
-                    color: currentStatus === s.val ? s.color : 'text.disabled',
-                    border: `1px solid ${currentStatus === s.val ? s.border : 'transparent'}`,
-                    fontWeight: currentStatus === s.val ? 700 : 400,
-                    fontSize: '0.72rem',
-                    height: 24,
-                    cursor: 'pointer',
-                    opacity: currentStatus === s.val ? 1 : 0.6,
-                    '&:hover': { opacity: 1, bgcolor: s.bg },
-                  }}
-                />
-              ))}
-            </Box>
-          </Box>
+          {/* Status Chip Options */}
+          <TaskStatusSelector taskId={task.id} currentStatus={currentStatus} onStatusChange={onStatusChange} isVertical={true} />
 
           {/* Metrics summary */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: 'text.secondary', fontSize: '0.75rem', flexWrap: 'wrap' }}>
-            <span>
-              優先度スコア: <strong style={{ color: '#d0bcff', fontSize: '0.85rem' }}>{metrics.score.toFixed(1)}</strong>
-            </span>
-            <span style={{ opacity: 0.3 }}>|</span>
-            <span>Blocker: <strong style={{ color: '#e6e0e9' }}>{metrics.blocker}</strong></span>
-            <span>Difficulty: <strong style={{ color: '#e6e0e9' }}>{metrics.difficulty}</strong></span>
-            <span>Generality: <strong style={{ color: '#e6e0e9' }}>{metrics.generality}</strong></span>
-          </Box>
+          <TaskMetricsDisplay metrics={metrics} isVertical={true} />
 
           {/* C# Code Example */}
           {details.csharp_example && (
@@ -405,6 +397,18 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
                 <CodeIcon sx={{ fontSize: 16 }} /> C# 記述例
               </Typography>
               <CsCodeHighlighter code={details.csharp_example} />
+            </Box>
+          )}
+          {/* C++ Code Example */}
+          {details.cpp_example && (
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{ color: '#81c784', fontWeight: 700, mb: 0.6, display: 'flex', alignItems: 'center', gap: 0.6, fontSize: '0.75rem' }}
+              >
+                <CodeIcon sx={{ fontSize: 16 }} /> C++ (CUDA) 記述例
+              </Typography>
+              <CsCodeHighlighter code={details.cpp_example} />
             </Box>
           )}
 
@@ -475,72 +479,15 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
           )}
 
           {/* Notes */}
-          <Box>
-            <Typography
-              variant="caption"
-              sx={{ color: '#d0bcff', fontWeight: 700, mb: 0.6, display: 'flex', alignItems: 'center', gap: 0.6, fontSize: '0.75rem' }}
-            >
-              <NoteIcon sx={{ fontSize: 16 }} /> タスク詳細メモ (自動保存)
-            </Typography>
-            <TextField
-              multiline
-              rows={3}
-              fullWidth
-              variant="outlined"
-              placeholder="メモ・補足を自由に入力..."
-              value={details.notes || ''}
-              onChange={(e) => onNotesChange(task.id, e.target.value)}
-              sx={{
-                bgcolor: 'rgba(0, 0, 0, 0.25)',
-                borderRadius: 2,
-                '& .MuiOutlinedInput-root': {
-                  fontSize: '0.84rem',
-                  color: '#e6e0e9',
-                  p: 1.5,
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.08)' },
-                  '&:hover fieldset': { borderColor: 'rgba(208, 188, 255, 0.3)' },
-                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                },
-              }}
-            />
-          </Box>
+          <TaskNotesEditor taskId={task.id} notes={details.notes || ''} onNotesChange={onNotesChange} />
         </Box>
       ) : (
         <Collapse in={expanded} timeout="auto" unmountOnExit sx={{ overflowY: 'auto' }}>
           <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* Status Options & Metrics in Bottom Dock */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary', fontSize: '0.78rem' }}>
-                <span>
-                  優先度スコア: <strong style={{ color: '#d0bcff', fontSize: '0.9rem' }}>{metrics.score.toFixed(1)}</strong>
-                </span>
-                <span style={{ opacity: 0.3 }}>|</span>
-                <span>Blocker: <strong style={{ color: '#e6e0e9' }}>{metrics.blocker}</strong></span>
-                <span>Difficulty: <strong style={{ color: '#e6e0e9' }}>{metrics.difficulty}</strong></span>
-                <span>Generality: <strong style={{ color: '#e6e0e9' }}>{metrics.generality}</strong></span>
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 0.6 }}>
-                {STATUS_CHIP_OPTIONS.map((s) => (
-                  <Chip
-                    key={s.val}
-                    label={s.label}
-                    size="small"
-                    onClick={() => onStatusChange(task.id, s.val)}
-                    sx={{
-                      bgcolor: currentStatus === s.val ? s.bg : 'transparent',
-                      color: currentStatus === s.val ? s.color : 'text.disabled',
-                      border: `1px solid ${currentStatus === s.val ? s.border : 'transparent'}`,
-                      fontWeight: currentStatus === s.val ? 700 : 400,
-                      fontSize: '0.72rem',
-                      height: 24,
-                      cursor: 'pointer',
-                      opacity: currentStatus === s.val ? 1 : 0.6,
-                      '&:hover': { opacity: 1, bgcolor: s.bg },
-                    }}
-                  />
-                ))}
-              </Box>
+              <TaskMetricsDisplay metrics={metrics} isVertical={false} />
+              <TaskStatusSelector taskId={task.id} currentStatus={currentStatus} onStatusChange={onStatusChange} isVertical={false} />
             </Box>
 
             {/* C# Code Example Section */}
@@ -624,35 +571,7 @@ export const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({
             </Box>
 
             {/* Live Editable Notes */}
-            <Box>
-              <Typography
-                variant="caption"
-                sx={{ color: '#d0bcff', fontWeight: 700, mb: 0.6, display: 'flex', alignItems: 'center', gap: 0.6, fontSize: '0.75rem' }}
-              >
-                <NoteIcon sx={{ fontSize: 16 }} /> タスク詳細メモ (自動保存)
-              </Typography>
-              <TextField
-                multiline
-                rows={2}
-                fullWidth
-                variant="outlined"
-                placeholder="メモ・補足を自由に入力..."
-                value={details.notes || ''}
-                onChange={(e) => onNotesChange(task.id, e.target.value)}
-                sx={{
-                  bgcolor: 'rgba(0, 0, 0, 0.25)',
-                  borderRadius: 2,
-                  '& .MuiOutlinedInput-root': {
-                    fontSize: '0.84rem',
-                    color: '#e6e0e9',
-                    p: 1.5,
-                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.08)' },
-                    '&:hover fieldset': { borderColor: 'rgba(208, 188, 255, 0.3)' },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                  },
-                }}
-              />
-            </Box>
+            <TaskNotesEditor taskId={task.id} notes={details.notes || ''} onNotesChange={onNotesChange} />
           </Box>
         </Collapse>
       )}

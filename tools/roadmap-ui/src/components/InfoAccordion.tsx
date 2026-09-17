@@ -170,7 +170,7 @@ export const InfoAccordion: React.FC = () => {
                   sx={{ fontWeight: 700, fontSize: '0.72rem', borderColor: '#49454f' }}
                 />
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  GPU基盤 (Builtins)
+                  GpuBigInteger
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
@@ -193,6 +193,28 @@ export const InfoAccordion: React.FC = () => {
                 />
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   ジェネレータ基盤
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <Chip
+                  label="GBF"
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontWeight: 700, fontSize: '0.72rem', borderColor: '#49454f' }}
+                />
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  GpuBigFloat
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                <Chip
+                  label="BCL"
+                  size="small"
+                  variant="outlined"
+                  sx={{ fontWeight: 700, fontSize: '0.72rem', borderColor: '#49454f' }}
+                />
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  基本クラスライブラリ
                 </Typography>
               </Box>
             </Box>

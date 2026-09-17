@@ -9,7 +9,7 @@ public class GBI28_GpuBigIntegerTests : IDisposable
 
     public GBI28_GpuBigIntegerTests()
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
         _context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
     }
@@ -25,7 +25,7 @@ public class GBI28_GpuBigIntegerTests : IDisposable
     [Trait("Category", "HappyPath")]
     public void Test_GBI28_ConstructAndDispose_WorksCorrectly()
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         var gpuBigInt = new GpuUIntBigInteger(_context, 4);
         var signed = new GpuBigInteger(gpuBigInt, isNegative: true);
 

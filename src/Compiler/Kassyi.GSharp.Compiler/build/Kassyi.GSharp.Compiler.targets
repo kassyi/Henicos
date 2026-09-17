@@ -1,12 +1,13 @@
 <Project>
   <!-- Locate the task assembly -->
   <PropertyGroup>
-    <GSharpCompilerTaskAssembly>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
+    <GSharpCompilerTaskAssembly Condition="Exists('$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll')">$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
+    <GSharpCompilerTaskAssembly Condition="'$(GSharpCompilerTaskAssembly)' == ''">$(MSBuildThisFileDirectory)..\..\Kassyi.GSharp.Compiler.Tasks\bin\$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
   </PropertyGroup>
 
   <!-- Register the tasks -->
-  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" Condition="Exists('$(GSharpCompilerTaskAssembly)')" />
-  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" Condition="Exists('$(GSharpCompilerTaskAssembly)')" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
@@ -15,6 +16,7 @@
     <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
+    <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
   </ItemGroup>
 
   <!-- Define the target to compile CUDA sources -->
@@ -30,7 +32,7 @@
 
     <!-- Run nvcc via the custom task -->
     <CompileCudaToFatbinTask 
-        Condition="'@(_GSharpCudaSources)' != ''"
+        Condition="'@(_GSharpCudaSources)' != '' And '$(GSharpSkipCudaCompilation)' != 'true' And '$(GSHARP_TEST_NO_CUDA)' != '1'"
         CudaSources="@(_GSharpCudaSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" 
         TargetArchitectures="$(GSharpTargetArchitectures)" >
