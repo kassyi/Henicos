@@ -89,7 +89,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount){
+extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
 (*successFlag)=false;
 float Gravity = 9.8f;
 int tx = threadIdx.x;
@@ -168,16 +168,15 @@ inlineVec[0]=123;
 inlineVec[1]=456;
 {
 DebugReduc_ComprehensiveSpecKernel_PhysicsState state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
-DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState = &state;
-pState.Buffer[0]=inlineVec[0];
-(*pState).Buffer[1]=inlineVec[1];
+state.Buffer[0]=inlineVec[0];
+state.Buffer[1]=inlineVec[1];
 unsigned long long carry = 0;
-unsigned int sum = __gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
+unsigned int sum = __gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
 long long borrow = 0;
-unsigned int diff = __gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
+unsigned int diff = __gsharp_sub_cc(sum,state.Buffer[1],&borrow);
 if(sum>diff)
 {
-pState.Flags=1;
+state.Flags=1;
 }
 }
 bool condition1 = tx>0;
@@ -194,14 +193,15 @@ if(condition1||!condition2)
 mag+=1.5f;
 }
 }
-InlinePtx(""/* test ptx inline */"");
+/* test ptx inline */
+;
 if(ty>0)
 {
 return;
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -211,11 +211,14 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount);
+ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount, unrollFactor);
 }
 }
 ";
 public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ProcessPhysics_Source;
+private static byte[]? s_decryptionKey_ProcessPhysics;
+private static byte[]? s_binaryData_ProcessPhysics;
+private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_DebugReduc_SpecTypes
@@ -272,11 +275,15 @@ successFlag = default;
 if (particles.Length == 0){
 return;
 }
+if (!s_isLoaded_ProcessPhysics)
+{
+s_decryptionKey_ProcessPhysics = null;
+s_isLoaded_ProcessPhysics = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, s_decryptionKey_ProcessPhysics);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)

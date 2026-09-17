@@ -8,7 +8,6 @@ interface TaskCardProps {
   task: RoadmapTask;
   inCart: boolean;
   isSelected?: boolean;
-  isExiting: boolean;
   onCartClick: (id: string, shiftKey: boolean) => void;
   onStatusChange: (id: string, newStatus: TaskStatus) => void;
   onSelectTask?: (id: string) => void;
@@ -16,6 +15,7 @@ interface TaskCardProps {
 
 const STATUS_CHIP_OPTIONS: { val: TaskStatus; label: string; color: string; bg: string; border: string }[] = [
   { val: 'incomplete', label: '未完', color: 'text.secondary', bg: 'rgba(255, 255, 255, 0.05)', border: '#49454f' },
+  { val: 'planned', label: '📅 計画', color: '#90caf9', bg: '#0d294a', border: '#1e4976' },
   { val: 'implemented', label: '🛠️ 実装', color: '#c4eed0', bg: '#1a2e22', border: '#386a4f' },
   { val: 'tuned', label: '⚡ パフォ', color: '#f3e5f5', bg: '#331b3f', border: '#ab47bc' },
   { val: 'rejected', label: '❌ 却下', color: '#ffcdd2', bg: '#3e1a1d', border: '#ef5350' },
@@ -25,7 +25,6 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
   task,
   inCart,
   isSelected,
-  isExiting,
   onCartClick,
   onStatusChange,
   onSelectTask,
@@ -44,7 +43,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
     <Card
       onClick={handleCardClick}
       sx={{
-        height: isExiting ? 0 : '100%',
+        height: '100%',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -74,9 +73,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
         position: 'relative',
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: isExiting ? 'translateX(120px) scale(0.92)' : isSelected || inCart ? 'translateY(-2px)' : 'none',
-        opacity: isExiting ? 0 : 1,
-        pointerEvents: isExiting ? 'none' : 'auto',
+        transform: isSelected || inCart ? 'translateY(-2px)' : 'none',
         boxShadow: isSelected
           ? '0 0 16px rgba(208, 188, 255, 0.35)'
           : inCart
@@ -137,6 +134,27 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
                 }}
               />
             )}
+            {task.pr && task.pr.map((prNum) => (
+              <Chip
+                key={prNum}
+                label={`#${prNum}`}
+                size="small"
+                variant="outlined"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`https://github.com/kassyi/Henicos/pull/${prNum}`, '_blank');
+                }}
+                title={`PR #${prNum}`}
+                sx={{
+                  fontSize: '0.68rem',
+                  color: '#81c784',
+                  borderColor: 'rgba(129, 199, 132, 0.3)',
+                  height: 22,
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'rgba(129, 199, 132, 0.12)' },
+                }}
+              />
+            ))}
           </Box>
 
           <IconButton
@@ -198,7 +216,7 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({
             Score: <span style={{ color: '#d0bcff', fontWeight: 700 }}>{metrics.score.toFixed(1)}</span> (B:{metrics.blocker} D:{metrics.difficulty} G:{metrics.generality})
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 0.4, flexShrink: 0 }}>
+          <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap', flexShrink: 0, justifyContent: 'flex-end' }}>
             {STATUS_CHIP_OPTIONS.map((s) => (
               <Chip
                 key={s.val}

@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GSharpTargetDialect>Cuda</GSharpTargetDialect>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,4 +28,5 @@
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <Import Project="..\..\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
 </Project>

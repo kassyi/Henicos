@@ -1,5 +1,6 @@
 using System.Numerics;
 using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Henicos.PiBenchmark;
 
@@ -30,7 +31,7 @@ public class ChudnovskyPi
 
         // Calculate Sqrt(10005 * 10^(2*totalDigits))
         var sqrtBase = 10005 * BigInteger.Pow(10, 2 * totalDigits);
-        var sqrt10005 = Sqrt(sqrtBase);
+        var sqrt10005 = sqrtBase.Sqrt();
 
         var piExt = (chudnovskyConstant * sqrt10005 * factorQ) / factorT;
         var pi = piExt / BigInteger.Pow(10, extraDigits);
@@ -75,37 +76,5 @@ public class ChudnovskyPi
             PolynomialQ = l.PolynomialQ * r.PolynomialQ,
             PolynomialT = l.PolynomialT * r.PolynomialQ + l.PolynomialP * r.PolynomialT
         };
-    }
-
-    private static BigInteger Sqrt(BigInteger n)
-    {
-        if (n == 0)
-        {
-            return 0;
-        }
-
-        if (n > 0)
-        {
-            var bitLength = (int)Math.Ceiling(BigInteger.Log(n, 2));
-            var root = BigInteger.One << (bitLength / 2);
-
-            while (true)
-            {
-                var next = (root + n / root) >> 1;
-                if (next == root || next == root + 1)
-                {
-                    if (root * root > n)
-                    {
-                        return root - 1;
-                    }
-
-                    return root;
-                }
-
-                root = next;
-            }
-        }
-
-        throw new ArithmeticException("NaN");
     }
 }

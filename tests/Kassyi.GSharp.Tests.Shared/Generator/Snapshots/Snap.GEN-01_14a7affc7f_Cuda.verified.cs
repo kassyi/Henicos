@@ -18,6 +18,9 @@ c[0]=a[0]+b[0];
 }
 ";
 public static readonly string MyTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MyTestKernel_Source;
+private static byte[]? s_decryptionKey_MyTestKernel;
+private static byte[]? s_binaryData_MyTestKernel;
+private static bool s_isLoaded_MyTestKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MyTestKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -26,18 +29,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_MyTestKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "MyTestKernel", decryptionKey);
+s_binaryData_MyTestKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MyTestKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MyTestKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyTestKernel, "MyTestKernel", s_decryptionKey_MyTestKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -161,18 +167,21 @@ public static unsafe void Launch_MyTestKernel_Device(IntPtr a, IntPtr b, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
+if (!s_isLoaded_MyTestKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[]? decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, "MyTestKernel", decryptionKey);
+s_binaryData_MyTestKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MyTestKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_01_SourceGeneratorTestKernels_MyTestKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MyTestKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyTestKernel, "MyTestKernel", s_decryptionKey_MyTestKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];

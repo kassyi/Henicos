@@ -70,6 +70,9 @@ HappyPathKernel(output);
 }
 ";
 public static readonly string HappyPathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + HappyPathKernel_Source;
+private static byte[]? s_decryptionKey_HappyPathKernel;
+private static byte[]? s_binaryData_HappyPathKernel;
+private static bool s_isLoaded_HappyPathKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void HappyPathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
@@ -78,11 +81,15 @@ public static unsafe void Launch_HappyPathKernel(global::System.Int32[] output, 
 if (output.Length == 0){
 return;
 }
+if (!s_isLoaded_HappyPathKernel)
+{
+s_decryptionKey_HappyPathKernel = null;
+s_isLoaded_HappyPathKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_17_TargetTypedNewKernels_HappyPathKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath, s_decryptionKey_HappyPathKernel);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -148,6 +155,9 @@ NestedInitializerKernel(output);
 }
 ";
 public static readonly string NestedInitializerKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NestedInitializerKernel_Source;
+private static byte[]? s_decryptionKey_NestedInitializerKernel;
+private static byte[]? s_binaryData_NestedInitializerKernel;
+private static bool s_isLoaded_NestedInitializerKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NestedInitializerKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
@@ -156,11 +166,15 @@ public static unsafe void Launch_NestedInitializerKernel(global::System.Int32[] 
 if (output.Length == 0){
 return;
 }
+if (!s_isLoaded_NestedInitializerKernel)
+{
+s_decryptionKey_NestedInitializerKernel = null;
+s_isLoaded_NestedInitializerKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_17_TargetTypedNewKernels_NestedInitializerKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[]? decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", dllPath, s_decryptionKey_NestedInitializerKernel);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

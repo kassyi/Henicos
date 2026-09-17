@@ -490,7 +490,7 @@ internal static class WrapperEmitter
             }
             else
             {
-                writer.AppendLine("byte[] decryptionKey = DeriveObfuscatedKey();");
+                writer.AppendLine($"byte[] decryptionKey = DeriveObfuscatedKey_{method.Name}();");
             }
         }
         else

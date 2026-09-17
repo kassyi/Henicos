@@ -165,7 +165,7 @@ public static class GpuBigIntFermatKernels
             Device_AddSub_SingleThread(remainder, quotient, remainder, outNumWords, -1);
 
             Device_ShiftLeft_SingleThread(quotient, temp, 3, outNumWords);
-            Device_AddSub_SingleThread(remainder, temp, valueT, outNumWords, -1);
+            Device_AddSub_SingleThread(remainder, temp, remainder, outNumWords, -1);
         });
     }
 }

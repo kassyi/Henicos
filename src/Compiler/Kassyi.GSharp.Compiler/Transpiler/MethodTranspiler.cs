@@ -317,12 +317,7 @@ public static class MethodTranspiler
         var validParameters = new List<ParameterSyntax>(parameters.Count);
         foreach (var p in parameters)
         {
-            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p)?.HasAttribute(KnownAttributes.Constant) ==
-                              true;
-            if (!paramSymbol)
-            {
-                validParameters.Add(p);
-            }
+            validParameters.Add(p);
         }
 
         for (var i = 0; i < validParameters.Count; i++)
@@ -411,11 +406,6 @@ public static class MethodTranspiler
 
                     foreach (var parameter in method.ParameterList.Parameters)
                     {
-                        if (semanticModel.GetDeclaredSymbol(parameter)?.HasAttribute(KnownAttributes.Constant) == true)
-                        {
-                            continue;
-                        }
-
                         if (!isFirst)
                         {
                             context.Writer.AppendComma().AppendSpace();
