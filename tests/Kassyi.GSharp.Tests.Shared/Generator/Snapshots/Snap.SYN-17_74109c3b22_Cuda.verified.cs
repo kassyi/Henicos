@@ -57,6 +57,9 @@ output[tid]=c1.Value+c2.Value;
 }
 ";
 public static readonly string HappyPathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + HappyPathKernel_Source;
+private static byte[]? s_decryptionKey_HappyPathKernel;
+private static byte[]? s_binaryData_HappyPathKernel;
+private static bool s_isLoaded_HappyPathKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_HappyPathKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -65,18 +68,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_HappyPathKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_17_TargetTypedNewKernels_HappyPathKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "HappyPathKernel", decryptionKey);
+s_binaryData_HappyPathKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_HappyPathKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTypedNewKernels_HappyPathKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_HappyPathKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -134,18 +140,21 @@ public static unsafe void Launch_HappyPathKernel_Device(IntPtr output, uint grid
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_HappyPathKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_17_TargetTypedNewKernels_HappyPathKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "HappyPathKernel", decryptionKey);
+s_binaryData_HappyPathKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_HappyPathKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTypedNewKernels_HappyPathKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_HappyPathKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -213,6 +222,9 @@ output[tid]=p.Id+p.Child.Value;
 }
 ";
 public static readonly string NestedInitializerKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NestedInitializerKernel_Source;
+private static byte[]? s_decryptionKey_NestedInitializerKernel;
+private static byte[]? s_binaryData_NestedInitializerKernel;
+private static bool s_isLoaded_NestedInitializerKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NestedInitializerKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -221,18 +233,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_NestedInitializerKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_17_TargetTypedNewKernels_NestedInitializerKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NestedInitializerKernel", decryptionKey);
+s_binaryData_NestedInitializerKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_NestedInitializerKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTypedNewKernels_NestedInitializerKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_NestedInitializerKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NestedInitializerKernel, "NestedInitializerKernel", s_decryptionKey_NestedInitializerKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -290,18 +305,21 @@ public static unsafe void Launch_NestedInitializerKernel_Device(IntPtr output, u
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_NestedInitializerKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_17_TargetTypedNewKernels_NestedInitializerKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "NestedInitializerKernel", decryptionKey);
+s_binaryData_NestedInitializerKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_NestedInitializerKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTypedNewKernels_NestedInitializerKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_NestedInitializerKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NestedInitializerKernel, "NestedInitializerKernel", s_decryptionKey_NestedInitializerKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];

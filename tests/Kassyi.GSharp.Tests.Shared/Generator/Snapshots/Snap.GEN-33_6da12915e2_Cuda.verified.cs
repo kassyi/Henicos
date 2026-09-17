@@ -31,6 +31,9 @@ data[tid].C-=1.0f;
 }
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ModifyStructLayoutKernel_Source;
+private static byte[]? s_decryptionKey_ModifyStructLayoutKernel;
+private static byte[]? s_binaryData_ModifyStructLayoutKernel;
+private static bool s_isLoaded_ModifyStructLayoutKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -39,18 +42,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_ModifyStructLayoutKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ModifyStructLayoutKernel", decryptionKey);
+s_binaryData_ModifyStructLayoutKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_ModifyStructLayoutKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_ModifyStructLayoutKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel", s_decryptionKey_ModifyStructLayoutKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -108,18 +114,21 @@ public static unsafe void Launch_ModifyStructLayoutKernel_Device(IntPtr data, ui
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_ModifyStructLayoutKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ModifyStructLayoutKernel", decryptionKey);
+s_binaryData_ModifyStructLayoutKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_ModifyStructLayoutKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_ModifyStructLayoutKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel", s_decryptionKey_ModifyStructLayoutKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];

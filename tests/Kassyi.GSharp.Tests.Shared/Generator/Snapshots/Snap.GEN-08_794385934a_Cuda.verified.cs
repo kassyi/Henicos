@@ -31,6 +31,9 @@ u64Data[6]=__gsharp_rotr64(u64Val,7);
 }
 ";
 public static readonly string BitOpsKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + BitOpsKernel_Source;
+private static byte[]? s_decryptionKey_BitOpsKernel;
+private static byte[]? s_binaryData_BitOpsKernel;
+private static bool s_isLoaded_BitOpsKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_BitOpsKernel(global::System.UInt32[] u32Data, global::System.UInt64[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -39,18 +42,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_BitOpsKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "BitOpsTestKernels_BitOpsKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOpsKernel", decryptionKey);
+s_binaryData_BitOpsKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_BitOpsKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'BitOpsTestKernels_BitOpsKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_BitOpsKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_BitOpsKernel, "BitOpsKernel", s_decryptionKey_BitOpsKernel);
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
 try
@@ -141,18 +147,21 @@ public static unsafe void Launch_BitOpsKernel_Device(IntPtr u32Data, IntPtr u64D
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_BitOpsKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "BitOpsTestKernels_BitOpsKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "BitOpsKernel", decryptionKey);
+s_binaryData_BitOpsKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_BitOpsKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'BitOpsTestKernels_BitOpsKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_BitOpsKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_BitOpsKernel, "BitOpsKernel", s_decryptionKey_BitOpsKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

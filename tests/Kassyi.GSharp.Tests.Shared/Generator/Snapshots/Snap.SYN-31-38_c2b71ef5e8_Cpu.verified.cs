@@ -45,6 +45,9 @@ FixedBufferKernel(data);
 }
 ";
 public static readonly string FixedBufferKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + FixedBufferKernel_Source;
+private static byte[]? s_decryptionKey_FixedBufferKernel;
+private static byte[]? s_binaryData_FixedBufferKernel;
+private static bool s_isLoaded_FixedBufferKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void FixedBufferKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* data);
@@ -53,11 +56,15 @@ public static unsafe void Launch_FixedBufferKernel(global::System.UInt32[] data,
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_FixedBufferKernel)
+{
+s_decryptionKey_FixedBufferKernel = null;
+s_isLoaded_FixedBufferKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", dllPath, s_decryptionKey_FixedBufferKernel);
 fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -110,6 +117,9 @@ PointerComplexAssignmentKernel(idx, val, dest);
 }
 ";
 public static readonly string PointerComplexAssignmentKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + PointerComplexAssignmentKernel_Source;
+private static byte[]? s_decryptionKey_PointerComplexAssignmentKernel;
+private static byte[]? s_binaryData_PointerComplexAssignmentKernel;
+private static bool s_isLoaded_PointerComplexAssignmentKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void PointerComplexAssignmentKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* idx, global::System.UInt32* val, global::System.UInt32* dest);
@@ -118,11 +128,15 @@ public static unsafe void Launch_PointerComplexAssignmentKernel(global::System.U
 if (idx.Length == 0 || val.Length == 0 || dest.Length == 0){
 return;
 }
+if (!s_isLoaded_PointerComplexAssignmentKernel)
+{
+s_decryptionKey_PointerComplexAssignmentKernel = null;
+s_isLoaded_PointerComplexAssignmentKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", dllPath, s_decryptionKey_PointerComplexAssignmentKernel);
 fixed (global::System.UInt32* p_idx = idx)
 fixed (global::System.UInt32* p_val = val)
 fixed (global::System.UInt32* p_dest = dest)
@@ -177,6 +191,9 @@ PointerDecrementKernel(src, dest);
 }
 ";
 public static readonly string PointerDecrementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + PointerDecrementKernel_Source;
+private static byte[]? s_decryptionKey_PointerDecrementKernel;
+private static byte[]? s_binaryData_PointerDecrementKernel;
+private static bool s_isLoaded_PointerDecrementKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void PointerDecrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* src, global::System.UInt32* dest);
@@ -185,11 +202,15 @@ public static unsafe void Launch_PointerDecrementKernel(global::System.UInt32[] 
 if (src.Length == 0 || dest.Length == 0){
 return;
 }
+if (!s_isLoaded_PointerDecrementKernel)
+{
+s_decryptionKey_PointerDecrementKernel = null;
+s_isLoaded_PointerDecrementKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", dllPath, s_decryptionKey_PointerDecrementKernel);
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {
@@ -243,6 +264,9 @@ PointerIncrementKernel(src, dest);
 }
 ";
 public static readonly string PointerIncrementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + PointerIncrementKernel_Source;
+private static byte[]? s_decryptionKey_PointerIncrementKernel;
+private static byte[]? s_binaryData_PointerIncrementKernel;
+private static bool s_isLoaded_PointerIncrementKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void PointerIncrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* src, global::System.UInt32* dest);
@@ -251,11 +275,15 @@ public static unsafe void Launch_PointerIncrementKernel(global::System.UInt32[] 
 if (src.Length == 0 || dest.Length == 0){
 return;
 }
+if (!s_isLoaded_PointerIncrementKernel)
+{
+s_decryptionKey_PointerIncrementKernel = null;
+s_isLoaded_PointerIncrementKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerIncrementKernel_Delegate>("__gsharp_launch_PointerIncrementKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PointerIncrementKernel_Delegate>("__gsharp_launch_PointerIncrementKernel", dllPath, s_decryptionKey_PointerIncrementKernel);
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {

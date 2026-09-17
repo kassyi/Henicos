@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class WrapperAllocationKernelsWrapper
 {
-public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void AllocationTestKernel(int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal){
+public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void AllocationTestKernel(int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal, unsigned int constantVal){
 if((*ioVal)>constantVal)
 {
 (*outVal)=arrayVal[0];
@@ -37,6 +37,9 @@ else
 }
 ";
 public static readonly string AllocationTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AllocationTestKernel_Source;
+private static byte[]? s_decryptionKey_AllocationTestKernel;
+private static byte[]? s_binaryData_AllocationTestKernel;
+private static bool s_isLoaded_AllocationTestKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AllocationTestKernel(ref global::System.Int32 ioVal, out global::System.Single outVal, global::System.Int32[] arrayVal, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -46,24 +49,27 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_AllocationTestKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "WrapperAllocationKernels_AllocationTestKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AllocationTestKernel", decryptionKey);
+s_binaryData_AllocationTestKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_AllocationTestKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'WrapperAllocationKernels_AllocationTestKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_AllocationTestKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AllocationTestKernel, "AllocationTestKernel", s_decryptionKey_AllocationTestKernel);
 IntPtr d_ioVal = IntPtr.Zero;
 IntPtr d_outVal = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
 try
 {
-void** kernelParams = stackalloc void*[3];
+void** kernelParams = stackalloc void*[4];
 // Marshal ref/out scalar: ioVal
 int ioVal_size = sizeof(global::System.Int32);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ioVal, ioVal_size));
@@ -94,6 +100,8 @@ handle_arrayVal.Free();
 }
 }
 kernelParams[2] = &d_arrayVal;
+// Marshal scalar: constantVal
+kernelParams[3] = &constantVal;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -143,27 +151,32 @@ public static unsafe void Launch_AllocationTestKernel_Device(IntPtr ioVal, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_AllocationTestKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "WrapperAllocationKernels_AllocationTestKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "AllocationTestKernel", decryptionKey);
+s_binaryData_AllocationTestKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_AllocationTestKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'WrapperAllocationKernels_AllocationTestKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_AllocationTestKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AllocationTestKernel, "AllocationTestKernel", s_decryptionKey_AllocationTestKernel);
 try
 {
-void** kernelParams = stackalloc void*[3];
+void** kernelParams = stackalloc void*[4];
 // Marshal device scalar: ioVal
 kernelParams[0] = &ioVal;
 // Marshal device scalar: outVal
 kernelParams[1] = &outVal;
 // Marshal device array: arrayVal
 kernelParams[2] = &arrayVal;
+// Marshal scalar: constantVal
+kernelParams[3] = &constantVal;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

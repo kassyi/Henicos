@@ -47,6 +47,9 @@ ImmediatelyEvaluatedLambdaKernel(data);
 }
 ";
 public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ImmediatelyEvaluatedLambdaKernel_Source;
+private static byte[]? s_decryptionKey_ImmediatelyEvaluatedLambdaKernel;
+private static byte[]? s_binaryData_ImmediatelyEvaluatedLambdaKernel;
+private static bool s_isLoaded_ImmediatelyEvaluatedLambdaKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ImmediatelyEvaluatedLambdaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
@@ -55,11 +58,15 @@ public static unsafe void Launch_ImmediatelyEvaluatedLambdaKernel(global::System
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_ImmediatelyEvaluatedLambdaKernel)
+{
+s_decryptionKey_ImmediatelyEvaluatedLambdaKernel = null;
+s_isLoaded_ImmediatelyEvaluatedLambdaKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ImmediatelyEvaluatedLambdaKernel_Delegate>("__gsharp_launch_ImmediatelyEvaluatedLambdaKernel", dllPath, s_decryptionKey_ImmediatelyEvaluatedLambdaKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -108,6 +115,9 @@ NonCapturingLambdaKernel(data);
 }
 ";
 public static readonly string NonCapturingLambdaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NonCapturingLambdaKernel_Source;
+private static byte[]? s_decryptionKey_NonCapturingLambdaKernel;
+private static byte[]? s_binaryData_NonCapturingLambdaKernel;
+private static bool s_isLoaded_NonCapturingLambdaKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NonCapturingLambdaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
@@ -116,11 +126,15 @@ public static unsafe void Launch_NonCapturingLambdaKernel(global::System.Int32[]
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_NonCapturingLambdaKernel)
+{
+s_decryptionKey_NonCapturingLambdaKernel = null;
+s_isLoaded_NonCapturingLambdaKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonCapturingLambdaKernel_Delegate>("__gsharp_launch_NonCapturingLambdaKernel", dllPath, s_decryptionKey_NonCapturingLambdaKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -170,6 +184,9 @@ ShadowedVariableCaptureKernel(data);
 }
 ";
 public static readonly string ShadowedVariableCaptureKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ShadowedVariableCaptureKernel_Source;
+private static byte[]? s_decryptionKey_ShadowedVariableCaptureKernel;
+private static byte[]? s_binaryData_ShadowedVariableCaptureKernel;
+private static bool s_isLoaded_ShadowedVariableCaptureKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ShadowedVariableCaptureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
@@ -178,11 +195,15 @@ public static unsafe void Launch_ShadowedVariableCaptureKernel(global::System.In
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_ShadowedVariableCaptureKernel)
+{
+s_decryptionKey_ShadowedVariableCaptureKernel = null;
+s_isLoaded_ShadowedVariableCaptureKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ShadowedVariableCaptureKernel_Delegate>("__gsharp_launch_ShadowedVariableCaptureKernel", dllPath, s_decryptionKey_ShadowedVariableCaptureKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -231,6 +252,9 @@ ValueCapturingLambdaKernel(data, factor);
 }
 ";
 public static readonly string ValueCapturingLambdaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ValueCapturingLambdaKernel_Source;
+private static byte[]? s_decryptionKey_ValueCapturingLambdaKernel;
+private static byte[]? s_binaryData_ValueCapturingLambdaKernel;
+private static bool s_isLoaded_ValueCapturingLambdaKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ValueCapturingLambdaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data, global::System.Int32 factor);
@@ -239,11 +263,15 @@ public static unsafe void Launch_ValueCapturingLambdaKernel(global::System.Int32
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_ValueCapturingLambdaKernel)
+{
+s_decryptionKey_ValueCapturingLambdaKernel = null;
+s_isLoaded_ValueCapturingLambdaKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ValueCapturingLambdaKernel_Delegate>("__gsharp_launch_ValueCapturingLambdaKernel", dllPath, s_decryptionKey_ValueCapturingLambdaKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, factor);

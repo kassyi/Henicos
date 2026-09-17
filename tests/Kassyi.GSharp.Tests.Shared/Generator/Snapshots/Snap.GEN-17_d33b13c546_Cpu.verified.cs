@@ -50,6 +50,9 @@ RefOutTestKernel(data);
 }
 ";
 public static readonly string RefOutTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + RefOutTestKernel_Source;
+private static byte[]? s_decryptionKey_RefOutTestKernel;
+private static byte[]? s_binaryData_RefOutTestKernel;
+private static bool s_isLoaded_RefOutTestKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void RefOutTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
@@ -58,11 +61,15 @@ public static unsafe void Launch_RefOutTestKernel(global::System.Int32[] data, u
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_RefOutTestKernel)
+{
+s_decryptionKey_RefOutTestKernel = null;
+s_isLoaded_RefOutTestKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_17_RefOutDereferenceKernels_RefOutTestKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<RefOutTestKernel_Delegate>("__gsharp_launch_RefOutTestKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<RefOutTestKernel_Delegate>("__gsharp_launch_RefOutTestKernel", dllPath, s_decryptionKey_RefOutTestKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
