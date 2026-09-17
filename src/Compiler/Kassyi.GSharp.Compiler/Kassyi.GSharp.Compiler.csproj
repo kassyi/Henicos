@@ -22,9 +22,21 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+
+    <!-- Pack build targets -->
+    <None Include="build\**" Pack="true" PackagePath="build\" />
+
+    <!-- Pack Custom MSBuild Tasks -->
+    <None Include="..\Kassyi.GSharp.Compiler.Tasks\bin\$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll" Pack="true" PackagePath="tasks\netstandard2.0\" Visible="false" />
+
+    <!-- Analyzer Output -->
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
   </ItemGroup>
 
   <PropertyGroup>

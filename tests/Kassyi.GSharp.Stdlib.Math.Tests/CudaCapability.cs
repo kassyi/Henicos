@@ -1,5 +1,4 @@
-using System;
-using Xunit;
+using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
@@ -10,7 +9,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             bool available = false;
             try
             {
-                Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuInit(0);
+                CudaDriverApi.cuInit(0);
                 available = true;
             }
             catch

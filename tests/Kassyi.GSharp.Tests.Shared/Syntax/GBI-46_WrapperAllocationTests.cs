@@ -2,7 +2,6 @@
 using System;
 using Xunit;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Generated;
 using System.Collections.Generic;
 
 namespace Kassyi.GSharp.Tests.Syntax;

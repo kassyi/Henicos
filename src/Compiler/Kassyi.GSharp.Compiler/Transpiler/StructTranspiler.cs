@@ -111,6 +111,22 @@ internal static class StructTranspiler
     /// </summary>
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
+        int? packValue = null;
+        var structLayoutAttr = structSym.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "System.Runtime.InteropServices.StructLayoutAttribute");
+        if (structLayoutAttr != null)
+        {
+            var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;
+            if (packArg is { IsNull: false, Value: int p and > 0 })
+            {
+                packValue = p;
+            }
+        }
+
+        if (packValue.HasValue)
+        {
+            context.Writer.AppendLine($"#pragma pack(push, {packValue.Value})");
+        }
+
         var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);
         if (inlineArrayAttr != null)
         {
@@ -119,6 +135,11 @@ internal static class StructTranspiler
         else
         {
             WriteStandardStructDefinition(structSym, ref context);
+        }
+
+        if (packValue.HasValue)
+        {
+            context.Writer.AppendLine("#pragma pack(pop)");
         }
     }
 
@@ -204,6 +225,7 @@ internal static class StructTranspiler
     private static void WriteStandardStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
         WriteStructHeader(ref context, structSym);
+
         using (context.Writer.Scope())
         {
             foreach (var member in structSym.GetMembers())
