@@ -2,11 +2,10 @@ namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
 public static class ComputeBenchmarkRunner
 {
-    public static void RunSuite(string suiteName)
+    public static bool RunSuite(string suiteName)
     {
         var benchmarks = new List<IComputeBenchmark>();
 
-        // TODO: Register benchmarks here once implemented
         if (suiteName is "all" or "sgemm")
         {
             benchmarks.Add(new SgemmBenchmark());
@@ -31,10 +30,12 @@ public static class ComputeBenchmarkRunner
         {
             Console.WriteLine(
                 $"No benchmarks found for suite '{suiteName}'. Available: sgemm, sha256, bs, reduce, all");
-            return;
+            return false;
         }
 
         Console.WriteLine($"--- Starting Compute Benchmark Suite ({benchmarks.Count} benchmarks) ---");
+
+        var allSucceeded = true;
 
         foreach (var benchmark in benchmarks)
         {
@@ -47,32 +48,46 @@ public static class ComputeBenchmarkRunner
             swRef.Stop();
             Console.WriteLine($"[{benchmark.Name}] CPU Reference Time: {swRef.Elapsed.TotalMilliseconds:F2} ms");
 
-            Console.WriteLine($"[{benchmark.Name}] Running G# CPU Mode...");
-            var swGsharp = Stopwatch.StartNew();
+            Console.WriteLine($"[{benchmark.Name}] Running G# CPU Mode (Warmup & Compilation)...");
+            var executionSucceeded = false;
             try
             {
+                // Warmup run to trigger AOT load / initialization outside timing window
                 benchmark.RunGSharpCpu();
-                swGsharp.Stop();
-                Console.WriteLine($"[{benchmark.Name}] G# CPU Mode Time: {swGsharp.Elapsed.TotalMilliseconds:F2} ms");
+                executionSucceeded = true;
             }
             catch (Exception ex)
             {
-                swGsharp.Stop();
-                Console.WriteLine($"[{benchmark.Name}] G# CPU Mode Skipped (Environment Unsupported): {ex.Message}");
+                Console.WriteLine($"[{benchmark.Name}] G# CPU Mode Execution Failed: {ex.Message}");
+                allSucceeded = false;
             }
 
-            Console.WriteLine($"[{benchmark.Name}] Verifying Logical Correctness...");
-            try
+            if (executionSucceeded)
             {
-                benchmark.Verify();
-                Console.WriteLine($"[{benchmark.Name}] Verification: PASS");
+                var swGsharp = Stopwatch.StartNew();
+                benchmark.RunGSharpCpu();
+                swGsharp.Stop();
+                Console.WriteLine($"[{benchmark.Name}] G# CPU Mode Time (Steady-State): {swGsharp.Elapsed.TotalMilliseconds:F2} ms");
+
+                Console.WriteLine($"[{benchmark.Name}] Verifying Logical Correctness...");
+                try
+                {
+                    benchmark.Verify();
+                    Console.WriteLine($"[{benchmark.Name}] Verification: PASS");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[{benchmark.Name}] Verification: FAIL - {ex.Message}");
+                    allSucceeded = false;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"[{benchmark.Name}] Verification: FAIL - {ex.Message}");
+                Console.WriteLine($"[{benchmark.Name}] Verification: SKIPPED (due to execution failure)");
             }
         }
 
         Console.WriteLine("\n--- Compute Benchmark Suite Completed ---");
+        return allSucceeded;
     }
 }

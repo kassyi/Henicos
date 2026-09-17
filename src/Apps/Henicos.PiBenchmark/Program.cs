@@ -84,8 +84,8 @@ internal class Program
     private static int RunComputeBench(string[] args)
     {
         var suite = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
-        ComputeBenchmarks.ComputeBenchmarkRunner.RunSuite(suite);
-        return 0;
+        var success = ComputeBenchmarks.ComputeBenchmarkRunner.RunSuite(suite);
+        return success ? 0 : 1;
     }
 
     private static int RunGpuPi(string[] args)

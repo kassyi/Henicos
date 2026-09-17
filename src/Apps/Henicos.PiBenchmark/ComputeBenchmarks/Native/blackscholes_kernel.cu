@@ -1,7 +1,8 @@
 #include <cuda_runtime.h>
 #include <math_constants.h>
 
-extern "C" __declspec(dllexport) void BlackScholesKernel_Native(float* s, float* x, float* t, float r, float v, float* callResult, float* putResult, int n)
+// Native CUDA reference implementation for Black-Scholes benchmark
+extern "C" __global__ void BlackScholesKernel_Native(float* s, float* x, float* t, float r, float v, float* callResult, float* putResult, int n)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= n) return;

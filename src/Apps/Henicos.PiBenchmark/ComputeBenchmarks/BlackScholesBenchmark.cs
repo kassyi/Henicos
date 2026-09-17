@@ -42,11 +42,10 @@ public class BlackScholesBenchmark : IComputeBenchmark
 
     public void RunReferenceCpu()
     {
-        // Execute on standard ThreadPool for fair CPU comparison
-        Parallel.For(0, N, i => 
+        for (int i = 0; i < N; i++)
         {
             BlackScholesCore(_s[i], _x[i], _t[i], _r, _v, out _callResultCpu[i], out _putResultCpu[i]);
-        });
+        }
     }
 
     public void RunGSharpCpu()
@@ -63,7 +62,11 @@ public class BlackScholesBenchmark : IComputeBenchmark
         {
             if (Math.Abs(_callResultCpu[i] - _callResultGsharp[i]) > 1e-4f)
             {
-                throw new Exception($"Mismatch at index {i}: CPU={_callResultCpu[i]}, G#={_callResultGsharp[i]}");
+                throw new Exception($"Call price mismatch at index {i}: CPU={_callResultCpu[i]}, G#={_callResultGsharp[i]}");
+            }
+            if (Math.Abs(_putResultCpu[i] - _putResultGsharp[i]) > 1e-4f)
+            {
+                throw new Exception($"Put price mismatch at index {i}: CPU={_putResultCpu[i]}, G#={_putResultGsharp[i]}");
             }
         }
     }
