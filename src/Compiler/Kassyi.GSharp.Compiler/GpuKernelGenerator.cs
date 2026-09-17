@@ -30,7 +30,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 bool emitSource = string.IsNullOrWhiteSpace(emitSrcStr) || string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
 
                 options.GlobalOptions.TryGetValue("build_property.IntermediateOutputPath", out var objPath);
-                options.GlobalOptions.TryGetValue("build_property.ProjectDir", out var projDir);
+                options.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projDir);
+                if (string.IsNullOrWhiteSpace(projDir))
+                {
+                    options.GlobalOptions.TryGetValue("build_property.ProjectDir", out projDir);
+                }
                 var intermediatePath = !string.IsNullOrWhiteSpace(objPath) && !string.IsNullOrWhiteSpace(projDir)
                     ? Path.Combine(projDir, objPath)
                     : null;
@@ -281,9 +285,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return sha.ComputeHash(Encoding.UTF8.GetBytes(config.CustomEncryptionKey!));
         }
 
-        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+        // Use a deterministic fallback key when no custom key is provided.
+        // Generating random numbers in a Roslyn Source Generator breaks determinism
+        // and causes the MSBuild task (which encrypts the fatbin) to use a different key
+        // than the generated C# wrapper code (which decrypts it at runtime), leading to CryptographicException.
+        using (var sha = System.Security.Cryptography.SHA256.Create())
         {
-            rng.GetBytes(aesKey);
+            var defaultKeyHash = sha.ComputeHash(Encoding.UTF8.GetBytes("GSharp_Default_VBO_Key_Fallback_" + config.TargetDialect));
+            System.Array.Copy(defaultKeyHash, aesKey, 32);
         }
 
         return aesKey;

@@ -297,11 +297,6 @@ internal static class MarshalingEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                continue;
-            }
-
             if (IsCustomStruct(p.Type))
             {
                 if (!isDevicePtr)
@@ -333,10 +328,7 @@ internal static class MarshalingEmitter
         var nonJitParamCount = 0;
         foreach (var p in method.Parameters)
         {
-            if (!p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                nonJitParamCount++;
-            }
+            nonJitParamCount++;
         }
 
         writer.Append("void** kernelParams = stackalloc void*[");
@@ -346,11 +338,6 @@ internal static class MarshalingEmitter
         var paramIndex = 0;
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                continue;
-            }
-
             WriteParameterMarshal(writer, p, paramIndex++, isDevicePtr);
         }
 
@@ -360,11 +347,6 @@ internal static class MarshalingEmitter
 
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                continue;
-            }
-
             WriteParameterUnmarshal(writer, p, isDevicePtr);
         }
     }
@@ -373,11 +355,6 @@ internal static class MarshalingEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.HasAttribute(KnownAttributes.JitConstant))
-            {
-                continue;
-            }
-
             WriteParameterFree(writer, p, isDevicePtr);
         }
     }

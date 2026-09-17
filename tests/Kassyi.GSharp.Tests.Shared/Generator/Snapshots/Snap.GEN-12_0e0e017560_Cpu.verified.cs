@@ -42,6 +42,9 @@ AddKernel(a, b, c);
 }
 ";
 public static readonly string AddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + AddKernel_Source;
+private static byte[]? s_decryptionKey_AddKernel;
+private static byte[]? s_binaryData_AddKernel;
+private static bool s_isLoaded_AddKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* c);
@@ -50,11 +53,15 @@ public static unsafe void Launch_AddKernel(global::System.Int32[] a, global::Sys
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
+if (!s_isLoaded_AddKernel)
+{
+s_decryptionKey_AddKernel = null;
+s_isLoaded_AddKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"PtxEngineExperimentKernels_AddKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", dllPath, s_decryptionKey_AddKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)

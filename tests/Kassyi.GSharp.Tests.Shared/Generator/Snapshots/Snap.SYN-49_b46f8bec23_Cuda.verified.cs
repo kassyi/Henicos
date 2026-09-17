@@ -43,6 +43,9 @@ __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 }
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + InterlockedEdgeCasesKernel_Source;
+private static byte[]? s_decryptionKey_InterlockedEdgeCasesKernel;
+private static byte[]? s_binaryData_InterlockedEdgeCasesKernel;
+private static bool s_isLoaded_InterlockedEdgeCasesKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_InterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -51,18 +54,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_InterlockedEdgeCasesKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InterlockedEdgeCasesKernel", decryptionKey);
+s_binaryData_InterlockedEdgeCasesKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_InterlockedEdgeCasesKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_InterlockedEdgeCasesKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedEdgeCasesKernel, "InterlockedEdgeCasesKernel", s_decryptionKey_InterlockedEdgeCasesKernel);
 IntPtr d_array = IntPtr.Zero;
 IntPtr d_structArray = IntPtr.Zero;
 try
@@ -153,18 +159,21 @@ public static unsafe void Launch_InterlockedEdgeCasesKernel_Device(IntPtr array,
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_InterlockedEdgeCasesKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InterlockedEdgeCasesKernel", decryptionKey);
+s_binaryData_InterlockedEdgeCasesKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_InterlockedEdgeCasesKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_InterlockedEdgeCasesKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedEdgeCasesKernel, "InterlockedEdgeCasesKernel", s_decryptionKey_InterlockedEdgeCasesKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -228,6 +237,9 @@ __gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ul,0ul);
 }
 ";
 public static readonly string InterlockedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + InterlockedKernel_Source;
+private static byte[]? s_decryptionKey_InterlockedKernel;
+private static byte[]? s_binaryData_InterlockedKernel;
+private static bool s_isLoaded_InterlockedKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_InterlockedKernel(global::System.Int32[] intBuf, global::System.UInt32[] uintBuf, global::System.Int64[] longBuf, global::System.UInt64[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -236,18 +248,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_InterlockedKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InterlockedKernel", decryptionKey);
+s_binaryData_InterlockedKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_InterlockedKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_InterlockedKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedKernel, "InterlockedKernel", s_decryptionKey_InterlockedKernel);
 IntPtr d_intBuf = IntPtr.Zero;
 IntPtr d_uintBuf = IntPtr.Zero;
 IntPtr d_longBuf = IntPtr.Zero;
@@ -404,18 +419,21 @@ public static unsafe void Launch_InterlockedKernel_Device(IntPtr intBuf, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_InterlockedKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "InterlockedKernel", decryptionKey);
+s_binaryData_InterlockedKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_InterlockedKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_InterlockedKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedKernel, "InterlockedKernel", s_decryptionKey_InterlockedKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -475,6 +493,9 @@ doubleSpecialResults[2]=fmin(d,0.0);
 }
 ";
 public static readonly string MathEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MathEdgeCasesKernel_Source;
+private static byte[]? s_decryptionKey_MathEdgeCasesKernel;
+private static byte[]? s_binaryData_MathEdgeCasesKernel;
+private static bool s_isLoaded_MathEdgeCasesKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MathEdgeCasesKernel(global::System.Single[] floatSpecialInputs, global::System.Single[] floatSpecialResults, global::System.Double[] doubleSpecialInputs, global::System.Double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -483,18 +504,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_MathEdgeCasesKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MathEdgeCasesKernel", decryptionKey);
+s_binaryData_MathEdgeCasesKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MathEdgeCasesKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MathEdgeCasesKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathEdgeCasesKernel, "MathEdgeCasesKernel", s_decryptionKey_MathEdgeCasesKernel);
 IntPtr d_floatSpecialInputs = IntPtr.Zero;
 IntPtr d_floatSpecialResults = IntPtr.Zero;
 IntPtr d_doubleSpecialInputs = IntPtr.Zero;
@@ -651,18 +675,21 @@ public static unsafe void Launch_MathEdgeCasesKernel_Device(IntPtr floatSpecialI
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_MathEdgeCasesKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MathEdgeCasesKernel", decryptionKey);
+s_binaryData_MathEdgeCasesKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MathEdgeCasesKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MathEdgeCasesKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathEdgeCasesKernel, "MathEdgeCasesKernel", s_decryptionKey_MathEdgeCasesKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -728,6 +755,9 @@ floatOutputs[5]=fabsf(fVal);
 }
 ";
 public static readonly string MathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MathKernel_Source;
+private static byte[]? s_decryptionKey_MathKernel;
+private static byte[]? s_binaryData_MathKernel;
+private static bool s_isLoaded_MathKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MathKernel(global::System.Double[] doubleInputs, global::System.Double[] doubleOutputs, global::System.Single[] floatInputs, global::System.Single[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -736,18 +766,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_MathKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MathKernel", decryptionKey);
+s_binaryData_MathKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MathKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MathKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathKernel, "MathKernel", s_decryptionKey_MathKernel);
 IntPtr d_doubleInputs = IntPtr.Zero;
 IntPtr d_doubleOutputs = IntPtr.Zero;
 IntPtr d_floatInputs = IntPtr.Zero;
@@ -904,18 +937,21 @@ public static unsafe void Launch_MathKernel_Device(IntPtr doubleInputs, IntPtr d
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_MathKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MathKernel", decryptionKey);
+s_binaryData_MathKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MathKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MathKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathKernel, "MathKernel", s_decryptionKey_MathKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

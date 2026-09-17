@@ -90,6 +90,9 @@ DummyShiftOp(ctx,c,a,5);
 }
 ";
 public static readonly string MacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MacroKernel_Source;
+private static byte[]? s_decryptionKey_MacroKernel;
+private static byte[]? s_binaryData_MacroKernel;
+private static bool s_isLoaded_MacroKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_TestNamespace_DummyContext
@@ -115,18 +118,21 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_MacroKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKernels_MacroKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MacroKernel", decryptionKey);
+s_binaryData_MacroKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MacroKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'TestKernels_MacroKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MacroKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MacroKernel, "MacroKernel", s_decryptionKey_MacroKernel);
 System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
@@ -256,18 +262,21 @@ public static unsafe void Launch_MacroKernel_Device(global::TestNamespace.DummyC
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_MacroKernel)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKernels_MacroKernel.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "MacroKernel", decryptionKey);
+s_binaryData_MacroKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_MacroKernel = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'TestKernels_MacroKernel.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_MacroKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MacroKernel, "MacroKernel", s_decryptionKey_MacroKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

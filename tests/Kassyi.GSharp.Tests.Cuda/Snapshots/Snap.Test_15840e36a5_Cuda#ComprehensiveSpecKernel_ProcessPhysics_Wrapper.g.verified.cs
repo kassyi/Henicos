@@ -89,7 +89,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount){
+extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
 (*successFlag)=false;
 float Gravity = 9.8f;
 int tx = threadIdx.x;
@@ -203,6 +203,9 @@ return;
 }
 ";
 public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ProcessPhysics_Source;
+private static byte[]? s_decryptionKey_ProcessPhysics;
+private static byte[]? s_binaryData_ProcessPhysics;
+private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_DebugReduc_SpecTypes
@@ -259,25 +262,28 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_ProcessPhysics)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ComprehensiveSpecKernel_ProcessPhysics.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ProcessPhysics", decryptionKey);
+s_binaryData_ProcessPhysics = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_ProcessPhysics = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpecKernel_ProcessPhysics.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_ProcessPhysics = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
 System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
-void** kernelParams = stackalloc void*[5];
+void** kernelParams = stackalloc void*[6];
 // Marshal array: particles
 int particles_size = particles.Length * sizeof(global::DebugReduc.PhysicsVector);
 if (particles_size > 0)
@@ -313,6 +319,8 @@ var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, fal
 kernelParams[3] = &native_largeStructVal;
 // Marshal scalar: particleCount
 kernelParams[4] = &particleCount;
+// Marshal scalar: unrollFactor
+kernelParams[5] = &unrollFactor;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -364,21 +372,24 @@ public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
 {
+if (!s_isLoaded_ProcessPhysics)
+{
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ComprehensiveSpecKernel_ProcessPhysics.fatbin");
-IntPtr hfunc = IntPtr.Zero;
 if (System.IO.File.Exists(fatbinPath))
 {
-var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);
-byte[] decryptionKey = null;
-hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(fatbinData, "ProcessPhysics", decryptionKey);
+s_binaryData_ProcessPhysics = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_ProcessPhysics = null;
 }
 else
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpecKernel_ProcessPhysics.fatbin' was not found at '{fatbinPath}'.");
 }
+s_isLoaded_ProcessPhysics = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
 try
 {
-void** kernelParams = stackalloc void*[5];
+void** kernelParams = stackalloc void*[6];
 // Marshal device array: particles
 kernelParams[0] = &particles;
 // Marshal device scalar: totalMagnitude
@@ -390,6 +401,8 @@ var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, tru
 kernelParams[3] = &native_largeStructVal;
 // Marshal scalar: particleCount
 kernelParams[4] = &particleCount;
+// Marshal scalar: unrollFactor
+kernelParams[5] = &unrollFactor;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

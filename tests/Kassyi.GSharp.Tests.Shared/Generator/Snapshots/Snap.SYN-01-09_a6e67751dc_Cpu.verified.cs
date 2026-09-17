@@ -46,6 +46,9 @@ NestedTernaryKernel(a, b, c, result);
 }
 ";
 public static readonly string NestedTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NestedTernaryKernel_Source;
+private static byte[]? s_decryptionKey_NestedTernaryKernel;
+private static byte[]? s_binaryData_NestedTernaryKernel;
+private static bool s_isLoaded_NestedTernaryKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NestedTernaryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* c, global::System.Int32* result);
@@ -54,11 +57,15 @@ public static unsafe void Launch_NestedTernaryKernel(global::System.Int32[] a, g
 if (a.Length == 0 || b.Length == 0 || c.Length == 0 || result.Length == 0){
 return;
 }
+if (!s_isLoaded_NestedTernaryKernel)
+{
+s_decryptionKey_NestedTernaryKernel = null;
+s_isLoaded_NestedTernaryKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_01_09_ControlFlowKernels_NestedTernaryKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", dllPath, s_decryptionKey_NestedTernaryKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)
@@ -112,6 +119,9 @@ NullCoalescingAssignmentSideEffectKernel(targetArray, sideEffectTracker, values)
 }
 ";
 public static readonly string NullCoalescingAssignmentSideEffectKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NullCoalescingAssignmentSideEffectKernel_Source;
+private static byte[]? s_decryptionKey_NullCoalescingAssignmentSideEffectKernel;
+private static byte[]? s_binaryData_NullCoalescingAssignmentSideEffectKernel;
+private static bool s_isLoaded_NullCoalescingAssignmentSideEffectKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NullCoalescingAssignmentSideEffectKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Nullable<global::System.Int32>* targetArray, global::System.Int32* sideEffectTracker, global::System.Int32* values);
@@ -120,11 +130,15 @@ public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(global
 if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length == 0){
 return;
 }
+if (!s_isLoaded_NullCoalescingAssignmentSideEffectKernel)
+{
+s_decryptionKey_NullCoalescingAssignmentSideEffectKernel = null;
+s_isLoaded_NullCoalescingAssignmentSideEffectKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_NullCoalescingAssignmentSideEffectKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_NullCoalescingAssignmentSideEffectKernel", dllPath, s_decryptionKey_NullCoalescingAssignmentSideEffectKernel);
 fixed (global::System.Nullable<global::System.Int32>* p_targetArray = targetArray)
 fixed (global::System.Int32* p_sideEffectTracker = sideEffectTracker)
 fixed (global::System.Int32* p_values = values)
@@ -176,6 +190,9 @@ NullCoalescingKernel(nullableInputs, fallbackValues, results);
 }
 ";
 public static readonly string NullCoalescingKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NullCoalescingKernel_Source;
+private static byte[]? s_decryptionKey_NullCoalescingKernel;
+private static byte[]? s_binaryData_NullCoalescingKernel;
+private static bool s_isLoaded_NullCoalescingKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NullCoalescingKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Nullable<global::System.Int32>* nullableInputs, global::System.Int32* fallbackValues, global::System.Int32* results);
@@ -184,11 +201,15 @@ public static unsafe void Launch_NullCoalescingKernel(global::System.Nullable<gl
 if (nullableInputs.Length == 0 || fallbackValues.Length == 0 || results.Length == 0){
 return;
 }
+if (!s_isLoaded_NullCoalescingKernel)
+{
+s_decryptionKey_NullCoalescingKernel = null;
+s_isLoaded_NullCoalescingKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_01_09_ControlFlowKernels_NullCoalescingKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NullCoalescingKernel_Delegate>("__gsharp_launch_NullCoalescingKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NullCoalescingKernel_Delegate>("__gsharp_launch_NullCoalescingKernel", dllPath, s_decryptionKey_NullCoalescingKernel);
 fixed (global::System.Nullable<global::System.Int32>* p_nullableInputs = nullableInputs)
 fixed (global::System.Int32* p_fallbackValues = fallbackValues)
 fixed (global::System.Int32* p_results = results)
@@ -242,6 +263,9 @@ RefSwitchExpressionKernel(a, b, selectors, valuesToAssign);
 }
 ";
 public static readonly string RefSwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + RefSwitchExpressionKernel_Source;
+private static byte[]? s_decryptionKey_RefSwitchExpressionKernel;
+private static byte[]? s_binaryData_RefSwitchExpressionKernel;
+private static bool s_isLoaded_RefSwitchExpressionKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void RefSwitchExpressionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* selectors, global::System.Int32* valuesToAssign);
@@ -250,11 +274,15 @@ public static unsafe void Launch_RefSwitchExpressionKernel(global::System.Int32[
 if (a.Length == 0 || b.Length == 0 || selectors.Length == 0 || valuesToAssign.Length == 0){
 return;
 }
+if (!s_isLoaded_RefSwitchExpressionKernel)
+{
+s_decryptionKey_RefSwitchExpressionKernel = null;
+s_isLoaded_RefSwitchExpressionKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", dllPath, s_decryptionKey_RefSwitchExpressionKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_selectors = selectors)
@@ -302,6 +330,9 @@ SimpleTernaryKernel(a, b, result);
 }
 ";
 public static readonly string SimpleTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + SimpleTernaryKernel_Source;
+private static byte[]? s_decryptionKey_SimpleTernaryKernel;
+private static byte[]? s_binaryData_SimpleTernaryKernel;
+private static bool s_isLoaded_SimpleTernaryKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void SimpleTernaryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Double* result);
@@ -310,11 +341,15 @@ public static unsafe void Launch_SimpleTernaryKernel(global::System.Int32[] a, g
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
+if (!s_isLoaded_SimpleTernaryKernel)
+{
+s_decryptionKey_SimpleTernaryKernel = null;
+s_isLoaded_SimpleTernaryKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_01_09_ControlFlowKernels_SimpleTernaryKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SimpleTernaryKernel_Delegate>("__gsharp_launch_SimpleTernaryKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SimpleTernaryKernel_Delegate>("__gsharp_launch_SimpleTernaryKernel", dllPath, s_decryptionKey_SimpleTernaryKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Double* p_result = result)
@@ -370,6 +405,9 @@ SwitchExpressionKernel(input, output);
 }
 ";
 public static readonly string SwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + SwitchExpressionKernel_Source;
+private static byte[]? s_decryptionKey_SwitchExpressionKernel;
+private static byte[]? s_binaryData_SwitchExpressionKernel;
+private static bool s_isLoaded_SwitchExpressionKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void SwitchExpressionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
@@ -378,11 +416,15 @@ public static unsafe void Launch_SwitchExpressionKernel(global::System.Int32[] i
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+if (!s_isLoaded_SwitchExpressionKernel)
+{
+s_decryptionKey_SwitchExpressionKernel = null;
+s_isLoaded_SwitchExpressionKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_01_09_ControlFlowKernels_SwitchExpressionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", dllPath, s_decryptionKey_SwitchExpressionKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

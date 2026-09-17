@@ -44,6 +44,9 @@ ModifyStructLayoutKernel(data);
 }
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ModifyStructLayoutKernel_Source;
+private static byte[]? s_decryptionKey_ModifyStructLayoutKernel;
+private static byte[]? s_binaryData_ModifyStructLayoutKernel;
+private static bool s_isLoaded_ModifyStructLayoutKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ModifyStructLayoutKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct* data);
@@ -52,11 +55,15 @@ public static unsafe void Launch_ModifyStructLayoutKernel(global::Kassyi.GSharp.
 if (data.Length == 0){
 return;
 }
+if (!s_isLoaded_ModifyStructLayoutKernel)
+{
+s_decryptionKey_ModifyStructLayoutKernel = null;
+s_isLoaded_ModifyStructLayoutKernel = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_33_StructLayoutKernels_ModifyStructLayoutKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_ModifyStructLayoutKernel", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_ModifyStructLayoutKernel", dllPath, s_decryptionKey_ModifyStructLayoutKernel);
 fixed (global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
