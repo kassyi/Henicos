@@ -5,6 +5,8 @@ public interface IComputeBenchmark
     string Name { get; }
     void Initialize();
     void RunReferenceCpu();
-    void RunGSharpCpu();
+    void RunGSharp();
+    void RunGSharpCpu() => RunGSharp();
+    void RunNativeCuda();
     void Verify();
 }
