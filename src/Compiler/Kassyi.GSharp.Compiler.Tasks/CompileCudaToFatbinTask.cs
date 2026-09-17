@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -12,7 +11,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     public ITaskItem[] CudaSources { get; set; } = [];
 
     public string TargetArchitectures { get; set; } =
-        "compute_50,sm_50;compute_70,sm_70;compute_80,sm_80;compute_86,sm_86";
+        "compute_86,sm_86";
 
     public string NvccPath { get; set; } = "nvcc";
 
@@ -24,9 +23,19 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     protected override ITaskItem[] GetSources() => CudaSources;
     protected override void SetOutputItems(ITaskItem[] outputItems) => OutputFatbins = outputItems;
 
+    private Dictionary<string, string>? _vcvarsEnv;
+
     protected override bool OnBeforeExecute()
     {
         _architectures = TargetArchitectures.Split([';'], StringSplitOptions.RemoveEmptyEntries);
+        _vcvarsEnv = GetVcvarsEnvironment("x64");
+        if (_vcvarsEnv == null)
+        {
+            Log.LogError(
+                "Could not locate vcvarsall.bat via vswhere.exe. Please ensure MSVC C++ Build Tools are installed.");
+            return false;
+        }
+
         return true;
     }
 
@@ -75,6 +84,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     {
         var args = new StringBuilder();
         args.Append("--fatbin ");
+        args.Append("-std=c++17 ");
+        args.Append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING ");
         foreach (var arch in architectures)
         {
             var parts = arch.Split(',');
@@ -100,6 +111,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             CreateNoWindow = true
         };
 
+        if (_vcvarsEnv != null)
+        {
+            foreach (var kvp in _vcvarsEnv)
+            {
+                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
+            }
+        }
+
         using var process = Process.Start(startInfo);
         if (process == null)
         {
@@ -108,9 +127,19 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
 
+        var errorBuilder = new StringBuilder();
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data != null)
+            {
+                errorBuilder.AppendLine(e.Data);
+            }
+        };
+        process.BeginErrorReadLine();
+
         var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
+        var error = errorBuilder.ToString();
 
         if (process.ExitCode == 0)
         {
@@ -130,5 +159,4 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         return false;
     }
-
 }
