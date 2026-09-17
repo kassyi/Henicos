@@ -1,6 +1,5 @@
-using System.Diagnostics;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -92,8 +91,8 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         }
 
         // Determine current host architecture
-        var arch = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture;
-        return arch == System.Runtime.InteropServices.Architecture.Arm64 ? ["arm64"] : ["x64"];
+        var arch = RuntimeInformation.ProcessArchitecture;
+        return arch == Architecture.Arm64 ? ["arm64"] : ["x64"];
     }
 
     private bool CompileWithMsvc(string sourcePath, string outputDllPath, string vcvarsArch)
@@ -151,7 +150,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             return false;
         }
 
-        var errorBuilder = new System.Text.StringBuilder();
+        var errorBuilder = new StringBuilder();
         process.ErrorDataReceived += (_, e) =>
         {
             if (e.Data != null)
