@@ -60,7 +60,7 @@ s_isLoaded_MatrixMultiplyStressKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MatrixMultiplyStressKernel_Delegate>("__gsharp_launch_MatrixMultiplyStressKernel", dllPath, s_decryptionKey_MatrixMultiplyStressKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MatrixMultiplyStressKernel_Delegate>("__gsharp_launch_MatrixMultiplyStressKernel", dllPath, s_decryptionKey_MatrixMultiplyStressKernel);
 fixed (global::System.Single* p_a = a)
 fixed (global::System.Single* p_b = b)
 fixed (global::System.Single* p_c = c)

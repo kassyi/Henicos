@@ -61,7 +61,7 @@ s_isLoaded_AtomicAddStressKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AtomicAddStressKernel_Delegate>("__gsharp_launch_AtomicAddStressKernel", dllPath, s_decryptionKey_AtomicAddStressKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicAddStressKernel_Delegate>("__gsharp_launch_AtomicAddStressKernel", dllPath, s_decryptionKey_AtomicAddStressKernel);
 fixed (global::System.Int32* p_globalSum = globalSum)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalSum);
@@ -129,7 +129,7 @@ s_isLoaded_AtomicOrMaxStressKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AtomicOrMaxStressKernel_Delegate>("__gsharp_launch_AtomicOrMaxStressKernel", dllPath, s_decryptionKey_AtomicOrMaxStressKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicOrMaxStressKernel_Delegate>("__gsharp_launch_AtomicOrMaxStressKernel", dllPath, s_decryptionKey_AtomicOrMaxStressKernel);
 fixed (global::System.UInt32* p_globalState = globalState)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalState);
@@ -201,7 +201,7 @@ s_isLoaded_IntrinsicsKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<IntrinsicsKernel_Delegate>("__gsharp_launch_IntrinsicsKernel", dllPath, s_decryptionKey_IntrinsicsKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IntrinsicsKernel_Delegate>("__gsharp_launch_IntrinsicsKernel", dllPath, s_decryptionKey_IntrinsicsKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -278,7 +278,7 @@ s_isLoaded_SharedMemoryKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SharedMemoryKernel_Delegate>("__gsharp_launch_SharedMemoryKernel", dllPath, s_decryptionKey_SharedMemoryKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryKernel_Delegate>("__gsharp_launch_SharedMemoryKernel", dllPath, s_decryptionKey_SharedMemoryKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, dynSize);
@@ -351,7 +351,7 @@ s_isLoaded_SharedMemoryReverseKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SharedMemoryReverseKernel_Delegate>("__gsharp_launch_SharedMemoryReverseKernel", dllPath, s_decryptionKey_SharedMemoryReverseKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryReverseKernel_Delegate>("__gsharp_launch_SharedMemoryReverseKernel", dllPath, s_decryptionKey_SharedMemoryReverseKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, size);

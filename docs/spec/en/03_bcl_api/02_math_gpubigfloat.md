@@ -1,17 +1,83 @@
-# 12. Arbitrary-Precision GPU Floating-Point Module (GpuBigFloat / GpuBigUFloat)
+# 2. Arbitrary-Precision GPU Floating-Point Module (GpuBigFloat / GpuBigUFloat)
 
 The `Kassyi.GSharp.Stdlib.Math.BigFloat` namespace provides high-performance, arbitrary-precision floating-point arithmetic executed natively on NVIDIA GPUs. Designed according to G#'s core tenets of **Zero-Allocation** and **Static Determinism**, all floating-point types are represented as unmanaged `struct` value types.
 
 ---
 
-## 12.1 Overview & Core Architecture
+## Part A: API Reference & Usage
+
+To provide an intuitive, zero-allocation developer experience natively in C#, the module leverages C# 12 `[InlineArray]` and `[CollectionBuilder]` to define fixed-size wrappers around generic memory layouts.
+
+### `GpuFloat128`, `GpuFloat256`, `GpuFloat512` Structs
+
+Concrete unmanaged wrapper structs for signed arbitrary-precision floating-point numbers.
+
+**Syntax**
+```csharp
+public struct GpuFloat128
+{
+    public GpuFloat128(GpuUInt128 significand, int exponent, bool isNegative) { ... }
+}
+```
+
+**Remarks**
+* **Zero-Allocation**: These structs are stack- or register-allocated value types. No reference allocations are performed.
+* **Initialization**: The recommended way to initialize the significand is using C# 12 Collection Expressions (`[ ... ]`), which safely copies a `ReadOnlySpan<uint>` into the inline arrays without triggering heap allocation.
+
+**Example 1: Initialization on the Host (CPU)**
+```csharp
+// Context: Host C# (CPU)
+using Kassyi.GSharp.Stdlib.Math.BigFloat;
+
+// 1. Initialize the significand (mantissa) using Collection Expressions
+// For a 128-bit float, we provide 4 x 32-bit uint chunks.
+GpuUInt128 significand = [0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000];
+
+// 2. Construct the float
+var myFloat = new GpuFloat128(significand, exponent: 10, isNegative: false);
+```
+
+**Example 2: Arithmetic Operations in the Kernel (GPU)**
+GpuBigFloat types support standard operator overloading for intuitive arithmetic directly inside GPU kernels.
+
+```csharp
+// Context: G# Kernel (GPU)
+[GpuKernel]
+public static unsafe void BigFloatAddKernel(GpuFloat128* a, GpuFloat128* b, GpuFloat128* result)
+{
+    int tid = ThreadIndex.X;
+    // Standard addition operator resolves to the optimized GPU math implementation
+    result[tid] = a[tid] + b[tid];
+}
+```
+
+### `GpuBigFloatRoundingMode` Enum
+
+Specifies the IEEE 754 compliant rounding mode to use during mathematical operations.
+
+**Syntax**
+```csharp
+public enum GpuBigFloatRoundingMode
+{
+    RoundToNearestEven = 0,
+    RoundTowardZero = 1,
+    RoundTowardPositiveInfinity = 2,
+    RoundTowardNegativeInfinity = 3
+}
+```
+
+---
+
+## Part B: Architecture and Implementation Details
+
+## 2.1 Overview & Core Architecture
 
 Arbitrary-precision GPU floating-point operations require predictable memory access, zero dynamic heap allocations, and zero dynamic dispatch. The module defines two primary floating-point value types:
 
 1. **`GpuBigUFloat<TSize>`**: Unsigned arbitrary-precision floating-point number.
 2. **`GpuBigFloat<TSize>`**: Signed arbitrary-precision floating-point number wrapping `GpuBigUFloat<TSize>`.
 
-### 12.1.1 Structural Layout & Memory Safety
+### 2.1.1 Structural Layout & Memory Safety
 
 To guarantee static determinism and seamless mapping to CUDA C++ registers and shared memory, all types enforce sequential layout (`[StructLayout(LayoutKind.Sequential)]`):
 
@@ -48,7 +114,7 @@ public struct GpuBigFloat<TSize> where TSize : unmanaged
 
 ---
 
-## 12.2 Radix Point Alignment (Bit-Shifting)
+## 2.2 Radix Point Alignment (Bit-Shifting)
 
 When performing addition ($A + B$) or subtraction ($A - B$), the operands must be aligned to a common radix point before significand operations.
 
@@ -56,7 +122,7 @@ Given two operands:
 $$A = (-1)^{S_A} \cdot M_A \cdot 2^{E_A}$$
 $$B = (-1)^{S_B} \cdot M_B \cdot 2^{E_B}$$
 
-### 12.2.1 Alignment Algorithm
+### 2.2.1 Alignment Algorithm
 
 1. **Exponent Comparison**:
    Calculate the exponent difference $\Delta E = |E_A - E_B|$.
@@ -72,9 +138,9 @@ $$B = (-1)^{S_B} \cdot M_B \cdot 2^{E_B}$$
 
 ---
 
-## 12.3 Normalization & IEEE 754 Compliant Rounding
+## 2.3 Normalization & IEEE 754 Compliant Rounding
 
-### 12.3.1 Normalization Process
+### 2.3.1 Normalization Process
 
 Following an arithmetic operation, the resulting significand $M_{\text{raw}}$ may overflow (carry out) or underflow (leading zeros). Normalization adjusts $M_{\text{raw}}$ so that its Most Significant Bit (MSB) aligns with the top bit of the allocated significand size:
 
@@ -85,7 +151,7 @@ Following an arithmetic operation, the resulting significand $M_{\text{raw}}$ ma
    If subtraction results in leading zeros, compute Leading Zero Count $\text{LZC}(M_{\text{raw}})$, shift $M_{\text{raw}}$ left by $\text{LZC}$, and decrement $E$:
    $$M_{\text{norm}} = M_{\text{raw}} \ll \text{LZC}, \quad E_{\text{norm}} = E_{\text{common}} - \text{LZC}$$
 
-### 12.3.2 IEEE 754 Rounding Modes (`GpuBigFloatRoundingMode`)
+### 2.3.2 IEEE 754 Rounding Modes (`GpuBigFloatRoundingMode`)
 
 The module supports IEEE 754 compliant rounding modes defined in `GpuBigFloatRoundingMode`:
 
@@ -114,7 +180,17 @@ Evaluated using Guard Bit ($G$), Round Bit ($R$), and Sticky Bit ($S$):
 
 ---
 
-## 12.4 Boundary Conditions & Edge Cases
+## 2.4 Algorithmic Complexity
+
+Because floating-point operations ultimately delegate to integer significand arithmetic (plus exponent manipulation and bit-alignment), the computational time complexity scales with the configured precision ($N$ words):
+
+- **Addition / Subtraction**: $\mathcal{O}(N)$ total work. Involves computing $\Delta E$, shifting the significand ($\mathcal{O}(N)$), performing parallel ripple-carry addition ($\mathcal{O}(N)$), and normalizing ($\mathcal{O}(N)$).
+- **Multiplication**: $\mathcal{O}(N \log N)$ total work. Exponents are added ($\mathcal{O}(1)$), while significands are multiplied utilizing the underlying `GpuBigInt` NTT logic ($\mathcal{O}(N \log N)$).
+- **Division**: $\mathcal{O}(N \log N)$ total work. Exponents are subtracted ($\mathcal{O}(1)$), while significands are divided utilizing Newton-Raphson iteration ($\mathcal{O}(N \log N)$).
+
+---
+
+## 2.5 Boundary Conditions & Edge Cases
 
 | Boundary Condition | Expected Behavior |
 | :--- | :--- |
@@ -127,7 +203,7 @@ Evaluated using Guard Bit ($G$), Round Bit ($R$), and Sticky Bit ($S$):
 
 ---
 
-## 12.5 Preconditions & Invariants
+## 2.6 Preconditions & Invariants
 
 1. **Unmanaged Type Constraint**: Type parameter `TSize` must be `unmanaged` to allow raw memory copy and GPU kernel execution.
 2. **Static Alignment Invariant**: Field offsets for `Significand`, `Exponent`, and `IsNegative` are fixed at compile time.
@@ -135,11 +211,11 @@ Evaluated using Guard Bit ($G$), Round Bit ($R$), and Sticky Bit ($S$):
 
 ---
 
-## 12.6 C# 12 Ergonomics & Developer Experience (DX)
+## 2.7 C# 12 Ergonomics & Developer Experience (DX)
 
 To provide an intuitive, zero-allocation developer experience natively in C#, the module leverages advanced C# 12 features such as `[InlineArray]` and `[CollectionBuilder]`.
 
-### 12.6.1 Concrete Fixed-Size Wrappers
+### 2.7.1 Concrete Fixed-Size Wrappers
 
 Instead of requiring users to specify generic size parameters (e.g., `GpuBigFloat<LimbBuffer4>`) and define `global using` aliases, the module provides ready-to-use concrete wrapper types for common precisions:
 
@@ -148,7 +224,7 @@ Instead of requiring users to specify generic size parameters (e.g., `GpuBigFloa
 
 These structs act as ultra-thin, zero-overhead wrappers around the generic `GpuBigFloat<TSize>` and `GpuUIntBigInteger<TSize>` types. They provide implicit conversions and operator overloads for seamless arithmetic.
 
-### 12.6.2 Zero-Allocation Collection Expressions
+### 2.7.2 Zero-Allocation Collection Expressions
 
 Traditional C# arrays (`new uint[] { 1, 2 }`) allocate memory on the managed heap, which is strictly prohibited for GPU device-side execution. To solve this, the module implements zero-allocation initialization using C# 12 Collection Expressions:
 

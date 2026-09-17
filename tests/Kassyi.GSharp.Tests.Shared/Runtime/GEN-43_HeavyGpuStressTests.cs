@@ -10,7 +10,7 @@ public class GEN_43_HeavyGpuStressTests
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-43")]
-    public void Test_GEN43_JitEngine_HandlesMultipleRepeatedLaunches()
+    public void Test_GEN43_GpuKernelLoader_HandlesMultipleRepeatedLaunches()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Use a small matrix size to avoid excessive execution time, 
@@ -49,11 +49,11 @@ public class GEN_43_HeavyGpuStressTests
     [SkippableFact]
     [Trait("FeatureId", "GEN-43")]
     [Trait("Category", "Concurrency")]
-    public void Test_GEN43_JitEngine_HandlesConcurrentLaunches()
+    public void Test_GEN43_GpuKernelLoader_HandlesConcurrentLaunches()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Concurrently launch kernels across multiple worker threads to stress 
-        // JitEngine thread safety and CudaContextScope per-thread binding.
+        // GpuKernelLoader thread safety and CudaContextScope per-thread binding.
         int n = 16;
         int elements = n * n;
         int workerCount = 8;

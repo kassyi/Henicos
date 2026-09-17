@@ -70,7 +70,7 @@ s_isLoaded_AllocationTestKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath, s_decryptionKey_AllocationTestKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath, s_decryptionKey_AllocationTestKernel);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_ioVal = &ioVal)
 fixed (global::System.Single* p_outVal = &outVal)

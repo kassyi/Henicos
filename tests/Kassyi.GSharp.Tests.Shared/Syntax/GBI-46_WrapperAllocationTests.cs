@@ -9,14 +9,14 @@ namespace Kassyi.GSharp.Tests.Syntax;
 [Trait("Category", "GpuExecution")]
 public class GBI_46_WrapperAllocationTests : TranspilerTestBase
 {
-    private static readonly global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[] s_constArray = new global::Kassyi.GSharp.Runtime.Jit.JitConstantArg[1];
+    private static readonly global::Kassyi.GSharp.Runtime.Aot.ConstantArgument[] s_constArray = new global::Kassyi.GSharp.Runtime.Aot.ConstantArgument[1];
 
     [SkippableFact]
     [Trait("FeatureId", "GBI-46")]
     public void Test_GBI46_LaunchDevice_ShouldNotAllocateOnHotPath()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-        using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+        using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
         // Setup
         int ioVal = 5;
         float outVal;
@@ -74,7 +74,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
     public void Test_GBI46_Launch_EmptyArray_ShouldReturnEarlyAndSetDefaultOut()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-        using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+        using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 
         int ioVal = 42;
         float outVal = 99.0f;
@@ -95,7 +95,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Warm up and JIT compile on primary thread
-        using (var _initCtx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+        using (var _initCtx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
         {
             int io = 5;
             WrapperAllocationKernelsWrapper.Launch_AllocationTestKernel(ref io, out _, [42], 10);
@@ -104,7 +104,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
         // Stress test concurrent invocation across multiple worker threads, each binding CUDA context
         System.Threading.Tasks.Parallel.For(0, 10, i =>
         {
-            using var _ctx = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope();
+            using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 
             int ioVal = 5;
             float outVal;

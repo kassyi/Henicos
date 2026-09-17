@@ -47,7 +47,7 @@ outVal = default;
 if (arrayVal.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AllocationTestKernel)
 {
@@ -63,7 +63,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'WrapperAllocatio
 }
 s_isLoaded_AllocationTestKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AllocationTestKernel, "AllocationTestKernel", s_decryptionKey_AllocationTestKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllocationTestKernel, "AllocationTestKernel", s_decryptionKey_AllocationTestKernel);
 IntPtr d_ioVal = IntPtr.Zero;
 IntPtr d_outVal = IntPtr.Zero;
 IntPtr d_arrayVal = IntPtr.Zero;
@@ -149,7 +149,7 @@ if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_arrayVal);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AllocationTestKernel_Device(IntPtr ioVal, IntPtr outVal, IntPtr arrayVal, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AllocationTestKernel)
 {
@@ -165,7 +165,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'WrapperAllocatio
 }
 s_isLoaded_AllocationTestKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AllocationTestKernel, "AllocationTestKernel", s_decryptionKey_AllocationTestKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllocationTestKernel, "AllocationTestKernel", s_decryptionKey_AllocationTestKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

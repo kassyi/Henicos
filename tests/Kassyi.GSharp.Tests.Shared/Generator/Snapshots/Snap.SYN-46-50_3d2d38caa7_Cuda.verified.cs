@@ -38,7 +38,7 @@ public static unsafe void Launch_AtomicAddStressKernel(global::System.Int32[] gl
 if (globalSum.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AtomicAddStressKernel)
 {
@@ -54,7 +54,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_AtomicAddStressKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AtomicAddStressKernel, "AtomicAddStressKernel", s_decryptionKey_AtomicAddStressKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicAddStressKernel, "AtomicAddStressKernel", s_decryptionKey_AtomicAddStressKernel);
 IntPtr d_globalSum = IntPtr.Zero;
 try
 {
@@ -110,7 +110,7 @@ if (d_globalSum != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_globalSum);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AtomicAddStressKernel_Device(IntPtr globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AtomicAddStressKernel)
 {
@@ -126,7 +126,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_AtomicAddStressKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AtomicAddStressKernel, "AtomicAddStressKernel", s_decryptionKey_AtomicAddStressKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicAddStressKernel, "AtomicAddStressKernel", s_decryptionKey_AtomicAddStressKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -186,7 +186,7 @@ public static unsafe void Launch_AtomicOrMaxStressKernel(global::System.UInt32[]
 if (globalState.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AtomicOrMaxStressKernel)
 {
@@ -202,7 +202,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_AtomicOrMaxStressKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel, "AtomicOrMaxStressKernel", s_decryptionKey_AtomicOrMaxStressKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel, "AtomicOrMaxStressKernel", s_decryptionKey_AtomicOrMaxStressKernel);
 IntPtr d_globalState = IntPtr.Zero;
 try
 {
@@ -258,7 +258,7 @@ if (d_globalState != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_globalState);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AtomicOrMaxStressKernel_Device(IntPtr globalState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AtomicOrMaxStressKernel)
 {
@@ -274,7 +274,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_AtomicOrMaxStressKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel, "AtomicOrMaxStressKernel", s_decryptionKey_AtomicOrMaxStressKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel, "AtomicOrMaxStressKernel", s_decryptionKey_AtomicOrMaxStressKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -338,7 +338,7 @@ public static unsafe void Launch_IntrinsicsKernel(global::System.Int32[] data, u
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_IntrinsicsKernel)
 {
@@ -354,7 +354,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_IntrinsicsKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_IntrinsicsKernel, "IntrinsicsKernel", s_decryptionKey_IntrinsicsKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IntrinsicsKernel, "IntrinsicsKernel", s_decryptionKey_IntrinsicsKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -410,7 +410,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_IntrinsicsKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_IntrinsicsKernel)
 {
@@ -426,7 +426,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_IntrinsicsKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_IntrinsicsKernel, "IntrinsicsKernel", s_decryptionKey_IntrinsicsKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IntrinsicsKernel, "IntrinsicsKernel", s_decryptionKey_IntrinsicsKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -495,7 +495,7 @@ public static unsafe void Launch_SharedMemoryKernel(global::System.Int32[] data,
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SharedMemoryKernel)
 {
@@ -511,7 +511,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_SharedMemoryKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SharedMemoryKernel, "SharedMemoryKernel", s_decryptionKey_SharedMemoryKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryKernel, "SharedMemoryKernel", s_decryptionKey_SharedMemoryKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -569,7 +569,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_SharedMemoryKernel_Device(IntPtr data, global::System.Int32 dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SharedMemoryKernel)
 {
@@ -585,7 +585,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_SharedMemoryKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SharedMemoryKernel, "SharedMemoryKernel", s_decryptionKey_SharedMemoryKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryKernel, "SharedMemoryKernel", s_decryptionKey_SharedMemoryKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -652,7 +652,7 @@ public static unsafe void Launch_SharedMemoryReverseKernel(global::System.Int32[
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SharedMemoryReverseKernel)
 {
@@ -668,7 +668,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_SharedMemoryReverseKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel, "SharedMemoryReverseKernel", s_decryptionKey_SharedMemoryReverseKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel, "SharedMemoryReverseKernel", s_decryptionKey_SharedMemoryReverseKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -726,7 +726,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_SharedMemoryReverseKernel_Device(IntPtr data, global::System.Int32 size, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SharedMemoryReverseKernel)
 {
@@ -742,7 +742,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_Concur
 }
 s_isLoaded_SharedMemoryReverseKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel, "SharedMemoryReverseKernel", s_decryptionKey_SharedMemoryReverseKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel, "SharedMemoryReverseKernel", s_decryptionKey_SharedMemoryReverseKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

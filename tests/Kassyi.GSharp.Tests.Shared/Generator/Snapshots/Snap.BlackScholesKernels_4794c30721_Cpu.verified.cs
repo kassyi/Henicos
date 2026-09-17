@@ -62,7 +62,7 @@ s_isLoaded_BlackScholesKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"BlackScholesKernels_BlackScholesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_BlackScholesKernel", dllPath, s_decryptionKey_BlackScholesKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_BlackScholesKernel", dllPath, s_decryptionKey_BlackScholesKernel);
 fixed (global::System.Single* p_s = s)
 fixed (global::System.Single* p_x = x)
 fixed (global::System.Single* p_t = t)

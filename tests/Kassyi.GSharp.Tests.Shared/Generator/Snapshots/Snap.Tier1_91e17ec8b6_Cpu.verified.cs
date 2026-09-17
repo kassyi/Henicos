@@ -288,7 +288,7 @@ s_isLoaded_AllInOneKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Tier1IntegrationKernels_AllInOneKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", dllPath, s_decryptionKey_AllInOneKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", dllPath, s_decryptionKey_AllInOneKernel);
 fixed (global::System.Int32* p_intInput = intInput)
 fixed (global::System.Single* p_floatInput = floatInput)
 fixed (global::System.Single* p_results = results)

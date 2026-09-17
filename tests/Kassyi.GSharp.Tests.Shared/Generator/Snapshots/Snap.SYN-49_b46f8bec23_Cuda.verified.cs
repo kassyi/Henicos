@@ -52,7 +52,7 @@ public static unsafe void Launch_InterlockedEdgeCasesKernel(global::System.Int32
 if (array.Length == 0 || structArray.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_InterlockedEdgeCasesKernel)
 {
@@ -68,7 +68,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_InterlockedEdgeCasesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedEdgeCasesKernel, "InterlockedEdgeCasesKernel", s_decryptionKey_InterlockedEdgeCasesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_InterlockedEdgeCasesKernel, "InterlockedEdgeCasesKernel", s_decryptionKey_InterlockedEdgeCasesKernel);
 IntPtr d_array = IntPtr.Zero;
 IntPtr d_structArray = IntPtr.Zero;
 try
@@ -157,7 +157,7 @@ if (d_structArray != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structArray);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_InterlockedEdgeCasesKernel_Device(IntPtr array, IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_InterlockedEdgeCasesKernel)
 {
@@ -173,7 +173,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_InterlockedEdgeCasesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedEdgeCasesKernel, "InterlockedEdgeCasesKernel", s_decryptionKey_InterlockedEdgeCasesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_InterlockedEdgeCasesKernel, "InterlockedEdgeCasesKernel", s_decryptionKey_InterlockedEdgeCasesKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -246,7 +246,7 @@ public static unsafe void Launch_InterlockedKernel(global::System.Int32[] intBuf
 if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_InterlockedKernel)
 {
@@ -262,7 +262,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_InterlockedKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedKernel, "InterlockedKernel", s_decryptionKey_InterlockedKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_InterlockedKernel, "InterlockedKernel", s_decryptionKey_InterlockedKernel);
 IntPtr d_intBuf = IntPtr.Zero;
 IntPtr d_uintBuf = IntPtr.Zero;
 IntPtr d_longBuf = IntPtr.Zero;
@@ -417,7 +417,7 @@ if (d_ulongBuf != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ulongBuf);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_InterlockedKernel_Device(IntPtr intBuf, IntPtr uintBuf, IntPtr longBuf, IntPtr ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_InterlockedKernel)
 {
@@ -433,7 +433,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_InterlockedKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_InterlockedKernel, "InterlockedKernel", s_decryptionKey_InterlockedKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_InterlockedKernel, "InterlockedKernel", s_decryptionKey_InterlockedKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -508,7 +508,7 @@ public static unsafe void Launch_MathEdgeCasesKernel(global::System.Single[] flo
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MathEdgeCasesKernel)
 {
@@ -524,7 +524,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_MathEdgeCasesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathEdgeCasesKernel, "MathEdgeCasesKernel", s_decryptionKey_MathEdgeCasesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MathEdgeCasesKernel, "MathEdgeCasesKernel", s_decryptionKey_MathEdgeCasesKernel);
 IntPtr d_floatSpecialInputs = IntPtr.Zero;
 IntPtr d_floatSpecialResults = IntPtr.Zero;
 IntPtr d_doubleSpecialInputs = IntPtr.Zero;
@@ -679,7 +679,7 @@ if (d_doubleSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_doubleSp
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MathEdgeCasesKernel_Device(IntPtr floatSpecialInputs, IntPtr floatSpecialResults, IntPtr doubleSpecialInputs, IntPtr doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MathEdgeCasesKernel)
 {
@@ -695,7 +695,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_MathEdgeCasesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathEdgeCasesKernel, "MathEdgeCasesKernel", s_decryptionKey_MathEdgeCasesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MathEdgeCasesKernel, "MathEdgeCasesKernel", s_decryptionKey_MathEdgeCasesKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -776,7 +776,7 @@ public static unsafe void Launch_MathKernel(global::System.Double[] doubleInputs
 if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MathKernel)
 {
@@ -792,7 +792,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_MathKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathKernel, "MathKernel", s_decryptionKey_MathKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MathKernel, "MathKernel", s_decryptionKey_MathKernel);
 IntPtr d_doubleInputs = IntPtr.Zero;
 IntPtr d_doubleOutputs = IntPtr.Zero;
 IntPtr d_floatInputs = IntPtr.Zero;
@@ -947,7 +947,7 @@ if (d_floatOutputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_floatOutputs);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MathKernel_Device(IntPtr doubleInputs, IntPtr doubleOutputs, IntPtr floatInputs, IntPtr floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MathKernel)
 {
@@ -963,7 +963,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_49_SYN_68_In
 }
 s_isLoaded_MathKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MathKernel, "MathKernel", s_decryptionKey_MathKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MathKernel, "MathKernel", s_decryptionKey_MathKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

@@ -63,7 +63,7 @@ public static unsafe void Launch_HappyPathKernel(global::System.Int32[] input, g
 if (input.Length == 0 || output.Length == 0 || success.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_HappyPathKernel)
 {
@@ -79,7 +79,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOut
 }
 s_isLoaded_HappyPathKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_success = IntPtr.Zero;
@@ -201,7 +201,7 @@ if (d_success != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_success);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_HappyPathKernel_Device(IntPtr input, IntPtr output, IntPtr success, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_HappyPathKernel)
 {
@@ -217,7 +217,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOut
 }
 s_isLoaded_HappyPathKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -285,7 +285,7 @@ public static unsafe void Launch_IfConditionKernel(global::System.Int32[] input,
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_IfConditionKernel)
 {
@@ -301,7 +301,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOut
 }
 s_isLoaded_IfConditionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_IfConditionKernel, "IfConditionKernel", s_decryptionKey_IfConditionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IfConditionKernel, "IfConditionKernel", s_decryptionKey_IfConditionKernel);
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -390,7 +390,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_IfConditionKernel_Device(IntPtr input, IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_IfConditionKernel)
 {
@@ -406,7 +406,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOut
 }
 s_isLoaded_IfConditionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_IfConditionKernel, "IfConditionKernel", s_decryptionKey_IfConditionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IfConditionKernel, "IfConditionKernel", s_decryptionKey_IfConditionKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -472,7 +472,7 @@ public static unsafe void Launch_WhileConditionKernel(global::System.Int32[] inp
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_WhileConditionKernel)
 {
@@ -488,7 +488,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOut
 }
 s_isLoaded_WhileConditionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_WhileConditionKernel, "WhileConditionKernel", s_decryptionKey_WhileConditionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WhileConditionKernel, "WhileConditionKernel", s_decryptionKey_WhileConditionKernel);
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -577,7 +577,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_WhileConditionKernel_Device(IntPtr input, IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_WhileConditionKernel)
 {
@@ -593,7 +593,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOut
 }
 s_isLoaded_WhileConditionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_WhileConditionKernel, "WhileConditionKernel", s_decryptionKey_WhileConditionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WhileConditionKernel, "WhileConditionKernel", s_decryptionKey_WhileConditionKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

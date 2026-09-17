@@ -34,14 +34,7 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Kassyi.GSharp.Tests.Shared\**\*.cs" />
-    <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
-    <Compile Remove="..\Kassyi.GSharp.Tests.Shared\obj\**\*.cs" />
-    <Compile Remove="..\Kassyi.GSharp.Tests.Shared\bin\**\*.cs" />
-    <EmbeddedResource Include="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
-  </ItemGroup>
-
+  <Import Project="..\Kassyi.GSharp.Tests.Shared\Kassyi.GSharp.Tests.Shared.projitems" Label="Shared" />
   <ItemGroup>
     <ProjectReference Include="..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
     <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />

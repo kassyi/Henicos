@@ -56,7 +56,7 @@ s_isLoaded_Vector2AddKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_18_VectorBuiltinKernels_Vector2AddKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", dllPath, s_decryptionKey_Vector2AddKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", dllPath, s_decryptionKey_Vector2AddKernel);
 fixed (global::System.Numerics.Vector2* p_a = a)
 fixed (global::System.Numerics.Vector2* p_b = b)
 fixed (global::System.Numerics.Vector2* p_result = result)
@@ -127,7 +127,7 @@ s_isLoaded_Vector3AddKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_18_VectorBuiltinKernels_Vector3AddKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_Vector3AddKernel", dllPath, s_decryptionKey_Vector3AddKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_Vector3AddKernel", dllPath, s_decryptionKey_Vector3AddKernel);
 fixed (global::System.Numerics.Vector3* p_a = a)
 fixed (global::System.Numerics.Vector3* p_b = b)
 fixed (global::System.Numerics.Vector3* p_result = result)
@@ -198,7 +198,7 @@ s_isLoaded_Vector4AddKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_18_VectorBuiltinKernels_Vector4AddKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_Vector4AddKernel", dllPath, s_decryptionKey_Vector4AddKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_Vector4AddKernel", dllPath, s_decryptionKey_Vector4AddKernel);
 fixed (global::System.Numerics.Vector4* p_a = a)
 fixed (global::System.Numerics.Vector4* p_b = b)
 fixed (global::System.Numerics.Vector4* p_result = result)

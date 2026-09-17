@@ -1,4 +1,5 @@
-using Kassyi.GSharp.Runtime.Jit;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
@@ -16,7 +17,7 @@ public class TrialFactoringBenchmark
         Logger<TrialFactoringBenchmark>.Info($"Max P   = {maxP:N0}");
         Logger<TrialFactoringBenchmark>.Info("==================================================");
 
-        using var scope = new JitEngine.CudaContextScope();
+        using var scope = new GpuKernelLoader.CudaContextScope();
 
         using var gpuContext = new GpuContext(1024);
 
@@ -50,7 +51,7 @@ public class TrialFactoringBenchmark
                 blockDimX: BlockSize
             );
 
-            JitEngine.SynchronizeDevice();
+            GpuKernelLoader.SynchronizeDevice();
 
             gpuContext.Provider.CopyDeviceToHost(zeroCount, resultCountBuffer.Pointer, 1);
             var count = zeroCount[0];

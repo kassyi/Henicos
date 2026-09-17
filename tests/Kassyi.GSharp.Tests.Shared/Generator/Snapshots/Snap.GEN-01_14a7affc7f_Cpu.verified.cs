@@ -50,7 +50,7 @@ s_isLoaded_MyTestKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_01_SourceGeneratorTestKernels_MyTestKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MyTestKernel_Delegate>("__gsharp_launch_MyTestKernel", dllPath, s_decryptionKey_MyTestKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyTestKernel_Delegate>("__gsharp_launch_MyTestKernel", dllPath, s_decryptionKey_MyTestKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)

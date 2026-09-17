@@ -116,7 +116,7 @@ public static unsafe void Launch_MacroKernel(global::TestNamespace.DummyContext 
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MacroKernel)
 {
@@ -132,7 +132,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernels_Macr
 }
 s_isLoaded_MacroKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MacroKernel, "MacroKernel", s_decryptionKey_MacroKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MacroKernel, "MacroKernel", s_decryptionKey_MacroKernel);
 System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
@@ -260,7 +260,7 @@ if (d_dResult != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_dResult);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MacroKernel_Device(global::TestNamespace.DummyContext ctx, IntPtr dA, IntPtr dB, IntPtr dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MacroKernel)
 {
@@ -276,7 +276,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernels_Macr
 }
 s_isLoaded_MacroKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MacroKernel, "MacroKernel", s_decryptionKey_MacroKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MacroKernel, "MacroKernel", s_decryptionKey_MacroKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

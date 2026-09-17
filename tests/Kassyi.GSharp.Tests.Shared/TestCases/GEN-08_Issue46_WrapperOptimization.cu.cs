@@ -16,7 +16,7 @@ public static class WrapperOptimizationKernels
         out float scalarOut,
         int[] arrayVal,
         ref MyCustomStruct structRef,
-        [JitConstant] uint constantVal)
+        [Constant] uint constantVal)
     {
         scalarOut = 0;
         if (scalarRef > constantVal)

@@ -52,7 +52,7 @@ s_isLoaded_CooperativePhysicsProcess = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"ComprehensiveSpecKernel_CooperativePhysicsProcess{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", dllPath, s_decryptionKey_CooperativePhysicsProcess);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", dllPath, s_decryptionKey_CooperativePhysicsProcess);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

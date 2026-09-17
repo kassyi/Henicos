@@ -10,7 +10,7 @@ public static class KnownAttributes
     public const string GpuConst = nameof(GpuConst);
     public const string GpuInline = nameof(GpuInline);
     public const string GpuNoInline = nameof(GpuNoInline);
-    public const string JitConstant = nameof(JitConstant);
+    public const string Constant = nameof(Constant);
     public const string CudaIntrinsic = nameof(CudaIntrinsic);
     public const string CudaIntrinsicPattern = nameof(CudaIntrinsicPattern);
     public const string MethodImpl = nameof(MethodImpl);

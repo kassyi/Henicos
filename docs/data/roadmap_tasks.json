@@ -323,7 +323,7 @@
       "score": 30
     },
     "details": {
-      "current_behavior": "There was an issue where child processes were left orphaned when compilation timed out in JitEngine.",
+      "current_behavior": "There was an issue where child processes were left orphaned when compilation timed out in GpuKernelLoader.",
       "strategy": "Implemented process tree termination on compilation timeout via BackendCompiler and Process API.",
       "csharp_example": "// Compile a massive kernel with a strict 2-second timeout\nusing var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));\ntry\n{\n    var ptx = BackendCompiler.Compile(massiveSource, cts.Token);\n}\ncatch (OperationCanceledException)\n{\n    // Handled cancellation\n}",
       "cpp_example": "/* Runtime Log Output:\n * [BackendCompiler] Compilation timed out after 2000ms.\n * [BackendCompiler] System.OperationCanceledException thrown.\n * [BackendCompiler] Forcefully terminating child compiler processes (e.g. ptxas.exe) to prevent orphaned zombies.\n */"
@@ -388,7 +388,7 @@
       "score": 41
     },
     "details": {
-      "current_behavior": "Verified that when invalid C++ (CUDA) source is included, JitEngine properly detects, wraps, and notifies the C# side of NVRTC Compilation Failed.",
+      "current_behavior": "Verified that when invalid C++ (CUDA) source is included, GpuKernelLoader properly detects, wraps, and notifies the C# side of NVRTC Compilation Failed.",
       "strategy": "Implemented structured exception wrapping for NVRTC and CUDA Driver API errors (NvrtcException / CudaException).",
       "csharp_example": "[GpuKernel]\npublic static void BadPtxKernel()\n{\n    // Syntactically valid C# that passes Roslyn Analyzer, \n    // but results in an invalid PTX assembly error during NVRTC JIT.\n    Gpu.InlinePtx(\"invalid_ptx_instruction %r1, %r2;\");\n}",
       "cpp_example": "/* Runtime Exception during JIT Compilation:\n * Kassyi.GSharp.Runtime.NvrtcException: NVRTC Compilation failed.\n * \n * --- NVRTC Log ---\n * <kernel_name>.cu(15): error: identifier \"invalid_ptx_instruction\" is undefined\n * 1 error detected in the compilation of \"<kernel_name>.cu\".\n */"
@@ -763,7 +763,7 @@
   },
   {
     "id": "GEN-11",
-    "title": "PTX output optimization via JitConstant and unrolling",
+    "title": "PTX output optimization via Constant and unrolling",
     "domain": "GEN",
     "category": "Runtime",
     "status": "implemented",
@@ -6149,7 +6149,7 @@
   },
   {
     "id": "GBI-01",
-    "title": "Implementation of GSharpJitProvider memory pool",
+    "title": "Implementation of GSharpAotProvider memory pool",
     "domain": "GBI",
     "category": "Memory Management",
     "status": "implemented",
@@ -6289,7 +6289,7 @@
       "score": 28
     },
     "details": {
-      "current_behavior": "Currently GSharpJitProvider.Square is substituting it by calling the generic Mul(A, A, Result). The dedicated squaring routine (Device_NTT_PointwiseSquare) existing on the Native side is bypassed on the JIT side.",
+      "current_behavior": "Currently GSharpAotProvider.Square is substituting it by calling the generic Mul(A, A, Result). The dedicated squaring routine (Device_NTT_PointwiseSquare) existing on the Native side is bypassed on the JIT side.",
       "strategy": "On the JIT side, directly dispatches a Pointwise kernel dedicated for squaring, cutting the number of NTT transforms and multiplication complexity in half.",
       "csharp_example": "using var context = new GpuContext();\nvar a = new GpuBigInteger(context, \"999999999999\");\n\n// Dispatches a dedicated squaring NTT kernel instead of general Mul(A, A)\nvar squared = GpuBigInteger.Square(a);",
       "cpp_example": "/* Dispatches Device_NTT_PointwiseSquare kernel cutting the number of transforms in half */\n// Launch -> __global__ void Device_NTT_PointwiseSquare(...)"
@@ -8089,7 +8089,7 @@
   },
   {
     "id": "GEN-37",
-    "title": "Runtime constant expansion of macro arguments using [JitConstant]",
+    "title": "Runtime constant expansion of macro arguments using [Constant]",
     "domain": "GEN",
     "category": "JIT Infrastructure",
     "status": "rejected",
@@ -8100,14 +8100,14 @@
       "score": 33
     },
     "details": {
-      "current_behavior": "Arguments with IsJitConstant are excluded from the CUDA kernel signature, passed to JitEngine via the __gsharp_jit_constants dictionary, and injected into PTX as C++ macros (#define).",
-      "strategy": "Rejected: Duplicate of SYN-29 (Unroll control using [JitConstant]).",
+      "current_behavior": "Arguments with IsConstant are excluded from the CUDA kernel signature, passed to GpuKernelLoader via the __gsharp_jit_constants dictionary, and injected into PTX as C++ macros (#define).",
+      "strategy": "Rejected: Duplicate of SYN-29 (Unroll control using [Constant]).",
       "csharp_example": "// Rejected: Duplicate of SYN-29"
     },
     "score": 33,
     "files": [
-      "src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs",
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs"
+      "src/Core/Kassyi.GSharp.Core/ConstantAttribute.cs",
+      "src/Runtime/Kassyi.GSharp.Runtime/Jit/GpuKernelLoader.cs"
     ],
     "depends_on": [
       "GEN-42"
@@ -8204,7 +8204,7 @@
   },
   {
     "id": "GEN-41",
-    "title": "PTX macro expansion of compile-time constants using Gpu.JitConstant(\"Name\")",
+    "title": "PTX macro expansion of compile-time constants using Gpu.Constant(\"Name\")",
     "domain": "GEN",
     "category": "Transpiler Infrastructure",
     "status": "rejected",
@@ -8215,13 +8215,13 @@
       "score": 30
     },
     "details": {
-      "current_behavior": "Replaces Gpu.JitConstant calls with a simple identifier name (Name) defined via #define on the PTX side and outputs it.",
+      "current_behavior": "Replaces Gpu.Constant calls with a simple identifier name (Name) defined via #define on the PTX side and outputs it.",
       "strategy": "Rejected: JIT compilation is being abolished in favor of AOT architecture. Standard C# compile-time 'const' variables fulfill this role natively during Source Generation.",
       "csharp_example": "// Rejected: JIT compilation is being abolished in favor of AOT architecture. Standard C# compile-time 'const' variables fulfill this role natively during Source Generation."
     },
     "score": 30,
     "files": [
-      "src/Core/Kassyi.GSharp.Core/JitConstantAttribute.cs"
+      "src/Core/Kassyi.GSharp.Core/ConstantAttribute.cs"
     ],
     "depends_on": [
       "GEN-37"
@@ -8339,14 +8339,14 @@
       "score": 33
     },
     "details": {
-      "current_behavior": "JitEngine performs a two-stage cache based on source hashes: a ConcurrentDictionary in memory and PTX files on disk.",
+      "current_behavior": "GpuKernelLoader performs a two-stage cache based on source hashes: a ConcurrentDictionary in memory and PTX files on disk.",
       "strategy": "Implemented Two-stage JIT caching (ThreadStatic cache and ConcurrentDictionary with Lazy<Delegate>) to eliminate zero-allocation overhead during engine dispatch.",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class GpuKernelLoader\n{"
     },
     "score": 33,
     "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs",
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/CpuJitEngine.cs"
+      "src/Runtime/Kassyi.GSharp.Runtime/Aot/GpuKernelLoader.cs",
+      "src/Runtime/Kassyi.GSharp.Runtime/Aot/CpuKernelLoader.cs"
     ],
     "pr": [
       122
@@ -8368,12 +8368,12 @@
     "details": {
       "current_behavior": "Uses Lazy<GpuModule> for exclusive control during initial compilation, and further binds/automatically restores the CUDA context per thread using CudaContextScope (IDisposable).",
       "strategy": "Introduced Lazy<T> in JIT engine and Context initialization to ensure thread-safe exclusive control under concurrent workloads.",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class JitEngine\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for runtime consumers\")]\npublic sealed class GpuKernelLoader\n{"
     },
     "score": 35,
     "files": [
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/JitEngine.cs",
-      "src/Runtime/Kassyi.GSharp.Runtime/Jit/CpuJitEngine.cs"
+      "src/Runtime/Kassyi.GSharp.Runtime/Aot/GpuKernelLoader.cs",
+      "src/Runtime/Kassyi.GSharp.Runtime/Aot/CpuKernelLoader.cs"
     ],
     "depends_on": [
       "GEN-37",
@@ -8549,13 +8549,13 @@
       "score": 27
     },
     "details": {
-      "current_behavior": "Uses the NTT (Number Theoretic Transform) algorithm for large integer multiplication (Mul), caching and transferring Twiddle Factors of primitive roots precomputed on the CPU side within the GSharpJitProvider.",
+      "current_behavior": "Uses the NTT (Number Theoretic Transform) algorithm for large integer multiplication (Mul), caching and transferring Twiddle Factors of primitive roots precomputed on the CPU side within the GSharpAotProvider.",
       "strategy": "Implemented and verified native G# Fermat PRP kernels. Evaluated performance directly on the GPU without intermediate CPU host logic.",
-      "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
+      "csharp_example": "public sealed class GSharpAotProvider : IGpuExecutionProvider\n{"
     },
     "score": 27,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpAotProvider.cs"
     ],
     "pr": [
       108
@@ -8577,11 +8577,11 @@
     "details": {
       "current_behavior": "During Add/Sub, data is split and processed in chunks (ChunkKernel, e.g., 256), and any generated Carry/Borrow is written to a temporary buffer and reapplied later by the ApplyKernel.",
       "strategy": "Implemented a two-pass pipeline (grid-stride strategy) for parallel chunk-split carry/borrow propagation in addition and subtraction kernels.",
-      "csharp_example": "public sealed class GSharpJitProvider : IGpuExecutionProvider\n{"
+      "csharp_example": "public sealed class GSharpAotProvider : IGpuExecutionProvider\n{"
     },
     "score": 26,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpJitProvider.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpAotProvider.cs",
       "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [

@@ -50,7 +50,7 @@ public static unsafe void Launch_ParenthesesKernel(global::System.Int32[] output
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ParenthesesKernel)
 {
@@ -66,7 +66,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_91_92_Parent
 }
 s_isLoaded_ParenthesesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ParenthesesKernel, "ParenthesesKernel", s_decryptionKey_ParenthesesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ParenthesesKernel, "ParenthesesKernel", s_decryptionKey_ParenthesesKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -128,7 +128,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ParenthesesKernel_Device(IntPtr output, global::System.Int32 a, global::System.Int32 b, global::System.Int32 c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ParenthesesKernel)
 {
@@ -144,7 +144,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_91_92_Parent
 }
 s_isLoaded_ParenthesesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ParenthesesKernel, "ParenthesesKernel", s_decryptionKey_ParenthesesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ParenthesesKernel, "ParenthesesKernel", s_decryptionKey_ParenthesesKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];

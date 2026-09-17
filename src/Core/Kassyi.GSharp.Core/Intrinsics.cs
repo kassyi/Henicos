@@ -137,7 +137,7 @@ public static class Gpu
     /// <param name="macroName">The name of the JIT macro parameter.</param>
     /// <returns>A typed placeholder evaluated at GPU compile-time.</returns>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int JitConstant(string macroName) => GpuOnlyException.Throw<int>();
+    public static int Constant(string macroName) => GpuOnlyException.Throw<int>();
 
     /// <summary>Atomically adds an integer value to the target address and returns the old value.</summary>
     [CudaIntrinsic("atomicAdd")]

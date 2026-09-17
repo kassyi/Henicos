@@ -11,7 +11,7 @@ global using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 global using Kassyi.GSharp.Compiler.Dialects;
 global using Kassyi.GSharp.Compiler.Transpiler;
 global using Kassyi.GSharp.Compiler.Transpiler.Dialects;
-global using Kassyi.GSharp.Runtime.Jit;
+global using Kassyi.GSharp.Runtime.Aot;
 global using Kassyi.GSharp.Tests.Helpers;
 global using Microsoft.CodeAnalysis;
 global using Microsoft.CodeAnalysis.CSharp;

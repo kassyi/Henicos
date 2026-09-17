@@ -91,7 +91,7 @@ s_isLoaded_SharedMemoryStaticKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", dllPath, s_decryptionKey_SharedMemoryStaticKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", dllPath, s_decryptionKey_SharedMemoryStaticKernel);
 fixed (global::System.Int32* p_intOutput = intOutput)
 fixed (global::System.Single* p_floatOutput = floatOutput)
 fixed (global::Kassyi.GSharp.Tests.Syntax.CustomPoint* p_pointOutput = pointOutput)

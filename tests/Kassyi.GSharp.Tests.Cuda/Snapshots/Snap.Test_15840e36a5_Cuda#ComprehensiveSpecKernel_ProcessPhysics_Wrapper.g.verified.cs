@@ -168,16 +168,15 @@ inlineVec[0]=123;
 inlineVec[1]=456;
 {
 DebugReduc_ComprehensiveSpecKernel_PhysicsState state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
-DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState = &state;
-pState.Buffer[0]=inlineVec[0];
-(*pState).Buffer[1]=inlineVec[1];
+state.Buffer[0]=inlineVec[0];
+state.Buffer[1]=inlineVec[1];
 unsigned long long carry = 0;
-unsigned int sum = __gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
+unsigned int sum = __gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
 long long borrow = 0;
-unsigned int diff = __gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
+unsigned int diff = __gsharp_sub_cc(sum,state.Buffer[1],&borrow);
 if(sum>diff)
 {
-pState.Flags=1;
+state.Flags=1;
 }
 }
 bool condition1 = tx>0;
@@ -194,7 +193,8 @@ if(condition1||!condition2)
 mag+=1.5f;
 }
 }
-InlinePtx(""/* test ptx inline */"");
+/* test ptx inline */
+;
 if(ty>0)
 {
 return;
@@ -260,7 +260,7 @@ successFlag = default;
 if (particles.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ProcessPhysics)
 {
@@ -276,7 +276,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpe
 }
 s_isLoaded_ProcessPhysics = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -370,7 +370,7 @@ foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ProcessPhysics_Device(IntPtr particles, IntPtr totalMagnitude, IntPtr successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ProcessPhysics)
 {
@@ -386,7 +386,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpe
 }
 s_isLoaded_ProcessPhysics = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
 try
 {
 void** kernelParams = stackalloc void*[6];

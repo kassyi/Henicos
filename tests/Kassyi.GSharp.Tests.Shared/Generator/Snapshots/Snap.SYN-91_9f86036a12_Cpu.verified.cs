@@ -73,7 +73,7 @@ s_isLoaded_ParenthesesKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", dllPath, s_decryptionKey_ParenthesesKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", dllPath, s_decryptionKey_ParenthesesKernel);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output, a, b, c);

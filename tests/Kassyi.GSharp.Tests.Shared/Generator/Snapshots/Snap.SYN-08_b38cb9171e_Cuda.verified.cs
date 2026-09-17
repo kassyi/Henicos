@@ -43,7 +43,7 @@ public static unsafe void Launch_ImmediatelyEvaluatedLambdaKernel(global::System
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ImmediatelyEvaluatedLambdaKernel)
 {
@@ -59,7 +59,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_ImmediatelyEvaluatedLambdaKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel, "ImmediatelyEvaluatedLambdaKernel", s_decryptionKey_ImmediatelyEvaluatedLambdaKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel, "ImmediatelyEvaluatedLambdaKernel", s_decryptionKey_ImmediatelyEvaluatedLambdaKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -115,7 +115,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ImmediatelyEvaluatedLambdaKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ImmediatelyEvaluatedLambdaKernel)
 {
@@ -131,7 +131,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_ImmediatelyEvaluatedLambdaKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel, "ImmediatelyEvaluatedLambdaKernel", s_decryptionKey_ImmediatelyEvaluatedLambdaKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel, "ImmediatelyEvaluatedLambdaKernel", s_decryptionKey_ImmediatelyEvaluatedLambdaKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -191,7 +191,7 @@ public static unsafe void Launch_NonCapturingLambdaKernel(global::System.Int32[]
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NonCapturingLambdaKernel)
 {
@@ -207,7 +207,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_NonCapturingLambdaKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel, "NonCapturingLambdaKernel", s_decryptionKey_NonCapturingLambdaKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel, "NonCapturingLambdaKernel", s_decryptionKey_NonCapturingLambdaKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -263,7 +263,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NonCapturingLambdaKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NonCapturingLambdaKernel)
 {
@@ -279,7 +279,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_NonCapturingLambdaKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel, "NonCapturingLambdaKernel", s_decryptionKey_NonCapturingLambdaKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel, "NonCapturingLambdaKernel", s_decryptionKey_NonCapturingLambdaKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -340,7 +340,7 @@ public static unsafe void Launch_ShadowedVariableCaptureKernel(global::System.In
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ShadowedVariableCaptureKernel)
 {
@@ -356,7 +356,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_ShadowedVariableCaptureKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel, "ShadowedVariableCaptureKernel", s_decryptionKey_ShadowedVariableCaptureKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel, "ShadowedVariableCaptureKernel", s_decryptionKey_ShadowedVariableCaptureKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -412,7 +412,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ShadowedVariableCaptureKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ShadowedVariableCaptureKernel)
 {
@@ -428,7 +428,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_ShadowedVariableCaptureKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel, "ShadowedVariableCaptureKernel", s_decryptionKey_ShadowedVariableCaptureKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel, "ShadowedVariableCaptureKernel", s_decryptionKey_ShadowedVariableCaptureKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -488,7 +488,7 @@ public static unsafe void Launch_ValueCapturingLambdaKernel(global::System.Int32
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ValueCapturingLambdaKernel)
 {
@@ -504,7 +504,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_ValueCapturingLambdaKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel, "ValueCapturingLambdaKernel", s_decryptionKey_ValueCapturingLambdaKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel, "ValueCapturingLambdaKernel", s_decryptionKey_ValueCapturingLambdaKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -562,7 +562,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ValueCapturingLambdaKernel_Device(IntPtr data, global::System.Int32 factor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ValueCapturingLambdaKernel)
 {
@@ -578,7 +578,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAnd
 }
 s_isLoaded_ValueCapturingLambdaKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel, "ValueCapturingLambdaKernel", s_decryptionKey_ValueCapturingLambdaKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel, "ValueCapturingLambdaKernel", s_decryptionKey_ValueCapturingLambdaKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

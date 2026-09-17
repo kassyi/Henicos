@@ -1,4 +1,4 @@
-﻿using Kassyi.GSharp.Runtime.Jit;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Henicos.Cli;
 
@@ -23,12 +23,12 @@ public class GpuBigIntBenchmark : IDisposable
     private GpuUIntBigInteger _gpuBLegacy = null!;
     private GpuUIntBigInteger _gpuResultLegacy = null!;
 
-    private JitEngine.CudaContextScope _scope;
+    private GpuKernelLoader.CudaContextScope _scope;
 
     [GlobalSetup]
     public void Setup()
     {
-        _scope = new JitEngine.CudaContextScope();
+        _scope = new GpuKernelLoader.CudaContextScope();
 
         _contextJit = new GpuContext(NumWords * 2);
         _contextLegacy = new GpuContext(NumWords * 2, GpuExecutionEngine.LegacyNative);
@@ -80,7 +80,7 @@ public class GpuBigIntBenchmark : IDisposable
     }
 
     [Benchmark]
-    public void Sub_GSharpJit() => _gpuResultJit.Value = _gpuAJit - _gpuBJit;
+    public void Sub_GSharpAot() => _gpuResultJit.Value = _gpuAJit - _gpuBJit;
 
     public void Dispose() => Cleanup();
 }

@@ -51,7 +51,7 @@ public static unsafe void Launch_BitOperationsTestKernel(global::System.UInt32[]
 if (u32Data.Length == 0 || u64Data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_BitOperationsTestKernel)
 {
@@ -67,7 +67,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_Numeri
 }
 s_isLoaded_BitOperationsTestKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_BitOperationsTestKernel, "BitOperationsTestKernel", s_decryptionKey_BitOperationsTestKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BitOperationsTestKernel, "BitOperationsTestKernel", s_decryptionKey_BitOperationsTestKernel);
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
 try
@@ -156,7 +156,7 @@ if (d_u64Data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_u64Data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_BitOperationsTestKernel_Device(IntPtr u32Data, IntPtr u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_BitOperationsTestKernel)
 {
@@ -172,7 +172,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_Numeri
 }
 s_isLoaded_BitOperationsTestKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_BitOperationsTestKernel, "BitOperationsTestKernel", s_decryptionKey_BitOperationsTestKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BitOperationsTestKernel, "BitOperationsTestKernel", s_decryptionKey_BitOperationsTestKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

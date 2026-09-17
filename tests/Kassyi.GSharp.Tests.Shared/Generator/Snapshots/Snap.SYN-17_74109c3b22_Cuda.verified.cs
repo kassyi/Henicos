@@ -66,7 +66,7 @@ public static unsafe void Launch_HappyPathKernel(global::System.Int32[] output, 
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_HappyPathKernel)
 {
@@ -82,7 +82,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTyp
 }
 s_isLoaded_HappyPathKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -138,7 +138,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_HappyPathKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_HappyPathKernel)
 {
@@ -154,7 +154,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTyp
 }
 s_isLoaded_HappyPathKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel", s_decryptionKey_HappyPathKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -231,7 +231,7 @@ public static unsafe void Launch_NestedInitializerKernel(global::System.Int32[] 
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NestedInitializerKernel)
 {
@@ -247,7 +247,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTyp
 }
 s_isLoaded_NestedInitializerKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NestedInitializerKernel, "NestedInitializerKernel", s_decryptionKey_NestedInitializerKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedInitializerKernel, "NestedInitializerKernel", s_decryptionKey_NestedInitializerKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -303,7 +303,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NestedInitializerKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NestedInitializerKernel)
 {
@@ -319,7 +319,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_17_TargetTyp
 }
 s_isLoaded_NestedInitializerKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NestedInitializerKernel, "NestedInitializerKernel", s_decryptionKey_NestedInitializerKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedInitializerKernel, "NestedInitializerKernel", s_decryptionKey_NestedInitializerKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];

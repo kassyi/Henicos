@@ -77,7 +77,7 @@ s_isLoaded_ComplexLogicKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_93_CoreSyntaxKernels_ComplexLogicKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ComplexLogicKernel_Delegate>("__gsharp_launch_ComplexLogicKernel", dllPath, s_decryptionKey_ComplexLogicKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexLogicKernel_Delegate>("__gsharp_launch_ComplexLogicKernel", dllPath, s_decryptionKey_ComplexLogicKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)
@@ -170,7 +170,7 @@ s_isLoaded_ControlFlowKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_93_CoreSyntaxKernels_ControlFlowKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ControlFlowKernel_Delegate>("__gsharp_launch_ControlFlowKernel", dllPath, s_decryptionKey_ControlFlowKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ControlFlowKernel_Delegate>("__gsharp_launch_ControlFlowKernel", dllPath, s_decryptionKey_ControlFlowKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -234,7 +234,7 @@ s_isLoaded_DeviceMethodKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_93_CoreSyntaxKernels_DeviceMethodKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<DeviceMethodKernel_Delegate>("__gsharp_launch_DeviceMethodKernel", dllPath, s_decryptionKey_DeviceMethodKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DeviceMethodKernel_Delegate>("__gsharp_launch_DeviceMethodKernel", dllPath, s_decryptionKey_DeviceMethodKernel);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -317,7 +317,7 @@ s_isLoaded_PaddedStructKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_93_CoreSyntaxKernels_PaddedStructKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", dllPath, s_decryptionKey_PaddedStructKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", dllPath, s_decryptionKey_PaddedStructKernel);
 fixed (global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* p_items = items)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_items, length);
@@ -396,7 +396,7 @@ s_isLoaded_StructKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_93_CoreSyntaxKernels_StructKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<StructKernel_Delegate>("__gsharp_launch_StructKernel", dllPath, s_decryptionKey_StructKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructKernel_Delegate>("__gsharp_launch_StructKernel", dllPath, s_decryptionKey_StructKernel);
 fixed (global::Kassyi.GSharp.Tests.Syntax.Vector2* p_vectors = vectors)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_vectors, length);

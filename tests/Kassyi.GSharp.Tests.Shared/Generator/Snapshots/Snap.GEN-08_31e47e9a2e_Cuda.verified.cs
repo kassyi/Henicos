@@ -45,7 +45,7 @@ public static unsafe void Launch_ChunkAddKernel(global::System.UInt32[] dA, glob
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ChunkAddKernel)
 {
@@ -61,7 +61,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GpuBigIntKernels
 }
 s_isLoaded_ChunkAddKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ChunkAddKernel, "ChunkAddKernel", s_decryptionKey_ChunkAddKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ChunkAddKernel, "ChunkAddKernel", s_decryptionKey_ChunkAddKernel);
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
@@ -220,7 +220,7 @@ if (d_carryBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_carryBuffer);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ChunkAddKernel_Device(IntPtr dA, IntPtr dB, IntPtr dResult, IntPtr carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ChunkAddKernel)
 {
@@ -236,7 +236,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GpuBigIntKernels
 }
 s_isLoaded_ChunkAddKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ChunkAddKernel, "ChunkAddKernel", s_decryptionKey_ChunkAddKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ChunkAddKernel, "ChunkAddKernel", s_decryptionKey_ChunkAddKernel);
 try
 {
 void** kernelParams = stackalloc void*[6];

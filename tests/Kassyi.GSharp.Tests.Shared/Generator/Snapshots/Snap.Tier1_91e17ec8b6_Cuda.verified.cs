@@ -265,7 +265,7 @@ public static unsafe void Launch_AllInOneKernel(global::System.Int32[] intInput,
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AllInOneKernel)
 {
@@ -281,7 +281,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'Tier1Integration
 }
 s_isLoaded_AllInOneKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AllInOneKernel, "AllInOneKernel", s_decryptionKey_AllInOneKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllInOneKernel, "AllInOneKernel", s_decryptionKey_AllInOneKernel);
 IntPtr d_intInput = IntPtr.Zero;
 IntPtr d_floatInput = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -446,7 +446,7 @@ if (d_globalCounter != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_globalCounter);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AllInOneKernel_Device(IntPtr intInput, IntPtr floatInput, IntPtr results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, IntPtr globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AllInOneKernel)
 {
@@ -462,7 +462,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'Tier1Integration
 }
 s_isLoaded_AllInOneKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AllInOneKernel, "AllInOneKernel", s_decryptionKey_AllInOneKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllInOneKernel, "AllInOneKernel", s_decryptionKey_AllInOneKernel);
 try
 {
 void** kernelParams = stackalloc void*[7];

@@ -86,7 +86,7 @@ s_isLoaded_HappyPathKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_03_InlineOutVarKernels_HappyPathKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath, s_decryptionKey_HappyPathKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath, s_decryptionKey_HappyPathKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 fixed (global::System.Int32* p_success = success)
@@ -160,7 +160,7 @@ s_isLoaded_IfConditionKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_03_InlineOutVarKernels_IfConditionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", dllPath, s_decryptionKey_IfConditionKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", dllPath, s_decryptionKey_IfConditionKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
@@ -233,7 +233,7 @@ s_isLoaded_WhileConditionKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_03_InlineOutVarKernels_WhileConditionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", dllPath, s_decryptionKey_WhileConditionKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", dllPath, s_decryptionKey_WhileConditionKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

@@ -64,7 +64,7 @@ public static unsafe void Launch_ModifyPackedInlineArrayKernel(global::Kassyi.GS
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ModifyPackedInlineArrayKernel)
 {
@@ -80,7 +80,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLay
 }
 s_isLoaded_ModifyPackedInlineArrayKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel, "ModifyPackedInlineArrayKernel", s_decryptionKey_ModifyPackedInlineArrayKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel, "ModifyPackedInlineArrayKernel", s_decryptionKey_ModifyPackedInlineArrayKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -136,7 +136,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ModifyPackedInlineArrayKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ModifyPackedInlineArrayKernel)
 {
@@ -152,7 +152,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLay
 }
 s_isLoaded_ModifyPackedInlineArrayKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel, "ModifyPackedInlineArrayKernel", s_decryptionKey_ModifyPackedInlineArrayKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel, "ModifyPackedInlineArrayKernel", s_decryptionKey_ModifyPackedInlineArrayKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -222,7 +222,7 @@ public static unsafe void Launch_ModifyStructLayoutKernel(global::Kassyi.GSharp.
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ModifyStructLayoutKernel)
 {
@@ -238,7 +238,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLay
 }
 s_isLoaded_ModifyStructLayoutKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel", s_decryptionKey_ModifyStructLayoutKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel", s_decryptionKey_ModifyStructLayoutKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -294,7 +294,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ModifyStructLayoutKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ModifyStructLayoutKernel)
 {
@@ -310,7 +310,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLay
 }
 s_isLoaded_ModifyStructLayoutKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel", s_decryptionKey_ModifyStructLayoutKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel", s_decryptionKey_ModifyStructLayoutKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
