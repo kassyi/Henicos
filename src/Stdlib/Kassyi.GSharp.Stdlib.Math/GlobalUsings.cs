@@ -11,5 +11,6 @@ global using System.Runtime.InteropServices;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using Kassyi.GSharp.Core;
+global using Kassyi.GSharp.Stdlib.Math.BigInt;
 global using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 global using Kassyi.GSharp.Stdlib.Math.Contexts;
