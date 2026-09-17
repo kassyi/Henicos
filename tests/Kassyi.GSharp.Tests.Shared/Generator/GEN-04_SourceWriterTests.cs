@@ -123,6 +123,10 @@ public class GEN_04_SourceWriterTests
             }
         }
 
-        return Verifier.Verify(writer.ToString());
+        var methodName = nameof(Test_GEN04_SourceWriter_NestedScopeAndIndentation_Snapshots);
+        var hash10 = Kassyi.GSharp.Tests.Helpers.HashHelper.ComputeShortHash(methodName);
+        var snapshotName = $"Snap.GEN04_{hash10}";
+
+        return Verifier.Verify(writer.ToString()).UseFileName(snapshotName);
     }
 }

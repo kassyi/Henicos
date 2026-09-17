@@ -31,14 +31,15 @@ internal static class CppNameFormatter
         writer.Append(symbol.Name);
         return ref writer;
     }
+
     public static string ToSafeCppIdentifier(this ISymbol symbol)
     {
-        var sb = new System.Text.StringBuilder();
+        var sb = new StringBuilder();
         AppendSafeIdentifierRecursive(symbol, sb);
         return sb.ToString();
     }
 
-    private static void AppendSafeIdentifierRecursive(ISymbol symbol, System.Text.StringBuilder sb)
+    private static void AppendSafeIdentifierRecursive(ISymbol symbol, StringBuilder sb)
     {
         if (symbol is ITypeParameterSymbol)
         {
@@ -51,7 +52,7 @@ internal static class CppNameFormatter
             return;
         }
 
-        if (symbol.ContainingSymbol is { } parent && parent is not INamespaceSymbol { IsGlobalNamespace: true })
+        if (symbol.ContainingSymbol is { } parent and not INamespaceSymbol { IsGlobalNamespace: true })
         {
             AppendSafeIdentifierRecursive(parent, sb);
             sb.Append('_');

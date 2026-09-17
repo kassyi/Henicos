@@ -22,10 +22,7 @@ public readonly struct GpuBigInteger(GpuUIntBigInteger value, bool isNegative)
     /// <summary>
     /// Disposes the underlying GPU buffer.
     /// </summary>
-    public void Dispose()
-    {
-        Value.Dispose();
-    }
+    public void Dispose() => Value.Dispose();
 
     public int CompareTo(GpuBigInteger other)
     {

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using BenchmarkDotNet.Running;
 using Cocona;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Jit;
 
 namespace Henicos.Cli;

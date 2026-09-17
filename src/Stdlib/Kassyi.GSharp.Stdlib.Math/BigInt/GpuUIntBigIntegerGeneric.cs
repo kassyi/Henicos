@@ -105,10 +105,7 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
         return result;
     }
 
-    public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool stickyBit)
-    {
-        return ShiftRight(bits, out _, out _, out stickyBit);
-    }
+    public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool stickyBit) => ShiftRight(bits, out _, out _, out stickyBit);
 
     public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool guardBit, out bool roundBit, out bool stickyBit)
     {

@@ -1,5 +1,4 @@
-
-using Kassyi.GSharp.Core;
+using System.Globalization;
 
 namespace Henicos.PiBenchmark;
 
@@ -241,7 +240,7 @@ internal class Program
             _ => (1.0, trimmed)
         };
 
-        if (double.TryParse(numberPart, System.Globalization.CultureInfo.InvariantCulture, out var val))
+        if (double.TryParse(numberPart, CultureInfo.InvariantCulture, out var val))
         {
             result = (int)(val * multiplier);
             return true;

@@ -47,7 +47,8 @@ public class LoggerCollectionDefinition : ICollectionFixture<LoggerFixture>;
 
 [Collection("LoggerCollection")]
 public class LoggerTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     private class TestLogger : Logger
     {
         protected override string GetTag() => "TestLogger";
@@ -57,7 +58,6 @@ public class LoggerTests
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ShouldFormatAndWriteMessagesAsync()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Trace;
         logger.LogInformation("Test Info Message");
@@ -80,7 +80,6 @@ public class LoggerTests
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ConcurrentWrites_ShouldNotLoseMessages_StressTest()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
         int threadCount = 50;
@@ -105,11 +104,11 @@ public class LoggerTests
 
         var messages = new HashSet<string>(
             content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                   .Select(line =>
-                   {
-                       var lastBracket = line.LastIndexOf(']');
-                       return lastBracket >= 0 ? line[(lastBracket + 1)..].Trim() : line.Trim();
-                   }));
+                .Select(line =>
+                {
+                    var lastBracket = line.LastIndexOf(']');
+                    return lastBracket >= 0 ? line[(lastBracket + 1)..].Trim() : line.Trim();
+                }));
 
         for (int t = 0; t < threadCount; t++)
         {
@@ -125,7 +124,6 @@ public class LoggerTests
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_ExtremeMessageSize_EdgeCase()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.Info;
 
@@ -146,7 +144,6 @@ public class LoggerTests
     [Trait("FeatureId", "GEN-03")]
     public async Task Log_LogLevelNone_EdgeCase()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         var logger = new TestLogger();
         Logger.ActiveLogLevel = LogLevel.None;
         var uniqueGuid = Guid.NewGuid().ToString();
@@ -167,7 +164,6 @@ public class LoggerTests
     [Trait("FeatureId", "GEN-04")]
     public async Task MeasureScope_ShouldLogDuration()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
         Logger.ActiveLogLevel = LogLevel.Trace;
 
         using (var scope = new Logger.MeasureScope("TestTag", "TestOperation", LogLevel.Info))

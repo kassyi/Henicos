@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime.Jit;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
@@ -8,12 +7,12 @@ namespace Henicos.PiBenchmark;
 
 public class TrialFactoringBenchmark
 {
-    public static void RunTrialFactoring(int E, uint maxP)
+    public static void RunTrialFactoring(int e, uint maxP)
     {
         Logger<TrialFactoringBenchmark>.Info("==================================================");
         Logger<TrialFactoringBenchmark>.Info(" G# Native Fermat Trial Factoring (GPU)");
         Logger<TrialFactoringBenchmark>.Info("==================================================");
-        Logger<TrialFactoringBenchmark>.Info($"E       = {E}");
+        Logger<TrialFactoringBenchmark>.Info($"E       = {e}");
         Logger<TrialFactoringBenchmark>.Info($"Max P   = {maxP:N0}");
         Logger<TrialFactoringBenchmark>.Info("==================================================");
 
@@ -25,29 +24,30 @@ public class TrialFactoringBenchmark
         using var resultsBuffer = new ScopedGpuMemory(gpuContext.Provider, maxResults * sizeof(uint));
         using var resultCountBuffer = new ScopedGpuMemory(gpuContext.Provider, sizeof(uint));
 
-        var zeroCount = new uint[1] { 0 };
+        var zeroCount = new uint[] { 0 };
         gpuContext.Provider.CopyHostToDevice(resultCountBuffer.Pointer, zeroCount, 1);
 
-        uint batchSize = 100_000_000;
-        uint blockSize = 256;
+        const uint BatchSize = 100_000_000;
+        const uint BlockSize = 256;
 
-        Logger<TrialFactoringBenchmark>.Info($"Testing odd numbers from 3 up to {maxP:N0} in batches of {batchSize:N0}...");
+        Logger<TrialFactoringBenchmark>.Info(
+            $"Testing odd numbers from 3 up to {maxP:N0} in batches of {BatchSize:N0}...");
 
         var sw = Stopwatch.StartNew();
 
-        for (uint startOdd = 3; startOdd < maxP; startOdd += batchSize * 2)
+        for (uint startOdd = 3; startOdd < maxP; startOdd += BatchSize * 2)
         {
-            var currentBatchSize = Math.Min(batchSize, (maxP - startOdd) / 2 + 1);
-            var gridX = (currentBatchSize + blockSize - 1) / blockSize;
+            var currentBatchSize = Math.Min(BatchSize, (maxP - startOdd) / 2 + 1);
+            var gridX = (currentBatchSize + BlockSize - 1) / BlockSize;
 
             FermatTrialFactoringKernelsWrapper.Launch_Kernel_SearchFactors32_Device(
                 startOdd,
-                (uint)E,
+                (uint)e,
                 resultsBuffer.Pointer,
                 resultCountBuffer.Pointer,
                 maxResults,
                 gridDimX: gridX,
-                blockDimX: blockSize
+                blockDimX: BlockSize
             );
 
             JitEngine.SynchronizeDevice();
@@ -62,7 +62,7 @@ public class TrialFactoringBenchmark
 
                 foreach (var k in resultsHost)
                 {
-                    if (IsPrimeCPU(k))
+                    if (IsPrimeCpu(k))
                     {
                         Logger<TrialFactoringBenchmark>.Info($"=> CONFIRMED PRIME FACTOR FOUND: {k}");
                         Logger<TrialFactoringBenchmark>.Info("=> N is COMPOSITE!");
@@ -79,27 +79,27 @@ public class TrialFactoringBenchmark
                 gpuContext.Provider.CopyHostToDevice(resultCountBuffer.Pointer, zeroCount, 1);
             }
 
-            if (startOdd % (batchSize * 10) == 3 && startOdd > 3)
+            if (startOdd % (BatchSize * 10) == 3 && startOdd > 3)
             {
                 Logger<TrialFactoringBenchmark>.Info($"  ... reached {startOdd:N0}");
             }
         }
 
         sw.Stop();
-        Logger<TrialFactoringBenchmark>.Info($"Trial factoring up to {maxP:N0} completed in {sw.ElapsedMilliseconds} ms.");
+        Logger<TrialFactoringBenchmark>.Info(
+            $"Trial factoring up to {maxP:N0} completed in {sw.ElapsedMilliseconds} ms.");
         Logger<TrialFactoringBenchmark>.Info("No factors found. N passed trial division screening.");
     }
 
-    private static bool IsPrimeCPU(uint n)
+    private static bool IsPrimeCpu(uint n)
     {
-        if (n <= 1)
+        switch (n)
         {
-            return false;
-        }
-
-        if (n == 2 || n == 3)
-        {
-            return true;
+            case <= 1:
+                return false;
+            case 2:
+            case 3:
+                return true;
         }
 
         if (n % 2 == 0)
@@ -114,6 +114,7 @@ public class TrialFactoringBenchmark
                 return false;
             }
         }
+
         return true;
     }
 }
