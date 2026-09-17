@@ -177,6 +177,7 @@ sequenceDiagram
 1. **Interception**: The G# Roslyn Source Generator detects the `[GpuKernel]` attribute.
 2. **Transpilation**: It translates the C# AST (Abstract Syntax Tree) directly into raw CUDA C++ (`.cu`). The `GridStrideLoop` is expanded into native thread math.
 3. **Native Compilation**: It silently invokes NVIDIA's `nvcc` compiler to build a native `.dll` / `.so`.
+    * **NVCC Fallback**: If `nvcc` is not installed or not found in the system PATH, the transpiler safely skips the C++ compilation phase and emits a mock CPU-based C# stub. This allows developers on non-GPU hardware (like MacBooks) to still compile and write code without breaking the .NET build.
 4. **P/Invoke Generation**: It generates the `Launch_AddVectors` method in your C# project, seamlessly bridging the managed and unmanaged worlds.
 
 ## 0.5 Next Steps
