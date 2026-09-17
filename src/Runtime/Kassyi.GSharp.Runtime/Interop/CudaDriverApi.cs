@@ -117,6 +117,11 @@ public static partial class CudaDriverApi
     public static partial CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuModuleLoadDataEx(out IntPtr module, IntPtr image, uint numOptions,
+        IntPtr[]? options, IntPtr[]? optionValues);
+
     [LibraryImport(DllName, StringMarshalling = StringMarshalling.Utf8)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
