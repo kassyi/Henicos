@@ -10,7 +10,7 @@ public class ReductionBenchmark : IComputeBenchmark
     private float[] _input = null!;
     private float[] _outputCpu = null!;
     private float[] _outputGsharp = null!;
-    
+
     private float _finalResultCpu;
     private float _finalResultGsharp;
 
@@ -31,44 +31,54 @@ public class ReductionBenchmark : IComputeBenchmark
 
     public void RunReferenceCpu()
     {
-        // Simple CPU baseline (sequential for fairness of what a standard C# dev would write, or simple parallel)
-        // Here we do a manual chunked sum to simulate the block structure
-        Parallel.For(0, Blocks, b =>
+        for (int b = 0; b < Blocks; b++)
         {
-            float sum = 0;
+            float sum = 0.0f;
             int start = b * ElementsPerBlock;
             int end = start + ElementsPerBlock;
+            if (end > N)
+            {
+                end = N;
+            }
+
             for (int i = start; i < end; i++)
             {
                 sum += _input[i];
             }
-            _outputCpu[b] = sum;
-        });
 
-        // Final CPU reduction on the host
+            _outputCpu[b] = sum;
+        }
+
         _finalResultCpu = _outputCpu.Sum();
     }
 
     public void RunGSharpCpu()
     {
-        // Execute G# Kernel on CPU Jit Engine
         ReductionKernelsWrapper.Launch_ReductionKernel(
             _input, _outputGsharp, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 
-        // Final CPU reduction on the host
         _finalResultGsharp = _outputGsharp.Sum();
     }
 
     public void Verify()
     {
-        // Floating point accumulation order matters, so we allow a generous epsilon for 16M additions
+        for (int b = 0; b < Blocks; b++)
+        {
+            float blockDiff = Math.Abs(_outputCpu[b] - _outputGsharp[b]);
+            if (blockDiff > 1e-3f)
+            {
+                throw new Exception(
+                    $"Mismatch in block {b} reduction sum: CPU={_outputCpu[b]}, G#={_outputGsharp[b]}, Diff={blockDiff}");
+            }
+        }
+
         float diff = Math.Abs(_finalResultCpu - _finalResultGsharp);
-        float threshold = 1.0f; // High threshold because 16M floats sum can drift significantly based on tree vs sequential
+        float threshold = 1.0f;
 
         if (diff > threshold)
         {
-            throw new Exception($"Mismatch in reduction sum: CPU={_finalResultCpu}, G#={_finalResultGsharp}, Diff={diff}");
+            throw new Exception($"Mismatch in final reduction sum: CPU={_finalResultCpu}, G#={_finalResultGsharp}, Diff={diff}");
         }
     }
 }

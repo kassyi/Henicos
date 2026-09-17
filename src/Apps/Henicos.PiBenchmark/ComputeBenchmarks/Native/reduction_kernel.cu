@@ -1,4 +1,7 @@
-extern "C" __declspec(dllexport) void ReductionKernel_Native(float* input, float* output, int n)
+#include <cuda_runtime.h>
+
+// Native CUDA reference implementation for parallel reduction benchmark
+extern "C" __global__ void ReductionKernel_Native(float* input, float* output, int n)
 {
     __shared__ float sdata[256];
 

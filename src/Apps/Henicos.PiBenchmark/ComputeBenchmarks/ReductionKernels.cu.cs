@@ -7,40 +7,25 @@ public static class ReductionKernels
     [GpuKernel]
     public static void ReductionKernel(float[] input, float[] output, int n)
     {
-        // 256 threads per block
-        SharedMemory<float> sdata = new SharedMemory<float>(256);
-
-        int tid = ThreadIndex.X;
-        int i = BlockIndex.X * (BlockDimension.X * 2) + ThreadIndex.X;
-
-        // Perform first level of reduction: read two elements into shared memory
-        float mySum = 0;
-        if (i < n)
+        int bx = BlockIndex.X;
+        int threadsPerBlock = BlockDimension.X;
+        int elementsPerBlock = threadsPerBlock * 2;
+        int start = bx * elementsPerBlock;
+        int end = start + elementsPerBlock;
+        if (end > n)
         {
-            mySum = input[i];
+            end = n;
         }
-        if (i + BlockDimension.X < n)
-        {
-            mySum += input[i + BlockDimension.X];
-        }
-        
-        sdata[tid] = mySum;
-        Gpu.SyncThreads();
 
-        // Perform reduction in shared memory
-        for (int s = BlockDimension.X / 2; s > 0; s >>= 1)
+        if (ThreadIndex.X == 0)
         {
-            if (tid < s)
+            float blockSum = 0.0f;
+            for (int i = start; i < end; i++)
             {
-                sdata[tid] += sdata[tid + s];
+                blockSum += input[i];
             }
-            Gpu.SyncThreads();
-        }
 
-        // Write result for this block to global mem
-        if (tid == 0)
-        {
-            output[BlockIndex.X] = sdata[0];
+            output[bx] = blockSum;
         }
     }
 }

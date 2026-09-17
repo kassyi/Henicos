@@ -1,4 +1,7 @@
-extern "C" __declspec(dllexport) void SgemmKernel_Native(float* a, float* b, float* c, int n)
+#include <cuda_runtime.h>
+
+// Native CUDA reference implementation for tiled SGEMM benchmark
+extern "C" __global__ void SgemmKernel_Native(float* a, float* b, float* c, int n)
 {
     const int TileSize = 16;
     __shared__ float As[TileSize][TileSize];

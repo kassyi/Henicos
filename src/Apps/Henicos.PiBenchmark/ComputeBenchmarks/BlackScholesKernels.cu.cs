@@ -27,6 +27,7 @@ public static class BlackScholesKernels
         });
     }
 
+    [GpuDeviceFunction]
     private static float CndGsharp(float d)
     {
         float K = 1.0f / (1.0f + 0.2316419f * MathF.Abs(d));

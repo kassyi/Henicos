@@ -20,7 +20,8 @@ __device__ inline uint32_t Sigma1(uint32_t x) { return RotR(x, 6) ^ RotR(x, 11) 
 __device__ inline uint32_t sigma0(uint32_t x) { return RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3); }
 __device__ inline uint32_t sigma1(uint32_t x) { return RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10); }
 
-extern "C" __declspec(dllexport) void Sha256Kernel_Native(unsigned char* input, uint32_t* output, int numMessages)
+// Native CUDA reference implementation for SHA-256 benchmark
+extern "C" __global__ void Sha256Kernel_Native(unsigned char* input, uint32_t* output, int numMessages)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     if (tid >= numMessages) return;

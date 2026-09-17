@@ -10,7 +10,7 @@ public class SgemmBenchmark : IComputeBenchmark
     private float[] _cCpu = null!;
     private float[] _cGsharp = null!;
 
-    public string Name => "SGEMM (512x512, Tiled)";
+    public string Name => "SGEMM (512x512)";
 
     public void Initialize()
     {
@@ -29,12 +29,11 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void RunReferenceCpu()
     {
-        // Simple CPU baseline
-        Parallel.For(0, N, row =>
+        for (int row = 0; row < N; row++)
         {
             for (int col = 0; col < N; col++)
             {
-                float sum = 0;
+                float sum = 0.0f;
                 for (int k = 0; k < N; k++)
                 {
                     sum += _a[row * N + k] * _b[k * N + col];
@@ -42,7 +41,7 @@ public class SgemmBenchmark : IComputeBenchmark
 
                 _cCpu[row * N + col] = sum;
             }
-        });
+        }
     }
 
     public void RunGSharpCpu()
