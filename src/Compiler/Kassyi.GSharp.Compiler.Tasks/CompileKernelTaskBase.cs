@@ -1,5 +1,3 @@
-using Microsoft.Build.Framework;
-
 namespace Kassyi.GSharp.Compiler.Tasks;
 
 public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
@@ -79,10 +77,15 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
         var vswhereStartInfo = new ProcessStartInfo
         {
             FileName = vswhere,
-            Arguments = "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath",
+            Arguments =
+                "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath",
             UseShellExecute = false,
             RedirectStandardOutput = true,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            EnvironmentVariables =
+            {
+                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
+            }
         };
 
         using var vswhereProcess = Process.Start(vswhereStartInfo);
@@ -108,10 +111,14 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
         var envStartInfo = new ProcessStartInfo
         {
             FileName = "cmd.exe",
-            Arguments = $"/c \"call \"{vcvarsPath}\" {vcvarsArch} >nul && set\"",
+            Arguments = $"/c \"set VSCMD_SKIP_SENDTELEMETRY=1 && call \"{vcvarsPath}\" {vcvarsArch} >nul && set\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            EnvironmentVariables =
+            {
+                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
+            }
         };
 
         using var envProcess = Process.Start(envStartInfo);
@@ -132,6 +139,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
                 envVars[line.Substring(0, eqIndex)] = line.Substring(eqIndex + 1);
             }
         }
+
         return envVars;
     }
 
