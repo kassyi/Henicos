@@ -31,7 +31,7 @@
 - **`layer` (対象レイヤー)**
     - `core`: `Kassyi.GSharp.Core` (属性、共通例外、マーカー)
     - `compiler`: `Kassyi.GSharp.Compiler` (ソースジェネレータ、トランスパイラ)
-    - `runtime`: `Kassyi.GSharp.Runtime` (JitEngine, CUDA API wrapper)
+    - `runtime`: `Kassyi.GSharp.Runtime` (GpuKernelLoader, CUDA API wrapper)
     - `stdlib`: `Kassyi.GSharp.Stdlib.Math` (GpuBigInt等の標準ライブラリ)
     - `native`: `Kassyi.GSharp.Stdlib.Math.Cuda` (CUDA C++ ネイティブ実装)
     - `apps`: `Henicos.Cli`, `Henicos.PiBenchmark` 等の検証アプリ

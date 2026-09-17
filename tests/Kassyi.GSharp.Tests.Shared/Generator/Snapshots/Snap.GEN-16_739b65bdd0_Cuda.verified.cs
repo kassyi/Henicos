@@ -36,7 +36,7 @@ public static unsafe void Launch_WarpPrimitivesKernel(global::System.Int32[] inp
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_WarpPrimitivesKernel)
 {
@@ -52,7 +52,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_16_WarpLevel
 }
 s_isLoaded_WarpPrimitivesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_WarpPrimitivesKernel, "WarpPrimitivesKernel", s_decryptionKey_WarpPrimitivesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpPrimitivesKernel, "WarpPrimitivesKernel", s_decryptionKey_WarpPrimitivesKernel);
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -141,7 +141,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_WarpPrimitivesKernel_Device(IntPtr input, IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_WarpPrimitivesKernel)
 {
@@ -157,7 +157,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_16_WarpLevel
 }
 s_isLoaded_WarpPrimitivesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_WarpPrimitivesKernel, "WarpPrimitivesKernel", s_decryptionKey_WarpPrimitivesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpPrimitivesKernel, "WarpPrimitivesKernel", s_decryptionKey_WarpPrimitivesKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -227,7 +227,7 @@ public static unsafe void Launch_WarpReduceSumKernel(global::System.Int32[] inpu
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_WarpReduceSumKernel)
 {
@@ -243,7 +243,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_16_WarpLevel
 }
 s_isLoaded_WarpReduceSumKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_WarpReduceSumKernel, "WarpReduceSumKernel", s_decryptionKey_WarpReduceSumKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReduceSumKernel, "WarpReduceSumKernel", s_decryptionKey_WarpReduceSumKernel);
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -332,7 +332,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_WarpReduceSumKernel_Device(IntPtr input, IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_WarpReduceSumKernel)
 {
@@ -348,7 +348,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_16_WarpLevel
 }
 s_isLoaded_WarpReduceSumKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_WarpReduceSumKernel, "WarpReduceSumKernel", s_decryptionKey_WarpReduceSumKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReduceSumKernel, "WarpReduceSumKernel", s_decryptionKey_WarpReduceSumKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

@@ -47,7 +47,7 @@ s_isLoaded_NonVoidReturnKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"ErrorKernels_NonVoidReturnKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<NonVoidReturnKernel_Delegate>("__gsharp_launch_NonVoidReturnKernel", dllPath, s_decryptionKey_NonVoidReturnKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NonVoidReturnKernel_Delegate>("__gsharp_launch_NonVoidReturnKernel", dllPath, s_decryptionKey_NonVoidReturnKernel);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }
 #pragma warning restore CS8500

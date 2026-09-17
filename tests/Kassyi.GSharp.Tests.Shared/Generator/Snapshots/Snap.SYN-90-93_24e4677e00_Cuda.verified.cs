@@ -54,7 +54,7 @@ public static unsafe void Launch_ComplexLogicKernel(global::System.Int32[] a, gl
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ComplexLogicKernel)
 {
@@ -70,7 +70,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_ComplexLogicKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ComplexLogicKernel, "ComplexLogicKernel", s_decryptionKey_ComplexLogicKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ComplexLogicKernel, "ComplexLogicKernel", s_decryptionKey_ComplexLogicKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -192,7 +192,7 @@ if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ComplexLogicKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ComplexLogicKernel)
 {
@@ -208,7 +208,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_ComplexLogicKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ComplexLogicKernel, "ComplexLogicKernel", s_decryptionKey_ComplexLogicKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ComplexLogicKernel, "ComplexLogicKernel", s_decryptionKey_ComplexLogicKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -295,7 +295,7 @@ public static unsafe void Launch_ControlFlowKernel(global::System.Int32[] data, 
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ControlFlowKernel)
 {
@@ -311,7 +311,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_ControlFlowKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ControlFlowKernel, "ControlFlowKernel", s_decryptionKey_ControlFlowKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ControlFlowKernel, "ControlFlowKernel", s_decryptionKey_ControlFlowKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -367,7 +367,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ControlFlowKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ControlFlowKernel)
 {
@@ -383,7 +383,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_ControlFlowKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ControlFlowKernel, "ControlFlowKernel", s_decryptionKey_ControlFlowKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ControlFlowKernel, "ControlFlowKernel", s_decryptionKey_ControlFlowKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -439,7 +439,7 @@ public static unsafe void Launch_DeviceMethodKernel(global::System.Int32[] data,
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_DeviceMethodKernel)
 {
@@ -455,7 +455,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_DeviceMethodKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_DeviceMethodKernel, "DeviceMethodKernel", s_decryptionKey_DeviceMethodKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_DeviceMethodKernel, "DeviceMethodKernel", s_decryptionKey_DeviceMethodKernel);
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -511,7 +511,7 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_DeviceMethodKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_DeviceMethodKernel)
 {
@@ -527,7 +527,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_DeviceMethodKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_DeviceMethodKernel, "DeviceMethodKernel", s_decryptionKey_DeviceMethodKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_DeviceMethodKernel, "DeviceMethodKernel", s_decryptionKey_DeviceMethodKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -602,7 +602,7 @@ public static unsafe void Launch_PaddedStructKernel(global::Kassyi.GSharp.Tests.
 if (items.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_PaddedStructKernel)
 {
@@ -618,7 +618,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_PaddedStructKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_PaddedStructKernel, "PaddedStructKernel", s_decryptionKey_PaddedStructKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PaddedStructKernel, "PaddedStructKernel", s_decryptionKey_PaddedStructKernel);
 IntPtr d_items = IntPtr.Zero;
 try
 {
@@ -676,7 +676,7 @@ if (d_items != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_items);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_PaddedStructKernel_Device(IntPtr items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_PaddedStructKernel)
 {
@@ -692,7 +692,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_PaddedStructKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_PaddedStructKernel, "PaddedStructKernel", s_decryptionKey_PaddedStructKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PaddedStructKernel, "PaddedStructKernel", s_decryptionKey_PaddedStructKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -765,7 +765,7 @@ public static unsafe void Launch_StructKernel(global::Kassyi.GSharp.Tests.Syntax
 if (vectors.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_StructKernel)
 {
@@ -781,7 +781,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_StructKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_StructKernel, "StructKernel", s_decryptionKey_StructKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StructKernel, "StructKernel", s_decryptionKey_StructKernel);
 IntPtr d_vectors = IntPtr.Zero;
 try
 {
@@ -839,7 +839,7 @@ if (d_vectors != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_vectors);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_StructKernel_Device(IntPtr vectors, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_StructKernel)
 {
@@ -855,7 +855,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_93_CoreSy
 }
 s_isLoaded_StructKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_StructKernel, "StructKernel", s_decryptionKey_StructKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StructKernel, "StructKernel", s_decryptionKey_StructKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

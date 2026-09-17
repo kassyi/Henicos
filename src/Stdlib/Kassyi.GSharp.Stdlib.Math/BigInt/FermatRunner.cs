@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Kassyi.GSharp.Runtime.Jit;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
@@ -128,7 +128,7 @@ public class FermatRunner : IDisposable
             MultiplySquareAndReduceHost();
         }
 
-        JitEngine.SynchronizeDevice();
+        GpuKernelLoader.SynchronizeDevice();
         sw.Stop();
 
         return (GetState(), sw.ElapsedMilliseconds);
@@ -142,7 +142,7 @@ public class FermatRunner : IDisposable
             MultiplySquareAndReduceHost();
         }
 
-        JitEngine.SynchronizeDevice();
+        GpuKernelLoader.SynchronizeDevice();
     }
 
     protected virtual void Dispose(bool disposing)

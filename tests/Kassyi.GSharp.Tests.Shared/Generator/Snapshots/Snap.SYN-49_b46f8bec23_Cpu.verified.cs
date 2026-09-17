@@ -75,7 +75,7 @@ s_isLoaded_InterlockedEdgeCasesKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", dllPath, s_decryptionKey_InterlockedEdgeCasesKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", dllPath, s_decryptionKey_InterlockedEdgeCasesKernel);
 fixed (global::System.Int32* p_array = array)
 fixed (global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
@@ -155,7 +155,7 @@ s_isLoaded_InterlockedKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", dllPath, s_decryptionKey_InterlockedKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", dllPath, s_decryptionKey_InterlockedKernel);
 fixed (global::System.Int32* p_intBuf = intBuf)
 fixed (global::System.UInt32* p_uintBuf = uintBuf)
 fixed (global::System.Int64* p_longBuf = longBuf)
@@ -235,7 +235,7 @@ s_isLoaded_MathEdgeCasesKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", dllPath, s_decryptionKey_MathEdgeCasesKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", dllPath, s_decryptionKey_MathEdgeCasesKernel);
 fixed (global::System.Single* p_floatSpecialInputs = floatSpecialInputs)
 fixed (global::System.Single* p_floatSpecialResults = floatSpecialResults)
 fixed (global::System.Double* p_doubleSpecialInputs = doubleSpecialInputs)
@@ -321,7 +321,7 @@ s_isLoaded_MathKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", dllPath, s_decryptionKey_MathKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", dllPath, s_decryptionKey_MathKernel);
 fixed (global::System.Double* p_doubleInputs = doubleInputs)
 fixed (global::System.Double* p_doubleOutputs = doubleOutputs)
 fixed (global::System.Single* p_floatInputs = floatInputs)

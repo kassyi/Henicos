@@ -62,7 +62,7 @@ s_isLoaded_InlinePtxKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", dllPath, s_decryptionKey_InlinePtxKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", dllPath, s_decryptionKey_InlinePtxKernel);
 fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

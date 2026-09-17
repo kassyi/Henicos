@@ -63,7 +63,7 @@ s_isLoaded_BitOpsKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"BitOpsTestKernels_BitOpsKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsKernel", dllPath, s_decryptionKey_BitOpsKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsKernel", dllPath, s_decryptionKey_BitOpsKernel);
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)
 {

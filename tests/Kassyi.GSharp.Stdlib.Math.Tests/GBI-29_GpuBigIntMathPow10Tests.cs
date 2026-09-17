@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 [Trait("Category", "GpuExecution")]
 public class GBI29_GpuBigIntMathPow10Tests
 {
-    private static GpuExecutionEngine CreateTestEngine() => GpuExecutionEngine.GSharpJit;
+    private static GpuExecutionEngine CreateTestEngine() => GpuExecutionEngine.GSharpAot;
 
     [Trait("FeatureId", "GBI-29")]
     [Trait("Category", "HappyPath")]

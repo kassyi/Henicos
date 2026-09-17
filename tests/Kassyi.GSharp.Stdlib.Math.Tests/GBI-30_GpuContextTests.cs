@@ -13,7 +13,7 @@ public class GBI30_GpuContextTests
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
-        var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+        var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
         // Act & Assert
         var exception = Record.Exception(() =>
@@ -45,19 +45,19 @@ public class GBI30_GpuContextTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private WeakReference CreateAndDropContext()
     {
-        var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+        var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
         return new WeakReference(context);
     }
 
     [SkippableFact]
     [Trait("FeatureId", "GBI-30")]
-    public void Test_GBI30_Dispose_WhenUsingGSharpJit_ShouldNotClearSharedProviderCaches()
+    public void Test_GBI30_Dispose_WhenUsingGSharpAot_ShouldNotClearSharedProviderCaches()
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
-        var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
-        var provider = GSharpJitProvider.Instance;
-        var carryPoolField = typeof(GSharpJitProvider).GetField(
+        var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        var provider = GSharpAotProvider.Instance;
+        var carryPoolField = typeof(GSharpAotProvider).GetField(
             "_carryBufferPool",
             BindingFlags.NonPublic | BindingFlags.Instance);
         var carryPool =
@@ -85,8 +85,8 @@ public class GBI30_GpuContextTests
         CudaCapability.EnsureGpuAvailable();
         Parallel.For(0, 8, i =>
         {
-            using var scope = new JitEngine.CudaContextScope();
-            using var ctx = new GpuContext(256, GpuExecutionEngine.GSharpJit);
+            using var scope = new GpuKernelLoader.CudaContextScope();
+            using var ctx = new GpuContext(256, GpuExecutionEngine.GSharpAot);
             using var temp1 = ctx.RentTemp(16);
             using var temp2 = ctx.RentTemp(32);
         });

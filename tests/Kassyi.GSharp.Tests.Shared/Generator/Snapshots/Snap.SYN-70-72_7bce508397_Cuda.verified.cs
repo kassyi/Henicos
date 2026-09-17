@@ -44,7 +44,7 @@ public static unsafe void Launch_ForeachCollectionExpressionKernel(global::Syste
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ForeachCollectionExpressionKernel)
 {
@@ -60,7 +60,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsA
 }
 s_isLoaded_ForeachCollectionExpressionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ForeachCollectionExpressionKernel, "ForeachCollectionExpressionKernel", s_decryptionKey_ForeachCollectionExpressionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ForeachCollectionExpressionKernel, "ForeachCollectionExpressionKernel", s_decryptionKey_ForeachCollectionExpressionKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -116,7 +116,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ForeachCollectionExpressionKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ForeachCollectionExpressionKernel)
 {
@@ -132,7 +132,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsA
 }
 s_isLoaded_ForeachCollectionExpressionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ForeachCollectionExpressionKernel, "ForeachCollectionExpressionKernel", s_decryptionKey_ForeachCollectionExpressionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ForeachCollectionExpressionKernel, "ForeachCollectionExpressionKernel", s_decryptionKey_ForeachCollectionExpressionKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -217,7 +217,7 @@ public static unsafe void Launch_ForeachInlineArrayKernel(global::System.Int32[]
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ForeachInlineArrayKernel)
 {
@@ -233,7 +233,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsA
 }
 s_isLoaded_ForeachInlineArrayKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ForeachInlineArrayKernel, "ForeachInlineArrayKernel", s_decryptionKey_ForeachInlineArrayKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ForeachInlineArrayKernel, "ForeachInlineArrayKernel", s_decryptionKey_ForeachInlineArrayKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -289,7 +289,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ForeachInlineArrayKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ForeachInlineArrayKernel)
 {
@@ -305,7 +305,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsA
 }
 s_isLoaded_ForeachInlineArrayKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ForeachInlineArrayKernel, "ForeachInlineArrayKernel", s_decryptionKey_ForeachInlineArrayKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ForeachInlineArrayKernel, "ForeachInlineArrayKernel", s_decryptionKey_ForeachInlineArrayKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -366,7 +366,7 @@ public static unsafe void Launch_ForeachStackAllocKernel(global::System.Int32[] 
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ForeachStackAllocKernel)
 {
@@ -382,7 +382,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsA
 }
 s_isLoaded_ForeachStackAllocKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ForeachStackAllocKernel, "ForeachStackAllocKernel", s_decryptionKey_ForeachStackAllocKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ForeachStackAllocKernel, "ForeachStackAllocKernel", s_decryptionKey_ForeachStackAllocKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -438,7 +438,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ForeachStackAllocKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_ForeachStackAllocKernel)
 {
@@ -454,7 +454,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_70_72_LoopsA
 }
 s_isLoaded_ForeachStackAllocKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_ForeachStackAllocKernel, "ForeachStackAllocKernel", s_decryptionKey_ForeachStackAllocKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ForeachStackAllocKernel, "ForeachStackAllocKernel", s_decryptionKey_ForeachStackAllocKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];

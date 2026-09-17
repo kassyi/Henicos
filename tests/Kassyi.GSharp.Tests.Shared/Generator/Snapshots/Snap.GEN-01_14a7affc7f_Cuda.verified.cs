@@ -27,7 +27,7 @@ public static unsafe void Launch_MyTestKernel(global::System.Int32[] a, global::
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MyTestKernel)
 {
@@ -43,7 +43,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_01_SourceGen
 }
 s_isLoaded_MyTestKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MyTestKernel, "MyTestKernel", s_decryptionKey_MyTestKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyTestKernel, "MyTestKernel", s_decryptionKey_MyTestKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -165,7 +165,7 @@ if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_MyTestKernel_Device(IntPtr a, IntPtr b, IntPtr c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_MyTestKernel)
 {
@@ -181,7 +181,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'GEN_01_SourceGen
 }
 s_isLoaded_MyTestKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_MyTestKernel, "MyTestKernel", s_decryptionKey_MyTestKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyTestKernel, "MyTestKernel", s_decryptionKey_MyTestKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];

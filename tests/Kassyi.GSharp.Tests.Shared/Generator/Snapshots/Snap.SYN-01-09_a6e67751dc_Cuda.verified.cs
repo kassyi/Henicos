@@ -42,7 +42,7 @@ public static unsafe void Launch_NestedTernaryKernel(global::System.Int32[] a, g
 if (a.Length == 0 || b.Length == 0 || c.Length == 0 || result.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NestedTernaryKernel)
 {
@@ -58,7 +58,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_NestedTernaryKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NestedTernaryKernel, "NestedTernaryKernel", s_decryptionKey_NestedTernaryKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedTernaryKernel, "NestedTernaryKernel", s_decryptionKey_NestedTernaryKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -213,7 +213,7 @@ if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_result);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NestedTernaryKernel_Device(IntPtr a, IntPtr b, IntPtr c, IntPtr result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NestedTernaryKernel)
 {
@@ -229,7 +229,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_NestedTernaryKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NestedTernaryKernel, "NestedTernaryKernel", s_decryptionKey_NestedTernaryKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedTernaryKernel, "NestedTernaryKernel", s_decryptionKey_NestedTernaryKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -297,7 +297,7 @@ public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel(global
 if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NullCoalescingAssignmentSideEffectKernel)
 {
@@ -313,7 +313,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_NullCoalescingAssignmentSideEffectKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel, "NullCoalescingAssignmentSideEffectKernel", s_decryptionKey_NullCoalescingAssignmentSideEffectKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel, "NullCoalescingAssignmentSideEffectKernel", s_decryptionKey_NullCoalescingAssignmentSideEffectKernel);
 IntPtr d_targetArray = IntPtr.Zero;
 IntPtr d_sideEffectTracker = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -435,7 +435,7 @@ if (d_values != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_values);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NullCoalescingAssignmentSideEffectKernel_Device(IntPtr targetArray, IntPtr sideEffectTracker, IntPtr values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NullCoalescingAssignmentSideEffectKernel)
 {
@@ -451,7 +451,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_NullCoalescingAssignmentSideEffectKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel, "NullCoalescingAssignmentSideEffectKernel", s_decryptionKey_NullCoalescingAssignmentSideEffectKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel, "NullCoalescingAssignmentSideEffectKernel", s_decryptionKey_NullCoalescingAssignmentSideEffectKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -516,7 +516,7 @@ public static unsafe void Launch_NullCoalescingKernel(global::System.Nullable<gl
 if (nullableInputs.Length == 0 || fallbackValues.Length == 0 || results.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NullCoalescingKernel)
 {
@@ -532,7 +532,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_NullCoalescingKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NullCoalescingKernel, "NullCoalescingKernel", s_decryptionKey_NullCoalescingKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingKernel, "NullCoalescingKernel", s_decryptionKey_NullCoalescingKernel);
 IntPtr d_nullableInputs = IntPtr.Zero;
 IntPtr d_fallbackValues = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -654,7 +654,7 @@ if (d_results != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_results);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_NullCoalescingKernel_Device(IntPtr nullableInputs, IntPtr fallbackValues, IntPtr results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_NullCoalescingKernel)
 {
@@ -670,7 +670,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_NullCoalescingKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_NullCoalescingKernel, "NullCoalescingKernel", s_decryptionKey_NullCoalescingKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingKernel, "NullCoalescingKernel", s_decryptionKey_NullCoalescingKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -737,7 +737,7 @@ public static unsafe void Launch_RefSwitchExpressionKernel(global::System.Int32[
 if (a.Length == 0 || b.Length == 0 || selectors.Length == 0 || valuesToAssign.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_RefSwitchExpressionKernel)
 {
@@ -753,7 +753,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_RefSwitchExpressionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel, "RefSwitchExpressionKernel", s_decryptionKey_RefSwitchExpressionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel, "RefSwitchExpressionKernel", s_decryptionKey_RefSwitchExpressionKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_selectors = IntPtr.Zero;
@@ -908,7 +908,7 @@ if (d_valuesToAssign != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_valuesToAssign
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_RefSwitchExpressionKernel_Device(IntPtr a, IntPtr b, IntPtr selectors, IntPtr valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_RefSwitchExpressionKernel)
 {
@@ -924,7 +924,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_RefSwitchExpressionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel, "RefSwitchExpressionKernel", s_decryptionKey_RefSwitchExpressionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel, "RefSwitchExpressionKernel", s_decryptionKey_RefSwitchExpressionKernel);
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -986,7 +986,7 @@ public static unsafe void Launch_SimpleTernaryKernel(global::System.Int32[] a, g
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SimpleTernaryKernel)
 {
@@ -1002,7 +1002,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_SimpleTernaryKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SimpleTernaryKernel, "SimpleTernaryKernel", s_decryptionKey_SimpleTernaryKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleTernaryKernel, "SimpleTernaryKernel", s_decryptionKey_SimpleTernaryKernel);
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -1124,7 +1124,7 @@ if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_result);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_SimpleTernaryKernel_Device(IntPtr a, IntPtr b, IntPtr result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SimpleTernaryKernel)
 {
@@ -1140,7 +1140,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_SimpleTernaryKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SimpleTernaryKernel, "SimpleTernaryKernel", s_decryptionKey_SimpleTernaryKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleTernaryKernel, "SimpleTernaryKernel", s_decryptionKey_SimpleTernaryKernel);
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1209,7 +1209,7 @@ public static unsafe void Launch_SwitchExpressionKernel(global::System.Int32[] i
 if (input.Length == 0 || output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SwitchExpressionKernel)
 {
@@ -1225,7 +1225,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_SwitchExpressionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SwitchExpressionKernel, "SwitchExpressionKernel", s_decryptionKey_SwitchExpressionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SwitchExpressionKernel, "SwitchExpressionKernel", s_decryptionKey_SwitchExpressionKernel);
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -1314,7 +1314,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_SwitchExpressionKernel_Device(IntPtr input, IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_SwitchExpressionKernel)
 {
@@ -1330,7 +1330,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_Contro
 }
 s_isLoaded_SwitchExpressionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_SwitchExpressionKernel, "SwitchExpressionKernel", s_decryptionKey_SwitchExpressionKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SwitchExpressionKernel, "SwitchExpressionKernel", s_decryptionKey_SwitchExpressionKernel);
 try
 {
 void** kernelParams = stackalloc void*[2];

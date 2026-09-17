@@ -49,7 +49,7 @@ s_isLoaded_BadKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"ErrorSpecKernel_BadKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<BadKernel_Delegate>("__gsharp_launch_BadKernel", dllPath, s_decryptionKey_BadKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BadKernel_Delegate>("__gsharp_launch_BadKernel", dllPath, s_decryptionKey_BadKernel);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }
 #pragma warning restore CS8500

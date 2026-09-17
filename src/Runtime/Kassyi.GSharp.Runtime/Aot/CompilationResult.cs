@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Runtime.Jit;
+namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
 /// Encapsulates static compilation output metrics parsed from the CUDA compiler backend (NVCC / PTXAS).

@@ -8,4 +8,4 @@ namespace Kassyi.GSharp.Core;
 /// </remarks>
 /// <remarks><para>Implements: <b>GEN-37, GEN-41</b></para></remarks>
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class JitConstantAttribute : Attribute;
+public sealed class ConstantAttribute : Attribute;

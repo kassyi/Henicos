@@ -78,7 +78,7 @@ s_isLoaded_ReductionKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"ReductionKernels_ReductionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernel", dllPath, s_decryptionKey_ReductionKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernel", dllPath, s_decryptionKey_ReductionKernel);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
 {

@@ -98,7 +98,7 @@ internal static class WrapperEmitter
             }
 
             writer.AppendLine(
-                "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())");
+                "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, method, hasAesKey, keyProvider);
@@ -301,7 +301,7 @@ internal static class WrapperEmitter
         }
 
         writer.AppendLine(
-            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\", s_decryptionKey_{method.Name});");
+            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\", s_decryptionKey_{method.Name});");
         writer.AppendLine();
     }
 
@@ -319,7 +319,7 @@ internal static class WrapperEmitter
                 "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.JitConstant))
+                if (p.HasAttribute(KnownAttributes.Constant))
                 {
                     continue;
                 }
@@ -385,7 +385,7 @@ internal static class WrapperEmitter
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, s_decryptionKey_{method.Name});");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, s_decryptionKey_{method.Name});");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
@@ -449,7 +449,7 @@ internal static class WrapperEmitter
 
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.JitConstant))
+                if (p.HasAttribute(KnownAttributes.Constant))
                 {
                     continue;
                 }

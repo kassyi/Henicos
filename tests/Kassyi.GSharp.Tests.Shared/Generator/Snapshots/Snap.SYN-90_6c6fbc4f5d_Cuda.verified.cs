@@ -50,7 +50,7 @@ public static unsafe void Launch_AggregateInitKernel(global::System.Int32[] outp
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AggregateInitKernel)
 {
@@ -66,7 +66,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_StructAgg
 }
 s_isLoaded_AggregateInitKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AggregateInitKernel, "AggregateInitKernel", s_decryptionKey_AggregateInitKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AggregateInitKernel, "AggregateInitKernel", s_decryptionKey_AggregateInitKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -122,7 +122,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AggregateInitKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_AggregateInitKernel)
 {
@@ -138,7 +138,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_StructAgg
 }
 s_isLoaded_AggregateInitKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_AggregateInitKernel, "AggregateInitKernel", s_decryptionKey_AggregateInitKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AggregateInitKernel, "AggregateInitKernel", s_decryptionKey_AggregateInitKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -215,7 +215,7 @@ public static unsafe void Launch_DeeplyNestedInitKernel(global::System.Int32[] o
 if (output.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_DeeplyNestedInitKernel)
 {
@@ -231,7 +231,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_StructAgg
 }
 s_isLoaded_DeeplyNestedInitKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_DeeplyNestedInitKernel, "DeeplyNestedInitKernel", s_decryptionKey_DeeplyNestedInitKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_DeeplyNestedInitKernel, "DeeplyNestedInitKernel", s_decryptionKey_DeeplyNestedInitKernel);
 IntPtr d_output = IntPtr.Zero;
 try
 {
@@ -287,7 +287,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_DeeplyNestedInitKernel_Device(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_DeeplyNestedInitKernel)
 {
@@ -303,7 +303,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_90_StructAgg
 }
 s_isLoaded_DeeplyNestedInitKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_DeeplyNestedInitKernel, "DeeplyNestedInitKernel", s_decryptionKey_DeeplyNestedInitKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_DeeplyNestedInitKernel, "DeeplyNestedInitKernel", s_decryptionKey_DeeplyNestedInitKernel);
 try
 {
 void** kernelParams = stackalloc void*[1];

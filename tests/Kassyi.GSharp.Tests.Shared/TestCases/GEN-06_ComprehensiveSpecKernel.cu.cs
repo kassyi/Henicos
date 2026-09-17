@@ -1,4 +1,4 @@
-﻿// ReSharper disable All
+// ReSharper disable All
 
 using System;
 using Kassyi.GSharp.Core;
@@ -22,12 +22,7 @@ public struct SpecTypes
     public double DoubleValue;
 }
 
-public static class Intrinsics
-{
-    public static void InlinePtx(string ptx)
-    {
-    }
-}
+
 
 public struct PhysicsVector
 {
@@ -83,7 +78,7 @@ public static partial class ComprehensiveSpecKernel
         out bool successFlag,
         SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
         int particleCount,
-        [JitConstant] int unrollFactor)
+        [Constant] int unrollFactor)
     {
         successFlag = false;
 
@@ -135,7 +130,7 @@ public static partial class ComprehensiveSpecKernel
             float mag = ComputeMagnitude(p);
             mag = (float)System.Math.Abs(mag);
 
-            // 5. Automatic Loop Unrolling via JitConstant (for)
+            // 5. Automatic Loop Unrolling via Constant (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
@@ -194,22 +189,18 @@ public static partial class ComprehensiveSpecKernel
             {
                 PhysicsState state = new PhysicsState();
 
-                // Pointer operators and sizeof
-                PhysicsState* pState = &state;
-                // int stateSize = sizeof(PhysicsState); // GSH0003
-
-                pState->Buffer[0] = inlineVec[0];
-                (*pState).Buffer[1] = inlineVec[1];
+                state.Buffer[0] = inlineVec[0];
+                state.Buffer[1] = inlineVec[1];
 
                 ulong carry = 0;
-                uint sum = Gpu.AddWithCarry(pState->Buffer[0], pState->Buffer[1], ref carry);
+                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
 
                 long borrow = 0;
-                uint diff = Gpu.SubWithBorrow(sum, pState->Buffer[1], ref borrow);
+                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
 
                 if (sum > diff)
                 {
-                    pState->Flags = 1;
+                    state.Flags = 1;
                 }
             }
 
@@ -229,7 +220,7 @@ public static partial class ComprehensiveSpecKernel
             }
 
             // 11.5 Inline PTX
-            Intrinsics.InlinePtx("/* test ptx inline */");
+            Gpu.InlinePtx("/* test ptx inline */");
 
             // 12. Early return
             if (ty > 0)
@@ -245,7 +236,7 @@ public static partial class ComprehensiveSpecKernel
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
         using var a = new GpuUIntBigInteger(context, 1024);
         using var b = new GpuUIntBigInteger(context, 1024);

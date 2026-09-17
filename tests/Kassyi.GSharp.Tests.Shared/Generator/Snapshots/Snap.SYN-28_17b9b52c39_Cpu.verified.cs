@@ -75,7 +75,7 @@ s_isLoaded_MethodAttributesKernel = true;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_28_MethodAttributesKernels_MethodAttributesKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", dllPath, s_decryptionKey_MethodAttributesKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", dllPath, s_decryptionKey_MethodAttributesKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_result = result)
 {

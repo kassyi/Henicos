@@ -39,7 +39,7 @@ public static unsafe void Launch_BlackScholesKernel(global::System.Single[] s, g
 if (s.Length == 0 || x.Length == 0 || t.Length == 0 || callResult.Length == 0 || putResult.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_BlackScholesKernel)
 {
@@ -55,7 +55,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'BlackScholesKern
 }
 s_isLoaded_BlackScholesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_BlackScholesKernel, "BlackScholesKernel", s_decryptionKey_BlackScholesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BlackScholesKernel, "BlackScholesKernel", s_decryptionKey_BlackScholesKernel);
 IntPtr d_s = IntPtr.Zero;
 IntPtr d_x = IntPtr.Zero;
 IntPtr d_t = IntPtr.Zero;
@@ -249,7 +249,7 @@ if (d_putResult != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_putResult);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_BlackScholesKernel_Device(IntPtr s, IntPtr x, IntPtr t, global::System.Single r, global::System.Single v, IntPtr callResult, IntPtr putResult, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Jit.JitEngine.CudaContextScope())
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 if (!s_isLoaded_BlackScholesKernel)
 {
@@ -265,7 +265,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'BlackScholesKern
 }
 s_isLoaded_BlackScholesKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Jit.JitEngine.LoadAotKernel(s_binaryData_BlackScholesKernel, "BlackScholesKernel", s_decryptionKey_BlackScholesKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BlackScholesKernel, "BlackScholesKernel", s_decryptionKey_BlackScholesKernel);
 try
 {
 void** kernelParams = stackalloc void*[8];

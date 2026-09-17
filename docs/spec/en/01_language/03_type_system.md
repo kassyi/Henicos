@@ -23,20 +23,6 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 > [!NOTE]
 > `nint` and `nuint` are unsupported due to the ambiguity of target pointer sizes between host and device architectures. Use explicit `long` or `ulong` for 64-bit address offsets.
 
-### 2.1.1 Built-in Vector Types (`System.Numerics`)
-
-G# provides first-class support for .NET standard vector types (`System.Numerics.Vector2`, `Vector3`, and `Vector4`). These types are transparently mapped to CUDA C++ native vector types (`float2`, `float3`, and `float4`).
-
-| C# Type | CUDA C++ Type | Components | CUDA Constructor Equivalent |
-| :--- | :--- | :--- | :--- |
-| `System.Numerics.Vector2` | `float2` | `x`, `y` | `make_float2(x, y)` |
-| `System.Numerics.Vector3` | `float3` | `x`, `y`, `z` | `make_float3(x, y, z)` |
-| `System.Numerics.Vector4` | `float4` | `x`, `y`, `z`, `w` | `make_float4(x, y, z, w)` |
-
-* **Component Access Mapping**: C# fields (`vec.X`, `vec.Y`, `vec.Z`, `vec.W`) are automatically normalized to CUDA lowercase field accessors (`vec.x`, `vec.y`, `vec.z`, `vec.w`).
-* **Instantiation**: Initializing vectors via `new Vector2(x, y)`, `new Vector3(x, y, z)`, or `new Vector4(x, y, z, w)` safely transpiles into C++ uniform brace initialization (`float2{x, y}`).
-* **Kernel & Buffer Interop**: Managed vector arrays (e.g., `Vector3[] buffer`) passed as kernel arguments are marshaled seamlessly as device pointers (`float3* buffer`).
-
 ## 2.2 Custom Structs (User-Defined Types)
 
 G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel. 
@@ -68,7 +54,9 @@ Point p = new Point(0, 0); // record struct / Primary Constructor
 *Note: The transpiler converts constructor arguments (like `new Point(0, 0)`) into C++ brace initialization (`Point{0, 0}`). For C# Object Initializers (e.g., `new() { X = 1 }`), the transpiler emits an Immediately Invoked Function Expression (IIFE) using a C++ lambda (e.g., `[&]() { Point _tmp; _tmp.X = 1; return _tmp; }()`) to safely execute arbitrary member assignments in C++ without requiring explicit constructors.*
 
 ### 2.2.4 P/Invoke and Layout Compatibility (`__Native_Struct`)
-G# generates structurally compatible C++ definitions for C# custom structs. To ensure exact binary layout compatibility during memory transfers (marshaling) and P/Invoke boundary crossings, the generator natively aligns with C#'s `[StructLayout]` configurations (e.g., Sequential or Explicit). The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
+G# generates structurally compatible C++ definitions for C# custom structs. To ensure exact binary layout compatibility during memory transfers (marshaling) and P/Invoke boundary crossings, the generator natively aligns with C#'s `[StructLayout]` configurations (e.g., Sequential or Explicit).
+* **Explicit Packing**: If a `Pack = X` property is defined on `[StructLayout]`, the transpiler translates this accurately into `#pragma pack(push, X)` and `#pragma pack(pop)` blocks surrounding the C++ struct.
+* **Alignment Guarantees**: The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
 
 ## 2.3 Memory Model and Pointers
 
@@ -100,7 +88,7 @@ G# fully supports implicitly typed local variables (`var`). The transpiler now m
 var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
 var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
 ```
-This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the JIT phase.
+This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the AOT phase.
 
 > [!WARNING]
 > **Literal Initialization Constraints**: To prevent subtle type-casting bugs in CUDA C++ (where `auto` might mistakenly infer a signed `int` for `0` when an `unsigned int` was expected), G# prohibits initializing `var` with untyped bare literals. You must use explicit literal suffixes.
@@ -121,7 +109,13 @@ The following C# memory operations are strictly prohibited within a G# kernel:
 
 All dynamic heap memory allocations (`new`) must occur strictly on the host (CPU) before the kernel is launched. The generated launcher stubs automatically handle the marshaling of these host arrays to device pointers.
 
-## 2.4 Constants (`const`)
+## 2.5 Local Initialization and `[SkipLocalsInit]`
+
+By default, standard C# variables are expected to be initialized. 
+However, for high-performance GPU kernels, unnecessary zero-initialization of large structs or buffers can waste registers and instructions.
+When a kernel method or module is annotated with `[SkipLocalsInit]`, the transpiler explicitly optimizes away the output of `default` or parameterless `new()` assignment code (e.g., `= ...;`). The local variables are emitted as uninitialized declarations in C++, matching the performance characteristics of raw C++ while relying on the compiler for optimal register allocation.
+
+## 2.6 Constants (`const`)
 
 G# fully supports the use of `const` fields and local variables. The AST transpiler resolves C# constants at compile time and emits them as hardcoded literals in the resulting CUDA C++ code.
 

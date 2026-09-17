@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Runtime.Jit;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
@@ -19,7 +19,7 @@ public static unsafe class NativeKernelInvoker
     {
         if (a.Length == 0 || b.Length == 0 || c.Length == 0) return;
 
-        using var scope = new JitEngine.CudaContextScope();
+        using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncSgemm, "sgemm_kernel.fatbin", "SgemmKernel_Native");
 
         IntPtr d_a = IntPtr.Zero, d_b = IntPtr.Zero, d_c = IntPtr.Zero;
@@ -69,7 +69,7 @@ public static unsafe class NativeKernelInvoker
     {
         if (input.Length == 0 || output.Length == 0) return;
 
-        using var scope = new JitEngine.CudaContextScope();
+        using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncSha256, "sha256_kernel.fatbin", "Sha256Kernel_Native");
 
         IntPtr d_in = IntPtr.Zero, d_out = IntPtr.Zero;
@@ -115,7 +115,7 @@ public static unsafe class NativeKernelInvoker
     {
         if (s.Length == 0) return;
 
-        using var scope = new JitEngine.CudaContextScope();
+        using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncBlackScholes, "blackscholes_kernel.fatbin", "BlackScholesKernel_Native");
 
         IntPtr d_s = IntPtr.Zero, d_x = IntPtr.Zero, d_t = IntPtr.Zero, d_call = IntPtr.Zero, d_put = IntPtr.Zero;
@@ -172,7 +172,7 @@ public static unsafe class NativeKernelInvoker
     {
         if (input.Length == 0 || output.Length == 0) return;
 
-        using var scope = new JitEngine.CudaContextScope();
+        using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncReduction, "reduction_kernel.fatbin", "ReductionKernel_Native");
 
         IntPtr d_in = IntPtr.Zero, d_out = IntPtr.Zero;
@@ -225,7 +225,7 @@ public static unsafe class NativeKernelInvoker
             }
 
             var fatbinBytes = File.ReadAllBytes(path);
-            hfunc = JitEngine.LoadAotKernel(fatbinBytes, kernelName);
+            hfunc = GpuKernelLoader.LoadAotKernel(fatbinBytes, kernelName);
         }
     }
 }

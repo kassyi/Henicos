@@ -7,10 +7,10 @@ C#側のマーシャリングにおける `Marshal.AllocHGlobal` などのヒー
 | Method           | NumWords | Mean        | Ratio |
 |----------------- |--------- |------------:|------:|
 | Sub_LegacyNative | 1024     |    21.65 us |  1.00 |
-| Sub_GSharpJit    | 1024     |    35.86 us |  1.66 |
+| Sub_GSharpAot    | 1024     |    35.86 us |  1.66 |
 |                  |          |             |       |
 | Sub_LegacyNative | 4096     |    31.63 us |  1.00 |
-| Sub_GSharpJit    | 4096     |    43.05 us |  1.36 |
+| Sub_GSharpAot    | 4096     |    43.05 us |  1.36 |
 
 ### 考察
 - 1024 words では、前回の `46.24 us` から **`35.86 us`** (Ratio: 2.17x → 1.66x) に高速化。

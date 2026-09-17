@@ -1,11 +1,11 @@
 using System.Security.Cryptography;
 
-namespace Kassyi.GSharp.Runtime.Jit;
+namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
 /// Runtime JIT compilation engine that compiles Standard C++ kernel strings into executable native CPU libraries and manages delegate bindings.
 /// </summary>
-public sealed class CpuJitEngine
+public sealed class CpuKernelLoader
 {
 
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>
