@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigFloat;
 
@@ -64,10 +63,7 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
     /// <param name="leadingZeros">The count of leading zeros to shift out.</param>
     /// <param name="carryOut"><see langword="true"/> if a carry bit was produced during addition.</param>
     /// <returns>The normalized <see cref="GpuBigFloat{TSize}"/>.</returns>
-    public readonly GpuBigFloat<TSize> Normalize(int leadingZeros = 0, bool carryOut = false)
-    {
-        return new GpuBigFloat<TSize>(UFloat.Normalize(leadingZeros, carryOut), IsNegative);
-    }
+    public readonly GpuBigFloat<TSize> Normalize(int leadingZeros = 0, bool carryOut = false) => new(UFloat.Normalize(leadingZeros, carryOut), IsNegative);
 
     /// <summary>
     /// Applies IEEE 754 compliant rounding to the floating-point value.

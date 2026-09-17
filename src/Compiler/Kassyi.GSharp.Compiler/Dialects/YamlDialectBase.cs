@@ -80,16 +80,13 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return true;
         }
 
-        if (symbol.ContainingType != null)
+        var patternAttr = symbol.ContainingType?.GetAttributes()
+            .FirstOrDefault(a => a.AttributeClass?.Name == "CudaIntrinsicPatternAttribute");
+        if (patternAttr is { ConstructorArguments.Length: > 0 })
         {
-            var patternAttr = symbol.ContainingType.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.Name == "CudaIntrinsicPatternAttribute");
-            if (patternAttr is { ConstructorArguments.Length: > 0 })
-            {
-                var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";
-                mappedExpression = string.Format(pattern, symbol.Name.ToLowerInvariant());
-                return true;
-            }
+            var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";
+            mappedExpression = string.Format(pattern, symbol.Name.ToLowerInvariant());
+            return true;
         }
 
         // [WHY] Dictionary key lookup for Yaml Dialects requires a string signature.
@@ -131,10 +128,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual CSharpSyntaxRewriter? GetAstPreProcessor(SemanticModel semanticModel) => null;
 
-    public virtual CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context)
-    {
-        return new DefaultInterceptorVisitor();
-    }
+    public virtual CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context) => new DefaultInterceptorVisitor();
 
     private class DefaultInterceptorVisitor : CSharpSyntaxVisitor<bool>
     {

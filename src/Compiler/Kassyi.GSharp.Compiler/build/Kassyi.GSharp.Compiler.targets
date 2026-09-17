@@ -1,0 +1,77 @@
+<Project>
+  <!-- Locate the task assembly -->
+  <PropertyGroup>
+    <GSharpCompilerTaskAssembly Condition="Exists('$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll')">$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
+    <GSharpCompilerTaskAssembly Condition="'$(GSharpCompilerTaskAssembly)' == ''">$(MSBuildThisFileDirectory)..\..\Kassyi.GSharp.Compiler.Tasks\bin\$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
+  </PropertyGroup>
+
+  <!-- Register the tasks -->
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="GSharpTargetDialect" />
+    <CompilerVisibleProperty Include="GSharpAotEnabled" />
+    <CompilerVisibleProperty Include="GSharpEmitSource" />
+    <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
+    <CompilerVisibleProperty Include="IntermediateOutputPath" />
+    <CompilerVisibleProperty Include="ProjectDir" />
+    <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+  </ItemGroup>
+
+  <!-- Define the target to compile CUDA sources -->
+  <!-- It runs before GetCopyToOutputDirectoryItems so that the newly built fatbins are copied to the output directory -->
+  <Target Name="GSharpCompileCuda" BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+          Inputs="$(MSBuildAllProjects);@(Compile)"
+          Outputs="$(IntermediateOutputPath)GSharpFatbins\_always_run_.marker">
+    
+    <ItemGroup>
+      <!-- Collect all generated .cu files in the intermediate output path -->
+      <_GSharpCudaSources Include="$(IntermediateOutputPath)**\*.cu" />
+    </ItemGroup>
+
+    <!-- Run nvcc via the custom task -->
+    <CompileCudaToFatbinTask 
+        Condition="'@(_GSharpCudaSources)' != '' And '$(GSharpSkipCudaCompilation)' != 'true' And '$(GSHARP_TEST_NO_CUDA)' != '1'"
+        CudaSources="@(_GSharpCudaSources)" 
+        OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" 
+        TargetArchitectures="$(GSharpTargetArchitectures)" >
+      <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
+    </CompileCudaToFatbinTask>
+
+    <!-- Copy compiled fatbins to output directory as Content -->
+    <ItemGroup>
+      <Content Include="@(_GSharpCompiledFatbins)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>%(Filename)%(Extension)</Link>
+      </Content>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GSharpCompileCpu" BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+          Inputs="$(MSBuildAllProjects);@(Compile)"
+          Outputs="$(IntermediateOutputPath)GSharpNativeDlls\_always_run_.marker">
+    
+    <ItemGroup>
+      <!-- Collect all generated .cpp files in the intermediate output path -->
+      <_GSharpCppSources Include="$(IntermediateOutputPath)**\*.cpp" />
+    </ItemGroup>
+
+    <!-- Run MSVC via the custom task -->
+    <CompileCppToNativeTask 
+        Condition="'@(_GSharpCppSources)' != ''"
+        CppSources="@(_GSharpCppSources)" 
+        OutputDirectory="$(IntermediateOutputPath)GSharpNativeDlls" 
+        GSharpMultiTarget="$(GSharpMultiTarget)" >
+      <Output TaskParameter="OutputDlls" ItemName="_GSharpCompiledDlls" />
+    </CompileCppToNativeTask>
+
+    <!-- Copy compiled DLLs to output directory as Content -->
+    <ItemGroup>
+      <Content Include="@(_GSharpCompiledDlls)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Link>%(Filename)%(Extension)</Link>
+      </Content>
+    </ItemGroup>
+  </Target>
+</Project>
