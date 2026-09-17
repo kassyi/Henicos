@@ -50,8 +50,8 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
         var parent = invocation.Parent;
         while (parent != null)
         {
-            if (parent is ForStatementSyntax || parent is ForEachStatementSyntax ||
-                parent is WhileStatementSyntax || parent is DoStatementSyntax)
+            if (parent is ForStatementSyntax or ForEachStatementSyntax or ForEachVariableStatementSyntax
+                or WhileStatementSyntax or DoStatementSyntax)
             {
                 isInsideLoop = true;
                 break;
