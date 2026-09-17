@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 #if !NET8_0_OR_GREATER
