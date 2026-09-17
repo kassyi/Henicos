@@ -127,12 +127,13 @@ Integer square root computation.
 
 **Syntax**
 ```csharp
-public static GpuBigIntExpr Sqrt(GpuBigInteger a);
+// Note: Sqrt is only supported for unsigned BigIntegers.
+public static GpuBigIntExpr Sqrt(GpuUIntBigInteger a);
 ```
 
 **Example**
 ```csharp
-var expr = GpuBigInteger.Sqrt(gpuA);
+var expr = GpuBigInteger.Sqrt(gpuUIntA);
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
@@ -357,3 +358,27 @@ In addition to core arithmetic, the standard library includes specialized high-p
 
 * **PQT Structures (Hypergeometric Series)**: Data structures (`PQT`) for evaluating hypergeometric series natively on the GPU. These are essential for algorithms like Chudnovsky's Pi calculation.
 * **GPU Radix Converter**: Fast, parallelized radix conversion algorithms (e.g., base-2 to base-10) for extremely large numbers, removing the CPU bottleneck when formatting millions of digits for output.
+
+### Zero-Allocation BigInt Building (`GpuUIntBuilder` and `LimbBuffer`)
+
+To construct large constant values or intermediate configurations natively inside GPU kernels (e.g., setting up initial states) without allocating memory on the managed heap, G# provides the `GpuUIntBuilder` and `LimbBuffer` structures.
+
+* **`LimbBuffer`**: A memory-safe, generic abstraction leveraging the C# 12 `[System.Runtime.CompilerServices.InlineArray]` feature to allocate fixed-size limb arrays (e.g., 8, 16, or 32 words) directly on the local execution stack (registers/local memory).
+* **`GpuUIntBuilder`**: A mutating builder struct that wraps a `LimbBuffer`. It provides host-like API methods (such as `Add`, `ShiftLeft`, `SetBit`) to safely construct and manipulate small-to-medium arbitrary precision integers directly on the device before writing the final result to global memory.
+
+```csharp
+// Example: Using GpuUIntBuilder inside a [GpuKernel]
+[GpuKernel]
+public static void SetupInitialState(uint* globalOutput)
+{
+    // Allocates a 16-word (512-bit) array entirely in GPU registers/stack
+    var buffer = new LimbBuffer16(); 
+    var builder = new GpuUIntBuilder(ref buffer);
+    
+    builder.SetBit(511); // Sets the highest bit
+    builder.Add(12345);
+    
+    // Write out the result safely to global memory
+    builder.CopyTo(globalOutput);
+}
+```
