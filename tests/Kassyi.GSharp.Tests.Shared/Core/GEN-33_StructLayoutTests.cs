@@ -35,7 +35,7 @@ public class GEN_33_StructLayoutTests
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var data = new StructWithPackedInlineArray[1];
         data[0] = new StructWithPackedInlineArray { A = 5, B = 10 };
-        data[0].Buffer.Element = 3;
+        data[0].Buffer[0] = 3;
 
         // SourceGenerator should emit this wrapper class and method.
         GEN_33_StructLayoutKernelsWrapper.Launch_ModifyPackedInlineArrayKernel(
@@ -44,7 +44,7 @@ public class GEN_33_StructLayoutTests
         );
 
         Assert.Equal(6, data[0].A);
-        Assert.Equal(5, data[0].Buffer.Element);
+        Assert.Equal(5, data[0].Buffer[0]);
         Assert.Equal(13, data[0].B);
     }
 }
