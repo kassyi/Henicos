@@ -19,7 +19,7 @@ G# eliminates all runtime compilation overhead by requiring all C# kernels to be
 The `LoadAotKernel` method is responsible for validating and loading the precompiled AOT binary directly into the CUDA driver. It ensures that the binary matches the expected compilation output.
 
 1. **Trailing Hash Validation**: Every valid AOT binary is embedded with a 32-byte trailing hash during the build phase. The runtime extracts and validates this hash against the expected value to prevent tampering or corruption.
-2. **Decryption (`GSHPENC1`)**: If the AOT binary is protected via Virtualization-Based Obfuscation (VBO) or static encryption, the binary will contain the magic header `GSHPENC1`. The runtime automatically invokes the provided `EncryptionKeyProvider` (configured via `[GpuKernel]` attribute) to derive the AES-GCM key and decrypt the binary in-memory before passing it to the NVIDIA driver.
+2. **Decryption (`GSHPENC1`)**: If the AOT binary is protected via Virtualization-Based Obfuscation (VBO) or static encryption, the binary will contain the magic header `GSHPENC1`. The runtime automatically extracts the 16-byte Initialization Vector (IV) from the payload header and invokes the provided `EncryptionKeyProvider` (configured via `[GpuKernel]` attribute, or derived by the VBO VM on the host) to derive the AES-256-CBC key and decrypt the binary in-memory before passing it to the NVIDIA driver. (Note: Authenticated encryption like GCM is currently not used; integrity relies on the trailing hash).
 
 ### 2.2.2 Caching and Memory Management
 

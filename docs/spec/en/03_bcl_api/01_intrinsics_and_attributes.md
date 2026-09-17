@@ -83,8 +83,7 @@ public class ConstantAttribute : Attribute
 
 **Remarks**
 * **Allowed Types**: Primitive integral types (`int`, `uint`, etc.).
-* **Behavior**: The parameter is removed from the generated C++ function signature. The AOT transpiler injects a `#define` macro at the top of the C++ source.
-* **Loop Unrolling**: The transpiler automatically prepends `#pragma unroll` to `for` loops. If the loop bound is a `[Constant]`, NVCC will fully unroll it at compile time.
+* **Behavior**: The parameter is removed from the generated C++ function signature. The AOT transpiler injects a `#define` macro at the top of the C++ source, allowing the backend C++ compiler (like NVCC) to perform aggressive compile-time optimizations such as dead-code elimination.
 
 **Example**
 ```csharp
@@ -92,7 +91,7 @@ public class ConstantAttribute : Attribute
 public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
 {
     int sum = 0;
-    // NVCC will fully unroll this loop because 'iterations' is a compile-time constant macro
+    // The backend compiler can heavily optimize this loop because 'iterations' is a macro
     for (int i = 0; i < iterations; i++) 
     {
         sum += i;
@@ -166,11 +165,15 @@ public static unsafe void SharedMemoryDemo(int* data)
 Performs an atomic read-modify-write addition to a memory address.
 
 **Syntax**
-`public static void AtomicAdd(ref int address, int val)`
-*(Also available for `uint`, `float`, `ulong`)*
+```csharp
+public static int AtomicAdd(ref int address, int val)
+public static uint AtomicAdd(ref uint address, uint val)
+public static float AtomicAdd(ref float address, float val)
+public static ulong AtomicAdd(ref ulong address, ulong val)
+```
 
 **Remarks**
-Maps to `atomicAdd(&address, val)`. Prevents race conditions when multiple threads concurrently write to the same global or shared memory location.
+Maps to `atomicAdd(&address, val)`. Prevents race conditions when multiple threads concurrently write to the same global or shared memory location. The returned value is the old value observed at `address` before the addition occurred.
 
 **Example**
 ```csharp

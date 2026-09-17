@@ -1,14 +1,14 @@
-# 1. Generator Architecture (`Kassyi.Generators.GSharp`)
+# 1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)
 
 This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators.
 
 ## 1.1 Pipeline Overview
 
-The `Kassyi.Generators.GSharp` project intercepts the MSBuild compilation process, analyzes the C# Abstract Syntax Tree (AST), and generates both the intermediary CUDA C++ source strings and the C# execution stubs.
+The `Kassyi.GSharp.Compiler.Generators` project intercepts the MSBuild compilation process, analyzes the C# Abstract Syntax Tree (AST), and generates both the intermediary C++ source strings and the C# execution stubs.
 
 ```mermaid
 flowchart TD
-    A[MSBuild Process] --> B(Kassyi.Generators.GSharp)
+    A[MSBuild Process] --> B(Kassyi.GSharp.Compiler.Generators)
     B --> C[Syntax Receiver]
     C -->|"Detects [GpuKernel]"| D[RoslynToCudaVisitor]
     D -->|AST Translation| E[CUDA C++ Source String]
@@ -44,24 +44,24 @@ A defining and powerful feature of the G# Transpiler is its "Two-Tier Architectu
 
 This separation of concerns is achieved through the `ITranspilerDialect` interface. The `RoslynToCudaVisitor` does not hardcode C++ strings directly; instead, it delegates syntax formatting to the active Dialect.
 
-* **Current Implementation**: The default dialect is `CudaCppDialect`, which layers G# over NVIDIA's CUDA C++. It handles the translation of C# syntax into valid C++ equivalents (e.g., converting C# `ref` to C++ pointers or references, translating intrinsic attributes, and mapping mathematical built-ins).
+* **Current Implementation**: The transpiler utilizes two distinct dialects during the build process:
+    1. **`CpuDialect` (Default Fallback)**: Transpiles C# into standard C++17. This dialect ensures that every GPU kernel has a functional, native CPU-side fallback compiled as a shared library. It implements parallel grid-stride loops using OpenMP (`#pragma omp parallel for`) and standard `std::thread` constructs. It does not support CUDA-specific intrinsic synchronization (e.g., `__syncthreads()`) or warp-level shuffle operations, gracefully falling back to standard barriers where possible.
+    2. **`CudaCppDialect` (Hardware Execution)**: Layers G# over NVIDIA's CUDA C++. It handles the translation of C# syntax into valid CUDA C++ equivalents, maps mathematical built-ins to fast PTX hardware intrinsics (e.g., `__sinf`), and manages execution grid dimensions. It generates the encrypted CUDA Fatbin payload.
 
-## 1.3 Host-Side Diagnostics & Developer Experience (DX)
+Both dialects share core responsibilities like converting C# `ref` to C++ pointers, pointer-arithmetic array accesses, and resolving custom struct dependencies.
 
-Unlike traditional GPU compilers (like NVCC) that only analyze the device code, G# leverages its position as a Roslyn Analyzer to seamlessly inspect the **Host C# Code** calling the generated `Launch_` kernels. This enables powerful, context-aware Developer Experience (DX) guardrails.
+* **Future-Proof Extensibility**: Because of this decoupling, G# can easily "speak" different languages. By simply defining a new dialect (e.g., `OpenCLDialect`, `MetalDialect`, or `HlslDialect`) and swapping the `ITranspilerDialect` implementation, the exact same C# kernel can be natively compiled for AMD, Apple Silicon, or DirectX backends without rewriting the core AST transpilation engine.
 
-### 1.3.1 Implicit Allocation Warnings in Tight Loops
-To maximize ease of use, G# allows `[GpuKernel]` methods to return arrays directly, which the transpiler handles by auto-generating a `Launch_` method that allocates the array on the Managed Heap on behalf of the user. 
+## 1.3 Explicit Output Buffer Contract
 
-While highly convenient, implicit heap allocations inside a tight host loop (such as a game engine's `Update()` loop or a `while(true)` event pump) cause severe Garbage Collector (GC) spikes. 
-To prevent this, the `Kassyi.Generators.GSharp` analyzer actively scans the host-side Abstract Syntax Tree. If it detects a `Launch_` method invocation that triggers an implicit allocation nested inside a `for`, `foreach`, `while`, or `do-while` loop, it surfaces an immediate diagnostic warning in the IDE:
+Unlike standard C# methods, `[GpuKernel]` methods are strictly required to return `void`. This enforces the G# Zero-Allocation philosophy by prohibiting implicit array allocations on the host.
 
-> **Warning GSH0006**: *Implicit heap allocation detected inside a host loop. To prevent GC spikes, consider pre-allocating the buffer outside the loop and passing it via the pointer/ref overload.*
+Instead, developers must use the **Explicit Output Buffer Contract**:
+1. Allocate an output array (e.g., `float[] results`) on the host.
+2. Pass it directly into the generated `Launch_` wrapper.
+3. The transpiler seamlessly maps this array to a device pointer and copies the mutated data back to the host after execution.
 
-This holistic approach to static analysis ensures that developers enjoy high-level syntax sugar without accidentally sacrificing the strict "Zero-Allocation" performance requirements of realtime GPU applications.
-* **Future-Proof Extensibility**: Because of this magical decoupling, G# can easily "speak" different languages. By simply defining a new dialect (e.g., `OpenCLDialect`, `MetalDialect`, or `HlslDialect`) and swapping the `ITranspilerDialect` implementation, the exact same C# kernel can be natively compiled for AMD, Apple Silicon, or DirectX backends without rewriting the core AST transpilation engine.
-
-## 1.3 Stub Emission (`GpuKernelGenerator`)
+## 1.4 Stub Emission (`GpuKernelGenerator`)
 
 Once the CUDA C++ string is constructed, `GpuKernelGenerator` creates a C# partial class containing a launcher method (e.g., `Launch[MethodName]`).
 
@@ -96,22 +96,45 @@ When a struct parameter is detected, the `GpuKernelGenerator` recursively traver
 
 > [!IMPORTANT]
 > This implicit deep marshaling empowers developers to pass complex, nested C# objects into the GPU without manually writing verbose and unsafe P/Invoke memory management code.
+> However, deep marshaling applies **only to the standard `Launch_*` (host-array) path**. When invoking the zero-allocation `Launch_*_Device` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally throws a `NotSupportedException` in the `_Device` launcher to prevent corrupted pointer mapping.
+
+```csharp
+// Example: A struct containing a managed array field
+public struct AdvancedContext
+{
+    public float[] Data;
+}
+
+[GpuKernel]
+public static void Process(AdvancedContext ctx) { /* ... */ }
+
+// Host Invocation:
+var ctx = new AdvancedContext { Data = new float[100] };
+
+// ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
+KernelWrapper.Launch_Process(ctx);
+
+// ❌ Prohibited: The _Device overload expects pre-allocated device pointers. 
+// A struct containing a managed array (T[]) cannot be mapped safely here.
+// Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
+KernelWrapper.Launch_Process_Device(ctx);
+```
 
 * **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
 * **Execution & Cleanup**: The launcher invokes `GpuKernelLoader.GetOrCompileKernel` and subsequently `CudaDriverApi.cuLaunchKernel`. Post-execution, it automatically copies the array data back Device-to-Host (`cuMemcpyDtoH_v2`) and frees all allocated device memory.
 * **Exceptions**: `[Constant]` parameters are strictly excluded from this marshaling array, as they exist exclusively in the preprocessor domain.
 
-## 1.4 Security and Virtualization-Based Obfuscation (VBO)
+## 1.5 Security and Virtualization-Based Obfuscation (VBO)
 
 To protect proprietary AOT kernel binaries from reverse engineering, the generator supports Virtualization-Based Obfuscation (VBO) and static payload encryption.
 
-### 1.4.1 AOT Kernel Encryption
-During the AOT build phase, the generator conditionally generates a secure 256-bit AES-GCM key for each kernel. The transpiled CUDA source string (or the compiled PTX/Fatbin) is encrypted at rest using this key.
-The wrapper emitter injects the encrypted payload directly into the host C# assembly alongside a magic header (`GSHPENC1`).
+### 1.5.1 AOT Kernel Encryption
+During the AOT build phase, the generator conditionally generates a secure 256-bit AES-256-CBC key for each kernel. The transpiled CUDA source string (or the compiled PTX/Fatbin) is encrypted at rest using this key.
+The wrapper emitter injects the encrypted payload directly into the host C# assembly alongside a magic header (`GSHPENC1`), immediately followed by the 16-byte randomly generated Initialization Vector (IV), and then the ciphertext.
 
-### 1.4.2 VBO Strategies (`IVmStrategy`)
+### 1.5.2 VBO Strategies (`IVmStrategy`)
 Instead of embedding the raw AES key inside the host binary where it can be easily extracted, the generator employs a Strategy Pattern (`IVmStrategy`) to emit a deterministic Virtual Machine that derives the key at runtime.
-Supported strategies include:
+Supported strategies (in `Kassyi.GSharp.Compiler.VmObfuscation`) include:
 - `ArithmeticVmStrategy`: Uses an arithmetic accumulator VM.
 - `AutomatonVmStrategy`: A state-machine permutation automaton.
 - `NandStackVmStrategy`: A minimal Turing-complete NAND stack VM.

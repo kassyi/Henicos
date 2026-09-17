@@ -32,12 +32,7 @@ public struct SpecTypes
     public double DoubleValue;
 }
 
-public static class Intrinsics
-{
-    public static void InlinePtx(string ptx)
-    {
-    }
-}
+
 
 public struct PhysicsVector
 {
@@ -91,7 +86,7 @@ public static partial class ComprehensiveSpecKernel
         PhysicsVector[] particles,
         ref float totalMagnitude,
         out bool successFlag,
-        SpecTypes largeStructVal, // Triggers GSH0014 (>= 32 bytes passed by value)
+        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
         int particleCount,
         [Constant] int unrollFactor)
     {
@@ -119,7 +114,198 @@ public static partial class ComprehensiveSpecKernel
         int tid = tx + bx * bdimX;
 
         // 2. Shared Memory (Static & Dynamic)
-        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH0013 (>32768 bytes)
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
+        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
+        SharedMemory<int> targetTypedCache = new(256); // Target-typed new support
+
+        if (tid < particleCount)
+        {
+            // 3. Custom Struct extraction & Array pointer dereferencing
+            PhysicsVector p = particles[tid];
+            SpecTypes types = largeStructVal; // Proves compilation of all primitive types
+
+            // 3.5 Record struct and var keyword support
+            var origin = new Point(0, 0);
+            var distance = origin.X + p.X;
+
+            // 3.6 Nested Structs
+            var nested = new NestedPhysicsState
+            {
+                Position = p,
+                Velocity = p,
+                StatusFlag = 1
+            };
+
+            // 4. All Math Mappings and Device Method invocation
+            float mag = ComputeMagnitude(p);
+            mag = (float)System.Math.Abs(mag);
+
+            // 5. Automatic Loop Unrolling via Constant (for)
+            for (int i = 0; i < unrollFactor; i++)
+            {
+                if (i == 1) continue;
+                mag = (float)System.Math.Max(mag, p.X * i + Gravity);
+            }
+
+            if (!IsPositive(mag))
+            {
+                mag = 0;
+            }
+
+            // 6. Other Loop Syntaxes
+            int counter = 0;
+            while (counter < 2)
+            {
+                mag = (float)System.Math.Min(mag, mag + 1);
+                counter++;
+            }
+
+            do
+            {
+                counter--;
+            } while (counter > 0);
+
+            // 7. Switch statement
+            switch (tx)
+            {
+                case 0:
+                    mag += 1;
+                    break;
+                default:
+                    mag += 0;
+                    break;
+            }
+
+            // 8. Memory writes
+            staticCache[tx] = tid;
+            dynamicCache[tx] = mag;
+
+            // 9. Synchronization
+            Gpu.SyncThreads();
+
+            // 10. Atomics and Out parameter
+            if (tx == 0)
+            {
+                Gpu.AtomicAdd(ref totalMagnitude, dynamicCache[0]);
+                successFlag = true;
+            }
+
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+            inlineVec[0] = 123;
+            inlineVec[1] = 456;
+
+            unsafe
+            {
+                PhysicsState state = new PhysicsState();
+
+                state.Buffer[0] = inlineVec[0];
+                state.Buffer[1] = inlineVec[1];
+
+                ulong carry = 0;
+                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
+
+                long borrow = 0;
+                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
+
+                if (sum > diff)
+                {
+                    state.Flags = 1;
+                }
+            }
+
+            // 11.6 Operators (Ternary, Bitwise, Logical, else if)
+            bool condition1 = tx > 0;
+            bool condition2 = ty == 0;
+            if (condition1 && condition2) // Logical short-circuit
+            {
+                int bitwise = (tx << 2) | (ty >> 1) ^ 0xFF;
+                bitwise &= ~1; // Bitwise assignment and NOT
+
+                // mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional - GSH0003
+            }
+            else if (condition1 || !condition2)
+            {
+                mag += 1.5f;
+            }
+
+            // 11.5 Inline PTX
+            Gpu.InlinePtx("/* test ptx inline */");
+
+            // 12. Early return
+            if (ty > 0)
+            {
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Demonstrates the host-side AST construction for GpuBigInt.
+    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDeviceFunction].
+    /// </summary>
+    public static void HostSideGpuBigIntDemo()
+    {
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+
+        using var a = new GpuUIntBigInteger(context, 1024);
+        using var b = new GpuUIntBigInteger(context, 1024);
+        using var result = new GpuUIntBigInteger(context, 1024);
+
+        // AST Construction: evaluated lazily and dispatched to GPU
+        result.Value = a + b;
+        b.Value = result - a;
+    }
+
+    [GpuKernel(Cooperative = true)]
+    public static void CooperativePhysicsProcess(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        data[tid] = tid;
+        Gpu.SyncGrid();
+    }
+}
+```
+<!-- END CSHARP -->
+
+        public ulong Flags;
+    }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Has intentional diagnostics errors")]
+    public static void ProcessPhysics(
+        PhysicsVector[] particles,
+        ref float totalMagnitude,
+        out bool successFlag,
+        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
+        int particleCount,
+        [Constant] int unrollFactor)
+    {
+        successFlag = false;
+
+        const float Gravity = 9.8f; // Triggers const evaluation in C++
+
+        // 1. All Intrinsics Indexing
+        int tx = ThreadIndex.X;
+        int ty = ThreadIndex.Y;
+        int tz = ThreadIndex.Z;
+
+        int bx = BlockIndex.X;
+        int by = BlockIndex.Y;
+        int bz = BlockIndex.Z;
+
+        int bdimX = BlockDimension.X;
+        int bdimY = BlockDimension.Y;
+        int bdimZ = BlockDimension.Z;
+
+        int gdimX = GridDimension.X;
+        int gdimY = GridDimension.Y;
+        int gdimZ = GridDimension.Z;
+
+        int tid = tx + bx * bdimX;
+
+        // 2. Shared Memory (Static & Dynamic)
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
         SharedMemory<int> targetTypedCache = new(256); // Target-typed new support
 
@@ -282,8 +468,8 @@ public static partial class ComprehensiveSpecKernel
 When building this code, MSBuild natively catches the strict constraints via the `Kassyi.Generators.GSharp` analyzers:
 
 ```
-ComprehensiveSpecKernel.cs(50,9): warning GSH0014: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.
-ComprehensiveSpecKernel.cs(76,63): warning GSH0013: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+ComprehensiveSpecKernel.cs(50,9): warning GSH1002: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.
+ComprehensiveSpecKernel.cs(76,63): warning GSH1001: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
 ```
 
 ## 8.3 The Transpiled CUDA C++ Output
@@ -292,7 +478,7 @@ ComprehensiveSpecKernel.cs(76,63): warning GSH0013: The kernel allocates 40000 b
 
 <!-- BEGIN CPP -->
 ```cpp
-//HintName: ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.cs
+﻿//HintName: ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.cs
 // <auto-generated/>
 #nullable enable
 using System;
@@ -383,7 +569,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount){
+extern ""C"" __declspec(dllexport) void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
 (*successFlag)=false;
 float Gravity = 9.8f;
 int tx = threadIdx.x;
@@ -495,7 +681,7 @@ return;
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -505,11 +691,14 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount);
+ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount, unrollFactor);
 }
 }
 ";
 public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ProcessPhysics_Source;
+private static byte[]? s_decryptionKey_ProcessPhysics;
+private static byte[]? s_binaryData_ProcessPhysics;
+private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_DebugReduc_SpecTypes
@@ -566,11 +755,15 @@ successFlag = default;
 if (particles.Length == 0){
 return;
 }
+if (!s_isLoaded_ProcessPhysics)
+{
+s_decryptionKey_ProcessPhysics = null;
+s_isLoaded_ProcessPhysics = true;
+}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-byte[] decryptionKey = null;
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, decryptionKey);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, s_decryptionKey_ProcessPhysics);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)
@@ -586,7 +779,7 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_particles
 
 ## 8.4 Sad Path Compilation Errors (Diagnostics)
 
-To ensure that the constraints outlined in [../language/05_limitations.md](../language/05_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests\Kassyi.GSharp.Tests\Generator\GEN-05_GeneratorDiagnosticsTests.cs`).
+To ensure that the constraints outlined in [../../01_language/05_limitations.md](../../01_language/05_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests/Kassyi.GSharp.Tests.Shared/Generator/GEN-05-07_GeneratorDiagnosticsTests.cs`).
 
 For example, when attempting to write invalid C# code in a kernel:
 
@@ -603,9 +796,9 @@ public static int BadKernel()
 The G# compiler natively intercepts these syntax tree nodes and fails the build with the following deterministic errors (which are snapshot-tested using Verify.XUnit):
 
 1. **GSH0001**: `Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.` (Triggered by `new object()`)
-2. **GSH0002**: `The string type is not supported in GPU kernels.` (Triggered by `string s = "hello"`)
-3. **GSH0003**: `The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels.` (Fallback trigger for any unknown syntax node)
-4. **GSH0004**: `Method 'BadKernel' is marked with [GpuKernel] but returns an unsupported reference type. GpuKernel methods must return void or a non-reference value type.`
+2. **GSH0002**: `The string type is not supported in GPU kernels` (Triggered by `string s = "hello"`)
+3. **GSH0003**: `The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels` (Fallback trigger for any unknown syntax node)
+4. **GSH0004**: `Method 'BadKernel' is marked with [GpuKernel] but returns 'System.Int32'. GpuKernel methods must return void.`
 
 ## Conclusion
 
@@ -613,7 +806,7 @@ This explicit trace proves that:
 
 1. `Constant` uses preprocessor macros.
 2. Custom Structs map flawlessly, and all 11 primitive C# types align to their C++ equivalents.
-3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004` and `GSH0013` - `GSH0014`) to act as strict guardrails.
+3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004` and `GSH1001` - `GSH1002`) to act as strict guardrails.
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.
-5. **`continue` statements are currently silently ignored** (documented limitation).
-6. **Phase 5 Target Identified**: `ref` and `out` scalars are correctly transpiled to pointers in `.cu` but their Device-to-Host copy-back logic is currently **missing** in the host C# launcher.
+5. **Control Flow**: Complex `switch` statements, `for`, `while`, and `do-while` loops (including `continue` and `break` jumps) are correctly transpiled and verified by snapshot tests.
+6. **Scalar Marshaling**: `ref` and `out` parameters are properly mapped to pointers in C++, and the C# host launcher utilizes zero-allocation `fixed` pinning to provide seamless bidirectional memory synchronization.

@@ -23,18 +23,27 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Delegates & Lambda Expressions** | **Partially Supported.** Non-capturing lambdas and local functions, or those capturing only value types, are extracted and expanded as C++ `__device__` functions (or lambdas). Complex closures requiring managed heap allocations (e.g., capturing reference types) are not supported. |
 | **`ref switch` Expressions** | **Unsupported by C#.** C# does not currently support `ref switch` expressions (`ref var r = x switch { ... }`). Use `if/else` or `ref ? :` for conditional `ref` assignment. |
 
-## 5.2 Standard Diagnostics and Warnings
+## 5.2 Dialect Syntax Support
+
+While `CudaCppDialect` fully supports all mapped GPU hardware intrinsics, the default `CpuDialect` (which provides native CPU-fallback for tests) has structural limitations due to its OpenMP and `std::thread` foundation:
+
+* **Device Synchronization (`Gpu.SyncThreads()`, `__syncthreads()`)**: CPU threads cannot perform hardware warp-level barriers. While they may compile, using these barriers can cause severe race conditions or deadlocks during CPU fallback execution.
+* **Warp Shuffles (`__shfl_sync()`, etc.)**: Hardware warp intrinsics are completely unsupported by `CpuDialect` and will cause C++ compilation failures during the CPU native library build phase.
+
+If a kernel relies on these features, developers must restrict it to hardware execution or provide alternative atomic algorithms when testing on the CPU fallback pipeline.
+
+## 5.3 Standard Diagnostics and Warnings
 
 Because G# utilizes the standard Roslyn C# compiler to validate syntax before transpilation, certain standard C# rules must be carefully managed.
 
-### 5.2.1 Suppressing Pointer Warnings
+### 5.3.1 Suppressing Pointer Warnings
 To manipulate raw memory arrays (e.g., `int*`), G# kernels must be marked with the `unsafe` keyword. Developers should configure their `.csproj` to allow unsafe blocks (`<AllowUnsafeBlocks>true</AllowUnsafeBlocks>`).
 
-### 5.2.2 Dereference Warnings (`CS8602`)
+### 5.3.2 Dereference Warnings (`CS8602`)
 When utilizing C# 8.0+ Nullable Reference Types, passing raw pointers might trigger `CS8602` (Dereference of a possibly null reference).
 Since all pointer validity checks are pushed to the AOT/Runtime phase, developers may need to suppress these warnings locally via `#pragma warning disable CS8602` or configure analyzer rules appropriately.
 
-## 5.3 Custom G# Diagnostics
+## 5.4 Custom G# Diagnostics
 
 The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during compilation by traversing the C# AST and reporting specific MSBuild diagnostics:
 

@@ -26,18 +26,35 @@ public class GpuContext : IDisposable
 * Must be instantiated before allocating any `GpuBigInteger` instances.
 * Supports a Dual-Engine architecture (`GSharpAot` for pure C# JIT/AOT kernels, `LegacyNative` for C++ DLLs).
 
-### `GpuBigInteger` Class
+### `GpuUIntBigInteger` Class
 
-A host-wrapper class (`IDisposable`) that manages the `IntPtr` to the GPU device memory for massive integers.
+A host-wrapper class (`IDisposable`) that manages the `IntPtr` to the GPU device memory for massive unsigned integers.
 
 **Syntax**
 ```csharp
-public class GpuBigInteger : IDisposable
+public class GpuUIntBigInteger : IDisposable
 {
-    public GpuBigInteger(int words);
-    public void CopyFromHost(uint[] hostData);
+    public GpuUIntBigInteger(GpuContext context, int numWords);
+    public GpuUIntBigInteger(GpuContext context, uint[] hostData);
     public uint[] ToHostArray();
-    public GpuBigIntExpr Value { set; }
+    public static GpuUIntBigInteger FromBigInteger(GpuContext context, BigInteger value, int minWords = 0);
+    public BigInteger ToBigInteger();
+    public void Dispose();
+}
+```
+
+### `GpuBigInteger` Struct
+
+A host-wrapper struct that pairs a `GpuUIntBigInteger` with a sign bit.
+
+**Syntax**
+```csharp
+public readonly struct GpuBigInteger : IDisposable, IComparable<GpuBigInteger>
+{
+    public GpuBigInteger(GpuUIntBigInteger value, bool isNegative = false);
+    public GpuUIntBigInteger Value { get; }
+    public bool IsNegative { get; }
+    public void Dispose();
 }
 ```
 
@@ -47,7 +64,7 @@ public class GpuBigInteger : IDisposable
 
 *Note: In the complexity analysis below, $N$ represents the number of 32-bit words (limbs) required to store the arbitrary-precision integer.*
 
-### `GpuBigInteger.Add` and `GpuBigInteger.Sub`
+### Addition and Subtraction
 
 Performs ripple-carry addition (using `Gpu.AddWithCarry`) or borrow-based subtraction (`Gpu.SubWithBorrow`) across multiple chunks.
 
@@ -55,22 +72,16 @@ Performs ripple-carry addition (using `Gpu.AddWithCarry`) or borrow-based subtra
 * **Algorithm**: Parallel Ripple-Carry / Borrow Propagation
 * **Time Complexity**: $\mathcal{O}(N)$ total work. Highly parallelized across CUDA blocks.
 
-**Syntax**
-```csharp
-public static void Add(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
-public static void Sub(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
-```
-
-**Remarks (Operator Overloads)**
-**(Host-Only):** While these `void` methods evaluate directly into the `result` buffer, `GpuBigInt` also provides `+` and `-` operator overloads designed exclusively for host-side orchestration. These overloads return a `GpuBigIntExpr` (Expression Tree) for lazy evaluation, enabling readable composed equations like `gpuResult.Value = a + b - c`.
+**Operator Overloads**
+**(Host-Only):** `GpuBigInt` provides `+` and `-` operator overloads designed exclusively for host-side orchestration. These overloads return a `GpuBigIntExpr` (Expression Tree) for lazy evaluation.
 
 **Example**
 ```csharp
-using var gpuResult = new GpuBigInteger(1024);
-GpuBigInteger.Add(gpuA, gpuB, gpuResult);
+var expr = gpuA + gpuB - gpuC;
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
-### `GpuBigInteger.Mul` (Multiplication)
+### Multiplication
 
 Highly optimized multiplication for massive sizes.
 
@@ -78,17 +89,13 @@ Highly optimized multiplication for massive sizes.
 * **Algorithm**: Number Theoretic Transform (NTT) / Fast Fourier Transform (FFT)
 * **Time Complexity**: $\mathcal{O}(N \log N)$
 
-**Syntax**
-```csharp
-public static void Mul(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
-```
-
-**Remarks (Operator Overloads)**
-**(Host-Only):** In addition to this direct evaluation method, the `*` operator overload is available exclusively on the host to construct a lazy-evaluated `GpuBigIntExpr`.
+**Operator Overloads**
+**(Host-Only):** The `*` operator overload is available exclusively on the host to construct a lazy-evaluated `GpuBigIntExpr`.
 
 **Example**
 ```csharp
-GpuBigInteger.Mul(gpuA, gpuB, gpuResult);
+var expr = gpuA * gpuB;
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### `GpuBigInteger.Div` (Division)
@@ -125,7 +132,8 @@ public static GpuBigIntExpr Sqrt(GpuBigInteger a);
 
 **Example**
 ```csharp
-gpuResult.Value = GpuBigInteger.Sqrt(gpuA);
+var expr = GpuBigInteger.Sqrt(gpuA);
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### `GpuBigInteger.Pow10` (Power of 10)
@@ -143,7 +151,8 @@ public static GpuBigIntExpr Pow10(int exponent);
 
 **Example**
 ```csharp
-gpuResult.Value = GpuBigInteger.Pow10(100); // Calculates 10^100
+var expr = GpuBigInteger.Pow10(100); // Calculates 10^100
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### Bitwise Operations and Bit Shifts
@@ -176,7 +185,8 @@ public static GpuBigIntExpr ShiftRight(GpuBigInteger a, int shiftBits);
 **Example**
 ```csharp
 // Easily composed via standard C# operators using Expression Trees
-gpuResult.Value = (~gpuA & gpuB) << 256;
+var expr = (~gpuA & gpuB) << 256;
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### `GpuBigInteger.Gcd` (Greatest Common Divisor)
@@ -194,7 +204,8 @@ public static GpuBigIntExpr Gcd(GpuBigInteger a, GpuBigInteger b);
 
 **Example**
 ```csharp
-gpuResult.Value = GpuBigInteger.Gcd(gpuA, gpuB);
+var expr = GpuBigInteger.Gcd(gpuA, gpuB);
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### `GpuBigInteger.ModPow` (Modular Exponentiation)
@@ -212,7 +223,8 @@ public static GpuBigIntExpr ModPow(GpuBigInteger a, GpuBigInteger exponent, GpuB
 
 **Example**
 ```csharp
-gpuResult.Value = GpuBigInteger.ModPow(gpuA, exponent, modulus);
+var expr = GpuBigInteger.ModPow(gpuA, exponent, modulus);
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### `GpuBigInteger.Square` (Instance Method)
@@ -233,7 +245,7 @@ This is an in-place mutation operation. For extremely large integers, calling `S
 
 **Example**
 ```csharp
-gpuA.Square(1024); // Squares gpuA in place
+gpuA.Value.Square(1024); // Squares gpuA's underlying unsigned value in place
 ```
 
 ### Fermat PRP Loop (DynamicFermatLoop, StaticFermatLoop)
@@ -278,29 +290,31 @@ Instead of computing immediately, operator overloads (`+`, `-`, `*`, `/`, `<<`, 
 
 **Example: Comprehensive Expression Tree**
 ```csharp
-// Evaluate the tree and write the result directly into a pre-allocated buffer
-gpuResult.Value = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+// Evaluate the tree and return the result as a new buffer
+var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### Diagnostic GSH0005: Preventing Computation Loss
 
-Because operators only build an AST and do not execute any kernels natively, failing to assign the resulting expression to a `.Value` property leads to a silent "computation lost" bug (the GPU kernel is never dispatched).
+Because operators only build an AST and do not execute any kernels natively, failing to evaluate the resulting expression leads to a silent "computation lost" bug (the GPU kernel is never dispatched).
 
-To prevent this, the G# Roslyn Analyzer introduces `GSH0005` (GpuBigIntExpr Direct Assignment). This diagnostic produces a **hard compiler error** if a `GpuBigIntExpr` is declared or assigned to a local variable without being resolved.
+To prevent this, the G# Roslyn Analyzer introduces `GSH0005` (GpuBigIntExpr Direct Assignment). This diagnostic produces a **hard compiler error** if a `GpuBigIntExpr` is declared or assigned to a local variable without being resolved or evaluated.
 
 ```csharp
 // ❌ INCORRECT: Triggers hard compiler error GSH0005
 // var recipe = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
 
-// ✨ CORRECT: Enforced single-line assignment
-gpuResult.Value = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+// ✨ CORRECT: Enforced evaluation
+var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
 ### Execution Strategy
 
-When `.Value` is assigned, the runtime analyzes the expression tree and executes it using an optimized execution plan:
+When `.Evaluate()` is called, the runtime analyzes the expression tree and executes it using an optimized execution plan:
 
-1. **Buffer Pooling**: Intermediate results are routed to a pre-allocated pool of temporary `GpuBigInteger` buffers managed by `GpuContext`. This reduces `cudaMalloc` allocations to **zero** during tight computational loops.
+1. **Buffer Pooling**: Intermediate results are routed to a pre-allocated pool of temporary buffers managed by `GpuContext`. This reduces `cudaMalloc` allocations to **zero** during tight computational loops.
 2. **Kernel Fusion (Future)**: The execution engine may dynamically generate and JIT-compile fused CUDA kernels (combining operations like Add and And into a single memory pass) to minimize global memory bandwidth.
 
 ---
