@@ -44,6 +44,10 @@ internal static class WrapperEmitter
                 WriteKernelSource(writer, method, source, config);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
+                writer.AppendLine($"private static byte[]? s_decryptionKey_{method.Name};");
+                writer.AppendLine($"private static byte[]? s_binaryData_{method.Name};");
+                writer.AppendLine($"private static bool s_isLoaded_{method.Name};");
+
                 if (aesKey != null)
                 {
                     if (string.IsNullOrWhiteSpace(keyProvider))
@@ -54,8 +58,8 @@ internal static class WrapperEmitter
 
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    WriteLaunchMethod(writer, method, false, config, aesKey != null, keyProvider);
-                    WriteLaunchMethod(writer, method, true, config, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, false, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, true, aesKey != null, keyProvider);
                 }
                 else
                 {
@@ -81,7 +85,7 @@ internal static class WrapperEmitter
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
-        GeneratorConfig config, bool hasAesKey, string? keyProvider)
+        bool hasAesKey, string? keyProvider)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -283,27 +287,43 @@ internal static class WrapperEmitter
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method,
         bool hasAesKey, string? keyProvider)
     {
+        writer.AppendLine($"if (!s_isLoaded_{method.Name})");
+        using (writer.Scope())
+        {
+            writer.AppendLine(
+                $"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
+            writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"s_binaryData_{method.Name} = System.IO.File.ReadAllBytes(fatbinPath);");
+                if (hasAesKey)
+                {
+                    if (!string.IsNullOrWhiteSpace(keyProvider))
+                    {
+                        writer.AppendLine(
+                            $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                    }
+                    else
+                    {
+                        writer.AppendLine($"s_decryptionKey_{method.Name} = DeriveObfuscatedKey_{method.Name}();");
+                    }
+                }
+                else
+                {
+                    writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
+                }
+            }
+            writer.AppendLine("else");
+            using (writer.Scope())
+            {
+                writer.AppendLine(
+                    $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
+            }
+            writer.AppendLine($"s_isLoaded_{method.Name} = true;");
+        }
+
         writer.AppendLine(
-            $"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
-        writer.AppendLine("IntPtr hfunc = IntPtr.Zero;");
-        writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
-        using (writer.Scope())
-        {
-            writer.AppendLine("var fatbinData = System.IO.File.ReadAllBytes(fatbinPath);");
-
-            WriteDecryptionKeySetup(writer, method, hasAesKey, keyProvider);
-
-            writer.AppendLine(
-                $"hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(fatbinData, \"{method.Name}\", decryptionKey);");
-        }
-
-        writer.AppendLine("else");
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
-        }
-
+            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\", s_decryptionKey_{method.Name});");
         writer.AppendLine();
     }
 
@@ -371,10 +391,31 @@ internal static class WrapperEmitter
         writer.AppendLine(
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
-        WriteDecryptionKeySetup(writer, method, hasAesKey, keyProvider);
+        writer.AppendLine($"if (!s_isLoaded_{method.Name})");
+        using (writer.Scope())
+        {
+            if (hasAesKey)
+            {
+                if (!string.IsNullOrWhiteSpace(keyProvider))
+                {
+                    writer.AppendLine(
+                        $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                }
+                else
+                {
+                    writer.AppendLine($"s_decryptionKey_{method.Name} = DeriveObfuscatedKey_{method.Name}();");
+                }
+            }
+            else
+            {
+                writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
+            }
+
+            writer.AppendLine($"s_isLoaded_{method.Name} = true;");
+        }
 
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, decryptionKey);");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, s_decryptionKey_{method.Name});");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
@@ -477,26 +518,6 @@ internal static class WrapperEmitter
         }
 
         writer.AppendLine(";");
-    }
-
-    private static void WriteDecryptionKeySetup(SourceWriter writer, IMethodSymbol method, bool hasAesKey, string? keyProvider)
-    {
-        if (hasAesKey)
-        {
-            if (!string.IsNullOrWhiteSpace(keyProvider))
-            {
-                writer.AppendLine(
-                    $"byte[] decryptionKey = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
-            }
-            else
-            {
-                writer.AppendLine($"byte[] decryptionKey = DeriveObfuscatedKey_{method.Name}();");
-            }
-        }
-        else
-        {
-            writer.AppendLine("byte[]? decryptionKey = null;");
-        }
     }
 
     private static void WriteAutoResultAllocation(SourceWriter writer, IMethodSymbol method)
