@@ -27,6 +27,7 @@ public class GpuKernelAttribute : Attribute
 * **Accessibility**: Must be `public static` or `internal static`.
 * **Calling Constraints (CRITICAL)**: A `[GpuKernel]` method **CANNOT** be called by another `[GpuKernel]` method (as CUDA does not allow `__global__` to call `__global__` without Dynamic Parallelism). Use `[GpuDeviceFunction]` instead.
 * **EncryptionKeyProvider**: Allows specifying a custom static method for AOT kernel decryption (overriding VBO strategy).
+* **Cooperative**: If set to `true`, the kernel is compiled and launched as a Cooperative Kernel (`cuLaunchCooperativeKernel`), allowing grid-wide synchronization via `Gpu.SyncGrid()`.
 
 **Example**
 ```csharp
@@ -99,6 +100,15 @@ public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
     data[0] = sum;
 }
 ```
+
+### Advanced Mapping Attributes
+
+The `Kassyi.GSharp.Core` package includes advanced attributes used primarily by the standard library to map C# constructs to native CUDA C++ representations during transpilation.
+* **`[CudaIntrinsic]`**: Maps a C# method to a specific CUDA C++ function call.
+* **`[CudaIntrinsicPattern]`**: Maps a C# method to a templated or patterned C++ expression (e.g., `__gsharp_add_cc({0}, {1}, {2})`).
+* **`[BclIntrinsicMap]`**: Marks a struct as a direct map to a BCL type, directing the transpiler to use the mapped implementations.
+* **`[GpuOperatorMacro]`**: Maps a C# method to a lambda expression or macro string for inline transpilation.
+* **`[SkipSnapshotConsistency]`**: Used in testing to bypass snapshot consistency verification for specific kernels.
 
 ---
 
@@ -234,6 +244,14 @@ public static void PtxDemo()
 }
 ```
 
+### `Gpu` Macro Methods
+
+The `Gpu` class provides high-level macro methods that are expanded directly into optimized C++ control flow or text by the transpiler.
+
+* **`Gpu.GridStrideLoop(int count, Action<int> body)`**: Expands into a standard CUDA grid-stride loop (`for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x * gridDim.x)`).
+* **`Gpu.SingleThread(Action body)`**: Wraps the body in a thread execution guard (`if (threadIdx.x == 0 && blockIdx.x == 0) { ... }`), ensuring the code runs only once per grid.
+* **`Gpu.Constant(string expression)`**: Directly injects the given string literal or identifier token as a raw C++ constant expression (e.g., `#define` text or enum values) into the transpiled source.
+
 ### Built-in Vector Types (`System.Numerics`)
 
 G# transparently maps `System.Numerics.Vector2`, `Vector3`, and `Vector4` to CUDA's native `float2`, `float3`, and `float4`.
@@ -249,3 +267,9 @@ public static unsafe void VectorCompute(Vector3* vectors)
     vectors[ThreadIndex.X] = new Vector3(vec.X, vec.Y, vec.Z);
 }
 ```
+
+### `System.Math` and `System.MathF`
+
+Standard C# math functions from `System.Math` and `System.MathF` are natively supported and transpiled to their CUDA hardware-accelerated intrinsic equivalents.
+* **Supported Methods**: `Exp`, `Log`, `Sqrt`, `Min`, `Max`, `Abs`, etc.
+* **Translation**: `Math.Sqrt(double)` translates to `sqrt()`, while `MathF.Sqrt(float)` translates to the faster single-precision `sqrtf()`.
