@@ -1,9 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const specFilePath = path.join(__dirname, '..', 'docs', 'spec', 'en', '09_comprehensive_example.md');
+const specFilePath = path.join(__dirname, '..', 'docs', 'spec', 'en', '04_guides', '01_comprehensive_example.md');
 const sourceFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'GEN-06_ComprehensiveSpecKernel.cu.cs');
-const generatedFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'Generator', 'Snapshots', 'Snap.Test_46261f8a84_Cpu#ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs');
+
+// Dynamically discover the CPU snapshot without hardcoding the hash
+const snapshotDir = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Cpu', 'Snapshots');
+let generatedFile = null;
+if (fs.existsSync(snapshotDir)) {
+    const files = fs.readdirSync(snapshotDir);
+    const match = files.find(f => f.includes('ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs'));
+    if (match) {
+        generatedFile = path.join(snapshotDir, match);
+    }
+}
 
 console.log("Syncing comprehensive spec...");
 
@@ -12,8 +22,8 @@ if (!fs.existsSync(sourceFile)) {
     process.exit(1);
 }
 
-if (!fs.existsSync(generatedFile)) {
-    console.error(`Generated file not found: ${generatedFile}`);
+if (!generatedFile || !fs.existsSync(generatedFile)) {
+    console.error(`Generated file not found in ${snapshotDir}`);
     process.exit(1);
 }
 
