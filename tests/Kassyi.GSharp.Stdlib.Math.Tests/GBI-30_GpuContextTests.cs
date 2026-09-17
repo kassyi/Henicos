@@ -11,7 +11,7 @@ public class GBI30_GpuContextTests
     [Trait("FeatureId", "GBI-30")]
     public void Test_GBI30_Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
 
@@ -29,7 +29,7 @@ public class GBI30_GpuContextTests
     [Trait("FeatureId", "GBI-30")]
     public void Test_GBI30_Finalizer_ShouldNotCrash()
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         // Arrange & Act
         WeakReference weakRef = CreateAndDropContext();
 
@@ -53,7 +53,7 @@ public class GBI30_GpuContextTests
     [Trait("FeatureId", "GBI-30")]
     public void Test_GBI30_Dispose_WhenUsingGSharpJit_ShouldNotClearSharedProviderCaches()
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpJit);
         var provider = GSharpJitProvider.Instance;
@@ -82,7 +82,7 @@ public class GBI30_GpuContextTests
     [Trait("FeatureId", "GBI-30")]
     public void Test_GBI30_ParallelContextDisposal_ShouldNotCorruptCaches()
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         Parallel.For(0, 8, i =>
         {
             using var scope = new JitEngine.CudaContextScope();

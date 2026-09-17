@@ -17,7 +17,7 @@ public class GEN_13_GpuMacroTests
     [InlineData(2048)]
     public void Test_GEN13_MacroKernel_GridStrideLoop_And_SingleThread(int length)
     {
-        Kassyi.GSharp.Stdlib.Math.Tests.CudaCapability.EnsureGpuAvailable();
+        CudaCapability.EnsureGpuAvailable();
         // Edge cases and stress testing for macro kernels
         using var scope = new JitEngine.CudaContextScope();
 
