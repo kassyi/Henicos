@@ -24,6 +24,7 @@ public class Sha256Benchmark : IComputeBenchmark
     private byte[] _input = null!;
     private uint[] _outputCpu = null!;
     private uint[] _outputGsharp = null!;
+    private uint[] _outputNative = null!;
 
     public string Name => "SHA-256 (100k Blocks Transform)";
 
@@ -32,6 +33,7 @@ public class Sha256Benchmark : IComputeBenchmark
         _input = new byte[N * 64];
         _outputCpu = new uint[N * 8];
         _outputGsharp = new uint[N * 8];
+        _outputNative = new uint[N * 8];
 
         var rand = new Random(42);
         rand.NextBytes(_input);
@@ -45,10 +47,17 @@ public class Sha256Benchmark : IComputeBenchmark
         }
     }
 
-    public void RunGSharpCpu()
+    public void RunGSharp()
     {
         Sha256KernelsWrapper.Launch_Sha256Kernel(
             _input, _outputGsharp, N,
+            gridDimX: (uint)Blocks, blockDimX: ThreadsPerBlock);
+    }
+
+    public void RunNativeCuda()
+    {
+        NativeKernelInvoker.LaunchSha256(
+            _input, _outputNative, N,
             gridDimX: (uint)Blocks, blockDimX: ThreadsPerBlock);
     }
 
@@ -60,6 +69,12 @@ public class Sha256Benchmark : IComputeBenchmark
             {
                 throw new Exception(
                     $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, G#={_outputGsharp[i]:X8}");
+            }
+
+            if (_outputCpu[i] != _outputNative[i])
+            {
+                throw new Exception(
+                    $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, Native={_outputNative[i]:X8}");
             }
         }
     }

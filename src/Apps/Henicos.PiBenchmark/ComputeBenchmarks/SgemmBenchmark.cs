@@ -9,6 +9,7 @@ public class SgemmBenchmark : IComputeBenchmark
     private float[] _b = null!;
     private float[] _cCpu = null!;
     private float[] _cGsharp = null!;
+    private float[] _cNative = null!;
 
     public string Name => "SGEMM (512x512)";
 
@@ -18,6 +19,7 @@ public class SgemmBenchmark : IComputeBenchmark
         _b = new float[N * N];
         _cCpu = new float[N * N];
         _cGsharp = new float[N * N];
+        _cNative = new float[N * N];
 
         var rand = new Random(42);
         for (int i = 0; i < N * N; i++)
@@ -44,16 +46,27 @@ public class SgemmBenchmark : IComputeBenchmark
         }
     }
 
-    public void RunGSharpCpu()
+    public void RunGSharp()
     {
         uint gridDimX = (uint)((N + TileSize - 1) / TileSize);
         uint gridDimY = (uint)((N + TileSize - 1) / TileSize);
         uint blockDimX = TileSize;
         uint blockDimY = TileSize;
 
-        // Execute G# Kernel on CPU Jit Engine
         SgemmKernelsWrapper.Launch_SgemmKernel(
             _a, _b, _cGsharp, N,
+            gridDimX: gridDimX, gridDimY: gridDimY, blockDimX: blockDimX, blockDimY: blockDimY);
+    }
+
+    public void RunNativeCuda()
+    {
+        uint gridDimX = (uint)((N + TileSize - 1) / TileSize);
+        uint gridDimY = (uint)((N + TileSize - 1) / TileSize);
+        uint blockDimX = TileSize;
+        uint blockDimY = TileSize;
+
+        NativeKernelInvoker.LaunchSgemm(
+            _a, _b, _cNative, N,
             gridDimX: gridDimX, gridDimY: gridDimY, blockDimX: blockDimX, blockDimY: blockDimY);
     }
 
@@ -64,6 +77,11 @@ public class SgemmBenchmark : IComputeBenchmark
             if (Math.Abs(_cCpu[i] - _cGsharp[i]) > 1e-2f)
             {
                 throw new Exception($"Mismatch at index {i}: CPU={_cCpu[i]}, G#={_cGsharp[i]}");
+            }
+
+            if (Math.Abs(_cCpu[i] - _cNative[i]) > 1e-2f)
+            {
+                throw new Exception($"Mismatch at index {i}: CPU={_cCpu[i]}, Native={_cNative[i]}");
             }
         }
     }

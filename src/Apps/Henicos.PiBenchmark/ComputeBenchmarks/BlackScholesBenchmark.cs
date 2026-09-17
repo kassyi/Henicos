@@ -16,6 +16,9 @@ public class BlackScholesBenchmark : IComputeBenchmark
     private float[] _callResultGsharp = null!;
     private float[] _putResultGsharp = null!;
 
+    private float[] _callResultNative = null!;
+    private float[] _putResultNative = null!;
+
     public string Name => "Black-Scholes (Float)";
 
     public void Initialize()
@@ -27,6 +30,8 @@ public class BlackScholesBenchmark : IComputeBenchmark
         _putResultCpu = new float[N];
         _callResultGsharp = new float[N];
         _putResultGsharp = new float[N];
+        _callResultNative = new float[N];
+        _putResultNative = new float[N];
 
         _r = 0.02f;
         _v = 0.30f;
@@ -48,12 +53,22 @@ public class BlackScholesBenchmark : IComputeBenchmark
         }
     }
 
-    public void RunGSharpCpu()
+    public void RunGSharp()
     {
-        // G# Kernel Execution via Source Generated CPU Wrapper
+        uint blockSize = 256;
+        uint numBlocks = (uint)((N + blockSize - 1) / blockSize);
         BlackScholesKernelsWrapper.Launch_BlackScholesKernel(
             _s, _x, _t, _r, _v, _callResultGsharp, _putResultGsharp, N,
-            gridDimX: 1, blockDimX: (uint)N);
+            gridDimX: numBlocks, blockDimX: blockSize);
+    }
+
+    public void RunNativeCuda()
+    {
+        uint blockSize = 256;
+        uint numBlocks = (uint)((N + blockSize - 1) / blockSize);
+        NativeKernelInvoker.LaunchBlackScholes(
+            _s, _x, _t, _r, _v, _callResultNative, _putResultNative, N,
+            gridDimX: numBlocks, blockDimX: blockSize);
     }
 
     public void Verify()
@@ -67,6 +82,14 @@ public class BlackScholesBenchmark : IComputeBenchmark
             if (Math.Abs(_putResultCpu[i] - _putResultGsharp[i]) > 1e-4f)
             {
                 throw new Exception($"Put price mismatch at index {i}: CPU={_putResultCpu[i]}, G#={_putResultGsharp[i]}");
+            }
+            if (Math.Abs(_callResultCpu[i] - _callResultNative[i]) > 1e-4f)
+            {
+                throw new Exception($"Call price mismatch at index {i}: CPU={_callResultCpu[i]}, Native={_callResultNative[i]}");
+            }
+            if (Math.Abs(_putResultCpu[i] - _putResultNative[i]) > 1e-4f)
+            {
+                throw new Exception($"Put price mismatch at index {i}: CPU={_putResultCpu[i]}, Native={_putResultNative[i]}");
             }
         }
     }
