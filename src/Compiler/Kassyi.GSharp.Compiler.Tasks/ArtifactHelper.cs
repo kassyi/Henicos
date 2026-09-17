@@ -1,6 +1,4 @@
 using System.Security.Cryptography;
-using Microsoft.Build.Utilities;
-using Microsoft.Build.Framework;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 

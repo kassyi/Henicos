@@ -161,7 +161,6 @@ internal static class WrapperEmitter
                 if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
                 {
                     writer.Append("IntPtr ");
-                    writer.Append(p.Name);
                 }
                 else
                 {
@@ -176,8 +175,9 @@ internal static class WrapperEmitter
 
                     writer.AppendFullyQualifiedCsharpName(p.Type);
                     writer.AppendSpace();
-                    writer.Append(p.Name);
                 }
+
+                writer.Append(p.Name);
 
                 first = false;
             }
@@ -393,12 +393,14 @@ internal static class WrapperEmitter
         var hasFixed = false;
         foreach (var p in method.Parameters)
         {
-            if (p.Type is IArrayTypeSymbol ||
-                (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
+            if (p.Type is not IArrayTypeSymbol &&
+                (p.RefKind is not (RefKind.Ref or RefKind.Out) || p.Type is IArrayTypeSymbol))
             {
-                hasFixed = true;
-                break;
+                continue;
             }
+
+            hasFixed = true;
+            break;
         }
 
         if (hasFixed)
