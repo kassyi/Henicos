@@ -252,20 +252,25 @@ internal static class StatementTranspilers
     /// <summary>
     /// Transpiles a break statement.
     /// </summary>
-    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context) => context.Writer.Append("break;");
+    public static void TranspileBreakStatement(BreakStatementSyntax node, ref TranspileContext context) =>
+        context.Writer.Append("break;");
 
     /// <summary>
     /// Transpiles a continue statement.
     /// </summary>
-    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context) => context.Writer.Append("continue;");
+    public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context) =>
+        context.Writer.Append("continue;");
 
     /// <summary>
     /// Transpiles a return statement, hoisting any inline declarations from the returned expression.
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        var methodNode = node.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-        if (methodNode != null)
+        var enclosingCallable = node.Ancestors().FirstOrDefault(n =>
+            n is MethodDeclarationSyntax or LocalFunctionStatementSyntax or ParenthesizedLambdaExpressionSyntax
+                or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax);
+
+        if (enclosingCallable is MethodDeclarationSyntax methodNode)
         {
             var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodNode);
             if (methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
