@@ -58,7 +58,7 @@ namespace Kassyi.GSharp.Tests.Core
             int tid = ThreadIndex.X;
 
             data[tid].A += 1;
-            data[tid].Buffer.Element += 2;
+            data[tid].Buffer[0] += 2;
             data[tid].B += 3;
         }
     }

@@ -50,7 +50,7 @@ int B;
 extern ""C"" __declspec(dllexport) void ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=1;
-data[tid].Buffer.Element+=2;
+data[tid].Buffer[0]+=2;
 data[tid].B+=3;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ModifyPackedInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray* __restrict__ data)
