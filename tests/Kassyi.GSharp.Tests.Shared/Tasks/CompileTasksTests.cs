@@ -3,23 +3,43 @@ using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Microsoft.Build.Locator;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Tasks;
 
 public class CompileTasksTests
 {
+    static CompileTasksTests()
+    {
+        MSBuildLocator.RegisterDefaults();
+    }
+
     private class MockBuildEngine : IBuildEngine
     {
         public bool ContinueOnError => false;
         public int LineNumberOfTaskNode => 0;
         public int ColumnNumberOfTaskNode => 0;
         public string ProjectFileOfTaskNode => "";
-        public bool BuildProjectFile(string projectFileName, string[] targetNames, System.Collections.IDictionary globalProperties, System.Collections.IDictionary targetOutputs) => true;
-        public void LogCustomEvent(CustomBuildEventArgs e) { }
-        public void LogErrorEvent(BuildErrorEventArgs e) { }
-        public void LogMessageEvent(BuildMessageEventArgs e) { }
-        public void LogWarningEvent(BuildWarningEventArgs e) { }
+
+        public bool BuildProjectFile(string projectFileName, string[] targetNames,
+            System.Collections.IDictionary globalProperties, System.Collections.IDictionary targetOutputs) => true;
+
+        public void LogCustomEvent(CustomBuildEventArgs e)
+        {
+        }
+
+        public void LogErrorEvent(BuildErrorEventArgs e)
+        {
+        }
+
+        public void LogMessageEvent(BuildMessageEventArgs e)
+        {
+        }
+
+        public void LogWarningEvent(BuildWarningEventArgs e)
+        {
+        }
     }
 
     [Fact]
