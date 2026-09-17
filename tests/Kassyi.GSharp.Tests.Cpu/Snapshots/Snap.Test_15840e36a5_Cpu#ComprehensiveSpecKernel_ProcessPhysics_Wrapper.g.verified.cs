@@ -168,16 +168,15 @@ inlineVec[0]=123;
 inlineVec[1]=456;
 {
 DebugReduc_ComprehensiveSpecKernel_PhysicsState state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
-DebugReduc_ComprehensiveSpecKernel_PhysicsState* pState = &state;
-pState.Buffer[0]=inlineVec[0];
-(*pState).Buffer[1]=inlineVec[1];
+state.Buffer[0]=inlineVec[0];
+state.Buffer[1]=inlineVec[1];
 unsigned long long carry = 0;
-unsigned int sum = __gsharp_add_cc(pState.Buffer[0],pState.Buffer[1],&carry);
+unsigned int sum = __gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
 long long borrow = 0;
-unsigned int diff = __gsharp_sub_cc(sum,pState.Buffer[1],&borrow);
+unsigned int diff = __gsharp_sub_cc(sum,state.Buffer[1],&borrow);
 if(sum>diff)
 {
-pState.Flags=1;
+state.Flags=1;
 }
 }
 bool condition1 = tx>0;
@@ -194,7 +193,8 @@ if(condition1||!condition2)
 mag+=1.5f;
 }
 }
-InlinePtx(""/* test ptx inline */"");
+/* test ptx inline */
+;
 if(ty>0)
 {
 return;
