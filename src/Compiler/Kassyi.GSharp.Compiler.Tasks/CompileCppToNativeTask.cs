@@ -1,8 +1,5 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
