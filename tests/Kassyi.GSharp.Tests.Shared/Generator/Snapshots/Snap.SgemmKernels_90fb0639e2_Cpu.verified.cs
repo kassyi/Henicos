@@ -63,14 +63,14 @@ public static unsafe void Launch_SgemmKernel(global::System.Single[] a, global::
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SgemmKernels_SgemmKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_SgemmKernel)
 {
 s_decryptionKey_SgemmKernel = null;
 s_isLoaded_SgemmKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SgemmKernels_SgemmKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SgemmKernel_Delegate>("__gsharp_launch_SgemmKernel", dllPath, s_decryptionKey_SgemmKernel);
 fixed (global::System.Single* p_a = a)
 fixed (global::System.Single* p_b = b)

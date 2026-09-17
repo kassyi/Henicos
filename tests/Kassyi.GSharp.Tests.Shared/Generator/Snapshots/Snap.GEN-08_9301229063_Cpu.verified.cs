@@ -103,9 +103,6 @@ MacroKernel(ctx, dA, dB, dResult);
 }
 ";
 public static readonly string MacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MacroKernel_Source;
-private static byte[]? s_decryptionKey_MacroKernel;
-private static byte[]? s_binaryData_MacroKernel;
-private static bool s_isLoaded_MacroKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_TestNamespace_DummyContext
@@ -123,6 +120,9 @@ public static unsafe void Unmarshal_TestNamespace_DummyContext(ref global::TestN
 host.State = native.State;
 }
 #pragma warning restore CS8500
+private static byte[]? s_decryptionKey_MacroKernel;
+private static byte[]? s_binaryData_MacroKernel;
+private static bool s_isLoaded_MacroKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestNamespace.DummyContext ctx, global::System.UInt32* dA, global::System.UInt32* dB, global::System.UInt32* dResult);
@@ -131,14 +131,14 @@ public static unsafe void Launch_MacroKernel(global::TestNamespace.DummyContext 
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"TestKernels_MacroKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_MacroKernel)
 {
 s_decryptionKey_MacroKernel = null;
 s_isLoaded_MacroKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"TestKernels_MacroKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MacroKernel_Delegate>("__gsharp_launch_MacroKernel", dllPath, s_decryptionKey_MacroKernel);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)

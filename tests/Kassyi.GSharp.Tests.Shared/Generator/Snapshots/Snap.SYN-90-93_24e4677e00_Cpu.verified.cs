@@ -69,14 +69,14 @@ public static unsafe void Launch_ComplexLogicKernel(global::System.Int32[] a, gl
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_90_93_CoreSyntaxKernels_ComplexLogicKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ComplexLogicKernel)
 {
 s_decryptionKey_ComplexLogicKernel = null;
 s_isLoaded_ComplexLogicKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_93_CoreSyntaxKernels_ComplexLogicKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexLogicKernel_Delegate>("__gsharp_launch_ComplexLogicKernel", dllPath, s_decryptionKey_ComplexLogicKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
@@ -162,14 +162,14 @@ public static unsafe void Launch_ControlFlowKernel(global::System.Int32[] data, 
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_90_93_CoreSyntaxKernels_ControlFlowKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ControlFlowKernel)
 {
 s_decryptionKey_ControlFlowKernel = null;
 s_isLoaded_ControlFlowKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_93_CoreSyntaxKernels_ControlFlowKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ControlFlowKernel_Delegate>("__gsharp_launch_ControlFlowKernel", dllPath, s_decryptionKey_ControlFlowKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -226,14 +226,14 @@ public static unsafe void Launch_DeviceMethodKernel(global::System.Int32[] data,
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_90_93_CoreSyntaxKernels_DeviceMethodKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_DeviceMethodKernel)
 {
 s_decryptionKey_DeviceMethodKernel = null;
 s_isLoaded_DeviceMethodKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_93_CoreSyntaxKernels_DeviceMethodKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DeviceMethodKernel_Delegate>("__gsharp_launch_DeviceMethodKernel", dllPath, s_decryptionKey_DeviceMethodKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -309,14 +309,14 @@ public static unsafe void Launch_PaddedStructKernel(global::Kassyi.GSharp.Tests.
 if (items.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_90_93_CoreSyntaxKernels_PaddedStructKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_PaddedStructKernel)
 {
 s_decryptionKey_PaddedStructKernel = null;
 s_isLoaded_PaddedStructKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_93_CoreSyntaxKernels_PaddedStructKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PaddedStructKernel_Delegate>("__gsharp_launch_PaddedStructKernel", dllPath, s_decryptionKey_PaddedStructKernel);
 fixed (global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* p_items = items)
 {
@@ -388,14 +388,14 @@ public static unsafe void Launch_StructKernel(global::Kassyi.GSharp.Tests.Syntax
 if (vectors.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_90_93_CoreSyntaxKernels_StructKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_StructKernel)
 {
 s_decryptionKey_StructKernel = null;
 s_isLoaded_StructKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_93_CoreSyntaxKernels_StructKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructKernel_Delegate>("__gsharp_launch_StructKernel", dllPath, s_decryptionKey_StructKernel);
 fixed (global::Kassyi.GSharp.Tests.Syntax.Vector2* p_vectors = vectors)
 {

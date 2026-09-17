@@ -51,14 +51,14 @@ public static unsafe void Launch_WarpPrimitivesKernel(global::System.Int32[] inp
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_WarpPrimitivesKernel)
 {
 s_decryptionKey_WarpPrimitivesKernel = null;
 s_isLoaded_WarpPrimitivesKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpPrimitivesKernel", dllPath, s_decryptionKey_WarpPrimitivesKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
@@ -128,14 +128,14 @@ public static unsafe void Launch_WarpReduceSumKernel(global::System.Int32[] inpu
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_WarpReduceSumKernel)
 {
 s_decryptionKey_WarpReduceSumKernel = null;
 s_isLoaded_WarpReduceSumKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpReduceSumKernel", dllPath, s_decryptionKey_WarpReduceSumKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)

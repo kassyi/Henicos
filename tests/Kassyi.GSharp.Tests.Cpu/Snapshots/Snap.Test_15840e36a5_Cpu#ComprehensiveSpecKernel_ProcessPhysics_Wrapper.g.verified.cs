@@ -216,9 +216,6 @@ ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleC
 }
 ";
 public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ProcessPhysics_Source;
-private static byte[]? s_decryptionKey_ProcessPhysics;
-private static byte[]? s_binaryData_ProcessPhysics;
-private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_DebugReduc_SpecTypes
@@ -266,6 +263,9 @@ host.FloatValue = native.FloatValue;
 host.DoubleValue = native.DoubleValue;
 }
 #pragma warning restore CS8500
+private static byte[]? s_decryptionKey_ProcessPhysics;
+private static byte[]? s_binaryData_ProcessPhysics;
+private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::DebugReduc.PhysicsVector* particles, global::System.Single* totalMagnitude, global::System.Boolean* successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount);
@@ -275,14 +275,14 @@ successFlag = default;
 if (particles.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ProcessPhysics)
 {
 s_decryptionKey_ProcessPhysics = null;
 s_isLoaded_ProcessPhysics = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, s_decryptionKey_ProcessPhysics);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)

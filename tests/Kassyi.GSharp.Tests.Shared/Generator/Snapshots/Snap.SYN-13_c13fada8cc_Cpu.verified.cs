@@ -83,14 +83,14 @@ public static unsafe void Launch_SharedMemoryStaticKernel(global::System.Int32[]
 if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_SharedMemoryStaticKernel)
 {
 s_decryptionKey_SharedMemoryStaticKernel = null;
 s_isLoaded_SharedMemoryStaticKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", dllPath, s_decryptionKey_SharedMemoryStaticKernel);
 fixed (global::System.Int32* p_intOutput = intOutput)
 fixed (global::System.Single* p_floatOutput = floatOutput)
