@@ -1,3 +1,4 @@
+using System.Buffers;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
@@ -68,7 +69,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         }
 
         // Zero-clear the newly allocated GPU memory to prevent uninitialized memory bugs
-        var zeroArray = System.Buffers.ArrayPool<uint>.Shared.Rent(numWords);
+        var zeroArray = ArrayPool<uint>.Shared.Rent(numWords);
         try
         {
             Array.Clear(zeroArray, 0, numWords);
@@ -76,7 +77,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(zeroArray);
+            ArrayPool<uint>.Shared.Return(zeroArray);
         }
     }
 
@@ -277,7 +278,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             return;
         }
 
-        var zeroArray = System.Buffers.ArrayPool<uint>.Shared.Rent(wordsToClear);
+        var zeroArray = ArrayPool<uint>.Shared.Rent(wordsToClear);
         try
         {
             Array.Clear(zeroArray, 0, wordsToClear);
@@ -285,7 +286,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(zeroArray);
+            ArrayPool<uint>.Shared.Return(zeroArray);
         }
     }
 
@@ -379,7 +380,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         var bitOffset = bitIndex % 32;
         if (wordIndex < numWords)
         {
-            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            var word = ArrayPool<uint>.Shared.Rent(1);
             try
             {
                 word[0] = 1u << bitOffset;
@@ -387,7 +388,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             }
             finally
             {
-                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+                ArrayPool<uint>.Shared.Return(word);
             }
         }
 
@@ -452,7 +453,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     {
         get
         {
-            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            var word = ArrayPool<uint>.Shared.Rent(1);
             try
             {
                 Context.Provider.CopyDeviceToHost(word, DevicePointer, 1);
@@ -460,7 +461,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             }
             finally
             {
-                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+                ArrayPool<uint>.Shared.Return(word);
             }
         }
     }
@@ -470,7 +471,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     {
         get
         {
-            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            var word = ArrayPool<uint>.Shared.Rent(1);
             try
             {
                 Context.Provider.CopyDeviceToHost(word, IntPtr.Add(DevicePointer, (NumWords - 1) * 4), 1);
@@ -478,12 +479,12 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             }
             finally
             {
-                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+                ArrayPool<uint>.Shared.Return(word);
             }
         }
         set
         {
-            var word = System.Buffers.ArrayPool<uint>.Shared.Rent(1);
+            var word = ArrayPool<uint>.Shared.Rent(1);
             try
             {
                 var ptr = IntPtr.Add(DevicePointer, (NumWords - 1) * 4);
@@ -501,7 +502,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             }
             finally
             {
-                System.Buffers.ArrayPool<uint>.Shared.Return(word);
+                ArrayPool<uint>.Shared.Return(word);
             }
         }
     }
@@ -551,7 +552,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         var words = (byteCount + 3) / 4;
         var allocWords = System.Math.Max(words, minWords);
 
-        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(allocWords);
+        var hostData = ArrayPool<uint>.Shared.Rent(allocWords);
         try
         {
             hostData.AsSpan(0, allocWords).Clear();
@@ -564,7 +565,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+            ArrayPool<uint>.Shared.Return(hostData);
         }
     }
 
@@ -573,7 +574,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// </summary>
     public BigInteger ToBigInteger(bool isNegative = false)
     {
-        var hostData = System.Buffers.ArrayPool<uint>.Shared.Rent(NumWords);
+        var hostData = ArrayPool<uint>.Shared.Rent(NumWords);
         try
         {
             Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
@@ -584,7 +585,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostData);
+            ArrayPool<uint>.Shared.Return(hostData);
         }
     }
 }
