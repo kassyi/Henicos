@@ -20,7 +20,7 @@ float Z;
 ;
 #endif
 __forceinline__ float ComputeMagnitude(DebugReduc_PhysicsVector v){
-return (float)__gsharp_unsupported_Sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
+return (float)sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
 }
 
 __noinline__ bool IsPositive(float value){

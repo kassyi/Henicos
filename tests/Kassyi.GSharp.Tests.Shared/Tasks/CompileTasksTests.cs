@@ -51,4 +51,53 @@ public class CompileTasksTests
         // Empty sources should succeed without doing anything
         Assert.True(task.Execute());
     }
+
+    [Fact]
+    [Trait("FeatureId", "COMP-TASKS")]
+    public void Test_CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
+    {
+        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
+        try
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", "1");
+            var task = new CompileCudaToFatbinTask
+            {
+                BuildEngine = new MockBuildEngine(),
+                CudaSources = [new TaskItem("dummy.cu")],
+                OutputDirectory = "dummy_out",
+                TargetArchitectures = "sm_86"
+            };
+            Assert.True(task.Execute());
+            Assert.Empty(task.OutputFatbins);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
+        }
+    }
+
+    [Fact]
+    [Trait("FeatureId", "COMP-TASKS")]
+    public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
+    {
+        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
+        try
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", null);
+            var task = new CompileCudaToFatbinTask
+            {
+                BuildEngine = new MockBuildEngine(),
+                CudaSources = [new TaskItem("dummy.cu")],
+                OutputDirectory = "dummy_out",
+                NvccPath = "non_existent_nvcc_executable_12345",
+                TargetArchitectures = "sm_86"
+            };
+            Assert.True(task.Execute());
+            Assert.Empty(task.OutputFatbins);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
+        }
+    }
 }

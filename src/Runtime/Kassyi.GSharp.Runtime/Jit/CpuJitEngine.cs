@@ -7,6 +7,7 @@ namespace Kassyi.GSharp.Runtime.Jit;
 /// </summary>
 public sealed class CpuJitEngine
 {
+
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>
     private static readonly ConcurrentDictionary<string, Lazy<Delegate>> s_functionCache = new();
 

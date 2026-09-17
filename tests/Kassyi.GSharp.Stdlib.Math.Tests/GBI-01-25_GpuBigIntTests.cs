@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
@@ -818,35 +819,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             arrA[sizeWords - 1] |= 0x40000000;
 
             var bigA = ToBigInteger(arrA);
-
-            // Expected Sqrt (using BigInteger.Log approx or similar)
-            // System.Numerics does not have BigInteger.Sqrt natively in net10.0
-            // (it does in .NET 9+ actually as BigInteger.IsPowerOfTwo/etc but BigInteger.Sqrt is not always available depending on TFM).
-            // Let's compute expected Sqrt manually with Heron's method.
-            BigInteger expectedSqrt = 1;
-            int bytes = bigA.GetByteCount(isUnsigned: true);
-            int bits = (bytes - 1) * 8;
-            BigInteger temp = bigA >> bits;
-            while (temp > 0)
-            {
-                bits++;
-                temp >>= 1;
-            }
-
-            expectedSqrt = BigInteger.One << (bits / 2);
-            for (int i = 0; i < 20; i++)
-            {
-                BigInteger next = (expectedSqrt + bigA / expectedSqrt) >> 1;
-                if (next == expectedSqrt || next > expectedSqrt && next - expectedSqrt == 1 ||
-                    expectedSqrt > next && expectedSqrt - next <= 1)
-                {
-                    expectedSqrt = BigInteger.Min(expectedSqrt, next);
-                    if (expectedSqrt * expectedSqrt > bigA) expectedSqrt--;
-                    break;
-                }
-
-                expectedSqrt = next;
-            }
+            var expectedSqrt = bigA.Sqrt();
 
             using var gpuA = new GpuUIntBigInteger(context, arrA);
             using var gpuResult = new GpuUIntBigInteger(context, sizeWords);
