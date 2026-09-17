@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -97,10 +98,10 @@ public sealed class JitEngine
                 throw new ArgumentException("Span too short for Hash256", nameof(span));
             }
 
-            A = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
-            B = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
-            C = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
-            D = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
+            A = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
+            B = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
+            C = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
+            D = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
         }
 
         public static implicit operator Hash256(string _) => default;
@@ -238,10 +239,10 @@ public sealed class JitEngine
     private static unsafe GpuModule LoadKernelFunctionPtx(byte[] binaryData, string kernelName)
     {
         var errorLogBuffer = new byte[8192];
-        void* pAlignedBinary = System.Runtime.InteropServices.NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
+        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
         try
         {
-            System.Runtime.InteropServices.Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
+            Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
 
             fixed (byte* pError = errorLogBuffer)
             {
@@ -263,17 +264,17 @@ public sealed class JitEngine
         }
         finally
         {
-            System.Runtime.InteropServices.NativeMemory.AlignedFree(pAlignedBinary);
+            NativeMemory.AlignedFree(pAlignedBinary);
         }
     }
 
     private static unsafe GpuModule LoadKernelFunction(byte[] binaryData, string kernelName)
     {
         // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
-        void* pAlignedBinary = System.Runtime.InteropServices.NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
+        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
         try
         {
-            System.Runtime.InteropServices.Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
+            Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
 
             // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
             // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
@@ -288,7 +289,7 @@ public sealed class JitEngine
         }
         finally
         {
-            System.Runtime.InteropServices.NativeMemory.AlignedFree(pAlignedBinary);
+            NativeMemory.AlignedFree(pAlignedBinary);
         }
     }
 }
