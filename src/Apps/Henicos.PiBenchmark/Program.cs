@@ -42,6 +42,7 @@ internal class Program
             "tf" => RunTrialFactoring(args[1..]),
             "prp" => RunFermatPrp(args[1..]),
             "bbp" => RunBbp(args[1..]),
+            "compute-bench" => RunComputeBench(args[1..]),
             _ when LooksLikeDigits(args[0]) => RunCpuPi(args),
             _ => HandleUnknownCommand(command)
         };
@@ -64,6 +65,7 @@ internal class Program
               tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
               prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)
               bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
+              compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, all) (default: all)
               help, -h, --help           Display this help message
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
@@ -77,6 +79,13 @@ internal class Program
         Logger<Program>.Warning($"Unknown command: '{command}'\n");
         PrintUsage();
         return 1;
+    }
+
+    private static int RunComputeBench(string[] args)
+    {
+        var suite = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
+        var success = ComputeBenchmarks.ComputeBenchmarkRunner.RunSuite(suite);
+        return success ? 0 : 1;
     }
 
     private static int RunGpuPi(string[] args)

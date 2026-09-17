@@ -9,12 +9,14 @@ public static class MegaCompilationCache
         var references = trustedAssemblies!
             .Split(Path.PathSeparator)
             .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => MetadataReference.CreateFromFile(p))
-            .Cast<MetadataReference>()
+            .Select(p => (MetadataReference)MetadataReference.CreateFromImage(File.ReadAllBytes(p)))
             .ToList();
 
-        references.Add(MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Core.Gpu).Assembly.Location));
-        references.Add(MetadataReference.CreateFromFile(typeof(Kassyi.GSharp.Stdlib.Math.BigInt.GpuUIntBigInteger).Assembly.Location));
+        var coreDllPath = typeof(Kassyi.GSharp.Core.Gpu).Assembly.Location;
+        var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath)!, "Kassyi.GSharp.Stdlib.Math.dll");
+        
+        references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(coreDllPath)));
+        references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));
 
         var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
