@@ -50,10 +50,17 @@
     <EmbeddedResource Include="Resources\Prelude.cpp" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
+  </ItemGroup>
+
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
     <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll&quot; &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDialects.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects">
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
