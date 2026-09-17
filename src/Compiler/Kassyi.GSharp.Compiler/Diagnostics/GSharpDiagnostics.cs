@@ -32,10 +32,10 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor KernelReturnMustBeVoid = new(
+    public static readonly DiagnosticDescriptor KernelReturnMustBeVoidOrBlittable = new(
         id: "GSH0004",
-        title: "GpuKernel must return void",
-        messageFormat: "Method '{0}' is marked with [GpuKernel] but returns '{1}'. GpuKernel methods must return void.",
+        title: "GpuKernel return type must be void or blittable",
+        messageFormat: "Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -127,4 +127,28 @@ public static class GSharpDiagnostics
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
+
+    public static bool ValidateKernelReturnType(IMethodSymbol methodSymbol, Action<Diagnostic>? reportDiagnostic)
+    {
+        if (methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
+        {
+            return true;
+        }
+
+        if (methodSymbol.ReturnType.IsUnmanagedType)
+        {
+            return true;
+        }
+
+        if (reportDiagnostic != null)
+        {
+            reportDiagnostic(Diagnostic.Create(
+                KernelReturnMustBeVoidOrBlittable,
+                methodSymbol.Locations.FirstOrDefault() ?? Location.None,
+                methodSymbol.Name,
+                methodSymbol.ReturnType.ToDisplayString()));
+        }
+
+        return false;
+    }
 }

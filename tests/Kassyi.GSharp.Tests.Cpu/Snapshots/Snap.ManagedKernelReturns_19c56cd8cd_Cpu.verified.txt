@@ -1,0 +1,61 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+    [GpuKernel]
+    public static float[] ArrayKernel() => new float[0];
+                                           ^^^^^^^^^^^^
+
+*/
+ : (9,43)-(9,55),
+      Message: The syntax 'ArrayCreationExpression' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    [GpuKernel]
+    public static float[] ArrayKernel() => new float[0];
+                                               ^^^^^^^^
+
+*/
+ : (9,47)-(9,55),
+      Message: The syntax 'ArrayType' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    [GpuKernel]
+    public static float[] ArrayKernel() => new float[0];
+                                                    ^^^
+
+*/
+ : (9,52)-(9,55),
+      Message: The syntax 'ArrayRankSpecifier' is not supported in GSharp GPU kernels,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0003,
+        Title: Unsupported syntax in GPU kernel,
+        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}
