@@ -47,6 +47,7 @@ public readonly struct ConstantArgument
         Value = value;
     }
 
+    // ReSharper disable UnusedMember.Global
     public static ConstantArgument Create(string key, int value) =>
         new(key, ConstantType.Int32, new ConstantValue { Int32Value = value });
 
@@ -85,4 +86,5 @@ public readonly struct ConstantArgument
             _ => string.Empty
         };
     }
+    // ReSharper restore UnusedMember.Global
 }
