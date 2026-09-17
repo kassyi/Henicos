@@ -18,7 +18,8 @@ public class TestClass_SYN91_92
 }
 
 public partial class SYN_91_92_ParenthesesSuppressionTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     [GeneratedRegex(@"if\s*\(\s*a\s*<\s*b\s*\)")]
     private static partial Regex IfConditionRegex();
 
@@ -33,8 +34,8 @@ public partial class SYN_91_92_ParenthesesSuppressionTests
     [Trait("Category", "Syntax")]
     public void Test_SYN91_RedundantParenthesesSuppression_HappyPath()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
+        var (cudaSource, diagnostics) =
+            RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
 
         Assert.Empty(diagnostics);
         Assert.Matches(IfConditionRegex(), cudaSource);
@@ -45,8 +46,8 @@ public partial class SYN_91_92_ParenthesesSuppressionTests
     [Trait("Category", "Syntax")]
     public void Test_SYN92_ParenthesesPreservation_EdgeCases_PrecedenceAndMixedOperators()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureExecutionCapability();
-        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
+        var (cudaSource, diagnostics) =
+            RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
 
         Assert.Empty(diagnostics);
         Assert.Matches(BoolAssignmentRegex(), cudaSource);

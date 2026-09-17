@@ -4,29 +4,15 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Runtime.Jit;
 
 /// <summary>
-/// Runtime JIT compilation engine that compiles CUDA C++ kernel strings into executable GPU modules and manages thread contexts.
+/// Runtime JIT/AOT compilation engine that manages thread contexts and loads executable GPU modules.
 /// </summary>
-/// <remarks>
-/// <para>Kernels are compiled via NVRTC on-demand and cached in a two-tier cache (in-memory <see cref="ConcurrentDictionary{TKey,TValue}"/> and disk-based PTX cache) to eliminate redundant compilation overhead.</para>
-/// <para><b>Thread Safety:</b> All public methods except <see cref="Shutdown"/> are safe for concurrent invocation from multiple threads.</para>
-/// </remarks>
-/// <remarks><para>Implements: <b>GEN-37, GEN-42, GEN-43</b></para></remarks>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
 public sealed class JitEngine
 {
     private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
-    private static string s_smVersion = "sm_52"; // default fallback
     private static readonly Lock s_initLock = new();
 
-    private static readonly string s_cacheDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Kassyi", "GSharp", "Cache", "Ptx"
-    );
-
-    /// <summary>
-    /// An RAII struct that binds the global GSharp CUDA context to the current thread and restores the previous context upon disposal.
-    /// </summary>
     public readonly struct CudaContextScope : IDisposable
     {
         private readonly IntPtr _prevContext;
@@ -50,9 +36,30 @@ public sealed class JitEngine
         }
     }
 
-    // ReSharper disable once InconsistentlySynchronizedField
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    public static bool IsDriverAvailable
+    {
+        get
+        {
+            try
+            {
+                EnsureInitialized();
+                return true;
+            }
+            catch (DllNotFoundException)
+            {
+                return false;
+            }
+            catch (CudaException)
+            {
+                return false;
+            }
+        }
+    }
+
     private static void EnsureInitialized()
     {
+        // ReSharper disable once InconsistentlySynchronizedField -- Double-checked locking pattern
         if (s_isGlobalInit)
         {
             return;
@@ -68,12 +75,6 @@ public sealed class JitEngine
             CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
             CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
-            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var major,
-                CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
-            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out var minor,
-                CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
-            s_smVersion = $"sm_{major}{minor}";
-
             CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
             s_isGlobalInit = true;
         }
@@ -85,394 +86,209 @@ public sealed class JitEngine
         public IntPtr Function { get; } = function;
     }
 
-    // Cache for compiled functions: Hash of Source -> Lazy<GpuModule>
-    private static readonly ConcurrentDictionary<Guid, Lazy<GpuModule>> s_functionCache = new();
+    private readonly struct Hash256 : IEquatable<Hash256>
+    {
+        public readonly ulong A, B, C, D;
 
-    /// <summary>
-    /// Unloads all cached GPU modules from the device driver and clears the in-memory cache to reclaim device memory.
-    /// </summary>
-    /// <remarks>
-    /// <para>Safe to call during application teardown or when changing GPU runtime contexts.</para>
-    /// <para><b>Thread Safety:</b> This method is NOT safe to call concurrently with other engine operations.</para>
-    /// </remarks>
+        public Hash256(ReadOnlySpan<byte> span)
+        {
+            if (span.Length < 32)
+            {
+                throw new ArgumentException("Span too short for Hash256", nameof(span));
+            }
+
+            A = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
+            B = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
+            C = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
+            D = System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
+        }
+
+        public static implicit operator Hash256(string _) => default;
+
+        public bool Equals(Hash256 other) => A == other.A && B == other.B && C == other.C && D == other.D;
+
+        public override bool Equals(object? obj) => obj is Hash256 other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(A, B, C, D);
+    }
+
+    // AOT Cache uses Hash256 and KernelName to prevent collisions and avoid allocations
+    private static readonly ConcurrentDictionary<(Hash256 Hash, string KernelName), Lazy<GpuModule>> s_functionCache =
+        new();
+
 #pragma warning disable IDE0051 // Justification: Public API for library
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {
         using var scope = new CudaContextScope();
 
-        foreach (var kvp in s_functionCache)
+        foreach (var lazyModule in s_functionCache.Values)
         {
-            if (!kvp.Value.IsValueCreated)
+            if (!lazyModule.IsValueCreated)
             {
                 continue;
             }
 
-            try
-            {
-                CudaDriverApi.cuModuleUnload(kvp.Value.Value.Module);
-            }
-            catch
-            {
-                // Ignore unload errors during shutdown to ensure we attempt to unload all modules.
-            }
+            var module = lazyModule.Value.Module;
+            CudaDriverApi.cuModuleUnload(module);
         }
 
         s_functionCache.Clear();
     }
 
-    public static int CacheMissCount;
-
-    public static IntPtr GetOrCompileKernel(string kernelName, string baseSource,
-        ReadOnlySpan<JitConstantArg> jitConstants = default,
-        ReadOnlySpan<KeyValuePair<string, string>> macros = default)
-    {
-        EnsureInitialized();
-
-        var cacheKey = ComputeCacheKey(kernelName, baseSource, jitConstants, macros);
-
-        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
-        {
-            return lazyHit.Value.Function;
-        }
-
-        Interlocked.Increment(ref CacheMissCount);
-
-        var jitArr = jitConstants.ToArray();
-        var macroArr = macros.ToArray();
-
-        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
-        {
-            return CompileKernelInternal(kernelName, baseSource, jitArr, macroArr);
-        }));
-
-        return lazyModule.Value.Function;
-    }
-
-    private static Guid ComputeCacheKey(string kernelName, string baseSource, ReadOnlySpan<JitConstantArg> jitConstants,
-        ReadOnlySpan<KeyValuePair<string, string>> macros)
-    {
-        // Zero-allocation FNV-1a hash
-        const ulong OffsetBasis = 14695981039346656037;
-        const ulong Prime = 1099511628211;
-        var hash = OffsetBasis;
-
-        hash = HashString(hash, Prime, kernelName);
-        hash = HashString(hash, Prime, baseSource);
-
-        foreach (var constant in jitConstants)
-        {
-            hash = HashString(hash, Prime, constant.Key);
-            hash = HashJitConstantType(hash, Prime, constant.Type);
-            hash = HashJitConstantValue(hash, Prime, in constant.Value);
-        }
-
-        foreach (var macro in macros)
-        {
-            hash = HashString(hash, Prime, macro.Key);
-            hash = HashString(hash, Prime, macro.Value);
-        }
-
-        var hash2 = hash ^ Prime;
-        unsafe
-        {
-            var b = stackalloc byte[16];
-            *(ulong*)b = hash;
-            *(ulong*)(b + 8) = hash2;
-            return new Guid(new ReadOnlySpan<byte>(b, 16));
-        }
-    }
-
-    private static ulong HashString(ulong hash, ulong prime, string? str)
-    {
-        if (str == null)
-        {
-            return hash;
-        }
-
-        foreach (var c in str)
-        {
-            hash ^= c;
-            hash *= prime;
-        }
-
-        return hash;
-    }
-
-    private static ulong HashJitConstantType(ulong hash, ulong prime, JitConstantType val)
-    {
-        hash ^= (byte)val;
-        hash *= prime;
-        return hash;
-    }
-
-    private static ulong HashJitConstantValue(ulong hash, ulong prime, in JitConstantValue val)
-    {
-        var v = val.UInt64Value; // Unionなので最大サイズのフィールドを読めばOK
-        for (var i = 0; i < 8; i++)
-        {
-            hash ^= (v & 0xFF);
-            hash *= prime;
-            v >>= 8;
-        }
-
-        return hash;
-    }
-
-    private static GpuModule CompileKernelInternal(string kernelName, string baseSource, JitConstantArg[]? jitConstants,
-        KeyValuePair<string, string>[]? macros)
-    {
-        var combinedMacros = new Dictionary<string, string>();
-        if (jitConstants != null)
-        {
-            foreach (var kvp in jitConstants)
-            {
-                combinedMacros[kvp.Key] = kvp.GetStringValue();
-            }
-        }
-
-        if (macros != null)
-        {
-            foreach (var kvp in macros)
-            {
-                combinedMacros[kvp.Key] = kvp.Value;
-            }
-        }
-
-        var cppSource = PreprocessSource(baseSource, combinedMacros);
-        var sourceHash = ComputeHash(cppSource);
-        var toolkitHash = ComputeHash(GetCudaToolkitPath());
-        var nvrtcVersion = NvrtcApi.GetNvrtcVersion();
-
-        var cacheFileName = $"{kernelName}_{sourceHash}_{s_smVersion}_{nvrtcVersion}_{toolkitHash}.ptx";
-        var cacheFilePath = Path.Combine(s_cacheDirectory, cacheFileName);
-        byte[]? ptxBytes = null;
-
-        if (File.Exists(cacheFilePath))
-        {
-            try
-            {
-                var loadedBytes = File.ReadAllBytes(cacheFilePath);
-                if (loadedBytes.Length > 0)
-                {
-                    ptxBytes = loadedBytes;
-                }
-                else
-                {
-                    TryDeleteFile(cacheFilePath);
-                }
-            }
-            catch
-            {
-                // Ignore read errors and fallback to fresh compilation
-                TryDeleteFile(cacheFilePath);
-            }
-        }
-
-        using var scope = new CudaContextScope();
-
-        if (ptxBytes != null)
-        {
-            try
-            {
-                return LoadKernelFunction(ptxBytes, kernelName);
-            }
-            catch
-            {
-                // Cached PTX is invalid or corrupt. Invalidate cache and fallback to recompile.
-                TryDeleteFile(cacheFilePath);
-            }
-        }
-
-        ptxBytes = CompileToPtx(cppSource, kernelName);
-        WriteCacheFileAtomic(cacheFilePath, ptxBytes);
-        return LoadKernelFunction(ptxBytes, kernelName);
-    }
-
-    private static string PreprocessSource(string cppSource, Dictionary<string, string>? macros)
-    {
-        if (macros is not { Count: > 0 })
-        {
-            return cppSource;
-        }
-
-        var sb = new StringBuilder();
-        foreach (var kvp in macros)
-        {
-            sb.AppendLine($"#define {kvp.Key} {kvp.Value}");
-        }
-
-        return sb + cppSource;
-    }
-
-    private static byte[] CompileToPtx(string cppSource, string kernelName)
-    {
-        var options = new List<string>
-        {
-            $"-arch={s_smVersion}",
-            "--std=c++17",
-            "-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"
-        };
-
-        var cudaPath = GetCudaToolkitPath();
-        if (!string.IsNullOrEmpty(cudaPath))
-        {
-            addIncludePaths(cudaPath);
-        }
-
-        return NvrtcCompiler.CompileToPtx(cppSource, kernelName, [.. options]);
-
-        void addIncludePaths(string baseDir)
-        {
-            var includePath = Path.Combine(baseDir, "include");
-            if (!Directory.Exists(includePath))
-            {
-                return;
-            }
-
-            options.Add($"-I{includePath}");
-
-            var ccclPath = Path.Combine(includePath, "cccl");
-            if (!Directory.Exists(ccclPath))
-            {
-                return;
-            }
-
-            options.Add($"-I{ccclPath}");
-
-            var libcxxPath = Path.Combine(ccclPath, "libcxx", "include");
-            if (Directory.Exists(libcxxPath))
-            {
-                options.Add($"-I{libcxxPath}");
-            }
-        }
-    }
-
-    private static string GetCudaToolkitPath()
-    {
-        var cudaPath = Environment.GetEnvironmentVariable("CUDA_PATH");
-        if (!string.IsNullOrEmpty(cudaPath))
-        {
-            return cudaPath;
-        }
-
-        var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
-        if (!Directory.Exists(cudaBaseDir))
-        {
-            return string.Empty;
-        }
-
-        foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
-        {
-            if (Directory.Exists(Path.Combine(dir, "include")))
-            {
-                return dir;
-            }
-        }
-
-        return string.Empty;
-    }
-
-    private static unsafe GpuModule LoadKernelFunction(byte[] ptxBytes, string kernelName)
-    {
-        var errorLogBuffer = new byte[8192];
-        var infoLogBuffer = new byte[8192];
-
-        fixed (byte* pError = errorLogBuffer, pInfo = infoLogBuffer)
-        {
-            IntPtr[] options =
-            [
-                3, // CU_JIT_INFO_LOG_BUFFER
-                4, // CU_JIT_INFO_LOG_BUFFER_SIZE_BYTES
-                5, // CU_JIT_ERROR_LOG_BUFFER
-                6 // CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES
-            ];
-
-            IntPtr[] optionValues =
-            [
-                (IntPtr)pInfo,
-                infoLogBuffer.Length,
-                (IntPtr)pError,
-                errorLogBuffer.Length
-            ];
-
-            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, ptxBytes, (uint)options.Length, options,
-                optionValues);
-            if (loadResult != CUresult.CudaSuccess)
-            {
-                var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
-                var infoLog = Encoding.UTF8.GetString(infoLogBuffer).TrimEnd('\0');
-                var ptxStr = Encoding.UTF8.GetString(ptxBytes).TrimEnd('\0');
-                Logger<JitEngine>.Info(
-                    $"[CUDA JIT ERROR]: {loadResult}\nInfo Log:\n{infoLog}\nError Log:\n{errorLog}\nPTX Source:\n{ptxStr}");
-                throw new Exception(
-                    $"cuModuleLoadDataEx failed with {loadResult}:\nInfo: {infoLog}\nError: {errorLog}");
-            }
-
-            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
-            return new GpuModule(module, hfunc);
-        }
-    }
-
-    private static string ComputeHash(string input)
-    {
-        var bytes = Encoding.UTF8.GetBytes(input);
-        var hashBytes = SHA256.HashData(bytes);
-        return Convert.ToHexStringLower(hashBytes);
-    }
-
-    /// <summary>
-    /// Blocks the CPU host thread until all previously issued GPU operations in the active context complete.
-    /// </summary>
-    /// <exception cref="CudaException">Thrown when device synchronization returns an error code.</exception>
-    /// <remarks>
-    /// <para><b>Performance:</b> This is a blocking call and forces CPU-GPU synchronization, which degrades parallel execution efficiency.</para>
-    /// </remarks>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void SynchronizeDevice()
     {
         using var scope = new CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
     }
 
-    private static void WriteCacheFileAtomic(string targetPath, byte[] content)
+    /// <summary>
+    /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName,
+        byte[]? decryptionKey = null)
     {
-        string? tempFilePath = null;
-        try
+        EnsureInitialized();
+
+        if (aotFatbin.Length < 32)
         {
-            var dir = Path.GetDirectoryName(targetPath);
-            if (!string.IsNullOrEmpty(dir))
+            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid hash.");
+        }
+
+        var embeddedHashBytes = aotFatbin.Slice(aotFatbin.Length - 32);
+        var expectedHashStruct = new Hash256(embeddedHashBytes);
+        var cacheKey = (expectedHashStruct, kernelName);
+
+        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
+        {
+            return lazyHit.Value.Function;
+        }
+
+        var expectedHashString = Convert.ToHexStringLower(embeddedHashBytes);
+        byte[] processed = [.. aotFatbin.Slice(0, aotFatbin.Length - 32)];
+        var isEncrypted = processed.Length > 8 && Encoding.ASCII.GetString(processed, 0, 8) == "GSHPENC1";
+
+        // 1. Decryption if required
+        if (isEncrypted)
+        {
+            if (decryptionKey == null || decryptionKey.Length == 0)
             {
-                Directory.CreateDirectory(dir);
+                throw new InvalidOperationException(
+                    $"AOT kernel binary for '{kernelName}' is encrypted but no decryption key was provided.");
             }
 
-            tempFilePath = $"{targetPath}.{Guid.NewGuid():N}.tmp";
-            File.WriteAllBytes(tempFilePath, content);
-            File.Move(tempFilePath, targetPath, overwrite: true);
+            using var aes = Aes.Create();
+            aes.Key = decryptionKey;
+
+            var iv = new byte[16];
+            Array.Copy(processed, 8, iv, 0, 16);
+            aes.IV = iv;
+
+            using var decryptor = aes.CreateDecryptor();
+            using var ms = new MemoryStream(processed, 24, processed.Length - 24);
+            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            using var output = new MemoryStream();
+            cs.CopyTo(output);
+            processed = output.ToArray();
         }
-        catch
+
+        // 2. Hash Validation
+        var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
+        if (!string.Equals(actualHash, expectedHashString, StringComparison.OrdinalIgnoreCase))
         {
-            // Ignore cache write errors on best-effort basis to avoid crashing execution
+            throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHashString}");
+        }
+
+        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
+        {
+            using var scope = new CudaContextScope();
+            return LoadKernelFunction(processed, kernelName);
+        }));
+
+        return lazyModule.Value.Function;
+    }
+
+    private static GpuModule LoadKernelFunction(string ptxCode, string kernelName)
+    {
+        EnsureInitialized();
+
+        // Use the kernel name as the hash for raw PTX strings to keep it simple, or an empty string.
+        var cacheKey = ("", kernelName);
+
+        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
+        {
+            return lazyHit.Value;
+        }
+
+        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
+        {
+            using var scope = new CudaContextScope();
+            var moduleData = Encoding.UTF8.GetBytes(ptxCode + "\0");
+
+            // Re-use internal loading logic. For JIT compilation from PTX, we NEED the error log buffer!
+            // Wait, we need to pass options here!
+            return LoadKernelFunctionPtx(moduleData, kernelName);
+        }));
+
+        return lazyModule.Value;
+    }
+
+    private static unsafe GpuModule LoadKernelFunctionPtx(byte[] binaryData, string kernelName)
+    {
+        var errorLogBuffer = new byte[8192];
+        void* pAlignedBinary = System.Runtime.InteropServices.NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
+        try
+        {
+            System.Runtime.InteropServices.Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
+
+            fixed (byte* pError = errorLogBuffer)
+            {
+                nint errorSize = errorLogBuffer.Length;
+                IntPtr[] options = [5, 6]; // CU_JIT_ERROR_LOG_BUFFER, SIZE
+                IntPtr[] optionValues = [(IntPtr)pError, (IntPtr)(&errorSize)];
+
+                var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary,
+                    (uint)options.Length, options, optionValues);
+                if (loadResult != CUresult.CudaSuccess)
+                {
+                    var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
+                    throw new Exception($"cuModuleLoadDataEx failed with {loadResult}:\nError: {errorLog}");
+                }
+
+                CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
+                return new GpuModule(module, hfunc);
+            }
         }
         finally
         {
-            if (tempFilePath != null)
-            {
-                TryDeleteFile(tempFilePath);
-            }
+            System.Runtime.InteropServices.NativeMemory.AlignedFree(pAlignedBinary);
         }
     }
 
-    private static void TryDeleteFile(string path)
+    private static unsafe GpuModule LoadKernelFunction(byte[] binaryData, string kernelName)
     {
+        // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
+        void* pAlignedBinary = System.Runtime.InteropServices.NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
         try
         {
-            if (File.Exists(path))
+            System.Runtime.InteropServices.Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
+
+            // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
+            // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
+            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
+            if (loadResult != CUresult.CudaSuccess)
             {
-                File.Delete(path);
+                throw new Exception($"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
             }
+
+            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
+            return new GpuModule(module, hfunc);
         }
-        catch
+        finally
         {
-            // Ignore cleanup errors on best-effort basis
+            System.Runtime.InteropServices.NativeMemory.AlignedFree(pAlignedBinary);
         }
     }
 }
