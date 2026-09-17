@@ -1,5 +1,4 @@
 using System.Numerics;
-using Kassyi.GSharp.Core;
 
 namespace Henicos.PiBenchmark;
 
