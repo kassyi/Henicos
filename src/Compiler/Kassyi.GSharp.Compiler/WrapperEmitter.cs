@@ -57,8 +57,8 @@ internal static class WrapperEmitter
 
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    WriteLaunchMethod(writer, method, false, config, aesKey != null, keyProvider);
-                    WriteLaunchMethod(writer, method, true, config, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, false, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, true, aesKey != null, keyProvider);
                 }
                 else
                 {
@@ -84,7 +84,7 @@ internal static class WrapperEmitter
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
-        GeneratorConfig config, bool hasAesKey, string? keyProvider)
+        bool hasAesKey, string? keyProvider)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -265,7 +265,8 @@ internal static class WrapperEmitter
         writer.AppendLine($"if (!s_isLoaded_{method.Name})");
         using (writer.Scope())
         {
-            writer.AppendLine($"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
+            writer.AppendLine(
+                $"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
             writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
             using (writer.Scope())
             {
@@ -275,7 +276,8 @@ internal static class WrapperEmitter
                 {
                     if (!string.IsNullOrWhiteSpace(keyProvider))
                     {
-                        writer.AppendLine($"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                        writer.AppendLine(
+                            $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
                     }
                     else
                     {
@@ -287,12 +289,14 @@ internal static class WrapperEmitter
                     writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
                 }
             }
+
             writer.AppendLine("else");
             using (writer.Scope())
             {
                 writer.AppendLine(
                     $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
             }
+
             writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
@@ -357,7 +361,8 @@ internal static class WrapperEmitter
             {
                 if (!string.IsNullOrWhiteSpace(keyProvider))
                 {
-                    writer.AppendLine($"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                    writer.AppendLine(
+                        $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
                 }
                 else
                 {
@@ -368,6 +373,7 @@ internal static class WrapperEmitter
             {
                 writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
             }
+
             writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
@@ -376,7 +382,7 @@ internal static class WrapperEmitter
         writer.AppendLine(
             $"var dllName = $\"{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\";");
         writer.AppendLine(
-            $"var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
+            "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
         writer.AppendLine(
             $"var hfunc = global::Kassyi.GSharp.Runtime.Jit.CpuJitEngine.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, s_decryptionKey_{method.Name});");
@@ -474,6 +480,4 @@ internal static class WrapperEmitter
 
         writer.Append(ns.Name);
     }
-
-
 }
