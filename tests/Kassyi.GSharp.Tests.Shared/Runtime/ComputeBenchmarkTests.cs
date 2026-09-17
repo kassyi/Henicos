@@ -1,55 +1,69 @@
-#if GSHARP_CPU
 using Henicos.PiBenchmark.ComputeBenchmarks;
+using Kassyi.GSharp.Tests.Helpers;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
 public class ComputeBenchmarkTests
 {
-    [Fact]
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
     public void SgemmBenchmark_ExecutionAndVerification_Succeeds()
     {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new SgemmBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
-        bench.RunGSharpCpu();
+        bench.RunNativeCuda();
+        bench.RunGSharp();
         bench.Verify();
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
     public void Sha256Benchmark_ExecutionAndVerification_Succeeds()
     {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new Sha256Benchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
-        bench.RunGSharpCpu();
+        bench.RunNativeCuda();
+        bench.RunGSharp();
         bench.Verify();
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
     public void BlackScholesBenchmark_ExecutionAndVerification_Succeeds()
     {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new BlackScholesBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
-        bench.RunGSharpCpu();
+        bench.RunNativeCuda();
+        bench.RunGSharp();
         bench.Verify();
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
     public void ReductionBenchmark_ExecutionAndVerification_Succeeds()
     {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new ReductionBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
-        bench.RunGSharpCpu();
+        bench.RunNativeCuda();
+        bench.RunGSharp();
         bench.Verify();
     }
 
-    [Fact]
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
     public void ComputeBenchmarkRunner_RunSuite_All_ReturnsTrue()
     {
-        var result = ComputeBenchmarkRunner.RunSuite("all");
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        var result = ComputeBenchmarkRunner.RunSuite("all", iterations: 2);
         Assert.True(result);
     }
 
@@ -60,4 +74,3 @@ public class ComputeBenchmarkTests
         Assert.False(result);
     }
 }
-#endif
