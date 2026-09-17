@@ -26,7 +26,7 @@ public class Sha256Benchmark : IComputeBenchmark
     private uint[] _outputGsharp = null!;
     private uint[] _outputNative = null!;
 
-    public string Name => "SHA-256 (100k Blocks Transform)";
+    public string Name => "SHA-256 Compression Function (100k Blocks)";
 
     public void Initialize()
     {
