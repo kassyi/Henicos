@@ -16,7 +16,10 @@ public static unsafe class NativeKernelInvoker
         float[] a, float[] b, float[] c, int n,
         uint gridDimX, uint gridDimY, uint blockDimX, uint blockDimY)
     {
-        if (a.Length == 0 || b.Length == 0 || c.Length == 0) return;
+        if (a.Length == 0 || b.Length == 0 || c.Length == 0)
+        {
+            return;
+        }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncSgemm, "sgemm_kernel.fatbin", "SgemmKernel_Native");
@@ -56,9 +59,20 @@ public static unsafe class NativeKernelInvoker
         }
         finally
         {
-            if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_a);
-            if (d_b != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_b);
-            if (d_c != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_c);
+            if (d_a != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_a);
+            }
+
+            if (d_b != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_b);
+            }
+
+            if (d_c != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_c);
+            }
         }
     }
 
@@ -66,7 +80,10 @@ public static unsafe class NativeKernelInvoker
         byte[] input, uint[] output, int numMessages,
         uint gridDimX, uint blockDimX)
     {
-        if (input.Length == 0 || output.Length == 0) return;
+        if (input.Length == 0 || output.Length == 0)
+        {
+            return;
+        }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncSha256, "sha256_kernel.fatbin", "Sha256Kernel_Native");
@@ -102,8 +119,15 @@ public static unsafe class NativeKernelInvoker
         }
         finally
         {
-            if (d_in != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_in);
-            if (d_out != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_out);
+            if (d_in != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_in);
+            }
+
+            if (d_out != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_out);
+            }
         }
     }
 
@@ -112,7 +136,10 @@ public static unsafe class NativeKernelInvoker
         float[] callResult, float[] putResult, int n,
         uint gridDimX, uint blockDimX)
     {
-        if (s.Length == 0) return;
+        if (s.Length == 0)
+        {
+            return;
+        }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncBlackScholes, "blackscholes_kernel.fatbin", "BlackScholesKernel_Native");
@@ -157,11 +184,30 @@ public static unsafe class NativeKernelInvoker
         }
         finally
         {
-            if (d_s != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_s);
-            if (d_x != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_x);
-            if (d_t != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_t);
-            if (d_call != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_call);
-            if (d_put != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_put);
+            if (d_s != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_s);
+            }
+
+            if (d_x != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_x);
+            }
+
+            if (d_t != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_t);
+            }
+
+            if (d_call != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_call);
+            }
+
+            if (d_put != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_put);
+            }
         }
     }
 
@@ -169,7 +215,10 @@ public static unsafe class NativeKernelInvoker
         float[] input, float[] output, int n,
         uint gridDimX, uint blockDimX)
     {
-        if (input.Length == 0 || output.Length == 0) return;
+        if (input.Length == 0 || output.Length == 0)
+        {
+            return;
+        }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         EnsureLoaded(ref s_hfuncReduction, "reduction_kernel.fatbin", "ReductionKernel_Native");
@@ -204,18 +253,31 @@ public static unsafe class NativeKernelInvoker
         }
         finally
         {
-            if (d_in != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_in);
-            if (d_out != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_out);
+            if (d_in != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_in);
+            }
+
+            if (d_out != IntPtr.Zero)
+            {
+                CudaDriverApi.cuMemFree_v2(d_out);
+            }
         }
     }
 
     private static void EnsureLoaded(ref IntPtr hfunc, string fatbinFileName, string kernelName)
     {
-        if (hfunc != IntPtr.Zero) return;
+        if (hfunc != IntPtr.Zero)
+        {
+            return;
+        }
 
         lock (s_lock)
         {
-            if (hfunc != IntPtr.Zero) return;
+            if (hfunc != IntPtr.Zero)
+            {
+                return;
+            }
 
             var path = Path.Combine(AppContext.BaseDirectory, fatbinFileName);
             if (!File.Exists(path))
