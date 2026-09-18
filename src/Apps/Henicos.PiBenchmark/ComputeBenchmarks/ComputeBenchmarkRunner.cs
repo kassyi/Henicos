@@ -6,7 +6,11 @@ public static class ComputeBenchmarkRunner
     {
         public static BenchmarkStats Calculate(double[] samples)
         {
-            if (samples.Length == 0) return default;
+            if (samples.Length == 0)
+            {
+                return default;
+            }
+
             var sorted = (double[])samples.Clone();
             Array.Sort(sorted);
 
@@ -15,7 +19,11 @@ public static class ComputeBenchmarkRunner
                 ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2.0
                 : sorted[sorted.Length / 2];
             double sum = 0;
-            foreach (var v in sorted) sum += v;
+            foreach (var v in sorted)
+            {
+                sum += v;
+            }
+
             double mean = sum / sorted.Length;
             return new BenchmarkStats(min, median, mean);
         }
