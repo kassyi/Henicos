@@ -23,7 +23,7 @@ public class GpuKernelAttribute : Attribute
 ```
 
 **Remarks**
-* **Return Type**: Must be `void`. Kernels execute asynchronously on the device and cannot return a primitive value directly.
+* **Return Type**: Can be `void`, unmanaged value types, or single-dimensional arrays. If a non-void type is returned, the generated launcher automatically allocates and returns a host array containing the returned values from each thread.
 * **Accessibility**: Must be `public static` or `internal static`.
 * **Calling Constraints (CRITICAL)**: A `[GpuKernel]` method **CANNOT** be called by another `[GpuKernel]` method (as CUDA does not allow `__global__` to call `__global__` without Dynamic Parallelism). Use `[GpuDeviceFunction]` instead.
 * **EncryptionKeyProvider**: Allows specifying a custom static method for AOT kernel decryption (overriding VBO strategy).

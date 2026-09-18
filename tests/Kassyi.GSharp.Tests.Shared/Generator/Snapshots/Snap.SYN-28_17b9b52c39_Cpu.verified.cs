@@ -67,14 +67,14 @@ public static unsafe void Launch_MethodAttributesKernel(global::System.Int32[] i
 if (input.Length == 0 || result.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_28_MethodAttributesKernels_MethodAttributesKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_MethodAttributesKernel)
 {
 s_decryptionKey_MethodAttributesKernel = null;
 s_isLoaded_MethodAttributesKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_28_MethodAttributesKernels_MethodAttributesKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", dllPath, s_decryptionKey_MethodAttributesKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_result = result)

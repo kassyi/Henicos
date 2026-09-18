@@ -53,14 +53,14 @@ public static unsafe void Launch_AtomicAddStressKernel(global::System.Int32[] gl
 if (globalSum.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_AtomicAddStressKernel)
 {
 s_decryptionKey_AtomicAddStressKernel = null;
 s_isLoaded_AtomicAddStressKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicAddStressKernel_Delegate>("__gsharp_launch_AtomicAddStressKernel", dllPath, s_decryptionKey_AtomicAddStressKernel);
 fixed (global::System.Int32* p_globalSum = globalSum)
 {
@@ -121,14 +121,14 @@ public static unsafe void Launch_AtomicOrMaxStressKernel(global::System.UInt32[]
 if (globalState.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_AtomicOrMaxStressKernel)
 {
 s_decryptionKey_AtomicOrMaxStressKernel = null;
 s_isLoaded_AtomicOrMaxStressKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicOrMaxStressKernel_Delegate>("__gsharp_launch_AtomicOrMaxStressKernel", dllPath, s_decryptionKey_AtomicOrMaxStressKernel);
 fixed (global::System.UInt32* p_globalState = globalState)
 {
@@ -193,14 +193,14 @@ public static unsafe void Launch_IntrinsicsKernel(global::System.Int32[] data, u
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_IntrinsicsKernel)
 {
 s_decryptionKey_IntrinsicsKernel = null;
 s_isLoaded_IntrinsicsKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IntrinsicsKernel_Delegate>("__gsharp_launch_IntrinsicsKernel", dllPath, s_decryptionKey_IntrinsicsKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -270,14 +270,14 @@ public static unsafe void Launch_SharedMemoryKernel(global::System.Int32[] data,
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_SharedMemoryKernel)
 {
 s_decryptionKey_SharedMemoryKernel = null;
 s_isLoaded_SharedMemoryKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryKernel_Delegate>("__gsharp_launch_SharedMemoryKernel", dllPath, s_decryptionKey_SharedMemoryKernel);
 fixed (global::System.Int32* p_data = data)
 {
@@ -343,14 +343,14 @@ public static unsafe void Launch_SharedMemoryReverseKernel(global::System.Int32[
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_SharedMemoryReverseKernel)
 {
 s_decryptionKey_SharedMemoryReverseKernel = null;
 s_isLoaded_SharedMemoryReverseKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryReverseKernel_Delegate>("__gsharp_launch_SharedMemoryReverseKernel", dllPath, s_decryptionKey_SharedMemoryReverseKernel);
 fixed (global::System.Int32* p_data = data)
 {

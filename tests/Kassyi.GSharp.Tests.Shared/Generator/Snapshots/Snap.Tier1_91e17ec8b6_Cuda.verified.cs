@@ -233,9 +233,6 @@ results[tid]=finalVal;
 }
 ";
 public static readonly string AllInOneKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AllInOneKernel_Source;
-private static byte[]? s_decryptionKey_AllInOneKernel;
-private static byte[]? s_binaryData_AllInOneKernel;
-private static bool s_isLoaded_AllInOneKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
@@ -259,6 +256,9 @@ host.FloatVal = native.FloatVal;
 host.BoolVal = native.BoolVal;
 }
 #pragma warning restore CS8500
+private static byte[]? s_decryptionKey_AllInOneKernel;
+private static byte[]? s_binaryData_AllInOneKernel;
+private static bool s_isLoaded_AllInOneKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_AllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {

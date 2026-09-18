@@ -54,14 +54,14 @@ public static unsafe void Launch_InlinePtxKernel(global::System.UInt32[] data, u
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_InlinePtxKernel)
 {
 s_decryptionKey_InlinePtxKernel = null;
 s_isLoaded_InlinePtxKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InlinePtxKernel_Delegate>("__gsharp_launch_InlinePtxKernel", dllPath, s_decryptionKey_InlinePtxKernel);
 fixed (global::System.UInt32* p_data = data)
 {

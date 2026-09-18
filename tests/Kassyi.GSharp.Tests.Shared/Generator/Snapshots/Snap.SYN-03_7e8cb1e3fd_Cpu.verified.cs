@@ -78,14 +78,14 @@ public static unsafe void Launch_HappyPathKernel(global::System.Int32[] input, g
 if (input.Length == 0 || output.Length == 0 || success.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_03_InlineOutVarKernels_HappyPathKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_HappyPathKernel)
 {
 s_decryptionKey_HappyPathKernel = null;
 s_isLoaded_HappyPathKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_03_InlineOutVarKernels_HappyPathKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath, s_decryptionKey_HappyPathKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
@@ -152,14 +152,14 @@ public static unsafe void Launch_IfConditionKernel(global::System.Int32[] input,
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_03_InlineOutVarKernels_IfConditionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_IfConditionKernel)
 {
 s_decryptionKey_IfConditionKernel = null;
 s_isLoaded_IfConditionKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_03_InlineOutVarKernels_IfConditionKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IfConditionKernel_Delegate>("__gsharp_launch_IfConditionKernel", dllPath, s_decryptionKey_IfConditionKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
@@ -225,14 +225,14 @@ public static unsafe void Launch_WhileConditionKernel(global::System.Int32[] inp
 if (input.Length == 0 || output.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"SYN_03_InlineOutVarKernels_WhileConditionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_WhileConditionKernel)
 {
 s_decryptionKey_WhileConditionKernel = null;
 s_isLoaded_WhileConditionKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_03_InlineOutVarKernels_WhileConditionKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WhileConditionKernel_Delegate>("__gsharp_launch_WhileConditionKernel", dllPath, s_decryptionKey_WhileConditionKernel);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)

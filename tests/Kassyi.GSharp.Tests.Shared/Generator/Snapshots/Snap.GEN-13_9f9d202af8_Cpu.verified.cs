@@ -53,14 +53,14 @@ public static unsafe void Launch_Kernel_MacroTest_FillAndSingle(global::System.U
 if (outputBuffer.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Kernel_MacroTest_FillAndSingle)
 {
 s_decryptionKey_Kernel_MacroTest_FillAndSingle = null;
 s_isLoaded_Kernel_MacroTest_FillAndSingle = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_Kernel_MacroTest_FillAndSingle", dllPath, s_decryptionKey_Kernel_MacroTest_FillAndSingle);
 fixed (global::System.UInt32* p_outputBuffer = outputBuffer)
 {

@@ -43,9 +43,6 @@ if((*scalarRef)>constantVal)
 }
 ";
 public static readonly string ComplexSignatureKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ComplexSignatureKernel_Source;
-private static byte[]? s_decryptionKey_ComplexSignatureKernel;
-private static byte[]? s_binaryData_ComplexSignatureKernel;
-private static bool s_isLoaded_ComplexSignatureKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
 public struct __Native_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
@@ -66,6 +63,9 @@ host.A = native.A;
 host.B = native.B;
 }
 #pragma warning restore CS8500
+private static byte[]? s_decryptionKey_ComplexSignatureKernel;
+private static byte[]? s_binaryData_ComplexSignatureKernel;
+private static bool s_isLoaded_ComplexSignatureKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void Launch_ComplexSignatureKernel(ref global::System.Int32 scalarRef, out global::System.Single scalarOut, global::System.Int32[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {

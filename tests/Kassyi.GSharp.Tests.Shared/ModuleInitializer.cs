@@ -13,6 +13,7 @@ public static class ModuleInitializer
         DiffEngine.DiffRunner.Disabled = true;
         VerifySourceGenerators.Initialize();
         Verifier.UseProjectRelativeDirectory("Snapshots");
+        Kassyi.GSharp.Core.Logger.WriteToConsole = false;
     }
 }
 

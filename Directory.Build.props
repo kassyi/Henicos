@@ -3,6 +3,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- 恒久対策: Smart App Control / Defender等によるジェネレーターのロードブロックを回避するため共有コンパイルを無効化 -->
     <UseSharedCompilation>false</UseSharedCompilation>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- 自動生成コード(Source Generator)等の未使用プライベートフィールド警告を抑制 -->
     <NoWarn>$(NoWarn);CS0169</NoWarn>
   </PropertyGroup>

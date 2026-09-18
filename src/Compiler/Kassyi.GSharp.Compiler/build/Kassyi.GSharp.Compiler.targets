@@ -5,9 +5,9 @@
     <GSharpCompilerTaskAssembly Condition="'$(GSharpCompilerTaskAssembly)' == ''">$(MSBuildThisFileDirectory)..\..\Kassyi.GSharp.Compiler.Tasks\bin\$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
   </PropertyGroup>
 
-  <!-- Register the tasks -->
-  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
-  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" />
+  <!-- Register the tasks out-of-process to avoid MSBuild node locking (MSB3026/MSB3027) -->
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCudaToFatbinTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
+  <UsingTask TaskName="Kassyi.GSharp.Compiler.Tasks.CompileCppToNativeTask" AssemblyFile="$(GSharpCompilerTaskAssembly)" TaskFactory="TaskHostFactory" />
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />

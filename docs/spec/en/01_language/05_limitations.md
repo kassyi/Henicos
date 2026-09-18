@@ -52,7 +52,7 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | **GSH0001** | Error | Object creation not supported | Triggered when `new` or `new()` is used on anything other than `SharedMemory<T>` or unmanaged `struct` types. |
 | **GSH0002** | Error | String usage not supported | Triggered when the `string` keyword is used. |
 | **GSH0003** | Error | Unsupported syntax | Triggered when unknown/unsupported C# syntax nodes are encountered. |
-| **GSH0004** | Error | GpuKernel unsupported return type | Triggered when a `[GpuKernel]` method declares a return type other than `void`. Output buffers must be passed via explicit array pointers. |
+| **GSH0004** | Error | GpuKernel unsupported return type | Triggered when a `[GpuKernel]` method declares an unsupported return type (like `string` or multidimensional arrays). `void`, unmanaged value types, and single-dimensional arrays are supported. |
 | **GSH0005** | Error | GpuBigIntExpr Direct Assignment | Triggered when a `GpuBigIntExpr` (from lazy evaluation operators) is assigned to a local variable (`var x = a + b;`) without being resolved into `.Value`. Prevents silent "computation lost" bugs. |
 | **GSH0006** | Error | InlinePtx non-constant argument | Triggered when `Gpu.InlinePtx` receives a dynamic string instead of a compile-time string literal. |
 | **GSH0007** | Error | `foreach` loop not supported | Triggered when a `foreach` loop is used on a type that allocates an `IEnumerator`. Spans and Arrays are safely excluded. |

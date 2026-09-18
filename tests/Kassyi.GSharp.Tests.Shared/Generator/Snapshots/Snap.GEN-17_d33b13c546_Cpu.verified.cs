@@ -61,14 +61,14 @@ public static unsafe void Launch_RefOutTestKernel(global::System.Int32[] data, u
 if (data.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_17_RefOutDereferenceKernels_RefOutTestKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_RefOutTestKernel)
 {
 s_decryptionKey_RefOutTestKernel = null;
 s_isLoaded_RefOutTestKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_17_RefOutDereferenceKernels_RefOutTestKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RefOutTestKernel_Delegate>("__gsharp_launch_RefOutTestKernel", dllPath, s_decryptionKey_RefOutTestKernel);
 fixed (global::System.Int32* p_data = data)
 {

@@ -76,7 +76,7 @@ public static partial class ComprehensiveSpecKernel
         PhysicsVector[] particles,
         ref float totalMagnitude,
         out bool successFlag,
-        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
+        SpecTypes largeStructVal, // Triggers GSH0014 (>= 32 bytes passed by value)
         int particleCount,
         [Constant] int unrollFactor)
     {
@@ -104,7 +104,7 @@ public static partial class ComprehensiveSpecKernel
         int tid = tx + bx * bdimX;
 
         // 2. Shared Memory (Static & Dynamic)
-        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH0013 (>32768 bytes)
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
         SharedMemory<int> targetTypedCache = new(256); // Target-typed new support
 

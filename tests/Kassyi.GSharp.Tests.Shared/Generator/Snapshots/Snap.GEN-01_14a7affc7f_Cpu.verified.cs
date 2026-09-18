@@ -42,14 +42,14 @@ public static unsafe void Launch_MyTestKernel(global::System.Int32[] a, global::
 if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GEN_01_SourceGeneratorTestKernels_MyTestKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_MyTestKernel)
 {
 s_decryptionKey_MyTestKernel = null;
 s_isLoaded_MyTestKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_01_SourceGeneratorTestKernels_MyTestKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyTestKernel_Delegate>("__gsharp_launch_MyTestKernel", dllPath, s_decryptionKey_MyTestKernel);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)

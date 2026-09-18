@@ -55,4 +55,15 @@ public class SYN_08_LambdaAndLocalFunctionsTests
         SYN_08_LambdaAndLocalFunctionsKernelsWrapper.Launch_ShadowedVariableCaptureKernel(data, blockDimX: 1);
         Assert.Equal(250, data[0]);
     }
+
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
+    [Trait("FeatureId", "SYN-08")]
+    public void Test_SYN08_NestedReturnsKernel()
+    {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        var result = SYN_08_LambdaAndLocalFunctionsKernelsWrapper.Launch_NestedReturnsKernel(someValue: 10, blockDimX: 1);
+        Assert.Single(result);
+        Assert.Equal(30.0f, result[0]); // 10 + (10 * 2) = 30
+    }
 }

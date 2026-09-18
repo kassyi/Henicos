@@ -72,50 +72,19 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
     {
 #pragma warning disable RS0030
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-        var syntaxTrees = new List<SyntaxTree>();
-        syntaxTrees.Add(CSharpSyntaxTree.ParseText(source, options: parseOptions, path: $"{testName}.cs"));
-
-        bool isStdlibKernel = sourceDir.IndexOf("Kernels", StringComparison.OrdinalIgnoreCase) >= 0;
-
-        if (isStdlibKernel)
-        {
-            var stdlibDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
-
-            var globalUsingsPath = Path.Combine(stdlibDir, "GlobalUsings.cs");
-            if (File.Exists(globalUsingsPath))
-            {
-                syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(globalUsingsPath),
-                    options: parseOptions, path: globalUsingsPath));
-            }
-
-            var contextsDir = Path.Combine(stdlibDir, "Contexts");
-            if (Directory.Exists(contextsDir))
-            {
-                foreach (var f in Directory.GetFiles(contextsDir, "*.cs"))
-                {
-                    syntaxTrees.Add(CSharpSyntaxTree.ParseText(await File.ReadAllTextAsync(f), options: parseOptions,
-                        path: f));
-                }
-            }
-
-            if (Directory.Exists(sourceDir))
-            {
-                foreach (var f in Directory.GetFiles(sourceDir, "*.cu.cs"))
-                {
-                    var name = Path.GetFileNameWithoutExtension(f).Replace(".cu", "");
-                    if (!name.Equals(testName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var text = await File.ReadAllTextAsync(f);
-                        var tree = CSharpSyntaxTree.ParseText(text, options: parseOptions, path: f);
-                        var root = tree.GetRoot();
-                        var rewriter = new GpuAttributeRemover();
-                        var newRoot = rewriter.Visit(root);
-                        syntaxTrees.Add(tree.WithRootAndOptions(newRoot, tree.Options));
-                    }
-                }
-            }
-        }
 #pragma warning restore RS0030
+        var compilation = await BuildCompilationAsync(source, testName, sourceDir, parseOptions);
+        var runResult = RunGenerator(compilation, parseOptions);
+        await VerifySnapshotAsync(runResult, testName);
+    }
+
+    private async Task<CSharpCompilation> BuildCompilationAsync(
+        string source, string testName, string sourceDir, CSharpParseOptions parseOptions)
+    {
+        bool isStdlibKernel = sourceDir.IndexOf("Kernels", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                              sourceDir.Contains("Stdlib");
+
+        var syntaxTrees = await CollectSyntaxTreesAsync(source, testName, sourceDir, parseOptions, isStdlibKernel);
 
         var compilation = CSharpCompilation.Create("SnapshotTest")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
@@ -133,14 +102,74 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
 
         compilation = compilation.AddSyntaxTrees(syntaxTrees);
 
-        var compileDiagnostics = compilation.GetDiagnostics();
-        var errors = compileDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
-        if (errors.Any())
+        var errors = compilation.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .ToList();
+        if (errors.Count > 0)
         {
             var errorMessages = string.Join(Environment.NewLine, errors.Select(e => e.ToString()));
             Assert.Fail($"C# Compilation failed with errors:\n{errorMessages}");
         }
 
+        return compilation;
+    }
+
+    private static async Task<List<SyntaxTree>> CollectSyntaxTreesAsync(
+        string source, string testName, string sourceDir, CSharpParseOptions parseOptions, bool isStdlibKernel)
+    {
+#pragma warning disable RS0030
+        var syntaxTrees = new List<SyntaxTree>
+        {
+            CSharpSyntaxTree.ParseText(source, options: parseOptions, path: $"{testName}.cs")
+        };
+
+        var parentDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
+        var globalUsingsPath = Path.Combine(parentDir, "GlobalUsings.cs");
+        if (File.Exists(globalUsingsPath))
+        {
+            syntaxTrees.Add(CSharpSyntaxTree.ParseText(
+                await File.ReadAllTextAsync(globalUsingsPath),
+                options: parseOptions,
+                path: globalUsingsPath));
+        }
+
+        if (isStdlibKernel)
+        {
+            var contextsDir = Path.Combine(parentDir, "Contexts");
+            if (Directory.Exists(contextsDir))
+            {
+                foreach (var f in Directory.GetFiles(contextsDir, "*.cs"))
+                {
+                    syntaxTrees.Add(CSharpSyntaxTree.ParseText(
+                        await File.ReadAllTextAsync(f),
+                        options: parseOptions,
+                        path: f));
+                }
+            }
+
+            if (Directory.Exists(sourceDir))
+            {
+                var rewriter = new GpuAttributeRemover();
+                foreach (var f in Directory.GetFiles(sourceDir, "*.cu.cs"))
+                {
+                    var name = Path.GetFileNameWithoutExtension(f).Replace(".cu", "");
+                    if (!name.Equals(testName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var text = await File.ReadAllTextAsync(f);
+                        var tree = CSharpSyntaxTree.ParseText(text, options: parseOptions, path: f);
+                        var newRoot = rewriter.Visit(tree.GetRoot());
+                        syntaxTrees.Add(tree.WithRootAndOptions(newRoot, tree.Options));
+                    }
+                }
+            }
+        }
+#pragma warning restore RS0030
+
+        return syntaxTrees;
+    }
+
+    private GeneratorDriverRunResult RunGenerator(CSharpCompilation compilation, CSharpParseOptions parseOptions)
+    {
         var generator = new GpuKernelGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             generators: new[] { generator.AsSourceGenerator() },
@@ -150,18 +179,24 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
-        var genErrors = generatorDiagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToList();
-        if (genErrors.Any())
+        var genErrors = generatorDiagnostics
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .ToList();
+        if (genErrors.Count > 0)
         {
             var errorMessages = string.Join(Environment.NewLine, genErrors.Select(e => e.ToString()));
             Assert.Fail($"Generator failed with errors:\n{errorMessages}");
         }
 
-        var runResult = driver.GetRunResult();
+        return driver.GetRunResult();
+    }
+
+    private async Task VerifySnapshotAsync(GeneratorDriverRunResult runResult, string testName)
+    {
         var nonSharedTrees = runResult.GeneratedTrees
             .Where(t => !t.FilePath.Contains("GSharpShared") || t.FilePath.Contains("DeviceCode"))
             .OrderBy(t => t.FilePath)
-            .Select(t => $"// File: {System.IO.Path.GetFileName(t.FilePath)}\n{t.GetText().ToString()}");
+            .Select(t => $"// File: {Path.GetFileName(t.FilePath)}\n{t.GetText().ToString()}");
         var combinedSource = string.Join("\n\n", nonSharedTrees);
 
         var prefix = testName.Split('_')[0];
