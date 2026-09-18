@@ -3,7 +3,6 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested via explicit xUnit transpilation assertions in SYN-156_LoopUnrollTests.cs")]
 public static class SYN_156_LoopUnrollKernels
 {
     // Happy Path: Standard for loop with [GpuLoopUnroll]
