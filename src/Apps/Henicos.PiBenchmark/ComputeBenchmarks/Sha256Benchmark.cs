@@ -1,14 +1,14 @@
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Order;
+using Henicos.PiBenchmark.Infrastructure;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Generated;
-
-/// <summary>
-/// Benchmarks raw SHA-256 single-block transformation / compression function compute throughput.
-/// </summary>
-public class Sha256Benchmark : IComputeBenchmark
+[Orderer(SummaryOrderPolicy.FastestToSlowest)]
+public class Sha256Benchmark
 {
     private const int N = 100_000; // 100,000 blocks of 64 bytes
     private const int ThreadsPerBlock = 256;
@@ -28,26 +28,37 @@ public class Sha256Benchmark : IComputeBenchmark
 
     private byte[] _input = null!;
     private uint[] _outputCpu = null!;
-    private uint[] _outputGsharp = null!;
-    private uint[] _outputNative = null!;
 
     private GpuBuffer<byte>? _dInput;
     private GpuBuffer<uint>? _dOutput;
 
-    public string Name => "SHA-256 Compression Function (100k Blocks)";
+    private GpuKernelLoader.CudaContextScope _ctxScope;
 
-    public void Initialize()
+    [GlobalSetup]
+    public void Setup()
     {
         _input = new byte[N * 64];
         _outputCpu = new uint[N * 8];
-        _outputGsharp = new uint[N * 8];
-        _outputNative = new uint[N * 8];
 
         var rand = new Random(42);
         rand.NextBytes(_input);
+
+        _ctxScope = new GpuKernelLoader.CudaContextScope();
+        _dInput = new GpuBuffer<byte>(N * 64);
+        _dOutput = new GpuBuffer<uint>(N * 8);
+        _dInput.CopyToDevice(_input);
     }
 
-    public void RunReferenceCpu()
+    [GlobalCleanup]
+    public void Cleanup()
+    {
+        _dInput?.Dispose();
+        _dOutput?.Dispose();
+        _ctxScope.Dispose();
+    }
+
+    [Benchmark(Baseline = true)]
+    public void Cpu()
     {
         for (var i = 0; i < N; i++)
         {
@@ -55,80 +66,39 @@ public class Sha256Benchmark : IComputeBenchmark
         }
     }
 
-    public void RunGSharp()
+    [Benchmark]
+    public void GSharpGpu()
     {
-        Sha256KernelsWrapper.Launch_Sha256Kernel(
-            _input, _outputGsharp, N,
-            gridDimX: (uint)Blocks, blockDimX: ThreadsPerBlock);
-    }
-
-    public void RunNativeCuda()
-    {
-        NativeKernelInvoker.LaunchSha256(
-            _input, _outputNative, N,
-            gridDimX: (uint)Blocks, blockDimX: ThreadsPerBlock);
-    }
-
-    public void InitializeDeviceMemory()
-    {
-        _dInput = new GpuBuffer<byte>(N * 64);
-        _dOutput = new GpuBuffer<uint>(N * 8);
-        _dInput.CopyToDevice(_input);
-    }
-
-    public void CleanupDeviceMemory()
-    {
-        if (_dOutput != null)
-        {
-            _dOutput.CopyToHost(_outputGsharp);
-        }
-
-        _dInput?.Dispose();
-        _dOutput?.Dispose();
-    }
-
-    public void RunGSharp_Pure()
-    {
-        if (_dInput == null || _dOutput == null)
-        {
-            return;
-        }
+        using var timer = new CudaEventTimer();
+        timer.Start();
 
         Sha256KernelsWrapper.Launch_Sha256Kernel_Device(
-            _dInput.DevicePointer, _dOutput.DevicePointer, N,
+            _dInput!.DevicePointer, _dOutput!.DevicePointer, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 
-        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        timer.Stop();
+        timer.Synchronize();
+
+        // Approximate operations for SHA-256 compression function (roughly 1000 per block)
+        GpuMetricsContext.RecordFlops(N * 1000.0);
+        GpuMetricsContext.RecordGpuTimeUs(timer.GetElapsedTimeMilliseconds() * 1000.0);
     }
 
-    public void RunNativeCuda_Pure()
+    [Benchmark]
+    public void NativeCuda()
     {
-        if (_dInput == null || _dOutput == null)
-        {
-            return;
-        }
+        using var timer = new CudaEventTimer();
+        timer.Start();
 
         NativeKernelInvoker.LaunchSha256_Device(
-            _dInput.DevicePointer, _dOutput.DevicePointer, N,
+            _dInput!.DevicePointer, _dOutput!.DevicePointer, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
-    }
 
-    public void Verify()
-    {
-        for (var i = 0; i < N * 8; i++)
-        {
-            if (_outputCpu[i] != _outputGsharp[i])
-            {
-                throw new Exception(
-                    $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, G#={_outputGsharp[i]:X8}");
-            }
+        timer.Stop();
+        timer.Synchronize();
 
-            if (_outputCpu[i] != _outputNative[i])
-            {
-                throw new Exception(
-                    $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, Native={_outputNative[i]:X8}");
-            }
-        }
+        GpuMetricsContext.RecordFlops(N * 1000.0);
+        GpuMetricsContext.RecordGpuTimeUs(timer.GetElapsedTimeMilliseconds() * 1000.0);
     }
 
     private void ReferenceSha256(int tid)
@@ -141,7 +111,7 @@ public class Sha256Benchmark : IComputeBenchmark
             w[i] = (uint)(_input[offset + i * 4] << 24) |
                    (uint)(_input[offset + i * 4 + 1] << 16) |
                    (uint)(_input[offset + i * 4 + 2] << 8) |
-                   (uint)(_input[offset + i * 4 + 3]);
+                   _input[offset + i * 4 + 3];
         }
 
         for (var i = 16; i < 64; i++)

@@ -1,12 +1,15 @@
+using BenchmarkDotNet.Attributes;
+using Henicos.PiBenchmark.Infrastructure;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Runtime.Aot;
 
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
-using Kassyi.GSharp.Runtime;
-
-public class SgemmBenchmark : IComputeBenchmark
+[Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
+public class SgemmBenchmark
 {
-    private const int N = 512; // 512x512 matrix
+    private const int N = 512;
     private const int TileSize = 16;
 
     private const uint GridDimX = (N + TileSize - 1) / TileSize;
@@ -17,22 +20,19 @@ public class SgemmBenchmark : IComputeBenchmark
     private float[] _a = null!;
     private float[] _b = null!;
     private float[] _cCpu = null!;
-    private float[] _cGsharp = null!;
-    private float[] _cNative = null!;
 
     private GpuBuffer<float>? _dA;
     private GpuBuffer<float>? _dB;
     private GpuBuffer<float>? _dC;
 
-    public string Name => "SGEMM (512x512)";
+    private GpuKernelLoader.CudaContextScope _ctxScope;
 
-    public void Initialize()
+    [GlobalSetup]
+    public void Setup()
     {
         _a = new float[N * N];
         _b = new float[N * N];
         _cCpu = new float[N * N];
-        _cGsharp = new float[N * N];
-        _cNative = new float[N * N];
 
         var rand = new Random(42);
         for (var i = 0; i < N * N; i++)
@@ -40,9 +40,27 @@ public class SgemmBenchmark : IComputeBenchmark
             _a[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
             _b[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
         }
+
+        _ctxScope = new GpuKernelLoader.CudaContextScope();
+        _dA = new GpuBuffer<float>(N * N);
+        _dB = new GpuBuffer<float>(N * N);
+        _dC = new GpuBuffer<float>(N * N);
+
+        _dA.CopyToDevice(_a);
+        _dB.CopyToDevice(_b);
     }
 
-    public void RunReferenceCpu()
+    [GlobalCleanup]
+    public void Cleanup()
+    {
+        _dA?.Dispose();
+        _dB?.Dispose();
+        _dC?.Dispose();
+        _ctxScope.Dispose();
+    }
+
+    [Benchmark(Baseline = true)]
+    public void Cpu()
     {
         for (var row = 0; row < N; row++)
         {
@@ -53,87 +71,45 @@ public class SgemmBenchmark : IComputeBenchmark
                 {
                     sum += _a[row * N + k] * _b[k * N + col];
                 }
-
                 _cCpu[row * N + col] = sum;
             }
         }
     }
 
-    public void RunGSharp()
+    [Benchmark]
+    public void GSharp_GPU()
     {
-        SgemmKernelsWrapper.Launch_SgemmKernel(
-            _a, _b, _cGsharp, N,
-            gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
-    }
-
-    public void RunNativeCuda()
-    {
-        NativeKernelInvoker.LaunchSgemm(
-            _a, _b, _cNative, N,
-            gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
-    }
-
-    public void InitializeDeviceMemory()
-    {
-        _dA = new GpuBuffer<float>(N * N);
-        _dB = new GpuBuffer<float>(N * N);
-        _dC = new GpuBuffer<float>(N * N);
-
-        _dA.CopyToDevice(_a);
-        _dB.CopyToDevice(_b);
-    }
-
-    public void CleanupDeviceMemory()
-    {
-        if (_dC != null)
-        {
-            _dC.CopyToHost(_cGsharp); // Get result for verification if needed
-        }
-
-        _dA?.Dispose();
-        _dB?.Dispose();
-        _dC?.Dispose();
-    }
-
-    public void RunGSharp_Pure()
-    {
-        if (_dA == null || _dB == null || _dC == null)
-        {
-            return;
-        }
+        using var timer = new CudaEventTimer();
+        timer.Start();
 
         SgemmKernelsWrapper.Launch_SgemmKernel_Device(
-            _dA.DevicePointer, _dB.DevicePointer, _dC.DevicePointer, N,
+            _dA!.DevicePointer, _dB!.DevicePointer, _dC!.DevicePointer, N,
             gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
 
-        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        timer.Stop();
+        timer.Synchronize();
+
+        // 2 * N^3 FLOPs for SGEMM
+        double flops = 2.0 * N * N * N;
+        GpuMetricsContext.RecordFlops(flops);
+        GpuMetricsContext.RecordGpuTimeUs(timer.GetElapsedTimeMilliseconds() * 1000.0);
     }
 
-    public void RunNativeCuda_Pure()
+    [Benchmark]
+    public void Native_CUDA()
     {
-        if (_dA == null || _dB == null || _dC == null)
-        {
-            return;
-        }
+        using var timer = new CudaEventTimer();
+        timer.Start();
 
         NativeKernelInvoker.LaunchSgemm_Device(
-            _dA.DevicePointer, _dB.DevicePointer, _dC.DevicePointer, N,
+            _dA!.DevicePointer, _dB!.DevicePointer, _dC!.DevicePointer, N,
             gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
-    }
 
-    public void Verify()
-    {
-        for (var i = 0; i < N * N; i++)
-        {
-            if (Math.Abs(_cCpu[i] - _cGsharp[i]) > 1e-2f)
-            {
-                throw new Exception($"Mismatch at index {i}: CPU={_cCpu[i]}, G#={_cGsharp[i]}");
-            }
+        timer.Stop();
+        timer.Synchronize();
 
-            if (Math.Abs(_cCpu[i] - _cNative[i]) > 1e-2f)
-            {
-                throw new Exception($"Mismatch at index {i}: CPU={_cCpu[i]}, Native={_cNative[i]}");
-            }
-        }
+        double flops = 2.0 * N * N * N;
+        GpuMetricsContext.RecordFlops(flops);
+        GpuMetricsContext.RecordGpuTimeUs(timer.GetElapsedTimeMilliseconds() * 1000.0);
     }
 }

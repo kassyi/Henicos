@@ -1,4 +1,7 @@
 using System.Globalization;
+using BenchmarkDotNet.Running;
+using Henicos.PiBenchmark.ComputeBenchmarks;
+using Henicos.PiBenchmark.Infrastructure;
 
 namespace Henicos.PiBenchmark;
 
@@ -83,10 +86,19 @@ internal class Program
 
     private static int RunComputeBench(string[] args)
     {
-        var suite = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
-        var success = ComputeBenchmarks.ComputeBenchmarkRunner.RunSuite(suite);
-        return success ? 0 : 1;
+        var switcher = new BenchmarkSwitcher(
+            [
+                typeof(SgemmBenchmark),
+                typeof(Sha256Benchmark),
+                typeof(BlackScholesBenchmark),
+                typeof(ReductionBenchmark)
+            ]
+        );
+
+        switcher.Run(args, new BenchmarkConfig());
+        return 0;
     }
+
 
     private static int RunGpuPi(string[] args)
     {
@@ -95,34 +107,38 @@ internal class Program
         var thresholdTerms = 8192;
         var asHex = false;
 
-        for (var i = 0; i < args.Length; i++)
-        {
-            var arg = args[i];
+        var argQueue = new Queue<string>(args);
+        var isFirstArg = true;
 
-            if (arg.Equals("--out", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+        while (argQueue.TryDequeue(out var arg))
+        {
+            switch (arg.ToLowerInvariant())
             {
-                outPath = args[++i];
+                case "--out" when argQueue.TryDequeue(out var path):
+                    outPath = path;
+                    break;
+                case "--threshold" when argQueue.TryDequeue(out var threshStr):
+                    if (int.TryParse(threshStr, out var thresh) && thresh > 0)
+                    {
+                        thresholdTerms = thresh;
+                    }
+                    else
+                    {
+                        Logger<Program>.Error("Error: --threshold must be a positive integer greater than zero.");
+                        return 1;
+                    }
+                    break;
+                case "--hex":
+                    asHex = true;
+                    break;
+                default:
+                    if (isFirstArg && !arg.StartsWith('-'))
+                    {
+                        targetDigits = ParseDigits(arg);
+                    }
+                    break;
             }
-            else if (arg.Equals("--threshold", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-            {
-                if (int.TryParse(args[++i], out var thresh) && thresh > 0)
-                {
-                    thresholdTerms = thresh;
-                }
-                else
-                {
-                    Logger<Program>.Error("Error: --threshold must be a positive integer greater than zero.");
-                    return 1;
-                }
-            }
-            else if (arg.Equals("--hex", StringComparison.OrdinalIgnoreCase))
-            {
-                asHex = true;
-            }
-            else if (!arg.StartsWith('-') && i == 0)
-            {
-                targetDigits = ParseDigits(arg, 10000);
-            }
+            isFirstArg = false;
         }
 
         GpuChudnovskyPi.ComputePiAndWriteToFile(targetDigits, outPath, thresholdTerms, asHex);
@@ -133,7 +149,7 @@ internal class Program
     {
         Logger<Program>.Info("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
 
-        var digits = args.Length > 0 ? ParseDigits(args[0], 10000) : 10000;
+        var digits = args.Length > 0 ? ParseDigits(args[0]) : 10000;
 
         Logger<Program>.Info($"Calculating {digits:N0} digits of Pi...");
 

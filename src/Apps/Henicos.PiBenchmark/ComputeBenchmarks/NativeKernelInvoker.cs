@@ -1,6 +1,6 @@
-using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime.Interop;
 
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
