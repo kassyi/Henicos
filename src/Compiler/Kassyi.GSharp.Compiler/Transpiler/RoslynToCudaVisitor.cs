@@ -345,6 +345,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        if (node.IsKind(SyntaxKind.NullLiteralExpression))
+        {
+            Context.Writer.Append("nullptr");
+            return;
+        }
+
         Context.Writer.Append(node.Token.Text);
     }
 
