@@ -74,14 +74,16 @@ internal static class WrapperEmitter
     private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string source,
         GeneratorConfig config)
     {
-        if (config.EmitSource)
+        if (!config.EmitSource)
         {
-            var escapedSource = source.Replace("\"", "\"\"");
-            writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
-            writer.AppendLine(
-                $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source + global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source + {method.Name}_Source;");
-            writer.AppendLine();
+            return;
         }
+
+        var escapedSource = source.Replace("\"", "\"\"");
+        writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
+        writer.AppendLine(
+            $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source + global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source + {method.Name}_Source;");
+        writer.AppendLine();
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
@@ -314,12 +316,14 @@ internal static class WrapperEmitter
                     writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
                 }
             }
+
             writer.AppendLine("else");
             using (writer.Scope())
             {
                 writer.AppendLine(
                     $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
             }
+
             writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
@@ -426,12 +430,14 @@ internal static class WrapperEmitter
         {
             foreach (var p in method.Parameters)
             {
-                if (p.Type is IArrayTypeSymbol ||
-                    (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
+                if (p.Type is not IArrayTypeSymbol &&
+                    (p.RefKind is not (RefKind.Ref or RefKind.Out) || p.Type is IArrayTypeSymbol))
                 {
-                    hasFixed = true;
-                    break;
+                    continue;
                 }
+
+                hasFixed = true;
+                break;
             }
         }
 
