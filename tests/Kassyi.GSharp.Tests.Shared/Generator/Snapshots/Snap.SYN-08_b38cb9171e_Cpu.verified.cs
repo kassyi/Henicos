@@ -137,7 +137,8 @@ s_decryptionKey_NestedReturnsKernel = null;
 s_isLoaded_NestedReturnsKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedReturnsKernel_Delegate>("__gsharp_launch_NestedReturnsKernel", dllPath, s_decryptionKey_NestedReturnsKernel);
-uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
+if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
+uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 fixed (global::System.Single* p___gsharp_auto_result = __gsharp_auto_result)
 {

@@ -50,7 +50,8 @@ s_decryptionKey_NormalReturnKernel = null;
 s_isLoaded_NormalReturnKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NormalReturnKernel_Delegate>("__gsharp_launch_NormalReturnKernel", dllPath, s_decryptionKey_NormalReturnKernel);
-uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
+if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
+uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 fixed (global::System.Single* p___gsharp_auto_result = __gsharp_auto_result)
 {
@@ -83,7 +84,7 @@ unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockId
 __gsharp_auto_result[__gsharp_global_tid] = 42;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_OneThreadKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZint* __restrict__ __gsharp_auto_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_OneThreadKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -115,7 +116,8 @@ s_decryptionKey_OneThreadKernel = null;
 s_isLoaded_OneThreadKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<OneThreadKernel_Delegate>("__gsharp_launch_OneThreadKernel", dllPath, s_decryptionKey_OneThreadKernel);
-uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
+if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
+uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 fixed (global::System.Int32* p___gsharp_auto_result = __gsharp_auto_result)
 {
@@ -160,7 +162,7 @@ s.B=threadIdx.x*1.5f;
 __gsharp_auto_result[__gsharp_global_tid] = s;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StructReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZKassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_StructReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -192,7 +194,8 @@ s_decryptionKey_StructReturnKernel = null;
 s_isLoaded_StructReturnKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructReturnKernel_Delegate>("__gsharp_launch_StructReturnKernel", dllPath, s_decryptionKey_StructReturnKernel);
-uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
+if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
+uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Runtime.GEN_08_AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 fixed (global::Kassyi.GSharp.Tests.Runtime.GEN_08_AutoAllocateReturnArraysKernels.TestStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {

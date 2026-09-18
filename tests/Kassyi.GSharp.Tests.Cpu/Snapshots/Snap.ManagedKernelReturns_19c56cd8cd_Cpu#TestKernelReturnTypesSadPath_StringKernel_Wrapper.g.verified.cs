@@ -13,25 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Generator
 {
 public static partial class TestKernelReturnTypesSadPathWrapper
 {
-public const string StringKernel_Source = @"extern ""C"" __declspec(dllexport) void StringKernel(System_String* __restrict__ __gsharp_auto_result){
-unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-__gsharp_auto_result[__gsharp_global_tid] = """";
-return;
-}
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StringKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZSystem_String* __restrict__ __gsharp_auto_result)
-{
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
-{
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StringKernel(__gsharp_auto_result);
-}
-}
-";
+public const string StringKernel_Source = @"// GSharp Transpilation failed for StringKernel. Return type string is not supported.";
 public static readonly string StringKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + StringKernel_Source;
 private static byte[]? s_decryptionKey_StringKernel;
 private static byte[]? s_binaryData_StringKernel;
@@ -50,7 +32,8 @@ s_decryptionKey_StringKernel = null;
 s_isLoaded_StringKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StringKernel_Delegate>("__gsharp_launch_StringKernel", dllPath, s_decryptionKey_StringKernel);
-uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
+if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
+uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.String[__gsharp_total_threads];
 fixed (global::System.String* p___gsharp_auto_result = __gsharp_auto_result)
 {
