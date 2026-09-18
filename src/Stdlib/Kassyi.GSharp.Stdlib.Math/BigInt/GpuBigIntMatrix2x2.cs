@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// </remarks>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
-public class GpuBigIntMatrix2x2 : IDisposable
+public class GpuBigIntMatrix2X2 : IDisposable
 {
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 0, column 0 ($M_{00}$) in GPU device memory.
@@ -86,7 +86,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with uninitialized memory for each matrix element.
+    /// Initializes a new instance of the <see cref="GpuBigIntMatrix2X2"/> class with uninitialized memory for each matrix element.
     /// </summary>
     /// <param name="context">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
     /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
@@ -94,7 +94,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
     /// <exception cref="OutOfMemoryException">Thrown when GPU global memory allocation fails for any of the matrix elements.</exception>
-    public GpuBigIntMatrix2x2(GpuContext context, int numWords, bool isOddStep)
+    public GpuBigIntMatrix2X2(GpuContext context, int numWords, bool isOddStep)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(numWords);
@@ -113,7 +113,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <param name="context">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
     /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
     /// <returns>
-    /// A new <see cref="GpuBigIntMatrix2x2"/> instance representing the identity matrix, where <see cref="M00"/> and <see cref="M11"/> are set to 1, and <see cref="M01"/> and <see cref="M10"/> are set to 0.
+    /// A new <see cref="GpuBigIntMatrix2X2"/> instance representing the identity matrix, where <see cref="M00"/> and <see cref="M11"/> are set to 1, and <see cref="M01"/> and <see cref="M10"/> are set to 0.
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
@@ -121,9 +121,9 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <remarks>
     /// <para><b>Lifecycle:</b> The caller is responsible for disposing the returned matrix to release allocated GPU device memory.</para>
     /// </remarks>
-    public static GpuBigIntMatrix2x2 Identity(GpuContext context, int numWords)
+    public static GpuBigIntMatrix2X2 Identity(GpuContext context, int numWords)
     {
-        var mat = new GpuBigIntMatrix2x2(context, numWords, false);
+        var mat = new GpuBigIntMatrix2X2(context, numWords, false);
         
         mat.M00.Clear();
         context.Provider.CopyHostToDevice(mat.M00.DevicePointer, [1u], 1);
@@ -144,7 +144,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <param name="v">The left-hand operand matrix $V$. Cannot be <see langword="null"/>.</param>
     /// <param name="u">The right-hand operand matrix $U$. Cannot be <see langword="null"/>.</param>
     /// <returns>
-    /// A new <see cref="GpuBigIntMatrix2x2"/> instance containing the product of <paramref name="v"/> and <paramref name="u"/>.
+    /// A new <see cref="GpuBigIntMatrix2X2"/> instance containing the product of <paramref name="v"/> and <paramref name="u"/>.
     /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths (<c>v.M00.NumWords + u.M00.NumWords</c>).
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="v"/> or <paramref name="u"/> is <see langword="null"/>.</exception>
@@ -164,7 +164,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// </para>
     /// <para><b>Lifecycle:</b> The caller is responsible for disposing the returned matrix.</para>
     /// </remarks>
-    public static GpuBigIntMatrix2x2 Multiply(GpuBigIntMatrix2x2 v, GpuBigIntMatrix2x2 u)
+    public static GpuBigIntMatrix2X2 Multiply(GpuBigIntMatrix2X2 v, GpuBigIntMatrix2X2 u)
     {
         ArgumentNullException.ThrowIfNull(v);
         ArgumentNullException.ThrowIfNull(u);
@@ -176,7 +176,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
 
         var ctx = v.Context;
         var outWords = v.M00.NumWords + u.M00.NumWords;
-        var result = new GpuBigIntMatrix2x2(ctx, outWords, v.IsOddStep ^ u.IsOddStep);
+        var result = new GpuBigIntMatrix2X2(ctx, outWords, v.IsOddStep ^ u.IsOddStep);
 
         using var temp1 = new GpuUIntBigInteger(ctx, outWords);
         using var temp2 = new GpuUIntBigInteger(ctx, outWords);
