@@ -2,17 +2,18 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
 public class GBI146_GpuBigIntegerTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "HappyPath")]
     public void Test_GBI146_ConstructorAndProperties_StoreCorrectValues()
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -26,7 +27,7 @@ public class GBI146_GpuBigIntegerTests
         Assert.Same(uintVal, negBigInt.Value);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "HappyPath")]
     [InlineData(0, false, 0, false, 0)]   // 0 == 0
@@ -38,10 +39,17 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(10, true, 10, false, -1)] // -10 < +10
     [InlineData(0, false, 5, true, 1)]    // 0 > -5
     [InlineData(0, false, 5, false, -1)]  // 0 < +5
+    // New Edge Cases for Zero and adjacent magnitudes
+    [InlineData(5, false, 0, false, 1)]   // +5 > 0
+    [InlineData(5, true, 0, false, -1)]   // -5 < 0
+    [InlineData(uint.MaxValue, false, uint.MaxValue - 1, false, 1)] // Max > Max - 1
+    [InlineData(uint.MaxValue - 1, false, uint.MaxValue, false, -1)] // Max - 1 < Max
+    [InlineData(uint.MaxValue, true, uint.MaxValue - 1, true, -1)] // -Max < -(Max - 1)
+    [InlineData(0xAAAAAAAA, false, 0x55555555, false, 1)] // Alternating bits High > Low
     public void Test_GBI146_ComparisonAndRelationalOperators_BehaveCorrectly(
         uint valA, bool negA, uint valB, bool negB, int expectedCmp)
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -86,7 +94,7 @@ public class GBI146_GpuBigIntegerTests
         }
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "HappyPath")]
     [InlineData(false, false, false)] // (+A) * (+B) = +Result
@@ -95,7 +103,7 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(true, true, false)]   // (-A) * (-B) = +Result
     public void Test_GBI146_SignedMultiplicationAndDivisionExpressions_SignRules(bool negA, bool negB, bool expectedNeg)
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -120,14 +128,14 @@ public class GBI146_GpuBigIntegerTests
         Assert.Equal(expectedNeg, evalDiv.IsNegative);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "HappyPath")]
     [InlineData(false, false, false)] // (+A) + (+B) = +Result
     [InlineData(true, true, true)]    // (-A) + (-B) = -Result
     public void Test_GBI146_SignedAdditionExpression_SameSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -145,14 +153,14 @@ public class GBI146_GpuBigIntegerTests
         Assert.Equal(expectedNeg, evalAdd.IsNegative);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "SadPath")]
     [InlineData(false, true)] // (+A) + (-B) => Not supported in lazy AST
     [InlineData(true, false)] // (-A) + (+B) => Not supported in lazy AST
     public void Test_GBI146_SignedAdditionExpression_DifferentSigns_ThrowsNotSupportedException(bool negA, bool negB)
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -165,14 +173,14 @@ public class GBI146_GpuBigIntegerTests
         Assert.Throws<NotSupportedException>(() => _ = a + b);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "HappyPath")]
     [InlineData(false, true, false)] // (+A) - (-B) = (+A) + (+B) = +Result
     [InlineData(true, false, true)]  // (-A) - (+B) = (-A) + (-B) = -Result
     public void Test_GBI146_SignedSubtractionExpression_DifferentSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -186,14 +194,14 @@ public class GBI146_GpuBigIntegerTests
         Assert.Equal(expectedNeg, subExpr.IsNegative);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "SadPath")]
     [InlineData(false, false)] // (+A) - (+B) => Not supported in lazy AST
     [InlineData(true, true)]   // (-A) - (-B) => Not supported in lazy AST
     public void Test_GBI146_SignedSubtractionExpression_SameSigns_ThrowsNotSupportedException(bool negA, bool negB)
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -206,12 +214,12 @@ public class GBI146_GpuBigIntegerTests
         Assert.Throws<NotSupportedException>(() => _ = a - b);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-146")]
     [Trait("Category", "HappyPath")]
     public void Test_GBI146_UnaryOperators_NegationAndBitwiseNot()
     {
-        if (!GpuKernelLoader.IsDriverAvailable) return;
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
