@@ -1,5 +1,7 @@
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
+using System.Diagnostics;
+
 public static class ComputeBenchmarkRunner
 {
     public readonly record struct BenchmarkStats(double Min, double Median, double Mean)
@@ -14,8 +16,8 @@ public static class ComputeBenchmarkRunner
             var sorted = (double[])samples.Clone();
             Array.Sort(sorted);
 
-            double min = sorted[0];
-            double median = sorted.Length % 2 == 0
+            var min = sorted[0];
+            var median = sorted.Length % 2 == 0
                 ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2.0
                 : sorted[sorted.Length / 2];
             double sum = 0;
@@ -24,7 +26,7 @@ public static class ComputeBenchmarkRunner
                 sum += v;
             }
 
-            double mean = sum / sorted.Length;
+            var mean = sum / sorted.Length;
             return new BenchmarkStats(min, median, mean);
         }
     }
@@ -32,8 +34,10 @@ public static class ComputeBenchmarkRunner
     private sealed record BenchmarkResult(
         string Name,
         double CpuMeanMs,
-        BenchmarkStats NativeStats,
-        BenchmarkStats GsharpStats,
+        BenchmarkStats NativeStatsE2E,
+        BenchmarkStats GsharpStatsE2E,
+        BenchmarkStats NativeStatsPure,
+        BenchmarkStats GsharpStatsPure,
         bool Success,
         string ErrorMessage = "");
 
@@ -68,9 +72,12 @@ public static class ComputeBenchmarkRunner
             return false;
         }
 
-        Console.WriteLine($"==========================================================================================");
-        Console.WriteLine($" Henicos / G# Compute Benchmark Suite ({benchmarks.Count} benchmarks, {iterations} iterations/sample)");
-        Console.WriteLine($"==========================================================================================");
+        Console.WriteLine(
+            $"==========================================================================================");
+        Console.WriteLine(
+            $" Henicos / G# Compute Benchmark Suite ({benchmarks.Count} benchmarks, {iterations} iterations/sample)");
+        Console.WriteLine(
+            $"==========================================================================================");
 
         var allSucceeded = true;
         var results = new List<BenchmarkResult>();
@@ -82,77 +89,86 @@ public static class ComputeBenchmarkRunner
             benchmark.Initialize();
 
             // 1. CPU Reference
-            Console.WriteLine("  Running CPU Reference Baseline (1 sample)...");
+            Console.WriteLine("  [Phase 0] Running CPU Reference Baseline (1 sample)...");
             var swCpu = Stopwatch.StartNew();
             benchmark.RunReferenceCpu();
             swCpu.Stop();
             var cpuTime = swCpu.Elapsed.TotalMilliseconds;
             Console.WriteLine($"  CPU Reference Time: {cpuTime:F2} ms");
 
-            // 2. Native CUDA C++
-            Console.WriteLine($"  Running Native CUDA C++ (Warmup + {iterations} iterations)...");
-            var nativeSamples = new double[iterations];
-            var nativeSuccess = false;
-            try
-            {
-                // Warmup
-                benchmark.RunNativeCuda();
-                for (int i = 0; i < iterations; i++)
-                {
-                    var sw = Stopwatch.StartNew();
-                    benchmark.RunNativeCuda();
-                    sw.Stop();
-                    nativeSamples[i] = sw.Elapsed.TotalMilliseconds;
-                }
-                nativeSuccess = true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"  Native CUDA Execution Failed: {ex.Message}");
-                allSucceeded = false;
-            }
+            // --- PHASE 1: End-to-End (E2E) Measurements ---
+            Console.WriteLine("\n  [Phase 1] E2E Measurements (Includes Alloc, HtoD, Kernel, DtoH, Free)");
 
-            var nativeStats = nativeSuccess ? BenchmarkStats.Calculate(nativeSamples) : default;
+            var (nativeSuccess, nativeStatsE2E, nativeError) = MeasureExecution(benchmark.RunNativeCuda, iterations);
             if (nativeSuccess)
             {
-                Console.WriteLine($"  Native CUDA Time: Min={nativeStats.Min:F2} ms | Med={nativeStats.Median:F2} ms | Mean={nativeStats.Mean:F2} ms");
+                Console.WriteLine(
+                    $"    Native CUDA (E2E): Min={nativeStatsE2E.Min:F2} ms | Med={nativeStatsE2E.Median:F2} ms | Mean={nativeStatsE2E.Mean:F2} ms");
             }
-
-            // 3. G# CUDA
-            Console.WriteLine($"  Running G# CUDA Transpiled (Warmup + {iterations} iterations)...");
-            var gsharpSamples = new double[iterations];
-            var gsharpSuccess = false;
-            string errorMessage = "";
-            try
+            else
             {
-                // Warmup
-                benchmark.RunGSharp();
-                for (int i = 0; i < iterations; i++)
-                {
-                    var sw = Stopwatch.StartNew();
-                    benchmark.RunGSharp();
-                    sw.Stop();
-                    gsharpSamples[i] = sw.Elapsed.TotalMilliseconds;
-                }
-                gsharpSuccess = true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"  G# CUDA Execution Failed: {ex.Message}");
-                errorMessage = ex.Message;
+                Console.WriteLine($"  Native CUDA (E2E) Failed: {nativeError}");
                 allSucceeded = false;
             }
 
-            var gsharpStats = gsharpSuccess ? BenchmarkStats.Calculate(gsharpSamples) : default;
+            var (gsharpSuccess, gsharpStatsE2E, gsharpError) = MeasureExecution(benchmark.RunGSharp, iterations);
             if (gsharpSuccess)
             {
-                Console.WriteLine($"  G# CUDA Time:     Min={gsharpStats.Min:F2} ms | Med={gsharpStats.Median:F2} ms | Mean={gsharpStats.Mean:F2} ms");
+                Console.WriteLine(
+                    $"    G# CUDA     (E2E): Min={gsharpStatsE2E.Min:F2} ms | Med={gsharpStatsE2E.Median:F2} ms | Mean={gsharpStatsE2E.Mean:F2} ms");
+            }
+            else
+            {
+                Console.WriteLine($"  G# CUDA     (E2E) Failed: {gsharpError}");
+                allSucceeded = false;
+            }
+
+            // --- PHASE 2: Pure Kernel Measurements ---
+            Console.WriteLine("\n  [Phase 2] Pure Kernel Measurements (Resident Device Buffers only)");
+
+            BenchmarkStats nativeStatsPure = default;
+            BenchmarkStats gsharpStatsPure = default;
+            var pureError = "";
+            var pureSuccess = false;
+
+            if (nativeSuccess && gsharpSuccess)
+            {
+                try
+                {
+                    benchmark.InitializeDeviceMemory();
+
+                    var (nSuccess, nStats, _) = MeasureExecution(benchmark.RunNativeCuda_Pure, iterations);
+                    var (gSuccess, gStats, _) = MeasureExecution(benchmark.RunGSharp_Pure, iterations);
+
+                    nativeStatsPure = nStats;
+                    gsharpStatsPure = gStats;
+                    pureSuccess = nSuccess && gSuccess;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"  Pure Kernel Execution Failed: {ex.Message}");
+                    pureError = ex.Message;
+                    allSucceeded = false;
+                    pureSuccess = false;
+                }
+                finally
+                {
+                    benchmark.CleanupDeviceMemory();
+                }
+            }
+
+            if (pureSuccess)
+            {
+                Console.WriteLine(
+                    $"    Native CUDA (Pure): Min={nativeStatsPure.Min:F2} ms | Med={nativeStatsPure.Median:F2} ms | Mean={nativeStatsPure.Mean:F2} ms");
+                Console.WriteLine(
+                    $"    G# CUDA     (Pure): Min={gsharpStatsPure.Min:F2} ms | Med={gsharpStatsPure.Median:F2} ms | Mean={gsharpStatsPure.Mean:F2} ms");
             }
 
             // 4. Verification
-            if (nativeSuccess && gsharpSuccess)
+            if (pureSuccess)
             {
-                Console.Write("  Verifying Correctness (CPU == G# == Native)... ");
+                Console.Write("\n  Verifying Correctness (CPU == G# == Native)... ");
                 try
                 {
                     benchmark.Verify();
@@ -161,50 +177,90 @@ public static class ComputeBenchmarkRunner
                 catch (Exception ex)
                 {
                     Console.WriteLine($"FAIL - {ex.Message}");
-                    errorMessage = ex.Message;
+                    pureError = ex.Message;
                     allSucceeded = false;
                 }
             }
             else
             {
-                Console.WriteLine("  Verification: SKIPPED (due to execution failure)");
+                Console.WriteLine("\n  Verification: SKIPPED (due to execution failure)");
             }
+
+            var errorMessage = !string.IsNullOrEmpty(nativeError) ? nativeError :
+                !string.IsNullOrEmpty(gsharpError) ? gsharpError : pureError;
 
             results.Add(new BenchmarkResult(
                 benchmark.Name,
                 cpuTime,
-                nativeStats,
-                gsharpStats,
-                nativeSuccess && gsharpSuccess && string.IsNullOrEmpty(errorMessage),
+                nativeStatsE2E,
+                gsharpStatsE2E,
+                nativeStatsPure,
+                gsharpStatsPure,
+                pureSuccess && string.IsNullOrEmpty(errorMessage),
                 errorMessage));
         }
 
         // Summary Table
         Console.WriteLine("\n");
-        Console.WriteLine("========================================================================================================================");
-        Console.WriteLine("                                    BENCHMARK COMPARISON & OVERHEAD SUMMARY                                             ");
-        Console.WriteLine("========================================================================================================================");
-        Console.WriteLine(string.Format("{0,-30} | {1,10} | {2,18} | {3,18} | {4,12} | {5,10}",
-            "Benchmark Name", "CPU (ms)", "Native CUDA (Mean)", "G# CUDA (Mean)", "G#/Native Ratio", "Speedup vs CPU"));
-        Console.WriteLine(new string('-', 120));
+        Console.WriteLine(
+            "=========================================================================================================================================");
+        Console.WriteLine(
+            "                                           BENCHMARK COMPARISON & OVERHEAD SUMMARY                                                       ");
+        Console.WriteLine(
+            "=========================================================================================================================================");
+        Console.WriteLine(string.Format("{0,-25} | {1,9} | {2,20} | {3,20} | {4,16} | {5,20} | {6,16}",
+            "Benchmark Name", "CPU (ms)", "Native E2E (ms)", "G# E2E (ms)", "Ratio (E2E)", "Native Pure (ms)",
+            "G# Pure (ms)", "Ratio (Pure)"));
+        Console.WriteLine(new string('-', 140));
 
         foreach (var r in results)
         {
             if (r.Success)
             {
-                double ratio = r.NativeStats.Mean > 0 ? r.GsharpStats.Mean / r.NativeStats.Mean : 1.0;
-                double speedup = r.GsharpStats.Mean > 0 ? r.CpuMeanMs / r.GsharpStats.Mean : 1.0;
-                Console.WriteLine(string.Format("{0,-30} | {1,10:F2} | {2,15:F2} ms | {3,15:F2} ms | {4,11:F2}x | {5,9:F1}x",
-                    r.Name, r.CpuMeanMs, r.NativeStats.Mean, r.GsharpStats.Mean, ratio, speedup));
+                var ratioE2E = r.NativeStatsE2E.Mean > 0 ? r.GsharpStatsE2E.Mean / r.NativeStatsE2E.Mean : 1.0;
+                var ratioPure = r.NativeStatsPure.Mean > 0 ? r.GsharpStatsPure.Mean / r.NativeStatsPure.Mean : 1.0;
+
+                var e2EStr = $"{r.NativeStatsE2E.Mean:F2} / {r.GsharpStatsE2E.Mean:F2}";
+                var pureStr = $"{r.NativeStatsPure.Mean:F2} / {r.GsharpStatsPure.Mean:F2}";
+
+                Console.WriteLine(string.Format(
+                    "{0,-25} | {1,9:F2} | {2,20:F2} | {3,20:F2} | {4,15:F2}x | {5,20:F2} | {6,15:F2}x",
+                    r.Name, r.CpuMeanMs, r.NativeStatsE2E.Mean, r.GsharpStatsE2E.Mean, ratioE2E, r.NativeStatsPure.Mean,
+                    r.GsharpStatsPure.Mean, ratioPure));
             }
             else
             {
-                Console.WriteLine(string.Format("{0,-30} | {1,10:F2} | {2,18} | {3,18} | {4,12} | {5,10}",
-                    r.Name, r.CpuMeanMs, "FAIL", "FAIL", "N/A", "N/A"));
+                Console.WriteLine(string.Format("{0,-25} | {1,9:F2} | {2,20} | {3,20} | {4,16} | {5,20} | {6,16}",
+                    r.Name, r.CpuMeanMs, "FAIL", "FAIL", "N/A", "FAIL", "FAIL", "N/A"));
             }
         }
-        Console.WriteLine("========================================================================================================================");
+
+        Console.WriteLine(
+            "=========================================================================================================================================");
 
         return allSucceeded;
+    }
+
+    private static (bool Success, BenchmarkStats Stats, string ErrorMessage) MeasureExecution(Action action,
+        int iterations)
+    {
+        var samples = new double[iterations];
+        try
+        {
+            action(); // Warmup
+            for (var i = 0; i < iterations; i++)
+            {
+                var sw = Stopwatch.StartNew();
+                action();
+                sw.Stop();
+                samples[i] = sw.Elapsed.TotalMilliseconds;
+            }
+
+            return (true, BenchmarkStats.Calculate(samples), string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return (false, default, ex.Message);
+        }
     }
 }
