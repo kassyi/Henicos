@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime.Aot;
+
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
 using System.Diagnostics;
@@ -73,11 +75,11 @@ public static class ComputeBenchmarkRunner
         }
 
         Console.WriteLine(
-            $"==========================================================================================");
+            "==========================================================================================");
         Console.WriteLine(
             $" Henicos / G# Compute Benchmark Suite ({benchmarks.Count} benchmarks, {iterations} iterations/sample)");
         Console.WriteLine(
-            $"==========================================================================================");
+            "==========================================================================================");
 
         var allSucceeded = true;
         var results = new List<BenchmarkResult>();
@@ -133,6 +135,7 @@ public static class ComputeBenchmarkRunner
 
             if (nativeSuccess && gsharpSuccess)
             {
+                using var ctx = new GpuKernelLoader.CudaContextScope();
                 try
                 {
                     benchmark.InitializeDeviceMemory();
