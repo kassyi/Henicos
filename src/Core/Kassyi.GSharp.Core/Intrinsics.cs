@@ -117,6 +117,15 @@ public static class GridDimension
 #pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
 public static class Gpu
 {
+    public static class Hint
+    {
+        /// <summary>
+        /// Instructs the GSharp Transpiler to emit a <c>#pragma unroll</c> directive immediately preceding the target loop.
+        /// </summary>
+        /// <param name="factor">The unroll factor limit. 0 means default unrolling.</param>
+        public static void Unroll(int factor = 0) { }
+    }
+
     /// <summary>
     /// Synchronizes all threads in the current block barrier (<c>__syncthreads()</c>).
     /// </summary>
