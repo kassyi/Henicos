@@ -326,6 +326,9 @@ public static class Gpu
 /// </summary>
 public static class Warp
 {
+#pragma warning disable IDE0051
+    // ReSharper disable UnusedMember.Global
+
     /// <summary>Exchanges an integer variable from a thread with a higher ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_down_sync")]
     public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
@@ -341,4 +344,7 @@ public static class Warp
     /// <summary>Exchanges a double-precision floating-point variable from a thread with a higher ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_down_sync")]
     public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32) => GpuOnlyException.Throw<double>();
+
+    // ReSharper restore UnusedMember.Global
+#pragma warning restore IDE0051
 }
