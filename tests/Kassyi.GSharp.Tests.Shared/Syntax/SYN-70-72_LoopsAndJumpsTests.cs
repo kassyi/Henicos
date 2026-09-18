@@ -14,14 +14,14 @@ public class SYN_70_72_LoopsAndJumpsTests
         Assert.Equal(100, output[0]);
     }
 
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-71")]
     [Trait("Category", "Syntax")]
     public void Test_SYN71_SwitchGotoCase_Transpilation()
     {
     }
 
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-72")]
     [Trait("Category", "Syntax")]
     public void Test_SYN72_NamedBreakGoto_Transpilation()

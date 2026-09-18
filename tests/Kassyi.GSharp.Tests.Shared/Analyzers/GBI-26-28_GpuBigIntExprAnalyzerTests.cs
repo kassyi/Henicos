@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests;
 
 public class GpuBigIntExprAnalyzerTests
