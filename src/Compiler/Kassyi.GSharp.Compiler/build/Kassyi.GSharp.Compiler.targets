@@ -59,7 +59,7 @@
 
     <!-- Run MSVC via the custom task -->
     <CompileCppToNativeTask 
-        Condition="'@(_GSharpCppSources)' != ''"
+        Condition="'@(_GSharpCppSources)' != '' And '$(GSharpSkipCpuCompilation)' != 'true' And '$(GSHARP_TEST_NO_CPU)' != '1'"
         CppSources="@(_GSharpCppSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpNativeDlls" 
         GSharpMultiTarget="$(GSharpMultiTarget)" >

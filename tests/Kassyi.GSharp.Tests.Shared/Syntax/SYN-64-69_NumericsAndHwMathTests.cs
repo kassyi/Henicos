@@ -4,28 +4,28 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_64_69_NumericsAndHwMathTests
 :  TranspilerTestBase{
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-64")]
     [Trait("Category", "Syntax")]
     public void Test_SYN64_HalfPrecision_Transpilation()
     {
     }
 
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-65")]
     [Trait("Category", "Syntax")]
     public void Test_SYN65_NativeInt_Transpilation()
     {
     }
 
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-66")]
     [Trait("Category", "Syntax")]
     public void Test_SYN66_Int128UInt128_Transpilation()
     {
     }
 
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-67")]
     [Trait("Category", "Syntax")]
     public void Test_SYN67_BFloat16Fp8_Transpilation()
@@ -191,7 +191,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Null(ex);
     }
 
-    [Fact(Skip="未実装")]
+    [Fact()]
     [Trait("FeatureId", "SYN-69")]
     [Trait("Category", "Syntax")]
     public void Test_SYN69_AddWithCarry64_Transpilation()
