@@ -35,6 +35,22 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                     return;
                 }
             }
+
+            if (MemberAccessExpressionTranspilerRule.TryEnsureNotProhibitedApi(symbol, node, ref context))
+            {
+                using (context.Writer.Parentheses())
+                {
+                    for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+                    {
+                        context.Visitor.Visit(node.ArgumentList.Arguments[i]);
+                        if (i < node.ArgumentList.Arguments.Count - 1)
+                        {
+                            context.Writer.AppendComma();
+                        }
+                    }
+                }
+                return;
+            }
         }
 
         context.Visitor.Visit(node.Expression);

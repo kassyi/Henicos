@@ -15,6 +15,14 @@ internal static class SymbolExtensions
             { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
         };
 
+    public static bool IsSystemNumerics(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: TypeConstants.NumericsNamespace,
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
+
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
         {
