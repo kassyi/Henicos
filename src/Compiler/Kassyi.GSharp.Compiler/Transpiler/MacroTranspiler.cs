@@ -315,7 +315,7 @@ internal static class MacroTranspiler
             var isFirst = true;
             var paramIndex = 0;
 
-            void AppendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
+            void appendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
             {
                 if (!isFirst)
                 {
@@ -349,24 +349,24 @@ internal static class MacroTranspiler
 
             if (hasContext)
             {
-                AppendArg(null, "ctx", ref context);
+                appendArg(null, "ctx", ref context);
             }
 
-            AppendArg(resultOp, null, ref context);
+            appendArg(resultOp, null, ref context);
 
             if (leftOp != null)
             {
-                AppendArg(leftOp, null, ref context);
+                appendArg(leftOp, null, ref context);
             }
 
             if (rightOp != null)
             {
-                AppendArg(rightOp, null, ref context);
+                appendArg(rightOp, null, ref context);
             }
 
             if (extraArg != null)
             {
-                AppendArg(extraArg, null, ref context);
+                appendArg(extraArg, null, ref context);
             }
         }
 
