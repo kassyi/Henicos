@@ -114,12 +114,9 @@ public static class YamlDialectGenerator
         }
 
         writer.Line("public override IEnumerable<string> RequiredHeaders => [");
-        using (writer.Scope())
+        foreach (var h in headers)
         {
-            foreach (var h in headers)
-            {
-                writer.Line($"\"{h}\",");
-            }
+            writer.Line($" \"{h}\",");
         }
 
         writer.Line("];");
