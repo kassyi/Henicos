@@ -1,4 +1,4 @@
-﻿namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_15_PoolStressTests
 :  TranspilerTestBase{

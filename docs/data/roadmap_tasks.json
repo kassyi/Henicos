@@ -106,7 +106,7 @@
     "title": "Local functions are unsupported",
     "domain": "GSH",
     "category": "Parsing / Syntax Analysis",
-    "status": "planned",
+    "status": "implemented",
     "metrics": {
       "blocker": 5,
       "difficulty": 3,
@@ -802,7 +802,7 @@
       10,
       15
     ],
-    "_searchableText": "gen11ptxoutputoptimizationviajitconstantandunrolling"
+    "_searchableText": "gen11ptxoutputoptimizationviaconstantandunrolling"
   },
   {
     "id": "GEN-12",
@@ -1106,7 +1106,7 @@
     "title": "Switch expression",
     "domain": "SYN",
     "category": "Control Syntax and Expression Level",
-    "status": "planned",
+    "status": "implemented",
     "metrics": {
       "blocker": 4,
       "difficulty": 2,
@@ -2447,7 +2447,7 @@
       "SYN-94"
     ],
     "pr": null,
-    "_searchableText": "syn29unrollcontrolvia[loopunroll(n)]attribute"
+    "_searchableText": "syn29unrollcontrolviagpu.forunrollextension(previously[loopunroll(n)])"
   },
   {
     "id": "SYN-30",
@@ -4269,7 +4269,7 @@
       "SYN-94"
     ],
     "pr": null,
-    "_searchableText": "syn63unsafe.nullref<t>()/isnullref"
+    "_searchableText": "syn63nullpointerassignmentsandchecksinunsafecontexts"
   },
   {
     "id": "SYN-64",
@@ -6183,7 +6183,7 @@
     "pr": [
       119
     ],
-    "_searchableText": "gbi01implementationofgsharpjitprovidermemorypool"
+    "_searchableText": "gbi01implementationofgsharpaotprovidermemorypool"
   },
   {
     "id": "GBI-02",
@@ -8113,7 +8113,7 @@
       "GEN-42"
     ],
     "pr": null,
-    "_searchableText": "gen37runtimeconstantexpansionofmacroargumentsusing[jitconstant]"
+    "_searchableText": "gen37runtimeconstantexpansionofmacroargumentsusing[constant]"
   },
   {
     "id": "GEN-38",
@@ -8200,7 +8200,7 @@
     "score": 32,
     "files": [],
     "pr": null,
-    "_searchableText": "gen40astexpansionofc#stringinterpolation($)ingpu.inlineptx"
+    "_searchableText": "gen40comprehensiveastexpansionofc#stringrepresentations(@,$,\"\"\")incompiletimecontexts(e.g.,gpu.inlineptx)"
   },
   {
     "id": "GEN-41",
@@ -8227,7 +8227,7 @@
       "GEN-37"
     ],
     "pr": null,
-    "_searchableText": "gen41ptxmacroexpansionofcompiletimeconstantsusinggpu.jitconstant(\"name\")"
+    "_searchableText": "gen41ptxmacroexpansionofcompiletimeconstantsusinggpu.constant(\"name\")"
   },
   {
     "id": "GSH-0007",
@@ -8301,7 +8301,7 @@
     "score": 34,
     "files": [],
     "pr": null,
-    "_searchableText": "gsh0009gsh0009:prohibitionofcombiningvarwithnumericliteralswithoutsuffixes"
+    "_searchableText": "gsh13gsh0009:prohibitionofcombiningvarwithnumericliteralswithoutsuffixes"
   },
   {
     "id": "GSH-12",
@@ -8324,7 +8324,7 @@
     "score": 33,
     "files": [],
     "pr": null,
-    "_searchableText": "gsh0012gsh0012/0006:compiletimeconstantandstringliteralconstraintsforgpumacroarguments"
+    "_searchableText": "gsh12gsh012/0006:compiletimeconstantandstringliteralconstraintsforgpumacroarguments"
   },
   {
     "id": "GEN-42",
