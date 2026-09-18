@@ -12,7 +12,17 @@ public class CompileTasksTests
 {
     static CompileTasksTests()
     {
-        MSBuildLocator.RegisterDefaults();
+        if (!MSBuildLocator.IsRegistered)
+        {
+            try
+            {
+                MSBuildLocator.RegisterDefaults();
+            }
+            catch
+            {
+                // Best-effort: ignore if already initialized or assemblies were pre-loaded
+            }
+        }
     }
 
     private class MockBuildEngine : IBuildEngine
