@@ -56,7 +56,7 @@ internal class Program
     private static int PrintUsage()
     {
         const string Usage = """
-            Henicos.PiBenchmark - High-Performance GPU & CPU Number Theory Suite
+            Henicos.Benchmarks - High-Performance GPU & CPU Number Theory Suite
 
             Usage: dotnet run -c Release -- <command> [options]
 
@@ -160,7 +160,7 @@ internal class Program
 
     private static int RunCpuPi(string[] args)
     {
-        Logger<Program>.Info("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
+        Logger<Program>.Info("Henicos.Benchmarks - Chudnovsky Binary Splitting (CPU Baseline)");
 
         var digits = args.Length > 0 ? ParseDigits(args[0]) : 10000;
 
