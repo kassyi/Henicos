@@ -53,6 +53,7 @@ public class GEN_01_09_GeneratorSadPathTests
     [Trait("Category", "SadPath")]
     [InlineData("GEN-33", "Analyzers/GEN-33_UnsupportedStructFieldsSadPath.cs")]
     [InlineData("SYN-91_92", "Analyzers/SYN-91_92_InvalidParenthesesSadPath.cs")]
+    [InlineData("GSH-03", "Analyzers/GSH-03_LocalFunctionCaptureSadPath.cs")]
     public async Task Test_GeneratorSadPath_HasErrors(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestGenerator(testCasePath)
