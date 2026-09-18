@@ -89,7 +89,10 @@ public sealed class GpuKernelLoader
 
     private readonly struct Hash256 : IEquatable<Hash256>
     {
-        public readonly ulong A, B, C, D;
+        private readonly ulong _a;
+        private readonly ulong _b;
+        private readonly ulong _c;
+        private readonly ulong _d;
 
         public Hash256(ReadOnlySpan<byte> span)
         {
@@ -98,19 +101,17 @@ public sealed class GpuKernelLoader
                 throw new ArgumentException("Span too short for Hash256", nameof(span));
             }
 
-            A = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
-            B = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
-            C = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
-            D = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
+            _a = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
+            _b = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
+            _c = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
+            _d = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
         }
 
-        public static implicit operator Hash256(string _) => default;
-
-        public bool Equals(Hash256 other) => A == other.A && B == other.B && C == other.C && D == other.D;
+        public bool Equals(Hash256 other) => _a == other._a && _b == other._b && _c == other._c && _d == other._d;
 
         public override bool Equals(object? obj) => obj is Hash256 other && Equals(other);
 
-        public override int GetHashCode() => HashCode.Combine(A, B, C, D);
+        public override int GetHashCode() => HashCode.Combine(_a, _b, _c, _d);
     }
 
     // AOT Cache uses Hash256 and KernelName to prevent collisions and avoid allocations
@@ -225,62 +226,6 @@ public sealed class GpuKernelLoader
         return lazyModule.Value.Function;
     }
 
-    private static GpuModule LoadKernelFunction(string ptxCode, string kernelName)
-    {
-        EnsureInitialized();
-
-        // Use the kernel name as the hash for raw PTX strings to keep it simple, or an empty string.
-        var cacheKey = ("", kernelName);
-
-        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
-        {
-            return lazyHit.Value;
-        }
-
-        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
-        {
-            using var scope = new CudaContextScope();
-            var moduleData = Encoding.UTF8.GetBytes(ptxCode + "\0");
-
-            // Re-use internal loading logic. For JIT compilation from PTX, we NEED the error log buffer!
-            // Wait, we need to pass options here!
-            return LoadKernelFunctionPtx(moduleData, kernelName);
-        }));
-
-        return lazyModule.Value;
-    }
-
-    private static unsafe GpuModule LoadKernelFunctionPtx(byte[] binaryData, string kernelName)
-    {
-        var errorLogBuffer = new byte[8192];
-        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
-        try
-        {
-            Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
-
-            fixed (byte* pError = errorLogBuffer)
-            {
-                nint errorSize = errorLogBuffer.Length;
-                IntPtr[] options = [5, 6]; // CU_JIT_ERROR_LOG_BUFFER, SIZE
-                IntPtr[] optionValues = [(IntPtr)pError, (IntPtr)(&errorSize)];
-
-                var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary,
-                    (uint)options.Length, options, optionValues);
-                if (loadResult != CUresult.CudaSuccess)
-                {
-                    var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
-                    throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult}:\nError: {errorLog}");
-                }
-
-                CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
-                return new GpuModule(module, hfunc);
-            }
-        }
-        finally
-        {
-            NativeMemory.AlignedFree(pAlignedBinary);
-        }
-    }
 
     private static unsafe GpuModule LoadKernelFunction(byte[] binaryData, string kernelName)
     {
