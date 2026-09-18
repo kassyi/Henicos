@@ -277,6 +277,45 @@ public static class Gpu
     [CudaIntrinsic("__shfl_xor_sync")]
     public static int ShflXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
 
+    /// <summary>Exchanges an integer variable from a thread with a higher ID relative to the caller.</summary>
+
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
+
+    /// <summary>Exchanges an unsigned integer variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
+
+    /// <summary>Exchanges a floating-point variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static float ShuffleDownSync(uint mask, float var, uint delta, int width = 32) => GpuOnlyException.Throw<float>();
+
+    /// <summary>Exchanges a double-precision floating-point variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32) => GpuOnlyException.Throw<double>();
+
     // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051
+}
+
+/// <summary>
+/// Provides GPU warp-level communication intrinsics.
+/// </summary>
+public static class Warp
+{
+    /// <summary>Exchanges an integer variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
+
+    /// <summary>Exchanges an unsigned integer variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
+
+    /// <summary>Exchanges a floating-point variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static float ShuffleDownSync(uint mask, float var, uint delta, int width = 32) => GpuOnlyException.Throw<float>();
+
+    /// <summary>Exchanges a double-precision floating-point variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32) => GpuOnlyException.Throw<double>();
 }
