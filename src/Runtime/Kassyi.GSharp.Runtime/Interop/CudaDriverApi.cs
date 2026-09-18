@@ -45,7 +45,7 @@ public enum CUresult
 }
 
 /// <summary>Exception thrown when a CUDA Driver API call returns a non-success status code.</summary>
-public class CudaException(CUresult result) : Exception($"CUDA Error: {result}")
+public class CudaException(CUresult result, string? message = null) : Exception(message ?? $"CUDA Error: {result}")
 {
     public CUresult Result { get; } = result;
 

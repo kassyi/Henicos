@@ -255,7 +255,7 @@ public sealed class GpuKernelLoader
                 if (loadResult != CUresult.CudaSuccess)
                 {
                     var errorLog = Encoding.UTF8.GetString(errorLogBuffer).TrimEnd('\0');
-                    throw new Exception($"cuModuleLoadDataEx failed with {loadResult}:\nError: {errorLog}");
+                    throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult}:\nError: {errorLog}");
                 }
 
                 CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
@@ -281,7 +281,7 @@ public sealed class GpuKernelLoader
             var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
             if (loadResult != CUresult.CudaSuccess)
             {
-                throw new Exception($"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
+                throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
             }
 
             CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));

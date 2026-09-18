@@ -47,12 +47,12 @@ public class GEN141_GpuKernelLoaderTests
         var invalidHash = System.Security.Cryptography.SHA256.HashData(invalidPtxBase);
         byte[] corruptedPtx = [.. invalidPtxBase, .. invalidHash];
 
-        // Loading corrupted/invalid PTX buffer should throw Exception (InvalidImage) when CudaException occurs
-        var ex = Assert.Throws<Exception>(() =>
+        // Loading corrupted/invalid PTX buffer should throw CudaException (CudaErrorInvalidImage)
+        var ex = Assert.Throws<CudaException>(() =>
         {
             GpuKernelLoader.LoadAotKernel(corruptedPtx, "non_existent_kernel");
         });
-        Assert.Contains("CudaErrorInvalidImage", ex.Message);
+        Assert.Equal(CUresult.CudaErrorInvalidImage, ex.Result);
     }
     
     [SkippableTheory]
