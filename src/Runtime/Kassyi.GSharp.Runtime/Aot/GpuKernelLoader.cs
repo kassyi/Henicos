@@ -5,7 +5,7 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
-/// Runtime JIT/AOT compilation engine that manages thread contexts and loads executable GPU modules.
+/// Runtime AOT compilation engine that manages thread contexts and loads executable GPU modules.
 /// </summary>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
 public sealed class GpuKernelLoader
@@ -207,7 +207,8 @@ public sealed class GpuKernelLoader
                 var decryptedHash = Convert.ToHexStringLower(SHA256.HashData(processed));
                 if (!string.Equals(decryptedHash, expectedHashString, StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new InvalidOperationException($"AOT Binary hash mismatch after decryption. Expected: {expectedHashString}");
+                    throw new InvalidOperationException(
+                        $"AOT Binary hash mismatch after decryption. Expected: {expectedHashString}");
                 }
             }
             else
@@ -240,7 +241,8 @@ public sealed class GpuKernelLoader
             var loadResult = CudaDriverApi.CuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
             if (loadResult != CUresult.CudaSuccess)
             {
-                throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
+                throw new CudaException(loadResult,
+                    $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
             }
 
             CudaException.ThrowIfError(CudaDriverApi.CuModuleGetFunction(out var hfunc, module, kernelName));
