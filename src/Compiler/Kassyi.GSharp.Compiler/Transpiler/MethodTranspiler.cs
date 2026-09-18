@@ -47,6 +47,16 @@ public static class MethodTranspiler
             throw new ArgumentNullException(nameof(semanticModel));
         }
 
+        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+        if (methodSymbol != null)
+        {
+            if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
+            {
+                return
+                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+            }
+        }
+
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
@@ -56,7 +66,6 @@ public static class MethodTranspiler
         ref var context = ref visitor.Context;
 
         context.Writer = bodyWriter;
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
         if (methodSymbol != null)
         {
             if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
@@ -164,7 +173,7 @@ public static class MethodTranspiler
         }
         else
         {
-            WriteKernelMethodPrefix(method, methodSymbol, ref context);
+            WriteKernelMethodPrefix(ref context);
         }
 
         context.Writer.Append($" {method.Identifier.Text}");
@@ -262,20 +271,12 @@ public static class MethodTranspiler
         return default;
     }
 
-    private static void WriteKernelMethodPrefix(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol,
-        ref TranspileContext context)
+    private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {
-        var returnType = methodSymbol?.ReturnType;
         // Auto-allocate feature: GpuKernel methods are now allowed to return values.
-
-        if (context.Dialect.IsCuda)
-        {
-            context.Writer.AppendKeyword("extern \"C\" __global__ void");
-        }
-        else
-        {
-            context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
-        }
+        context.Writer.AppendKeyword(context.Dialect.IsCuda
+            ? "extern \"C\" __global__ void"
+            : "extern \"C\" __declspec(dllexport) void");
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
@@ -382,11 +383,7 @@ public static class MethodTranspiler
                                  methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
         if (isKernelWithReturn)
         {
-            if (method.ParameterList.Parameters.Count > 0)
-            {
-                context.Writer.Append(", ");
-            }
-
+            context.Writer.Append(", ");
             context.AppendType(methodSymbol.ReturnType);
             context.Writer.Append("* __restrict__ __gsharp_auto_result");
         }
