@@ -45,8 +45,15 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
         finally
         {
-            if (leftResult.Value.IsTemp) context.ReturnTemp(leftResult.Value);
-            if (rightResult.Value.IsTemp) context.ReturnTemp(rightResult.Value);
+            if (leftResult.Value.IsTemp)
+            {
+                context.ReturnTemp(leftResult.Value);
+            }
+
+            if (rightResult.Value.IsTemp)
+            {
+                context.ReturnTemp(rightResult.Value);
+            }
         }
     }
 
@@ -144,7 +151,10 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : IGpuBig
         }
         finally
         {
-            if (targetEval.Value.IsTemp) context.ReturnTemp(targetEval.Value);
+            if (targetEval.Value.IsTemp)
+            {
+                context.ReturnTemp(targetEval.Value);
+            }
         }
     }
 }
