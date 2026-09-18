@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
+[assembly:
+    SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
+        Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -70,15 +72,15 @@ public static partial class CudaDriverApi
         ComputeCapabilityMinor = 76
     }
 
-    [LibraryImport(DllName)]
+    [LibraryImport(DllName, EntryPoint = "cuDeviceGetAttribute")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
+    public static partial CUresult CuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuInit(uint flags);
 
-    [LibraryImport(DllName)]
+    [LibraryImport(DllName, EntryPoint = "cuDeviceGet")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuDeviceGet(out int device, int ordinal);
 
@@ -104,27 +106,27 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxSetCurrent(IntPtr ctx);
 
-    [LibraryImport(DllName)]
+    [LibraryImport(DllName, EntryPoint = "cuCtxGetCurrent")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuCtxGetCurrent(out IntPtr pctx);
+    public static partial CUresult CuCtxGetCurrent(out IntPtr pctx);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxSynchronize();
 
-    [LibraryImport(DllName)]
+    [LibraryImport(DllName, EntryPoint = "cuModuleLoadDataEx")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
+    public static partial CUresult CuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 
-    [LibraryImport(DllName)]
+    [LibraryImport(DllName, EntryPoint = "cuModuleLoadDataEx")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuModuleLoadDataEx(out IntPtr module, IntPtr image, uint numOptions,
+    public static partial CUresult CuModuleLoadDataEx(out IntPtr module, IntPtr image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 
-    [LibraryImport(DllName, StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport(DllName, EntryPoint = "cuModuleGetFunction", StringMarshalling = StringMarshalling.Utf8)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
+    public static partial CUresult CuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
