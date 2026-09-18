@@ -111,11 +111,12 @@ public class GBI146_GpuBigIntegerTests
         GpuBigIntExpr divExpr = a / b;
         Assert.Equal(expectedNeg, divExpr.IsNegative);
 
-        using var dest = new GpuUIntBigInteger(context, 8);
-        using var evalMul = mulExpr.Evaluate(dest);
+        using var destMul = new GpuUIntBigInteger(context, 8);
+        using var evalMul = mulExpr.Evaluate(destMul);
         Assert.Equal(expectedNeg, evalMul.IsNegative);
 
-        using var evalDiv = divExpr.Evaluate(dest);
+        using var destDiv = new GpuUIntBigInteger(context, 4);
+        using var evalDiv = divExpr.Evaluate(destDiv);
         Assert.Equal(expectedNeg, evalDiv.IsNegative);
     }
 
