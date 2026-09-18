@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __global__ void LocalFunctionExpressionBodyKernel(int* __restrict__ data){
+public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __declspec(dllexport) void LocalFunctionExpressionBodyKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 auto Square = [&](int x) {
 return x*x;
@@ -21,124 +21,44 @@ return x*x;
 ;
 data[tid]=Square(data[tid]);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionExpressionBodyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+LocalFunctionExpressionBodyKernel(data);
+}
+}
 ";
-public static readonly string LocalFunctionExpressionBodyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LocalFunctionExpressionBodyKernel_Source;
+public static readonly string LocalFunctionExpressionBodyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LocalFunctionExpressionBodyKernel_Source;
 private static byte[]? s_decryptionKey_LocalFunctionExpressionBodyKernel;
 private static byte[]? s_binaryData_LocalFunctionExpressionBodyKernel;
 private static bool s_isLoaded_LocalFunctionExpressionBodyKernel;
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void LocalFunctionExpressionBodyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
 public static unsafe void Launch_LocalFunctionExpressionBodyKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_LocalFunctionExpressionBodyKernel)
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LocalFunctionExpressionBodyKernel = System.IO.File.ReadAllBytes(fatbinPath);
 s_decryptionKey_LocalFunctionExpressionBodyKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel.fatbin' was not found at '{fatbinPath}'.");
-}
 s_isLoaded_LocalFunctionExpressionBodyKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LocalFunctionExpressionBodyKernel, "LocalFunctionExpressionBodyKernel", s_decryptionKey_LocalFunctionExpressionBodyKernel);
-IntPtr d_data = IntPtr.Zero;
-try
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionExpressionBodyKernel_Delegate>("__gsharp_launch_LocalFunctionExpressionBodyKernel", dllPath, s_decryptionKey_LocalFunctionExpressionBodyKernel);
+fixed (global::System.Int32* p_data = data)
 {
-void** kernelParams = stackalloc void*[1];
-// Marshal array: data
-int data_size = data.Length * sizeof(global::System.Int32);
-if (data_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_data, p_data, data_size));
-}
-finally
-{
-handle_data.Free();
-}
-}
-kernelParams[0] = &d_data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: data
-if (data_size > 0 && d_data != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_data, d_data, data_size));
-}
-finally
-{
-handleBack_data.Free();
-}
-}
-}
-finally
-{
-if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_LocalFunctionExpressionBodyKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-if (!s_isLoaded_LocalFunctionExpressionBodyKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LocalFunctionExpressionBodyKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_LocalFunctionExpressionBodyKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LocalFunctionExpressionBodyKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LocalFunctionExpressionBodyKernel, "LocalFunctionExpressionBodyKernel", s_decryptionKey_LocalFunctionExpressionBodyKernel);
-try
-{
-void** kernelParams = stackalloc void*[1];
-// Marshal device array: data
-kernelParams[0] = &data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
@@ -161,7 +81,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __global__ void LocalFunctionValueReturnKernel(int* __restrict__ data, int bonus){
+public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __declspec(dllexport) void LocalFunctionValueReturnKernel(int* __restrict__ data, int bonus){
 int tid = threadIdx.x;
 auto ComputeTotal = [&](int val) {
 return val*3+bonus;
@@ -169,128 +89,44 @@ return val*3+bonus;
 ;
 data[tid]=ComputeTotal(data[tid]);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionValueReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int bonus)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+LocalFunctionValueReturnKernel(data, bonus);
+}
+}
 ";
-public static readonly string LocalFunctionValueReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LocalFunctionValueReturnKernel_Source;
+public static readonly string LocalFunctionValueReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LocalFunctionValueReturnKernel_Source;
 private static byte[]? s_decryptionKey_LocalFunctionValueReturnKernel;
 private static byte[]? s_binaryData_LocalFunctionValueReturnKernel;
 private static bool s_isLoaded_LocalFunctionValueReturnKernel;
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void LocalFunctionValueReturnKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data, global::System.Int32 bonus);
 public static unsafe void Launch_LocalFunctionValueReturnKernel(global::System.Int32[] data, global::System.Int32 bonus, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_LocalFunctionValueReturnKernel)
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LocalFunctionValueReturnKernel = System.IO.File.ReadAllBytes(fatbinPath);
 s_decryptionKey_LocalFunctionValueReturnKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel.fatbin' was not found at '{fatbinPath}'.");
-}
 s_isLoaded_LocalFunctionValueReturnKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LocalFunctionValueReturnKernel, "LocalFunctionValueReturnKernel", s_decryptionKey_LocalFunctionValueReturnKernel);
-IntPtr d_data = IntPtr.Zero;
-try
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionValueReturnKernel_Delegate>("__gsharp_launch_LocalFunctionValueReturnKernel", dllPath, s_decryptionKey_LocalFunctionValueReturnKernel);
+fixed (global::System.Int32* p_data = data)
 {
-void** kernelParams = stackalloc void*[2];
-// Marshal array: data
-int data_size = data.Length * sizeof(global::System.Int32);
-if (data_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_data, p_data, data_size));
-}
-finally
-{
-handle_data.Free();
-}
-}
-kernelParams[0] = &d_data;
-// Marshal scalar: bonus
-kernelParams[1] = &bonus;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: data
-if (data_size > 0 && d_data != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_data, d_data, data_size));
-}
-finally
-{
-handleBack_data.Free();
-}
-}
-}
-finally
-{
-if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_LocalFunctionValueReturnKernel_Device(IntPtr data, global::System.Int32 bonus, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-if (!s_isLoaded_LocalFunctionValueReturnKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LocalFunctionValueReturnKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_LocalFunctionValueReturnKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LocalFunctionValueReturnKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LocalFunctionValueReturnKernel, "LocalFunctionValueReturnKernel", s_decryptionKey_LocalFunctionValueReturnKernel);
-try
-{
-void** kernelParams = stackalloc void*[2];
-// Marshal device array: data
-kernelParams[0] = &data;
-// Marshal scalar: bonus
-kernelParams[1] = &bonus;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, bonus);
 }
 }
 #pragma warning restore CS8500
@@ -313,7 +149,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __global__ void LocalFunctionVoidKernel(int* __restrict__ data){
+public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __declspec(dllexport) void LocalFunctionVoidKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 auto MultiplyByTwo = [&]() {
 data[tid]=data[tid]*2;
@@ -321,124 +157,44 @@ data[tid]=data[tid]*2;
 ;
 MultiplyByTwo();
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionVoidKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+LocalFunctionVoidKernel(data);
+}
+}
 ";
-public static readonly string LocalFunctionVoidKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LocalFunctionVoidKernel_Source;
+public static readonly string LocalFunctionVoidKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LocalFunctionVoidKernel_Source;
 private static byte[]? s_decryptionKey_LocalFunctionVoidKernel;
 private static byte[]? s_binaryData_LocalFunctionVoidKernel;
 private static bool s_isLoaded_LocalFunctionVoidKernel;
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void LocalFunctionVoidKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
 public static unsafe void Launch_LocalFunctionVoidKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_LocalFunctionVoidKernel)
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LocalFunctionVoidKernel = System.IO.File.ReadAllBytes(fatbinPath);
 s_decryptionKey_LocalFunctionVoidKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel.fatbin' was not found at '{fatbinPath}'.");
-}
 s_isLoaded_LocalFunctionVoidKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LocalFunctionVoidKernel, "LocalFunctionVoidKernel", s_decryptionKey_LocalFunctionVoidKernel);
-IntPtr d_data = IntPtr.Zero;
-try
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionVoidKernel_Delegate>("__gsharp_launch_LocalFunctionVoidKernel", dllPath, s_decryptionKey_LocalFunctionVoidKernel);
+fixed (global::System.Int32* p_data = data)
 {
-void** kernelParams = stackalloc void*[1];
-// Marshal array: data
-int data_size = data.Length * sizeof(global::System.Int32);
-if (data_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_data, p_data, data_size));
-}
-finally
-{
-handle_data.Free();
-}
-}
-kernelParams[0] = &d_data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: data
-if (data_size > 0 && d_data != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_data, d_data, data_size));
-}
-finally
-{
-handleBack_data.Free();
-}
-}
-}
-finally
-{
-if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_LocalFunctionVoidKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-if (!s_isLoaded_LocalFunctionVoidKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LocalFunctionVoidKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_LocalFunctionVoidKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LocalFunctionVoidKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LocalFunctionVoidKernel, "LocalFunctionVoidKernel", s_decryptionKey_LocalFunctionVoidKernel);
-try
-{
-void** kernelParams = stackalloc void*[1];
-// Marshal device array: data
-kernelParams[0] = &data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
@@ -461,7 +217,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __global__ void MultiParamLocalFunctionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ result){
+public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __declspec(dllexport) void MultiParamLocalFunctionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ result){
 int tid = threadIdx.x;
 auto ClampAdd = [&](int val1, int val2, int minVal, int maxVal) {
 int sum = val1+val2;
@@ -478,194 +234,46 @@ return sum;
 ;
 result[tid]=ClampAdd(a[tid],b[tid],0,100);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_MultiParamLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ result)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+MultiParamLocalFunctionKernel(a, b, result);
+}
+}
 ";
-public static readonly string MultiParamLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MultiParamLocalFunctionKernel_Source;
+public static readonly string MultiParamLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MultiParamLocalFunctionKernel_Source;
 private static byte[]? s_decryptionKey_MultiParamLocalFunctionKernel;
 private static byte[]? s_binaryData_MultiParamLocalFunctionKernel;
 private static bool s_isLoaded_MultiParamLocalFunctionKernel;
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void MultiParamLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* result);
 public static unsafe void Launch_MultiParamLocalFunctionKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_MultiParamLocalFunctionKernel)
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_MultiParamLocalFunctionKernel = System.IO.File.ReadAllBytes(fatbinPath);
 s_decryptionKey_MultiParamLocalFunctionKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
 s_isLoaded_MultiParamLocalFunctionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MultiParamLocalFunctionKernel, "MultiParamLocalFunctionKernel", s_decryptionKey_MultiParamLocalFunctionKernel);
-IntPtr d_a = IntPtr.Zero;
-IntPtr d_b = IntPtr.Zero;
-IntPtr d_result = IntPtr.Zero;
-try
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MultiParamLocalFunctionKernel_Delegate>("__gsharp_launch_MultiParamLocalFunctionKernel", dllPath, s_decryptionKey_MultiParamLocalFunctionKernel);
+fixed (global::System.Int32* p_a = a)
+fixed (global::System.Int32* p_b = b)
+fixed (global::System.Int32* p_result = result)
 {
-void** kernelParams = stackalloc void*[3];
-// Marshal array: a
-int a_size = a.Length * sizeof(global::System.Int32);
-if (a_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, a_size));
-System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_a = handle_a.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_a, p_a, a_size));
-}
-finally
-{
-handle_a.Free();
-}
-}
-kernelParams[0] = &d_a;
-// Marshal array: b
-int b_size = b.Length * sizeof(global::System.Int32);
-if (b_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, b_size));
-System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_b = handle_b.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_b, p_b, b_size));
-}
-finally
-{
-handle_b.Free();
-}
-}
-kernelParams[1] = &d_b;
-// Marshal array: result
-int result_size = result.Length * sizeof(global::System.Int32);
-if (result_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_result, result_size));
-System.Runtime.InteropServices.GCHandle handle_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_result = handle_result.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_result, p_result, result_size));
-}
-finally
-{
-handle_result.Free();
-}
-}
-kernelParams[2] = &d_result;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: a
-if (a_size > 0 && d_a != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_a = handleBack_a.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_a, d_a, a_size));
-}
-finally
-{
-handleBack_a.Free();
-}
-}
-// Copy back array: b
-if (b_size > 0 && d_b != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_b = handleBack_b.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_b, d_b, b_size));
-}
-finally
-{
-handleBack_b.Free();
-}
-}
-// Copy back array: result
-if (result_size > 0 && d_result != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_result = handleBack_result.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_result, d_result, result_size));
-}
-finally
-{
-handleBack_result.Free();
-}
-}
-}
-finally
-{
-if (d_a != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_a);
-if (d_b != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_b);
-if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_result);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_MultiParamLocalFunctionKernel_Device(IntPtr a, IntPtr b, IntPtr result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-if (!s_isLoaded_MultiParamLocalFunctionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_MultiParamLocalFunctionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_MultiParamLocalFunctionKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_MultiParamLocalFunctionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MultiParamLocalFunctionKernel, "MultiParamLocalFunctionKernel", s_decryptionKey_MultiParamLocalFunctionKernel);
-try
-{
-void** kernelParams = stackalloc void*[3];
-// Marshal device array: a
-kernelParams[0] = &a;
-// Marshal device array: b
-kernelParams[1] = &b;
-// Marshal device array: result
-kernelParams[2] = &result;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_result);
 }
 }
 #pragma warning restore CS8500
@@ -688,7 +296,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __global__ void NestedLocalFunctionKernel(int* __restrict__ data){
+public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __declspec(dllexport) void NestedLocalFunctionKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 auto InnerAdd = [&](int a, int b) {
 return a+b;
@@ -701,124 +309,44 @@ return InnerAdd(doubled,10);
 ;
 data[tid]=OuterMultiplyAndAdd(data[tid]);
 }
+extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+{
+for (uint32_t bz = 0; bz < gridDimZ; bz++)
+for (uint32_t by = 0; by < gridDimY; by++)
+for (uint32_t bx = 0; bx < gridDimX; bx++)
+for (uint32_t tz = 0; tz < blockDimZ; tz++)
+for (uint32_t ty = 0; ty < blockDimY; ty++)
+for (uint32_t tx = 0; tx < blockDimX; tx++)
+{
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+NestedLocalFunctionKernel(data);
+}
+}
 ";
-public static readonly string NestedLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NestedLocalFunctionKernel_Source;
+public static readonly string NestedLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NestedLocalFunctionKernel_Source;
 private static byte[]? s_decryptionKey_NestedLocalFunctionKernel;
 private static byte[]? s_binaryData_NestedLocalFunctionKernel;
 private static bool s_isLoaded_NestedLocalFunctionKernel;
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+#pragma warning disable CS8500
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void NestedLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
 public static unsafe void Launch_NestedLocalFunctionKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_NestedLocalFunctionKernel)
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NestedLocalFunctionKernel = System.IO.File.ReadAllBytes(fatbinPath);
 s_decryptionKey_NestedLocalFunctionKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
 s_isLoaded_NestedLocalFunctionKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedLocalFunctionKernel, "NestedLocalFunctionKernel", s_decryptionKey_NestedLocalFunctionKernel);
-IntPtr d_data = IntPtr.Zero;
-try
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedLocalFunctionKernel_Delegate>("__gsharp_launch_NestedLocalFunctionKernel", dllPath, s_decryptionKey_NestedLocalFunctionKernel);
+fixed (global::System.Int32* p_data = data)
 {
-void** kernelParams = stackalloc void*[1];
-// Marshal array: data
-int data_size = data.Length * sizeof(global::System.Int32);
-if (data_size > 0)
-{
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_data, p_data, data_size));
-}
-finally
-{
-handle_data.Free();
-}
-}
-kernelParams[0] = &d_data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-// Copy back array: data
-if (data_size > 0 && d_data != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_data, d_data, data_size));
-}
-finally
-{
-handleBack_data.Free();
-}
-}
-}
-finally
-{
-if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
-}
-}
-}
-#pragma warning restore CS8500
-#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_NestedLocalFunctionKernel_Device(IntPtr data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
-{
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
-{
-if (!s_isLoaded_NestedLocalFunctionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NestedLocalFunctionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_NestedLocalFunctionKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NestedLocalFunctionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedLocalFunctionKernel, "NestedLocalFunctionKernel", s_decryptionKey_NestedLocalFunctionKernel);
-try
-{
-void** kernelParams = stackalloc void*[1];
-// Marshal device array: data
-kernelParams[0] = &data;
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-hfunc,
-gridDimX, gridDimY, gridDimZ, // Grid dim
-blockDimX, blockDimY, blockDimZ, // Block dim
-sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
-));
-}
-finally
-{
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
@@ -826,11 +354,11 @@ finally
 }
 
 
-// File: GSharpSharedCudaDeviceCode.g.cs
+// File: GSharpSharedCpuDeviceCode.g.cs
 // <auto-generated/>
 namespace Kassyi.GSharp.Generated
 {
-internal static class GSharpSharedCudaDeviceCode
+internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"";
 }
