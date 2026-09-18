@@ -21,7 +21,7 @@ public sealed class GpuKernelLoader
         public CudaContextScope()
         {
             EnsureInitialized();
-            CudaDriverApi.CuCtxGetCurrent(out _prevContext);
+            CudaDriverApi.cuCtxGetCurrent(out _prevContext);
             if (_prevContext != s_globalContext)
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxSetCurrent(s_globalContext));
@@ -238,14 +238,14 @@ public sealed class GpuKernelLoader
 
             // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
             // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
-            var loadResult = CudaDriverApi.CuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
+            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
             if (loadResult != CUresult.CudaSuccess)
             {
                 throw new CudaException(loadResult,
                     $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
             }
 
-            CudaException.ThrowIfError(CudaDriverApi.CuModuleGetFunction(out var hfunc, module, kernelName));
+            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
             return new GpuModule(module, hfunc);
         }
         finally
