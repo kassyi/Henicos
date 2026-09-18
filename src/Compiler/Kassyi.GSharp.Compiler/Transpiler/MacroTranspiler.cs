@@ -22,8 +22,19 @@ internal static class MacroTranspiler
     private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
-            symbol.ContainingType.Name != TypeConstants.GpuType ||
             !symbol.ContainingNamespace.IsCoreNamespace())
+        {
+            return false;
+        }
+
+        var typeName = symbol.ContainingType.Name;
+        if (typeName == "Hint" && symbol.ContainingType.ContainingType?.Name == TypeConstants.GpuType)
+        {
+            if (symbol.Name == "Unroll") return TranspileHintUnroll(invocation, ref context);
+            return false;
+        }
+
+        if (typeName != TypeConstants.GpuType)
         {
             return false;
         }
@@ -35,6 +46,31 @@ internal static class MacroTranspiler
             "SingleThread" => TranspileSingleThread(invocation, ref context),
             _ => false
         };
+    }
+
+    private static bool TranspileHintUnroll(InvocationExpressionSyntax invocation, ref TranspileContext context)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        int factor = 0;
+        if (args.Count > 0)
+        {
+            var constantValue = context.SemanticModel.GetConstantValue(args[0].Expression);
+            if (constantValue.HasValue && constantValue.Value is int intVal)
+            {
+                factor = intVal;
+            }
+        }
+
+        if (factor > 0)
+        {
+            context.Writer.AppendLine($"#pragma unroll {factor}");
+        }
+        else
+        {
+            context.Writer.AppendLine("#pragma unroll");
+        }
+        
+        return true;
     }
 
     private static bool TranspileForUnroll(InvocationExpressionSyntax invocation, ref TranspileContext context,
