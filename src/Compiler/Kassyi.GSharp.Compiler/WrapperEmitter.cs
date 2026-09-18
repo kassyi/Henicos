@@ -136,6 +136,7 @@ internal static class WrapperEmitter
         {
             WriteOutParameterDefaults(writer, method);
             WriteEmptyArrayGuards(writer, method);
+            WriteAutoResultAllocation(writer, method);
             WriteCpuDelegateGetOrCompile(writer, method, hasAesKey, keyProvider);
             WriteCpuFixedBlocksAndInvoke(writer, method);
         }
@@ -450,7 +451,6 @@ internal static class WrapperEmitter
 
             if (method.ReturnType.SpecialType != SpecialType.System_Void)
             {
-                WriteAutoResultAllocation(writer, method);
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(method.ReturnType);
                 writer.AppendLine("* p___gsharp_auto_result = __gsharp_auto_result)");
