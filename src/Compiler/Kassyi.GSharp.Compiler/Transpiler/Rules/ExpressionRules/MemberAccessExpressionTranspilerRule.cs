@@ -73,9 +73,9 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (symbol is
             {
                 ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
-                or TypeConstants.InterlockedType
+                or TypeConstants.InterlockedType or TypeConstants.BitOperationsType
             } &&
-            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading()))
+            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() || symbol.ContainingNamespace.IsSystemOrNumerics()))
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(
                 GSharpDiagnostics.UnsupportedSyntax,
