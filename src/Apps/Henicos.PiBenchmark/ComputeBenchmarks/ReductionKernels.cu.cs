@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Core;
-
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
 public static class ReductionKernels

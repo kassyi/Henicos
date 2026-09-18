@@ -1,5 +1,5 @@
 using System;
-using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime;
 
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
@@ -16,23 +16,23 @@ public static class Sha256Kernels
     private static uint Maj(uint x, uint y, uint z) => (x & y) ^ (x & z) ^ (y & z);
 
     [GpuDeviceFunction]
-    private static uint Sigma0(uint x) => RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22);
+    private static uint UpperSigma0(uint x) => RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22);
 
     [GpuDeviceFunction]
-    private static uint Sigma1(uint x) => RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25);
+    private static uint UpperSigma1(uint x) => RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25);
 
     [GpuDeviceFunction]
-    private static uint sigma0(uint x) => RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3);
+    private static uint LowerSigma0(uint x) => RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3);
 
     [GpuDeviceFunction]
-    private static uint sigma1(uint x) => RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
+    private static uint LowerSigma1(uint x) => RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
 
     [GpuKernel]
     public static void Sha256Kernel(byte[] input, uint[] output, int numMessages)
     {
         Gpu.GridStrideLoop(numMessages, tid =>
         {
-            Span<uint> K = stackalloc uint[64]
+            Span<uint> k = stackalloc uint[64]
             {
                 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
                 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -55,12 +55,12 @@ public static class Sha256Kernels
                 w[i] = (uint)(input[offset + i * 4] << 24) |
                        (uint)(input[offset + i * 4 + 1] << 16) |
                        (uint)(input[offset + i * 4 + 2] << 8) |
-                       (uint)(input[offset + i * 4 + 3]);
+                       input[offset + i * 4 + 3];
             }
 
             for (int i = 16; i < 64; i++)
             {
-                w[i] = sigma1(w[i - 2]) + w[i - 7] + sigma0(w[i - 15]) + w[i - 16];
+                w[i] = LowerSigma1(w[i - 2]) + w[i - 7] + LowerSigma0(w[i - 15]) + w[i - 16];
             }
 
             uint a = 0x6a09e667;
@@ -74,8 +74,8 @@ public static class Sha256Kernels
 
             for (int i = 0; i < 64; i++)
             {
-                uint t1 = h + Sigma1(e) + Ch(e, f, g) + K[i] + w[i];
-                uint t2 = Sigma0(a) + Maj(a, b, c);
+                uint t1 = h + UpperSigma1(e) + Ch(e, f, g) + k[i] + w[i];
+                uint t2 = UpperSigma0(a) + Maj(a, b, c);
                 h = g;
                 g = f;
                 f = e;
