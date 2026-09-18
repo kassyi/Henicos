@@ -525,7 +525,9 @@ internal static class WrapperEmitter
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
             writer.AppendLine(
-                "uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);");
+                "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
+            writer.AppendLine(
+                "uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }");
             writer.Append("var __gsharp_auto_result = new ");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
             writer.AppendLine("[__gsharp_total_threads];");
