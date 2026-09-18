@@ -196,6 +196,58 @@ public static unsafe void HistogramKernel(int* data, int* bins)
 }
 ```
 
+### Warp Shuffle Intrinsics (`Warp.ShuffleDownSync` / `Gpu.ShuffleDownSync`)
+
+Facilitates ultra-low latency, register-to-register communication between threads within the same warp without using Shared Memory or barrier synchronization.
+
+**Syntax**
+```csharp
+public static class Warp
+{
+    public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32);
+    public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width = 32);
+    public static float ShuffleDownSync(uint mask, float var, uint delta, int width = 32);
+    public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32);
+}
+```
+*(Also available via `Gpu.ShuffleDownSync` overloads).*
+
+**Remarks**
+* **Mapping**: Maps directly to CUDA's `__shfl_down_sync()` hardware intrinsic.
+* **Zero Shared Memory Overhead**: Threads exchange local register values directly through hardware warp communication, eliminating bank conflicts and `Gpu.SyncThreads()` barrier stalls.
+* **Parameters**:
+  * `mask`: 32-bit execution mask representing participating active threads (typically `0xFFFFFFFF` for all 32 warp lanes).
+  * `var`: The variable to read/transfer (supported for `int`, `uint`, `float`, `double`).
+  * `delta`: The lane ID offset to read from (`caller_lane + delta`). If `caller_lane + delta >= width`, the calling thread's own value is preserved.
+  * `width`: Sub-warp section width (defaults to `32`).
+* **Common Use Cases**:
+  * **Warp Reduction**: Tree reductions (sum, min, max) across 32 threads in 5 logarithmic steps ($\log_2 32$).
+  * **Stencil & Image Convolutions**: 1D horizontal convolutions and Gaussian blur kernels without apron/halo memory overhead.
+  * **AI & Deep Learning Kernels**: Attention score normalization in FlashAttention, fast row-reductions in Softmax and LayerNorm/RMSNorm.
+
+**Example: 32-Thread Warp Reduction Sum**
+```csharp
+[GpuKernel]
+public static unsafe void WarpReduceSumKernel(int* output, int* input)
+{
+    uint mask = 0xFFFFFFFF;
+    int val = input[ThreadIndex.X];
+
+    // Tree reduction across 32 threads using register shuffle
+    val += Warp.ShuffleDownSync(mask, val, 16);
+    val += Warp.ShuffleDownSync(mask, val, 8);
+    val += Warp.ShuffleDownSync(mask, val, 4);
+    val += Warp.ShuffleDownSync(mask, val, 2);
+    val += Warp.ShuffleDownSync(mask, val, 1);
+
+    // Lane 0 holds the aggregated warp sum
+    if (ThreadIndex.X == 0)
+    {
+        output[0] = val;
+    }
+}
+```
+
 ### `SharedMemory<T>` Struct
 
 Abstracts CUDA's `__shared__` memory space for ultra-fast, block-local data sharing.
@@ -244,10 +296,26 @@ public static void PtxDemo()
 }
 ```
 
+### Loop Unrolling Macros
+
+G# provides two distinct mechanisms for unrolling loops, each serving a different architectural purpose for performance tuning.
+
+* **`Gpu.ForUnroll(int start, int count, Action<int> body)`**: 
+  * **Purpose**: Performs *Compile-Time Constant Source Code Duplication*.
+  * **Usage**: Use this strictly when the loop variable (`i`) must be evaluated as a compile-time constant literal. This is required when passing the loop index to methods or structs that enforce strict constant evaluation (e.g., allocating statically sized `SharedMemory<T>`).
+  * **Caution**: Because this macro literally copies and pastes the loop body in the generated C++ source code, using it for loops with large iteration counts will drastically bloat the code and may crash the backend compiler. Additionally, executing this method on the C# CPU host allocates a delegate closure, which violates the zero-allocation principle.
+
+* **`Gpu.Hint.Unroll(int factor = 0)`**:
+  * **Purpose**: Emits a `#pragma unroll` directive for pure computational optimization.
+  * **Usage**: Highly recommended for pure calculation loops (like SGEMM or array index access) to increase Instruction-Level Parallelism (ILP). The NVIDIA NVCC compiler will optimally unroll the loop based on register availability.
+  * **Advantage**: It does not bloat the intermediate source code. Because it is a simple marker method, it guarantees zero closure allocations when executing the kernel natively on the C# CPU host for testing.
+
 ### `Gpu` Macro Methods
 
-The `Gpu` class provides high-level macro methods that are expanded directly into optimized C++ control flow or text by the transpiler.
+The `Gpu` class provides high-level macro methods and directives that are expanded directly into optimized C++ control flow, pragmas, or text by the transpiler.
 
+* **`Gpu.Hint.Unroll(int factor = 0)`**: Emits a `#pragma unroll` (or `#pragma unroll <factor>`) directive immediately preceding the target loop. Recommended for optimizing compute-heavy loops (e.g. SGEMM) for Instruction-Level Parallelism (ILP) without bloating source code or allocating closures on CPU host execution.
+* **`Gpu.ForUnroll(int start, int count, Action<int> body)`**: Duplicates the loop body at compile time across the specified range. Useful strictly when loop indices must be treated as compile-time constant literals (e.g., statically sized shared memory indexing).
 * **`Gpu.GridStrideLoop(int count, Action<int> body)`**: Expands into a standard CUDA grid-stride loop (`for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x * gridDim.x)`).
 * **`Gpu.SingleThread(Action body)`**: Wraps the body in a thread execution guard (`if (threadIdx.x == 0 && blockIdx.x == 0) { ... }`), ensuring the code runs only once per grid.
 * **`Gpu.Constant(string expression)`**: Directly injects the given string literal or identifier token as a raw C++ constant expression (e.g., `#define` text or enum values) into the transpiled source.
