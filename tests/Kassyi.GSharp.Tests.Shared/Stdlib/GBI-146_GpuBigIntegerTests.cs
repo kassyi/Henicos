@@ -157,6 +157,11 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(10, true, 5, false, 5, true)]   // (-10) + (+5) = -5
     [InlineData(5, true, 10, false, 5, false)]  // (-5) + (+10) = +5
     [InlineData(10, false, 10, true, 0, false)] // (+10) + (-10) = 0
+    [InlineData(uint.MaxValue, false, 1, true, uint.MaxValue - 1, false)] // Max + (-1) = Max - 1
+    [InlineData(1, false, uint.MaxValue, true, uint.MaxValue - 1, true)]  // 1 + (-Max) = -(Max - 1)
+    [InlineData(0, false, 0, true, 0, false)] // 0 + (-0) = 0
+    [InlineData(0xAAAAAAAA, false, 0x55555555, true, 0x55555555, false)] // 0xAAAAAAAA + (-0x55555555) = 0x55555555
+    [InlineData(0x55555555, false, 0xAAAAAAAA, true, 0x55555555, true)]  // 0x55555555 + (-0xAAAAAAAA) = -0x55555555
     public void Test_GBI146_SignedAdditionExpression_DifferentSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -213,6 +218,12 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(10, true, 5, true, 5, true)]     // (-10) - (-5) = -5
     [InlineData(5, true, 10, true, 5, false)]    // (-5) - (-10) = +5
     [InlineData(10, false, 10, false, 0, false)] // (+10) - (+10) = 0
+    [InlineData(uint.MaxValue, false, 1, false, uint.MaxValue - 1, false)]
+    [InlineData(1, false, uint.MaxValue, false, uint.MaxValue - 1, true)]
+    [InlineData(0, false, 0, false, 0, false)] // 0 - 0 = 0
+    [InlineData(0, true, 0, true, 0, false)]   // (-0) - (-0) = 0
+    [InlineData(0xAAAAAAAA, false, 0x55555555, false, 0x55555555, false)]
+    [InlineData(0x55555555, false, 0xAAAAAAAA, false, 0x55555555, true)]
     public void Test_GBI146_SignedSubtractionExpression_SameSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -259,5 +270,50 @@ public class GBI146_GpuBigIntegerTests
         using var destNot = new GpuUIntBigInteger(context, 4);
         using var evalNot = notExpr.Evaluate(destNot);
         Assert.False(evalNot.IsNegative);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBI-146")]
+    [Trait("Category", "SadPath")]
+    public void Test_GBI146_Evaluate_SadPaths_ThrowsAndReleasesBuffers()
+    {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+
+        using var uA_4 = GpuUIntBigInteger.FromBigInteger(context, 10, 4);
+        using var uB_4 = GpuUIntBigInteger.FromBigInteger(context, 0, 4); // For division by zero
+        using var uC_8 = GpuUIntBigInteger.FromBigInteger(context, 20, 8); // Unequal width
+
+        var a = new GpuBigInteger(uA_4, false);
+        var b = new GpuBigInteger(uB_4, false);
+        var c = new GpuBigInteger(uC_8, false);
+
+        GpuBigIntExpr exprAddUnequal = a + c;
+        
+        // 1. Unequal operand widths
+        Assert.Throws<ArgumentException>(() => exprAddUnequal.Evaluate(context));
+        
+        // 2. Incompatible destination widths
+        GpuBigIntExpr exprAdd = a + b;
+        using var invalidDest = new GpuUIntBigInteger(context, 8); // Should be 4
+        Assert.Throws<ArgumentException>(() => exprAdd.Evaluate(invalidDest));
+
+        // 3. Division by zero (verify temps are reused via loop)
+        GpuBigIntExpr exprDivZero = a / b;
+        using var destDiv = new GpuUIntBigInteger(context, 4);
+        
+        for (int i = 0; i < 100; i++)
+        {
+            Assert.Throws<DivideByZeroException>(() => exprDivZero.Evaluate(destDiv));
+        }
+        
+        // 4. Multiplication without explicit destination (allocates sum of widths correctly)
+        GpuBigIntExpr exprMul = a * b; // 4 + 4 = 8
+        using var mulResult = exprMul.Evaluate(context); // Rents temporary buffer
+        Assert.Equal(8, mulResult.Value.NumWords);
+        
+        using var uExpected = new GpuUIntBigInteger(context, 8);
+        Assert.Equal(0, mulResult.Value.CompareTo(uExpected)); // Is zero
     }
 }
