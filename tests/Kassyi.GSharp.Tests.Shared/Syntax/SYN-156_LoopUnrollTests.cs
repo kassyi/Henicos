@@ -109,6 +109,20 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
         Assert.Contains("#pragma unroll\nfor", cudaSource2.Replace("\r", ""));
     }
 
+    [Theory]
+    [InlineData("StatementUnrollFactor0", "#pragma unroll\nfor")]
+    [InlineData("StatementUnrollFactor1", "#pragma unroll 1\nfor")]
+    [InlineData("StatementUnrollFactor", "#pragma unroll 4\nfor")]
+    [InlineData("StatementUnrollFactorMax", "#pragma unroll 2147483647\nfor")]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "SYN-156")]
+    public void Test_SYN156_LoopUnrollFactor_BoundaryTheory(string methodName, string expectedCudaPattern)
+    {
+        var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
+        Assert.Empty(diagnostics);
+        Assert.Contains(expectedCudaPattern, cudaSource.Replace("\r", ""));
+    }
+
     [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "SYN-156")]
@@ -123,6 +137,38 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
         Assert.Empty(diagnostics2);
         Assert.Contains("#pragma unroll 4", cudaSource2);
         Assert.Contains("#pragma unroll 4\nfor", cudaSource2.Replace("\r", ""));
+    }
+
+    [Fact]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "SYN-156")]
+    public void Test_SYN156_LoopUnroll_NegativeFactor_ReportsDiagnostic()
+    {
+        var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollNegativeFactor");
+        Assert.Contains(diagnostics, d => d.Id == "GSH0016");
+        Assert.DoesNotContain("#pragma unroll", cudaSource);
+    }
+
+    [Fact]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "SYN-156")]
+    public void Test_SYN156_LoopUnroll_VariableFactor_ReportsDiagnostic()
+    {
+        var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollVariableFactor");
+        Assert.Contains(diagnostics, d => d.Id == "GSH0016");
+        Assert.DoesNotContain("#pragma unroll", cudaSource);
+    }
+
+    [Theory]
+    [InlineData("StatementUnrollMisplacedEnd")]
+    [InlineData("StatementUnrollMisplacedLast")]
+    [Trait("Category", "Syntax")]
+    [Trait("FeatureId", "SYN-156")]
+    public void Test_SYN156_LoopUnroll_MisplacedHint_ReportsDiagnostic(string methodName)
+    {
+        var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
+        Assert.Contains(diagnostics, d => d.Id == "GSH0017");
+        Assert.DoesNotContain("#pragma unroll", cudaSource);
     }
 
     [Fact]

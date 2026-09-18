@@ -67,4 +67,72 @@ public static class SYN_156_LoopUnrollStatements
             sum += 2;
         data[0] = sum;
     }
+
+    [GpuKernel]
+    public static void StatementUnrollFactor0(int[] data)
+    {
+        int sum = 0;
+        Gpu.Hint.Unroll(0);
+        for (int i = 0; i < 4; i++)
+            sum += i;
+        data[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void StatementUnrollFactor1(int[] data)
+    {
+        int sum = 0;
+        Gpu.Hint.Unroll(1);
+        for (int i = 0; i < 4; i++)
+            sum += i;
+        data[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void StatementUnrollFactorMax(int[] data)
+    {
+        int sum = 0;
+        Gpu.Hint.Unroll(int.MaxValue);
+        for (int i = 0; i < 4; i++)
+            sum += i;
+        data[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void StatementUnrollNegativeFactor(int[] data)
+    {
+        int sum = 0;
+        Gpu.Hint.Unroll(-1);
+        for (int i = 0; i < 4; i++)
+            sum += i;
+        data[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void StatementUnrollVariableFactor(int[] data)
+    {
+        int sum = 0;
+        int factor = 4;
+        Gpu.Hint.Unroll(factor);
+        for (int i = 0; i < 4; i++)
+            sum += i;
+        data[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void StatementUnrollMisplacedEnd(int[] data)
+    {
+        int sum = 0;
+        for (int i = 0; i < 4; i++)
+            sum += i;
+        Gpu.Hint.Unroll();
+        data[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void StatementUnrollMisplacedLast(int[] data)
+    {
+        data[0] = 1;
+        Gpu.Hint.Unroll();
+    }
 }

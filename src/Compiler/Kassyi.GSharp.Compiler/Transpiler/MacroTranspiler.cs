@@ -1,4 +1,6 @@
+using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
@@ -13,13 +15,14 @@ internal static class MacroTranspiler
     {
         return node.Expression switch
         {
-            InvocationExpressionSyntax invocation => TryTranspileInvocation(invocation, ref context),
+            InvocationExpressionSyntax invocation => TryTranspileInvocation(invocation, node, ref context),
             AssignmentExpressionSyntax assignment => TryTranspileAssignment(assignment, ref context),
             _ => false
         };
     }
 
-    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ref TranspileContext context)
+    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation,
+        ExpressionStatementSyntax statement, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
             !symbol.ContainingNamespace.IsCoreNamespace())
@@ -30,7 +33,7 @@ internal static class MacroTranspiler
         var typeName = symbol.ContainingType.Name;
         if (typeName == "Hint" && symbol.ContainingType.ContainingType?.Name == TypeConstants.GpuType)
         {
-            if (symbol.Name == "Unroll") return TranspileHintUnroll(invocation, ref context);
+            if (symbol.Name == "Unroll") return TranspileHintUnroll(invocation, statement, ref context);
             return false;
         }
 
@@ -48,17 +51,32 @@ internal static class MacroTranspiler
         };
     }
 
-    private static bool TranspileHintUnroll(InvocationExpressionSyntax invocation, ref TranspileContext context)
+    private static bool TranspileHintUnroll(InvocationExpressionSyntax invocation, ExpressionStatementSyntax statement,
+        ref TranspileContext context)
     {
+        if (!GpuMacroArgumentRule.PrecedesSupportedLoop(statement))
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+                invocation.GetLocation()));
+            return true;
+        }
+
         var args = invocation.ArgumentList.Arguments;
         int factor = 0;
         if (args.Count > 0)
         {
-            var constantValue = context.SemanticModel.GetConstantValue(args[0].Expression);
-            if (constantValue.HasValue && constantValue.Value is int intVal)
+            var factorExpr = args[0].Expression;
+            var constantValue = context.SemanticModel.GetConstantValue(factorExpr);
+            if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
             {
-                factor = intVal;
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
+                    factorExpr.GetLocation()));
+                return true;
             }
+
+            factor = intVal;
         }
 
         if (factor > 0)
@@ -69,7 +87,7 @@ internal static class MacroTranspiler
         {
             context.Writer.AppendLine("#pragma unroll");
         }
-        
+
         return true;
     }
 
@@ -263,7 +281,9 @@ internal static class MacroTranspiler
         }
 
         var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "GpuOperatorMacroAttribute" && a.AttributeClass.ContainingNamespace.IsCoreNamespace());
+            .FirstOrDefault(a =>
+                a.AttributeClass?.Name == "GpuOperatorMacroAttribute" &&
+                a.AttributeClass.ContainingNamespace.IsCoreNamespace());
 
         if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {
