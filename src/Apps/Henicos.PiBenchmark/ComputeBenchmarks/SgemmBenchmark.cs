@@ -1,15 +1,28 @@
+using Kassyi.GSharp.Runtime.Interop;
+
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
+
+using Kassyi.GSharp.Runtime;
 
 public class SgemmBenchmark : IComputeBenchmark
 {
     private const int N = 512; // 512x512 matrix
     private const int TileSize = 16;
 
+    private const uint GridDimX = (N + TileSize - 1) / TileSize;
+    private const uint GridDimY = (N + TileSize - 1) / TileSize;
+    private const uint BlockDimX = TileSize;
+    private const uint BlockDimY = TileSize;
+
     private float[] _a = null!;
     private float[] _b = null!;
     private float[] _cCpu = null!;
     private float[] _cGsharp = null!;
     private float[] _cNative = null!;
+
+    private GpuBuffer<float>? _dA;
+    private GpuBuffer<float>? _dB;
+    private GpuBuffer<float>? _dC;
 
     public string Name => "SGEMM (512x512)";
 
@@ -22,7 +35,7 @@ public class SgemmBenchmark : IComputeBenchmark
         _cNative = new float[N * N];
 
         var rand = new Random(42);
-        for (int i = 0; i < N * N; i++)
+        for (var i = 0; i < N * N; i++)
         {
             _a[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
             _b[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
@@ -31,12 +44,12 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void RunReferenceCpu()
     {
-        for (int row = 0; row < N; row++)
+        for (var row = 0; row < N; row++)
         {
-            for (int col = 0; col < N; col++)
+            for (var col = 0; col < N; col++)
             {
-                float sum = 0.0f;
-                for (int k = 0; k < N; k++)
+                var sum = 0.0f;
+                for (var k = 0; k < N; k++)
                 {
                     sum += _a[row * N + k] * _b[k * N + col];
                 }
@@ -48,31 +61,69 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void RunGSharp()
     {
-        uint gridDimX = (uint)((N + TileSize - 1) / TileSize);
-        uint gridDimY = (uint)((N + TileSize - 1) / TileSize);
-        uint blockDimX = TileSize;
-        uint blockDimY = TileSize;
-
         SgemmKernelsWrapper.Launch_SgemmKernel(
             _a, _b, _cGsharp, N,
-            gridDimX: gridDimX, gridDimY: gridDimY, blockDimX: blockDimX, blockDimY: blockDimY);
+            gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
     }
 
     public void RunNativeCuda()
     {
-        uint gridDimX = (uint)((N + TileSize - 1) / TileSize);
-        uint gridDimY = (uint)((N + TileSize - 1) / TileSize);
-        uint blockDimX = TileSize;
-        uint blockDimY = TileSize;
-
         NativeKernelInvoker.LaunchSgemm(
             _a, _b, _cNative, N,
-            gridDimX: gridDimX, gridDimY: gridDimY, blockDimX: blockDimX, blockDimY: blockDimY);
+            gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
+    }
+
+    public void InitializeDeviceMemory()
+    {
+        _dA = new GpuBuffer<float>(N * N);
+        _dB = new GpuBuffer<float>(N * N);
+        _dC = new GpuBuffer<float>(N * N);
+
+        _dA.CopyToDevice(_a);
+        _dB.CopyToDevice(_b);
+    }
+
+    public void CleanupDeviceMemory()
+    {
+        if (_dC != null)
+        {
+            _dC.CopyToHost(_cGsharp); // Get result for verification if needed
+        }
+
+        _dA?.Dispose();
+        _dB?.Dispose();
+        _dC?.Dispose();
+    }
+
+    public void RunGSharp_Pure()
+    {
+        if (_dA == null || _dB == null || _dC == null)
+        {
+            return;
+        }
+
+        SgemmKernelsWrapper.Launch_SgemmKernel_Device(
+            _dA.DevicePointer, _dB.DevicePointer, _dC.DevicePointer, N,
+            gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
+
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+    }
+
+    public void RunNativeCuda_Pure()
+    {
+        if (_dA == null || _dB == null || _dC == null)
+        {
+            return;
+        }
+
+        NativeKernelInvoker.LaunchSgemm_Device(
+            _dA.DevicePointer, _dB.DevicePointer, _dC.DevicePointer, N,
+            gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
     }
 
     public void Verify()
     {
-        for (int i = 0; i < N * N; i++)
+        for (var i = 0; i < N * N; i++)
         {
             if (Math.Abs(_cCpu[i] - _cGsharp[i]) > 1e-2f)
             {

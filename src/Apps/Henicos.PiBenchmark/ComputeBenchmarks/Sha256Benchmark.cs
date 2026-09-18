@@ -1,4 +1,9 @@
+using Kassyi.GSharp.Runtime.Interop;
+
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
+
+using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Generated;
 
 /// <summary>
 /// Benchmarks raw SHA-256 single-block transformation / compression function compute throughput.
@@ -25,6 +30,9 @@ public class Sha256Benchmark : IComputeBenchmark
     private uint[] _outputCpu = null!;
     private uint[] _outputGsharp = null!;
     private uint[] _outputNative = null!;
+
+    private GpuBuffer<byte>? _dInput;
+    private GpuBuffer<uint>? _dOutput;
 
     public string Name => "SHA-256 Compression Function (100k Blocks)";
 
@@ -59,6 +67,50 @@ public class Sha256Benchmark : IComputeBenchmark
         NativeKernelInvoker.LaunchSha256(
             _input, _outputNative, N,
             gridDimX: (uint)Blocks, blockDimX: ThreadsPerBlock);
+    }
+
+    public void InitializeDeviceMemory()
+    {
+        _dInput = new GpuBuffer<byte>(N * 64);
+        _dOutput = new GpuBuffer<uint>(N * 8);
+        _dInput.CopyToDevice(_input);
+    }
+
+    public void CleanupDeviceMemory()
+    {
+        if (_dOutput != null)
+        {
+            _dOutput.CopyToHost(_outputGsharp);
+        }
+
+        _dInput?.Dispose();
+        _dOutput?.Dispose();
+    }
+
+    public void RunGSharp_Pure()
+    {
+        if (_dInput == null || _dOutput == null)
+        {
+            return;
+        }
+
+        Sha256KernelsWrapper.Launch_Sha256Kernel_Device(
+            _dInput.DevicePointer, _dOutput.DevicePointer, N,
+            gridDimX: Blocks, blockDimX: ThreadsPerBlock);
+
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+    }
+
+    public void RunNativeCuda_Pure()
+    {
+        if (_dInput == null || _dOutput == null)
+        {
+            return;
+        }
+
+        NativeKernelInvoker.LaunchSha256_Device(
+            _dInput.DevicePointer, _dOutput.DevicePointer, N,
+            gridDimX: Blocks, blockDimX: ThreadsPerBlock);
     }
 
     public void Verify()
@@ -110,12 +162,12 @@ public class Sha256Benchmark : IComputeBenchmark
 
         for (var i = 0; i < 64; i++)
         {
-            var S1 = RotR(e, 6) ^ RotR(e, 11) ^ RotR(e, 25);
+            var s1 = RotR(e, 6) ^ RotR(e, 11) ^ RotR(e, 25);
             var ch = (e & f) ^ (~e & g);
-            var temp1 = h + S1 + ch + s_k[i] + w[i];
-            var S0 = RotR(a, 2) ^ RotR(a, 13) ^ RotR(a, 22);
+            var temp1 = h + s1 + ch + s_k[i] + w[i];
+            var s0 = RotR(a, 2) ^ RotR(a, 13) ^ RotR(a, 22);
             var maj = (a & b) ^ (a & c) ^ (b & c);
-            var temp2 = S0 + maj;
+            var temp2 = s0 + maj;
 
             h = g;
             g = f;
