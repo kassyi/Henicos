@@ -7,11 +7,14 @@ namespace Kassyi.GSharp.Runtime;
 /// Manages allocation and deallocation natively.
 /// </summary>
 /// <typeparam name="T">The unmanaged type of the elements in the buffer.</typeparam>
+// ReSharper disable UnusedType.Global
+// ReSharper disable UnusedMember.Global
 public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 {
     private IntPtr _devicePointer;
     private readonly int _length;
-    private readonly int _byteSize;
+    private readonly nint _byteSize;
+    private readonly IntPtr _owningContext;
     private bool _isDisposed;
 
     /// <summary>
@@ -36,10 +39,12 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         }
 
         _length = length;
-        _byteSize = length * sizeof(T);
-        
+        nint byteSize = checked((nint)length * sizeof(T));
+        _byteSize = byteSize;
+
         if (_byteSize > 0)
         {
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out _owningContext));
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out _devicePointer, _byteSize));
         }
     }
@@ -63,7 +68,8 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 
         fixed (T* ptr = source)
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, source.Length * sizeof(T)));
+            nint copySize = checked((nint)source.Length * sizeof(T));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, copySize));
         }
     }
 
@@ -86,28 +92,42 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 
         fixed (T* ptr = destination)
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, destination.Length * sizeof(T)));
+            nint copySize = checked((nint)destination.Length * sizeof(T));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, (IntPtr)copySize));
         }
     }
 
-    private void ReleaseUnmanagedResources()
+    private CUresult ReleaseUnmanagedResources()
     {
         if (_devicePointer != IntPtr.Zero)
         {
-            // Note: In a finalizer context, calling CUDA APIs might be dangerous if the context is already destroyed,
-            // but cuMemFree_v2 is generally safe if the driver is still active.
-            CudaDriverApi.cuMemFree_v2(_devicePointer);
+            CUresult res;
+            if (_owningContext != IntPtr.Zero)
+            {
+                CudaDriverApi.cuCtxPushCurrent_v2(_owningContext);
+                res = CudaDriverApi.cuMemFree_v2(_devicePointer);
+                CudaDriverApi.cuCtxPopCurrent_v2(out _);
+            }
+            else
+            {
+                res = CudaDriverApi.cuMemFree_v2(_devicePointer);
+            }
+
             _devicePointer = IntPtr.Zero;
+            return res;
         }
+
+        return CUresult.CudaSuccess;
     }
 
     public void Dispose()
     {
         if (!_isDisposed)
         {
-            ReleaseUnmanagedResources();
+            var res = ReleaseUnmanagedResources();
             _isDisposed = true;
             GC.SuppressFinalize(this);
+            CudaException.ThrowIfError(res);
         }
     }
 
@@ -115,7 +135,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     {
         if (!_isDisposed)
         {
-            ReleaseUnmanagedResources();
+            _ = ReleaseUnmanagedResources();
             _isDisposed = true;
         }
     }
