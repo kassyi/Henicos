@@ -33,8 +33,7 @@ internal static class MacroTranspiler
         var typeName = symbol.ContainingType.Name;
         if (typeName == "Hint" && symbol.ContainingType.ContainingType?.Name == TypeConstants.GpuType)
         {
-            if (symbol.Name == "Unroll") return TranspileHintUnroll(invocation, statement, ref context);
-            return false;
+            return symbol.Name == "Unroll" && TranspileHintUnroll(invocation, statement, ref context);
         }
 
         if (typeName != TypeConstants.GpuType)
@@ -63,7 +62,7 @@ internal static class MacroTranspiler
         }
 
         var args = invocation.ArgumentList.Arguments;
-        int factor = 0;
+        var factor = 0;
         if (args.Count > 0)
         {
             var factorExpr = args[0].Expression;
@@ -290,7 +289,7 @@ internal static class MacroTranspiler
             return false;
         }
 
-        return EmitMacroOperatorAssignment(assignment, rightNode, methodSymbol, macroAttr, ref context);
+        return EmitMacroOperatorAssignment(assignment, rightNode, macroAttr, ref context);
     }
 
     private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
@@ -312,14 +311,12 @@ internal static class MacroTranspiler
     private static bool EmitMacroOperatorAssignment(
         AssignmentExpressionSyntax assignment,
         ExpressionSyntax rightNode,
-        IMethodSymbol methodSymbol,
         AttributeData macroAttr,
         ref TranspileContext context)
     {
-        var targetType = macroAttr.ConstructorArguments[0].Value as INamedTypeSymbol;
-        var targetMethodName = macroAttr.ConstructorArguments[1].Value as string;
-
-        if (targetType == null || targetMethodName == null)
+        if (macroAttr.ConstructorArguments.Length < 2 ||
+            macroAttr.ConstructorArguments[0].Value is not INamedTypeSymbol targetType ||
+            macroAttr.ConstructorArguments[1].Value is not string targetMethodName)
         {
             return false;
         }
@@ -327,10 +324,19 @@ internal static class MacroTranspiler
         var expectedMethodParamsMin = rightNode is BinaryExpressionSyntax ? 3 : 2; // result + left + (right/extraArg)
         var expectedMethodParamsMax = expectedMethodParamsMin + 1; // + context
 
-        var targetMethods = targetType.GetMembers(targetMethodName).OfType<IMethodSymbol>().ToList();
-        var targetMethod = targetMethods.FirstOrDefault(m =>
-            m.Parameters.Length == expectedMethodParamsMin ||
-            (m.Parameters.Length == expectedMethodParamsMax && m.Parameters[0].Type.IsValueType));
+        IMethodSymbol? targetMethod = null;
+        foreach (var member in targetType.GetMembers(targetMethodName))
+        {
+            if (member is not IMethodSymbol m ||
+                (m.Parameters.Length != expectedMethodParamsMin &&
+                 (m.Parameters.Length != expectedMethodParamsMax || !m.Parameters[0].Type.IsValueType)))
+            {
+                continue;
+            }
+
+            targetMethod = m;
+            break;
+        }
 
         if (targetMethod == null)
         {
@@ -341,26 +347,17 @@ internal static class MacroTranspiler
             return false;
         }
 
-        ExpressionSyntax? leftOp = null;
-        ExpressionSyntax? rightOp = null;
-        ExpressionSyntax? extraArg = null;
-
-        if (rightNode is BinaryExpressionSyntax binaryExpr)
+        var (leftOp, rightOp, extraArg) = rightNode switch
         {
-            leftOp = binaryExpr.Left;
-            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression))
-            {
-                rightOp = binaryExpr.Right;
-            }
-            else
-            {
-                extraArg = binaryExpr.Right;
-            }
-        }
-        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
-        {
-            leftOp = unaryExpr.Operand;
-        }
+            BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.LeftShiftExpression,
+                    SyntaxKind.RightShiftExpression) =>
+                (binary.Left, null, (ExpressionSyntax?)binary.Right),
+            BinaryExpressionSyntax binary =>
+                (binary.Left, (ExpressionSyntax?)binary.Right, null),
+            PrefixUnaryExpressionSyntax unary =>
+                (unary.Operand, null, null),
+            _ => ((ExpressionSyntax?)null, (ExpressionSyntax?)null, (ExpressionSyntax?)null)
+        };
 
         var resultOp = assignment.Left;
 
@@ -383,12 +380,13 @@ internal static class MacroTranspiler
                 var param = targetMethod.Parameters[paramIndex++];
                 var isPointer = param.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
 
-                if (isPointer && rawString != null)
+                if (rawString != null)
                 {
-                    localContext.Writer.Append($"&{rawString}");
-                }
-                else if (rawString != null)
-                {
+                    if (isPointer)
+                    {
+                        localContext.Writer.Append('&');
+                    }
+
                     localContext.Writer.Append(rawString);
                 }
                 else if (expr != null)
@@ -396,7 +394,7 @@ internal static class MacroTranspiler
                     var isExprPointer = localContext.SemanticModel.GetTypeInfo(expr).Type is IPointerTypeSymbol;
                     if (isPointer && !isExprPointer)
                     {
-                        localContext.Writer.Append("&");
+                        localContext.Writer.Append('&');
                     }
 
                     localContext.Visitor.Visit(expr);
@@ -430,7 +428,3 @@ internal static class MacroTranspiler
         return true;
     }
 }
-
-
-
-
