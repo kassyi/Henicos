@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 
 #pragma warning disable IDE0051 // Unused member in interop definitions
+#pragma warning disable IDE1006 // Naming Styles
 // ReSharper disable UnusedMember.Global
 
 [assembly:
@@ -64,7 +65,7 @@ public class CudaException(CUresult result, string? message = null) : Exception(
 }
 
 /// <summary>P/Invoke bindings for NVIDIA CUDA Driver API functions (<c>nvcuda.dll</c> / <c>libcuda.so</c>).</summary>
-// ReSharper disable once InconsistentNaming -- P/Invoke matches native CUDA API naming
+// ReSharper disable InconsistentNaming
 public static partial class CudaDriverApi
 {
     private const string DllName = "nvcuda.dll";
@@ -75,15 +76,15 @@ public static partial class CudaDriverApi
         ComputeCapabilityMinor = 76
     }
 
-    [LibraryImport(DllName, EntryPoint = "cuDeviceGetAttribute")]
+    [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
+    public static partial CUresult cuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuInit(uint flags);
 
-    [LibraryImport(DllName, EntryPoint = "cuDeviceGet")]
+    [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuDeviceGet(out int device, int ordinal);
 
@@ -95,12 +96,10 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxDestroy_v2(IntPtr ctx);
 
-    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPushCurrent_v2(IntPtr ctx);
 
-    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPopCurrent_v2(out IntPtr pctx);
@@ -109,9 +108,9 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxSetCurrent(IntPtr ctx);
 
-    [LibraryImport(DllName, EntryPoint = "cuCtxGetCurrent")]
+    [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuCtxGetCurrent(out IntPtr pctx);
+    public static partial CUresult cuCtxGetCurrent(out IntPtr pctx);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
@@ -119,7 +118,7 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuEventCreate(out IntPtr phEvent, uint flags);
+    public static partial CUresult cuEventCreate(out IntPtr phEvent, uint flags);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
@@ -131,26 +130,26 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuEventElapsedTime(out float pMilliseconds, IntPtr hStart, IntPtr hEnd);
+    public static partial CUresult cuEventElapsedTime(out float pMilliseconds, IntPtr hStart, IntPtr hEnd);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuEventDestroy_v2(IntPtr hEvent);
 
 
-    [LibraryImport(DllName, EntryPoint = "cuModuleLoadDataEx")]
+    [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
+    public static partial CUresult cuModuleLoadDataEx(out IntPtr module, byte[] image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 
-    [LibraryImport(DllName, EntryPoint = "cuModuleLoadDataEx")]
+    [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuModuleLoadDataEx(out IntPtr module, IntPtr image, uint numOptions,
+    public static partial CUresult cuModuleLoadDataEx(out IntPtr module, IntPtr image, uint numOptions,
         IntPtr[]? options, IntPtr[]? optionValues);
 
-    [LibraryImport(DllName, EntryPoint = "cuModuleGetFunction", StringMarshalling = StringMarshalling.Utf8)]
+    [LibraryImport(DllName, StringMarshalling = StringMarshalling.Utf8)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult CuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
+    public static partial CUresult cuModuleGetFunction(out IntPtr hfunc, IntPtr hmod, string name);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
@@ -201,4 +200,4 @@ public static partial class CudaDriverApi
         IntPtr hStream,
         void** kernelParams);
 }
-
+// ReSharper restore InconsistentNaming

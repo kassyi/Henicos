@@ -12,8 +12,8 @@ public sealed class CudaEventTimer : IDisposable
     public CudaEventTimer()
     {
         // CU_EVENT_DEFAULT = 0x0
-        CudaException.ThrowIfError(CudaDriverApi.CuEventCreate(out _startEvent, 0));
-        CudaException.ThrowIfError(CudaDriverApi.CuEventCreate(out _endEvent, 0));
+        CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _startEvent, 0));
+        CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _endEvent, 0));
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public sealed class CudaEventTimer : IDisposable
     /// </summary>
     public float GetElapsedTimeMilliseconds()
     {
-        CudaException.ThrowIfError(CudaDriverApi.CuEventElapsedTime(out var ms, _startEvent, _endEvent));
+        CudaException.ThrowIfError(CudaDriverApi.cuEventElapsedTime(out var ms, _startEvent, _endEvent));
         return ms;
     }
 
