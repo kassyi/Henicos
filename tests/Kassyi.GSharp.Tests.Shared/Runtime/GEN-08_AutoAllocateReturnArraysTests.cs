@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 public class GEN_08_AutoAllocateReturnArraysTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "GpuExecution")]
     public void NormalReturnKernel_MultiThread_ReturnsExpectedArray()
@@ -20,7 +20,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
         Assert.All(result, x => Assert.Equal(20.0f, x));
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "GpuExecution")]
     public void OneThreadKernel_OneThread_ReturnsSingleElementArray()
@@ -33,7 +33,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
         Assert.Equal(42, result[0]);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "GpuExecution")]
     public void StructReturnKernel_BlittableStruct_ReturnsExpectedStructArray()
