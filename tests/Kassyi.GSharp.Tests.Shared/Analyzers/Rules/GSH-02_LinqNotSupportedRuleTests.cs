@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_02_LinqNotSupportedRuleTests

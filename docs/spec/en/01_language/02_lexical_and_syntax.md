@@ -56,3 +56,63 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 
 C# preprocessor directives (e.g., `#if`, `#define`) are **not** translated into CUDA C++ preprocessor directives. They are evaluated by the Roslyn compiler during the AOT phase.
 To inject C++ preprocessor macros (like `#define`) into the generated CUDA code, you must use the `[Constant]` attribute on kernel parameters.
+
+## 2.5 In-Depth Syntax Guides
+
+To help you write highly expressive and allocation-free GPU code, G# uniquely supports many modern C# features by lowering them into highly optimized CUDA C++ during the AOT transpilation phase.
+
+### 2.5.1 Switch Expressions
+
+Switch expressions provide a concise, expression-based way to implement pattern matching. G# fully supports switch expressions and automatically translates them into Immediately Invoked Function Expressions (IIFE) in C++ to guarantee zero-allocation and perfect execution on the GPU.
+
+**Example: Value and Relational Pattern Matching**
+```csharp
+[GpuKernel]
+public static void CategorizeValuesKernel(int[] input, float[] output)
+{
+    int tid = ThreadIndex.X;
+    int val = input[tid];
+    
+    // Switch expressions are natively supported on the GPU.
+    output[tid] = val switch
+    {
+        <= 0 => 0.0f,
+        1 => 3.14159f,
+        2 => 2.71828f,
+        _ => -1.0f
+    };
+}
+```
+
+> [!NOTE]
+> **Performance Characteristics**
+> The G# transpiler lowers switch expressions into an inline C++ lambda expression (`[&]() { ... }()`). The CUDA compiler (`nvcc`) aggressively inlines this during the PTX generation phase, resulting in branching logic with absolutely zero invocation overhead.
+
+### 2.5.2 Local Functions and Lambdas
+
+G# natively supports C# local functions and lambda expressions. They are highly effective for organizing complex math pipelines or algorithm steps without leaving the scope of the `[GpuKernel]`.
+
+**Example: Local Functions and Capturing Lambdas**
+```csharp
+[GpuKernel]
+public static void LocalMathKernel(int[] data, int factor)
+{
+    int tid = ThreadIndex.X;
+
+    // 1. Local functions are fully supported
+    int LocalAdd(int a, int b)
+    {
+        return a + b;
+    }
+
+    // 2. Value-capturing lambdas are safely transpiled
+    var multiply = (int x) => x * factor;
+
+    data[tid] = multiply(LocalAdd(data[tid], 100));
+}
+```
+
+> [!IMPORTANT]
+> **Closure Constraints**
+> Local functions and lambdas can freely capture local `struct` variables, primitive types, and kernel parameters. However, capturing managed reference types (classes) or performing actions that force a managed heap closure allocation is strictly prohibited and will trigger an AOT transpilation error.
+
