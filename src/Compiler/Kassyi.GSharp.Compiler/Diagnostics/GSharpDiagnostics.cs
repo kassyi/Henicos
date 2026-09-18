@@ -1,4 +1,6 @@
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Compiler.Diagnostics", Justification = "Public API exposed for compiler usage")]
+[assembly:
+    SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
+        Target = "Kassyi.GSharp.Compiler.Diagnostics", Justification = "Public API exposed for compiler usage")]
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
@@ -11,7 +13,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ObjectCreationNotSupported = new(
         id: "GSH0001",
         title: "Object creation not supported in GPU kernels",
-        messageFormat: "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
+        messageFormat:
+        "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -35,7 +38,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor KernelReturnMustBeVoidOrBlittable = new(
         id: "GSH0004",
         title: "GpuKernel return type must be void or blittable",
-        messageFormat: "Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.",
+        messageFormat:
+        "Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -43,7 +47,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor GpuBigIntExprDirectAssignment = new(
         id: "GSH0005",
         title: "GpuBigIntExpr must be assigned via .Value",
-        messageFormat: "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
+        messageFormat:
+        "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -59,7 +64,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ForeachNotSupported = new(
         id: "GSH0007",
         title: "Foreach is not allowed in GPU kernels",
-        messageFormat: "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead.",
+        messageFormat:
+        "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -75,7 +81,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ImplicitVarNeedsSuffix = new(
         id: "GSH0009",
         title: "Implicit var with literal needs suffix",
-        messageFormat: "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'.",
+        messageFormat:
+        "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -107,7 +114,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
         id: "GSH0013",
         title: "Excessive static shared memory usage",
-        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
+        messageFormat:
+        "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -115,7 +123,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
         id: "GSH0014",
         title: "Large struct passed by value",
-        messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+        messageFormat:
+        "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -123,7 +132,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
         id: "GSH0015",
         title: "Auto-allocated array in loop",
-        messageFormat: "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
+        messageFormat:
+        "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -144,6 +154,14 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor HostIntrinsicCallError = new(
+        id: "GSH0018",
+        title: "GPU intrinsic called from host",
+        messageFormat: "The GPU intrinsic '{0}' cannot be called from a host method",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static bool ValidateKernelReturnType(IMethodSymbol methodSymbol, Action<Diagnostic>? reportDiagnostic)
     {
         if (methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
@@ -156,14 +174,11 @@ public static class GSharpDiagnostics
             return true;
         }
 
-        if (reportDiagnostic != null)
-        {
-            reportDiagnostic(Diagnostic.Create(
-                KernelReturnMustBeVoidOrBlittable,
-                methodSymbol.Locations.FirstOrDefault() ?? Location.None,
-                methodSymbol.Name,
-                methodSymbol.ReturnType.ToDisplayString()));
-        }
+        reportDiagnostic?.Invoke(Diagnostic.Create(
+            KernelReturnMustBeVoidOrBlittable,
+            methodSymbol.Locations.FirstOrDefault() ?? Location.None,
+            methodSymbol.Name,
+            methodSymbol.ReturnType.ToDisplayString()));
 
         return false;
     }
