@@ -57,13 +57,22 @@ public static class SYN_154_WarpShuffleKernels
 
         if (lane < 16)
         {
-            val = Gpu.ShuffleDownSync(mask, val, 1);
+            mask = 0x0000FFFF;
+            val = Gpu.ShuffleDownSync(mask, val, 1, 16);
         }
         else
         {
-            val = Gpu.ShuffleDownSync(mask, val, 2);
+            mask = 0xFFFF0000;
+            val = Gpu.ShuffleDownSync(mask, val, 2, 16);
         }
 
         output[tid] = val;
+    }
+
+    [GpuKernel]
+    public static void WarpShuffleExtremaKernel(uint mask, int[] input, uint delta, int width, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        output[tid] = Gpu.ShuffleDownSync(mask, input[tid], delta, width);
     }
 }
