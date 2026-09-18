@@ -4,11 +4,11 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 /// <summary>Abstract base AST node representing a binary GPU BigInteger operation.</summary>
 internal abstract class BinaryExpression : IGpuBigUIntExpression
 {
-    protected IGpuBigUIntExpression Left
+    internal IGpuBigUIntExpression Left
     {
         get;
     }
-    protected IGpuBigUIntExpression Right
+    internal IGpuBigUIntExpression Right
     {
         get;
     }

@@ -1,4 +1,4 @@
-﻿
+
 namespace Kassyi.GSharp.Tests.Helpers;
 
 public class GEN_54_MegaCompilationCacheTests

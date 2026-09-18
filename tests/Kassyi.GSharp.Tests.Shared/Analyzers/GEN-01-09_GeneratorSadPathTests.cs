@@ -58,4 +58,13 @@ public class GEN_01_09_GeneratorSadPathTests
         await RoslynTestUtility.TestGenerator(testCasePath)
                                .HasErrorsAsync();
     }
+
+    [Fact]
+    [Trait("Category", "SadPath")]
+    [Trait("FeatureId", "GSH-03")]
+    public async Task Test_GSH03_LocalFunctionCapture_ReportsExpectedDiagnostic()
+    {
+        await RoslynTestUtility.TestGenerator("Analyzers/GSH-03_LocalFunctionCaptureSadPath.cs")
+                               .ReportsErrorsAsync("CS8421");
+    }
 }
