@@ -122,7 +122,13 @@ public static class Gpu
         /// <summary>
         /// Instructs the GSharp Transpiler to emit a <c>#pragma unroll</c> directive immediately preceding the target loop.
         /// </summary>
-        /// <param name="factor">The unroll factor limit. 0 means default unrolling.</param>
+        /// <param name="factor">The maximum number of iterations to unroll. A value of 0 indicates that the compiler should determine the optimal unroll factor heuristically.</param>
+        /// <remarks>
+        /// <para><b>Usage Scenario:</b></para>
+        /// <para>This method is highly recommended for optimizing pure computational loops (such as SGEMM or array traversals) to improve Instruction-Level Parallelism (ILP). It relies on the NVCC compiler to unroll the loop during the final backend compilation phase.</para>
+        /// <para><b>Comparison with <see cref="Gpu.ForUnroll(int, int, System.Action{int})"/>:</b></para>
+        /// <para>Unlike <c>ForUnroll</c>, which literally duplicates loop bodies in the intermediate C++ code (useful for generating compile-time constants), <c>Hint.Unroll</c> does not bloat the source code and prevents compiler crashes on large iteration counts. Furthermore, because it is a simple marker method, it guarantees zero closure allocations when executing the kernel purely on the C# CPU host for testing.</para>
+        /// </remarks>
         public static void Unroll(int factor = 0) { }
     }
 
@@ -216,11 +222,18 @@ public static class Gpu
     public static void InlinePtx(string ptx) => GpuOnlyException.Throw();
 
     /// <summary>
-    /// Transpilation macro that unrolls a loop body at compile-time across the specified range.
+    /// Transpilation macro that unrolls a loop body at compile-time by duplicating the source code across the specified range.
     /// </summary>
     /// <param name="start">The constant loop starting index.</param>
     /// <param name="count">The constant loop iteration count.</param>
     /// <param name="body">The loop body delegate.</param>
+    /// <remarks>
+    /// <para><b>Usage Scenario:</b></para>
+    /// <para>This method should be used strictly when the loop variable needs to be evaluated as a compile-time constant literal (e.g., <c>0</c>, <c>1</c>, <c>2</c>). This is essential when passing the index to methods that enforce strict constant evaluation, such as statically sized shared memory allocations.</para>
+    /// <para><b>Caution:</b></para>
+    /// <para>Because this macro performs literal source code duplication during transpilation, using it for loops with high iteration counts will drastically bloat the generated C++ code and may cause the backend compiler to crash. For general performance tuning and ILP improvements, use <see cref="Hint.Unroll(int)"/> instead.</para>
+    /// <para>Note that executing this method on the C# CPU host will inevitably allocate a delegate closure, which violates zero-allocation principles.</para>
+    /// </remarks>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static void ForUnroll(int start, int count, Action<int> body) => GpuOnlyException.Throw();
 
@@ -230,6 +243,7 @@ public static class Gpu
     /// <summary>
     /// Transpilation macro that unrolls a loop body at compile-time with context state propagation.
     /// </summary>
+    /// <inheritdoc cref="ForUnroll(int, int, System.Action{int})"/>
     public static void ForUnroll<TContext>(ref TContext ctx, int start, int count, UnrollAction<TContext> body) => GpuOnlyException.Throw();
 
     /// <summary>
