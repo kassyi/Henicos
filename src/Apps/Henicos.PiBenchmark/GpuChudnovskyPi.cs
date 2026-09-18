@@ -209,7 +209,8 @@ public static class GpuChudnovskyPi
         return gpuSqrtBase;
     }
 
-    private static GpuUIntBigInteger ComputeNumerator(GpuContext context, GpuUIntBigInteger gpuSqrtBase, GpuUIntBigInteger pqtQ)
+    private static GpuUIntBigInteger ComputeNumerator(GpuContext context, GpuUIntBigInteger gpuSqrtBase,
+        GpuUIntBigInteger pqtQ)
     {
         using var gpuSqrtResult = new GpuUIntBigInteger(context, gpuSqrtBase.NumWords);
         var swSqrt = Stopwatch.StartNew();

@@ -50,7 +50,7 @@ internal class Program
 
     private static int PrintUsage()
     {
-        const string usage = """
+        const string Usage = """
             Henicos.PiBenchmark - High-Performance GPU & CPU Number Theory Suite
 
             Usage: dotnet run -c Release -- <command> [options]
@@ -70,7 +70,7 @@ internal class Program
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
             """;
-        Logger<Program>.Info(usage);
+        Logger<Program>.Info(Usage);
         return 0;
     }
 
