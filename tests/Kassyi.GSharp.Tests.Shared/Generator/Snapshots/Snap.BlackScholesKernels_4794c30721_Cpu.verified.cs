@@ -54,14 +54,14 @@ public static unsafe void Launch_BlackScholesKernel(global::System.Single[] s, g
 if (s.Length == 0 || x.Length == 0 || t.Length == 0 || callResult.Length == 0 || putResult.Length == 0){
 return;
 }
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"BlackScholesKernels_BlackScholesKernel{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_BlackScholesKernel)
 {
 s_decryptionKey_BlackScholesKernel = null;
 s_isLoaded_BlackScholesKernel = true;
 }
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"BlackScholesKernels_BlackScholesKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_BlackScholesKernel", dllPath, s_decryptionKey_BlackScholesKernel);
 fixed (global::System.Single* p_s = s)
 fixed (global::System.Single* p_x = x)

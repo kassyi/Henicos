@@ -1,0 +1,80 @@
+﻿{
+  Diagnostics: [
+    {
+      Location: /*
+    [GpuKernel]
+    public static float[] ArrayKernel() => new float[0];
+                          ^^^^^^^^^^^
+
+*/
+ : (9,26)-(9,37),
+      Message: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0004,
+        Title: GpuKernel return type must be void or blittable,
+        MessageFormat: Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    [GpuKernel]
+    public static string StringKernel() => "";
+                         ^^^^^^^^^^^^
+
+*/
+ : (13,25)-(13,37),
+      Message: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0004,
+        Title: GpuKernel return type must be void or blittable,
+        MessageFormat: Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    [GpuKernel]
+    public static ManagedStruct ManagedStructKernel() => default;
+                                ^^^^^^^^^^^^^^^^^^^
+
+*/
+ : (27,32)-(27,51),
+      Message: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0004,
+        Title: GpuKernel return type must be void or blittable,
+        MessageFormat: Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    },
+    {
+      Location: /*
+    [GpuKernel]
+    public static ReadOnlySpan<float> SpanKernel() => default;
+                                      ^^^^^^^^^^
+}
+*/
+ : (31,38)-(31,48),
+      Message: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.,
+      Severity: Error,
+      Descriptor: {
+        Id: GSH0004,
+        Title: GpuKernel return type must be void or blittable,
+        MessageFormat: Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}

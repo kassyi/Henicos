@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
 public static class ComputeBenchmarkRunner

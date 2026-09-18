@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Dialects;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -46,6 +47,16 @@ public static class MethodTranspiler
             throw new ArgumentNullException(nameof(semanticModel));
         }
 
+        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+        if (methodSymbol != null)
+        {
+            if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
+            {
+                return
+                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+            }
+        }
+
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
@@ -55,7 +66,6 @@ public static class MethodTranspiler
         ref var context = ref visitor.Context;
 
         context.Writer = bodyWriter;
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
         if (methodSymbol != null)
         {
             if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
@@ -118,6 +128,16 @@ public static class MethodTranspiler
             throw new ArgumentNullException(nameof(semanticModel));
         }
 
+        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+        if (methodSymbol != null)
+        {
+            if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
+            {
+                return
+                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+            }
+        }
+
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
@@ -153,13 +173,27 @@ public static class MethodTranspiler
         }
         else
         {
-            WriteKernelMethodPrefix(method, methodSymbol, ref context);
+            WriteKernelMethodPrefix(ref context);
         }
 
         context.Writer.Append($" {method.Identifier.Text}");
         using (context.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
+
+            if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
+                methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
+            {
+                return;
+            }
+
+            if (method.ParameterList.Parameters.Count > 0)
+            {
+                context.Writer.Append(", ");
+            }
+
+            context.AppendType(methodSymbol.ReturnType);
+            context.Writer.Append("* __restrict__ __gsharp_auto_result");
         }
     }
 
@@ -196,28 +230,23 @@ public static class MethodTranspiler
 
         foreach (var attr in methodSymbol.GetAttributes())
         {
-            if (attr.IsAttribute(KnownAttributes.GpuInline))
+            var keyword = attr.AttributeClass?.Name switch
             {
-                return "__forceinline__";
-            }
+                KnownAttributes.GpuInline or KnownAttributes.GpuInline + "Attribute" => "__forceinline__",
+                KnownAttributes.GpuNoInline or KnownAttributes.GpuNoInline + "Attribute" => "__noinline__",
+                KnownAttributes.MethodImpl or KnownAttributes.MethodImpl + "Attribute" => ExtractMethodImplOptions(attr)
+                    switch
+                    {
+                        var opt when (opt & MethodImplOptions.AggressiveInlining) != 0 => "__forceinline__",
+                        var opt when (opt & MethodImplOptions.NoInlining) != 0 => "__noinline__",
+                        _ => null
+                    },
+                _ => null
+            };
 
-            if (attr.IsAttribute(KnownAttributes.GpuNoInline))
+            if (keyword != null)
             {
-                return "__noinline__";
-            }
-
-            if (attr.IsAttribute(KnownAttributes.MethodImpl))
-            {
-                var options = ExtractMethodImplOptions(attr);
-                if ((options & MethodImplOptions.AggressiveInlining) != 0)
-                {
-                    return "__forceinline__";
-                }
-
-                if ((options & MethodImplOptions.NoInlining) != 0)
-                {
-                    return "__noinline__";
-                }
+                return keyword;
             }
         }
 
@@ -242,44 +271,49 @@ public static class MethodTranspiler
         return default;
     }
 
-    private static void WriteKernelMethodPrefix(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol,
-        ref TranspileContext context)
+    private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {
-        var returnType = methodSymbol?.ReturnType;
-        if (returnType is { SpecialType: not SpecialType.System_Void })
-        {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.KernelReturnMustBeVoid,
-                method.ReturnType.GetLocation(), method.Identifier.Text, returnType.Name));
-        }
-
-        if (context.Dialect.IsCuda)
-        {
-            context.Writer.AppendKeyword("extern \"C\" __global__ void");
-        }
-        else
-        {
-            context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
-        }
+        // Auto-allocate feature: GpuKernel methods are now allowed to return values.
+        context.Writer.AppendKeyword(context.Dialect.IsCuda
+            ? "extern \"C\" __global__ void"
+            : "extern \"C\" __declspec(dllexport) void");
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
     {
         using (context.Writer.Scope())
         {
+            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+            var isKernelWithReturn = methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+                                     methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
+
+            if (isKernelWithReturn)
+            {
+                context.Writer.AppendLine(
+                    "unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
+                    " * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
+            }
+
             if (method.Body != null)
             {
                 context.Visitor.Visit(method.Body);
             }
             else if (method.ExpressionBody != null)
             {
-                var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
                 if (methodSymbol is { ReturnsVoid: false })
                 {
-                    context.Writer.Append("return ");
+                    context.Writer.Append(isKernelWithReturn
+                        ? "__gsharp_auto_result[__gsharp_global_tid] = "
+                        : "return ");
                 }
 
                 context.Visitor.Visit(method.ExpressionBody.Expression);
                 context.Writer.AppendSemiColonLine();
+
+                if (isKernelWithReturn)
+                {
+                    context.Writer.AppendKeyword("return").AppendSemiColonLine();
+                }
             }
         }
     }
@@ -344,6 +378,16 @@ public static class MethodTranspiler
         }
 
         WriteParameters(method.ParameterList.Parameters, false, ref context);
+
+        var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+                                 methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
+        if (isKernelWithReturn)
+        {
+            context.Writer.Append(", ");
+            context.AppendType(methodSymbol.ReturnType);
+            context.Writer.Append("* __restrict__ __gsharp_auto_result");
+        }
+
         context.Writer.AppendLine(")");
 
         using (context.Writer.Scope())
@@ -356,11 +400,11 @@ public static class MethodTranspiler
             context.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
             using (context.Writer.Scope())
             {
-                context.Writer.AppendLine("__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
+                context.Writer.AppendLine(
+                    "__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
                 context.Writer.Append(method.Identifier.Text);
                 using (context.Writer.Parentheses())
                 {
-                    var semanticModel = context.SemanticModel;
                     var isFirst = true;
 
                     foreach (var parameter in method.ParameterList.Parameters)
@@ -369,11 +413,23 @@ public static class MethodTranspiler
                         {
                             context.Writer.AppendComma().AppendSpace();
                         }
+
                         isFirst = false;
 
                         context.Writer.Append(parameter.Identifier.Text);
                     }
+
+                    if (isKernelWithReturn)
+                    {
+                        if (!isFirst)
+                        {
+                            context.Writer.AppendComma().AppendSpace();
+                        }
+
+                        context.Writer.Append("__gsharp_auto_result");
+                    }
                 }
+
                 context.Writer.AppendSemiColonLine();
             }
         }

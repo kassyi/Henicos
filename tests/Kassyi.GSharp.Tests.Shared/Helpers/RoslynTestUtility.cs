@@ -244,6 +244,13 @@ public class AnalyzerTestConfig
         return await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, _analyzer, TargetDialect);
     }
 
+    /// <summary>Asserts that running the analyzer reports zero diagnostics.</summary>
+    public async Task ReportsNoDiagnosticsAsync()
+    {
+        var diagnostics = await GetDiagnosticsAsync();
+        Assert.Empty(diagnostics);
+    }
+
     /// <summary>Asserts that the analyzer produces at least one error-level diagnostic.</summary>
     public async Task HasErrorsAsync()
     {

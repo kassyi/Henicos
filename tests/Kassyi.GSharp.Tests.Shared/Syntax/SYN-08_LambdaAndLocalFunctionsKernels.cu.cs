@@ -47,4 +47,20 @@ public static class SYN_08_LambdaAndLocalFunctionsKernels
         };
         data[tid] = calc(data[tid]) + value; // calc(100) + 50
     }
+
+    [GpuKernel]
+    public static float NestedReturnsKernel(int someValue)
+    {
+        // Local function with return
+        float LocalAdd(float a, float b)
+        {
+            return a + b;
+        }
+
+        var doubleValue = (float x) => {
+            return x * 2;
+        };
+
+        return LocalAdd(someValue, doubleValue(someValue));
+    }
 }
