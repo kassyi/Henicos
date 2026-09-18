@@ -50,8 +50,5 @@ public readonly struct GpuBigIntExpr
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
     /// <returns>A new <see cref="GpuBigInteger"/> instance wrapping the destination buffer with the evaluated sign.</returns>
-    public GpuBigInteger Evaluate(GpuUIntBigInteger destination)
-    {
-        return Node.Evaluate(destination.Context, destination);
-    }
+    public GpuBigInteger Evaluate(GpuUIntBigInteger destination) => Node.Evaluate(destination.Context, destination);
 }
