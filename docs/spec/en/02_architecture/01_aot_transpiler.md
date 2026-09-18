@@ -52,14 +52,22 @@ Both dialects share core responsibilities like converting C# `ref` to C++ pointe
 
 * **Future-Proof Extensibility**: Because of this decoupling, G# can easily "speak" different languages. By simply defining a new dialect (e.g., `OpenCLDialect`, `MetalDialect`, or `HlslDialect`) and swapping the `ITranspilerDialect` implementation, the exact same C# kernel can be natively compiled for AMD, Apple Silicon, or DirectX backends without rewriting the core AST transpilation engine.
 
-## 1.3 Explicit Output Buffer Contract
+## 1.3 Output Buffer Contract & Auto-Allocation
 
-Unlike standard C# methods, `[GpuKernel]` methods are strictly required to return `void`. This enforces the G# Zero-Allocation philosophy by prohibiting implicit array allocations on the host.
+Traditionally, standard C# methods can return arbitrary values, while GPU kernels are required to return `void`. G# bridges this gap by offering two approaches to outputting data:
 
-Instead, developers must use the **Explicit Output Buffer Contract**:
+**1. Explicit Output Buffer Contract (`void` kernels)**
+This is the recommended approach for strict Zero-Allocation environments:
 1. Allocate an output array (e.g., `float[] results`) on the host.
 2. Pass it directly into the generated `Launch_` wrapper.
 3. The transpiler seamlessly maps this array to a device pointer and copies the mutated data back to the host after execution.
+
+**2. Auto-Allocated Returns (Value/Array returning kernels)**
+For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types or single-dimensional arrays. When a kernel specifies a non-void return type:
+1. The `Launch_` method dynamically allocates an output array of size `gridDim * blockDim` on the host.
+2. Under the hood, the transpiler injects an implicit `__gsharp_auto_result` device pointer into the kernel signature.
+3. Each thread evaluates the `return` statement and assigns the result directly into `__gsharp_auto_result[tid]`.
+4. The populated array is returned directly by the `Launch_` wrapper.
 
 ## 1.4 Stub Emission (`GpuKernelGenerator`)
 

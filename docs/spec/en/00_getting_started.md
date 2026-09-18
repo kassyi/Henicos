@@ -116,41 +116,37 @@ public class Program
 
 ---
 
-## 0.3 The Explicit Output Buffer Pattern
+## 0.3 Returning Data from Kernels (Auto-Allocation & Explicit Buffers)
 
-Traditional CUDA kernels must return `void`. G# enforces this same contract. To return values from a kernel, you allocate an output buffer (array) on the host and pass it directly to the generated launcher.
+Traditional CUDA kernels must return `void`. While G# supports this (and it is recommended for maximum control), G# introduces a powerful feature: **Auto-Allocated Returns**.
+
+If your `[GpuKernel]` returns a value type (e.g., `float`, `int`, `struct`) or an array, the transpiler will automatically convert this into an explicit output buffer under the hood. The `Launch_` method will dynamically allocate an array of size `gridDim * blockDim` (one element per thread) and return it to you!
 
 ```csharp
 [GpuKernel]
-public static void ComputeMagnitude(PhysicsVector[] particles, float[] output, int length)
+public static float ComputeMagnitude(PhysicsVector[] particles)
 {
     int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
-    if (tid < length)
-    {
-        var p = particles[tid];
-        output[tid] = MathF.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
-    }
+    var p = particles[tid];
+    
+    // Each thread simply returns its calculated value!
+    return MathF.Sqrt(p.X * p.X + p.Y * p.Y + p.Z * p.Z);
 }
 ```
 
-On the host side, you simply allocate the array and pass it to the `Launch_` method, and the GPU populates it directly!
+On the host side, you simply call the `Launch_` method. G# automatically allocates the array for you and populates it with each thread's result:
 
 ```csharp
-// 1. Allocate an array exactly matching the total items to process
-float[] magnitudes = new float[25600];
-
-// 2. Pass the output array to the generated Launch_ wrapper
-MathKernels.Launch_ComputeMagnitude(
+// The generated Launch_ method returns a float[] sized exactly to the total thread count!
+float[] magnitudes = MathKernels.Launch_ComputeMagnitude(
     particles: particlesArray,
-    output: magnitudes,
-    length: 25600,
     gridDimX: 100,
-    blockDimX: 256
+    blockDimX: 256  // Returns a float[25600]
 );
 ```
 
 > [!WARNING]
-> Ensure your output array is sized correctly for your calculation, and avoid reallocating it inside a hot game loop (e.g., `Update()`). Pre-allocate output buffers once to adhere to **Zero-Allocation** best practices.
+> While Auto-Allocation is incredibly convenient for prototyping and rapid development, allocating large arrays during hot game loops (e.g., `Update()`) can trigger Managed Heap Garbage Collection (GC) pauses. For performance-critical code, it is recommended to fallback to the **Explicit Output Buffer Pattern** by passing pre-allocated arrays to `void` returning kernels to adhere to strict **Zero-Allocation** best practices.
 
 ---
 
