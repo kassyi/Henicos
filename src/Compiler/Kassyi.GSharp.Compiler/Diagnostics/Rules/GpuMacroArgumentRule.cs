@@ -18,12 +18,13 @@ internal sealed class GpuMacroArgumentRule
         }
 
         var containingType = invocationSymbol.ContainingType;
-        if (containingType?.Name == "Hint" && containingType.ContainingType?.Name == "Gpu")
+        if (containingType is { Name: "Hint", ContainingType.Name: "Gpu" })
         {
             if (invocationSymbol.Name == "Unroll")
             {
                 CheckUnrollHint(invocation, ref context);
             }
+
             return;
         }
 
@@ -32,23 +33,30 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        if (invocationSymbol.Name == "ForUnroll")
+        switch (invocationSymbol.Name)
         {
-            var hasContext = invocationSymbol.Parameters.Length == 4;
-            var offset = hasContext ? 1 : 0;
-            var args = invocation.ArgumentList.Arguments;
-            if (args.Count >= offset + 2)
+            case "ForUnroll":
             {
-                CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
-                CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
+                var hasContext = invocationSymbol.Parameters.Length == 4;
+                var offset = hasContext ? 1 : 0;
+                var args = invocation.ArgumentList.Arguments;
+                if (args.Count >= offset + 2)
+                {
+                    CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
+                    CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
+                }
+
+                break;
             }
-        }
-        else if (invocationSymbol.Name == "InlinePtx")
-        {
-            var args = invocation.ArgumentList.Arguments;
-            if (args.Count >= 1)
+            case "InlinePtx":
             {
-                CheckStringLiteral(args[0].Expression, ref context);
+                var args = invocation.ArgumentList.Arguments;
+                if (args.Count >= 1)
+                {
+                    CheckStringLiteral(args[0].Expression, ref context);
+                }
+
+                break;
             }
         }
     }
@@ -56,45 +64,50 @@ internal sealed class GpuMacroArgumentRule
     private void CheckUnrollHint(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
         var args = invocation.ArgumentList.Arguments;
+        Diagnostic? diagnostic;
         if (args.Count >= 1)
         {
             var factorExpr = args[0].Expression;
             var constant = context.SemanticModel.GetConstantValue(factorExpr);
             if (!constant.HasValue || constant.Value is not int intVal || intVal < 0)
             {
-                var diagnostic = Diagnostic.Create(
+                diagnostic = Diagnostic.Create(
                     GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
                     factorExpr.GetLocation());
                 context.ReportDiagnostic(diagnostic);
             }
         }
 
-        if (invocation.Parent is ExpressionStatementSyntax exprStmt)
+        if (invocation.Parent is not ExpressionStatementSyntax exprStmt)
         {
-            if (!PrecedesSupportedLoop(exprStmt))
-            {
-                var diagnostic = Diagnostic.Create(
-                    GSharpDiagnostics.UnrollHintMustPrecedeLoop,
-                    invocation.GetLocation());
-                context.ReportDiagnostic(diagnostic);
-            }
+            return;
         }
+
+
+        if (PrecedesSupportedLoop(exprStmt))
+        {
+            return;
+        }
+
+        diagnostic = Diagnostic.Create(
+            GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+            invocation.GetLocation());
+        context.ReportDiagnostic(diagnostic);
     }
 
     public static bool PrecedesSupportedLoop(ExpressionStatementSyntax node)
     {
         SyntaxList<StatementSyntax> statements;
-        if (node.Parent is BlockSyntax block)
+        switch (node.Parent)
         {
-            statements = block.Statements;
-        }
-        else if (node.Parent is SwitchSectionSyntax switchSection)
-        {
-            statements = switchSection.Statements;
-        }
-        else
-        {
-            return false;
+            case BlockSyntax block:
+                statements = block.Statements;
+                break;
+            case SwitchSectionSyntax switchSection:
+                statements = switchSection.Statements;
+                break;
+            default:
+                return false;
         }
 
         var index = statements.IndexOf(node);
@@ -109,14 +122,11 @@ internal sealed class GpuMacroArgumentRule
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
     {
-        if (expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
+        switch (expr)
         {
-            return;
-        }
-
-        if (expr is InterpolatedStringExpressionSyntax)
-        {
-            return;
+            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
+            case InterpolatedStringExpressionSyntax:
+                return;
         }
 
         var constant = context.SemanticModel.GetConstantValue(expr);
@@ -132,15 +142,17 @@ internal sealed class GpuMacroArgumentRule
     private void CheckConstant(ExpressionSyntax expr, string paramName, string macroName, ref ValidationContext context)
     {
         var constant = context.SemanticModel.GetConstantValue(expr);
-        if (!constant.HasValue)
+        if (constant.HasValue)
         {
-            var diagnostic = Diagnostic.Create(
-                GSharpDiagnostics.MacroArgumentMustBeConstant,
-                expr.GetLocation(),
-                paramName,
-                macroName);
-            context.ReportDiagnostic(diagnostic);
+            return;
         }
+
+        var diagnostic = Diagnostic.Create(
+            GSharpDiagnostics.MacroArgumentMustBeConstant,
+            expr.GetLocation(),
+            paramName,
+            macroName);
+        context.ReportDiagnostic(diagnostic);
     }
 }
 
