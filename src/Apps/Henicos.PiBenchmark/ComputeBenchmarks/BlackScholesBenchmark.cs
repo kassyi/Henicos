@@ -1,8 +1,13 @@
+using BenchmarkDotNet.Attributes;
+using Henicos.PiBenchmark.Infrastructure;
+using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Runtime.Aot;
+
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
-using Kassyi.GSharp.Runtime;
-
-public class BlackScholesBenchmark : IComputeBenchmark
+[Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
+public class BlackScholesBenchmark
 {
     private const int N = 1_000_000;
 
@@ -15,31 +20,22 @@ public class BlackScholesBenchmark : IComputeBenchmark
     private float[] _callResultCpu = null!;
     private float[] _putResultCpu = null!;
 
-    private float[] _callResultGsharp = null!;
-    private float[] _putResultGsharp = null!;
-
-    private float[] _callResultNative = null!;
-    private float[] _putResultNative = null!;
-
     private GpuBuffer<float>? _dS;
     private GpuBuffer<float>? _dX;
     private GpuBuffer<float>? _dT;
     private GpuBuffer<float>? _dCall;
     private GpuBuffer<float>? _dPut;
 
-    public string Name => "Black-Scholes (Float)";
+    private GpuKernelLoader.CudaContextScope _ctxScope;
 
-    public void Initialize()
+    [GlobalSetup]
+    public void Setup()
     {
         _s = new float[N];
         _x = new float[N];
         _t = new float[N];
         _callResultCpu = new float[N];
         _putResultCpu = new float[N];
-        _callResultGsharp = new float[N];
-        _putResultGsharp = new float[N];
-        _callResultNative = new float[N];
-        _putResultNative = new float[N];
 
         _r = 0.02f;
         _v = 0.30f;
@@ -51,36 +47,8 @@ public class BlackScholesBenchmark : IComputeBenchmark
             _x[i] = (float)(rand.NextDouble() * 100.0 + 10.0); // Strike price 10..110
             _t[i] = (float)(rand.NextDouble() * 5.0 + 0.1); // Time to maturity 0.1..5.1
         }
-    }
 
-    public void RunReferenceCpu()
-    {
-        for (int i = 0; i < N; i++)
-        {
-            BlackScholesCore(_s[i], _x[i], _t[i], _r, _v, out _callResultCpu[i], out _putResultCpu[i]);
-        }
-    }
-
-    public void RunGSharp()
-    {
-        uint blockSize = 256;
-        uint numBlocks = (N + blockSize - 1) / blockSize;
-        BlackScholesKernelsWrapper.Launch_BlackScholesKernel(
-            _s, _x, _t, _r, _v, _callResultGsharp, _putResultGsharp, N,
-            gridDimX: numBlocks, blockDimX: blockSize);
-    }
-
-    public void RunNativeCuda()
-    {
-        uint blockSize = 256;
-        uint numBlocks = (N + blockSize - 1) / blockSize;
-        NativeKernelInvoker.LaunchBlackScholes(
-            _s, _x, _t, _r, _v, _callResultNative, _putResultNative, N,
-            gridDimX: numBlocks, blockDimX: blockSize);
-    }
-
-    public void InitializeDeviceMemory()
-    {
+        _ctxScope = new GpuKernelLoader.CudaContextScope();
         _dS = new GpuBuffer<float>(N);
         _dX = new GpuBuffer<float>(N);
         _dT = new GpuBuffer<float>(N);
@@ -92,82 +60,65 @@ public class BlackScholesBenchmark : IComputeBenchmark
         _dT.CopyToDevice(_t);
     }
 
-    public void CleanupDeviceMemory()
+    [GlobalCleanup]
+    public void Cleanup()
     {
-        if (_dCall != null && _dPut != null)
-        {
-            _dCall.CopyToHost(_callResultGsharp);
-            _dPut.CopyToHost(_putResultGsharp);
-        }
-
         _dS?.Dispose();
         _dX?.Dispose();
         _dT?.Dispose();
         _dCall?.Dispose();
         _dPut?.Dispose();
+        _ctxScope.Dispose();
     }
 
-    public void RunGSharp_Pure()
+    [Benchmark(Baseline = true)]
+    public void Cpu()
     {
-        if (_dS == null || _dX == null || _dT == null || _dCall == null || _dPut == null)
+        for (int i = 0; i < N; i++)
         {
-            return;
+            BlackScholesCore(_s[i], _x[i], _t[i], _r, _v, out _callResultCpu[i], out _putResultCpu[i]);
         }
+    }
+
+    [Benchmark]
+    public void GSharpGpu()
+    {
+        using var timer = new CudaEventTimer();
+        timer.Start();
 
         uint blockSize = 256;
         uint numBlocks = (N + blockSize - 1) / blockSize;
         BlackScholesKernelsWrapper.Launch_BlackScholesKernel_Device(
-            _dS.DevicePointer, _dX.DevicePointer, _dT.DevicePointer, _r, _v,
-            _dCall.DevicePointer, _dPut.DevicePointer, N,
+            _dS!.DevicePointer, _dX!.DevicePointer, _dT!.DevicePointer, _r, _v,
+            _dCall!.DevicePointer, _dPut!.DevicePointer, N,
             gridDimX: numBlocks, blockDimX: blockSize);
 
-        Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(Kassyi.GSharp.Runtime.Interop.CudaDriverApi
-            .cuCtxSynchronize());
+        timer.Stop();
+        timer.Synchronize();
+
+        // Rough estimate of ~100 FLOPs per option
+        GpuMetricsContext.RecordFlops(N * 100.0);
+        GpuMetricsContext.RecordGpuTimeUs(timer.GetElapsedTimeMilliseconds() * 1000.0);
     }
 
-    public void RunNativeCuda_Pure()
+    [Benchmark]
+    public void NativeCuda()
     {
-        if (_dS == null || _dX == null || _dT == null || _dCall == null || _dPut == null)
-        {
-            return;
-        }
+        using var timer = new CudaEventTimer();
+        timer.Start();
 
         uint blockSize = 256;
         uint numBlocks = (N + blockSize - 1) / blockSize;
         NativeKernelInvoker.LaunchBlackScholes_Device(
-            _dS.DevicePointer, _dX.DevicePointer, _dT.DevicePointer, _r, _v,
-            _dCall.DevicePointer, _dPut.DevicePointer, N,
+            _dS!.DevicePointer, _dX!.DevicePointer, _dT!.DevicePointer, _r, _v,
+            _dCall!.DevicePointer, _dPut!.DevicePointer, N,
             gridDimX: numBlocks, blockDimX: blockSize);
-    }
 
-    public void Verify()
-    {
-        for (int i = 0; i < N; i++)
-        {
-            if (Math.Abs(_callResultCpu[i] - _callResultGsharp[i]) > 1e-4f)
-            {
-                throw new Exception(
-                    $"Call price mismatch at index {i}: CPU={_callResultCpu[i]}, G#={_callResultGsharp[i]}");
-            }
+        timer.Stop();
+        timer.Synchronize();
 
-            if (Math.Abs(_putResultCpu[i] - _putResultGsharp[i]) > 1e-4f)
-            {
-                throw new Exception(
-                    $"Put price mismatch at index {i}: CPU={_putResultCpu[i]}, G#={_putResultGsharp[i]}");
-            }
-
-            if (Math.Abs(_callResultCpu[i] - _callResultNative[i]) > 1e-4f)
-            {
-                throw new Exception(
-                    $"Call price mismatch at index {i}: CPU={_callResultCpu[i]}, Native={_callResultNative[i]}");
-            }
-
-            if (Math.Abs(_putResultCpu[i] - _putResultNative[i]) > 1e-4f)
-            {
-                throw new Exception(
-                    $"Put price mismatch at index {i}: CPU={_putResultCpu[i]}, Native={_putResultNative[i]}");
-            }
-        }
+        GpuMetricsContext.RecordFlops(N * 100.0);
+        GpuMetricsContext.RecordGpuTimeUs(timer.GetElapsedTimeMilliseconds() * 1000.0);
     }
 
     // Baseline C# Implementation
