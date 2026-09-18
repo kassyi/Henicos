@@ -40,30 +40,6 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
-        id: "GSH0013",
-        title: "Excessive static shared memory usage",
-        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
-        id: "GSH0014",
-        title: "Large struct passed by value",
-        messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
-        id: "GSH0015",
-        title: "Auto-allocated array in loop",
-        messageFormat: "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public static readonly DiagnosticDescriptor GpuBigIntExprDirectAssignment = new(
         id: "GSH0005",
         title: "GpuBigIntExpr must be assigned via .Value",
@@ -124,6 +100,46 @@ public static class GSharpDiagnostics
         id: "GSH0012",
         title: "Macro arguments must be compile-time constants",
         messageFormat: "The argument '{0}' of macro '{1}' must be a compile-time constant",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
+        id: "GSH0013",
+        title: "Excessive static shared memory usage",
+        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
+        id: "GSH0014",
+        title: "Large struct passed by value",
+        messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
+        id: "GSH0015",
+        title: "Auto-allocated array in loop",
+        messageFormat: "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrollFactorMustBeNonNegativeConstant = new(
+        id: "GSH0016",
+        title: "Unroll factor must be a non-negative compile-time constant",
+        messageFormat: "The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrollHintMustPrecedeLoop = new(
+        id: "GSH0017",
+        title: "Unroll hint must precede a loop",
+        messageFormat: "Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

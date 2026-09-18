@@ -244,6 +244,20 @@ public static void PtxDemo()
 }
 ```
 
+### Loop Unrolling Macros
+
+G# provides two distinct mechanisms for unrolling loops, each serving a different architectural purpose for performance tuning.
+
+* **`Gpu.ForUnroll(int start, int count, Action<int> body)`**: 
+  * **Purpose**: Performs *Compile-Time Constant Source Code Duplication*.
+  * **Usage**: Use this strictly when the loop variable (`i`) must be evaluated as a compile-time constant literal. This is required when passing the loop index to methods or structs that enforce strict constant evaluation (e.g., allocating statically sized `SharedMemory<T>`).
+  * **Caution**: Because this macro literally copies and pastes the loop body in the generated C++ source code, using it for loops with large iteration counts will drastically bloat the code and may crash the backend compiler. Additionally, executing this method on the C# CPU host allocates a delegate closure, which violates the zero-allocation principle.
+
+* **`Gpu.Hint.Unroll(int factor = 0)`**:
+  * **Purpose**: Emits a `#pragma unroll` directive for pure computational optimization.
+  * **Usage**: Highly recommended for pure calculation loops (like SGEMM or array index access) to increase Instruction-Level Parallelism (ILP). The NVIDIA NVCC compiler will optimally unroll the loop based on register availability.
+  * **Advantage**: It does not bloat the intermediate source code. Because it is a simple marker method, it guarantees zero closure allocations when executing the kernel natively on the C# CPU host for testing.
+
 ### `Gpu` Macro Methods
 
 The `Gpu` class provides high-level macro methods that are expanded directly into optimized C++ control flow or text by the transpiler.
