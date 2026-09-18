@@ -13,25 +13,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Generator
 {
 public static partial class TestKernelReturnTypesSadPathWrapper
 {
-public const string ManagedStructKernel_Source = @"extern ""C"" __declspec(dllexport) void ManagedStructKernel(Kassyi_GSharp_Tests_Shared_TestCases_Generator_TestKernelReturnTypesSadPath_ManagedStruct* __restrict__ __gsharp_auto_result){
-unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-__gsharp_auto_result[__gsharp_global_tid] = {};
-return;
-}
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ManagedStructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZKassyi_GSharp_Tests_Shared_TestCases_Generator_TestKernelReturnTypesSadPath_ManagedStruct* __restrict__ __gsharp_auto_result)
-{
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
-{
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ManagedStructKernel(__gsharp_auto_result);
-}
-}
-";
+public const string ManagedStructKernel_Source = @"// GSharp Transpilation failed for ManagedStructKernel. Return type Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct is not supported.";
 public static readonly string ManagedStructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ManagedStructKernel_Source;
 private static byte[]? s_decryptionKey_ManagedStructKernel;
 private static byte[]? s_binaryData_ManagedStructKernel;
@@ -50,7 +32,8 @@ s_decryptionKey_ManagedStructKernel = null;
 s_isLoaded_ManagedStructKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ManagedStructKernel_Delegate>("__gsharp_launch_ManagedStructKernel", dllPath, s_decryptionKey_ManagedStructKernel);
-uint __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ);
+if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
+uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct[__gsharp_total_threads];
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {
