@@ -1,5 +1,8 @@
 using System.Runtime.CompilerServices;
 
+#pragma warning disable IDE0051 // Unused member in interop definitions
+// ReSharper disable UnusedMember.Global
+
 [assembly:
     SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
         Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
@@ -113,6 +116,27 @@ public static partial class CudaDriverApi
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxSynchronize();
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult CuEventCreate(out IntPtr phEvent, uint flags);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuEventRecord(IntPtr hEvent, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuEventSynchronize(IntPtr hEvent);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult CuEventElapsedTime(out float pMilliseconds, IntPtr hStart, IntPtr hEnd);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuEventDestroy_v2(IntPtr hEvent);
+
 
     [LibraryImport(DllName, EntryPoint = "cuModuleLoadDataEx")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
