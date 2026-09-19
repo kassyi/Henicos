@@ -143,13 +143,26 @@ To protect proprietary AOT kernel binaries from reverse engineering, the generat
 During the AOT build phase, the generator conditionally generates a secure 256-bit AES-256-CBC key for each kernel. The transpiled CUDA source string (or the compiled PTX/Fatbin) is encrypted at rest using this key.
 The wrapper emitter injects the encrypted payload directly into the host C# assembly alongside a magic header (`GSHPENC1`), immediately followed by the 16-byte randomly generated Initialization Vector (IV), and then the ciphertext.
 
-### 1.5.2 VBO Strategies (`IVmStrategy`)
-Instead of embedding the raw AES key inside the host binary where it can be easily extracted, the generator employs a Strategy Pattern (`IVmStrategy`) to emit a deterministic Virtual Machine that derives the key at runtime.
-Supported strategies (in `Kassyi.GSharp.Compiler.VmObfuscation`) include:
-- `ArithmeticVmStrategy`: Uses an arithmetic accumulator VM.
-- `AutomatonVmStrategy`: A state-machine permutation automaton.
-- `NandStackVmStrategy`: A minimal Turing-complete NAND stack VM.
-- `RegisterVmStrategy`: A multi-register load/store/xor VM.
+### 1.5.2 The Chimera VM (`PolymorphicVmStrategy`)
+Instead of embedding the raw AES key inside the host binary where it can be easily extracted, the generator emits a deterministic Virtual Machine that computes the key at runtime.
 
-The C# wrapper executes this VM to compute the correct decryption key dynamically before passing the decrypted payload to the NVIDIA driver via the Runtime Loader.
+To defeat static analysis and signature-based generic cracking tools, G# employs a **Compile-Time Polymorphic Engine** (The "Chimera VM"). For every single kernel compilation, the generator scrambles together up to 10 different obfuscation sub-strategies (e.g., ChaCha ARX operations, AES S-Box lookups, Collatz conjectures, Exception-driven control flow, Matrix multiplications). 
+
+1. **Opcode Shuffling**: The VM instruction set is randomized per-build.
+2. **Variable Minification**: All internal VM state variables (`bc`, `mem`, `regs`, etc.) are minified into randomized hexadecimal identifiers (e.g., `_A1B2`) during code generation.
+3. **Self-Destruction**: Once the AES key is derived, the VM immediately wipes its bytecode array and internal memory buffers (`System.Array.Clear`) to prevent post-execution memory dumping of the state.
+
+### 1.5.3 Contextual Entropy Injection (The DRM Hook)
+While the Chimera VM provides an extreme barrier against static analysis, any static key derivation is theoretically vulnerable to dynamic memory dumping. To protect the payload against runtime dynamic analysis and to bind the decryption key to the user's proprietary runtime environment, the generator emits a `partial` method hook for **Contextual Entropy Injection**.
+
+```csharp
+/// <summary>Inject contextual entropy to bind the decryption key to the runtime environment. (Phase 5)</summary>
+[System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+static partial void InjectContextualEntropy_MyKernel(ref int entropy, int[] registers, int[] memory);
+```
+
+Developers can implement this `partial` method in their own code to perform custom cryptographic mutations on the VM's `registers` and `memory` state before the VM executes. 
+- **State Entanglement**: By modifying the VM memory based on an external DRM token or proprietary anti-cheat heartbeat, the execution of the VM becomes cryptographically tangled with the host environment.
+- **Inlining Defense**: The `AggressiveInlining` attribute forces the JIT compiler to fuse the user's custom hook logic directly into the Chimera VM loop in the final x64 native code. This erases the function boundary (no `CALL` instruction), rendering standard API hooking tools (like Frida or MinHook) useless against the hook itself.
+- **Automatic Fallback**: If the developer chooses not to implement this `partial` method, the Roslyn compiler automatically removes the method call at compile-time with zero runtime overhead, and the VM safely falls back to a deterministic internal hash.
 
