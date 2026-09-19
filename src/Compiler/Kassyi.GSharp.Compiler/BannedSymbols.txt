@@ -1,0 +1,17 @@
+# Banned APIs in G# Compiler & Transpiler (Mentalism & Safety Guardrails)
+
+# 1. AST stringification prohibition (Enforces YES AST)
+M:Microsoft.CodeAnalysis.SyntaxNode.ToString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
+M:Microsoft.CodeAnalysis.SyntaxNode.ToFullString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
+
+# 2. Regular Expressions prohibition (Enforces Grammar & Performance)
+T:System.Text.RegularExpressions.Regex;Regular expressions are strictly prohibited in the compiler (Violates YES AST / Anti-Pattern). Use Roslyn SyntaxRewriter, SyntaxVisitor, or AST pattern matching instead.
+
+# 3. Reflection prohibition (Enforces YES AST & YES Static Determinism)
+N:System.Reflection;Direct reflection is strictly prohibited in the compiler (Violates YES AST / Static Determinism). Use Roslyn SemanticModel, ITypeSymbol, and IMethodSymbol instead.
+M:System.Type.GetType(System.String);Dynamic type resolution via string is strictly prohibited. Use Compilation.GetTypeByMetadataName instead.
+
+# 4. Non-deterministic APIs prohibition (Enforces YES Static Determinism & Incremental Cache)
+M:System.DateTime.get_Now;DateTime.Now is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
+M:System.DateTime.get_UtcNow;DateTime.UtcNow is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
+M:System.Guid.NewGuid;Guid.NewGuid is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based naming instead.
