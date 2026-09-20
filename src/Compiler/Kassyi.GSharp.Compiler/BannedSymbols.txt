@@ -12,6 +12,6 @@ N:System.Reflection;Direct reflection is strictly prohibited in the compiler (Vi
 M:System.Type.GetType(System.String);Dynamic type resolution via string is strictly prohibited. Use Compilation.GetTypeByMetadataName instead.
 
 # 4. Non-deterministic APIs prohibition (Enforces YES Static Determinism & Incremental Cache)
-M:System.DateTime.get_Now;DateTime.Now is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
-M:System.DateTime.get_UtcNow;DateTime.UtcNow is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
+P:System.DateTime.Now;DateTime.Now is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
+P:System.DateTime.UtcNow;DateTime.UtcNow is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
 M:System.Guid.NewGuid;Guid.NewGuid is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based naming instead.
