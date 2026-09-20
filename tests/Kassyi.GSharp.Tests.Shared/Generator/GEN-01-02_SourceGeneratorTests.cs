@@ -1,8 +1,7 @@
-using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests;
 
-public class GEN_01_SourceGeneratorTests(ITestOutputHelper output) : TranspilerTestBase
+public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
 {
     private readonly ITestOutputHelper _output = output;
 
@@ -15,7 +14,7 @@ public class GEN_01_SourceGeneratorTests(ITestOutputHelper output) : TranspilerT
         int[] bArray = [20];
         int[] cArray = [0];
 
-        GEN_01_SourceGeneratorTestKernelsWrapper.LaunchMyTestKernel(aArray, bArray, cArray);
+        GEN_01_SourceGeneratorTestKernelsWrapper.Launch_MyTestKernel(aArray, bArray, cArray);
 
         Assert.Equal(30, cArray[0]);
     }

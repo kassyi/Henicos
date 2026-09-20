@@ -3,29 +3,28 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_31_38_AdvancedMemoryTests
 :  TranspilerTestBase{
-
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-31")]
     [Trait("Category", "Syntax")]
     public void Test_SYN31_UnsafeAsPointer_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-32")]
     [Trait("Category", "Syntax")]
     public void Test_SYN32_MemoryMarshalCast_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-33")]
     [Trait("Category", "Syntax")]
     public void Test_SYN33_RefFields_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-34")]
     [Trait("Category", "Syntax")]
     public void Test_SYN34_SimdVector128_Transpilation()
@@ -40,7 +39,7 @@ public class SYN_31_38_AdvancedMemoryTests
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
 
-        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerIncrementKernel(src, dest);
+        SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_PointerIncrementKernel(src, dest);
 
         Assert.Equal(10u, dest[0]);
         Assert.Equal(20u, dest[1]);
@@ -55,7 +54,7 @@ public class SYN_31_38_AdvancedMemoryTests
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
 
-        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerDecrementKernel(src, dest);
+        SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_PointerDecrementKernel(src, dest);
 
         Assert.Equal(100u, dest[0]);
         Assert.Equal(200u, dest[1]);
@@ -74,21 +73,21 @@ public class SYN_31_38_AdvancedMemoryTests
     {
         uint[] dest = [0, 0, 0];
 
-        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerComplexAssignmentKernel(idx, val, dest);
+        SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_PointerComplexAssignmentKernel(idx, val, dest);
 
         Assert.Equal(expectedDest[0], dest[0]);
         Assert.Equal(expectedDest[1], dest[1]);
         Assert.Equal(expectedDest[2], dest[2]);
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-37")]
     [Trait("Category", "Syntax")]
     public void Test_SYN37_UnsafePointerArithmetic_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-38")]
     [Trait("Category", "Syntax")]
     public void Test_SYN38_FixedSizeBuffers_Transpilation()

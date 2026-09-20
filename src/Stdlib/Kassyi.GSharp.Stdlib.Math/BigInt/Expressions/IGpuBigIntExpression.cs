@@ -8,7 +8,10 @@ public interface IGpuBigIntExpression
     /// <summary>
     /// Gets the number of words (32-bit units) required to store the absolute magnitude of this expression.
     /// </summary>
-    int NumWords { get; }
+    int NumWords
+    {
+        get;
+    }
 
     /// <summary>
     /// Evaluates this AST node into a new or provided GPU buffer, returning a signed <see cref="GpuBigInteger"/>.

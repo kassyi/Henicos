@@ -28,17 +28,26 @@ public class GpuContext : IDisposable
     /// <summary>
     /// Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
     /// </summary>
-    public int MaxWords { get; }
+    public int MaxWords
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
     /// </summary>
-    public IntPtr WorkspacePointer { get; }
+    public IntPtr WorkspacePointer
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the active GPU execution engine type.
     /// </summary>
-    public GpuExecutionEngine Engine { get; }
+    public GpuExecutionEngine Engine
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.

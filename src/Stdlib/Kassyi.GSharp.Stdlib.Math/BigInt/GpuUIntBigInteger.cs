@@ -578,7 +578,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         try
         {
             Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
-            
+
             var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords));
             var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
             return isNegative ? -big : big;

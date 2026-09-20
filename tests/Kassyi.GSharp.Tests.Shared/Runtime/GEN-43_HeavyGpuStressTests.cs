@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Tests.Helpers;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -7,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 [Trait("Category", "GpuExecution")]
 [Trait("Category", "Stress")]
-public class GEN_43_HeavyGpuStressTests : TranspilerTestBase
+public class GEN_43_HeavyGpuStressTests
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-43")]
@@ -32,7 +31,7 @@ public class GEN_43_HeavyGpuStressTests : TranspilerTestBase
 
         for (int iter = 0; iter < iterations; iter++)
         {
-            GEN_43_HeavyGpuStressKernelsWrapper.LaunchMatrixMultiplyStressKernel(
+            GEN_43_HeavyGpuStressKernelsWrapper.Launch_MatrixMultiplyStressKernel(
                 a, b, c, n,
                 gridDimX: 1, gridDimY: 1,
                 blockDimX: (uint)n, blockDimY: (uint)n
@@ -72,7 +71,7 @@ public class GEN_43_HeavyGpuStressTests : TranspilerTestBase
 
             for (int iter = 0; iter < iterationsPerWorker; iter++)
             {
-                GEN_43_HeavyGpuStressKernelsWrapper.LaunchMatrixMultiplyStressKernel(
+                GEN_43_HeavyGpuStressKernelsWrapper.Launch_MatrixMultiplyStressKernel(
                     a, b, c, n,
                     gridDimX: 1, gridDimY: 1,
                     blockDimX: (uint)n, blockDimY: (uint)n

@@ -15,7 +15,9 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     /// </summary>
     public static readonly VariableDeclarationTranspilerRule Instance = new();
 
-    private VariableDeclarationTranspilerRule() { }
+    private VariableDeclarationTranspilerRule()
+    {
+    }
 
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,

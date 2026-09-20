@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class GEN_35_MacroTranspilerTests : TranspilerTestBase
 {
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-35")]

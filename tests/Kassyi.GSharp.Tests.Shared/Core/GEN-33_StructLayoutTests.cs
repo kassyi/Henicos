@@ -1,10 +1,9 @@
-using Kassyi.GSharp.Tests.Helpers;
 using System;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Core;
 
-public class GEN_33_StructLayoutTests : TranspilerTestBase
+public class GEN_33_StructLayoutTests
 {
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
@@ -17,7 +16,7 @@ public class GEN_33_StructLayoutTests : TranspilerTestBase
         };
 
         // SourceGenerator should emit this wrapper class and method.
-        GEN_33_StructLayoutKernelsWrapper.LaunchModifyStructLayoutKernel(
+        GEN_33_StructLayoutKernelsWrapper.Launch_ModifyStructLayoutKernel(
             data,
             blockDimX: 1
         );
@@ -37,7 +36,7 @@ public class GEN_33_StructLayoutTests : TranspilerTestBase
         data[0].Buffer[0] = 3;
 
         // SourceGenerator should emit this wrapper class and method.
-        GEN_33_StructLayoutKernelsWrapper.LaunchModifyPackedInlineArrayKernel(
+        GEN_33_StructLayoutKernelsWrapper.Launch_ModifyPackedInlineArrayKernel(
             data,
             blockDimX: 1
         );

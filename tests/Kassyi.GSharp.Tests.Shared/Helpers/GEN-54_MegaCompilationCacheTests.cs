@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Helpers;
 
 public class GEN_54_MegaCompilationCacheTests
 :  TranspilerTestBase{
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Stress")]
     public void GetDynamicCompilation_ConcurrentAccess_IsThreadSafe()
     {
@@ -29,7 +29,7 @@ public class GEN_54_MegaCompilationCacheTests
         Assert.Empty(exceptions);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Stress")]
     public void GetDynamicCompilation_ConcurrentAccess_WithExplicitCallerPaths_IsDeterministicAndThreadSafe()
     {
@@ -57,7 +57,7 @@ public class GEN_54_MegaCompilationCacheTests
         Assert.Empty(exceptions);
     }
 
-    [SkippableFact]
+    [Fact]
     public void BaseCompilation_IsNotNullAndHasUnsafeAllowed()
     {
         var baseComp = MegaCompilationCache.BaseCompilation;

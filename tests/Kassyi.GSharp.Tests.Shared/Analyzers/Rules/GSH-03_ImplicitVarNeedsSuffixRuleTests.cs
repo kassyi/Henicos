@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_03_ImplicitVarNeedsSuffixRuleTests
 :  TranspilerTestBase{
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GSH-03")]
     public void Validate_GSH03_ReportsDiagnostic_OnVarWithoutSuffix()
     {
@@ -24,7 +24,7 @@ public class GSH_03_ImplicitVarNeedsSuffixRuleTests
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GSH-03")]
     public void Validate_GSH03_DoesNotReportDiagnostic_OnVarWithSuffix()
     {

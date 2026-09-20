@@ -52,7 +52,7 @@ public class CompileTasksTests
         }
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "COMP-TASKS")]
     public void Test_CompileCudaToFatbinTask_EmptySources_ReturnsTrue()
     {
@@ -67,7 +67,7 @@ public class CompileTasksTests
         Assert.True(task.Execute());
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "COMP-TASKS")]
     public void Test_CompileCppToNativeTask_EmptySources_ReturnsTrue()
     {
@@ -82,7 +82,7 @@ public class CompileTasksTests
         Assert.True(task.Execute());
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "COMP-TASKS")]
     public void Test_CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
     {
@@ -106,7 +106,7 @@ public class CompileTasksTests
         }
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "COMP-TASKS")]
     public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
     {

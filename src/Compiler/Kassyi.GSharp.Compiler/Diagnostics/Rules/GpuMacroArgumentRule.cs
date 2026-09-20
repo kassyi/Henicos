@@ -17,116 +17,42 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        var containingType = invocationSymbol.ContainingType;
-        if (containingType is { Name: "Hint", ContainingType.Name: "Gpu" })
-        {
-            if (invocationSymbol.Name == "Unroll")
-            {
-                CheckUnrollHint(invocation, ref context);
-            }
-
-            return;
-        }
-
-        if (containingType?.Name != "Gpu")
+        if (invocationSymbol.ContainingType?.Name != "Gpu")
         {
             return;
         }
 
-        switch (invocationSymbol.Name)
+        if (invocationSymbol.Name == "ForUnroll")
         {
-            case "ForUnroll":
+            var hasContext = invocationSymbol.Parameters.Length == 4;
+            var offset = hasContext ? 1 : 0;
+            var args = invocation.ArgumentList.Arguments;
+            if (args.Count >= offset + 2)
             {
-                var hasContext = invocationSymbol.Parameters.Length == 4;
-                var offset = hasContext ? 1 : 0;
-                var args = invocation.ArgumentList.Arguments;
-                if (args.Count >= offset + 2)
-                {
-                    CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
-                    CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
-                }
-
-                break;
-            }
-            case "InlinePtx":
-            {
-                var args = invocation.ArgumentList.Arguments;
-                if (args.Count >= 1)
-                {
-                    CheckStringLiteral(args[0].Expression, ref context);
-                }
-
-                break;
+                CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
+                CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
             }
         }
-    }
-
-    private void CheckUnrollHint(InvocationExpressionSyntax invocation, ref ValidationContext context)
-    {
-        var args = invocation.ArgumentList.Arguments;
-        Diagnostic? diagnostic;
-        if (args.Count >= 1)
+        else if (invocationSymbol.Name == "InlinePtx")
         {
-            var factorExpr = args[0].Expression;
-            var constant = context.SemanticModel.GetConstantValue(factorExpr);
-            if (!constant.HasValue || constant.Value is not int intVal || intVal < 0)
+            var args = invocation.ArgumentList.Arguments;
+            if (args.Count >= 1)
             {
-                diagnostic = Diagnostic.Create(
-                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
-                    factorExpr.GetLocation());
-                context.ReportDiagnostic(diagnostic);
+                CheckStringLiteral(args[0].Expression, ref context);
             }
         }
-
-        if (invocation.Parent is not ExpressionStatementSyntax exprStmt)
-        {
-            return;
-        }
-
-
-        if (PrecedesSupportedLoop(exprStmt))
-        {
-            return;
-        }
-
-        diagnostic = Diagnostic.Create(
-            GSharpDiagnostics.UnrollHintMustPrecedeLoop,
-            invocation.GetLocation());
-        context.ReportDiagnostic(diagnostic);
-    }
-
-    public static bool PrecedesSupportedLoop(ExpressionStatementSyntax node)
-    {
-        SyntaxList<StatementSyntax> statements;
-        switch (node.Parent)
-        {
-            case BlockSyntax block:
-                statements = block.Statements;
-                break;
-            case SwitchSectionSyntax switchSection:
-                statements = switchSection.Statements;
-                break;
-            default:
-                return false;
-        }
-
-        var index = statements.IndexOf(node);
-        if (index < 0 || index + 1 >= statements.Count)
-        {
-            return false;
-        }
-
-        var nextStmt = statements[index + 1];
-        return nextStmt is ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax;
     }
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
     {
-        switch (expr)
+        if (expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
         {
-            case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
-            case InterpolatedStringExpressionSyntax:
-                return;
+            return;
+        }
+
+        if (expr is InterpolatedStringExpressionSyntax)
+        {
+            return;
         }
 
         var constant = context.SemanticModel.GetConstantValue(expr);
@@ -142,17 +68,15 @@ internal sealed class GpuMacroArgumentRule
     private void CheckConstant(ExpressionSyntax expr, string paramName, string macroName, ref ValidationContext context)
     {
         var constant = context.SemanticModel.GetConstantValue(expr);
-        if (constant.HasValue)
+        if (!constant.HasValue)
         {
-            return;
+            var diagnostic = Diagnostic.Create(
+                GSharpDiagnostics.MacroArgumentMustBeConstant,
+                expr.GetLocation(),
+                paramName,
+                macroName);
+            context.ReportDiagnostic(diagnostic);
         }
-
-        var diagnostic = Diagnostic.Create(
-            GSharpDiagnostics.MacroArgumentMustBeConstant,
-            expr.GetLocation(),
-            paramName,
-            macroName);
-        context.ReportDiagnostic(diagnostic);
     }
 }
 

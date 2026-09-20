@@ -15,6 +15,7 @@ internal static class TypeConstants
     public const string MathType = "Math";
     public const string MathFType = "MathF";
     public const string InterlockedType = "Interlocked";
+    public const string BitOperationsType = "BitOperations";
 
     public const string Vector2Type = "Vector2";
     public const string Vector3Type = "Vector3";

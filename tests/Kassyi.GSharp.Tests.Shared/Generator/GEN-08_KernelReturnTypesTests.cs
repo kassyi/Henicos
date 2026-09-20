@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 public class GEN_08_KernelReturnTypesTests : Helpers.TranspilerTestBase
 {
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "SadPath")]
     public async Task Test_ManagedKernelReturns_ReportsDiagnostics()

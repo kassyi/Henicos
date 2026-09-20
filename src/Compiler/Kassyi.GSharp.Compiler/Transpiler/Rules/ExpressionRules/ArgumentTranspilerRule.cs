@@ -15,7 +15,9 @@ public sealed class ArgumentTranspilerRule : SyntaxNodeTranspilerRuleBase<Argume
     /// </summary>
     public static readonly ArgumentTranspilerRule Instance = new();
 
-    private ArgumentTranspilerRule() { }
+    private ArgumentTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(ArgumentSyntax node, ref TranspileContext context)
@@ -24,7 +26,7 @@ public sealed class ArgumentTranspilerRule : SyntaxNodeTranspilerRuleBase<Argume
         {
             bool needsAddressOf = true;
             var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-            
+
             if (symbol is IParameterSymbol { RefKind: not RefKind.None } ||
                 symbol is ILocalSymbol { IsRef: true })
             {

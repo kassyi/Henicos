@@ -18,6 +18,16 @@ public class GpuKernelAttribute : Attribute
     {
         get; set;
     }
+
+    /// <summary>
+    /// Gets or sets the name of a static method that provides the AES decryption key for AOT kernels.
+    /// If left null, a Virtualization-Based Obfuscation (VBO) VM will automatically derive the key at runtime.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
+    public string? EncryptionKeyProvider
+    {
+        get; set;
+    }
 }
 
 /// <summary>

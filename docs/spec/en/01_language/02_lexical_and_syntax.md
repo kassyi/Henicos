@@ -9,7 +9,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | C# Construct | Supported | CUDA Equivalent | Notes |
 | :--- | :---: | :--- | :--- |
 | `if` / `else if` / `else` | Yes | `if` / `else` | Standard branching. Single-statement braceless blocks are automatically scoped `{ }` in generated CUDA C++. |
-| `for` loop | Yes | `for` loop | Supported. Use `Gpu.Hint.Unroll()` immediately preceding the loop to emit `#pragma unroll`. |
+| `for` loop | Yes | `for` loop | Automatically prefixed with `#pragma unroll` during transpilation. |
 | `while` loop | Yes | `while` loop | Supported. |
 | `do...while` loop | Yes | `do...while` loop | Supported. |
 | `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). |

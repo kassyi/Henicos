@@ -4,28 +4,28 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_64_69_NumericsAndHwMathTests
 :  TranspilerTestBase{
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-64")]
     [Trait("Category", "Syntax")]
     public void Test_SYN64_HalfPrecision_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-65")]
     [Trait("Category", "Syntax")]
     public void Test_SYN65_NativeInt_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-66")]
     [Trait("Category", "Syntax")]
     public void Test_SYN66_Int128UInt128_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-67")]
     [Trait("Category", "Syntax")]
     public void Test_SYN67_BFloat16Fp8_Transpilation()
@@ -49,7 +49,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         ulong[] u64Data = new ulong[7];
         u64Data[0] = u64Input;
 
-        SYN_64_69_NumericsAndHwMathKernelsWrapper.LaunchBitOperationsTestKernel(u32Data, u64Data);
+        SYN_64_69_NumericsAndHwMathKernelsWrapper.Launch_BitOperationsTestKernel(u32Data, u64Data);
 
         uint u32Val = u32Data[0];
         Assert.Equal((uint)BitOperations.LeadingZeroCount(u32Val), u32Data[1]);
@@ -85,7 +85,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         float[] floatInputs = [fVal];
         float[] floatOutputs = new float[9];
 
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchMathKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
             doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 1);
 
         // Double assertions
@@ -128,7 +128,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         double[] doubleInputs = [dInput];
         double[] doubleResults = new double[6];
 
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchMathEdgeCasesKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathEdgeCasesKernel(
             floatInputs, floatResults, doubleInputs, doubleResults, blockDimX: 1);
 
         if (float.IsNaN(fInput))
@@ -181,13 +181,13 @@ public class SYN_64_69_NumericsAndHwMathTests
         float[] floatOutputs = [];
 
         var ex = Record.Exception(() => 
-            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchMathKernel(
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
                 doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 0));
 
         Assert.Null(ex);
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-69")]
     [Trait("Category", "Syntax")]
     public void Test_SYN69_AddWithCarry64_Transpilation()

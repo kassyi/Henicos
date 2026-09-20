@@ -14,7 +14,9 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
     /// </summary>
     public static readonly PostfixUnaryExpressionTranspilerRule Instance = new();
 
-    private PostfixUnaryExpressionTranspilerRule() { }
+    private PostfixUnaryExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(PostfixUnaryExpressionSyntax node, ref TranspileContext context)

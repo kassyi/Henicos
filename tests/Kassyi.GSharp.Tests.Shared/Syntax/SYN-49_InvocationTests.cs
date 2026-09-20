@@ -16,7 +16,7 @@ public class SYN_49_InvocationTests
         ulong[] ulongBuf = new ulong[3];
 
         const int numThreads = 64;
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedKernel(
             intBuf, uintBuf, longBuf, ulongBuf, blockDimX: numThreads);
 
         Assert.Equal(numThreads, intBuf[0]);
@@ -44,7 +44,7 @@ public class SYN_49_InvocationTests
         ulong[] ulongBuf = [];
 
         var ex = Record.Exception(() => 
-            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedKernel(
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedKernel(
                 intBuf, uintBuf, longBuf, ulongBuf, blockDimX: 0));
 
         Assert.Null(ex);
@@ -68,7 +68,7 @@ public class SYN_49_InvocationTests
             new AtomicTestStruct { ValueI = 40, ValueU = 0, ValueL = 0 },
         };
 
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedEdgeCasesKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedEdgeCasesKernel(
             array, structArray, blockDimX: 4);
 
         for (int i = 0; i < 4; i++)
@@ -90,7 +90,7 @@ public class SYN_49_InvocationTests
 
         // Should be rejected or safely handled (we assert no exception is thrown when blockDimX is 0, or we catch exception)
         var ex = Record.Exception(() => 
-            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedEdgeCasesKernel(
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedEdgeCasesKernel(
                 emptyArray, emptyStructArray, blockDimX: 0));
 
         Assert.Null(ex);

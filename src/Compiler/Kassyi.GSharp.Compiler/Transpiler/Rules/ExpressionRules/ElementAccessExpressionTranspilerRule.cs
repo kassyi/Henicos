@@ -14,7 +14,9 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
     /// </summary>
     public static readonly ElementAccessExpressionTranspilerRule Instance = new();
 
-    private ElementAccessExpressionTranspilerRule() { }
+    private ElementAccessExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(ElementAccessExpressionSyntax node, ref TranspileContext context)

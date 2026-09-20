@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Tests.Helpers;
 #nullable enable
 using System;
 using System.Threading.Tasks;
@@ -9,13 +8,8 @@ using System.Text;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GpuKernelLoaderAotTests : TranspilerTestBase
+public class GpuKernelLoaderAotTests
 {
-    public GpuKernelLoaderAotTests()
-    {
-        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
-    }
-
     // A minimal valid PTX string (acting as binary data) to satisfy cuModuleLoadDataEx
     private static readonly byte[] s_validPtx;
 
@@ -26,7 +20,7 @@ public class GpuKernelLoaderAotTests : TranspilerTestBase
         s_validPtx = [.. basePtx, .. hash];
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-43")]
     [Trait("Category", "Runtime")]
     public void Test_GEN43_LoadAotKernel_ParallelContention()
@@ -36,8 +30,7 @@ public class GpuKernelLoaderAotTests : TranspilerTestBase
         // Execute in parallel on multiple threads to verify thread-safety and CUDA context management
         Parallel.For(0, 100, i =>
         {
-            var hModule = GpuKernelLoader.LoadModule(s_validPtx);
-            var hfunc = GpuKernelLoader.GetFunction(hModule, "empty_kernel");
+            var hfunc = GpuKernelLoader.LoadAotKernel(s_validPtx, "empty_kernel");
             Assert.NotEqual(IntPtr.Zero, hfunc);
             
             // Call SynchronizeDevice to ensure context binding is correct per-thread

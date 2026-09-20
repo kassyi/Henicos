@@ -2,7 +2,6 @@
 namespace Kassyi.GSharp.Tests.Syntax;
 
 public class GEN29_StructMemoryLayoutTests:  TranspilerTestBase{
-
     [SkippableFact]
     [Trait("FeatureId", "GEN-29")]
     [Trait("Category", "GpuExecution")]
@@ -13,7 +12,7 @@ public class GEN29_StructMemoryLayoutTests:  TranspilerTestBase{
         float[] floatOutput = [0.0f];
         CustomPoint[] pointOutput = [new CustomPoint()];
 
-        SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper.LaunchSharedMemoryStaticKernel(
+        SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernelsWrapper.Launch_SharedMemoryStaticKernel(
             intOutput, floatOutput, pointOutput, blockDimX: 256);
 
         Assert.Equal(30, intOutput[0]);

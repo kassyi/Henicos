@@ -166,7 +166,7 @@ public static class GpuBigIntMath
                     currentGpu = nextCurrent;
                 }
             }
-            
+
             success = true;
             return resultGpu;
         }
@@ -195,7 +195,7 @@ public static class GpuBigIntMath
             }
 
             trimmed = nextBuffer.PadTo(actualWords);
-            
+
             var result = trimmed;
             trimmed = null; // Ownership transferred to caller
             return result;

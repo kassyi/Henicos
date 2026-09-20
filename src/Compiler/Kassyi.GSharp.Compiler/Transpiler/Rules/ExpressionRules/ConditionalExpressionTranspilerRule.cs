@@ -14,7 +14,9 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
     /// </summary>
     public static readonly ConditionalExpressionTranspilerRule Instance = new();
 
-    private ConditionalExpressionTranspilerRule() { }
+    private ConditionalExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(ConditionalExpressionSyntax node, ref TranspileContext context)

@@ -6,21 +6,21 @@ public class FullLoopTest
 {
     public static void Run()
     {
-        const int Exponent = 1000;
-        var baseOffset = BigInteger.One << Exponent;
-        var modulus = (BigInteger.One << (2 * Exponent + 1)) - baseOffset + 11;
+        const int exponent = 1000;
+        var baseOffset = BigInteger.One << exponent;
+        var modulus = (BigInteger.One << (2 * exponent + 1)) - baseOffset + 11;
 
-        var numWords = (2 * Exponent + 1 + 31) / 32;
+        var numWords = (2 * exponent + 1 + 31) / 32;
         var data = new uint[numWords * 2 + 16];
         data[0] = 2; // T = 2
 
-        for (var iter = 0; iter < Exponent; iter++)
+        for (var iter = 0; iter < exponent; iter++)
         {
             squareAndReduce();
             multiplyBy2AndReduce();
         }
 
-        for (var iter = 0; iter < Exponent - 4; iter++)
+        for (var iter = 0; iter < exponent - 4; iter++)
         {
             squareAndReduce();
         }
@@ -55,7 +55,7 @@ public class FullLoopTest
             Array.Clear(data, 0, data.Length);
             Buffer.BlockCopy(bytes, 0, data, 0, Math.Min(bytes.Length, data.Length * 4));
 
-            HybridReduction.ReduceInPlace(data, Exponent, numWords);
+            HybridReduction.ReduceInPlace(data, exponent, numWords);
         }
 
         void multiplyBy2AndReduce()
@@ -68,7 +68,7 @@ public class FullLoopTest
             Array.Clear(data, 0, data.Length);
             Buffer.BlockCopy(bytes, 0, data, 0, Math.Min(bytes.Length, data.Length * 4));
 
-            HybridReduction.ReduceInPlace(data, Exponent, numWords);
+            HybridReduction.ReduceInPlace(data, exponent, numWords);
         }
     }
 }

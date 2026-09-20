@@ -43,12 +43,8 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
         var constantValue = context.SemanticModel.GetConstantValue(argExpr);
         if (constantValue is { HasValue: true, Value: string ptxString })
         {
-            context.Writer.AppendLine("#ifdef __CUDA_ARCH__");
             context.Writer.Append(ptxString);
             context.Writer.AppendLine();
-            context.Writer.AppendLine("#else");
-            context.Writer.AppendLine("throw \"Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU.\";");
-            context.Writer.AppendLine("#endif");
             return;
         }
 
@@ -65,7 +61,6 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
     private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,
         ref TranspileContext context)
     {
-        context.Writer.AppendLine("#ifdef __CUDA_ARCH__");
         foreach (var content in interpolated.Contents)
         {
             switch (content)
@@ -80,9 +75,6 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
         }
 
         context.Writer.AppendLine();
-        context.Writer.AppendLine("#else");
-        context.Writer.AppendLine("throw \"Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU.\";");
-        context.Writer.AppendLine("#endif");
     }
 
     private static void TranspileConstant(InvocationExpressionSyntax node, ref TranspileContext context)

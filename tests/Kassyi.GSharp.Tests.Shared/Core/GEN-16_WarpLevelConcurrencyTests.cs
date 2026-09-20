@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Tests.Helpers;
 #if GSHARP_CUDA
 using System;
 using System.Linq;
@@ -7,7 +6,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Core;
 
 [Trait("Category", "GpuExecution")]
-public class GEN_16_WarpLevelConcurrencyTests : TranspilerTestBase
+public class GEN_16_WarpLevelConcurrencyTests
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-16")]
@@ -26,7 +25,7 @@ public class GEN_16_WarpLevelConcurrencyTests : TranspilerTestBase
         }
 
         // Output array initialized to 0
-        GEN_16_WarpLevelConcurrencyKernelsWrapper.LaunchWarpReduceSumKernel(
+        GEN_16_WarpLevelConcurrencyKernelsWrapper.Launch_WarpReduceSumKernel(
             input,
             output,
             blockDimX: (uint)length
@@ -47,7 +46,7 @@ public class GEN_16_WarpLevelConcurrencyTests : TranspilerTestBase
         var input = new int[length];
         var output = new int[length];
         
-        GEN_16_WarpLevelConcurrencyKernelsWrapper.LaunchWarpPrimitivesKernel(
+        GEN_16_WarpLevelConcurrencyKernelsWrapper.Launch_WarpPrimitivesKernel(
             input,
             output,
             blockDimX: 32
