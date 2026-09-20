@@ -8,7 +8,7 @@
       "args": [
         "watch",
         "--project",
-        "tests/Kassyi.GSharp.Tests/Kassyi.GSharp.Tests.csproj",
+        "tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj",
         "test",
         "--verbosity",
         "minimal"
