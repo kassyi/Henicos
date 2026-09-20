@@ -146,7 +146,7 @@ public static class GSharpDiagnostics
                 KernelReturnMustBeVoidOrBlittable,
                 methodSymbol.Locations.FirstOrDefault() ?? Location.None,
                 methodSymbol.Name,
-                methodSymbol.ReturnType.ToDisplayString()));
+                methodSymbol.ReturnType.Name));
         }
 
         return false;

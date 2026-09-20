@@ -9,11 +9,11 @@ internal static class SymbolExtensions
     public static bool IsSystemOrNumerics(this INamespaceSymbol? ns) =>
         ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             or
-        {
-            Name: TypeConstants.NumericsNamespace,
-            ContainingNamespace:
-            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-        };
+            {
+                Name: TypeConstants.NumericsNamespace,
+                ContainingNamespace:
+                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+            };
 
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
@@ -63,6 +63,7 @@ internal static class SymbolExtensions
                 return true;
             }
         }
+
         return false;
     }
 
@@ -78,6 +79,7 @@ internal static class SymbolExtensions
                 return attr;
             }
         }
+
         return null;
     }
 
@@ -88,24 +90,32 @@ internal static class SymbolExtensions
     public static string GetFullNamespaceName(this INamespaceSymbol? namespaceSymbol)
     {
         if (namespaceSymbol == null || namespaceSymbol.IsGlobalNamespace)
+        {
             return string.Empty;
+        }
 
         // Fast path for single-level namespace
         if (namespaceSymbol.ContainingNamespace is null or { IsGlobalNamespace: true })
+        {
             return namespaceSymbol.Name;
+        }
 
-        using var enumerator = GetNamespaces(namespaceSymbol).GetEnumerator();
-        if (!enumerator.MoveNext()) return string.Empty;
+        using var enumerator = getNamespaces(namespaceSymbol).GetEnumerator();
+        if (!enumerator.MoveNext())
+        {
+            return string.Empty;
+        }
 
-        var sb = new System.Text.StringBuilder(enumerator.Current);
+        var sb = new StringBuilder(enumerator.Current);
         while (enumerator.MoveNext())
         {
             sb.Insert(0, ".");
             sb.Insert(0, enumerator.Current);
         }
+
         return sb.ToString();
 
-        static System.Collections.Generic.IEnumerable<string> GetNamespaces(INamespaceSymbol? ns)
+        static IEnumerable<string> getNamespaces(INamespaceSymbol? ns)
         {
             var current = ns;
             while (current != null && !current.IsGlobalNamespace)
@@ -114,5 +124,26 @@ internal static class SymbolExtensions
                 current = current.ContainingNamespace;
             }
         }
+    }
+
+    /// <summary>
+    /// Gets the fully qualified name (e.g. global::Namespace.TypeName) without allocating via ToDisplayString().
+    /// </summary>
+    public static string GetFullyQualifiedName(this ITypeSymbol? typeSymbol)
+    {
+        if (typeSymbol == null)
+        {
+            return string.Empty;
+        }
+
+        var typeName = typeSymbol.Name;
+        // Handle generic types naively for typical GPU use-cases
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType)
+        {
+            typeName = $"{namedType.Name}<{string.Join(", ", namedType.TypeArguments.Select(t => t.Name))}>";
+        }
+
+        var ns = typeSymbol.ContainingNamespace.GetFullNamespaceName();
+        return string.IsNullOrEmpty(ns) ? $"global::{typeName}" : $"global::{ns}.{typeName}";
     }
 }

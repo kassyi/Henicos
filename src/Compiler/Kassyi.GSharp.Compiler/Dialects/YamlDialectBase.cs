@@ -38,7 +38,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
             ~SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
         // [WHY] Dictionary key lookup for Yaml Dialects requires a string allocation.
         // I tolerate ToDisplayString here because it is not in the execution hot path.
+#pragma warning disable RS0030 // Do not used banned APIs
         var name = typeSymbol.ToDisplayString(format).Replace("global::", "");
+#pragma warning restore RS0030
 
         if (TryMapType(name, out var mappedType))
         {
@@ -91,6 +93,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         // [WHY] Dictionary key lookup for Yaml Dialects requires a string signature.
         // I tolerate ToDisplayString here because it is not in the execution hot path.
+#pragma warning disable RS0030 // Do not used banned APIs
         var name = symbol.ToDisplayString(new SymbolDisplayFormat(
             memberOptions: SymbolDisplayMemberOptions.IncludeParameters |
                            SymbolDisplayMemberOptions.IncludeContainingType,
@@ -99,6 +102,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes
         )).Replace("global::", "");
+#pragma warning restore RS0030
 
         return TryMapIntrinsicCore(name, out mappedExpression);
     }

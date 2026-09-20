@@ -53,7 +53,7 @@ public static class MethodTranspiler
             if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
             {
                 return
-                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.Name} is not supported.";
             }
         }
 
@@ -134,7 +134,7 @@ public static class MethodTranspiler
             if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
             {
                 return
-                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.Name} is not supported.";
             }
         }
 

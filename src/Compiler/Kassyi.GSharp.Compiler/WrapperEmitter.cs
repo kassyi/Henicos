@@ -303,7 +303,7 @@ internal static class WrapperEmitter
                     if (!string.IsNullOrWhiteSpace(keyProvider))
                     {
                         writer.AppendLine(
-                            $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                            $"s_decryptionKey_{method.Name} = {method.ContainingType.GetFullyQualifiedName()}.{keyProvider}();");
                     }
                     else
                     {
