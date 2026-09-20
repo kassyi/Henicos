@@ -161,6 +161,15 @@ public static class MethodTranspiler
         return mainWriter.ToString();
     }
 
+    private static string GetMangledKernelName(MethodDeclarationSyntax method)
+    {
+        var parentType = method.Parent as TypeDeclarationSyntax;
+        if (parentType != null)
+        {
+            return $"{parentType.Identifier.Text}_{method.Identifier.Text}";
+        }
+        return method.Identifier.Text;
+    }
 
     private static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice,
         ref TranspileContext context)
@@ -176,7 +185,8 @@ public static class MethodTranspiler
             WriteKernelMethodPrefix(ref context);
         }
 
-        context.Writer.Append($" {method.Identifier.Text}");
+        var mangledName = GetMangledKernelName(method);
+        context.Writer.Append($" {mangledName}");
         using (context.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
@@ -364,9 +374,11 @@ public static class MethodTranspiler
             return;
         }
 
+        var mangledName = GetMangledKernelName(method);
+
         context.Writer.AppendLine();
         context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
-        context.Writer.Append($" __gsharp_launch_{method.Identifier.Text}(");
+        context.Writer.Append($" __gsharp_Launch{mangledName}(");
 
         // Launch dimensions
         context.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
@@ -402,7 +414,7 @@ public static class MethodTranspiler
             {
                 context.Writer.AppendLine(
                     "__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
-                context.Writer.Append(method.Identifier.Text);
+                context.Writer.Append(mangledName);
                 using (context.Writer.Parentheses())
                 {
                     var isFirst = true;

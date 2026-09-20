@@ -7,10 +7,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
-    public string TargetArchitectures
-    {
-        get; set;
-    } =
+    public string TargetArchitectures { get; set; } =
         "compute_86,sm_86";
 
     public string NvccPath { get; set; } = "nvcc";
@@ -83,53 +80,65 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         }
     }
 
-    protected override ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem)
+    protected override ITaskItem[]? ExecutePipeline(ITaskItem[] sources)
     {
         if (_skipCompilation)
         {
             return [];
         }
 
-        var sourcePath = sourceItem.GetMetadata("FullPath");
-        var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
-        var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
-        var keyFilePath = sourcePath + ".key";
+        var results = new List<ITaskItem>();
 
-        if (!CompileWithNvcc(sourcePath, outputFatbinPath, _architectures))
+        foreach (var sourceItem in sources)
         {
-            return null;
+            var sourcePath = sourceItem.GetMetadata("FullPath");
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                continue;
+            }
+
+            var sourceFileName = Path.GetFileNameWithoutExtension(sourcePath);
+            if (sourceFileName.EndsWith(".g"))
+            {
+                sourceFileName = sourceFileName.Substring(0, sourceFileName.Length - 2);
+            }
+
+            var finalFatbinPath = Path.Combine(OutputDirectory, sourceFileName + ".fatbin");
+            var finalKeyFilePath = finalFatbinPath + ".key";
+
+            var sourceTime = File.GetLastWriteTimeUtc(sourcePath);
+            var fatbinTime = File.Exists(finalFatbinPath)
+                ? File.GetLastWriteTimeUtc(finalFatbinPath)
+                : DateTime.MinValue;
+
+            if (sourceTime > fatbinTime)
+            {
+                Log.LogMessage(MessageImportance.Normal, $"Compiling CUDA source directly to fatbin: {sourcePath}");
+                if (!CompileWithNvccToFatbin(sourcePath, finalFatbinPath, _architectures))
+                {
+                    return null; // Stop on first error
+                }
+
+                if (!ArtifactHelper.ProcessArtifact(finalFatbinPath, finalKeyFilePath, Log))
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                Log.LogMessage(MessageImportance.Normal,
+                    $"Skipping CUDA compilation. Fatbin is up-to-date: {finalFatbinPath}");
+            }
+
+            var finalTaskItem = new TaskItem(finalFatbinPath);
+            finalTaskItem.SetMetadata("LogicalName", sourceFileName + ".fatbin");
+            results.Add(finalTaskItem);
         }
 
-        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, keyFilePath, Log))
-        {
-            return null;
-        }
-
-        var taskItem = new TaskItem(outputFatbinPath);
-        taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
-        return [taskItem];
+        return [.. results];
     }
 
-    private bool CompileWithNvcc(string sourcePath, string outputFatbinPath, string[] architectures)
-    {
-        var args = BuildNvccArguments(sourcePath, outputFatbinPath, architectures);
-        Log.LogMessage(MessageImportance.Normal, $"Compiling CUDA source: {sourcePath}");
-
-        if (!RunNvccProcess(args))
-        {
-            return false;
-        }
-
-        if (File.Exists(outputFatbinPath))
-        {
-            return true;
-        }
-
-        Log.LogError($"nvcc succeeded but output fatbin was not found at '{outputFatbinPath}'.");
-        return false;
-    }
-
-    private string BuildNvccArguments(string sourcePath, string outputFatbinPath, string[] architectures)
+    private bool CompileWithNvccToFatbin(string sourcePath, string outputFatbinPath, string[] architectures)
     {
         var args = new StringBuilder();
         args.Append("--fatbin ");
@@ -146,7 +155,19 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         }
 
         args.Append($"-o \"{outputFatbinPath}\" \"{sourcePath}\"");
-        return args.ToString();
+
+        if (!RunNvccProcess(args.ToString()))
+        {
+            return false;
+        }
+
+        if (File.Exists(outputFatbinPath))
+        {
+            return true;
+        }
+
+        Log.LogError($"nvcc succeeded but output fatbin was not found at '{outputFatbinPath}'.");
+        return false;
     }
 
     private bool RunNvccProcess(string arguments)

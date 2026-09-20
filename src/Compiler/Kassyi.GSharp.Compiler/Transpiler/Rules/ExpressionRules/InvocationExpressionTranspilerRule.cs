@@ -26,6 +26,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
+        var handledExpression = false;
         if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
         {
             foreach (var rule in s_invocationRules)
@@ -35,9 +36,19 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                     return;
                 }
             }
+
+            if (symbol.HasAttribute(KnownAttributes.GpuKernel) || symbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
+            {
+                var mangledName = $"{symbol.ContainingType.Name}_{symbol.Name}";
+                context.Writer.Append(mangledName);
+                handledExpression = true;
+            }
         }
 
-        context.Visitor.Visit(node.Expression);
+        if (!handledExpression)
+        {
+            context.Visitor.Visit(node.Expression);
+        }
         using (context.Writer.Parentheses())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
