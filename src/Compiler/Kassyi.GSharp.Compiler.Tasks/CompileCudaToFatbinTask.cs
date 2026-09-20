@@ -98,7 +98,13 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var sourcePath = sourceItem.GetMetadata("FullPath");
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
-        var keyFilePath = sourcePath + ".key";
+
+        if (File.Exists(outputFatbinPath) && File.GetLastWriteTimeUtc(outputFatbinPath) >= File.GetLastWriteTimeUtc(sourcePath))
+        {
+            var cachedTaskItem = new TaskItem(outputFatbinPath);
+            cachedTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
+            return [cachedTaskItem];
+        }
 
         if (MockCompilation)
         {
@@ -113,7 +119,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return null;
         }
 
-        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, keyFilePath, Log))
+        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, Log))
         {
             return null;
         }
