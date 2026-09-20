@@ -276,12 +276,6 @@ finalVal-=0.5f;
 loopCounter++;
 }
 while(loopCounter<3);
-#ifdef __CUDA_ARCH__
-// test inline ptx
-#else
-throw ""Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU."";
-#endif
-;
 results[tid]=finalVal;
 }
 }

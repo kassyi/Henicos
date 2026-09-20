@@ -194,12 +194,6 @@ if(condition1||!condition2)
 mag+=1.5f;
 }
 }
-#ifdef __CUDA_ARCH__
-/* test ptx inline */
-#else
-throw ""Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU."";
-#endif
-;
 if(ty>0)
 {
 return;
