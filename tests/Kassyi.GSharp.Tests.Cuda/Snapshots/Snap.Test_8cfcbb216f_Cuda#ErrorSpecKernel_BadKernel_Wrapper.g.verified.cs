@@ -5,6 +5,7 @@ using System;
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 #pragma warning disable RS1016
 #pragma warning disable RS1034
+#pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
 using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
@@ -13,7 +14,7 @@ namespace TestSpace
 {
 public static partial class ErrorSpecKernelWrapper
 {
-public const string BadKernel_Source = @"extern ""C"" __global__ void BadKernel(int* __restrict__ __gsharp_auto_result){
+public const string BadKernel_Source = @"extern ""C"" __global__ void ErrorSpecKernel_BadKernel(int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 System_String s = ""hello"";
 System_Object obj = object;
@@ -22,32 +23,33 @@ return;
 }
 ";
 public static readonly string BadKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + BadKernel_Source;
-private static byte[]? s_decryptionKey_BadKernel;
-private static byte[]? s_binaryData_BadKernel;
-private static bool s_isLoaded_BadKernel;
+private static IntPtr? s_hfunc_BadKernel;
+private static int s_generation_BadKernel = -1;
+private static readonly object s_lock_BadKernel = new object();
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerBadKernel()
+{
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_BadKernel.HasValue && s_generation_BadKernel == currentGen) return;
+lock (s_lock_BadKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_BadKernel.HasValue && s_generation_BadKernel == currentGen) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+s_hfunc_BadKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "ErrorSpecKernel_BadKernel");
+s_generation_BadKernel = currentGen;
+}
+}
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::System.Int32[] Launch_BadKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Int32[] LaunchBadKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_BadKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorSpecKernel_BadKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_BadKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_BadKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'ErrorSpecKernel_BadKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_BadKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BadKernel, "BadKernel", s_decryptionKey_BadKernel);
+WarmupFunctionPointerBadKernel();
+IntPtr hfunc = s_hfunc_BadKernel!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -97,28 +99,15 @@ return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::System.Int32[] Launch_BadKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Int32[] LaunchBadKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_BadKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorSpecKernel_BadKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_BadKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_BadKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'ErrorSpecKernel_BadKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_BadKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BadKernel, "BadKernel", s_decryptionKey_BadKernel);
+WarmupFunctionPointerBadKernel();
+IntPtr hfunc = s_hfunc_BadKernel!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

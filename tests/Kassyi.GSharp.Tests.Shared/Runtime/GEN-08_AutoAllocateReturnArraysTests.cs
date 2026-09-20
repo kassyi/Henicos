@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.Helpers;
 using System;
 using System.Linq;
 using Xunit;
@@ -5,15 +6,14 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN_08_AutoAllocateReturnArraysTests
+public class GEN_08_AutoAllocateReturnArraysTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "GpuExecution")]
     public void NormalReturnKernel_MultiThread_ReturnsExpectedArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.Launch_NormalReturnKernel(10, blockDimX: 5, blockDimY: 2);
+        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: 5, blockDimY: 2);
         
         Assert.NotNull(result);
         Assert.Equal(10, result.Length);
@@ -25,8 +25,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
     [Trait("Category", "GpuExecution")]
     public void OneThreadKernel_OneThread_ReturnsSingleElementArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.Launch_OneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1);
+        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchOneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1);
         
         Assert.NotNull(result);
         Assert.Single(result);
@@ -38,8 +37,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
     [Trait("Category", "GpuExecution")]
     public void StructReturnKernel_BlittableStruct_ReturnsExpectedStructArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.Launch_StructReturnKernel(blockDimX: 100);
+        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchStructReturnKernel(blockDimX: 100);
         
         Assert.NotNull(result);
         Assert.Equal(100, result.Length);
@@ -50,21 +48,21 @@ public class GEN_08_AutoAllocateReturnArraysTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "SadPath")]
-    public void KernelLaunch_ZeroDimension_ThrowsArgumentOutOfRangeException()
+    public void KernelLaunchZeroDimension_ThrowsArgumentOutOfRangeException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => 
-            GEN_08_AutoAllocateReturnArraysKernelsWrapper.Launch_NormalReturnKernel(10, blockDimX: 0));
+            GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: 0));
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "SadPath")]
-    public void KernelLaunch_OverflowingDimension_ThrowsOverflowException()
+    public void KernelLaunchOverflowingDimension_ThrowsOverflowException()
     {
         Assert.Throws<OverflowException>(() => 
-            GEN_08_AutoAllocateReturnArraysKernelsWrapper.Launch_NormalReturnKernel(10, blockDimX: int.MaxValue, blockDimY: 2));
+            GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: int.MaxValue, blockDimY: 2));
     }
 }

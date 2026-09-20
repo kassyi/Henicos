@@ -9,7 +9,7 @@ public class GSH_10_HostLoopAnalyzerTests : TranspilerTestBase
 {
     private static readonly HostLoopAnalyzer s_analyzer = new();
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GSH-10")]
     [Trait("Category", "SadPath")]
     [InlineData("GSH-10", "Analyzers/HostLoop/GSH-10_AutoAllocateReturnInLoop_HostSide.cs", "GSH0015")]
@@ -20,7 +20,7 @@ public class GSH_10_HostLoopAnalyzerTests : TranspilerTestBase
                                .ReportsDiagnosticsAsync(expectedErrorId);
     }
 
-    [Theory]
+    [SkippableTheory]
     [Trait("FeatureId", "GSH-10")]
     [Trait("Category", "SafePath")]
     [InlineData("GSH-10", "Analyzers/HostLoop/GSH-10_AutoAllocateReturn_SafePath.cs")]

@@ -68,7 +68,7 @@ public class MathFmaBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        MathFmaKernelsWrapper.Launch_MathFmaKernel_Device(
+        MathFmaKernelsWrapper.LaunchMathFmaKernel_Device(
             _dData!.DevicePointer, N, Iterations,
             gridDimX: GridDimX, gridDimY: 1, blockDimX: BlockSize, blockDimY: 1);
 

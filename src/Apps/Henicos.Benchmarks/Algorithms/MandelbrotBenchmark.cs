@@ -72,7 +72,7 @@ public class MandelbrotBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        MandelbrotKernelsWrapper.Launch_MandelbrotKernel_Device(
+        MandelbrotKernelsWrapper.LaunchMandelbrotKernel_Device(
             _dOutput!.DevicePointer, Width, Height, MaxIter,
             -2.0f, 1.0f, -1.5f, 1.5f,
             gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: TileSize, blockDimY: TileSize);

@@ -1,11 +1,17 @@
 using System;
 using Xunit;
 
+using Kassyi.GSharp.Tests.Helpers;
+
 namespace Kassyi.GSharp.Tests.Core;
 
 [Trait("Category", "GpuExecution")]
-public class GEN_29_SharedMemoryTests
+public class GEN_29_SharedMemoryTests : TranspilerTestBase
 {
+    public GEN_29_SharedMemoryTests()
+    {
+        SkipIfCpuDialect();
+    }
     [SkippableTheory]
     [InlineData(1)]
     [InlineData(128)]
@@ -14,7 +20,7 @@ public class GEN_29_SharedMemoryTests
     [Trait("FeatureId", "GEN-29")]
     public void Test_GEN29_SharedMemory_ReversesArrayCorrectly(int length)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+
         var input = new int[length];
         var output = new int[length];
 
@@ -24,7 +30,7 @@ public class GEN_29_SharedMemoryTests
         }
 
         // SourceGenerator emits this wrapper class and method.
-        GEN_29_SharedMemoryKernelsWrapper.Launch_ReverseArrayWithSharedMemoryKernel(
+        GEN_29_SharedMemoryKernelsWrapper.LaunchReverseArrayWithSharedMemoryKernel(
             input,
             output,
             length,

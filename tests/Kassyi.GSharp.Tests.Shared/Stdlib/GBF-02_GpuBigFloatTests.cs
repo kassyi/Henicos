@@ -4,7 +4,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
-public class GBF145_GpuBigFloatTests
+public class GBF02_GpuBigFloatTests
 {
     private static LimbBuffer4 CreateLimb4(uint l0, uint l1, uint l2, uint l3)
     {
@@ -17,13 +17,12 @@ public class GBF145_GpuBigFloatTests
     }
 
     [SkippableTheory]
-    [Trait("FeatureId", "GBF-145")]
+    [Trait("FeatureId", "GBF-02")]
     [Trait("Category", "HappyPath")]
     [InlineData(false, false, false)] // (+10) + (+2) = +12
     [InlineData(true, true, true)]    // (-10) + (-2) = -12
-    public void Test_GBF145_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
+    public void Test_GBF02_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         
         var sigA = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(10, 0, 0, 0));
         var sigB = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(2, 0, 0, 0));
@@ -36,16 +35,15 @@ public class GBF145_GpuBigFloatTests
     }
 
     [SkippableTheory]
-    [Trait("FeatureId", "GBF-145")]
+    [Trait("FeatureId", "GBF-02")]
     [Trait("Category", "EdgeCase")]
     [InlineData(int.MaxValue)]
     [InlineData(int.MinValue)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(-1)]
-    public void Test_GBF145_ExponentArithmetic_BoundaryValues(int exp)
+    public void Test_GBF02_ExponentArithmetic_BoundaryValues(int exp)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Edge case exponents testing numeric extremes and representation (Fix 7)
         var sig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000));
@@ -57,11 +55,10 @@ public class GBF145_GpuBigFloatTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-145")]
+    [Trait("FeatureId", "GBF-02")]
     [Trait("Category", "EdgeCase")]
-    public void Test_GBF145_ZeroSignificandNormalization_FlushesToZeroExponent()
+    public void Test_GBF02_ZeroSignificandNormalization_FlushesToZeroExponent()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         var zeroSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0, 0, 0, 0));
         var valSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(42, 0, 0, 0));
@@ -78,11 +75,10 @@ public class GBF145_GpuBigFloatTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-145")]
+    [Trait("FeatureId", "GBF-02")]
     [Trait("Category", "SadPath")]
-    public void Test_GBF145_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
+    public void Test_GBF02_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         var zeroSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0, 0, 0, 0));
         var floatZero = new GpuBigFloat<LimbBuffer4>(zeroSig, 0, isNegative: false);

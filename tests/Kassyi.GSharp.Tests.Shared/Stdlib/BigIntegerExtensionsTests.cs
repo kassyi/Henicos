@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 [Trait("Category", "Unit")]
 public class BigIntegerExtensionsTests
 {
-    [Theory]
+    [SkippableTheory]
     [InlineData(0, 0)]
     [InlineData(1, 1)]
     [InlineData(2, 1)]
@@ -30,14 +30,14 @@ public class BigIntegerExtensionsTests
         Assert.Equal(new BigInteger(expected), actual);
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sqrt_NegativeValue_ThrowsArgumentOutOfRangeException()
     {
         var negative = new BigInteger(-1);
         Assert.Throws<ArgumentOutOfRangeException>(() => negative.Sqrt());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sqrt_LargePerfectSquare_ReturnsExactRoot()
     {
         // 2^100 exact root is 2^50
@@ -56,7 +56,7 @@ public class BigIntegerExtensionsTests
         Assert.Equal(expected, justAbove.Sqrt());
     }
 
-    [Fact]
+    [SkippableFact]
     public void Sqrt_ChudnovskyScaleValue_ComputesCorrectly()
     {
         // 10005 * 10^40

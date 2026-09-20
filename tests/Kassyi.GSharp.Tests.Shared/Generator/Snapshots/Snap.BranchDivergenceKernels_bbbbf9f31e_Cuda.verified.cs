@@ -5,6 +5,7 @@ using System;
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 #pragma warning disable RS1016
 #pragma warning disable RS1034
+#pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
 using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
@@ -13,7 +14,7 @@ namespace Henicos.Benchmarks.Microbenchmarks
 {
 public static partial class BranchDivergenceKernelsWrapper
 {
-public const string BranchDivergenceKernel_Source = @"extern ""C"" __global__ void BranchDivergenceKernel(float* __restrict__ data, int n){
+public const string BranchDivergenceKernel_Source = @"extern ""C"" __global__ void BranchDivergenceKernels_BranchDivergenceKernel(float* __restrict__ data, int n){
 int idx = blockIdx.x*blockDim.x+threadIdx.x;
 if(idx<n)
 {
@@ -37,32 +38,33 @@ data[idx]=val;
 }
 ";
 public static readonly string BranchDivergenceKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + BranchDivergenceKernel_Source;
-private static byte[]? s_decryptionKey_BranchDivergenceKernel;
-private static byte[]? s_binaryData_BranchDivergenceKernel;
-private static bool s_isLoaded_BranchDivergenceKernel;
+private static IntPtr? s_hfunc_BranchDivergenceKernel;
+private static int s_generation_BranchDivergenceKernel = -1;
+private static readonly object s_lock_BranchDivergenceKernel = new object();
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerBranchDivergenceKernel()
+{
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_BranchDivergenceKernel.HasValue && s_generation_BranchDivergenceKernel == currentGen) return;
+lock (s_lock_BranchDivergenceKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_BranchDivergenceKernel.HasValue && s_generation_BranchDivergenceKernel == currentGen) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_BranchDivergenceKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "BranchDivergenceKernels_BranchDivergenceKernel");
+s_generation_BranchDivergenceKernel = currentGen;
+}
+}
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_BranchDivergenceKernel(global::System.Single[] data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBranchDivergenceKernel(global::System.Single[] data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_BranchDivergenceKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "BranchDivergenceKernels_BranchDivergenceKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_BranchDivergenceKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_BranchDivergenceKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'BranchDivergenceKernels_BranchDivergenceKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_BranchDivergenceKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BranchDivergenceKernel, "BranchDivergenceKernel", s_decryptionKey_BranchDivergenceKernel);
+WarmupFunctionPointerBranchDivergenceKernel();
+IntPtr hfunc = s_hfunc_BranchDivergenceKernel!.Value;
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -118,25 +120,12 @@ if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_BranchDivergenceKernel_Device(IntPtr data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBranchDivergenceKernel_Device(IntPtr data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_BranchDivergenceKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "BranchDivergenceKernels_BranchDivergenceKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_BranchDivergenceKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_BranchDivergenceKernel = null;
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'BranchDivergenceKernels_BranchDivergenceKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_BranchDivergenceKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BranchDivergenceKernel, "BranchDivergenceKernel", s_decryptionKey_BranchDivergenceKernel);
+WarmupFunctionPointerBranchDivergenceKernel();
+IntPtr hfunc = s_hfunc_BranchDivergenceKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -160,6 +149,55 @@ finally
 }
 }
 #pragma warning restore CS8500
+}
+}
+
+
+// File: GSharpModuleContext_SnapshotTest.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+using System.Threading;
+#pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
+namespace Kassyi.GSharp.Generated
+{
+public static class GSharpModuleContext_SnapshotTest
+{
+private static IntPtr? s_hModule;
+private static int s_generation = -1;
+private static readonly object s_lock = new object();
+/// <summary>
+/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// </summary>
+public static IntPtr GetOrLoadModule()
+{
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
+lock (s_lock)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
+}
+byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
+s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
+return s_hModule.Value;
+}
+}
+/// <summary>
+/// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
+/// </summary>
+public static void Warmup()
+{
+// Force load the module first
+GetOrLoadModule();
+global::Henicos.Benchmarks.Microbenchmarks.BranchDivergenceKernelsWrapper.WarmupFunctionPointerBranchDivergenceKernel();
+}
 }
 }
 

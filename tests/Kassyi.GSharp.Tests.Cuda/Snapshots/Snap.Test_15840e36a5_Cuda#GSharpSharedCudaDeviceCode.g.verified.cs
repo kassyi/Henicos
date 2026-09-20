@@ -5,9 +5,9 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCudaDeviceCode
 {
 public const string Source = @"struct DebugReduc_PhysicsVector;
-__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
+__forceinline__ __device__ float ComprehensiveSpecKernel_ComputeMagnitude(DebugReduc_PhysicsVector v);
 
-__noinline__ __device__ bool IsPositive(float value);
+__noinline__ __device__ bool ComprehensiveSpecKernel_IsPositive(float value);
 
 #ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
@@ -19,11 +19,11 @@ float Z;
 }
 ;
 #endif
-__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector v){
+__forceinline__ __device__ float ComprehensiveSpecKernel_ComputeMagnitude(DebugReduc_PhysicsVector v){
 return (float)sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
 }
 
-__noinline__ __device__ bool IsPositive(float value){
+__noinline__ __device__ bool ComprehensiveSpecKernel_IsPositive(float value){
 return value>0;
 }
 

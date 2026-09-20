@@ -61,13 +61,13 @@ public sealed class CpuKernelLoader
     /// Loads an AOT-compiled native CPU library and returns a raw function pointer.
     /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    public static IntPtr LoadAotKernelPtr(string kernelName, string dllPath, byte[]? decryptionKey = null)
+    public static IntPtr LoadAotKernelPtr(string kernelName, string dllPath)
     {
         var cacheKey = dllPath + "::" + kernelName;
 
         var lazyPtr = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<Delegate>(() =>
         {
-            return new Func<IntPtr>(() => LoadKernelFunctionPtr(dllPath, kernelName, decryptionKey));
+            return new Func<IntPtr>(() => LoadKernelFunctionPtr(dllPath, kernelName));
         }));
 
         if (lazyPtr.Value is Func<IntPtr> ptrFunc)
@@ -82,7 +82,7 @@ public sealed class CpuKernelLoader
     /// Loads an AOT-compiled native CPU library and returns a strongly-typed delegate.
     /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    public static TDelegate LoadAotKernel<TDelegate>(string kernelName, string dllPath, byte[]? decryptionKey = null)
+    public static TDelegate LoadAotKernel<TDelegate>(string kernelName, string dllPath)
         where TDelegate : Delegate
     {
         var cacheKey = dllPath + "::" + kernelName;
@@ -93,12 +93,12 @@ public sealed class CpuKernelLoader
         }
 
         var lazyDelegate = s_functionCache.GetOrAdd(cacheKey,
-            _ => new Lazy<Delegate>(() => LoadKernelFunction<TDelegate>(dllPath, kernelName, decryptionKey)));
+            _ => new Lazy<Delegate>(() => LoadKernelFunction<TDelegate>(dllPath, kernelName)));
 
         return (TDelegate)lazyDelegate.Value;
     }
 
-    private static IntPtr LoadKernelFunctionPtr(string dllPath, string kernelName, byte[]? decryptionKey)
+    private static IntPtr LoadKernelFunctionPtr(string dllPath, string kernelName)
     {
         var fileData = File.ReadAllBytes(dllPath);
         if (fileData.Length < 32)
@@ -113,44 +113,14 @@ public sealed class CpuKernelLoader
         var processed = new byte[fileData.Length - 32];
         Array.Copy(fileData, 0, processed, 0, fileData.Length - 32);
 
-        var isEncrypted = processed.Length > 8 && Encoding.ASCII.GetString(processed, 0, 8) == "GSHPENC1";
-
-        if (isEncrypted)
-        {
-            if (decryptionKey == null || decryptionKey.Length == 0)
-            {
-                throw new InvalidOperationException(
-                    "AOT native binary is encrypted but no decryption key was provided.");
-            }
-
-            using var aes = Aes.Create();
-            aes.Key = decryptionKey.Length == 32 ? decryptionKey : SHA256.HashData(decryptionKey);
-
-            var iv = new byte[16];
-            Array.Copy(processed, 8, iv, 0, 16);
-            aes.IV = iv;
-
-            using var decryptor = aes.CreateDecryptor();
-            using var ms = new MemoryStream(processed, 24, processed.Length - 24);
-            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-            using var output = new MemoryStream();
-            cs.CopyTo(output);
-            processed = output.ToArray();
-        }
-
+        // Tamper resistance check
         var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
         if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"AOT native binary hash mismatch. Expected: {expectedHash}");
+            throw new InvalidOperationException($"AOT native binary hash mismatch for '{kernelName}'. The file may be corrupted or tampered with. Expected: {expectedHash}");
         }
 
         var loadPath = dllPath;
-        if (isEncrypted)
-        {
-            loadPath = Path.GetTempFileName() + ".dll";
-            File.WriteAllBytes(loadPath, processed);
-            s_tempFiles.Add(loadPath);
-        }
 
         var module = NativeLibrary.Load(loadPath);
         s_loadedModules.Add(module);
@@ -164,7 +134,7 @@ public sealed class CpuKernelLoader
         return hfunc;
     }
 
-    private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName, byte[]? decryptionKey)
+    private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName)
         where TDelegate : Delegate =>
-        Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName, decryptionKey));
+        Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName));
 }

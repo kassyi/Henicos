@@ -6,7 +6,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
     public string OutputDirectory { get; set; } = string.Empty;
 
     protected abstract ITaskItem[] GetSources();
-    protected abstract ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem);
+    protected virtual ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem) => null;
     protected abstract void SetOutputItems(ITaskItem[] outputItems);
 
     public override bool Execute()
@@ -22,13 +22,24 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             Directory.CreateDirectory(OutputDirectory);
         }
 
-        var outputItems = new List<ITaskItem>();
-
         if (!OnBeforeExecute())
         {
             return false;
         }
 
+        var outputItems = ExecutePipeline(sources);
+        if (outputItems == null)
+        {
+            return false;
+        }
+
+        SetOutputItems(outputItems);
+        return true;
+    }
+
+    protected virtual ITaskItem[]? ExecutePipeline(ITaskItem[] sources)
+    {
+        var outputItems = new List<ITaskItem>();
         var hasErrors = false;
         var lockObj = new object();
 
@@ -55,11 +66,10 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
 
         if (hasErrors)
         {
-            return false;
+            return null;
         }
 
-        SetOutputItems([.. outputItems]);
-        return true;
+        return [.. outputItems];
     }
 
     protected virtual bool OnBeforeExecute() => true;

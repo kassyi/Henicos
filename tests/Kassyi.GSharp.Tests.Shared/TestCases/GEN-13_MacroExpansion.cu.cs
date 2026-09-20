@@ -23,7 +23,7 @@ namespace TestSpace
             });
 
             // InlinePtx test
-            Gpu.InlinePtx("/* inline ptx here */");
+
         }
     }
 }

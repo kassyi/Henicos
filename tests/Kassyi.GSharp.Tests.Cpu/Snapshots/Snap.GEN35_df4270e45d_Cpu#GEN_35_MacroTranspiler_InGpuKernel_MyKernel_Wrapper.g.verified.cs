@@ -5,6 +5,7 @@ using System;
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 #pragma warning disable RS1016
 #pragma warning disable RS1034
+#pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
 using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
@@ -13,7 +14,7 @@ namespace Kassyi.GSharp.Tests.TestCases.Transpiler
 {
 public static partial class GEN_35_MacroTranspiler_InGpuKernelWrapper
 {
-public const string MyKernel_Source = @"extern ""C"" __declspec(dllexport) void MyKernel(){
+public const string MyKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_35_MacroTranspiler_InGpuKernel_MyKernel(){
 int sum = 0;
 // [GpuUnroll] start=0, count=3
 {
@@ -34,7 +35,7 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 sum+=100;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)
+extern ""C"" __declspec(dllexport) void __gsharp_LaunchGEN_35_MacroTranspiler_InGpuKernel_MyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -44,28 +45,27 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MyKernel();
+GEN_35_MacroTranspiler_InGpuKernel_MyKernel();
 }
 }
 ";
 public static readonly string MyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MyKernel_Source;
-private static byte[]? s_decryptionKey_MyKernel;
 private static byte[]? s_binaryData_MyKernel;
 private static bool s_isLoaded_MyKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);
-public static unsafe void Launch_MyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_35_MacroTranspiler_InGpuKernel_MyKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+var dllName = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{archSuffix}.dll";
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GEN_35_MacroTranspiler_InGpuKernelWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_MyKernel)
 {
-s_decryptionKey_MyKernel = null;
 s_isLoaded_MyKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyKernel_Delegate>("__gsharp_launch_MyKernel", dllPath, s_decryptionKey_MyKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyKernel_Delegate>("__gsharp_LaunchGEN_35_MacroTranspiler_InGpuKernel_MyKernel", dllPath);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }
 #pragma warning restore CS8500

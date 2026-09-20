@@ -13,7 +13,6 @@
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <CompilerVisibleProperty Include="GSharpAotEnabled" />
     <CompilerVisibleProperty Include="GSharpEmitSource" />
-    <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
@@ -21,14 +20,20 @@
 
   <!-- Define the target to compile CUDA sources -->
   <!-- It runs before GetCopyToOutputDirectoryItems so that the newly built fatbins are copied to the output directory -->
-  <Target Name="GSharpCompileCuda" BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+  <Target Name="GSharpCompileCuda" AfterTargets="CoreCompile" BeforeTargets="CopyFilesToOutputDirectory"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpFatbins\_always_run_.marker">
     
+    <PropertyGroup>
+      <_SafeAssemblyName>$(AssemblyName.Replace('.', '_'))</_SafeAssemblyName>
+    </PropertyGroup>
     <ItemGroup>
-      <!-- Collect all generated .cu files in the intermediate output path -->
-      <_GSharpCudaSources Include="$(IntermediateOutputPath)**\*.cu" />
+      <!-- Collect the unified generated .cu file in the intermediate output path -->
+      <_GSharpCudaSources Include="$(IntermediateOutputPath)Kassyi.GSharp.Kernels_$(_SafeAssemblyName).g.cu" Condition="Exists('$(IntermediateOutputPath)Kassyi.GSharp.Kernels_$(_SafeAssemblyName).g.cu')" />
     </ItemGroup>
+    
+    <Message Importance="High" Text="[DEBUG] IntermediateOutputPath: $(IntermediateOutputPath)" />
+    <Message Importance="High" Text="[DEBUG] Found Cuda Sources: @(_GSharpCudaSources)" />
 
     <!-- Run nvcc via the custom task -->
     <CompileCudaToFatbinTask 
@@ -40,21 +45,17 @@
     </CompileCudaToFatbinTask>
 
     <!-- Copy compiled fatbins to output directory as Content -->
-    <ItemGroup>
-      <Content Include="@(_GSharpCompiledFatbins)">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Link>%(Filename)%(Extension)</Link>
-      </Content>
-    </ItemGroup>
+    <!-- Copy compiled fatbins to output directory explicitly -->
+    <Copy SourceFiles="@(_GSharpCompiledFatbins)" DestinationFolder="$(OutDir)" />
   </Target>
 
-  <Target Name="GSharpCompileCpu" BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+  <Target Name="GSharpCompileCpu" AfterTargets="CoreCompile" BeforeTargets="CopyFilesToOutputDirectory"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpNativeDlls\_always_run_.marker">
     
     <ItemGroup>
-      <!-- Collect all generated .cpp files in the intermediate output path -->
-      <_GSharpCppSources Include="$(IntermediateOutputPath)**\*.cpp" />
+      <!-- Collect the unified generated .cpp file in the intermediate output path -->
+      <_GSharpCppSources Include="$(IntermediateOutputPath)Kassyi.GSharp.Kernels_$(_SafeAssemblyName).g.cpp" Condition="Exists('$(IntermediateOutputPath)Kassyi.GSharp.Kernels_$(_SafeAssemblyName).g.cpp')" />
     </ItemGroup>
 
     <!-- Run MSVC via the custom task -->
@@ -67,11 +68,28 @@
     </CompileCppToNativeTask>
 
     <!-- Copy compiled DLLs to output directory as Content -->
+    <!-- Copy compiled DLLs to output directory explicitly -->
+    <Copy SourceFiles="@(_GSharpCompiledDlls)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <!-- Export generated files to referencing projects (transitive copy) -->
+  <Target Name="GSharpExportToReferencingProjects" BeforeTargets="GetCopyToOutputDirectoryItems">
+    <PropertyGroup>
+      <_SafeAssemblyName>$(AssemblyName.Replace('.', '_'))</_SafeAssemblyName>
+      <_ArchSuffix Condition="'$(GSharpMultiTarget)' == 'true'">_x64</_ArchSuffix>
+      <_ArchSuffix Condition="'$(GSharpMultiTarget)' != 'true'"></_ArchSuffix>
+    </PropertyGroup>
     <ItemGroup>
-      <Content Include="@(_GSharpCompiledDlls)">
+      <!-- Export fatbin -->
+      <AllItemsFullPathWithTargetPath Include="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpFatbins\Kassyi.GSharp.Kernels_$(_SafeAssemblyName).fatbin" Condition="Exists('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpFatbins\Kassyi.GSharp.Kernels_$(_SafeAssemblyName).fatbin')">
+        <TargetPath>Kassyi.GSharp.Kernels_$(_SafeAssemblyName).fatbin</TargetPath>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Link>%(Filename)%(Extension)</Link>
-      </Content>
+      </AllItemsFullPathWithTargetPath>
+      <!-- Export CPU native DLLs -->
+      <AllItemsFullPathWithTargetPath Include="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpNativeDlls\Kassyi.GSharp.Kernels_$(_SafeAssemblyName)$(_ArchSuffix).dll" Condition="Exists('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpNativeDlls\Kassyi.GSharp.Kernels_$(_SafeAssemblyName)$(_ArchSuffix).dll')">
+        <TargetPath>Kassyi.GSharp.Kernels_$(_SafeAssemblyName)$(_ArchSuffix).dll</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </AllItemsFullPathWithTargetPath>
     </ItemGroup>
   </Target>
 </Project>

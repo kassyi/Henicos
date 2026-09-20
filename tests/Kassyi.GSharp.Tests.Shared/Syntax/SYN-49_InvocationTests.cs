@@ -9,7 +9,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedAtomicOperations()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] intBuf = new int[3];
         uint[] uintBuf = new uint[3];
@@ -17,7 +16,7 @@ public class SYN_49_InvocationTests
         ulong[] ulongBuf = new ulong[3];
 
         const int numThreads = 64;
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedKernel(
             intBuf, uintBuf, longBuf, ulongBuf, blockDimX: numThreads);
 
         Assert.Equal(numThreads, intBuf[0]);
@@ -39,14 +38,13 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedAtomicOperations_EmptyArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] intBuf = [];
         uint[] uintBuf = [];
         long[] longBuf = [];
         ulong[] ulongBuf = [];
 
         var ex = Record.Exception(() => 
-            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedKernel(
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedKernel(
                 intBuf, uintBuf, longBuf, ulongBuf, blockDimX: 0));
 
         Assert.Null(ex);
@@ -60,7 +58,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedEdgeCases_ArrayElementsAndStructFields()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] array = new int[4] { 1, 2, 3, 4 };
         AtomicTestStruct[] structArray = new AtomicTestStruct[4]
@@ -71,7 +68,7 @@ public class SYN_49_InvocationTests
             new AtomicTestStruct { ValueI = 40, ValueU = 0, ValueL = 0 },
         };
 
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedEdgeCasesKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedEdgeCasesKernel(
             array, structArray, blockDimX: 4);
 
         for (int i = 0; i < 4; i++)
@@ -88,13 +85,12 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedEdgeCases_EmptyArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] emptyArray = [];
         AtomicTestStruct[] emptyStructArray = [];
 
         // Should be rejected or safely handled (we assert no exception is thrown when blockDimX is 0, or we catch exception)
         var ex = Record.Exception(() => 
-            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_InterlockedEdgeCasesKernel(
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchInterlockedEdgeCasesKernel(
                 emptyArray, emptyStructArray, blockDimX: 0));
 
         Assert.Null(ex);
@@ -105,7 +101,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_AtomicTestStruct_MemoryLayout()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());
         Assert.Equal(0, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueI").ToInt32());
         Assert.Equal(4, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueU").ToInt32());

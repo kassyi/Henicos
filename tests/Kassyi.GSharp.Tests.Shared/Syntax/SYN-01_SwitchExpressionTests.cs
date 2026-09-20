@@ -13,11 +13,10 @@ public class SYN_01_SwitchExpressionTests : TranspilerTestBase
     [InlineData(100, -1)]
     public void Test_SYN01_SimpleConstantSwitch_Execution(int inputVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] output = [0];
 
-        SYN_01_SwitchExpressionKernelsWrapper.Launch_SimpleConstantSwitchKernel(input, output, blockDimX: 1);
+        SYN_01_SwitchExpressionKernelsWrapper.LaunchSimpleConstantSwitchKernel(input, output, blockDimX: 1);
 
         Assert.Equal(expectedVal, output[0]);
     }
@@ -31,11 +30,10 @@ public class SYN_01_SwitchExpressionTests : TranspilerTestBase
     [InlineData(99, -1.0f)]
     public void Test_SYN01_FloatingPointReturnSwitch_Execution(int mode, float expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [mode];
         float[] output = [0.0f];
 
-        SYN_01_SwitchExpressionKernelsWrapper.Launch_FloatingPointReturnSwitchKernel(input, output, blockDimX: 1);
+        SYN_01_SwitchExpressionKernelsWrapper.LaunchFloatingPointReturnSwitchKernel(input, output, blockDimX: 1);
 
         Assert.Equal(expectedVal, output[0], precision: 4);
     }
@@ -52,11 +50,10 @@ public class SYN_01_SwitchExpressionTests : TranspilerTestBase
     [InlineData(-100, 0)]
     public void Test_SYN01_MultipleArmsBoundarySwitch_Execution(int inputVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] output = [0];
 
-        SYN_01_SwitchExpressionKernelsWrapper.Launch_MultipleArmsBoundarySwitchKernel(input, output, blockDimX: 1);
+        SYN_01_SwitchExpressionKernelsWrapper.LaunchMultipleArmsBoundarySwitchKernel(input, output, blockDimX: 1);
 
         Assert.Equal(expectedVal, output[0]);
     }

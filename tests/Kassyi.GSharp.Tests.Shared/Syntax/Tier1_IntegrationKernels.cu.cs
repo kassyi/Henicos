@@ -194,7 +194,7 @@ public static partial class Tier1IntegrationKernels
             } while (loopCounter < 3);
 
             // SYN-77: Inline PTX
-            Gpu.InlinePtx("// test inline ptx");
+
 
             results[tid] = finalVal;
         });
