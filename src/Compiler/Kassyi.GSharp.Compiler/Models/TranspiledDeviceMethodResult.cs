@@ -4,6 +4,9 @@ namespace Kassyi.GSharp.Compiler.Models;
 
 internal readonly struct TranspiledDeviceMethodResult(
     IMethodSymbol methodSymbol,
+    string methodName,
+    string className,
+    string? @namespace,
     string cudaSignature,
     string cudaBody,
     string cppSignature,
@@ -11,6 +14,9 @@ internal readonly struct TranspiledDeviceMethodResult(
     EquatableArray<EquatableDiagnostic> diagnostics) : IEquatable<TranspiledDeviceMethodResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
+    public string MethodName { get; } = methodName;
+    public string ClassName { get; } = className;
+    public string? Namespace { get; } = @namespace;
     public string CudaSignature { get; } = cudaSignature;
     public string CudaBody { get; } = cudaBody;
     public string CppSignature { get; } = cppSignature;
@@ -19,7 +25,10 @@ internal readonly struct TranspiledDeviceMethodResult(
 
     public bool Equals(TranspiledDeviceMethodResult other)
     {
-        return CudaSignature == other.CudaSignature &&
+        return MethodName == other.MethodName &&
+               ClassName == other.ClassName &&
+               Namespace == other.Namespace &&
+               CudaSignature == other.CudaSignature &&
                CudaBody == other.CudaBody &&
                CppSignature == other.CppSignature &&
                CppBody == other.CppBody &&
@@ -28,16 +37,8 @@ internal readonly struct TranspiledDeviceMethodResult(
 
     public override bool Equals(object? obj) => obj is TranspiledDeviceMethodResult other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        var hash = 17;
-        hash = hash * 31 + HashHelper.ComputeFnv1AHash(CudaSignature);
-        hash = hash * 31 + HashHelper.ComputeFnv1AHash(CudaBody);
-        hash = hash * 31 + HashHelper.ComputeFnv1AHash(CppSignature);
-        hash = hash * 31 + HashHelper.ComputeFnv1AHash(CppBody);
-        hash = hash * 31 + Diagnostics.GetHashCode();
-        return hash;
-    }
+    public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSignature, CudaBody,
+        CppSignature, CppBody, Diagnostics);
 
     public static bool operator ==(TranspiledDeviceMethodResult left, TranspiledDeviceMethodResult right) =>
         left.Equals(right);
