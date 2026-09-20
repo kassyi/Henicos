@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Kassyi.GSharp.Compiler.Dialects;
 using Microsoft.CodeAnalysis.Text;
 
@@ -116,7 +115,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var distinctKernelMethods = kernelMethods.OfType<IMethodSymbol>()
-            .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default).ToList();
+            .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default).ToImmutableArray();
 
         ITranspilerDialect dialect = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase)
             ? new GSharpCudaDialect()
