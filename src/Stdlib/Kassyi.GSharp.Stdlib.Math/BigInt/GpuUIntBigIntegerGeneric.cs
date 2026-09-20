@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// </summary>
 /// <typeparam name="TSize">The unmanaged struct type representing the limb storage layout.</typeparam>
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
+public struct GpuUIntBigInteger<TSize> : IEquatable<GpuUIntBigInteger<TSize>> where TSize : unmanaged
 {
     /// <summary>
     /// The fixed-size limb storage backing this big integer instance.
@@ -282,5 +282,23 @@ public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
 
         return 0;
     }
+
+    public readonly bool Equals(GpuUIntBigInteger<TSize> other) => CompareTo(other) == 0;
+
+    public readonly override bool Equals(object? obj) => obj is GpuUIntBigInteger<TSize> other && Equals(other);
+
+    public readonly override int GetHashCode()
+    {
+        var span = GetSpan();
+        var hash = new HashCode();
+        foreach (var t in span)
+        {
+            hash.Add(t);
+        }
+        return hash.ToHashCode();
+    }
+
+    public static bool operator ==(GpuUIntBigInteger<TSize> left, GpuUIntBigInteger<TSize> right) => left.Equals(right);
+    public static bool operator !=(GpuUIntBigInteger<TSize> left, GpuUIntBigInteger<TSize> right) => !left.Equals(right);
 }
 
