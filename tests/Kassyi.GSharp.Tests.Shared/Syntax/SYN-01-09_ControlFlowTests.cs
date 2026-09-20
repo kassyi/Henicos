@@ -20,7 +20,7 @@ public class SYN_01_09_ControlFlowTests
         int[] input = [inputVal];
         int[] output = [0];
 
-        SYN_01_09_ControlFlowKernelsWrapper.Launch_SwitchExpressionKernel(input, output, blockDimX: 1);
+        SYN_01_09_ControlFlowKernelsWrapper.LaunchSwitchExpressionKernel(input, output, blockDimX: 1);
 
         Assert.Equal(expectedVal, output[0]);
     }
@@ -36,7 +36,7 @@ public class SYN_01_09_ControlFlowTests
         int[] selectors = [1, 2]; // tid 0 selects 'a', tid 1 selects 'b'
         int[] valuesToAssign = [999, 888];
 
-        SYN_01_09_ControlFlowKernelsWrapper.Launch_RefSwitchExpressionKernel(a, b, selectors, valuesToAssign, blockDimX: 2);
+        SYN_01_09_ControlFlowKernelsWrapper.LaunchRefSwitchExpressionKernel(a, b, selectors, valuesToAssign, blockDimX: 2);
 
         Assert.Equal(999, a[0]); // a[0] updated
         Assert.Equal(20, a[1]);  // a[1] unchanged
@@ -65,7 +65,7 @@ public class SYN_01_09_ControlFlowTests
         int[] fallbackValues = [fallbackVal];
         int[] results = [0];
 
-        SYN_01_09_ControlFlowKernelsWrapper.Launch_NullCoalescingKernel(nullableInputs, fallbackValues, results, blockDimX: 1);
+        SYN_01_09_ControlFlowKernelsWrapper.LaunchNullCoalescingKernel(nullableInputs, fallbackValues, results, blockDimX: 1);
 
         Assert.Equal(expectedVal, results[0]);
     }
@@ -80,7 +80,7 @@ public class SYN_01_09_ControlFlowTests
         int[] sideEffectTracker = [0, 1]; // starting indices for side effect
         int[] values = [50, 99];
 
-        SYN_01_09_ControlFlowKernelsWrapper.Launch_NullCoalescingAssignmentSideEffectKernel(targetArray, sideEffectTracker, values, blockDimX: 2);
+        SYN_01_09_ControlFlowKernelsWrapper.LaunchNullCoalescingAssignmentSideEffectKernel(targetArray, sideEffectTracker, values, blockDimX: 2);
 
         // Verify side-effect tracker was incremented exactly once per thread
         Assert.Equal(1, sideEffectTracker[0]);
@@ -107,7 +107,7 @@ public class SYN_01_09_ControlFlowTests
         int[] b = [bVal];
         double[] result = [0.0];
 
-        SYN_01_09_ControlFlowKernelsWrapper.Launch_SimpleTernaryKernel(a, b, result, blockDimX: 1);
+        SYN_01_09_ControlFlowKernelsWrapper.LaunchSimpleTernaryKernel(a, b, result, blockDimX: 1);
 
         Assert.Equal(expectedResult, result[0], precision: 4);
     }
@@ -127,7 +127,7 @@ public class SYN_01_09_ControlFlowTests
         int[] c = [z];
         int[] result = [0];
 
-        SYN_01_09_ControlFlowKernelsWrapper.Launch_NestedTernaryKernel(a, b, c, result, blockDimX: 1);
+        SYN_01_09_ControlFlowKernelsWrapper.LaunchNestedTernaryKernel(a, b, c, result, blockDimX: 1);
 
         Assert.Equal(expectedResult, result[0]);
     }

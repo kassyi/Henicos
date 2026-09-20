@@ -12,7 +12,7 @@ public class GEN_20_34_TranspilerInfrastructureTests
         int[] vals = [5, 5, 5];
         int[] results = [0, 0, 0];
 
-        GEN_20_34_TranspilerInfrastructureKernelsWrapper.Launch_MutualCallKernel(counts, vals, results, blockDimX: 3);
+        GEN_20_34_TranspilerInfrastructureKernelsWrapper.LaunchMutualCallKernel(counts, vals, results, blockDimX: 3);
 
         // thread 0: count=1, val=5 -> MutualFuncA(1, 5) -> MutualFuncB(0, 15) -> returns 15
         Assert.Equal(15, results[0]);
@@ -34,7 +34,7 @@ public class GEN_20_34_TranspilerInfrastructureTests
         int[] output2Arg = [0, 0];
         int[] output3Arg = [0, 0];
 
-        GEN_20_34_TranspilerInfrastructureKernelsWrapper.Launch_OverloadTestKernel(
+        GEN_20_34_TranspilerInfrastructureKernelsWrapper.LaunchOverloadTestKernel(
             inputA, inputB, inputC, output2Arg, output3Arg, blockDimX: 2);
 
         // thread 0: 2-arg MultiplyAdd(3, 5) = 15; 3-arg MultiplyAdd(3, 5, 7) = 22
@@ -54,7 +54,7 @@ public class GEN_20_34_TranspilerInfrastructureTests
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // 1. Empty array transfer
         int[] emptyData = [];
-        GEN_20_34_TranspilerInfrastructureKernelsWrapper.Launch_ArrayTransferKernel(emptyData, 0, blockDimX: 1);
+        GEN_20_34_TranspilerInfrastructureKernelsWrapper.LaunchArrayTransferKernel(emptyData, 0, blockDimX: 1);
         Assert.Empty(emptyData);
 
         // 2. Large array transfer (65,536 elements across 256 blocks of 256 threads)
@@ -65,7 +65,7 @@ public class GEN_20_34_TranspilerInfrastructureTests
             hugeData[i] = i;
         }
 
-        GEN_20_34_TranspilerInfrastructureKernelsWrapper.Launch_ArrayTransferKernel(
+        GEN_20_34_TranspilerInfrastructureKernelsWrapper.LaunchArrayTransferKernel(
             hugeData, length, blockDimX: 256, gridDimX: 256);
 
         for (int i = 0; i < length; i++)

@@ -10,7 +10,7 @@ public class SYN_70_72_LoopsAndJumpsTests
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = [0];
-        SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachInlineArrayKernel(output, blockDimX: 1);
+        SYN_70_72_LoopsAndJumpsKernelsWrapper.LaunchForeachInlineArrayKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
     }
 

@@ -9,7 +9,7 @@ public class GSH_03_LocalFunctionLoweringTests : TranspilerTestBase
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [10, 20, 30];
-        GSH_03_LocalFunctionLoweringKernelsWrapper.Launch_LocalFunctionVoidKernel(data, blockDimX: 3);
+        GSH_03_LocalFunctionLoweringKernelsWrapper.LaunchLocalFunctionVoidKernel(data, blockDimX: 3);
         Assert.Equal(20, data[0]);
         Assert.Equal(40, data[1]);
         Assert.Equal(60, data[2]);
@@ -30,7 +30,7 @@ public class GSH_03_LocalFunctionLoweringTests : TranspilerTestBase
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [input];
-        GSH_03_LocalFunctionLoweringKernelsWrapper.Launch_LocalFunctionValueReturnKernel(data, bonus, blockDimX: 1);
+        GSH_03_LocalFunctionLoweringKernelsWrapper.LaunchLocalFunctionValueReturnKernel(data, bonus, blockDimX: 1);
         Assert.Equal(expected, data[0]);
     }
 
@@ -45,7 +45,7 @@ public class GSH_03_LocalFunctionLoweringTests : TranspilerTestBase
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [input];
-        GSH_03_LocalFunctionLoweringKernelsWrapper.Launch_LocalFunctionExpressionBodyKernel(data, blockDimX: 1);
+        GSH_03_LocalFunctionLoweringKernelsWrapper.LaunchLocalFunctionExpressionBodyKernel(data, blockDimX: 1);
         Assert.Equal(expected, data[0]);
     }
 
@@ -56,7 +56,7 @@ public class GSH_03_LocalFunctionLoweringTests : TranspilerTestBase
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0, 5, 10];
-        GSH_03_LocalFunctionLoweringKernelsWrapper.Launch_NestedLocalFunctionKernel(data, blockDimX: 3);
+        GSH_03_LocalFunctionLoweringKernelsWrapper.LaunchNestedLocalFunctionKernel(data, blockDimX: 3);
         Assert.Equal(10, data[0]); // 0 * 2 + 10
         Assert.Equal(20, data[1]); // 5 * 2 + 10
         Assert.Equal(30, data[2]); // 10 * 2 + 10
@@ -80,7 +80,7 @@ public class GSH_03_LocalFunctionLoweringTests : TranspilerTestBase
         int[] a = [aVal];
         int[] b = [bVal];
         int[] result = [0];
-        GSH_03_LocalFunctionLoweringKernelsWrapper.Launch_MultiParamLocalFunctionKernel(a, b, result, blockDimX: 1);
+        GSH_03_LocalFunctionLoweringKernelsWrapper.LaunchMultiParamLocalFunctionKernel(a, b, result, blockDimX: 1);
         Assert.Equal(expected, result[0]);
     }
 }

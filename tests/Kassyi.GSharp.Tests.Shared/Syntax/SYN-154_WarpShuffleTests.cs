@@ -30,7 +30,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
 
         int[] output = new int[totalThreads];
 
-        SYN_154_WarpShuffleKernelsWrapper.Launch_WarpShuffleExtremaKernel(
+        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpShuffleExtremaKernel(
             mask,
             input,
             delta,
@@ -78,7 +78,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
 
         int[] output = new int[numWarps];
 
-        SYN_154_WarpShuffleKernelsWrapper.Launch_WarpReductionKernel(
+        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpReductionKernel(
             input,
             output,
             blockDimX: (uint)totalThreads
@@ -116,7 +116,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
         int[] out31 = new int[totalThreads];
         int[] out32 = new int[totalThreads];
 
-        SYN_154_WarpShuffleKernelsWrapper.Launch_WarpShuffleBoundaryKernel(
+        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpShuffleBoundaryKernel(
             input,
             out0,
             out31,
@@ -155,7 +155,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
 
         int[] output = new int[totalThreads];
 
-        SYN_154_WarpShuffleKernelsWrapper.Launch_WarpDivergenceKernel(
+        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpDivergenceKernel(
             input,
             output,
             blockDimX: (uint)totalThreads

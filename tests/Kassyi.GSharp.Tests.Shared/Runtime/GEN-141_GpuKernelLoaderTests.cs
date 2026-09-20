@@ -27,7 +27,8 @@ public class GEN141_GpuKernelLoaderTests
         // Stress parallel concurrent calls to LoadAotKernel to ensure allocation locks and loader caches operate thread-safely
         Parallel.For(0, 50, i =>
         {
-            var hfunc = GpuKernelLoader.LoadAotKernel(s_validPtx, "empty_kernel");
+            var hModule = GpuKernelLoader.LoadModule(s_validPtx);
+            var hfunc = GpuKernelLoader.GetFunction(hModule, "empty_kernel");
             Assert.NotEqual(IntPtr.Zero, hfunc);
 
             GpuKernelLoader.SynchronizeDevice();
@@ -50,7 +51,8 @@ public class GEN141_GpuKernelLoaderTests
         // Loading corrupted/invalid PTX buffer should throw CudaException (CudaErrorInvalidImage)
         var ex = Assert.Throws<CudaException>(() =>
         {
-            GpuKernelLoader.LoadAotKernel(corruptedPtx, "non_existent_kernel");
+            var hModule = GpuKernelLoader.LoadModule(corruptedPtx);
+            GpuKernelLoader.GetFunction(hModule, "non_existent_kernel");
         });
         Assert.Equal(CUresult.CudaErrorInvalidImage, ex.Result);
     }
@@ -70,7 +72,8 @@ public class GEN141_GpuKernelLoaderTests
 
         var ex = Assert.Throws<InvalidOperationException>(() =>
         {
-            GpuKernelLoader.LoadAotKernel(shortBuffer, "any_kernel");
+            var hModule = GpuKernelLoader.LoadModule(shortBuffer);
+            GpuKernelLoader.GetFunction(hModule, "any_kernel");
         });
         Assert.Contains("too small", ex.Message);
     }
@@ -86,7 +89,8 @@ public class GEN141_GpuKernelLoaderTests
         // Valid PTX module but non-existent entry point function name
         var ex = Assert.Throws<CudaException>(() =>
         {
-            GpuKernelLoader.LoadAotKernel(s_validPtx, "missing_kernel_entry_point");
+            var hModule = GpuKernelLoader.LoadModule(s_validPtx);
+            GpuKernelLoader.GetFunction(hModule, "missing_kernel_entry_point");
         });
         Assert.Contains("CudaErrorNotFound", ex.Message);
     }

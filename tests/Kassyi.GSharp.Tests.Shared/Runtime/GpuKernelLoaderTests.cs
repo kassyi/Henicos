@@ -30,7 +30,8 @@ public class GpuKernelLoaderAotTests
         // Execute in parallel on multiple threads to verify thread-safety and CUDA context management
         Parallel.For(0, 100, i =>
         {
-            var hfunc = GpuKernelLoader.LoadAotKernel(s_validPtx, "empty_kernel");
+            var hModule = GpuKernelLoader.LoadModule(s_validPtx);
+            var hfunc = GpuKernelLoader.GetFunction(hModule, "empty_kernel");
             Assert.NotEqual(IntPtr.Zero, hfunc);
             
             // Call SynchronizeDevice to ensure context binding is correct per-thread
