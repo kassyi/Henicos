@@ -8,6 +8,11 @@ namespace Kassyi.GSharp.Tests.Stdlib;
 
 public class GBI35_GpuBigIntegerTests : TranspilerTestBase
 {
+    public GBI35_GpuBigIntegerTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     [SkippableFact]
     [Trait("FeatureId", "GBI-35")]
     [Trait("Category", "HappyPath")]

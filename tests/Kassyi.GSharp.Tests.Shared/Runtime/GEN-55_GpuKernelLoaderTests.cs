@@ -7,6 +7,11 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 public class GEN55_GpuKernelLoaderTests : TranspilerTestBase
 {
+    public GEN55_GpuKernelLoaderTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     private static readonly byte[] s_validPtx;
 
     static GEN55_GpuKernelLoaderTests()

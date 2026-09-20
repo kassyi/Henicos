@@ -11,6 +11,11 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 public class GpuKernelLoaderAotTests : TranspilerTestBase
 {
+    public GpuKernelLoaderAotTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     // A minimal valid PTX string (acting as binary data) to satisfy cuModuleLoadDataEx
     private static readonly byte[] s_validPtx;
 

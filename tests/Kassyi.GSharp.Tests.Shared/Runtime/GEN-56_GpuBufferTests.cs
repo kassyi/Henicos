@@ -7,6 +7,11 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 public class GEN56_GpuBufferTests : TranspilerTestBase
 {
+    public GEN56_GpuBufferTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     [SkippableTheory]
     [Trait("FeatureId", "GEN-56")]
     [Trait("Category", "Runtime")]
