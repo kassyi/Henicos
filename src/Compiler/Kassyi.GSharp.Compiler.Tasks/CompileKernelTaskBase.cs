@@ -66,8 +66,19 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
 
     protected virtual bool OnBeforeExecute() => true;
 
+    private static readonly Dictionary<string, Dictionary<string, string>?> s_vcvarsCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly object s_vcvarsLock = new();
+
     protected Dictionary<string, string>? GetVcvarsEnvironment(string vcvarsArch)
     {
+        lock (s_vcvarsLock)
+        {
+            if (s_vcvarsCache.TryGetValue(vcvarsArch, out var cachedEnv))
+            {
+                return cachedEnv;
+            }
+        }
+
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
 
@@ -140,6 +151,11 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             {
                 envVars[line.Substring(0, eqIndex)] = line.Substring(eqIndex + 1);
             }
+        }
+
+        lock (s_vcvarsLock)
+        {
+            s_vcvarsCache[vcvarsArch] = envVars;
         }
 
         return envVars;
