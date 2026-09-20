@@ -7,4 +7,8 @@
     <!-- 自動生成コード(Source Generator)等の未使用プライベートフィールド警告を抑制 -->
     <NoWarn>$(NoWarn);CS0169</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)BannedSymbols.txt')" />
+  </ItemGroup>
 </Project>

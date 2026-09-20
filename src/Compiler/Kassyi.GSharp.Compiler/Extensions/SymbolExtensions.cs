@@ -80,4 +80,39 @@ internal static class SymbolExtensions
         }
         return null;
     }
+
+    /// <summary>
+    /// Gets the full namespace name without allocating via ToDisplayString().
+    /// Uses StringBuilder to construct the dot-separated name from bottom to top.
+    /// </summary>
+    public static string GetFullNamespaceName(this INamespaceSymbol? namespaceSymbol)
+    {
+        if (namespaceSymbol == null || namespaceSymbol.IsGlobalNamespace)
+            return string.Empty;
+
+        // Fast path for single-level namespace
+        if (namespaceSymbol.ContainingNamespace is null or { IsGlobalNamespace: true })
+            return namespaceSymbol.Name;
+
+        using var enumerator = GetNamespaces(namespaceSymbol).GetEnumerator();
+        if (!enumerator.MoveNext()) return string.Empty;
+
+        var sb = new System.Text.StringBuilder(enumerator.Current);
+        while (enumerator.MoveNext())
+        {
+            sb.Insert(0, ".");
+            sb.Insert(0, enumerator.Current);
+        }
+        return sb.ToString();
+
+        static System.Collections.Generic.IEnumerable<string> GetNamespaces(INamespaceSymbol? ns)
+        {
+            var current = ns;
+            while (current != null && !current.IsGlobalNamespace)
+            {
+                yield return current.Name;
+                current = current.ContainingNamespace;
+            }
+        }
+    }
 }

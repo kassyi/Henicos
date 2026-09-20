@@ -90,6 +90,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         return new TranspiledKernelResult(
             methodSymbol,
+            methodSymbol.Name,
+            methodSymbol.ContainingType.Name,
+            methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
             cudaSource,
             cppSource,
             keyProvider,
@@ -126,7 +129,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
 
-        return new TranspiledDeviceMethodResult(methodSymbol, cudaSignature, cudaBody, cppSignature, cppBody,
+        return new TranspiledDeviceMethodResult(
+            methodSymbol,
+            methodSymbol.Name,
+            methodSymbol.ContainingType.Name,
+            methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+            cudaSignature,
+            cudaBody,
+            cppSignature,
+            cppBody,
             equatableDiagnostics);
 
         void reportDiagnostic(Diagnostic d) => diagnostics.Add(d);
@@ -175,7 +186,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         bool isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
         ITranspilerDialect dialect = isCuda ? new GSharpCudaDialect() : new StandardCppDialect();
 
-        var distinctDeviceMethods = deviceMethods.Distinct(new DeviceResultEqualityComparer()).ToList();
+        var distinctDeviceMethods = deviceMethods.Distinct().ToList();
         var commonDeviceSource =
             GenerateCommonDeviceSource(distinctDeviceMethods, context, isCuda);
         var preludeSource = GetPreludeSource(context, dialect);
@@ -195,28 +206,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         // Use Distinct by fully qualified method name to avoid duplicates if partial classes define it twice (which is illegal in C# but AST parses it).
         // For IMethodSymbol, SymbolEqualityComparer.Default is fine here because they are from the SAME cached output if unchanged.
-        foreach (var method in kernelMethods.Distinct(new KernelResultEqualityComparer()))
+        foreach (var method in kernelMethods.Distinct())
         {
             ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda, aesKey);
         }
-    }
-
-    private class KernelResultEqualityComparer : IEqualityComparer<TranspiledKernelResult>
-    {
-        public bool Equals(TranspiledKernelResult x, TranspiledKernelResult y) =>
-            SymbolEqualityComparer.Default.Equals(x.MethodSymbol, y.MethodSymbol);
-
-        public int GetHashCode(TranspiledKernelResult obj) =>
-            SymbolEqualityComparer.Default.GetHashCode(obj.MethodSymbol);
-    }
-
-    private class DeviceResultEqualityComparer : IEqualityComparer<TranspiledDeviceMethodResult>
-    {
-        public bool Equals(TranspiledDeviceMethodResult x, TranspiledDeviceMethodResult y) =>
-            SymbolEqualityComparer.Default.Equals(x.MethodSymbol, y.MethodSymbol);
-
-        public int GetHashCode(TranspiledDeviceMethodResult obj) =>
-            SymbolEqualityComparer.Default.GetHashCode(obj.MethodSymbol);
     }
 
     private static void EmitSharedSources(SourceProductionContext context, GeneratorConfig config, string preludeSource,
@@ -303,17 +296,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(Diagnostic.Create(
                     new DiagnosticDescriptor(
                         "GEN002", "Missing Encryption Key",
-                        $"Method '{method.MethodSymbol.Name}' specifies an EncryptionKeyProvider, but no build-time key was provided via <GSharpAotEncryptionKey> MSBuild property.",
+                        $"Method '{method.MethodName}' specifies an EncryptionKeyProvider, but no build-time key was provided via <GSharpAotEncryptionKey> MSBuild property.",
                         "GSharp", DiagnosticSeverity.Error, true),
                     method.MethodSymbol.Locations.FirstOrDefault() ?? Location.None));
             }
 
-            WriteAotArtifacts(method.MethodSymbol, config, aesKey!, preludeSource, commonDeviceSource, source, dialect);
+            WriteAotArtifacts(method, config, aesKey!, preludeSource, commonDeviceSource, source, dialect);
         }
 
         var wrapperSource =
             WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config, aesKey, keyProvider);
-        context.AddSource(method.MethodSymbol.ContainingType.Name + "_" + method.MethodSymbol.Name + "_Wrapper.g.cs",
+        context.AddSource(method.ClassName + "_" + method.MethodName + "_Wrapper.g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
@@ -371,12 +364,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return aesKey;
     }
 
-    private static void WriteAotArtifacts(IMethodSymbol method, GeneratorConfig config, byte[] aesKey,
+    private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config, byte[] aesKey,
         string preludeSource, string commonDeviceSource, string kernelSource, ITranspilerDialect dialect)
     {
         var fullCudaSource = preludeSource + commonDeviceSource + kernelSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"{method.ContainingType.Name}_{method.Name}{ext}";
+        var fileName = $"{method.ClassName}_{method.MethodName}{ext}";
         var filePath = Path.Combine(config.IntermediateOutputPath!, fileName);
         var keyFilePath = filePath + ".key";
 
