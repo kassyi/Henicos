@@ -17,3 +17,10 @@ M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Use ToDisplayString() ins
 M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Use ToDisplayString() instead
 M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Use custom helper instead to avoid performance penalty in generator hot paths
 M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Use custom helper instead to avoid performance penalty in generator hot paths
+T:System.Reflection.MethodInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
+T:System.Reflection.PropertyInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
+T:System.Reflection.FieldInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Type.GetMethod(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Type.GetProperty(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Type.GetField(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Activator.CreateInstance(System.Type);Dynamic instantiation is prohibited. Use direct AST/Symbol resolution.
