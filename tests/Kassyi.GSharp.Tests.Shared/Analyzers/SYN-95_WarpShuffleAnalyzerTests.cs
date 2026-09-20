@@ -13,12 +13,12 @@ public class SYN_154_WarpShuffleAnalyzerTests : TranspilerTestBase
     [Fact]
     [Trait("Category", "SadPath")]
     [Trait("FeatureId", "154")]
-    [Trait("FeatureId", "SYN-154")]
+    [Trait("FeatureId", "SYN-95")]
     public async Task Test_154_HostCallToShuffleDownSync_ReportsExpectedError()
     {
         // Asserting diagnostic error for host-side intrinsic use
         // Replace with actual analyzer if HostIntrinsicAnalyzer doesn't exist
-        await RoslynTestUtility.TestAnalyzer("Analyzers/SYN-154_WarpShuffleSadPath.cs", s_analyzer)
+        await RoslynTestUtility.TestAnalyzer("Analyzers/SYN-95_WarpShuffleSadPath.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0018");
     }
 }

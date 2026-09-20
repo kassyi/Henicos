@@ -5,11 +5,11 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN141_GpuKernelLoaderTests
+public class GEN55_GpuKernelLoaderTests
 {
     private static readonly byte[] s_validPtx;
 
-    static GEN141_GpuKernelLoaderTests()
+    static GEN55_GpuKernelLoaderTests()
     {
         var basePtx = Encoding.UTF8.GetBytes(".version 7.0\n.target sm_50\n.address_size 64\n.visible .entry empty_kernel() { ret; }\0");
         var hash = System.Security.Cryptography.SHA256.HashData(basePtx);
@@ -17,10 +17,10 @@ public class GEN141_GpuKernelLoaderTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GEN-141")]
+    [Trait("FeatureId", "GEN-55")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "HappyPath")]
-    public void Test_GEN141_HighThroughputKernelLoading_ParallelStress()
+    public void Test_GEN55_HighThroughputKernelLoading_ParallelStress()
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -36,10 +36,10 @@ public class GEN141_GpuKernelLoaderTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GEN-141")]
+    [Trait("FeatureId", "GEN-55")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
-    public void Test_GEN141_CorruptedPtxBinary_ThrowsArgumentException()
+    public void Test_GEN55_CorruptedPtxBinary_ThrowsArgumentException()
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -58,13 +58,13 @@ public class GEN141_GpuKernelLoaderTests
     }
     
     [SkippableTheory]
-    [Trait("FeatureId", "GEN-141")]
+    [Trait("FeatureId", "GEN-55")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(31)] // Less than 32 bytes (SHA256 hash length)
-    public void Test_GEN141_ShortPtxBuffer_ThrowsArgumentException(int length)
+    public void Test_GEN55_ShortPtxBuffer_ThrowsArgumentException(int length)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -79,10 +79,10 @@ public class GEN141_GpuKernelLoaderTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GEN-141")]
+    [Trait("FeatureId", "GEN-55")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
-    public void Test_GEN141_NonExistentKernelName_ThrowsArgumentException()
+    public void Test_GEN55_NonExistentKernelName_ThrowsArgumentException()
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -93,5 +93,66 @@ public class GEN141_GpuKernelLoaderTests
             GpuKernelLoader.GetFunction(hModule, "missing_kernel_entry_point");
         });
         Assert.Contains("CudaErrorNotFound", ex.Message);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GEN-55")]
+    [Trait("Category", "Runtime")]
+    [Trait("Category", "SadPath")]
+    public void Test_GEN55_TamperedBody_ThrowsInvalidOperationException()
+    {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+
+        // Copy valid PTX
+        byte[] tampered = new byte[s_validPtx.Length];
+        Array.Copy(s_validPtx, tampered, s_validPtx.Length);
+
+        // Mutate the body (e.g. byte at index 10)
+        tampered[10] = (byte)(tampered[10] ^ 0xFF);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadModule(tampered);
+        });
+        Assert.Contains("hash mismatch", ex.Message);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GEN-55")]
+    [Trait("Category", "Runtime")]
+    [Trait("Category", "SadPath")]
+    public void Test_GEN55_TamperedHashFooter_ThrowsInvalidOperationException()
+    {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+
+        // Copy valid PTX
+        byte[] tampered = new byte[s_validPtx.Length];
+        Array.Copy(s_validPtx, tampered, s_validPtx.Length);
+
+        // Mutate the footer hash (last 32 bytes)
+        tampered[^1] = (byte)(tampered[^1] ^ 0xFF);
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadModule(tampered);
+        });
+        Assert.Contains("hash mismatch", ex.Message);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GEN-55")]
+    [Trait("Category", "Runtime")]
+    [Trait("Category", "HappyPath")]
+    public void Test_GEN55_ModuleContextWarmup_ExecutesSafely()
+    {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+
+#if GSHARP_CUDA
+        // Directly invoke the auto-generated static method without Reflection.
+        // Static Determinism & Zero-Allocation rule.
+        global::Kassyi.GSharp.Generated.GSharpModuleContext_Kassyi_GSharp_Tests_Cuda.Warmup();
+#else
+        throw new SkipException("Module warmup is only applicable in CUDA execution mode.");
+#endif
     }
 }

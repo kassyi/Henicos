@@ -10,7 +10,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [SkippableTheory]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
-    [Trait("FeatureId", "SYN-154")]
+    [Trait("FeatureId", "SYN-95")]
     [InlineData(0xFFFFFFFF, 1, 32)] // Full warp, delta=1
     [InlineData(0xFFFFFFFF, 31, 32)] // Full warp, delta=31
     [InlineData(0xFFFFFFFF, 32, 32)] // Full warp, delta=out-of-bounds
@@ -61,7 +61,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
-    [Trait("FeatureId", "SYN-154")]
+    [Trait("FeatureId", "SYN-95")]
     public void Test_154_WarpReduceSum_CalculatesCorrectly()
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -100,7 +100,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
-    [Trait("FeatureId", "SYN-154")]
+    [Trait("FeatureId", "SYN-95")]
     public void Test_154_WarpShuffleBoundaryOffsets()
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -141,7 +141,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
-    [Trait("FeatureId", "SYN-154")]
+    [Trait("FeatureId", "SYN-95")]
     public void Test_154_WarpDivergence()
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -179,7 +179,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "154")]
-    [Trait("FeatureId", "SYN-154")]
+    [Trait("FeatureId", "SYN-95")]
     public void Test_154_Transpilation_MapsToCudaNativeShuffle()
     {
         const string code = """

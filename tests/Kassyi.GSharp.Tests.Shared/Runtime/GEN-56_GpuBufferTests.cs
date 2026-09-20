@@ -5,16 +5,16 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN153_GpuBufferTests
+public class GEN56_GpuBufferTests
 {
     [SkippableTheory]
-    [Trait("FeatureId", "GEN-153")]
+    [Trait("FeatureId", "GEN-56")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "HappyPath")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(1024)]
-    public void Test_GEN153_GpuBuffer_HappyPath_RoundTrip(int count)
+    public void Test_GEN56_GpuBuffer_HappyPath_RoundTrip(int count)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
@@ -43,10 +43,10 @@ public class GEN153_GpuBufferTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GEN-153")]
+    [Trait("FeatureId", "GEN-56")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
-    public void Test_GEN153_GpuBuffer_NegativeLength_ThrowsArgumentOutOfRangeException()
+    public void Test_GEN56_GpuBuffer_NegativeLength_ThrowsArgumentOutOfRangeException()
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
@@ -55,10 +55,10 @@ public class GEN153_GpuBufferTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GEN-153")]
+    [Trait("FeatureId", "GEN-56")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
-    public void Test_GEN153_GpuBuffer_OversizedSpan_ThrowsArgumentException()
+    public void Test_GEN56_GpuBuffer_OversizedSpan_ThrowsArgumentException()
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
@@ -74,10 +74,10 @@ public class GEN153_GpuBufferTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GEN-153")]
+    [Trait("FeatureId", "GEN-56")]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
-    public void Test_GEN153_GpuBuffer_UseAfterDispose_ThrowsObjectDisposedException()
+    public void Test_GEN56_GpuBuffer_UseAfterDispose_ThrowsObjectDisposedException()
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
