@@ -24,7 +24,7 @@ namespace Henicos.Benchmarks.Microbenchmarks
 {
 public static partial class MathFmaKernelsWrapper
 {
-public const string MathFmaKernel_Source = @"extern ""C"" __declspec(dllexport) void MathFmaKernel(float* __restrict__ data, int n, int iterations){
+public const string MathFmaKernel_Source = @"extern ""C"" __declspec(dllexport) void MathFmaKernels_MathFmaKernel(float* __restrict__ data, int n, int iterations){
 int idx = blockIdx.x*blockDim.x+threadIdx.x;
 if(idx<n)
 {
@@ -39,7 +39,7 @@ a=a*b+c;
 data[idx]=a;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MathFmaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n, int iterations)
+extern ""C"" __declspec(dllexport) void __gsharp_LaunchMathFmaKernels_MathFmaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n, int iterations)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -49,31 +49,30 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MathFmaKernel(data, n, iterations);
+MathFmaKernels_MathFmaKernel(data, n, iterations);
 }
 }
 ";
 public static readonly string MathFmaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MathFmaKernel_Source;
-private static byte[]? s_decryptionKey_MathFmaKernel;
 private static byte[]? s_binaryData_MathFmaKernel;
 private static bool s_isLoaded_MathFmaKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MathFmaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* data, global::System.Int32 n, global::System.Int32 iterations);
-public static unsafe void Launch_MathFmaKernel(global::System.Single[] data, global::System.Int32 n, global::System.Int32 iterations, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMathFmaKernel(global::System.Single[] data, global::System.Int32 n, global::System.Int32 iterations, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"MathFmaKernels_MathFmaKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
+var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_MathFmaKernel)
 {
-s_decryptionKey_MathFmaKernel = null;
 s_isLoaded_MathFmaKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathFmaKernel_Delegate>("__gsharp_launch_MathFmaKernel", dllPath, s_decryptionKey_MathFmaKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathFmaKernel_Delegate>("__gsharp_LaunchMathFmaKernels_MathFmaKernel", dllPath);
 fixed (global::System.Single* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, n, iterations);

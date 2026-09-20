@@ -13,7 +13,7 @@ namespace Henicos.Benchmarks.Microbenchmarks
 {
 public static partial class BranchDivergenceKernelsWrapper
 {
-public const string BranchDivergenceKernel_Source = @"extern ""C"" __declspec(dllexport) void BranchDivergenceKernel(float* __restrict__ data, int n){
+public const string BranchDivergenceKernel_Source = @"extern ""C"" __declspec(dllexport) void BranchDivergenceKernels_BranchDivergenceKernel(float* __restrict__ data, int n){
 int idx = blockIdx.x*blockDim.x+threadIdx.x;
 if(idx<n)
 {
@@ -35,7 +35,7 @@ val=val*0.99f-0.01f;
 data[idx]=val;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_BranchDivergenceKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_LaunchBranchDivergenceKernels_BranchDivergenceKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -45,31 +45,30 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-BranchDivergenceKernel(data, n);
+BranchDivergenceKernels_BranchDivergenceKernel(data, n);
 }
 }
 ";
 public static readonly string BranchDivergenceKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + BranchDivergenceKernel_Source;
-private static byte[]? s_decryptionKey_BranchDivergenceKernel;
 private static byte[]? s_binaryData_BranchDivergenceKernel;
 private static bool s_isLoaded_BranchDivergenceKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void BranchDivergenceKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* data, global::System.Int32 n);
-public static unsafe void Launch_BranchDivergenceKernel(global::System.Single[] data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBranchDivergenceKernel(global::System.Single[] data, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"BranchDivergenceKernels_BranchDivergenceKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
+var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_BranchDivergenceKernel)
 {
-s_decryptionKey_BranchDivergenceKernel = null;
 s_isLoaded_BranchDivergenceKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BranchDivergenceKernel_Delegate>("__gsharp_launch_BranchDivergenceKernel", dllPath, s_decryptionKey_BranchDivergenceKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BranchDivergenceKernel_Delegate>("__gsharp_LaunchBranchDivergenceKernels_BranchDivergenceKernel", dllPath);
 fixed (global::System.Single* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, n);

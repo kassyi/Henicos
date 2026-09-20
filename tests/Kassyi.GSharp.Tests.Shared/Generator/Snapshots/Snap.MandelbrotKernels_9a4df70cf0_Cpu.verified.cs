@@ -24,7 +24,7 @@ namespace Henicos.Benchmarks.Algorithms
 {
 public static partial class MandelbrotKernelsWrapper
 {
-public const string MandelbrotKernel_Source = @"extern ""C"" __declspec(dllexport) void MandelbrotKernel(int* __restrict__ output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax){
+public const string MandelbrotKernel_Source = @"extern ""C"" __declspec(dllexport) void MandelbrotKernels_MandelbrotKernel(int* __restrict__ output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax){
 int col = blockIdx.x*blockDim.x+threadIdx.x;
 int row = blockIdx.y*blockDim.y+threadIdx.y;
 if(col<width&&row<height)
@@ -44,7 +44,7 @@ iter++;
 output[row*width+col]=iter;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MandelbrotKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax)
+extern ""C"" __declspec(dllexport) void __gsharp_LaunchMandelbrotKernels_MandelbrotKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output, int width, int height, int maxIter, float xMin, float xMax, float yMin, float yMax)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -54,31 +54,30 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MandelbrotKernel(output, width, height, maxIter, xMin, xMax, yMin, yMax);
+MandelbrotKernels_MandelbrotKernel(output, width, height, maxIter, xMin, xMax, yMin, yMax);
 }
 }
 ";
 public static readonly string MandelbrotKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MandelbrotKernel_Source;
-private static byte[]? s_decryptionKey_MandelbrotKernel;
 private static byte[]? s_binaryData_MandelbrotKernel;
 private static bool s_isLoaded_MandelbrotKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MandelbrotKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output, global::System.Int32 width, global::System.Int32 height, global::System.Int32 maxIter, global::System.Single xMin, global::System.Single xMax, global::System.Single yMin, global::System.Single yMax);
-public static unsafe void Launch_MandelbrotKernel(global::System.Int32[] output, global::System.Int32 width, global::System.Int32 height, global::System.Int32 maxIter, global::System.Single xMin, global::System.Single xMax, global::System.Single yMin, global::System.Single yMax, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMandelbrotKernel(global::System.Int32[] output, global::System.Int32 width, global::System.Int32 height, global::System.Int32 maxIter, global::System.Single xMin, global::System.Single xMax, global::System.Single yMin, global::System.Single yMax, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"MandelbrotKernels_MandelbrotKernel{archSuffix}.dll";
-var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
+var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_MandelbrotKernel)
 {
-s_decryptionKey_MandelbrotKernel = null;
 s_isLoaded_MandelbrotKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MandelbrotKernel_Delegate>("__gsharp_launch_MandelbrotKernel", dllPath, s_decryptionKey_MandelbrotKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MandelbrotKernel_Delegate>("__gsharp_LaunchMandelbrotKernels_MandelbrotKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output, width, height, maxIter, xMin, xMax, yMin, yMax);
