@@ -6,14 +6,18 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
-public class GBI35_GpuBigIntegerTests
+public class GBI35_GpuBigIntegerTests : TranspilerTestBase
 {
+    public GBI35_GpuBigIntegerTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     [SkippableFact]
     [Trait("FeatureId", "GBI-35")]
     [Trait("Category", "HappyPath")]
     public void Test_GBI35_ConstructorAndProperties_StoreCorrectValues()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -49,7 +53,6 @@ public class GBI35_GpuBigIntegerTests
     public void Test_GBI35_ComparisonAndRelationalOperators_BehaveCorrectly(
         uint valA, bool negA, uint valB, bool negB, int expectedCmp)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -103,7 +106,6 @@ public class GBI35_GpuBigIntegerTests
     [InlineData(true, true, false)]   // (-A) * (-B) = +Result
     public void Test_GBI35_SignedMultiplicationAndDivisionExpressions_SignRules(bool negA, bool negB, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -132,7 +134,6 @@ public class GBI35_GpuBigIntegerTests
     [InlineData(true, true, true)]    // (-A) + (-B) = -Result
     public void Test_GBI35_SignedAdditionExpression_SameSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -164,7 +165,6 @@ public class GBI35_GpuBigIntegerTests
     [InlineData(0x55555555, false, 0xAAAAAAAA, true, 0x55555555, true)]  // 0x55555555 + (-0xAAAAAAAA) = -0x55555555
     public void Test_GBI35_SignedAdditionExpression_DifferentSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -193,7 +193,6 @@ public class GBI35_GpuBigIntegerTests
     [InlineData(true, false, true)]  // (-A) - (+B) = (-A) + (-B) = -Result
     public void Test_GBI35_SignedSubtractionExpression_DifferentSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -226,7 +225,6 @@ public class GBI35_GpuBigIntegerTests
     [InlineData(0x55555555, false, 0xAAAAAAAA, false, 0x55555555, true)]
     public void Test_GBI35_SignedSubtractionExpression_SameSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -252,7 +250,6 @@ public class GBI35_GpuBigIntegerTests
     [Trait("Category", "HappyPath")]
     public void Test_GBI35_UnaryOperators_NegationAndBitwiseNot()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -277,7 +274,6 @@ public class GBI35_GpuBigIntegerTests
     [Trait("Category", "SadPath")]
     public void Test_GBI35_Evaluate_SadPaths_ThrowsAndReleasesBuffers()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 

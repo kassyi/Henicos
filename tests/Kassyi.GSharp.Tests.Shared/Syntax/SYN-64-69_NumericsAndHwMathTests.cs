@@ -4,28 +4,28 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_64_69_NumericsAndHwMathTests
 :  TranspilerTestBase{
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-64")]
     [Trait("Category", "Syntax")]
     public void Test_SYN64_HalfPrecision_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-65")]
     [Trait("Category", "Syntax")]
     public void Test_SYN65_NativeInt_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-66")]
     [Trait("Category", "Syntax")]
     public void Test_SYN66_Int128UInt128_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-67")]
     [Trait("Category", "Syntax")]
     public void Test_SYN67_BFloat16Fp8_Transpilation()
@@ -43,7 +43,6 @@ public class SYN_64_69_NumericsAndHwMathTests
     [InlineData(0b00000000_10101010_11110000_00001000u, 0b00000000_00000000_10101010_11110000_00001000_00000000_00000000_00001000ul)]
     public void TestBitOperationsKernel_DataDriven(uint u32Input, ulong u64Input)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] u32Data = new uint[7];
         u32Data[0] = u32Input;
 
@@ -81,7 +80,6 @@ public class SYN_64_69_NumericsAndHwMathTests
     [InlineData(-1.0, -1.0f)]
     public void Test_SYN68_MathAndMathF_DataDriven(double dVal, float fVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         double[] doubleInputs = [dVal];
         double[] doubleOutputs = new double[9];
         float[] floatInputs = [fVal];
@@ -125,7 +123,6 @@ public class SYN_64_69_NumericsAndHwMathTests
     [InlineData(-0.0f, -0.0)]
     public void Test_SYN68_MathEdgeCases_SpecialValues(float fInput, double dInput)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         float[] floatInputs = [fInput];
         float[] floatResults = new float[6];
         double[] doubleInputs = [dInput];
@@ -178,7 +175,6 @@ public class SYN_64_69_NumericsAndHwMathTests
     [Trait("FeatureId", "SYN-68")]
     public void Test_SYN68_MathAndMathF_EmptyArray()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         double[] doubleInputs = [];
         double[] doubleOutputs = [];
         float[] floatInputs = [];
@@ -191,7 +187,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         Assert.Null(ex);
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-69")]
     [Trait("Category", "Syntax")]
     public void Test_SYN69_AddWithCarry64_Transpilation()

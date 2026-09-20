@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.Helpers;
 #nullable enable
 using System;
 using System.Threading.Tasks;
@@ -8,8 +9,13 @@ using System.Text;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GpuKernelLoaderAotTests
+public class GpuKernelLoaderAotTests : TranspilerTestBase
 {
+    public GpuKernelLoaderAotTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     // A minimal valid PTX string (acting as binary data) to satisfy cuModuleLoadDataEx
     private static readonly byte[] s_validPtx;
 
@@ -20,7 +26,7 @@ public class GpuKernelLoaderAotTests
         s_validPtx = [.. basePtx, .. hash];
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-43")]
     [Trait("Category", "Runtime")]
     public void Test_GEN43_LoadAotKernel_ParallelContention()

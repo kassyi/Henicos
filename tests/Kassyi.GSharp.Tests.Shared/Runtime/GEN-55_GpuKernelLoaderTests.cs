@@ -5,8 +5,13 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN55_GpuKernelLoaderTests
+public class GEN55_GpuKernelLoaderTests : TranspilerTestBase
 {
+    public GEN55_GpuKernelLoaderTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     private static readonly byte[] s_validPtx;
 
     static GEN55_GpuKernelLoaderTests()
@@ -22,7 +27,6 @@ public class GEN55_GpuKernelLoaderTests
     [Trait("Category", "HappyPath")]
     public void Test_GEN55_HighThroughputKernelLoading_ParallelStress()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Stress parallel concurrent calls to LoadAotKernel to ensure allocation locks and loader caches operate thread-safely
         Parallel.For(0, 50, i =>
@@ -41,7 +45,6 @@ public class GEN55_GpuKernelLoaderTests
     [Trait("Category", "SadPath")]
     public void Test_GEN55_CorruptedPtxBinary_ThrowsArgumentException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Create a hash-appended but syntactically invalid PTX fixture so it reaches module loading
         var invalidPtxBase = Encoding.UTF8.GetBytes("INVALID_PTX_HEADER_AND_BODY\0");
@@ -66,7 +69,6 @@ public class GEN55_GpuKernelLoaderTests
     [InlineData(31)] // Less than 32 bytes (SHA256 hash length)
     public void Test_GEN55_ShortPtxBuffer_ThrowsArgumentException(int length)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         byte[] shortBuffer = new byte[length];
 
@@ -86,7 +88,6 @@ public class GEN55_GpuKernelLoaderTests
     [InlineData(33)] // One byte above boundary
     public void Test_GEN55_ExactBoundaryBuffer_ThrowsHashMismatch(int length)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         byte[] buffer = new byte[length]; // all zeros, hash will definitely mismatch
 
@@ -103,7 +104,6 @@ public class GEN55_GpuKernelLoaderTests
     [Trait("Category", "SadPath")]
     public void Test_GEN55_NonExistentKernelName_ThrowsArgumentException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Valid PTX module but non-existent entry point function name
         var ex = Assert.Throws<CudaException>(() =>
@@ -120,7 +120,6 @@ public class GEN55_GpuKernelLoaderTests
     [Trait("Category", "SadPath")]
     public void Test_GEN55_TamperedBody_ThrowsInvalidOperationException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Copy valid PTX
         byte[] tampered = new byte[s_validPtx.Length];
@@ -142,7 +141,6 @@ public class GEN55_GpuKernelLoaderTests
     [Trait("Category", "SadPath")]
     public void Test_GEN55_TamperedHashFooter_ThrowsInvalidOperationException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Copy valid PTX
         byte[] tampered = new byte[s_validPtx.Length];
@@ -164,7 +162,6 @@ public class GEN55_GpuKernelLoaderTests
     [Trait("Category", "HappyPath")]
     public void Test_GEN55_ModuleContextWarmup_ExecutesSafely()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
 #if GSHARP_CUDA
         // Directly invoke the auto-generated static method without Reflection.

@@ -8,7 +8,6 @@ public class GEN29_StructMemoryLayoutTests:  TranspilerTestBase{
     [Trait("Category", "GpuExecution")]
     public void Test_GEN29_SharedMemory_StaticExpansion_And_MultipleTypes()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.SharedMemory);
         int[] intOutput = [0];
         float[] floatOutput = [0.0f];

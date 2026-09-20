@@ -7,6 +7,11 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_95_WarpShuffleTests : TranspilerTestBase
 {
+    public SYN_95_WarpShuffleTests()
+    {
+        SkipIfCpuDialect();
+    }
+
     [SkippableTheory]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
@@ -19,8 +24,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
     [InlineData(0xFFFFFFFF, 0, 32)] // Zero delta
     public void Test_95_WarpShuffleExtrema_CalculatesCorrectly(uint mask, uint delta, int width)
     {
-        Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-
         const int totalThreads = 32;
         int[] input = new int[totalThreads];
         for (int i = 0; i < totalThreads; i++)
@@ -64,8 +67,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_WarpReduceSum_CalculatesCorrectly()
     {
-        Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-
         const int threadsPerWarp = 32;
         const int numWarps = 4;
         const int totalThreads = threadsPerWarp * numWarps;
@@ -103,8 +104,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_WarpShuffleBoundaryOffsets()
     {
-        Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-
         const int totalThreads = 32;
         int[] input = new int[totalThreads];
         for (int i = 0; i < totalThreads; i++)
@@ -144,8 +143,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_WarpDivergence()
     {
-        Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-
         const int totalThreads = 32;
         int[] input = new int[totalThreads];
         for (int i = 0; i < totalThreads; i++)
@@ -176,7 +173,7 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
         Assert.Equal(input[30], output[30]);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]

@@ -35,8 +35,6 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 data[0]=999;
 }
-/* inline ptx here */
-;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_LaunchMacroExpansionKernel_TestMacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int length)
 {

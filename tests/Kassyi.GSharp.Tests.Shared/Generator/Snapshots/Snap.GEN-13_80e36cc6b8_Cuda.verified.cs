@@ -84,8 +84,6 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 data[0]=999;
 }
-/* inline ptx here */
-;
 }
 ";
 public static readonly string TestMacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + TestMacroKernel_Source;

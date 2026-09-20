@@ -16,7 +16,6 @@ public class SYN_01_09_ControlFlowTests
     [InlineData(int.MaxValue - 1, 99)]
     public void Test_SYN01_SwitchExpression_Transpilation(int inputVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] output = [0];
 
@@ -30,7 +29,6 @@ public class SYN_01_09_ControlFlowTests
     [Trait("Category", "GpuExecution")]
     public void Test_SYN01_RefSwitchExpression_Transpilation()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] a = [10, 20];
         int[] b = [100, 200];
         int[] selectors = [1, 2]; // tid 0 selects 'a', tid 1 selects 'b'
@@ -44,7 +42,7 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(888, b[1]); // b[1] updated
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-02")]
     [Trait("Category", "Syntax")]
     public void Test_SYN02_PatternMatching_Transpilation()
@@ -60,7 +58,6 @@ public class SYN_01_09_ControlFlowTests
     [InlineData(0, 50, 0)]
     public void Test_SYN04_NullCoalescing_Transpilation(int? inputVal, int fallbackVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int?[] nullableInputs = [inputVal];
         int[] fallbackValues = [fallbackVal];
         int[] results = [0];
@@ -75,7 +72,6 @@ public class SYN_01_09_ControlFlowTests
     [Trait("FeatureId", "SYN-04")]
     public void Test_SYN04_NullCoalescingAssignment_SideEffect_Transpilation()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int?[] targetArray = [null, 10]; // target[0] is null (will be assigned), target[1] is 10 (will NOT be assigned)
         int[] sideEffectTracker = [0, 1]; // starting indices for side effect
         int[] values = [50, 99];
@@ -102,7 +98,6 @@ public class SYN_01_09_ControlFlowTests
     [InlineData(4, 5, 7.5)]
     public void Test_SYN05_ConditionalExpression_Transpilation(int aVal, int bVal, double expectedResult)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] a = [aVal];
         int[] b = [bVal];
         double[] result = [0.0];
@@ -121,7 +116,6 @@ public class SYN_01_09_ControlFlowTests
     [InlineData(2, 5, 3, 4)] // 2 <= 5 and 2 <= 3 -> 4
     public void Test_SYN05_NestedTernary_Transpilation(int x, int y, int z, int expectedResult)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] a = [x];
         int[] b = [y];
         int[] c = [z];
@@ -132,7 +126,7 @@ public class SYN_01_09_ControlFlowTests
         Assert.Equal(expectedResult, result[0]);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-06")]
     [Trait("Category", "Syntax")]
     public void Test_SYN06_RefConditionalExpression_Transpilation()
@@ -140,7 +134,7 @@ public class SYN_01_09_ControlFlowTests
     }
 
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-09")]
     [Trait("Category", "Syntax")]
     public void Test_SYN09_DefaultLiteral_Transpilation()

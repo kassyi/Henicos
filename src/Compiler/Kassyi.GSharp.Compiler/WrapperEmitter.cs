@@ -128,14 +128,58 @@ internal static class WrapperEmitter
         WriteLaunchMethodSignature(writer, method, false);
         using (writer.Scope())
         {
-            WriteOutParameterDefaults(writer, method);
-            WriteEmptyArrayGuards(writer, method);
-            WriteAutoResultAllocation(writer, method);
-            WriteCpuDelegateGetOrCompile(writer, method);
-            WriteCpuFixedBlocksAndInvoke(writer, method);
+            if (ContainsInlinePtx(method))
+            {
+                writer.AppendLine(
+                    "throw new global::System.NotSupportedException(\"Inline PTX is only supported on GPU execution.\");");
+            }
+            else
+            {
+                WriteOutParameterDefaults(writer, method);
+                WriteEmptyArrayGuards(writer, method);
+                WriteAutoResultAllocation(writer, method);
+                WriteCpuDelegateGetOrCompile(writer, method);
+                WriteCpuFixedBlocksAndInvoke(writer, method);
+            }
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
+    }
+
+    private sealed class InlinePtxWalker : CSharpSyntaxWalker
+    {
+        public bool Found { get; private set; }
+
+        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            if (Found)
+            {
+                return;
+            }
+
+            if (node.Name.Identifier.ValueText == "InlinePtx")
+            {
+                Found = true;
+                return;
+            }
+
+            base.VisitMemberAccessExpression(node);
+        }
+    }
+
+    private static bool ContainsInlinePtx(IMethodSymbol method)
+    {
+        var walker = new InlinePtxWalker();
+        foreach (var syntaxRef in method.DeclaringSyntaxReferences)
+        {
+            walker.Visit(syntaxRef.GetSyntax());
+            if (walker.Found)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
@@ -175,13 +219,14 @@ internal static class WrapperEmitter
                 }
                 else
                 {
-                    if (p.RefKind == RefKind.Ref)
+                    switch (p.RefKind)
                     {
-                        writer.Append("ref ");
-                    }
-                    else if (p.RefKind == RefKind.Out)
-                    {
-                        writer.Append("out ");
+                        case RefKind.Ref:
+                            writer.Append("ref ");
+                            break;
+                        case RefKind.Out:
+                            writer.Append("out ");
+                            break;
                     }
 
                     writer.AppendFullyQualifiedCsharpName(p.Type);
@@ -279,10 +324,7 @@ internal static class WrapperEmitter
     }
 
 
-    private static string GetMangledKernelName(IMethodSymbol method)
-    {
-        return $"{method.ContainingType.Name}_{method.Name}";
-    }
+    private static string GetMangledKernelName(IMethodSymbol method) => $"{method.ContainingType.Name}_{method.Name}";
 
     private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, IMethodSymbol method)
     {
@@ -293,12 +335,14 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendLine("var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
-            writer.AppendLine($"if (s_hfunc_{method.Name}.HasValue && s_generation_{method.Name} == currentGen) return;");
+            writer.AppendLine(
+                $"if (s_hfunc_{method.Name}.HasValue && s_generation_{method.Name} == currentGen) return;");
             writer.AppendLine($"lock (s_lock_{method.Name})");
             using (writer.Scope())
             {
                 writer.AppendLine("currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
-                writer.AppendLine($"if (s_hfunc_{method.Name}.HasValue && s_generation_{method.Name} == currentGen) return;");
+                writer.AppendLine(
+                    $"if (s_hfunc_{method.Name}.HasValue && s_generation_{method.Name} == currentGen) return;");
                 writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_");
                 WriteSafeAssemblyName(writer, method.ContainingAssembly.Name);
                 writer.AppendLine(".GetOrLoadModule();");
@@ -356,22 +400,29 @@ internal static class WrapperEmitter
                     using (writer.Scope())
                     {
                         writer.AppendLine("currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
-                        writer.AppendLine("if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;");
+                        writer.AppendLine(
+                            "if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;");
                         writer.AppendLine();
-                        writer.AppendLine($"var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{safeAssemblyName}).Assembly.Location) ?? System.AppContext.BaseDirectory;");
-                        writer.AppendLine($"var fatbinPath = System.IO.Path.Combine(baseDir, \"Kassyi.GSharp.Kernels_{safeAssemblyName}.fatbin\");");
+                        writer.AppendLine(
+                            $"var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{safeAssemblyName}).Assembly.Location) ?? System.AppContext.BaseDirectory;");
+                        writer.AppendLine(
+                            $"var fatbinPath = System.IO.Path.Combine(baseDir, \"Kassyi.GSharp.Kernels_{safeAssemblyName}.fatbin\");");
                         writer.AppendLine("if (!System.IO.File.Exists(fatbinPath))");
                         using (writer.Scope())
                         {
-                            writer.AppendLine("throw new System.InvalidOperationException($\"AOT kernel binary was not found at '{fatbinPath}'.\");");
+                            writer.AppendLine(
+                                "throw new System.InvalidOperationException($\"AOT kernel binary was not found at '{fatbinPath}'.\");");
                         }
+
                         writer.AppendLine();
                         writer.AppendLine("byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);");
-                        writer.AppendLine("s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);");
+                        writer.AppendLine(
+                            "s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);");
                         writer.AppendLine("s_generation = currentGen;");
                         writer.AppendLine("return s_hModule.Value;");
                     }
                 }
+
                 writer.AppendLine();
                 writer.AppendLine("""
                     /// <summary>
@@ -385,7 +436,9 @@ internal static class WrapperEmitter
                     writer.AppendLine("GetOrLoadModule();");
                     foreach (var method in kernelMethods)
                     {
-                        var ns = method.ContainingNamespace.IsGlobalNamespace ? "" : method.ContainingNamespace.ToString() + ".";
+                        var ns = method.ContainingNamespace.IsGlobalNamespace
+                            ? ""
+                            : method.ContainingNamespace.ToString() + ".";
                         var typeName = method.ContainingType.Name;
                         writer.AppendLine($"global::{ns}{typeName}Wrapper.WarmupFunctionPointer{method.Name}();");
                     }
@@ -611,9 +664,8 @@ internal static class WrapperEmitter
 
     private static void WriteSafeAssemblyName(SourceWriter writer, string assemblyName)
     {
-        for (int i = 0; i < assemblyName.Length; i++)
+        foreach (var c in assemblyName)
         {
-            var c = assemblyName[i];
             writer.Append(c == '.' ? '_' : c);
         }
     }

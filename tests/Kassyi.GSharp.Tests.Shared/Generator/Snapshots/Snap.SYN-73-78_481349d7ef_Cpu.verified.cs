@@ -26,7 +26,11 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_73_78_ContractsAndPtxKernelsWrapper
 {
 public const string InlinePtxKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel(unsigned int* __restrict__ data){
-data[0] = 999;
+#ifdef __CUDA_ARCH__
+asm(""mov.u32 %0, 999;"" : ""=r""(data[0]));
+#else
+throw ""Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU."";
+#endif
 ;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_LaunchSYN_73_78_ContractsAndPtxKernels_InlinePtxKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ data)
@@ -51,22 +55,7 @@ private static bool s_isLoaded_InlinePtxKernel;
 private unsafe delegate void InlinePtxKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* data);
 public static unsafe void LaunchInlinePtxKernel(global::System.UInt32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (data.Length == 0){
-return;
-}
-var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
-var baseDir = System.IO.Path.GetDirectoryName(typeof(SYN_73_78_ContractsAndPtxKernelsWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
-var dllPath = System.IO.Path.Combine(baseDir, dllName);
-if (!s_isLoaded_InlinePtxKernel)
-{
-s_isLoaded_InlinePtxKernel = true;
-}
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InlinePtxKernel_Delegate>("__gsharp_LaunchSYN_73_78_ContractsAndPtxKernels_InlinePtxKernel", dllPath);
-fixed (global::System.UInt32* p_data = data)
-{
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
-}
+throw new global::System.NotSupportedException("Inline PTX is only supported on GPU execution.");
 }
 #pragma warning restore CS8500
 }

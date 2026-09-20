@@ -10,7 +10,7 @@ public class SYN_95_WarpShuffleAnalyzerTests : TranspilerTestBase
 {
     private static readonly HostIntrinsicAnalyzer s_analyzer = new();
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "SadPath")]
     [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]

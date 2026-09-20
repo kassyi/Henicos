@@ -4,28 +4,28 @@ namespace Kassyi.GSharp.Tests.Syntax;
 public class SYN_31_38_AdvancedMemoryTests
 :  TranspilerTestBase{
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-31")]
     [Trait("Category", "Syntax")]
     public void Test_SYN31_UnsafeAsPointer_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-32")]
     [Trait("Category", "Syntax")]
     public void Test_SYN32_MemoryMarshalCast_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-33")]
     [Trait("Category", "Syntax")]
     public void Test_SYN33_RefFields_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-34")]
     [Trait("Category", "Syntax")]
     public void Test_SYN34_SimdVector128_Transpilation()
@@ -37,7 +37,6 @@ public class SYN_31_38_AdvancedMemoryTests
     [Trait("FeatureId", "SYN-36")]
     public void Test_SYN36_PointerIncrementKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
 
@@ -53,7 +52,6 @@ public class SYN_31_38_AdvancedMemoryTests
     [Trait("FeatureId", "SYN-36")]
     public void Test_SYN36_PointerDecrementKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
 
@@ -74,7 +72,6 @@ public class SYN_31_38_AdvancedMemoryTests
     [InlineData(new uint[] { 2, 1, 0 }, new uint[] { 0, 0, 0 }, new uint[] { 10, 10, 10 })]
     public void Test_SYN36_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] expectedDest)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] dest = [0, 0, 0];
 
         SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerComplexAssignmentKernel(idx, val, dest);
@@ -84,14 +81,14 @@ public class SYN_31_38_AdvancedMemoryTests
         Assert.Equal(expectedDest[2], dest[2]);
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-37")]
     [Trait("Category", "Syntax")]
     public void Test_SYN37_UnsafePointerArithmetic_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-38")]
     [Trait("Category", "Syntax")]
     public void Test_SYN38_FixedSizeBuffers_Transpilation()

@@ -23,7 +23,6 @@ public class GBF02_GpuBigFloatTests
     [InlineData(true, true, true)]    // (-10) + (-2) = -12
     public void Test_GBF02_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         
         var sigA = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(10, 0, 0, 0));
         var sigB = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(2, 0, 0, 0));
@@ -45,7 +44,6 @@ public class GBF02_GpuBigFloatTests
     [InlineData(-1)]
     public void Test_GBF02_ExponentArithmetic_BoundaryValues(int exp)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Edge case exponents testing numeric extremes and representation (Fix 7)
         var sig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000));
@@ -61,7 +59,6 @@ public class GBF02_GpuBigFloatTests
     [Trait("Category", "EdgeCase")]
     public void Test_GBF02_ZeroSignificandNormalization_FlushesToZeroExponent()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         var zeroSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0, 0, 0, 0));
         var valSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(42, 0, 0, 0));
@@ -82,7 +79,6 @@ public class GBF02_GpuBigFloatTests
     [Trait("Category", "SadPath")]
     public void Test_GBF02_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         var zeroSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0, 0, 0, 0));
         var floatZero = new GpuBigFloat<LimbBuffer4>(zeroSig, 0, isNegative: false);

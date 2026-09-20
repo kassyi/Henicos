@@ -194,8 +194,6 @@ if(condition1||!condition2)
 mag+=1.5f;
 }
 }
-/* test ptx inline */
-;
 if(ty>0)
 {
 return;

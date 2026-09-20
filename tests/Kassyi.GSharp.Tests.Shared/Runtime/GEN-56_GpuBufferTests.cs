@@ -5,8 +5,13 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN56_GpuBufferTests
+public class GEN56_GpuBufferTests : TranspilerTestBase
 {
+    public GEN56_GpuBufferTests()
+    {
+        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
+    }
+
     [SkippableTheory]
     [Trait("FeatureId", "GEN-56")]
     [Trait("Category", "Runtime")]
@@ -16,7 +21,6 @@ public class GEN56_GpuBufferTests
     [InlineData(1024)]
     public void Test_GEN56_GpuBuffer_HappyPath_RoundTrip(int count)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
 
         int[] sourceData = new int[count];
@@ -48,7 +52,6 @@ public class GEN56_GpuBufferTests
     [Trait("Category", "SadPath")]
     public void Test_GEN56_GpuBuffer_NegativeLength_ThrowsArgumentOutOfRangeException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
 
         Assert.Throws<ArgumentOutOfRangeException>(() => new GpuBuffer<int>(-1));
@@ -60,7 +63,6 @@ public class GEN56_GpuBufferTests
     [Trait("Category", "SadPath")]
     public void Test_GEN56_GpuBuffer_OversizedSpan_ThrowsArgumentException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
 
         using var buffer = new GpuBuffer<int>(10);
@@ -79,7 +81,6 @@ public class GEN56_GpuBufferTests
     [Trait("Category", "SadPath")]
     public void Test_GEN56_GpuBuffer_UseAfterDispose_ThrowsObjectDisposedException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
 
         var buffer = new GpuBuffer<int>(10);
