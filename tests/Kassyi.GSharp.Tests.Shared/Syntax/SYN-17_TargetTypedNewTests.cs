@@ -8,7 +8,6 @@ public class SYN_17_TargetTypedNewTests
     [Trait("FeatureId", "SYN-17")]
     public void Test_SYN17_HappyPath_TargetTypedNew()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = [0];
 
         SYN_17_TargetTypedNewKernelsWrapper.LaunchHappyPathKernel(output, blockDimX: 1);
@@ -25,7 +24,6 @@ public class SYN_17_TargetTypedNewTests
     [InlineData(2, 12)] // tid 2: p.Id = 2, p.Child.Value = 10 -> 12
     public void Test_SYN17_EdgeCase_NestedTargetTypedNewInInitializer(int tid, int expectedOutput)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = new int[3];
 
         SYN_17_TargetTypedNewKernelsWrapper.LaunchNestedInitializerKernel(output, blockDimX: 3);

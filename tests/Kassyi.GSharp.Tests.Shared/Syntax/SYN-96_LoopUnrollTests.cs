@@ -43,7 +43,6 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-96")]
     public void Test_SYN96_LoopUnrollForKernel_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
         SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollForKernel(data, blockDimX: 1);
         Assert.Equal(10, data[0]);
@@ -54,7 +53,6 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-96")]
     public void Test_SYN96_LoopUnrollFactorKernel_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
         SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollFactorKernel(data, blockDimX: 1);
         Assert.Equal(100, data[0]);
@@ -65,7 +63,6 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-96")]
     public void Test_SYN96_LoopUnrollWhileKernel_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
         SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollWhileKernel(data, blockDimX: 1);
         Assert.Equal(15, data[0]);
@@ -76,7 +73,6 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-96")]
     public void Test_SYN96_LoopUnrollNestedKernel_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
         SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollNestedKernel(data, blockDimX: 1);
         Assert.Equal(18, data[0]);
@@ -87,7 +83,6 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [Trait("FeatureId", "SYN-96")]
     public void Test_SYN96_LoopUnrollSingleStatementKernel_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
         SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollSingleStatementKernel(data, blockDimX: 1);
         Assert.Equal(8, data[0]);

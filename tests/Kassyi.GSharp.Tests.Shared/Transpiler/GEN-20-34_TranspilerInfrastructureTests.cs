@@ -7,7 +7,6 @@ public class GEN_20_34_TranspilerInfrastructureTests
     [Trait("FeatureId", "GEN-20")]
     public void Test_GEN20_ForwardDeclarations_And_MutualCalls()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] counts = [1, 2, 3];
         int[] vals = [5, 5, 5];
         int[] results = [0, 0, 0];
@@ -27,7 +26,6 @@ public class GEN_20_34_TranspilerInfrastructureTests
     [Trait("FeatureId", "GEN-20")]
     public void Test_GEN20_OverloadedFunctions_DeduplicationAndForwardDecl()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] inputA = [3, 4];
         int[] inputB = [5, 6];
         int[] inputC = [7, 8];
@@ -51,7 +49,6 @@ public class GEN_20_34_TranspilerInfrastructureTests
     [Trait("FeatureId", "GEN-34")]
     public void Test_GEN34_PinnedArrayTransfer_EmptyAndHugeArrays()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // 1. Empty array transfer
         int[] emptyData = [];
         GEN_20_34_TranspilerInfrastructureKernelsWrapper.LaunchArrayTransferKernel(emptyData, 0, blockDimX: 1);

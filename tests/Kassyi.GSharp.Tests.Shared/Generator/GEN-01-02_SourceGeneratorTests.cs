@@ -10,7 +10,6 @@ public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
     [Trait("FeatureId", "GEN-01")]
     public void TestGeneratedWrapper()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] aArray = [10];
         int[] bArray = [20];
         int[] cArray = [0];

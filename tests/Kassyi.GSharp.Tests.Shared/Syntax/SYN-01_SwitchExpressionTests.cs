@@ -13,7 +13,6 @@ public class SYN_01_SwitchExpressionTests : TranspilerTestBase
     [InlineData(100, -1)]
     public void Test_SYN01_SimpleConstantSwitch_Execution(int inputVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] output = [0];
 
@@ -31,7 +30,6 @@ public class SYN_01_SwitchExpressionTests : TranspilerTestBase
     [InlineData(99, -1.0f)]
     public void Test_SYN01_FloatingPointReturnSwitch_Execution(int mode, float expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [mode];
         float[] output = [0.0f];
 
@@ -52,7 +50,6 @@ public class SYN_01_SwitchExpressionTests : TranspilerTestBase
     [InlineData(-100, 0)]
     public void Test_SYN01_MultipleArmsBoundarySwitch_Execution(int inputVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] output = [0];
 
