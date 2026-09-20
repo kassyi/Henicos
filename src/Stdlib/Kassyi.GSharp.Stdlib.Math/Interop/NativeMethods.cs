@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -33,6 +34,8 @@ internal static partial class NativeMethods
             (libraryName, assembly, _) => DlImportResolover(libraryName, assembly));
     }
 
+    [UnconditionalSuppressMessage("SingleFile", "IL3000:Avoid accessing Assembly.Location",
+        Justification = "Fallback to assembly location when running in non-single-file development setups.")]
     private static IntPtr DlImportResolover(string libraryName, Assembly assembly)
     {
         if (libraryName != DllName && libraryName != DllName + ".dll")

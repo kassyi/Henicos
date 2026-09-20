@@ -4,13 +4,24 @@
 
 ## G# Core Design Philosophy & Manifest
 
+> **"Standing on the Shoulders of Giants—and Stacking Them."**
+
+G# does not reinvent the wheel—it fuses the greatest engineering feats of modern computing into a singular, unified pipeline.
+
+When targeting the GPU, G# transfigures directly into raw CUDA C++. By feeding mechanically pristine, unaliased ASTs from Microsoft's Roslyn into NVIDIA's relentlessly optimized NVCC backend, and dispatching via zero-allocation .NET 10 runtimes, G# achieves what manual C++ cannot: peak hardware saturation with the pure elegance of C#.
+
+Yet, the true power of G# extends beyond the GPU. Because kernel code remains 100% valid C#, it seamlessly compiles down to native CPU C++ or executes directly on the .NET runtime. No GPU required.
+
+You can develop, debug, and run full test suites on standard developer machines and inexpensive, CPU-only CI/CD pipelines—then deploy to enterprise-grade silicon to unleash pure native speed.
+
 > **"Bringing C#'s existing mental model directly into the GPU realm delivers the ultimate developer experience (DX)."**
 
-G# strictly adheres to three uncompromising technical tenets:
+G# strictly adheres to four uncompromising technical tenets:
 
 1. **YES AST (Roslyn Syntax Nodes & Semantic Models)**: All code analysis, transpilation, and safety enforcement are performed strictly via Roslyn Abstract Syntax Trees and Semantic Models at compile-time.
 2. **YES Zero-Allocation**: GPU device-side execution fundamentally enforces a zero-allocation guarantee—prohibiting dynamic reference-type heap allocations while fully leveraging value types (`struct`) and stack/register memory.
 3. **YES Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection, NO LINQ, and NO Dynamic Dispatch**.
+4. **YES Ubiquitous Execution (Host-Device Equivalence)**: Every G# kernel is dual-natured: fully transpilable into native CUDA C++ for peak GPU throughput, while maintaining 100% CPU compatibility for low-cost, GPU-less CI/CD and frictionless local debugging.
 
 ---
 
@@ -50,4 +61,3 @@ A defining strength of G# is its **Two-Tier Transpiler Architecture**. Rather th
 - **Backend Agnosticism**: By simply swapping the active Dialect, the identical Roslyn AST engine can target entirely different GPU backends (e.g., OpenCL C, Apple Metal Shading Language, or Vulkan GLSL) without rewriting the core compilation logic.
 
 > For deep internal architecture details of the transpiler and runtime execution, refer to **Part II: Implementation Overview** (`../02_architecture/01_aot_transpiler.md` and `../02_architecture/02_runtime_loader.md`).
-

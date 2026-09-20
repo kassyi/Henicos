@@ -3,6 +3,7 @@
 #nullable enable
 using System;
 using System.Threading;
+#pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_MegaTestCompilationBase
