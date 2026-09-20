@@ -3,37 +3,36 @@
 #nullable enable
 using System;
 using System.Threading;
-
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_MegaTestCompilationBase
 {
 private static IntPtr? s_hModule;
+private static int s_generation = -1;
 private static readonly object s_lock = new object();
-
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
 public static IntPtr GetOrLoadModule()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 lock (s_lock)
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_MegaTestCompilationBase).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
-
 byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
 return s_hModule.Value;
 }
 }
-
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
 /// </summary>
@@ -42,4 +41,6 @@ public static void Warmup()
 // Force load the module first
 GetOrLoadModule();
 global::TestSpace.ErrorSpecKernelWrapper.WarmupFunctionPointerBadKernel();
-}}}
+}
+}
+}
