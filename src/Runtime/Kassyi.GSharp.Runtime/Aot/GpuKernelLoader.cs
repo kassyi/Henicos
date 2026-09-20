@@ -86,6 +86,9 @@ public sealed class GpuKernelLoader
     // Track loaded modules for Shutdown cleanup
     private static readonly ConcurrentBag<IntPtr> s_loadedModules = [];
 
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    public static int Generation { get; private set; }
+
 #pragma warning disable IDE0051 // Justification: Public API for library
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
@@ -98,6 +101,7 @@ public sealed class GpuKernelLoader
         }
 
         s_loadedModules.Clear();
+        Generation++;
     }
 
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers

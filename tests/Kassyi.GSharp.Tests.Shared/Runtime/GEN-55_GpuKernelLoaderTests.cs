@@ -78,6 +78,25 @@ public class GEN55_GpuKernelLoaderTests
         Assert.Contains("too small", ex.Message);
     }
 
+    [SkippableTheory]
+    [Trait("FeatureId", "GEN-55")]
+    [Trait("Category", "Runtime")]
+    [Trait("Category", "SadPath")]
+    [InlineData(32)] // Exact boundary
+    [InlineData(33)] // One byte above boundary
+    public void Test_GEN55_ExactBoundaryBuffer_ThrowsHashMismatch(int length)
+    {
+        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
+
+        byte[] buffer = new byte[length]; // all zeros, hash will definitely mismatch
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadModule(buffer);
+        });
+        Assert.Contains("hash mismatch", ex.Message);
+    }
+
     [SkippableFact]
     [Trait("FeatureId", "GEN-55")]
     [Trait("Category", "Runtime")]
