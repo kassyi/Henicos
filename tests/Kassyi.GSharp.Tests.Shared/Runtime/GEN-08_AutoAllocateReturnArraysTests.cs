@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.Helpers;
 using System;
 using System.Linq;
 using Xunit;
@@ -5,7 +6,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN_08_AutoAllocateReturnArraysTests
+public class GEN_08_AutoAllocateReturnArraysTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-08")]

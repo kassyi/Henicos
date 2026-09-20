@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.Helpers;
 #nullable enable
 using System;
 using System.Threading.Tasks;
@@ -8,7 +9,7 @@ using System.Text;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GpuKernelLoaderAotTests
+public class GpuKernelLoaderAotTests : TranspilerTestBase
 {
     // A minimal valid PTX string (acting as binary data) to satisfy cuModuleLoadDataEx
     private static readonly byte[] s_validPtx;

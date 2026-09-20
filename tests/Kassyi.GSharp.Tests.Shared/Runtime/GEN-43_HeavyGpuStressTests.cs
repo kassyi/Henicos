@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.Helpers;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -6,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Runtime;
 
 [Trait("Category", "GpuExecution")]
 [Trait("Category", "Stress")]
-public class GEN_43_HeavyGpuStressTests
+public class GEN_43_HeavyGpuStressTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-43")]

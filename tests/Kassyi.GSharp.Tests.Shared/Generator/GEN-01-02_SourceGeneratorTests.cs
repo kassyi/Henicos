@@ -1,7 +1,8 @@
+using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests;
 
-public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
+public class GEN_01_SourceGeneratorTests(ITestOutputHelper output) : TranspilerTestBase
 {
     private readonly ITestOutputHelper _output = output;
 

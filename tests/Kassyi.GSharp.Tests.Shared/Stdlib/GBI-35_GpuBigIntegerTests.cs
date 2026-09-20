@@ -6,7 +6,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
-public class GBI35_GpuBigIntegerTests
+public class GBI35_GpuBigIntegerTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("FeatureId", "GBI-35")]

@@ -5,7 +5,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN55_GpuKernelLoaderTests
+public class GEN55_GpuKernelLoaderTests : TranspilerTestBase
 {
     private static readonly byte[] s_validPtx;
 

@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Tests.Helpers;
 #if GSHARP_CUDA
 using System;
 using System.Linq;
@@ -6,7 +7,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Core;
 
 [Trait("Category", "GpuExecution")]
-public class GEN_16_WarpLevelConcurrencyTests
+public class GEN_16_WarpLevelConcurrencyTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("FeatureId", "GEN-16")]

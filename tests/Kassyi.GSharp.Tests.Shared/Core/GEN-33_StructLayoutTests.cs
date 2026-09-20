@@ -1,9 +1,10 @@
+using Kassyi.GSharp.Tests.Helpers;
 using System;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Core;
 
-public class GEN_33_StructLayoutTests
+public class GEN_33_StructLayoutTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("Category", "GpuExecution")]

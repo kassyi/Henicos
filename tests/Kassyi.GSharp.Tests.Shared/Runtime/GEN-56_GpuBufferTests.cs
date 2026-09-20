@@ -5,7 +5,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN56_GpuBufferTests
+public class GEN56_GpuBufferTests : TranspilerTestBase
 {
     [SkippableTheory]
     [Trait("FeatureId", "GEN-56")]
