@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -81,42 +83,8 @@ public sealed class GpuKernelLoader
         }
     }
 
-    private readonly struct GpuModule(IntPtr module, IntPtr function)
-    {
-        public IntPtr Module { get; } = module;
-        public IntPtr Function { get; } = function;
-    }
-
-    private readonly struct Hash256 : IEquatable<Hash256>
-    {
-        private readonly ulong _a;
-        private readonly ulong _b;
-        private readonly ulong _c;
-        private readonly ulong _d;
-
-        public Hash256(ReadOnlySpan<byte> span)
-        {
-            if (span.Length < 32)
-            {
-                throw new ArgumentException("Span too short for Hash256", nameof(span));
-            }
-
-            _a = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
-            _b = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
-            _c = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
-            _d = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
-        }
-
-        public bool Equals(Hash256 other) => _a == other._a && _b == other._b && _c == other._c && _d == other._d;
-
-        public override bool Equals(object? obj) => obj is Hash256 other && Equals(other);
-
-        public override int GetHashCode() => HashCode.Combine(_a, _b, _c, _d);
-    }
-
-    // AOT Cache uses Hash256 and KernelName to prevent collisions and avoid allocations
-    private static readonly ConcurrentDictionary<(Hash256 Hash, string KernelName), Lazy<GpuModule>> s_functionCache =
-        new();
+    // Track loaded modules for Shutdown cleanup
+    private static readonly ConcurrentBag<IntPtr> s_loadedModules = [];
 
 #pragma warning disable IDE0051 // Justification: Public API for library
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
@@ -124,18 +92,12 @@ public sealed class GpuKernelLoader
     {
         using var scope = new CudaContextScope();
 
-        foreach (var lazyModule in s_functionCache.Values)
+        foreach (var module in s_loadedModules)
         {
-            if (!lazyModule.IsValueCreated)
-            {
-                continue;
-            }
-
-            var module = lazyModule.Value.Module;
             CudaDriverApi.cuModuleUnload(module);
         }
 
-        s_functionCache.Clear();
+        s_loadedModules.Clear();
     }
 
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
@@ -149,8 +111,7 @@ public sealed class GpuKernelLoader
     /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
     /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName,
-        byte[]? decryptionKey = null)
+    public static IntPtr LoadModule(ReadOnlySpan<byte> aotFatbin)
     {
         EnsureInitialized();
 
@@ -160,97 +121,53 @@ public sealed class GpuKernelLoader
         }
 
         var embeddedHashBytes = aotFatbin.Slice(aotFatbin.Length - 32);
-        var expectedHashStruct = new Hash256(embeddedHashBytes);
-        var cacheKey = (expectedHashStruct, kernelName);
-
-        if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
-        {
-            return lazyHit.Value.Function;
-        }
-
         var expectedHashString = Convert.ToHexStringLower(embeddedHashBytes);
         byte[] processed = [.. aotFatbin.Slice(0, aotFatbin.Length - 32)];
 
-        // 1. Check if it's a valid plain text binary first.
-        // This prevents a rare edge case where a plain text binary coincidentally starts with "GSHPENC1".
-        var plainHash = Convert.ToHexStringLower(SHA256.HashData(processed));
-        var isPlainText = string.Equals(plainHash, expectedHashString, StringComparison.OrdinalIgnoreCase);
-
-        if (!isPlainText)
+        var actualHashString = Convert.ToHexStringLower(SHA256.HashData(processed));
+        if (!string.Equals(actualHashString, expectedHashString, StringComparison.OrdinalIgnoreCase))
         {
-            // 2. If plain hash doesn't match, check if it's encrypted
-            var isEncrypted = processed.Length > 8 && Encoding.ASCII.GetString(processed, 0, 8) == "GSHPENC1";
-
-            if (isEncrypted)
-            {
-                if (decryptionKey == null || decryptionKey.Length == 0)
-                {
-                    throw new InvalidOperationException(
-                        $"AOT kernel binary for '{kernelName}' is encrypted but no decryption key was provided.");
-                }
-
-                using var aes = Aes.Create();
-                aes.Key = decryptionKey;
-
-                var iv = new byte[16];
-                Array.Copy(processed, 8, iv, 0, 16);
-                aes.IV = iv;
-
-                using var decryptor = aes.CreateDecryptor();
-                using var ms = new MemoryStream(processed, 24, processed.Length - 24);
-                using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-                using var output = new MemoryStream();
-                cs.CopyTo(output);
-                processed = output.ToArray();
-
-                // 3. Hash Validation for decrypted data
-                var decryptedHash = Convert.ToHexStringLower(SHA256.HashData(processed));
-                if (!string.Equals(decryptedHash, expectedHashString, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException(
-                        $"AOT Binary hash mismatch after decryption. Expected: {expectedHashString}");
-                }
-            }
-            else
-            {
-                // Not encrypted and plain hash mismatch
-                throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHashString}");
-            }
+            throw new InvalidOperationException($"AOT Binary hash mismatch. The file may be corrupted or tampered with. Expected: {expectedHashString}");
         }
 
-        var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
-        {
-            using var scope = new CudaContextScope();
-            return LoadKernelFunction(processed, kernelName);
-        }));
+        using var scope = new CudaContextScope();
 
-        return lazyModule.Value.Function;
+        unsafe
+        {
+            // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
+            void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)processed.Length, 8);
+            try
+            {
+                Marshal.Copy(processed, 0, (IntPtr)pAlignedBinary, processed.Length);
+
+                // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
+                // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
+                var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
+                if (loadResult != CUresult.CudaSuccess)
+                {
+                    throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult}.");
+                }
+
+                s_loadedModules.Add(module);
+                return module;
+            }
+            finally
+            {
+                NativeMemory.AlignedFree(pAlignedBinary);
+            }
+        }
     }
 
-
-    private static unsafe GpuModule LoadKernelFunction(byte[] binaryData, string kernelName)
+    /// <summary>
+    /// Retrieves a function pointer from a loaded CUDA module.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    public static IntPtr GetFunction(IntPtr hModule, string kernelName)
     {
-        // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
-        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
-        try
-        {
-            Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
-
-            // Do NOT pass JIT options (like ERROR_LOG_BUFFER) when loading an AOT Fatbin,
-            // as it causes CUDA_ERROR_INVALID_VALUE when the driver simply loads a matching CUBIN without JITing.
-            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
-            if (loadResult != CUresult.CudaSuccess)
-            {
-                throw new CudaException(loadResult,
-                    $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
-            }
-
-            CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
-            return new GpuModule(module, hfunc);
-        }
-        finally
-        {
-            NativeMemory.AlignedFree(pAlignedBinary);
-        }
+        EnsureInitialized();
+        using var scope = new CudaContextScope();
+        
+        CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, hModule, kernelName));
+        return hfunc;
     }
 }
