@@ -3,7 +3,6 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class SYN_31_38_AdvancedMemoryTests
 :  TranspilerTestBase{
-
     [Fact()]
     [Trait("FeatureId", "SYN-31")]
     [Trait("Category", "Syntax")]
@@ -37,7 +36,6 @@ public class SYN_31_38_AdvancedMemoryTests
     [Trait("FeatureId", "SYN-36")]
     public void Test_SYN36_PointerIncrementKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
 
@@ -53,7 +51,6 @@ public class SYN_31_38_AdvancedMemoryTests
     [Trait("FeatureId", "SYN-36")]
     public void Test_SYN36_PointerDecrementKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
 
@@ -74,7 +71,6 @@ public class SYN_31_38_AdvancedMemoryTests
     [InlineData(new uint[] { 2, 1, 0 }, new uint[] { 0, 0, 0 }, new uint[] { 10, 10, 10 })]
     public void Test_SYN36_PointerComplexAssignmentKernel(uint[] idx, uint[] val, uint[] expectedDest)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] dest = [0, 0, 0];
 
         SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_PointerComplexAssignmentKernel(idx, val, dest);

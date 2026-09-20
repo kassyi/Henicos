@@ -10,12 +10,18 @@ public sealed class GpuOperatorMacroAttribute : Attribute
     /// <summary>
     /// The target type containing the GPU kernel or device method.
     /// </summary>
-    public Type TargetType { get; }
+    public Type TargetType
+    {
+        get;
+    }
 
     /// <summary>
     /// The name of the target GPU kernel or device method.
     /// </summary>
-    public string TargetMethod { get; }
+    public string TargetMethod
+    {
+        get;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuOperatorMacroAttribute"/> class.

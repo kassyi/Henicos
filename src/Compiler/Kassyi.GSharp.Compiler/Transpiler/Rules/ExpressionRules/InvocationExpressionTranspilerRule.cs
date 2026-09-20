@@ -21,7 +21,9 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             GpuMacroTranspilerRule.Instance
         );
 
-    private InvocationExpressionTranspilerRule() { }
+    private InvocationExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)

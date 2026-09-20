@@ -16,7 +16,6 @@ public class SYN_11_16_CollectionsAndMemoryTests
     [Trait("Category", "GpuExecution")]
     public void Test_SYN12_ForeachCollectionExpression_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = [0];
         SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachCollectionExpressionKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
@@ -27,7 +26,6 @@ public class SYN_11_16_CollectionsAndMemoryTests
     [Trait("Category", "GpuExecution")]
     public void Test_SYN13_ForeachStackAlloc_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = [0];
         SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachStackAllocKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);

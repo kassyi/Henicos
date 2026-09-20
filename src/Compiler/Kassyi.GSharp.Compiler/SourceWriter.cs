@@ -15,7 +15,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder { get; }
+    private StringBuilder Builder
+    {
+        get;
+    }
 
     public SourceWriter()
     {

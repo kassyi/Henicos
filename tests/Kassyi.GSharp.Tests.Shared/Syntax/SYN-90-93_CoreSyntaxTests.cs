@@ -17,7 +17,6 @@ public class SYN_90_93_CoreSyntaxTests
     [InlineData(int.MaxValue / 10, 2, (int.MaxValue / 10) * 5)] // Max reasonable value without overflow
     public void TestComplexLogicKernel_BoundaryDataDriven(int a, int b, int expectedC)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] aArray = [a];
         int[] bArray = [b];
         int[] cArray = [0];
@@ -32,7 +31,6 @@ public class SYN_90_93_CoreSyntaxTests
     [Trait("FeatureId", "SYN-91")]
     public void TestControlFlowKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Test with 8 threads across multiple warps/lanes
         int[] dataArray = new int[8];
 
@@ -56,7 +54,6 @@ public class SYN_90_93_CoreSyntaxTests
     [Trait("FeatureId", "SYN-92")]
     public void TestStructKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Empty array edge case
         Vector2[] emptyVectors = [];
         SYN_90_93_CoreSyntaxKernelsWrapper.Launch_StructKernel(emptyVectors, 0, blockDimX: 1);
@@ -88,7 +85,6 @@ public class SYN_90_93_CoreSyntaxTests
     [Trait("FeatureId", "SYN-92")]
     public void TestStruct_MixedPaddingAndAlignment()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Empty array edge case
         MixedPaddingStruct[] emptyItems = [];
         SYN_90_93_CoreSyntaxKernelsWrapper.Launch_PaddedStructKernel(emptyItems, 0, blockDimX: 1);
@@ -130,7 +126,6 @@ public class SYN_90_93_CoreSyntaxTests
     [Trait("FeatureId", "SYN-93")]
     public void TestDeviceMethodKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Single-element edge case
         int[] singleData = [42];
         SYN_90_93_CoreSyntaxKernelsWrapper.Launch_DeviceMethodKernel(singleData, blockDimX: 1);

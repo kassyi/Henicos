@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace Kassyi.GSharp.Stdlib.Math.IO;
 

@@ -10,7 +10,6 @@ public class GEN_33_StructLayoutTests
     [Trait("FeatureId", "GEN-33")]
     public void Test_GEN33_StructLayout_IsMaintained_InGpuKernel()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var data = new CustomLayoutStruct[1]
         {
             new CustomLayoutStruct { A = 5, B = 10.0, C = 3.0f }
@@ -32,7 +31,6 @@ public class GEN_33_StructLayoutTests
     [Trait("FeatureId", "GEN-33")]
     public void Test_GEN33_PackedInlineArray_IsMaintained_InGpuKernel()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var data = new StructWithPackedInlineArray[1];
         data[0] = new StructWithPackedInlineArray { A = 5, B = 10 };
         data[0].Buffer[0] = 3;

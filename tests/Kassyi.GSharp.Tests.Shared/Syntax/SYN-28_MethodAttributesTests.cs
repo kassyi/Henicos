@@ -45,7 +45,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [0, 5, 10, 20];
         int[] result = new int[4];
 
@@ -66,7 +65,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MethodAttributes_EmptyArray_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [];
         int[] result = [];
 
@@ -81,7 +79,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MethodAttributes_SingleElement_Execution()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [42];
         int[] result = new int[1];
 
@@ -108,7 +105,6 @@ public partial class SYN_28_MethodAttributesTests
     [InlineData(-1000000, (-1000000 + 100) * 2)]
     public void Test_SYN28_AggressiveInlining_NumericBoundaries_Execution(int inputVal, int expectedVal)
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] input = [inputVal];
         int[] result = new int[1];
 
@@ -122,7 +118,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_AggressiveInlining_TranspilesWithForceinlineDevice()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("AggressiveInlinedFunc");
 
         Assert.Empty(diagnostics);
@@ -134,7 +129,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_NoInlining_TranspilesWithNoinlineDevice()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoInlinedFunc");
 
         Assert.Empty(diagnostics);
@@ -146,7 +140,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_MultipleAttributes_EmitsForceinlineOnceWithoutDuplicates()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("MultipleAttributesFunc");
 
         Assert.Empty(diagnostics);
@@ -161,7 +154,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UnsupportedOption_NoOptimization_DefaultsToInlineDeviceWithoutError()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("NoOptimizationFunc");
 
         Assert.Empty(diagnostics);
@@ -175,7 +167,6 @@ public partial class SYN_28_MethodAttributesTests
     [Trait("FeatureId", "SYN-28")]
     public void Test_SYN28_UserDefinedMethodImplAttribute_DoesNotCollideWithBclMethodImpl()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var (cudaSource, diagnostics) = TranspileDeviceMethod("CustomMethod");
 
         Assert.Empty(diagnostics);

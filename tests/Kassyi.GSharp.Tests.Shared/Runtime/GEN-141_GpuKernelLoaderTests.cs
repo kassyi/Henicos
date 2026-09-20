@@ -22,7 +22,6 @@ public class GEN141_GpuKernelLoaderTests
     [Trait("Category", "HappyPath")]
     public void Test_GEN141_HighThroughputKernelLoading_ParallelStress()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Stress parallel concurrent calls to LoadAotKernel to ensure allocation locks and loader caches operate thread-safely
         Parallel.For(0, 50, i =>
@@ -40,7 +39,6 @@ public class GEN141_GpuKernelLoaderTests
     [Trait("Category", "SadPath")]
     public void Test_GEN141_CorruptedPtxBinary_ThrowsArgumentException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Create a hash-appended but syntactically invalid PTX fixture so it reaches module loading
         var invalidPtxBase = Encoding.UTF8.GetBytes("INVALID_PTX_HEADER_AND_BODY\0");
@@ -64,7 +62,6 @@ public class GEN141_GpuKernelLoaderTests
     [InlineData(31)] // Less than 32 bytes (SHA256 hash length)
     public void Test_GEN141_ShortPtxBuffer_ThrowsArgumentException(int length)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         byte[] shortBuffer = new byte[length];
 
@@ -81,7 +78,6 @@ public class GEN141_GpuKernelLoaderTests
     [Trait("Category", "SadPath")]
     public void Test_GEN141_NonExistentKernelName_ThrowsArgumentException()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         // Valid PTX module but non-existent entry point function name
         var ex = Assert.Throws<CudaException>(() =>

@@ -586,9 +586,9 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         var firstH = isInverse ? n2 : n1;
         var secondW = isInverse ? n2 : n1;
         var secondH = isInverse ? n1 : n2;
-        
+
         var currentBuf = buffer;
-        
+
         if (!isInverse)
         {
             LaunchTranspose(currentBuf, tempBuffer, firstW, firstH);
@@ -596,13 +596,13 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         }
 
         LaunchSharedRow(currentBuf, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, firstW, firstH);
-        
+
         var nextBuf = currentBuf == buffer ? tempBuffer : buffer;
         LaunchTranspose(currentBuf, nextBuf, firstH, firstW);
         currentBuf = nextBuf;
-        
+
         LaunchSharedRow(currentBuf, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, secondW, secondH);
-        
+
         if (isInverse)
         {
             LaunchTranspose(currentBuf, buffer, secondH, secondW);

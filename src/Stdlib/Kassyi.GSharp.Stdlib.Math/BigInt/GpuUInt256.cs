@@ -17,7 +17,10 @@ public struct GpuUInt256
 
     // Dummy enumerator to satisfy C# 12 CollectionBuilder element type requirement (CS9188)
     public Enumerator GetEnumerator() => default;
-    public struct Enumerator { public uint Current => 0; public bool MoveNext() => false; }
+    public struct Enumerator
+    {
+        public uint Current => 0; public bool MoveNext() => false;
+    }
 
     public static GpuUInt256 Create(ReadOnlySpan<uint> elements) => new GpuUInt256(GpuUIntBuilder.Create<LimbBuffer8>(elements));
 }

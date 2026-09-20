@@ -19,7 +19,10 @@ public interface ITranspilerDialect
     /// <value>
     /// An enumerable of header include paths (e.g., <c>&lt;cuda_runtime.h&gt;</c>).
     /// </value>
-    IEnumerable<string> RequiredHeaders { get; }
+    IEnumerable<string> RequiredHeaders
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether this dialect targets NVIDIA CUDA for GPU execution.
@@ -27,7 +30,10 @@ public interface ITranspilerDialect
     /// <value>
     /// <see langword="true"/> if the dialect emits CUDA C++ (<c>.cu</c>) kernels; otherwise, <see langword="false"/>.
     /// </value>
-    bool IsCuda { get; }
+    bool IsCuda
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the bitwise flag collection of hardware and language features supported by this dialect.
@@ -35,7 +41,10 @@ public interface ITranspilerDialect
     /// <value>
     /// A <see cref="DialectCapabilities"/> value indicating supported runtime features.
     /// </value>
-    DialectCapabilities Capabilities { get; }
+    DialectCapabilities Capabilities
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the language prefix prepended to all emitted struct definitions.
@@ -43,7 +52,10 @@ public interface ITranspilerDialect
     /// <value>
     /// The prefix string (e.g., <c>"__device__ "</c> in CUDA, or empty string in host C++).
     /// </value>
-    string StructPrefix { get; }
+    string StructPrefix
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the language prefix prepended to all emitted function and method definitions.
@@ -51,7 +63,10 @@ public interface ITranspilerDialect
     /// <value>
     /// The prefix string (e.g., <c>"__device__ inline "</c> in CUDA).
     /// </value>
-    string MethodPrefix { get; }
+    string MethodPrefix
+    {
+        get;
+    }
 
     /// <summary>
     /// Emits the target C++ type representation for the specified C# Roslyn type symbol.

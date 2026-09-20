@@ -14,7 +14,9 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
     /// </summary>
     public static readonly PrefixUnaryExpressionTranspilerRule Instance = new();
 
-    private PrefixUnaryExpressionTranspilerRule() { }
+    private PrefixUnaryExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(PrefixUnaryExpressionSyntax node, ref TranspileContext context)

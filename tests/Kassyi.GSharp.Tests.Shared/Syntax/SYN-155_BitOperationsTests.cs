@@ -23,7 +23,6 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [InlineData(0x55555555u, 31)]
     public void Test_BCL02_Rotate32_Execution(uint val, int shift)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         uint[] vals = [val];
         int[] shifts = [shift];
@@ -49,7 +48,6 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [InlineData(0x5555555555555555ul, 63)]
     public void Test_BCL02_Rotate64_Execution(ulong val, int shift)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
         ulong[] vals = [val];
         int[] shifts = [shift];

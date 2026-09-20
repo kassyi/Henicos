@@ -14,7 +14,9 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
     /// </summary>
     public static readonly CastExpressionTranspilerRule Instance = new();
 
-    private CastExpressionTranspilerRule() { }
+    private CastExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(CastExpressionSyntax node, ref TranspileContext context)

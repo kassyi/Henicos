@@ -14,7 +14,9 @@ public sealed class ParenthesizedExpressionTranspilerRule : SyntaxNodeTranspiler
     /// </summary>
     public static readonly ParenthesizedExpressionTranspilerRule Instance = new();
 
-    private ParenthesizedExpressionTranspilerRule() { }
+    private ParenthesizedExpressionTranspilerRule()
+    {
+    }
 
     /// <inheritdoc />
     public override void Transpile(ParenthesizedExpressionSyntax node, ref TranspileContext context)

@@ -10,7 +10,6 @@ public class ComputeBenchmarkTests
     [Trait("Category", "GpuExecution")]
     public void SgemmBenchmark_ExecutionAndVerification_Succeeds()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new SgemmBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -23,7 +22,6 @@ public class ComputeBenchmarkTests
     [Trait("Category", "GpuExecution")]
     public void Sha256Benchmark_ExecutionAndVerification_Succeeds()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new Sha256Benchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -36,7 +34,6 @@ public class ComputeBenchmarkTests
     [Trait("Category", "GpuExecution")]
     public void BlackScholesBenchmark_ExecutionAndVerification_Succeeds()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new BlackScholesBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -49,7 +46,6 @@ public class ComputeBenchmarkTests
     [Trait("Category", "GpuExecution")]
     public void ReductionBenchmark_ExecutionAndVerification_Succeeds()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var bench = new ReductionBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -62,7 +58,6 @@ public class ComputeBenchmarkTests
     [Trait("Category", "GpuExecution")]
     public void ComputeBenchmarkRunner_RunSuite_All_ReturnsTrue()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         var result = ComputeBenchmarkRunner.RunSuite("all", iterations: 2);
         Assert.True(result);
     }

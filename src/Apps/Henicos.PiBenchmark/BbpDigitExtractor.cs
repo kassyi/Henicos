@@ -115,7 +115,7 @@ public static class BbpDigitExtractor
         }
 
         // Compute terms where k > id (Converges extremely fast; typically <= 25 terms)
-        for (var k = id + 1;; k++)
+        for (var k = id + 1; ; k++)
         {
             var ak = 8L * k + m;
             var t = Math.Pow(16.0, id - k) / ak;

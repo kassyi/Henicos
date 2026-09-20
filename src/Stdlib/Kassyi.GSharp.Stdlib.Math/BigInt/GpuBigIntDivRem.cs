@@ -560,23 +560,23 @@ public static class GpuBigIntDivRem
         GpuBigIntMath.ShiftRight(rNorm, totalShift, shiftedRNorm);
 
         using var currentRoot = new GpuUIntBigInteger(leftOperand.Context, n);
-        currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);        
-        
+        currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
+
         // Final Babylonian (Heron's) method loop to ensure exact integer precision.
         // InverseSqrt may stall at low precision if the input has many trailing zeros (e.g., 10005 * 2^9152).
         using var divisionResult = new GpuUIntBigInteger(leftOperand.Context, n);
         using var sumWithDivision = new GpuUIntBigInteger(leftOperand.Context, n);
         using var prevRoot = new GpuUIntBigInteger(leftOperand.Context, n);
-        
+
         while (true)
         {
             prevRoot.CopyFrom(currentRoot, numWords: n);
-            
+
             Div(leftOperand, currentRoot, divisionResult);
             GpuBigIntMath.Add(currentRoot, divisionResult, sumWithDivision);
             currentRoot.Clear();
             GpuBigIntMath.ShiftRight(sumWithDivision, 1, currentRoot);
-            
+
             // If current == prev or current == prev + 1 (oscillating), we have converged.
             using var diff = new GpuUIntBigInteger(leftOperand.Context, n);
             GpuBigIntMath.BitwiseXor(currentRoot, prevRoot, diff);
@@ -584,13 +584,13 @@ public static class GpuBigIntDivRem
             {
                 break;
             }
-            
+
             // To prevent infinite oscillation between floor and ceil
             using var plusOne = new GpuUIntBigInteger(leftOperand.Context, n);
             plusOne.Context.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1);
             using var prevPlusOne = new GpuUIntBigInteger(leftOperand.Context, n);
             GpuBigIntMath.Add(prevRoot, plusOne, prevPlusOne);
-            
+
             GpuBigIntMath.BitwiseXor(currentRoot, prevPlusOne, diff);
             if (GetActualBits(diff) == 0)
             {
@@ -679,7 +679,7 @@ public static class GpuBigIntDivRem
             shiftInTruncated++; // even if negative, maintain parity
         }
 
-        var originalBigTop = shiftInTruncated >= 0 
+        var originalBigTop = shiftInTruncated >= 0
             ? (topBig >> shiftInTruncated)
             : (topBig << -shiftInTruncated);
 

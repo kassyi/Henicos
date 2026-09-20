@@ -13,7 +13,6 @@ public class GBI146_GpuBigIntegerTests
     [Trait("Category", "HappyPath")]
     public void Test_GBI146_ConstructorAndProperties_StoreCorrectValues()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -49,7 +48,6 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_ComparisonAndRelationalOperators_BehaveCorrectly(
         uint valA, bool negA, uint valB, bool negB, int expectedCmp)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -103,7 +101,6 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(true, true, false)]   // (-A) * (-B) = +Result
     public void Test_GBI146_SignedMultiplicationAndDivisionExpressions_SignRules(bool negA, bool negB, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -132,7 +129,6 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(true, true, true)]    // (-A) + (-B) = -Result
     public void Test_GBI146_SignedAdditionExpression_SameSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -164,7 +160,6 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(0x55555555, false, 0xAAAAAAAA, true, 0x55555555, true)]  // 0x55555555 + (-0xAAAAAAAA) = -0x55555555
     public void Test_GBI146_SignedAdditionExpression_DifferentSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -193,7 +188,6 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(true, false, true)]  // (-A) - (+B) = (-A) + (-B) = -Result
     public void Test_GBI146_SignedSubtractionExpression_DifferentSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -226,7 +220,6 @@ public class GBI146_GpuBigIntegerTests
     [InlineData(0x55555555, false, 0xAAAAAAAA, false, 0x55555555, true)]
     public void Test_GBI146_SignedSubtractionExpression_SameSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -252,7 +245,6 @@ public class GBI146_GpuBigIntegerTests
     [Trait("Category", "HappyPath")]
     public void Test_GBI146_UnaryOperators_NegationAndBitwiseNot()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
@@ -277,7 +269,6 @@ public class GBI146_GpuBigIntegerTests
     [Trait("Category", "SadPath")]
     public void Test_GBI146_Evaluate_SadPaths_ThrowsAndReleasesBuffers()
     {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 

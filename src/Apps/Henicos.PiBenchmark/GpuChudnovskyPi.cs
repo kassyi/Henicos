@@ -25,17 +25,38 @@ public static class GpuChudnovskyPi
 
     private readonly struct CpuPqt
     {
-        public BigInteger P { get; init; }
-        public BigInteger Q { get; init; }
-        public BigInteger T { get; init; }
+        public BigInteger P
+        {
+            get; init;
+        }
+        public BigInteger Q
+        {
+            get; init;
+        }
+        public BigInteger T
+        {
+            get; init;
+        }
     }
 
     private class ProgressState
     {
-        public int TotalTerms { get; }
-        public int TotalDigits { get; }
-        public Stopwatch Stopwatch { get; }
-        public long LastReportTimeMs { get; set; }
+        public int TotalTerms
+        {
+            get;
+        }
+        public int TotalDigits
+        {
+            get;
+        }
+        public Stopwatch Stopwatch
+        {
+            get;
+        }
+        public long LastReportTimeMs
+        {
+            get; set;
+        }
 
         public ProgressState(int totalTerms, int totalDigits)
         {

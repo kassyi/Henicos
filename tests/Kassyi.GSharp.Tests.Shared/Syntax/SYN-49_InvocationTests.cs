@@ -9,7 +9,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedAtomicOperations()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] intBuf = new int[3];
         uint[] uintBuf = new uint[3];
@@ -39,7 +38,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedAtomicOperations_EmptyArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] intBuf = [];
         uint[] uintBuf = [];
         long[] longBuf = [];
@@ -60,7 +58,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedEdgeCases_ArrayElementsAndStructFields()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] array = new int[4] { 1, 2, 3, 4 };
         AtomicTestStruct[] structArray = new AtomicTestStruct[4]
@@ -88,7 +85,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_InterlockedEdgeCases_EmptyArray()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] emptyArray = [];
         AtomicTestStruct[] emptyStructArray = [];
 
@@ -105,7 +101,6 @@ public class SYN_49_InvocationTests
     [Trait("FeatureId", "SYN-49")]
     public void Test_SYN49_AtomicTestStruct_MemoryLayout()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());
         Assert.Equal(0, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueI").ToInt32());
         Assert.Equal(4, System.Runtime.InteropServices.Marshal.OffsetOf<AtomicTestStruct>("ValueU").ToInt32());

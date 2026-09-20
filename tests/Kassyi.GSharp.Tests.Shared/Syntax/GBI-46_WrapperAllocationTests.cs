@@ -15,7 +15,6 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
     [Trait("FeatureId", "GBI-46")]
     public void Test_GBI46_LaunchDevice_ShouldNotAllocateOnHotPath()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
         // Setup
         int ioVal = 5;
@@ -73,7 +72,6 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
     [Trait("FeatureId", "GBI-46")]
     public void Test_GBI46_Launch_EmptyArray_ShouldReturnEarlyAndSetDefaultOut()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 
         int ioVal = 42;
@@ -93,7 +91,6 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
     [Trait("FeatureId", "GBI-46")]
     public void Test_GBI46_LaunchDevice_ConcurrentAccess_ShouldBeThreadSafe()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         // Warm up and JIT compile on primary thread
         using (var _initCtx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
         {

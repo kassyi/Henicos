@@ -15,7 +15,9 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     /// </summary>
     public static readonly LocalDeclarationStatementTranspilerRule Instance = new();
 
-    private LocalDeclarationStatementTranspilerRule() { }
+    private LocalDeclarationStatementTranspilerRule()
+    {
+    }
 
     private readonly struct SharedMemoryAllocation(
         VariableDeclaratorSyntax declarator,
@@ -41,7 +43,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         }
 
         DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref context);
-        
+
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.VisitVariableDeclaration(node.Declaration);
         context.Writer.AppendSemiColon();

@@ -2,7 +2,10 @@ namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
 public interface IComputeBenchmark
 {
-    string Name { get; }
+    string Name
+    {
+        get;
+    }
     void Initialize();
     void RunReferenceCpu();
     void RunGSharp();

@@ -22,7 +22,7 @@ public static class PiVerification
 
         var count = computedHexTail.Length;
         Logger.Info("Verification", $"Extracting {count} hex digits at offset {offset} via BBP...");
-        
+
         var expectedHex = BbpDigitExtractor.ExtractHexDigits(offset, count);
         expectedHex = expectedHex.ToUpperInvariant();
         computedHexTail = computedHexTail.ToUpperInvariant();
