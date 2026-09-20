@@ -13,7 +13,6 @@
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
     <CompilerVisibleProperty Include="GSharpAotEnabled" />
     <CompilerVisibleProperty Include="GSharpEmitSource" />
-    <CompilerVisibleProperty Include="GSharpAotEncryptionKey" />
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
@@ -87,8 +86,8 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </AllItemsFullPathWithTargetPath>
       <!-- Export CPU native DLLs -->
-      <AllItemsFullPathWithTargetPath Include="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpNativeDlls\Kassyi.GSharp.Kernels$(_ArchSuffix).dll" Condition="Exists('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpNativeDlls\Kassyi.GSharp.Kernels$(_ArchSuffix).dll')">
-        <TargetPath>Kassyi.GSharp.Kernels$(_ArchSuffix).dll</TargetPath>
+      <AllItemsFullPathWithTargetPath Include="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpNativeDlls\Kassyi.GSharp.Kernels_$(_SafeAssemblyName)$(_ArchSuffix).dll" Condition="Exists('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)GSharpNativeDlls\Kassyi.GSharp.Kernels_$(_SafeAssemblyName)$(_ArchSuffix).dll')">
+        <TargetPath>Kassyi.GSharp.Kernels_$(_SafeAssemblyName)$(_ArchSuffix).dll</TargetPath>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </AllItemsFullPathWithTargetPath>
     </ItemGroup>
