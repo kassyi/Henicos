@@ -5,7 +5,7 @@ public class GpuBigIntExprAnalyzerTests
 :  TranspilerTestBase{
     private static readonly GpuBigIntExprAnalyzer s_analyzer = new();
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-26")]
     public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
@@ -13,7 +13,7 @@ public class GpuBigIntExprAnalyzerTests
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-26")]
     public async Task MultipleDeclarations_InSingleStatement_EdgeCase()
     {
@@ -23,7 +23,7 @@ public class GpuBigIntExprAnalyzerTests
         Assert.Equal(2, count);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-26")]
     public async Task MalformedSyntax_ShouldNotCrash_SadPath()
     {
@@ -31,7 +31,7 @@ public class GpuBigIntExprAnalyzerTests
                                .ReportsErrorsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-27")]
     public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
@@ -39,7 +39,7 @@ public class GpuBigIntExprAnalyzerTests
                                .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GBI-28")]
     public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {

@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Tests.Helpers;
 
 public class HashHelperTests
 {
-    [Fact]
+    [SkippableFact]
     public void ComputeShortHash_GivenNormalString_ReturnsStableKnownHash()
     {
         // Assert a stable known hash for normal input
@@ -15,7 +15,7 @@ public class HashHelperTests
         Assert.Equal(hash, hash2);
     }
 
-    [Fact]
+    [SkippableFact]
     public void ComputeShortHash_GivenEmptyString_ReturnsExpectedHash()
     {
         var hash = HashHelper.ComputeShortHash("");
@@ -24,7 +24,7 @@ public class HashHelperTests
         Assert.Equal("cbf29ce484", hash); // FNV-1a offset basis 14695981039346656037UL in hex is cbf29ce484222325, 10 chars is cbf29ce484
     }
 
-    [Fact]
+    [SkippableFact]
     public void ComputeShortHash_GivenNullString_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => HashHelper.ComputeShortHash(null!));

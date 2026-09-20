@@ -4,28 +4,28 @@ namespace Kassyi.GSharp.Tests.Syntax;
 public class SYN_31_38_AdvancedMemoryTests
 :  TranspilerTestBase{
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-31")]
     [Trait("Category", "Syntax")]
     public void Test_SYN31_UnsafeAsPointer_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-32")]
     [Trait("Category", "Syntax")]
     public void Test_SYN32_MemoryMarshalCast_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-33")]
     [Trait("Category", "Syntax")]
     public void Test_SYN33_RefFields_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-34")]
     [Trait("Category", "Syntax")]
     public void Test_SYN34_SimdVector128_Transpilation()
@@ -81,14 +81,14 @@ public class SYN_31_38_AdvancedMemoryTests
         Assert.Equal(expectedDest[2], dest[2]);
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-37")]
     [Trait("Category", "Syntax")]
     public void Test_SYN37_UnsafePointerArithmetic_Transpilation()
     {
     }
 
-    [Fact()]
+    [SkippableFact]
     [Trait("FeatureId", "SYN-38")]
     [Trait("Category", "Syntax")]
     public void Test_SYN38_FixedSizeBuffers_Transpilation()

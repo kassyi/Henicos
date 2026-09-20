@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Generator;
 
 public class GEN_04_SourceWriterTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
@@ -27,7 +27,7 @@ public class GEN_04_SourceWriterTests
         Assert.Equal("auto x = 123;\n", result);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
@@ -48,7 +48,7 @@ public class GEN_04_SourceWriterTests
         Assert.Equal("keep_this keep_newline\nkeep_line\n", result);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
@@ -67,7 +67,7 @@ public class GEN_04_SourceWriterTests
         Assert.Equal("func() arr[] {}", writer.ToString());
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
@@ -84,7 +84,7 @@ public class GEN_04_SourceWriterTests
         Assert.Equal("line1\nline2", result);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]
@@ -105,7 +105,7 @@ public class GEN_04_SourceWriterTests
         Assert.Equal("// Header for Kernel\n__global__ void Kernel_42() {}", result);
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Transpiler")]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-04")]

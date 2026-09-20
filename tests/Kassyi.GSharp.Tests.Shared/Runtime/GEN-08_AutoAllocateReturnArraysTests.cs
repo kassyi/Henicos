@@ -48,7 +48,7 @@ public class GEN_08_AutoAllocateReturnArraysTests : TranspilerTestBase
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "SadPath")]
     public void KernelLaunchZeroDimension_ThrowsArgumentOutOfRangeException()
@@ -57,7 +57,7 @@ public class GEN_08_AutoAllocateReturnArraysTests : TranspilerTestBase
             GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: 0));
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "SadPath")]
     public void KernelLaunchOverflowingDimension_ThrowsOverflowException()

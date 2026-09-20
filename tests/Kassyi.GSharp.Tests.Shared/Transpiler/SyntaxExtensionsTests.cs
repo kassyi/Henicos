@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Transpiler;
 
 public class SyntaxExtensionsTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Compiler")]
     [Trait("FeatureId", "GEN-20")]
     public void Test_GEN20_SyntaxExtensions_SyntaxToken_IsKind_MatchesCorrectly()
@@ -18,7 +18,7 @@ public class SyntaxExtensionsTests
         Assert.False(token.IsKind());
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "Compiler")]
     [Trait("FeatureId", "GEN-20")]
     public void Test_GEN20_SyntaxExtensions_SyntaxNode_IsKind_MatchesCorrectly()

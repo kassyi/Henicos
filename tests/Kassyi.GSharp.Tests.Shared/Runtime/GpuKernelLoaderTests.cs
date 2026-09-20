@@ -21,7 +21,7 @@ public class GpuKernelLoaderAotTests : TranspilerTestBase
         s_validPtx = [.. basePtx, .. hash];
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-43")]
     [Trait("Category", "Runtime")]
     public void Test_GEN43_LoadAotKernel_ParallelContention()

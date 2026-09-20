@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Tests.Generator;
 
 public class GEN_35_AotConfigurationTests
 {
-    [Fact]
+    [SkippableFact]
     [Trait("FeatureId", "GEN-35")]
     [Trait("Category", "Transpiler")]
     public void Test_GEN35_AotConfiguration_AlwaysProducesAotWrapper()
