@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public class SYN_154_WarpShuffleTests : TranspilerTestBase
+public class SYN_95_WarpShuffleTests : TranspilerTestBase
 {
     [SkippableTheory]
     [Trait("Category", "GpuExecution")]
@@ -17,7 +17,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [InlineData(0x0000FFFF, 1, 16)] // Half warp, delta=1
     [InlineData(0x00000000, 1, 32)] // Zero mask
     [InlineData(0xFFFFFFFF, 0, 32)] // Zero delta
-    public void Test_154_WarpShuffleExtrema_CalculatesCorrectly(uint mask, uint delta, int width)
+    public void Test_95_WarpShuffleExtrema_CalculatesCorrectly(uint mask, uint delta, int width)
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -30,7 +30,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
 
         int[] output = new int[totalThreads];
 
-        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpShuffleExtremaKernel(
+        SYN_95_WarpShuffleKernelsWrapper.LaunchWarpShuffleExtremaKernel(
             mask,
             input,
             delta,
@@ -62,7 +62,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
-    public void Test_154_WarpReduceSum_CalculatesCorrectly()
+    public void Test_95_WarpReduceSum_CalculatesCorrectly()
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -78,7 +78,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
 
         int[] output = new int[numWarps];
 
-        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpReductionKernel(
+        SYN_95_WarpShuffleKernelsWrapper.LaunchWarpReductionKernel(
             input,
             output,
             blockDimX: (uint)totalThreads
@@ -101,7 +101,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
-    public void Test_154_WarpShuffleBoundaryOffsets()
+    public void Test_95_WarpShuffleBoundaryOffsets()
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -116,7 +116,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
         int[] out31 = new int[totalThreads];
         int[] out32 = new int[totalThreads];
 
-        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpShuffleBoundaryKernel(
+        SYN_95_WarpShuffleKernelsWrapper.LaunchWarpShuffleBoundaryKernel(
             input,
             out0,
             out31,
@@ -142,7 +142,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
-    public void Test_154_WarpDivergence()
+    public void Test_95_WarpDivergence()
     {
         Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -155,7 +155,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
 
         int[] output = new int[totalThreads];
 
-        SYN_154_WarpShuffleKernelsWrapper.LaunchWarpDivergenceKernel(
+        SYN_95_WarpShuffleKernelsWrapper.LaunchWarpDivergenceKernel(
             input,
             output,
             blockDimX: (uint)totalThreads
@@ -180,7 +180,7 @@ public class SYN_154_WarpShuffleTests : TranspilerTestBase
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
-    public void Test_154_Transpilation_MapsToCudaNativeShuffle()
+    public void Test_95_Transpilation_MapsToCudaNativeShuffle()
     {
         const string code = """
             using Kassyi.GSharp.Core ;

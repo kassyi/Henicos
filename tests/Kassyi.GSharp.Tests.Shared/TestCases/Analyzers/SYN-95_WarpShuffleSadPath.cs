@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-public static class SYN_154_WarpShuffleSadPath
+public static class SYN_95_WarpShuffleSadPath
 {
     // Calling ShuffleDownSync in host-side non-GPU kernel context
     public static void HostCallToShuffleDownSync()
