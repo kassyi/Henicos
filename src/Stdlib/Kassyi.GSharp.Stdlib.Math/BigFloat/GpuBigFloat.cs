@@ -45,8 +45,10 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
     /// Aligns the radix point between this instance and another <see cref="GpuBigFloat{TSize}"/>.
     /// </summary>
     /// <param name="other">The operand to align against.</param>
-    /// <param name="alignedOther">The resulting aligned operand.</param>
-    /// <param name="stickyBit">The sticky bit preserved from right-shifting.</param>
+    /// <param name="alignedThis">The resulting aligned this operand.</param>
+    /// <param name="alignedOther">The resulting aligned other operand.</param>
+    /// <param name="stickyThis">The sticky bit preserved from right-shifting this operand.</param>
+    /// <param name="stickyOther">The sticky bit preserved from right-shifting the other operand.</param>
     /// <returns>The exponent difference $\Delta E$.</returns>
     public readonly void AlignRadixPoint(GpuBigFloat<TSize> other, out GpuBigFloat<TSize> alignedThis,
         out GpuBigFloat<TSize> alignedOther, out bool stickyThis, out bool stickyOther)
@@ -188,7 +190,7 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
             return 0;
         }
 
-        var normalized = UFloat.Normalize(UFloat.Significand.CountLeadingZeros(), false);
+        var normalized = UFloat.Normalize(UFloat.Significand.CountLeadingZeros());
         return HashCode.Combine(normalized.Significand.GetHashCode(), normalized.Exponent, IsNegative);
     }
 
