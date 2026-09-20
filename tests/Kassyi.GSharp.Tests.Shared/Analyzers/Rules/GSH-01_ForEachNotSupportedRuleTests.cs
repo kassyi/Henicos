@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Analyzers.Rules;
 
 public class GSH_01_ForEachNotSupportedRuleTests
 :  TranspilerTestBase{
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GSH-01")]
     public void Validate_GSH01_ReportsDiagnostic_OnForEachStatement()
     {

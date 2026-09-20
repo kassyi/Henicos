@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Kassyi.GSharp.Compiler;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -18,44 +24,33 @@ public static class YamlDialectGenerator
             return;
         }
 
-        var inputDir = args[0];
-        var outputDir = args[1];
+        string inputDir = args[0];
+        string outputDir = args[1];
 
         Directory.CreateDirectory(outputDir);
 
-        var allFiles = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories);
-        var dialectDefinitions = new List<DialectDefinition>();
-        var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
+        var yamlFiles = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories)
+            .Where(path => path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            .Select(path => File.ReadAllText(path));
 
-        foreach (var path in allFiles)
+        var dialectDefinitions = yamlFiles.Select(text =>
         {
-            if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
-                !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
             try
             {
-                var text = File.ReadAllText(path);
-                var def = s_deserializer.Deserialize<DialectDefinition>(text);
-                if (!string.IsNullOrEmpty(def.Name))
-                {
-                    dialectDefinitions.Add(def);
-                    defMap[def.Name] = def;
-                }
+                return s_deserializer.Deserialize<DialectDefinition>(text);
             }
-            catch (Exception ex)
+            catch
             {
-                // Ignore deserialization errors for non-dialect or invalid YAML files
-                _ = ex;
+                return null;
             }
-        }
+        }).Where(def => def != null && !string.IsNullOrEmpty(def.Name)).ToList();
+
+        var defMap = dialectDefinitions.ToDictionary(d => d!.Name, d => d!);
 
         foreach (var def in dialectDefinitions)
         {
-            var source = GenerateDialectClass(def!, defMap);
-            File.WriteAllText(Path.Combine(outputDir, $"{def.Name}Dialect.g.cs"), source, Encoding.UTF8);
+            string source = GenerateDialectClass(def!, defMap);
+            File.WriteAllText(Path.Combine(outputDir, $"{def!.Name}Dialect.g.cs"), source, Encoding.UTF8);
         }
     }
 
@@ -73,133 +68,107 @@ public static class YamlDialectGenerator
         writer.Line("namespace Kassyi.GSharp.Compiler.Dialects;");
         writer.Line();
 
-        var baseClass = string.IsNullOrEmpty(def.Inherits) ? "YamlDialectBase" : $"{def.Inherits}Dialect";
+        string baseClass = string.IsNullOrEmpty(def.Inherits) ? "YamlDialectBase" : $"{def.Inherits}Dialect";
 
         writer.Line($"public class {def.Name}Dialect : {baseClass}");
         using (writer.Scope())
         {
-            EmitRequiredHeaders(writer, def, definitions);
-            EmitPrefixOverrides(writer, def, definitions);
+            // Headers
+            var headers = new HashSet<string>();
+            CollectHeaders(def, definitions, headers);
+            if (headers.Count > 0)
+            {
+                writer.Line("public override IEnumerable<string> RequiredHeaders => new string[]");
+                using (writer.Scope("{", "};"))
+                {
+                    foreach (var h in headers)
+                    {
+                        writer.Line($"\"{h}\",");
+                    }
+                }
+            }
 
-            EmitMappingMethod(
-                writer,
-                "public override bool TryMapType(string fullyQualifiedName, out string mappedType)",
-                "fullyQualifiedName",
-                "mappedType",
-                "return base.TryMapType(fullyQualifiedName, out mappedType);",
-                def.Types);
+            // StructPrefix
+            string? structPrefix = GetInheritedValue(def, definitions, d => d.StructPrefix);
+            if (structPrefix != null)
+            {
+                writer.Line($"public override string StructPrefix => \"{structPrefix}\";");
+            }
 
-            EmitMappingMethod(
-                writer,
-                "protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)",
-                "signature",
-                "mappedExpression",
-                "return base.TryMapIntrinsicCore(signature, out mappedExpression);",
-                def.Intrinsics);
+            // MethodPrefix
+            string? methodPrefix = GetInheritedValue(def, definitions, d => d.MethodPrefix);
+            if (methodPrefix != null)
+            {
+                writer.Line($"public override string MethodPrefix => \"{methodPrefix}\";");
+            }
+
+            // Types
+            if (def.Types != null && def.Types.Count > 0)
+            {
+                writer.Line("public override bool TryMapType(string fullyQualifiedName, out string mappedType)");
+                using (writer.Scope())
+                {
+                    writer.Line("switch (fullyQualifiedName)");
+                    using (writer.Scope())
+                    {
+                        foreach (var kvp in def.Types)
+                        {
+                            writer.Line($"case \"{kvp.Key}\": mappedType = \"{kvp.Value}\"; return true;");
+                        }
+                    }
+                    writer.Line("return base.TryMapType(fullyQualifiedName, out mappedType);");
+                }
+            }
+
+            // Intrinsics
+            if (def.Intrinsics != null && def.Intrinsics.Count > 0)
+            {
+                writer.Line("protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
+                using (writer.Scope())
+                {
+                    writer.Line("switch (signature)");
+                    using (writer.Scope())
+                    {
+                        foreach (var kvp in def.Intrinsics)
+                        {
+                            writer.Line($"case \"{kvp.Key}\": mappedExpression = \"{kvp.Value}\"; return true;");
+                        }
+                    }
+                    writer.Line("return base.TryMapIntrinsicCore(signature, out mappedExpression);");
+                }
+            }
         }
 
         return writer.ToString();
     }
 
-    private static void EmitRequiredHeaders(
-        SourceWriter writer,
-        DialectDefinition def,
-        Dictionary<string, DialectDefinition> definitions)
-    {
-        var headers = new HashSet<string>();
-        CollectHeaders(def, definitions, headers);
-        if (headers.Count == 0)
-        {
-            return;
-        }
-
-        writer.Line("public override IEnumerable<string> RequiredHeaders => [");
-        foreach (var h in headers)
-        {
-            writer.Line($" \"{h}\",");
-        }
-
-        writer.Line("];");
-    }
-
-    private static void EmitPrefixOverrides(
-        SourceWriter writer,
-        DialectDefinition def,
-        Dictionary<string, DialectDefinition> definitions)
-    {
-        if (GetInheritedValue(def, definitions, d => d.StructPrefix) is { } structPrefix)
-        {
-            writer.Line($"public override string StructPrefix => \"{structPrefix}\";");
-        }
-
-        if (GetInheritedValue(def, definitions, d => d.MethodPrefix) is { } methodPrefix)
-        {
-            writer.Line($"public override string MethodPrefix => \"{methodPrefix}\";");
-        }
-    }
-
-    private static void EmitMappingMethod(
-        SourceWriter writer,
-        string methodSignature,
-        string switchVariable,
-        string outParameter,
-        string fallbackReturn,
-        Dictionary<string, string>? mappings)
-    {
-        if (mappings is not { Count: > 0 })
-        {
-            return;
-        }
-
-        writer.Line(methodSignature);
-        using (writer.Scope())
-        {
-            writer.Line($"switch ({switchVariable})");
-            using (writer.Scope())
-            {
-                foreach (var (key, value) in mappings)
-                {
-                    writer.Line($"case \"{key}\": {outParameter} = \"{value}\"; return true;");
-                }
-            }
-
-            writer.Line(fallbackReturn);
-        }
-    }
-
-    private static void CollectHeaders(
-        DialectDefinition def,
-        Dictionary<string, DialectDefinition> definitions,
-        HashSet<string> headers)
+    private static void CollectHeaders(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, HashSet<string> headers)
     {
         if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits!, out var parent))
         {
             CollectHeaders(parent, definitions, headers);
         }
-
-        if (def.RequiredHeaders is { Count: > 0 })
+        if (def.RequiredHeaders != null)
         {
-            headers.UnionWith(def.RequiredHeaders);
+            foreach (var h in def.RequiredHeaders)
+            {
+                headers.Add(h);
+            }
         }
     }
 
-    private static string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions,
-        Func<DialectDefinition, string?> selector)
+    private static string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, Func<DialectDefinition, string?> selector)
     {
-        while (true)
+        var val = selector(def);
+        if (!string.IsNullOrEmpty(val))
         {
-            var val = selector(def);
-            if (!string.IsNullOrEmpty(val))
-            {
-                return val;
-            }
-
-            if (string.IsNullOrEmpty(def.Inherits) || !definitions.TryGetValue(def.Inherits!, out var parent))
-            {
-                return null;
-            }
-
-            def = parent;
+            return val;
         }
+
+        if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits!, out var parent))
+        {
+            return GetInheritedValue(parent, definitions, selector);
+        }
+        return null;
     }
 }

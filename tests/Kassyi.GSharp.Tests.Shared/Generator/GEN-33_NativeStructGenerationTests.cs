@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Generator;
 
 public class GEN_33_NativeStructGenerationTests
 {
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "GEN-33")]
     public async Task Test_GEN33_NativeStructGeneration_ArrayFieldsAndNestedStructs()

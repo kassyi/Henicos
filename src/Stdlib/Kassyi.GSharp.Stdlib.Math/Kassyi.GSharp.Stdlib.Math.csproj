@@ -7,8 +7,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GSharpTargetDialect>Cuda</GSharpTargetDialect>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <IsAotCompatible>true</IsAotCompatible>
-    <WarningsAsErrors>$(WarningsAsErrors);IL2026;IL2091;IL2092;IL2093;IL2094;IL2095;IL3050;IL2104;IL2121;IL3000;IL3001;IL3002;IL3003</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

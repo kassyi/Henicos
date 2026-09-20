@@ -229,7 +229,7 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
         await VerifyGeneratorAsync(source, testName, sourceDir!);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-08")]
     public async Task Test_GEN08_SharedPreludeHeader_Snapshot()
     {
@@ -263,7 +263,7 @@ public partial class GEN_08_GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers
             .UseFileName($"Snap.SharedHeader_{DialectName}");
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-09")]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {

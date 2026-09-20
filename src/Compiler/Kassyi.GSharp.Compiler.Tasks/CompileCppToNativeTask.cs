@@ -46,70 +46,41 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         return true;
     }
 
-    protected override ITaskItem[]? ExecutePipeline(ITaskItem[] sources)
+    protected override ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem)
     {
-        var results = new List<ITaskItem>();
+        var sourcePath = sourceItem.GetMetadata("FullPath");
+        var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
+        var keyFilePath = sourcePath + ".key";
+        var items = new List<ITaskItem>();
 
-        foreach (var sourceItem in sources)
+        foreach (var arch in _architectures)
         {
-            var sourcePath = sourceItem.GetMetadata("FullPath");
-            if (string.IsNullOrEmpty(sourcePath))
+            // cl.exe architecture argument
+            var vcvarsArch = arch == "x64" ? "x64" : (arch == "arm64" ? "x64_arm64" : "x64");
+
+            var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
+
+            if (!Directory.Exists(OutputDirectory))
             {
-                continue;
+                Directory.CreateDirectory(OutputDirectory);
             }
 
-            var sourceFileName = Path.GetFileNameWithoutExtension(sourcePath);
-            if (sourceFileName.EndsWith(".g"))
-            {
-                sourceFileName = sourceFileName.Substring(0, sourceFileName.Length - 2);
-            }
-
-            var sourceTime = File.GetLastWriteTimeUtc(sourcePath);
-            bool success = true;
-
-            foreach (var platform in _architectures)
-            {
-                var vcvarsArch = platform == "x64" ? "x64" : (platform == "arm64" ? "x64_arm64" : "x64");
-                var outputDllPath = Path.Combine(OutputDirectory, $"{sourceFileName}_{platform}.dll");
-
-                var dllTime = File.Exists(outputDllPath) ? File.GetLastWriteTimeUtc(outputDllPath) : DateTime.MinValue;
-
-                if (sourceTime > dllTime)
-                {
-                    if (!Directory.Exists(OutputDirectory))
-                    {
-                        Directory.CreateDirectory(OutputDirectory);
-                    }
-
-                    Log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {platform}: {sourcePath}");
-                    if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
-                    {
-                        success = false;
-                        break;
-                    }
-                    if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
-                    {
-                        success = false;
-                        break;
-                    }
-                }
-                else
-                {
-                    Log.LogMessage(MessageImportance.Normal, $"Skipping C++ compilation for {platform}. DLL is up-to-date: {outputDllPath}");
-                }
-
-                var finalTaskItem = new TaskItem(outputDllPath);
-                finalTaskItem.SetMetadata("LogicalName", Path.GetFileName(outputDllPath));
-                results.Add(finalTaskItem);
-            }
-
-            if (!success)
+            if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
             {
                 return null;
             }
+
+            if (!ArtifactHelper.ProcessArtifact(outputDllPath, keyFilePath, Log))
+            {
+                return null;
+            }
+
+            var taskItem = new TaskItem(outputDllPath);
+            taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
+            items.Add(taskItem);
         }
 
-        return results.ToArray();
+        return [.. items];
     }
 
     private string[] GetTargetArchitectures()

@@ -220,7 +220,7 @@ public static partial class ComprehensiveSpecKernel
             }
 
             // 11.5 Inline PTX
-
+            Gpu.InlinePtx("/* test ptx inline */");
 
             // 12. Early return
             if (ty > 0)

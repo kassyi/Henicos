@@ -4,7 +4,8 @@ namespace Kassyi.GSharp.Compiler;
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
 {
-    public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config)
+    public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config,
+        byte[]? aesKey = null, string? keyProvider = null)
     {
         var className = method.ContainingType.Name + "Wrapper";
 
@@ -16,7 +17,6 @@ internal static class WrapperEmitter
             #pragma warning disable RS1035 // Do not use APIs banned for analyzers
             #pragma warning disable RS1016
             #pragma warning disable RS1034
-            #pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
             using System.Text;
             using System.Runtime.InteropServices;
             using global::Kassyi.GSharp.Core;
@@ -44,20 +44,26 @@ internal static class WrapperEmitter
                 WriteKernelSource(writer, method, source, config);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
+                writer.AppendLine($"private static byte[]? s_decryptionKey_{method.Name};");
+                writer.AppendLine($"private static byte[]? s_binaryData_{method.Name};");
+                writer.AppendLine($"private static bool s_isLoaded_{method.Name};");
+
+                if (aesKey != null)
+                {
+                    if (string.IsNullOrWhiteSpace(keyProvider))
+                    {
+                        VmObfuscatorEmitter.EmitKeyDerivationVm(writer, method, aesKey);
+                    }
+                }
+
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
-                    writer.AppendLine($"private static int s_generation_{method.Name} = -1;");
-                    writer.AppendLine($"private static readonly object s_lock_{method.Name} = new object();");
-                    WriteWarmupFunctionPointerMethod(writer, method);
-                    WriteLaunchMethod(writer, method, false);
-                    WriteLaunchMethod(writer, method, true);
+                    WriteLaunchMethod(writer, method, false, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, true, aesKey != null, keyProvider);
                 }
                 else
                 {
-                    writer.AppendLine($"private static byte[]? s_binaryData_{method.Name};");
-                    writer.AppendLine($"private static bool s_isLoaded_{method.Name};");
-                    WriteLaunchMethodCpu(writer, method);
+                    WriteLaunchMethodCpu(writer, method, aesKey != null, keyProvider);
                 }
             }
         }
@@ -68,19 +74,18 @@ internal static class WrapperEmitter
     private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string source,
         GeneratorConfig config)
     {
-        if (!config.EmitSource)
+        if (config.EmitSource)
         {
-            return;
+            var escapedSource = source.Replace("\"", "\"\"");
+            writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
+            writer.AppendLine(
+                $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source + global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source + {method.Name}_Source;");
+            writer.AppendLine();
         }
-
-        var escapedSource = source.Replace("\"", "\"\"");
-        writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
-        writer.AppendLine(
-            $"public static readonly string {method.Name}_FullSource = global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source + global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source + {method.Name}_Source;");
-        writer.AppendLine();
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
+    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
+        bool hasAesKey, string? keyProvider)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -99,7 +104,7 @@ internal static class WrapperEmitter
                 "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
             using (writer.Scope())
             {
-                WriteCudaKernelCompilationCall(writer, method);
+                WriteCudaKernelCompilationCall(writer, method, hasAesKey, keyProvider);
                 MarshalingEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
 
                 writer.AppendLine("try");
@@ -121,65 +126,22 @@ internal static class WrapperEmitter
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method,
+        bool hasAesKey, string? keyProvider)
     {
         writer.AppendLine("#pragma warning disable CS8500");
         WriteCpuDelegateDeclaration(writer, method);
         WriteLaunchMethodSignature(writer, method, false);
         using (writer.Scope())
         {
-            if (ContainsInlinePtx(method))
-            {
-                writer.AppendLine(
-                    "throw new global::System.NotSupportedException(\"Inline PTX is only supported on GPU execution.\");");
-            }
-            else
-            {
-                WriteOutParameterDefaults(writer, method);
-                WriteEmptyArrayGuards(writer, method);
-                WriteAutoResultAllocation(writer, method);
-                WriteCpuDelegateGetOrCompile(writer, method);
-                WriteCpuFixedBlocksAndInvoke(writer, method);
-            }
+            WriteOutParameterDefaults(writer, method);
+            WriteEmptyArrayGuards(writer, method);
+            WriteAutoResultAllocation(writer, method);
+            WriteCpuDelegateGetOrCompile(writer, method, hasAesKey, keyProvider);
+            WriteCpuFixedBlocksAndInvoke(writer, method);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
-    }
-
-    private sealed class InlinePtxWalker : CSharpSyntaxWalker
-    {
-        public bool Found { get; private set; }
-
-        public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        {
-            if (Found)
-            {
-                return;
-            }
-
-            if (node.Name.Identifier.ValueText == "InlinePtx")
-            {
-                Found = true;
-                return;
-            }
-
-            base.VisitMemberAccessExpression(node);
-        }
-    }
-
-    private static bool ContainsInlinePtx(IMethodSymbol method)
-    {
-        var walker = new InlinePtxWalker();
-        foreach (var syntaxRef in method.DeclaringSyntaxReferences)
-        {
-            walker.Visit(syntaxRef.GetSyntax());
-            if (walker.Found)
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
@@ -195,7 +157,7 @@ internal static class WrapperEmitter
             writer.Append("void ");
         }
 
-        writer.Append("Launch");
+        writer.Append("Launch_");
         writer.Append(method.Name);
         if (isDevicePtr)
         {
@@ -219,14 +181,13 @@ internal static class WrapperEmitter
                 }
                 else
                 {
-                    switch (p.RefKind)
+                    if (p.RefKind == RefKind.Ref)
                     {
-                        case RefKind.Ref:
-                            writer.Append("ref ");
-                            break;
-                        case RefKind.Out:
-                            writer.Append("out ");
-                            break;
+                        writer.Append("ref ");
+                    }
+                    else if (p.RefKind == RefKind.Out)
+                    {
+                        writer.Append("out ");
                     }
 
                     writer.AppendFullyQualifiedCsharpName(p.Type);
@@ -261,7 +222,7 @@ internal static class WrapperEmitter
             }
 
             writer.Append(p.Name);
-            writer.AppendLine("= default;");
+            writer.AppendLine(" = default;");
         }
     }
 
@@ -324,129 +285,47 @@ internal static class WrapperEmitter
     }
 
 
-    private static string GetMangledKernelName(IMethodSymbol method) => $"{method.ContainingType.Name}_{method.Name}";
-
-    private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method,
+        bool hasAesKey, string? keyProvider)
     {
-        var mangledName = GetMangledKernelName(method);
-        writer.AppendLine(
-            "/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>");
-        writer.AppendLine($"public static void WarmupFunctionPointer{method.Name}()");
+        writer.AppendLine($"if (!s_isLoaded_{method.Name})");
         using (writer.Scope())
         {
-            writer.AppendLine("var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
             writer.AppendLine(
-                $"if (s_hfunc_{method.Name}.HasValue && s_generation_{method.Name} == currentGen) return;");
-            writer.AppendLine($"lock (s_lock_{method.Name})");
+                $"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
+            writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
             using (writer.Scope())
             {
-                writer.AppendLine("currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
-                writer.AppendLine(
-                    $"if (s_hfunc_{method.Name}.HasValue && s_generation_{method.Name} == currentGen) return;");
-                writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_");
-                WriteSafeAssemblyName(writer, method.ContainingAssembly.Name);
-                writer.AppendLine(".GetOrLoadModule();");
-                writer.AppendLine(
-                    $"s_hfunc_{method.Name} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{mangledName}\");");
-                writer.AppendLine($"s_generation_{method.Name} = currentGen;");
+                writer.AppendLine($"s_binaryData_{method.Name} = System.IO.File.ReadAllBytes(fatbinPath);");
+                if (hasAesKey)
+                {
+                    if (!string.IsNullOrWhiteSpace(keyProvider))
+                    {
+                        writer.AppendLine(
+                            $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                    }
+                    else
+                    {
+                        writer.AppendLine($"s_decryptionKey_{method.Name} = DeriveObfuscatedKey_{method.Name}();");
+                    }
+                }
+                else
+                {
+                    writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
+                }
             }
-        }
-
-        writer.AppendLine();
-    }
-
-    private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
-    {
-        writer.AppendLine($"WarmupFunctionPointer{method.Name}();");
-        writer.AppendLine($"IntPtr hfunc = s_hfunc_{method.Name}!.Value;");
-        writer.AppendLine();
-    }
-
-    public static string GenerateModuleContextClass(string assemblyName, IEnumerable<IMethodSymbol> kernelMethods)
-    {
-        var safeAssemblyName = assemblyName.Replace(".", "_");
-
-        var writer = new SourceWriter();
-        writer.AppendLine("""
-            // <auto-generated/>
-            #nullable enable
-            using System;
-            using System.Threading;
-            #pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
-            """);
-        writer.AppendLine();
-
-        writer.AppendLine("namespace Kassyi.GSharp.Generated");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"public static class GSharpModuleContext_{safeAssemblyName}");
+            writer.AppendLine("else");
             using (writer.Scope())
             {
-                writer.AppendLine("private static IntPtr? s_hModule;");
-                writer.AppendLine("private static int s_generation = -1;");
-                writer.AppendLine("private static readonly object s_lock = new object();");
-                writer.AppendLine();
-                writer.AppendLine("""
-                    /// <summary>
-                    /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
-                    /// </summary>
-                    public static IntPtr GetOrLoadModule()
-                    """);
-                using (writer.Scope())
-                {
-                    writer.AppendLine("var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
-                    writer.AppendLine("if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;");
-                    writer.AppendLine("lock (s_lock)");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;");
-                        writer.AppendLine(
-                            "if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;");
-                        writer.AppendLine();
-                        writer.AppendLine(
-                            $"var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{safeAssemblyName}).Assembly.Location) ?? System.AppContext.BaseDirectory;");
-                        writer.AppendLine(
-                            $"var fatbinPath = System.IO.Path.Combine(baseDir, \"Kassyi.GSharp.Kernels_{safeAssemblyName}.fatbin\");");
-                        writer.AppendLine("if (!System.IO.File.Exists(fatbinPath))");
-                        using (writer.Scope())
-                        {
-                            writer.AppendLine(
-                                "throw new System.InvalidOperationException($\"AOT kernel binary was not found at '{fatbinPath}'.\");");
-                        }
-
-                        writer.AppendLine();
-                        writer.AppendLine("byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);");
-                        writer.AppendLine(
-                            "s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);");
-                        writer.AppendLine("s_generation = currentGen;");
-                        writer.AppendLine("return s_hModule.Value;");
-                    }
-                }
-
-                writer.AppendLine();
-                writer.AppendLine("""
-                    /// <summary>
-                    /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
-                    /// </summary>
-                    public static void Warmup()
-                    """);
-                using (writer.Scope())
-                {
-                    writer.AppendLine("// Force load the module first");
-                    writer.AppendLine("GetOrLoadModule();");
-                    foreach (var method in kernelMethods)
-                    {
-                        var ns = method.ContainingNamespace.IsGlobalNamespace
-                            ? ""
-                            : method.ContainingNamespace.ToString() + ".";
-                        var typeName = method.ContainingType.Name;
-                        writer.AppendLine($"global::{ns}{typeName}Wrapper.WarmupFunctionPointer{method.Name}();");
-                    }
-                }
+                writer.AppendLine(
+                    $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
             }
+            writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
-        return writer.ToString();
+        writer.AppendLine(
+            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\", s_decryptionKey_{method.Name});");
+        writer.AppendLine();
     }
 
     private static void WriteCpuDelegateDeclaration(SourceWriter writer, IMethodSymbol method)
@@ -503,27 +382,41 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method,
+        bool hasAesKey, string? keyProvider)
     {
         writer.AppendLine(
             "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
-        writer.Append("var dllName = $\"Kassyi.GSharp.Kernels_");
-        WriteSafeAssemblyName(writer, method.ContainingAssembly.Name);
-        writer.AppendLine("{archSuffix}.dll\";");
         writer.AppendLine(
-            $"var baseDir = System.IO.Path.GetDirectoryName(typeof({method.ContainingType.Name}Wrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;");
+            $"var dllName = $\"{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\";");
         writer.AppendLine(
-            "var dllPath = System.IO.Path.Combine(baseDir, dllName);");
+            "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
         writer.AppendLine($"if (!s_isLoaded_{method.Name})");
         using (writer.Scope())
         {
+            if (hasAesKey)
+            {
+                if (!string.IsNullOrWhiteSpace(keyProvider))
+                {
+                    writer.AppendLine(
+                        $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                }
+                else
+                {
+                    writer.AppendLine($"s_decryptionKey_{method.Name} = DeriveObfuscatedKey_{method.Name}();");
+                }
+            }
+            else
+            {
+                writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
+            }
+
             writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
-        var mangledName = GetMangledKernelName(method);
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_Launch{mangledName}\", dllPath);");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, s_decryptionKey_{method.Name});");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
@@ -533,14 +426,12 @@ internal static class WrapperEmitter
         {
             foreach (var p in method.Parameters)
             {
-                if (p.Type is not IArrayTypeSymbol &&
-                    (p.RefKind is not (RefKind.Ref or RefKind.Out) || p.Type is IArrayTypeSymbol))
+                if (p.Type is IArrayTypeSymbol ||
+                    (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
                 {
-                    continue;
+                    hasFixed = true;
+                    break;
                 }
-
-                hasFixed = true;
-                break;
             }
         }
 
@@ -660,13 +551,5 @@ internal static class WrapperEmitter
         }
 
         writer.Append(ns.Name);
-    }
-
-    private static void WriteSafeAssemblyName(SourceWriter writer, string assemblyName)
-    {
-        foreach (var c in assemblyName)
-        {
-            writer.Append(c == '.' ? '_' : c);
-        }
     }
 }

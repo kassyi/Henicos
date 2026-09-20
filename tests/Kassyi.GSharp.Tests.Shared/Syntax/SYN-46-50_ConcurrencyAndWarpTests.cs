@@ -14,10 +14,11 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     [Trait("FeatureId", "SYN-47")]
     public void TestSharedMemoryKernel()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.SharedMemory);
         int[] dataArray = [1, 2, 3, 4];
 
-        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.LaunchSharedMemoryKernel(dataArray, 4, blockDimX: 4, sharedMemBytes: 32);
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_SharedMemoryKernel(dataArray, 4, blockDimX: 4, sharedMemBytes: 32);
 
         Assert.Equal(3, dataArray[0]);
         Assert.Equal(6, dataArray[1]);
@@ -30,6 +31,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     [Trait("FeatureId", "SYN-47")]
     public void TestSharedMemory_WarpSyncAcross256Threads()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.SharedMemory);
         const int size = 256;
         int[] dataArray = new int[size];
@@ -38,7 +40,7 @@ public class SYN_46_50_ConcurrencyAndWarpTests
             dataArray[i] = i * 3 + 1;
         }
 
-        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.LaunchSharedMemoryReverseKernel(
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_SharedMemoryReverseKernel(
             dataArray,
             size,
             blockDimX: size
@@ -64,12 +66,13 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     [Trait("FeatureId", "SYN-68")]
     public void TestIntrinsicsKernel()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] dataArray = new int[2];
         dataArray[0] = 0; // atomic sum
         dataArray[1] = 0; // max value
 
-        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.LaunchIntrinsicsKernel(dataArray, blockDimX: 10);
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_IntrinsicsKernel(dataArray, blockDimX: 10);
 
         Assert.Equal(45, dataArray[0]); // Sum of 0..9 is 45
         Assert.Equal(100, dataArray[1]);
@@ -81,13 +84,14 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     [Trait("FeatureId", "SYN-49")]
     public void TestAtomicAddStress_HighContention()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         int[] globalSum = [0];
         uint threadsPerBlock = 256;
         uint blocksPerGrid = 16;
         int expectedTotalThreads = (int)(threadsPerBlock * blocksPerGrid); // 4096 threads
 
-        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.LaunchAtomicAddStressKernel(
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_AtomicAddStressKernel(
             globalSum,
             gridDimX: blocksPerGrid,
             blockDimX: threadsPerBlock
@@ -102,13 +106,14 @@ public class SYN_46_50_ConcurrencyAndWarpTests
     [Trait("FeatureId", "SYN-49")]
     public void TestAtomicOrMaxStress_HighContention()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         EnsureCapability(DialectCapabilities.HardwareAtomics);
         uint[] globalState = [0, 0];
         uint threadsPerBlock = 256;
         uint blocksPerGrid = 16;
         uint expectedTotalThreads = threadsPerBlock * blocksPerGrid; // 4096 threads
 
-        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.LaunchAtomicOrMaxStressKernel(
+        SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Launch_AtomicOrMaxStressKernel(
             globalState,
             gridDimX: blocksPerGrid,
             blockDimX: threadsPerBlock

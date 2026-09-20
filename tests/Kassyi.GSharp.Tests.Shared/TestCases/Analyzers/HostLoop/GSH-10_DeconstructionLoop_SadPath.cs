@@ -16,9 +16,9 @@ public class TestLoopAnalyzerDeconstruction
         var list = new List<(int a, int b)> { (1, 2) };
         foreach (var (a, b) in list)
         {
-            var result = LaunchKernelTest();
+            var result = Launch_KernelTest();
         }
     }
 
-    public static float[] LaunchKernelTest() => new float[0];
+    public static float[] Launch_KernelTest() => new float[0];
 }

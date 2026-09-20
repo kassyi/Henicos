@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Analyzers;
 
 public class GEN_01_09_GeneratorSadPathTests
 :  TranspilerTestBase{
-    [SkippableTheory]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-13", "Analyzers/SYN-13_DynamicStackAllocSadPath.cs", "GSH0003")]
     [InlineData("SYN-49", "Analyzers/SYN-49_UnsupportedInterlockedOverload.cs", "GSH0003")]
@@ -20,7 +20,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .ReportsErrorsAsync(expectedErrorId);
     }
 
-    [SkippableTheory]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-01", "Analyzers/GpuKernel/SYN-01_NonExhaustiveSwitch_InGpuKernel.cu.cs", "CS8509")]
     public async Task Test_GeneratorSadPath_ReportsExpectedDiagnostic(string featureId, string testCasePath, string expectedDiagnosticId)
@@ -29,7 +29,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .ReportsDiagnosticsAsync(expectedDiagnosticId);
     }
 
-    [SkippableTheory]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("SYN-08", "Analyzers/SYN-08_DelegateEscapeSadPath.cs", new[] { "GSH0001", "GSH0003" })]
     [InlineData("SYN-01", "Analyzers/GpuKernel/SYN-01_UnsupportedSwitch_InGpuKernel.cu.cs", new[] { "GSH0003", "GSH0003" })]
@@ -39,7 +39,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .ReportsErrorsAsync(expectedErrorIds);
     }
 
-    [SkippableTheory]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("GEN-29", "Analyzers/GEN-29_DynamicSharedMemorySadPath.cs")]
     [InlineData("SYN-90", "Analyzers/SYN-90_UnsupportedMethodInStructInit.cs")]
@@ -50,7 +50,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .HasNoErrorsAsync();
     }
 
-    [SkippableTheory]
+    [Theory]
     [Trait("Category", "SadPath")]
     [InlineData("GEN-33", "Analyzers/GEN-33_UnsupportedStructFieldsSadPath.cs")]
     [InlineData("SYN-91_92", "Analyzers/SYN-91_92_InvalidParenthesesSadPath.cs")]
@@ -60,7 +60,7 @@ public class GEN_01_09_GeneratorSadPathTests
                                .HasErrorsAsync();
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "SadPath")]
     [Trait("FeatureId", "GSH-03")]
     public async Task Test_GSH03_LocalFunctionCapture_ReportsExpectedDiagnostic()

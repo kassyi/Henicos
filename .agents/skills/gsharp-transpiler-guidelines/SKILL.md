@@ -44,6 +44,8 @@ _writer.AppendLine();
 ### Scoped (with `using`)
 
 - `using (_writer.Scope())` -> outputs `{` and `}` with line breaks and block structure.
+- `using (_writer.Parentheses())` -> outputs `(` and `)` inline.
+- `using (_writer.Brackets())` -> outputs `[` and `]` inline.
 
 ### Empty / Standalone (no `using` needed)
 

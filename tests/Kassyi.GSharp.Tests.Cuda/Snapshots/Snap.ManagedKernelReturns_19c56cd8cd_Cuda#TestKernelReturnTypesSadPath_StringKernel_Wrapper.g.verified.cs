@@ -5,7 +5,6 @@ using System;
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 #pragma warning disable RS1016
 #pragma warning disable RS1034
-#pragma warning disable IL3000 // Avoid accessing Assembly.Location when publishing as a single file
 using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
@@ -16,33 +15,32 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string StringKernel_Source = @"// GSharp Transpilation failed for StringKernel. Return type string is not supported.";
 public static readonly string StringKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + StringKernel_Source;
-private static IntPtr? s_hfunc_StringKernel;
-private static int s_generation_StringKernel = -1;
-private static readonly object s_lock_StringKernel = new object();
-/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
-public static void WarmupFunctionPointerStringKernel()
-{
-var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
-if (s_hfunc_StringKernel.HasValue && s_generation_StringKernel == currentGen) return;
-lock (s_lock_StringKernel)
-{
-currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
-if (s_hfunc_StringKernel.HasValue && s_generation_StringKernel == currentGen) return;
-IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
-s_hfunc_StringKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "TestKernelReturnTypesSadPath_StringKernel");
-s_generation_StringKernel = currentGen;
-}
-}
+private static byte[]? s_decryptionKey_StringKernel;
+private static byte[]? s_binaryData_StringKernel;
+private static bool s_isLoaded_StringKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::System.String[] LaunchStringKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.String[] Launch_StringKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.String[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerStringKernel();
-IntPtr hfunc = s_hfunc_StringKernel!.Value;
+if (!s_isLoaded_StringKernel)
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKernelReturnTypesSadPath_StringKernel.fatbin");
+if (System.IO.File.Exists(fatbinPath))
+{
+s_binaryData_StringKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_StringKernel = null;
+}
+else
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturnTypesSadPath_StringKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+s_isLoaded_StringKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StringKernel, "StringKernel", s_decryptionKey_StringKernel);
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -92,15 +90,28 @@ return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::System.String[] LaunchStringKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.String[] Launch_StringKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.String[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-WarmupFunctionPointerStringKernel();
-IntPtr hfunc = s_hfunc_StringKernel!.Value;
+if (!s_isLoaded_StringKernel)
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKernelReturnTypesSadPath_StringKernel.fatbin");
+if (System.IO.File.Exists(fatbinPath))
+{
+s_binaryData_StringKernel = System.IO.File.ReadAllBytes(fatbinPath);
+s_decryptionKey_StringKernel = null;
+}
+else
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturnTypesSadPath_StringKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+s_isLoaded_StringKernel = true;
+}
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StringKernel, "StringKernel", s_decryptionKey_StringKernel);
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

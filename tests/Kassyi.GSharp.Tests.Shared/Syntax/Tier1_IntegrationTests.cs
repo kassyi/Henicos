@@ -2,16 +2,12 @@ namespace Kassyi.GSharp.Tests.Syntax;
 
 public class Tier1_IntegrationTests : TranspilerTestBase
 {
-    public Tier1_IntegrationTests()
-    {
-        SkipIfCpuDialect();
-    }
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
     [Trait("FeatureId", "Tier1")]
     public void Test_Tier1_AllInOneKernel_Execution()
     {
-
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         const int count = 256;
         int[] intInput = new int[count];
         float[] floatInput = new float[count];
@@ -32,7 +28,7 @@ public class Tier1_IntegrationTests : TranspilerTestBase
         }
 
         // We can just execute the CPU JIT which sets the thread index properly!
-        Tier1IntegrationKernelsWrapper.LaunchAllInOneKernel(
+        Tier1IntegrationKernelsWrapper.Launch_AllInOneKernel(
             intInput,
             floatInput,
             gpuResults,

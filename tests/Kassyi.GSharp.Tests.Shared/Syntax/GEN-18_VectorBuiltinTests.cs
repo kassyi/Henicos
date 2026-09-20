@@ -10,6 +10,7 @@ public class GEN_18_VectorBuiltinTests
     [InlineData(10)]
     public void GEN18_TestVector2AddKernel(int arrayLength)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         System.Numerics.Vector2[] a = new System.Numerics.Vector2[arrayLength];
         System.Numerics.Vector2[] b = new System.Numerics.Vector2[arrayLength];
         System.Numerics.Vector2[] expected = new System.Numerics.Vector2[arrayLength];
@@ -23,7 +24,7 @@ public class GEN_18_VectorBuiltinTests
 
         System.Numerics.Vector2[] result = new System.Numerics.Vector2[arrayLength];
 
-        GEN_18_VectorBuiltinKernelsWrapper.LaunchVector2AddKernel(a, b, result, arrayLength, blockDimX: 32);
+        GEN_18_VectorBuiltinKernelsWrapper.Launch_Vector2AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
         for (int i = 0; i < arrayLength; i++)
         {
@@ -40,6 +41,7 @@ public class GEN_18_VectorBuiltinTests
     [InlineData(10)]
     public void GEN18_TestVector3AddKernel(int arrayLength)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         System.Numerics.Vector3[] a = new System.Numerics.Vector3[arrayLength];
         System.Numerics.Vector3[] b = new System.Numerics.Vector3[arrayLength];
         System.Numerics.Vector3[] expected = new System.Numerics.Vector3[arrayLength];
@@ -53,7 +55,7 @@ public class GEN_18_VectorBuiltinTests
 
         System.Numerics.Vector3[] result = new System.Numerics.Vector3[arrayLength];
 
-        GEN_18_VectorBuiltinKernelsWrapper.LaunchVector3AddKernel(a, b, result, arrayLength, blockDimX: 32);
+        GEN_18_VectorBuiltinKernelsWrapper.Launch_Vector3AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
         for (int i = 0; i < arrayLength; i++)
         {
@@ -71,6 +73,7 @@ public class GEN_18_VectorBuiltinTests
     [InlineData(10)]
     public void GEN18_TestVector4AddKernel(int arrayLength)
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         System.Numerics.Vector4[] a = new System.Numerics.Vector4[arrayLength];
         System.Numerics.Vector4[] b = new System.Numerics.Vector4[arrayLength];
         System.Numerics.Vector4[] expected = new System.Numerics.Vector4[arrayLength];
@@ -84,7 +87,7 @@ public class GEN_18_VectorBuiltinTests
 
         System.Numerics.Vector4[] result = new System.Numerics.Vector4[arrayLength];
 
-        GEN_18_VectorBuiltinKernelsWrapper.LaunchVector4AddKernel(a, b, result, arrayLength, blockDimX: 32);
+        GEN_18_VectorBuiltinKernelsWrapper.Launch_Vector4AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
         for (int i = 0; i < arrayLength; i++)
         {

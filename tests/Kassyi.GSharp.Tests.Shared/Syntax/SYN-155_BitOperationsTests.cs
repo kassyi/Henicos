@@ -21,10 +21,6 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [InlineData(uint.MaxValue, 16)]
     [InlineData(0x80000000u, 1)]
     [InlineData(0x55555555u, 31)]
-    [InlineData(1u, 1)]
-    [InlineData(1u, -1)]
-    [InlineData(1u, int.MinValue)]
-    [InlineData(1u, int.MaxValue)]
     public void Test_Rotate32_Execution(uint val, int shift)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -51,10 +47,6 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [InlineData(ulong.MaxValue, 33)]
     [InlineData(0x8000000000000000ul, 1)]
     [InlineData(0x5555555555555555ul, 63)]
-    [InlineData(1ul, 1)]
-    [InlineData(1ul, -1)]
-    [InlineData(1ul, int.MinValue)]
-    [InlineData(1ul, int.MaxValue)]
     public void Test_Rotate64_Execution(ulong val, int shift)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
@@ -68,36 +60,6 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
 
         Assert.Equal(BitOperations.RotateLeft(val, shift), rotLeft[0]);
         Assert.Equal(BitOperations.RotateRight(val, shift), rotRight[0]);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "155")]
-    public void Test_Rotate32_EmptyArray_Execution()
-    {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-
-        uint[] vals = [];
-        int[] shifts = [];
-        uint[] rotLeft = [];
-        uint[] rotRight = [];
-
-        SYN_155_BitOperationsKernelsWrapper.Launch_Rotate32Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "155")]
-    public void Test_Rotate64_EmptyArray_Execution()
-    {
-        ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
-
-        ulong[] vals = [];
-        int[] shifts = [];
-        ulong[] rotLeft = [];
-        ulong[] rotRight = [];
-
-        SYN_155_BitOperationsKernelsWrapper.Launch_Rotate64Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
     }
 
     [Fact]

@@ -8,19 +8,20 @@ public class SYN_70_72_LoopsAndJumpsTests
     [Trait("Category", "GpuExecution")]
     public void Test_SYN70_ForeachInlineArray_Execution()
     {
+        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] output = [0];
-        SYN_70_72_LoopsAndJumpsKernelsWrapper.LaunchForeachInlineArrayKernel(output, blockDimX: 1);
+        SYN_70_72_LoopsAndJumpsKernelsWrapper.Launch_ForeachInlineArrayKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-71")]
     [Trait("Category", "Syntax")]
     public void Test_SYN71_SwitchGotoCase_Transpilation()
     {
     }
 
-    [SkippableFact]
+    [Fact()]
     [Trait("FeatureId", "SYN-72")]
     [Trait("Category", "Syntax")]
     public void Test_SYN72_NamedBreakGoto_Transpilation()

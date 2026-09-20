@@ -24,7 +24,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         return comp.GetSymbolsWithName(name, SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_EmptyStruct()
@@ -38,7 +38,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         Assert.Equal("EmptyStruct", sorted[0].Name);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_DeepNesting()
@@ -61,7 +61,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         Assert.Equal("StructA", sorted[3].Name);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-05")]
     [Trait("Category", "Unit")]
     public void Test_GEN05_TopologicallySortedStructs_ExcludesSystemTypes()

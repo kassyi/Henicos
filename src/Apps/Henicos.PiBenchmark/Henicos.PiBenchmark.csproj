@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\Stdlib\Kassyi.GSharp.Stdlib.Math\Kassyi.GSharp.Stdlib.Math.csproj" />
+    <ProjectReference Include="..\..\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
+    <GSharpEmitSource>true</GSharpEmitSource>
+    <DefineConstants>GSHARP_CUDA</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="GSharpTargetDialect" />
+    <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <CompilerVisibleProperty Include="IntermediateOutputPath" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
+    <_GSharpCudaSources Include="ComputeBenchmarks\Native\*.cu" />
+  </ItemGroup>
+
+  <Import Project="..\..\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
+</Project>

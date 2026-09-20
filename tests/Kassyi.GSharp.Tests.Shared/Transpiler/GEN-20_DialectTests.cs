@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Tests.DialectTests
 {
     public class YamlDialectTests
     {
-        [SkippableFact]
+        [Fact]
         [Trait("FeatureId", "GEN-20")]
         public void Test_GEN20_CanLoadStandardCpp()
         {
@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Tests.DialectTests
             Assert.Equal("int", mappedType);
         }
 
-        [SkippableFact]
+        [Fact]
         [Trait("FeatureId", "GEN-20")]
         public void Test_GEN20_CanLoadGSharpCuda()
         {

@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests;
 
 public class GEN_05_GeneratorDiagnosticsTests : TranspilerTestBase
 {
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-05")]
     public async Task TestSadPathDiagnostics()
     {
@@ -13,7 +13,7 @@ public class GEN_05_GeneratorDiagnosticsTests : TranspilerTestBase
         await Verify(driver);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("FeatureId", "GEN-06")]
     public async Task TestComprehensiveSpecKernelGeneratedSource()
     {
@@ -23,7 +23,7 @@ public class GEN_05_GeneratorDiagnosticsTests : TranspilerTestBase
         await Verify(driver);
     }
 
-    [SkippableFact]
+    [Fact]
     [Trait("Category", "Diagnostics")]
     [Trait("FeatureId", "GEN-07")]
     public async Task Test_UnsupportedFeatures_ReportsDiagnostics()

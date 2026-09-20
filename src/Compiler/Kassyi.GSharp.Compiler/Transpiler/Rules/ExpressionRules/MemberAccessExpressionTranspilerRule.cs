@@ -12,86 +12,75 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
     public override void Transpile(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
-        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol
-                     ?? (node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node
-                         ? context.SemanticModel.GetSymbolInfo(invocation).Symbol
-                         : null);
+        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
+
+        if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
+        {
+            symbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
+        }
+
+        if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
+        {
+            return;
+        }
+
+        if (symbol != null && TryEnsureNotProhibitedApi(symbol, node, ref context))
+        {
+            return;
+        }
+
+        if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
+        {
+            context.Writer.AppendConstantField(field);
+            return;
+        }
 
         var memberExprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-
-        var handled = (symbol, memberExprSymbol) switch
+        if (TryTranspileEnumAccess(memberExprSymbol, node, ref context))
         {
-            ({ } s, _) when TryTranspileIntrinsic(s, ref context) => true,
-            ({ } s, _) when TryEnsureNotProhibitedApi(s, node, ref context) => true,
-            (IFieldSymbol { IsConst: true, HasConstantValue: true } field, _) => appendConstant(field, ref context),
-            (_, { } exprSym) when TryTranspileEnumAccess(exprSym, node, ref context) => true,
-            (_, ITypeSymbol) => appendGlobalStatic(node, ref context),
-            _ when TryTranspileStackArrayLength(node, ref context) => true,
-            _ => false
-        };
-
-        if (!handled)
-        {
-            TranspileMemberAccess(node, ref context);
+            return;
         }
 
-        static bool appendConstant(IFieldSymbol field, ref TranspileContext ctx)
-        {
-            ctx.Writer.AppendConstantField(field);
-            return true;
-        }
-
-        static bool appendGlobalStatic(MemberAccessExpressionSyntax n, ref TranspileContext ctx)
+        if (memberExprSymbol is ITypeSymbol)
         {
             // Skip class name for global static methods
-            ctx.Writer.Append(n.Name.Identifier.Text);
-            return true;
+            context.Writer.Append(node.Name.Identifier.Text);
+            return;
         }
+
+        if (TryTranspileStackArrayLength(node, ref context))
+        {
+            return;
+        }
+
+        TranspileMemberAccess(node, ref context);
     }
 
     private static bool TryTranspileIntrinsic(ISymbol symbol, ref TranspileContext context)
     {
-        if (!context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
+        if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
         {
-            return false;
+            context.Writer.Append(mappedName);
+            return true;
         }
 
-        context.Writer.Append(mappedName);
-        return true;
+        return false;
     }
 
-    internal static bool TryEnsureNotProhibitedApi(ISymbol symbol, SyntaxNode node,
+    private static bool TryEnsureNotProhibitedApi(ISymbol symbol, MemberAccessExpressionSyntax node,
         ref TranspileContext context)
     {
-        if (symbol.ContainingType == null)
-        {
-            return false;
-        }
-
-        if (context.Dialect.TryMapIntrinsic(symbol, out _) || (symbol is IMethodSymbol ms &&
-                                                               context.BclIntrinsicMap.ContainsKey(
-                                                                   ms.OriginalDefinition)))
-        {
-            return false;
-        }
-
-        var typeName = symbol.ContainingType.Name;
-        var ns = symbol.ContainingType.ContainingNamespace;
-
-        var isProhibited = typeName switch
-        {
-            TypeConstants.MathType or TypeConstants.MathFType => ns.IsSystemNamespace(),
-            TypeConstants.InterlockedType => ns.IsSystemThreading(),
-            TypeConstants.BitOperationsType => ns.IsSystemNumerics(),
-            _ => false
-        };
-
-        if (isProhibited)
+        if (symbol is
+            {
+                ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
+                or TypeConstants.InterlockedType or TypeConstants.BitOperationsType
+            } &&
+            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() || symbol.ContainingNamespace.IsSystemOrNumerics()))
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(
                 GSharpDiagnostics.UnsupportedSyntax,
                 node.GetLocation(),
-                $"{typeName}.{symbol.Name}"));
+                $"{symbol.ContainingType.Name}.{symbol.Name}"));
             context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
             return true;
         }
@@ -102,14 +91,14 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     private static bool TryTranspileEnumAccess(ISymbol? memberExprSymbol, MemberAccessExpressionSyntax node,
         ref TranspileContext context)
     {
-        if (memberExprSymbol is not ITypeSymbol { TypeKind: TypeKind.Enum })
+        if (memberExprSymbol is ITypeSymbol { TypeKind: TypeKind.Enum })
         {
-            return false;
+            context.Visitor.Visit(node.Expression);
+            context.Writer.Append($"::{node.Name.Identifier.Text}");
+            return true;
         }
 
-        context.Visitor.Visit(node.Expression);
-        context.Writer.Append($"::{node.Name.Identifier.Text}");
-        return true;
+        return false;
     }
 
     private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ref TranspileContext context)
@@ -125,18 +114,19 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             {
                 memberName = memberName.ToLowerInvariant();
             }
-            else
+            else if (memberName == "Length")
             {
-                switch (memberName)
+                if (typeInfo.Type.HasAttribute(KnownAttributes.InlineArray))
                 {
-                    case "Length" when typeInfo.Type.HasAttribute(KnownAttributes.InlineArray):
-                        context.Writer.Append("size()");
-                        return;
-                    case "Length":
-                    case "Count":
-                        memberName = "length";
-                        break;
+                    context.Writer.Append("size()");
+                    return;
                 }
+
+                memberName = "length";
+            }
+            else if (memberName == "Count")
+            {
+                memberName = "length";
             }
         }
 
@@ -151,32 +141,35 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
 
         var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
-
-        return symbol switch
+        if (symbol is ILocalSymbol localSym)
         {
-            ILocalSymbol { DeclaringSyntaxReferences: { Length: > 0 } refs }
-                when refs[0].GetSyntax() is VariableDeclaratorSyntax { Initializer: { } initializer } &&
-                     ArraySyntaxExtractor.TryGetArrayInitialization(initializer.Value, out var count, out var sizeExpr,
-                         out _) =>
-                (count, sizeExpr) switch
+            if (localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is not VariableDeclaratorSyntax decl)
+            {
+                return false;
+            }
+
+            if (decl.Initializer == null)
+            {
+                return false;
+            }
+
+            if (ArraySyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
+                    out _))
+            {
+                if (count.HasValue)
                 {
-                    ({ } c, _) => appendCount(c, ref context),
-                    (_, { } expr) => visitSizeExpr(expr, ref context),
-                    _ => false
-                },
-            _ => false
-        };
+                    context.Writer.Append(count.Value);
+                    return true;
+                }
 
-        static bool appendCount(int c, ref TranspileContext ctx)
-        {
-            ctx.Writer.Append(c);
-            return true;
+                if (sizeExpr != null)
+                {
+                    context.Visitor.Visit(sizeExpr);
+                    return true;
+                }
+            }
         }
 
-        static bool visitSizeExpr(SyntaxNode expr, ref TranspileContext ctx)
-        {
-            ctx.Visitor.Visit(expr);
-            return true;
-        }
+        return false;
     }
 }
