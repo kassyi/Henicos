@@ -104,7 +104,6 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             }
 
             var finalFatbinPath = Path.Combine(OutputDirectory, sourceFileName + ".fatbin");
-            var finalKeyFilePath = finalFatbinPath + ".key";
 
             var sourceTime = File.GetLastWriteTimeUtc(sourcePath);
             var fatbinTime = File.Exists(finalFatbinPath)
@@ -119,7 +118,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                     return null; // Stop on first error
                 }
 
-                if (!ArtifactHelper.ProcessArtifact(finalFatbinPath, finalKeyFilePath, Log))
+                if (!ArtifactHelper.ProcessArtifact(finalFatbinPath, Log))
                 {
                     return null;
                 }

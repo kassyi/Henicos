@@ -71,7 +71,6 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             {
                 var vcvarsArch = platform == "x64" ? "x64" : (platform == "arm64" ? "x64_arm64" : "x64");
                 var outputDllPath = Path.Combine(OutputDirectory, $"{sourceFileName}_{platform}.dll");
-                var outputKeyPath = outputDllPath + ".key";
 
                 var dllTime = File.Exists(outputDllPath) ? File.GetLastWriteTimeUtc(outputDllPath) : DateTime.MinValue;
 
@@ -88,7 +87,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                         success = false;
                         break;
                     }
-                    if (!ArtifactHelper.ProcessArtifact(outputDllPath, outputKeyPath, Log))
+                    if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
                     {
                         success = false;
                         break;
