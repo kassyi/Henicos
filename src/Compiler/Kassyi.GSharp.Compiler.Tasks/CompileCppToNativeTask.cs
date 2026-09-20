@@ -57,12 +57,12 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var items = new List<ITaskItem>();
 
-        var hasErrors = false;
+        var hasErrors = 0;
         var lockObj = new object();
 
         Parallel.ForEach(_architectures, arch =>
         {
-            if (hasErrors)
+            if (Volatile.Read(location: ref hasErrors) != 0)
             {
                 return;
             }
@@ -113,13 +113,13 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
             if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
             {
-                hasErrors = true;
+                Interlocked.Exchange(ref hasErrors, 1);
                 return;
             }
 
             if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
-                hasErrors = true;
+                Interlocked.Exchange(ref hasErrors, 1);
                 return;
             }
 
@@ -131,7 +131,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             }
         });
 
-        return hasErrors ? null : [.. items];
+        return Volatile.Read(ref hasErrors) != 0 ? null : [.. items];
     }
 
     private string[] GetTargetArchitectures()

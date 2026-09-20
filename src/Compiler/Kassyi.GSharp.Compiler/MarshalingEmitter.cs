@@ -59,7 +59,7 @@ internal static class MarshalingEmitter
     private static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
     {
         int? packValue = null;
-        var structLayoutAttr = s.GetAttributes().FirstOrDefault(a => a.IsAttribute("StructLayoutAttribute"));
+        var structLayoutAttr = s.GetAttributes().FirstOrDefault(a => a.IsStructLayoutAttribute());
         if (structLayoutAttr != null)
         {
             var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;

@@ -23,8 +23,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 }
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
-                bool emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
-                                  string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
+                var emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
+                                 string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
 
                 options.GlobalOptions.TryGetValue("build_property.IntermediateOutputPath", out var objPath);
                 options.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projDir);
@@ -73,7 +73,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var diagnostics = new List<Diagnostic>();
-        void reportDiagnostic(Diagnostic d) => diagnostics.Add(d);
 
         var cudaDialect = new GSharpCudaDialect();
         var cppDialect = new StandardCppDialect();
@@ -84,7 +83,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
         }, isDevice: false, cppDialect);
 
-        string? keyProvider = ResolveKeyProvider(methodSymbol);
+        var keyProvider = ResolveKeyProvider(methodSymbol);
 
         var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
 
@@ -98,6 +97,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
             keyProvider,
             equatableDiagnostics
         );
+
+        void reportDiagnostic(Diagnostic d)
+        {
+            if (!diagnostics.Any(existing => existing.Id == d.Id && existing.Location == d.Location))
+            {
+                diagnostics.Add(d);
+            }
+        }
     }
 
     private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorSyntaxContext context,
@@ -140,7 +147,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cppBody,
             equatableDiagnostics);
 
-        void reportDiagnostic(Diagnostic d) => diagnostics.Add(d);
+        void reportDiagnostic(Diagnostic d)
+        {
+            if (!diagnostics.Any(existing => existing.Id == d.Id && existing.Location == d.Location))
+            {
+                diagnostics.Add(d);
+            }
+        }
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)

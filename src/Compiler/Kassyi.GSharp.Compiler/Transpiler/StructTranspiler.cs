@@ -112,7 +112,7 @@ internal static class StructTranspiler
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
         int? packValue = null;
-        var structLayoutAttr = structSym.GetAttributes().FirstOrDefault(a => a.IsAttribute("StructLayoutAttribute"));
+        var structLayoutAttr = structSym.GetAttributes().FirstOrDefault(a => a.IsStructLayoutAttribute());
         if (structLayoutAttr != null)
         {
             var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;

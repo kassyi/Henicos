@@ -52,6 +52,26 @@ internal static class SymbolExtensions
         KnownAttributes.IsAttributeName(attr.AttributeClass?.Name, shortName);
 
     /// <summary>
+    /// Accurately determines if the attribute is System.Runtime.InteropServices.StructLayoutAttribute.
+    /// </summary>
+    public static bool IsStructLayoutAttribute(this AttributeData attr)
+    {
+        var name = attr.AttributeClass?.Name;
+        if (name != "StructLayoutAttribute" && name != "StructLayout")
+        {
+            return false;
+        }
+
+        var ns = attr.AttributeClass?.ContainingNamespace;
+        return ns is
+        {
+            Name: "InteropServices",
+            ContainingNamespace:
+            { Name: "Runtime", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+        };
+    }
+
+    /// <summary>
     /// Determines whether the symbol has an attribute matching the specified short name.
     /// </summary>
     public static bool HasAttribute(this ISymbol symbol, string shortName)
@@ -118,7 +138,7 @@ internal static class SymbolExtensions
         static IEnumerable<string> getNamespaces(INamespaceSymbol? ns)
         {
             var current = ns;
-            while (current != null && !current.IsGlobalNamespace)
+            while (current is { IsGlobalNamespace: false })
             {
                 yield return current.Name;
                 current = current.ContainingNamespace;
@@ -136,14 +156,95 @@ internal static class SymbolExtensions
             return string.Empty;
         }
 
-        var typeName = typeSymbol.Name;
-        // Handle generic types naively for typical GPU use-cases
-        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType)
+        var sb = new StringBuilder();
+        BuildFullyQualifiedName(typeSymbol, sb);
+        return sb.ToString();
+    }
+
+    private static void BuildFullyQualifiedName(ITypeSymbol symbol, StringBuilder sb)
+    {
+        switch (symbol)
         {
-            typeName = $"{namedType.Name}<{string.Join(", ", namedType.TypeArguments.Select(t => t.Name))}>";
+            case IArrayTypeSymbol arrayType:
+            {
+                BuildFullyQualifiedName(arrayType.ElementType, sb);
+                sb.Append('[');
+                for (var i = 0; i < arrayType.Rank - 1; i++)
+                {
+                    sb.Append(',');
+                }
+
+                sb.Append(']');
+                return;
+            }
+            case IPointerTypeSymbol pointerType:
+                BuildFullyQualifiedName(pointerType.PointedAtType, sb);
+                sb.Append('*');
+                return;
+            case ITypeParameterSymbol typeParam:
+                sb.Append(typeParam.Name);
+                return;
         }
 
-        var ns = typeSymbol.ContainingNamespace.GetFullNamespaceName();
-        return string.IsNullOrEmpty(ns) ? $"global::{typeName}" : $"global::{ns}.{typeName}";
+        var ns = symbol.ContainingNamespace.GetFullNamespaceName();
+        if (!string.IsNullOrEmpty(ns))
+        {
+            sb.Append("global::").Append(ns).Append('.');
+        }
+        else if (symbol.ContainingNamespace?.IsGlobalNamespace == true)
+        {
+            sb.Append("global::");
+        }
+
+        BuildContainingTypes(symbol.ContainingType, sb);
+
+        sb.Append(symbol.Name);
+
+        if (symbol is not INamedTypeSymbol { IsGenericType: true } namedType)
+        {
+            return;
+        }
+
+        sb.Append('<');
+        for (var i = 0; i < namedType.TypeArguments.Length; i++)
+        {
+            if (i > 0)
+            {
+                sb.Append(", ");
+            }
+
+            BuildFullyQualifiedName(namedType.TypeArguments[i], sb);
+        }
+
+        sb.Append('>');
+    }
+
+    private static void BuildContainingTypes(INamedTypeSymbol? containingType, StringBuilder sb)
+    {
+        if (containingType == null)
+        {
+            return;
+        }
+
+        BuildContainingTypes(containingType.ContainingType, sb);
+
+        sb.Append(containingType.Name);
+        if (containingType.IsGenericType)
+        {
+            sb.Append('<');
+            for (var i = 0; i < containingType.TypeArguments.Length; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                BuildFullyQualifiedName(containingType.TypeArguments[i], sb);
+            }
+
+            sb.Append('>');
+        }
+
+        sb.Append('.');
     }
 }
