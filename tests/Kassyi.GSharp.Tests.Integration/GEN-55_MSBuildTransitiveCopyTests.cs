@@ -39,7 +39,8 @@ public class MSBuildTransitiveCopyTests : IDisposable
     }
 
     [Fact]
-    public void NativeAssets_ShouldFlowTransitivelyToConsumer()
+    [Trait("FeatureId", "GEN-55")]
+    public async Task Test_GEN_55_NativeAssets_ShouldFlowTransitivelyToConsumer()
     {
         var producerDir = Path.Combine(_testRoot, "Producer");
         var consumerDir = Path.Combine(_testRoot, "Consumer");
@@ -47,8 +48,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         Directory.CreateDirectory(consumerDir);
 
         var targetsPath = Path.Combine(_repoRoot, "src", "Compiler", "Kassyi.GSharp.Compiler", "build", "Kassyi.GSharp.Compiler.targets");
-        // We know the task is built to this location before the tests run.
-        var taskAssemblyPath = Path.Combine(_repoRoot, "src", "Compiler", "Kassyi.GSharp.Compiler.Tasks", "bin", "Debug", "netstandard2.0", "Kassyi.GSharp.Compiler.Tasks.dll");
+        var taskAssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Kassyi.GSharp.Compiler.Tasks.dll");
 
         // 1. Create Producer
         var producerProject = $"""
@@ -93,7 +93,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         var startInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
-            Arguments = "build Consumer.csproj -c Debug",
+            Arguments = "build Consumer.csproj -c Debug -nr:false",
             WorkingDirectory = consumerDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -102,10 +102,17 @@ public class MSBuildTransitiveCopyTests : IDisposable
         };
 
         using var process = Process.Start(startInfo);
-        process!.WaitForExit();
+        var stdoutTask = process!.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
 
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
+        if (!process.WaitForExit(60000))
+        {
+            process.Kill();
+            throw new TimeoutException("Build process timed out.");
+        }
+
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
         
         _output.WriteLine("=== STDOUT ===");
         _output.WriteLine(stdout);
@@ -134,5 +141,66 @@ public class MSBuildTransitiveCopyTests : IDisposable
         }
         
         foundAnyDll.Should().BeTrue("Native DLL should be copied transitively");
+    }
+
+    [Fact]
+    [Trait("FeatureId", "GEN-55")]
+    public async Task Test_GEN_55_MockCompilationFailure_ShouldFailBuild()
+    {
+        var producerDir = Path.Combine(_testRoot, "ProducerFail");
+        Directory.CreateDirectory(producerDir);
+
+        var targetsPath = Path.Combine(_repoRoot, "src", "Compiler", "Kassyi.GSharp.Compiler", "build", "Kassyi.GSharp.Compiler.targets");
+        // Give a completely invalid path to the assembly to force MSBuild task failure.
+        var taskAssemblyPath = Path.Combine(producerDir, "NonExistent.dll");
+
+        var producerProject = $"""
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net10.0</TargetFramework>
+            <GSharpMockCompilation>true</GSharpMockCompilation>
+            <GSharpCompilerTaskAssembly>{taskAssemblyPath}</GSharpCompilerTaskAssembly>
+          </PropertyGroup>
+          <Import Project="{targetsPath}" />
+        </Project>
+        """;
+
+        File.WriteAllText(Path.Combine(producerDir, "ProducerFail.csproj"), producerProject);
+        
+        var producerObjDir = Path.Combine(producerDir, "obj", "Debug", "net10.0");
+        Directory.CreateDirectory(producerObjDir);
+        File.WriteAllText(Path.Combine(producerObjDir, "Dummy.cu"), "// Dummy CUDA");
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = "build ProducerFail.csproj -c Debug -nr:false",
+            WorkingDirectory = producerDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(startInfo);
+        var stdoutTask = process!.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+
+        if (!process.WaitForExit(60000))
+        {
+            process.Kill();
+            throw new TimeoutException("Build process timed out.");
+        }
+
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+
+        _output.WriteLine("=== STDOUT ===");
+        _output.WriteLine(stdout);
+        _output.WriteLine("=== STDERR ===");
+        _output.WriteLine(stderr);
+
+        process.ExitCode.Should().NotBe(0, "Build should fail when task assembly is invalid or missing");
+        stdout.Should().Contain("MSB4062", "MSBuild should report missing task assembly error");
     }
 }
