@@ -21,7 +21,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [InlineData(uint.MaxValue, 16)]
     [InlineData(0x80000000u, 1)]
     [InlineData(0x55555555u, 31)]
-    public void Test_Rotate32_Execution(uint val, int shift)
+    public void Test_BCL02_Rotate32_Execution(uint val, int shift)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -47,7 +47,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [InlineData(ulong.MaxValue, 33)]
     [InlineData(0x8000000000000000ul, 1)]
     [InlineData(0x5555555555555555ul, 63)]
-    public void Test_Rotate64_Execution(ulong val, int shift)
+    public void Test_BCL02_Rotate64_Execution(ulong val, int shift)
     {
         ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
 
@@ -65,7 +65,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     [Fact]
     [Trait("Category", "Syntax")]
     [Trait("FeatureId", "155")]
-    public void Test_BitOperations_Rotate32_TranspilesToPtxFunnelShiftIntrinsics()
+    public void Test_BCL02_BitOperations_Rotate32_TranspilesToPtxFunnelShiftIntrinsics()
     {
         // 1. Verify wrapper source uses G# rotation prelude intrinsics
         string source = SYN_155_BitOperationsKernelsWrapper.Rotate32Kernel_Source;
