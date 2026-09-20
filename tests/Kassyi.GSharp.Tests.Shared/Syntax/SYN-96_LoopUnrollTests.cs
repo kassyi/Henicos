@@ -6,7 +6,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 {
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileKernelMethod(string methodName)
     {
-        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax", "SYN-156_LoopUnrollKernels.cu.cs");
+        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax", "SYN-96_LoopUnrollKernels.cu.cs");
         var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
 
         var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
@@ -23,7 +23,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileTestCaseMethod(string methodName)
     {
-        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "SYN-156_LoopUnrollStatements.cs");
+        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "SYN-96_LoopUnrollStatements.cs");
         var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
 
         var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
@@ -40,63 +40,63 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollForKernel_Execution()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollForKernel_Execution()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.Launch_LoopUnrollForKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollForKernel(data, blockDimX: 1);
         Assert.Equal(10, data[0]);
     }
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollFactorKernel_Execution()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollFactorKernel_Execution()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.Launch_LoopUnrollFactorKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollFactorKernel(data, blockDimX: 1);
         Assert.Equal(100, data[0]);
     }
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollWhileKernel_Execution()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollWhileKernel_Execution()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.Launch_LoopUnrollWhileKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollWhileKernel(data, blockDimX: 1);
         Assert.Equal(15, data[0]);
     }
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollNestedKernel_Execution()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollNestedKernel_Execution()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.Launch_LoopUnrollNestedKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollNestedKernel(data, blockDimX: 1);
         Assert.Equal(18, data[0]);
     }
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollSingleStatementKernel_Execution()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollSingleStatementKernel_Execution()
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.Launch_LoopUnrollSingleStatementKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollSingleStatementKernel(data, blockDimX: 1);
         Assert.Equal(8, data[0]);
     }
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollFor_TranspilesPragmaUnroll()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollFor_TranspilesPragmaUnroll()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollForKernel");
         Assert.Empty(diagnostics1);
@@ -115,8 +115,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [InlineData("StatementUnrollFactor", "#pragma unroll 4\nfor")]
     [InlineData("StatementUnrollFactorMax", "#pragma unroll 2147483647\nfor")]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollFactor_BoundaryTheory(string methodName, string expectedCudaPattern)
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollFactor_BoundaryTheory(string methodName, string expectedCudaPattern)
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
         Assert.Empty(diagnostics);
@@ -125,8 +125,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollFactor_TranspilesPragmaUnrollFactor()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollFactor_TranspilesPragmaUnrollFactor()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollFactorKernel");
         Assert.Empty(diagnostics1);
@@ -141,8 +141,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnroll_NegativeFactor_ReportsDiagnostic()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnroll_NegativeFactor_ReportsDiagnostic()
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollNegativeFactor");
         Assert.Contains(diagnostics, d => d.Id == "GSH0016");
@@ -151,8 +151,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnroll_VariableFactor_ReportsDiagnostic()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnroll_VariableFactor_ReportsDiagnostic()
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollVariableFactor");
         Assert.Contains(diagnostics, d => d.Id == "GSH0016");
@@ -163,8 +163,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     [InlineData("StatementUnrollMisplacedEnd")]
     [InlineData("StatementUnrollMisplacedLast")]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnroll_MisplacedHint_ReportsDiagnostic(string methodName)
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnroll_MisplacedHint_ReportsDiagnostic(string methodName)
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
         Assert.Contains(diagnostics, d => d.Id == "GSH0017");
@@ -173,8 +173,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollWhile_TranspilesPragmaUnroll()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollWhile_TranspilesPragmaUnroll()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollWhileKernel");
         Assert.Empty(diagnostics1);
@@ -189,8 +189,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollNested_TranspilesPragmaUnrollOnInnerLoopOnly()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollNested_TranspilesPragmaUnrollOnInnerLoopOnly()
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollNested");
         Assert.Empty(diagnostics);
@@ -210,8 +210,8 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
 
     [Fact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "SYN-156")]
-    public void Test_SYN156_LoopUnrollSingleStatement_TranspilesPragmaUnroll()
+    [Trait("FeatureId", "SYN-96")]
+    public void Test_SYN96_LoopUnrollSingleStatement_TranspilesPragmaUnroll()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollSingleStatementKernel");
         Assert.Empty(diagnostics1);

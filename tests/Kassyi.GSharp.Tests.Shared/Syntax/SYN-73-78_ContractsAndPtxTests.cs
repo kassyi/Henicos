@@ -37,7 +37,7 @@ public class SYN_73_78_ContractsAndPtxTests
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] data = [0];
-        SYN_73_78_ContractsAndPtxKernelsWrapper.Launch_InlinePtxKernel(data);
+        SYN_73_78_ContractsAndPtxKernelsWrapper.LaunchInlinePtxKernel(data);
         Assert.Equal(999u, data[0]);
     }
 

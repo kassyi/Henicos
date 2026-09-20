@@ -18,7 +18,7 @@ public class GSH_01_05_TranspilerIssuesTests
         int[] c = [z];
         int[] result = [0];
 
-        Syntax.SYN_01_09_ControlFlowKernelsWrapper.Launch_NestedTernaryKernel(a, b, c, result, blockDimX: 1);
+        Syntax.SYN_01_09_ControlFlowKernelsWrapper.LaunchNestedTernaryKernel(a, b, c, result, blockDimX: 1);
 
         Assert.Equal(expectedResult, result[0]);
     }

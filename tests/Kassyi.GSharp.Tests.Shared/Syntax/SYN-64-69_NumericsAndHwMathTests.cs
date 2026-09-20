@@ -50,7 +50,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         ulong[] u64Data = new ulong[7];
         u64Data[0] = u64Input;
 
-        SYN_64_69_NumericsAndHwMathKernelsWrapper.Launch_BitOperationsTestKernel(u32Data, u64Data);
+        SYN_64_69_NumericsAndHwMathKernelsWrapper.LaunchBitOperationsTestKernel(u32Data, u64Data);
 
         uint u32Val = u32Data[0];
         Assert.Equal((uint)BitOperations.LeadingZeroCount(u32Val), u32Data[1]);
@@ -87,7 +87,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         float[] floatInputs = [fVal];
         float[] floatOutputs = new float[9];
 
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchMathKernel(
             doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 1);
 
         // Double assertions
@@ -131,7 +131,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         double[] doubleInputs = [dInput];
         double[] doubleResults = new double[6];
 
-        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathEdgeCasesKernel(
+        SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchMathEdgeCasesKernel(
             floatInputs, floatResults, doubleInputs, doubleResults, blockDimX: 1);
 
         if (float.IsNaN(fInput))
@@ -185,7 +185,7 @@ public class SYN_64_69_NumericsAndHwMathTests
         float[] floatOutputs = [];
 
         var ex = Record.Exception(() => 
-            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.Launch_MathKernel(
+            SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper.LaunchMathKernel(
                 doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 0));
 
         Assert.Null(ex);

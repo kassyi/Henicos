@@ -162,6 +162,8 @@ public static unsafe class NativeKernelInvoker
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
     }
 
+    private static readonly Dictionary<string, IntPtr> s_modules = new();
+
     private static void EnsureLoaded(ref IntPtr hfunc, string fatbinFileName, string kernelName)
     {
         if (hfunc != IntPtr.Zero)
@@ -176,14 +178,20 @@ public static unsafe class NativeKernelInvoker
                 return;
             }
 
-            var path = Path.Combine(AppContext.BaseDirectory, fatbinFileName);
-            if (!File.Exists(path))
+            if (!s_modules.TryGetValue(fatbinFileName, out var hModule))
             {
-                throw new FileNotFoundException($"Native fatbin '{fatbinFileName}' not found at '{path}'.");
+                var path = Path.Combine(AppContext.BaseDirectory, fatbinFileName);
+                if (!File.Exists(path))
+                {
+                    throw new FileNotFoundException($"Native fatbin '{fatbinFileName}' not found at '{path}'.");
+                }
+
+                var fatbinBytes = File.ReadAllBytes(path);
+                hModule = GpuKernelLoader.LoadModule(fatbinBytes);
+                s_modules[fatbinFileName] = hModule;
             }
 
-            var fatbinBytes = File.ReadAllBytes(path);
-            hfunc = GpuKernelLoader.LoadAotKernel(fatbinBytes, kernelName);
+            hfunc = GpuKernelLoader.GetFunction(hModule, kernelName);
         }
     }
 }

@@ -28,7 +28,7 @@ public class EmptyKernelBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        EmptyKernelKernelsWrapper.Launch_EmptyKernel_Device(gridDimX: 1, gridDimY: 1, blockDimX: 1, blockDimY: 1);
+        EmptyKernelKernelsWrapper.LaunchEmptyKernel_Device(gridDimX: 1, gridDimY: 1, blockDimX: 1, blockDimY: 1);
 
         timer.Stop();
         timer.Synchronize();

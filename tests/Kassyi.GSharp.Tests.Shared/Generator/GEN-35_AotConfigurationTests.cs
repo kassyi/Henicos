@@ -29,12 +29,15 @@ public class GEN_35_AotConfigurationTests
         // Ensure wrapper is generated
         Assert.Contains(generatedTrees, t => t.FilePath.Contains("MyKernel_Run_Wrapper.g.cs"));
         
+        // Check that wrapper calls GetOrLoadModule
         var wrapperSource = generatedTrees.First(t => t.FilePath.Contains("MyKernel_Run_Wrapper.g.cs")).ToString();
+        Assert.Contains("GSharpModuleContext_", wrapperSource);
+        Assert.Contains("GetOrLoadModule()", wrapperSource);
         
-        // We unified naming, so it should expect MyKernel_Run.fatbin
-        Assert.Contains("MyKernel_Run.fatbin", wrapperSource);
-        
-        // Check that it's using the file-based loading approach
-        Assert.Contains("System.IO.Path.Combine(System.AppContext.BaseDirectory", wrapperSource);
+        // Check module context
+        var contextSource = generatedTrees.First(t => t.FilePath.Contains("GSharpModuleContext_")).ToString();
+        Assert.Contains(".fatbin", contextSource);
+        Assert.Contains("Kassyi.GSharp.Kernels_", contextSource);
+        Assert.Contains("System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_", contextSource);
     }
 }

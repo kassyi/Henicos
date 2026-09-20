@@ -72,7 +72,7 @@ public class Sha256Benchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        Sha256KernelsWrapper.Launch_Sha256Kernel_Device(
+        Sha256KernelsWrapper.LaunchSha256Kernel_Device(
             _dInput!.DevicePointer, _dOutput!.DevicePointer, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 

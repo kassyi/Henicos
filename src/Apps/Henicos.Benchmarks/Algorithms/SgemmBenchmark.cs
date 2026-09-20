@@ -82,7 +82,7 @@ public class SgemmBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        SgemmKernelsWrapper.Launch_SgemmKernel_Device(
+        SgemmKernelsWrapper.LaunchSgemmKernel_Device(
             _dA!.DevicePointer, _dB!.DevicePointer, _dC!.DevicePointer, N,
             gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
 

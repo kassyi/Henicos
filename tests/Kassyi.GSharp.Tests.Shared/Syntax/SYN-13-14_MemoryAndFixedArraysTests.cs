@@ -11,7 +11,7 @@ public class SYN_13_14_MemoryAndFixedArraysTests
     {
         Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] dataArray = [5, 0];
-        SYN_31_38_AdvancedMemoryKernelsWrapper.Launch_FixedBufferKernel(dataArray);
+        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchFixedBufferKernel(dataArray);
 
         Assert.Equal(15u, dataArray[1]);
     }
