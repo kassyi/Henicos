@@ -6,6 +6,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
+[Trait("Category", "GpuExecution")]
 public class GBI146_GpuBigIntegerTests
 {
     [SkippableFact]

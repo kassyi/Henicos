@@ -5,6 +5,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
+[Trait("Category", "GpuExecution")]
 public class GEN141_GpuKernelLoaderTests
 {
     private static readonly byte[] s_validPtx;
