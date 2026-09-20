@@ -28,6 +28,11 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
     protected override bool OnBeforeExecute()
     {
+        if (MockCompilation)
+        {
+            return true;
+        }
+
         if (Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA") == "1")
         {
             Log.LogMessage(MessageImportance.High, "GSHARP_TEST_NO_CUDA is set. Skipping CUDA fatbin compilation.");
@@ -94,6 +99,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
         var keyFilePath = sourcePath + ".key";
+
+        if (MockCompilation)
+        {
+            File.WriteAllText(outputFatbinPath, "Mock Fatbin Content");
+            var mockTaskItem = new TaskItem(outputFatbinPath);
+            mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
+            return [mockTaskItem];
+        }
 
         if (!CompileWithNvcc(sourcePath, outputFatbinPath, _architectures))
         {
