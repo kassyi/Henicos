@@ -57,8 +57,16 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var items = new List<ITaskItem>();
 
-        foreach (var arch in _architectures)
+        var hasErrors = false;
+        var lockObj = new object();
+
+        Parallel.ForEach(_architectures, arch =>
         {
+            if (hasErrors)
+            {
+                return;
+            }
+
             // cl.exe architecture argument
             var vcvarsArch = arch switch
             {
@@ -69,9 +77,12 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
             var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
 
-            if (!Directory.Exists(OutputDirectory))
+            lock (lockObj)
             {
-                Directory.CreateDirectory(OutputDirectory);
+                if (!Directory.Exists(OutputDirectory))
+                {
+                    Directory.CreateDirectory(OutputDirectory);
+                }
             }
 
             if (File.Exists(outputDllPath) &&
@@ -79,8 +90,12 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             {
                 var cachedTaskItem = new TaskItem(outputDllPath);
                 cachedTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                items.Add(cachedTaskItem);
-                continue;
+                lock (lockObj)
+                {
+                    items.Add(cachedTaskItem);
+                }
+
+                return;
             }
 
             if (MockCompilation)
@@ -88,26 +103,35 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 File.WriteAllText(outputDllPath, "Mock Native DLL Content");
                 var mockTaskItem = new TaskItem(outputDllPath);
                 mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                items.Add(mockTaskItem);
-                continue;
+                lock (lockObj)
+                {
+                    items.Add(mockTaskItem);
+                }
+
+                return;
             }
 
             if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
             {
-                return null;
+                hasErrors = true;
+                return;
             }
 
             if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
-                return null;
+                hasErrors = true;
+                return;
             }
 
             var taskItem = new TaskItem(outputDllPath);
             taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-            items.Add(taskItem);
-        }
+            lock (lockObj)
+            {
+                items.Add(taskItem);
+            }
+        });
 
-        return [.. items];
+        return hasErrors ? null : [.. items];
     }
 
     private string[] GetTargetArchitectures()
