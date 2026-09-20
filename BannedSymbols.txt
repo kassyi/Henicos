@@ -1,0 +1,26 @@
+M:Microsoft.CodeAnalysis.ISymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.ITypeSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IMethodSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IPropertySymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IFieldSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IEventSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IParameterSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.ILocalSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IAliasSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.ILabelSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Use ToDisplayString() instead
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Use custom helper instead to avoid performance penalty in generator hot paths
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Use custom helper instead to avoid performance penalty in generator hot paths
+T:System.Reflection.MethodInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
+T:System.Reflection.PropertyInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
+T:System.Reflection.FieldInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Type.GetMethod(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Type.GetProperty(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Type.GetField(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
+M:System.Activator.CreateInstance(System.Type);Dynamic instantiation is prohibited. Use direct AST/Symbol resolution.

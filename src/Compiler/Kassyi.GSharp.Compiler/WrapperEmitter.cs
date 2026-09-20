@@ -1,5 +1,6 @@
-namespace Kassyi.GSharp.Compiler;
+using Kassyi.GSharp.Compiler.Models;
 
+namespace Kassyi.GSharp.Compiler;
 /// <summary>Generates host-side C# wrapper classes that JIT-compile and invoke GPU kernels.</summary>
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
@@ -302,7 +303,7 @@ internal static class WrapperEmitter
                     if (!string.IsNullOrWhiteSpace(keyProvider))
                     {
                         writer.AppendLine(
-                            $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                            $"s_decryptionKey_{method.Name} = {method.ContainingType.GetFullyQualifiedName()}.{keyProvider}();");
                     }
                     else
                     {
@@ -400,7 +401,7 @@ internal static class WrapperEmitter
                 if (!string.IsNullOrWhiteSpace(keyProvider))
                 {
                     writer.AppendLine(
-                        $"s_decryptionKey_{method.Name} = {method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{keyProvider}();");
+                        $"s_decryptionKey_{method.Name} = {method.ContainingType.GetFullyQualifiedName()}.{keyProvider}();");
                 }
                 else
                 {

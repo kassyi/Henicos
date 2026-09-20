@@ -8,10 +8,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
 
-    public bool GSharpMultiTarget
-    {
-        get; set;
-    }
+    public bool GSharpMultiTarget { get; set; }
 
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];
@@ -58,27 +55,47 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     {
         var sourcePath = sourceItem.GetMetadata("FullPath");
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
-        var keyFilePath = sourcePath + ".key";
         var items = new List<ITaskItem>();
 
-        foreach (var arch in _architectures)
+        var hasErrors = 0;
+        var lockObj = new object();
+
+        Parallel.ForEach(_architectures, arch =>
         {
+            if (Volatile.Read(location: ref hasErrors) != 0)
+            {
+                return;
+            }
+
             // cl.exe architecture argument
-            var vcvarsArch = arch == "x64" ? "x64" : (arch == "arm64" ? "x64_arm64" : "x64");
+            var vcvarsArch = arch switch
+            {
+                "x64" => "x64",
+                "arm64" => "x64_arm64",
+                _ => "x64"
+            };
 
             var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
 
-            if (!Directory.Exists(OutputDirectory))
+            lock (lockObj)
             {
-                Directory.CreateDirectory(OutputDirectory);
+                if (!Directory.Exists(OutputDirectory))
+                {
+                    Directory.CreateDirectory(OutputDirectory);
+                }
             }
 
-            if (File.Exists(outputDllPath) && File.GetLastWriteTimeUtc(outputDllPath) >= File.GetLastWriteTimeUtc(sourcePath))
+            if (File.Exists(outputDllPath) &&
+                File.GetLastWriteTimeUtc(outputDllPath) >= File.GetLastWriteTimeUtc(sourcePath))
             {
                 var cachedTaskItem = new TaskItem(outputDllPath);
                 cachedTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                items.Add(cachedTaskItem);
-                continue;
+                lock (lockObj)
+                {
+                    items.Add(cachedTaskItem);
+                }
+
+                return;
             }
 
             if (MockCompilation)
@@ -86,26 +103,35 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 File.WriteAllText(outputDllPath, "Mock Native DLL Content");
                 var mockTaskItem = new TaskItem(outputDllPath);
                 mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                items.Add(mockTaskItem);
-                continue;
+                lock (lockObj)
+                {
+                    items.Add(mockTaskItem);
+                }
+
+                return;
             }
 
             if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
             {
-                return null;
+                Interlocked.Exchange(ref hasErrors, 1);
+                return;
             }
 
             if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
-                return null;
+                Interlocked.Exchange(ref hasErrors, 1);
+                return;
             }
 
             var taskItem = new TaskItem(outputDllPath);
             taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-            items.Add(taskItem);
-        }
+            lock (lockObj)
+            {
+                items.Add(taskItem);
+            }
+        });
 
-        return [.. items];
+        return Volatile.Read(ref hasErrors) != 0 ? null : [.. items];
     }
 
     private string[] GetTargetArchitectures()

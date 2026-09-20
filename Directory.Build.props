@@ -1,10 +1,16 @@
 <Project>
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- 恒久対策: Smart App Control / Defender等によるジェネレーターのロードブロックを回避するため共有コンパイルを無効化 -->
-    <UseSharedCompilation>false</UseSharedCompilation>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- 自動生成コード(Source Generator)等の未使用プライベートフィールド警告を抑制 -->
     <NoWarn>$(NoWarn);CS0169</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)BannedSymbols.txt')" />
+  </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Kassyi.GSharp.Compiler.Tasks;
 
 public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
@@ -66,7 +68,16 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
 
     protected virtual bool OnBeforeExecute() => true;
 
+    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
+        new(StringComparer.OrdinalIgnoreCase);
+
     protected Dictionary<string, string>? GetVcvarsEnvironment(string vcvarsArch)
+    {
+        return s_vcvarsCache.GetOrAdd(vcvarsArch,
+            arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch))).Value;
+    }
+
+    private Dictionary<string, string>? ResolveVcvarsEnvironment(string vcvarsArch)
     {
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");

@@ -52,8 +52,10 @@ public static class MethodTranspiler
         {
             if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
             {
+#pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
                 return
                     $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+#pragma warning restore RS0030
             }
         }
 
@@ -133,8 +135,10 @@ public static class MethodTranspiler
         {
             if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
             {
+#pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
                 return
                     $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
+#pragma warning restore RS0030
             }
         }
 

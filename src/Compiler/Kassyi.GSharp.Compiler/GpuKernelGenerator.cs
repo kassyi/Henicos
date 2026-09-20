@@ -1,14 +1,10 @@
 using System.Security.Cryptography;
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Helpers;
+using Kassyi.GSharp.Compiler.Models;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Compiler;
-
-internal record struct GeneratorConfig(
-    string TargetDialect,
-    bool EmitSource,
-    string? IntermediateOutputPath,
-    string? CustomEncryptionKey);
 
 /// <summary>Roslyn incremental source generator that transpiles C# GPU kernels to CUDA C++ and emits host invocations.</summary>
 /// <remarks><para>Implements: <b>GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GE-07, GEN-08, GEN-09, GEN-10, GEN-11, GEN-12, GEN-13, GEN-14, GEN-17, GEN-18, GEN-19, GEN-25, GEN-28, GEN-29, GEN-31, GEN-32</b></para></remarks>
@@ -27,8 +23,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 }
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
-                bool emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
-                                  string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
+                var emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
+                                 string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
 
                 options.GlobalOptions.TryGetValue("build_property.IntermediateOutputPath", out var objPath);
                 options.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projDir);
@@ -49,21 +45,115 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var kernelMethods = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuKernel),
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, KnownAttributes.GpuKernel))
-            .Where(static m => m is not null);
+                transform: static (ctx, _) => TranspileKernel(ctx, KnownAttributes.GpuKernel))
+            .Where(static m => m.HasValue)
+            .Select(static (m, _) => m!.Value);
 
         var deviceMethods = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuDeviceFunction),
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx, KnownAttributes.GpuDeviceFunction))
-            .Where(static m => m is not null);
+                transform: static (ctx, _) => TranspileDeviceMethod(ctx, KnownAttributes.GpuDeviceFunction))
+            .Where(static m => m.HasValue)
+            .Select(static (m, _) => m!.Value);
 
         var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());
-        var compilationAndAll = context.CompilationProvider.Combine(kernelsAndDevices).Combine(configProvider);
+        var allData = kernelsAndDevices.Combine(configProvider);
 
-        context.RegisterSourceOutput(compilationAndAll,
-            static (spc, source) => Execute(source.Left.Left, source.Left.Right.Left, source.Left.Right.Right,
-                source.Right, spc));
+        context.RegisterSourceOutput(allData,
+            static (spc, source) => Execute(source.Left.Left, source.Left.Right, source.Right, spc));
+    }
+
+    private static TranspiledKernelResult? TranspileKernel(GeneratorSyntaxContext context, string attributeName)
+    {
+        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        {
+            return null;
+        }
+
+        var diagnostics = new List<Diagnostic>();
+
+        var cudaDialect = new GSharpCudaDialect();
+        var cppDialect = new StandardCppDialect();
+
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, reportDiagnostic,
+            isDevice: false, cudaDialect);
+        var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
+        {
+        }, isDevice: false, cppDialect);
+
+        var keyProvider = ResolveKeyProvider(methodSymbol);
+
+        var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
+
+        return new TranspiledKernelResult(
+            methodSymbol,
+            methodSymbol.Name,
+            methodSymbol.ContainingType.Name,
+            methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+            cudaSource,
+            cppSource,
+            keyProvider,
+            equatableDiagnostics
+        );
+
+        void reportDiagnostic(Diagnostic d)
+        {
+            if (!diagnostics.Any(existing => existing.Id == d.Id && existing.Location == d.Location))
+            {
+                diagnostics.Add(d);
+            }
+        }
+    }
+
+    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorSyntaxContext context,
+        string attributeName)
+    {
+        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        {
+            return null;
+        }
+
+        var diagnostics = new List<Diagnostic>();
+
+        var cudaDialect = new GSharpCudaDialect();
+        var cppDialect = new StandardCppDialect();
+
+        var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
+            reportDiagnostic, isDevice: true, cudaDialect);
+        var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel, _ =>
+        {
+        }, isDevice: true, cppDialect);
+
+        var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, reportDiagnostic,
+            isDevice: true, cudaDialect);
+        var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
+        {
+        }, isDevice: true, cppDialect);
+
+        var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
+
+        return new TranspiledDeviceMethodResult(
+            methodSymbol,
+            methodSymbol.Name,
+            methodSymbol.ContainingType.Name,
+            methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+            cudaSignature,
+            cudaBody,
+            cppSignature,
+            cppBody,
+            equatableDiagnostics);
+
+        void reportDiagnostic(Diagnostic d)
+        {
+            if (!diagnostics.Any(existing => existing.Id == d.Id && existing.Location == d.Location))
+            {
+                diagnostics.Add(d);
+            }
+        }
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
@@ -97,32 +187,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
         _ => null
     };
 
-    private static IMethodSymbol? GetSemanticTargetForGeneration(GeneratorSyntaxContext context, string attributeName)
-    {
-        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
-
-        if (methodSymbol == null)
-        {
-            return null;
-        }
-
-        return methodSymbol.HasAttribute(attributeName) ? methodSymbol : null;
-    }
-
-    private static void Execute(Compilation compilation, ImmutableArray<IMethodSymbol?> kernelMethods,
-        ImmutableArray<IMethodSymbol?> deviceMethods, GeneratorConfig config, SourceProductionContext context)
+    private static void Execute(ImmutableArray<TranspiledKernelResult> kernelMethods,
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config,
+        SourceProductionContext context)
     {
         if (kernelMethods.IsDefaultOrEmpty)
         {
             return;
         }
 
-        ITranspilerDialect dialect = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase)
-            ? new GSharpCudaDialect()
-            : new StandardCppDialect();
+        bool isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
+        ITranspilerDialect dialect = isCuda ? new GSharpCudaDialect() : new StandardCppDialect();
 
-        var commonDeviceSource = GenerateCommonDeviceSource(compilation, deviceMethods, context, dialect);
+        var distinctDeviceMethods = deviceMethods.Distinct().ToList();
+        var commonDeviceSource =
+            GenerateCommonDeviceSource(distinctDeviceMethods, context, isCuda);
         var preludeSource = GetPreludeSource(context, dialect);
 
         if (preludeSource == null)
@@ -132,10 +211,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         EmitSharedSources(context, config, preludeSource, commonDeviceSource);
 
-        foreach (var method in kernelMethods.OfType<IMethodSymbol>()
-                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        byte[]? aesKey = null;
+        if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
         {
-            ProcessKernelMethod(method, compilation, config, context, dialect, preludeSource, commonDeviceSource);
+            aesKey = ResolveEncryptionKey(config);
+        }
+
+        // Use Distinct by fully qualified method name to avoid duplicates if partial classes define it twice (which is illegal in C# but AST parses it).
+        // For IMethodSymbol, SymbolEqualityComparer.Default is fine here because they are from the SAME cached output if unchanged.
+        foreach (var method in kernelMethods.Distinct())
+        {
+            ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda, aesKey);
         }
     }
 
@@ -204,44 +290,36 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
-    private static void ProcessKernelMethod(IMethodSymbol method, Compilation compilation, GeneratorConfig config,
-        SourceProductionContext context, ITranspilerDialect dialect, string preludeSource, string commonDeviceSource)
+    private static void ProcessKernelMethod(TranspiledKernelResult method, GeneratorConfig config,
+        SourceProductionContext context, ITranspilerDialect dialect, string preludeSource, string commonDeviceSource,
+        bool isCuda, byte[]? aesKey)
     {
-        var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-
-        if (syntaxRef?.GetSyntax() is not MethodDeclarationSyntax syntaxNode)
+        foreach (var diag in method.Diagnostics)
         {
-            return;
+            context.ReportDiagnostic(diag.Diagnostic);
         }
 
-        var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-        var source = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic,
-            isDevice: false, dialect);
-
-        byte[]? aesKey = null;
-        string? keyProvider = null;
+        string source = isCuda ? method.CudaSource : method.CppSource;
+        string? keyProvider = method.KeyProvider;
 
         if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
         {
-            keyProvider = ResolveKeyProvider(method);
-
             if (keyProvider != null && string.IsNullOrWhiteSpace(config.CustomEncryptionKey))
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     new DiagnosticDescriptor(
                         "GEN002", "Missing Encryption Key",
-                        $"Method '{method.Name}' specifies an EncryptionKeyProvider, but no build-time key was provided via <GSharpAotEncryptionKey> MSBuild property.",
+                        $"Method '{method.MethodName}' specifies an EncryptionKeyProvider, but no build-time key was provided via <GSharpAotEncryptionKey> MSBuild property.",
                         "GSharp", DiagnosticSeverity.Error, true),
-                    method.Locations.FirstOrDefault() ?? Location.None));
+                    method.MethodSymbol.Locations.FirstOrDefault() ?? Location.None));
             }
 
-            aesKey = ResolveEncryptionKey(config);
-
-            WriteAotArtifacts(method, config, aesKey, preludeSource, commonDeviceSource, source, dialect);
+            WriteAotArtifacts(method, config, aesKey!, preludeSource, commonDeviceSource, source, dialect);
         }
 
-        var wrapperSource = WrapperEmitter.GenerateWrapperClass(method, source, config, aesKey, keyProvider);
-        context.AddSource(method.ContainingType.Name + "_" + method.Name + "_Wrapper.g.cs",
+        var wrapperSource =
+            WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config, aesKey, keyProvider);
+        context.AddSource(method.ClassName + "_" + method.MethodName + "_Wrapper.g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
@@ -289,10 +367,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return sha.ComputeHash(Encoding.UTF8.GetBytes(config.CustomEncryptionKey!));
         }
 
-        // Use a deterministic fallback key when no custom key is provided.
-        // Generating random numbers in a Roslyn Source Generator breaks determinism
-        // and causes the MSBuild task (which encrypts the fatbin) to use a different key
-        // than the generated C# wrapper code (which decrypts it at runtime), leading to CryptographicException.
         using (var sha = SHA256.Create())
         {
             var defaultKeyHash =
@@ -303,12 +377,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         return aesKey;
     }
 
-    private static void WriteAotArtifacts(IMethodSymbol method, GeneratorConfig config, byte[] aesKey,
+    private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config, byte[] aesKey,
         string preludeSource, string commonDeviceSource, string kernelSource, ITranspilerDialect dialect)
     {
         var fullCudaSource = preludeSource + commonDeviceSource + kernelSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"{method.ContainingType.Name}_{method.Name}{ext}";
+        var fileName = $"{method.ClassName}_{method.MethodName}{ext}";
         var filePath = Path.Combine(config.IntermediateOutputPath!, fileName);
         var keyFilePath = filePath + ".key";
 
@@ -334,54 +408,26 @@ public class GpuKernelGenerator : IIncrementalGenerator
 #pragma warning restore RS1035
     }
 
-    private static string GenerateCommonDeviceSource(Compilation compilation,
-        ImmutableArray<IMethodSymbol?> deviceMethods, SourceProductionContext context,
-        ITranspilerDialect dialect)
+    private static string GenerateCommonDeviceSource(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
+        SourceProductionContext context, bool isCuda)
     {
         var deviceSourceBuilder = new StringBuilder();
 
         // Pass 1: Forward declarations
-        foreach (var method in deviceMethods.OfType<IMethodSymbol>()
-                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        foreach (var method in deviceMethods)
         {
-            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null)
+            foreach (var diag in method.Diagnostics)
             {
-                continue;
+                context.ReportDiagnostic(diag.Diagnostic);
             }
 
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null)
-            {
-                continue;
-            }
-
-            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var signatureCode = MethodTranspiler.GenerateCudaSignature(syntaxNode, semanticModel,
-                context.ReportDiagnostic, isDevice: true, dialect);
-            deviceSourceBuilder.AppendLine(signatureCode);
+            deviceSourceBuilder.AppendLine(isCuda ? method.CudaSignature : method.CppSignature);
         }
 
         // Pass 2: Method bodies
-        foreach (var method in deviceMethods.OfType<IMethodSymbol>()
-                     .Distinct<IMethodSymbol>(SymbolEqualityComparer.Default))
+        foreach (var method in deviceMethods)
         {
-            var syntaxRef = method.DeclaringSyntaxReferences.FirstOrDefault();
-            if (syntaxRef == null)
-            {
-                continue;
-            }
-
-            var syntaxNode = syntaxRef.GetSyntax() as MethodDeclarationSyntax;
-            if (syntaxNode == null)
-            {
-                continue;
-            }
-
-            var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
-            var deviceCode = MethodTranspiler.GenerateCudaSource(syntaxNode, semanticModel, context.ReportDiagnostic,
-                isDevice: true, dialect);
-            deviceSourceBuilder.AppendLine(deviceCode);
+            deviceSourceBuilder.AppendLine(isCuda ? method.CudaBody : method.CppBody);
         }
 
         return deviceSourceBuilder.ToString();

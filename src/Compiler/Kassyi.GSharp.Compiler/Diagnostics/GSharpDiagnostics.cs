@@ -146,7 +146,9 @@ public static class GSharpDiagnostics
                 KernelReturnMustBeVoidOrBlittable,
                 methodSymbol.Locations.FirstOrDefault() ?? Location.None,
                 methodSymbol.Name,
+#pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
                 methodSymbol.ReturnType.ToDisplayString()));
+#pragma warning restore RS0030
         }
 
         return false;
