@@ -35,12 +35,16 @@ public class SYN_73_78_ContractsAndPtxTests
     [Trait("FeatureId", "SYN-77")]
     public void TestInlinePtxKernel()
     {
-        Kassyi.GSharp.Tests.Helpers.ExecutionCapabilityChecker.EnsureGpuExecutionCapability();
         uint[] data = [0];
+        if (IsCpuDialect)
+        {
+            Assert.Throws<System.NotSupportedException>(() => SYN_73_78_ContractsAndPtxKernelsWrapper.LaunchInlinePtxKernel(data));
+            return;
+        }
+
         SYN_73_78_ContractsAndPtxKernelsWrapper.LaunchInlinePtxKernel(data);
         Assert.Equal(999u, data[0]);
     }
-
     [SkippableFact()]
     [Trait("FeatureId", "SYN-78")]
     [Trait("Category", "Syntax")]
