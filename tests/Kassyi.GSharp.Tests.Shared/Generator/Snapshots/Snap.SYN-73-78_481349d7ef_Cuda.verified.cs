@@ -75,7 +75,11 @@ namespace Kassyi.GSharp.Tests.Syntax
 public static partial class SYN_73_78_ContractsAndPtxKernelsWrapper
 {
 public const string InlinePtxKernel_Source = @"extern ""C"" __global__ void SYN_73_78_ContractsAndPtxKernels_InlinePtxKernel(unsigned int* __restrict__ data){
-data[0] = 999;
+#ifdef __CUDA_ARCH__
+asm(""mov.u32 %0, 999;"" : ""=r""(data[0]));
+#else
+throw ""Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU."";
+#endif
 ;
 }
 ";

@@ -84,7 +84,11 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 data[0]=999;
 }
+#ifdef __CUDA_ARCH__
 /* inline ptx here */
+#else
+throw ""Gpu.InlinePtx is only supported on GPU execution. Ensure this code is not reached on the CPU."";
+#endif
 ;
 }
 ";
