@@ -1,6 +1,3 @@
-using System;
-using Kassyi.GSharp.Core;
-
 namespace Henicos.PiBenchmark.ComputeBenchmarks;
 
 public static class Sha256Kernels
