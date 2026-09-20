@@ -42,7 +42,7 @@ internal static class HashHelper
                 }
                 else
                 {
-                    hash = hash * 31 + (value?.GetHashCode() ?? 0);
+                    hash = hash * 31 + ComputeFnv1AHash(value?.ToString());
                 }
             }
             return hash;
