@@ -15,7 +15,7 @@ public class GEN_01_SourceGeneratorTests(ITestOutputHelper output)
         int[] bArray = [20];
         int[] cArray = [0];
 
-        GEN_01_SourceGeneratorTestKernelsWrapper.Launch_MyTestKernel(aArray, bArray, cArray);
+        GEN_01_SourceGeneratorTestKernelsWrapper.LaunchMyTestKernel(aArray, bArray, cArray);
 
         Assert.Equal(30, cArray[0]);
     }

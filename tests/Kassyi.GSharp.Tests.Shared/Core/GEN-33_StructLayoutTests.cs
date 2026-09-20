@@ -17,7 +17,7 @@ public class GEN_33_StructLayoutTests
         };
 
         // SourceGenerator should emit this wrapper class and method.
-        GEN_33_StructLayoutKernelsWrapper.Launch_ModifyStructLayoutKernel(
+        GEN_33_StructLayoutKernelsWrapper.LaunchModifyStructLayoutKernel(
             data,
             blockDimX: 1
         );
@@ -38,7 +38,7 @@ public class GEN_33_StructLayoutTests
         data[0].Buffer[0] = 3;
 
         // SourceGenerator should emit this wrapper class and method.
-        GEN_33_StructLayoutKernelsWrapper.Launch_ModifyPackedInlineArrayKernel(
+        GEN_33_StructLayoutKernelsWrapper.LaunchModifyPackedInlineArrayKernel(
             data,
             blockDimX: 1
         );
