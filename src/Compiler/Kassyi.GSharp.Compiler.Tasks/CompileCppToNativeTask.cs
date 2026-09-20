@@ -26,6 +26,11 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     {
         _architectures = GetTargetArchitectures();
 
+        if (MockCompilation)
+        {
+            return true;
+        }
+
         foreach (var arch in _architectures)
         {
             var vcvarsArch = arch switch
@@ -66,6 +71,15 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             if (!Directory.Exists(OutputDirectory))
             {
                 Directory.CreateDirectory(OutputDirectory);
+            }
+
+            if (MockCompilation)
+            {
+                File.WriteAllText(outputDllPath, "Mock Native DLL Content");
+                var mockTaskItem = new TaskItem(outputDllPath);
+                mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
+                items.Add(mockTaskItem);
+                continue;
             }
 
             if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))

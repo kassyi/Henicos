@@ -17,6 +17,7 @@
     <CompilerVisibleProperty Include="IntermediateOutputPath" />
     <CompilerVisibleProperty Include="ProjectDir" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <CompilerVisibleProperty Include="GSharpMockCompilation" />
   </ItemGroup>
 
   <!-- Define the target to compile CUDA sources -->
@@ -32,7 +33,8 @@
 
     <!-- Run nvcc via the custom task -->
     <CompileCudaToFatbinTask 
-        Condition="'@(_GSharpCudaSources)' != '' And '$(GSharpSkipCudaCompilation)' != 'true' And '$(GSHARP_TEST_NO_CUDA)' != '1'"
+        Condition="'@(_GSharpCudaSources)' != '' And '$(GSharpSkipCudaCompilation)' != 'true' And ('$(GSHARP_TEST_NO_CUDA)' != '1' Or '$(GSharpMockCompilation)' == 'true')"
+        MockCompilation="$(GSharpMockCompilation)"
         CudaSources="@(_GSharpCudaSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" 
         TargetArchitectures="$(GSharpTargetArchitectures)" >
@@ -59,7 +61,8 @@
 
     <!-- Run MSVC via the custom task -->
     <CompileCppToNativeTask 
-        Condition="'@(_GSharpCppSources)' != '' And '$(GSharpSkipCpuCompilation)' != 'true' And '$(GSHARP_TEST_NO_CPU)' != '1'"
+        Condition="'@(_GSharpCppSources)' != '' And '$(GSharpSkipCpuCompilation)' != 'true' And ('$(GSHARP_TEST_NO_CPU)' != '1' Or '$(GSharpMockCompilation)' == 'true')"
+        MockCompilation="$(GSharpMockCompilation)"
         CppSources="@(_GSharpCppSources)" 
         OutputDirectory="$(IntermediateOutputPath)GSharpNativeDlls" 
         GSharpMultiTarget="$(GSharpMultiTarget)" >
