@@ -45,7 +45,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
-var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GEN_08_AutoAllocateReturnArraysKernelsWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_NormalReturnKernel)
 {
@@ -110,7 +110,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
-var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GEN_08_AutoAllocateReturnArraysKernelsWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_OneThreadKernel)
 {
@@ -187,7 +187,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Runtime.GEN_08_AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
-var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GEN_08_AutoAllocateReturnArraysKernelsWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_StructReturnKernel)
 {

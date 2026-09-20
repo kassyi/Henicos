@@ -82,7 +82,7 @@ return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
-var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(SYN_17_TargetTypedNewKernelsWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_HappyPathKernel)
 {
@@ -166,7 +166,7 @@ return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
-var baseDir = System.IO.Path.GetDirectoryName(typeof(global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(SYN_17_TargetTypedNewKernelsWrapper).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var dllPath = System.IO.Path.Combine(baseDir, dllName);
 if (!s_isLoaded_NestedInitializerKernel)
 {

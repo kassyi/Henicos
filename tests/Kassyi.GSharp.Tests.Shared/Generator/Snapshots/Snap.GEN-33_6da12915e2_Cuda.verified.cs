@@ -56,12 +56,21 @@ data[tid].B+=3;
 ";
 public static readonly string ModifyPackedInlineArrayKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ModifyPackedInlineArrayKernel_Source;
 private static IntPtr? s_hfunc_ModifyPackedInlineArrayKernel;
+private static int s_generation_ModifyPackedInlineArrayKernel = -1;
+private static readonly object s_lock_ModifyPackedInlineArrayKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerModifyPackedInlineArrayKernel()
 {
-if (s_hfunc_ModifyPackedInlineArrayKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ModifyPackedInlineArrayKernel.HasValue && s_generation_ModifyPackedInlineArrayKernel == currentGen) return;
+lock (s_lock_ModifyPackedInlineArrayKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ModifyPackedInlineArrayKernel.HasValue && s_generation_ModifyPackedInlineArrayKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_ModifyPackedInlineArrayKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel");
+s_generation_ModifyPackedInlineArrayKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -193,12 +202,21 @@ data[tid].C-=1.0f;
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ModifyStructLayoutKernel_Source;
 private static IntPtr? s_hfunc_ModifyStructLayoutKernel;
+private static int s_generation_ModifyStructLayoutKernel = -1;
+private static readonly object s_lock_ModifyStructLayoutKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerModifyStructLayoutKernel()
 {
-if (s_hfunc_ModifyStructLayoutKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ModifyStructLayoutKernel.HasValue && s_generation_ModifyStructLayoutKernel == currentGen) return;
+lock (s_lock_ModifyStructLayoutKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ModifyStructLayoutKernel.HasValue && s_generation_ModifyStructLayoutKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_ModifyStructLayoutKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN_33_StructLayoutKernels_ModifyStructLayoutKernel");
+s_generation_ModifyStructLayoutKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -299,37 +317,36 @@ finally
 #nullable enable
 using System;
 using System.Threading;
-
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_SnapshotTest
 {
 private static IntPtr? s_hModule;
+private static int s_generation = -1;
 private static readonly object s_lock = new object();
-
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
 public static IntPtr GetOrLoadModule()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 lock (s_lock)
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
-
 byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
 return s_hModule.Value;
 }
 }
-
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
 /// </summary>
@@ -339,7 +356,9 @@ public static void Warmup()
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Core.GEN_33_StructLayoutKernelsWrapper.WarmupFunctionPointerModifyStructLayoutKernel();
 global::Kassyi.GSharp.Tests.Core.GEN_33_StructLayoutKernelsWrapper.WarmupFunctionPointerModifyPackedInlineArrayKernel();
-}}}
+}
+}
+}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs

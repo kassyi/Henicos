@@ -3,37 +3,36 @@
 #nullable enable
 using System;
 using System.Threading;
-
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_SnapshotTest
 {
 private static IntPtr? s_hModule;
+private static int s_generation = -1;
 private static readonly object s_lock = new object();
-
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
 public static IntPtr GetOrLoadModule()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 lock (s_lock)
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
-
 byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
 return s_hModule.Value;
 }
 }
-
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
 /// </summary>
@@ -44,7 +43,9 @@ GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Syntax.SYN_01_SwitchExpressionKernelsWrapper.WarmupFunctionPointerSimpleConstantSwitchKernel();
 global::Kassyi.GSharp.Tests.Syntax.SYN_01_SwitchExpressionKernelsWrapper.WarmupFunctionPointerFloatingPointReturnSwitchKernel();
 global::Kassyi.GSharp.Tests.Syntax.SYN_01_SwitchExpressionKernelsWrapper.WarmupFunctionPointerMultipleArmsBoundarySwitchKernel();
-}}}
+}
+}
+}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs
@@ -89,12 +90,21 @@ default: return -1.0f;
 ";
 public static readonly string FloatingPointReturnSwitchKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + FloatingPointReturnSwitchKernel_Source;
 private static IntPtr? s_hfunc_FloatingPointReturnSwitchKernel;
+private static int s_generation_FloatingPointReturnSwitchKernel = -1;
+private static readonly object s_lock_FloatingPointReturnSwitchKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerFloatingPointReturnSwitchKernel()
 {
-if (s_hfunc_FloatingPointReturnSwitchKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_FloatingPointReturnSwitchKernel.HasValue && s_generation_FloatingPointReturnSwitchKernel == currentGen) return;
+lock (s_lock_FloatingPointReturnSwitchKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_FloatingPointReturnSwitchKernel.HasValue && s_generation_FloatingPointReturnSwitchKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_FloatingPointReturnSwitchKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel");
+s_generation_FloatingPointReturnSwitchKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchFloatingPointReturnSwitchKernel(global::System.Int32[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -258,12 +268,21 @@ default: return 0;
 ";
 public static readonly string MultipleArmsBoundarySwitchKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MultipleArmsBoundarySwitchKernel_Source;
 private static IntPtr? s_hfunc_MultipleArmsBoundarySwitchKernel;
+private static int s_generation_MultipleArmsBoundarySwitchKernel = -1;
+private static readonly object s_lock_MultipleArmsBoundarySwitchKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerMultipleArmsBoundarySwitchKernel()
 {
-if (s_hfunc_MultipleArmsBoundarySwitchKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_MultipleArmsBoundarySwitchKernel.HasValue && s_generation_MultipleArmsBoundarySwitchKernel == currentGen) return;
+lock (s_lock_MultipleArmsBoundarySwitchKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_MultipleArmsBoundarySwitchKernel.HasValue && s_generation_MultipleArmsBoundarySwitchKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_MultipleArmsBoundarySwitchKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel");
+s_generation_MultipleArmsBoundarySwitchKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchMultipleArmsBoundarySwitchKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -425,12 +444,21 @@ default: return -1;
 ";
 public static readonly string SimpleConstantSwitchKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SimpleConstantSwitchKernel_Source;
 private static IntPtr? s_hfunc_SimpleConstantSwitchKernel;
+private static int s_generation_SimpleConstantSwitchKernel = -1;
+private static readonly object s_lock_SimpleConstantSwitchKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerSimpleConstantSwitchKernel()
 {
-if (s_hfunc_SimpleConstantSwitchKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_SimpleConstantSwitchKernel.HasValue && s_generation_SimpleConstantSwitchKernel == currentGen) return;
+lock (s_lock_SimpleConstantSwitchKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_SimpleConstantSwitchKernel.HasValue && s_generation_SimpleConstantSwitchKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_SimpleConstantSwitchKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel");
+s_generation_SimpleConstantSwitchKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSimpleConstantSwitchKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)

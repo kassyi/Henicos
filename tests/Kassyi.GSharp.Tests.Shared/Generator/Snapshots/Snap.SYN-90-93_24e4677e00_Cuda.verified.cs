@@ -3,37 +3,36 @@
 #nullable enable
 using System;
 using System.Threading;
-
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_SnapshotTest
 {
 private static IntPtr? s_hModule;
+private static int s_generation = -1;
 private static readonly object s_lock = new object();
-
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
 public static IntPtr GetOrLoadModule()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 lock (s_lock)
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
-
 byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
 return s_hModule.Value;
 }
 }
-
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
 /// </summary>
@@ -46,7 +45,9 @@ global::Kassyi.GSharp.Tests.Syntax.SYN_90_93_CoreSyntaxKernelsWrapper.WarmupFunc
 global::Kassyi.GSharp.Tests.Syntax.SYN_90_93_CoreSyntaxKernelsWrapper.WarmupFunctionPointerStructKernel();
 global::Kassyi.GSharp.Tests.Syntax.SYN_90_93_CoreSyntaxKernelsWrapper.WarmupFunctionPointerPaddedStructKernel();
 global::Kassyi.GSharp.Tests.Syntax.SYN_90_93_CoreSyntaxKernelsWrapper.WarmupFunctionPointerDeviceMethodKernel();
-}}}
+}
+}
+}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs
@@ -97,12 +98,21 @@ c[0]=c[0]+b[0];
 ";
 public static readonly string ComplexLogicKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ComplexLogicKernel_Source;
 private static IntPtr? s_hfunc_ComplexLogicKernel;
+private static int s_generation_ComplexLogicKernel = -1;
+private static readonly object s_lock_ComplexLogicKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerComplexLogicKernel()
 {
-if (s_hfunc_ComplexLogicKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ComplexLogicKernel.HasValue && s_generation_ComplexLogicKernel == currentGen) return;
+lock (s_lock_ComplexLogicKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ComplexLogicKernel.HasValue && s_generation_ComplexLogicKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_ComplexLogicKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_90_93_CoreSyntaxKernels_ComplexLogicKernel");
+s_generation_ComplexLogicKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchComplexLogicKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -317,12 +327,21 @@ data[tid]=data[tid]+200;
 ";
 public static readonly string ControlFlowKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ControlFlowKernel_Source;
 private static IntPtr? s_hfunc_ControlFlowKernel;
+private static int s_generation_ControlFlowKernel = -1;
+private static readonly object s_lock_ControlFlowKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerControlFlowKernel()
 {
-if (s_hfunc_ControlFlowKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ControlFlowKernel.HasValue && s_generation_ControlFlowKernel == currentGen) return;
+lock (s_lock_ControlFlowKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_ControlFlowKernel.HasValue && s_generation_ControlFlowKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_ControlFlowKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_90_93_CoreSyntaxKernels_ControlFlowKernel");
+s_generation_ControlFlowKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchControlFlowKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -440,12 +459,21 @@ data[tid]=SYN_90_93_CoreSyntaxKernels_MyCustomAdd(data[tid],100);
 ";
 public static readonly string DeviceMethodKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + DeviceMethodKernel_Source;
 private static IntPtr? s_hfunc_DeviceMethodKernel;
+private static int s_generation_DeviceMethodKernel = -1;
+private static readonly object s_lock_DeviceMethodKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerDeviceMethodKernel()
 {
-if (s_hfunc_DeviceMethodKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_DeviceMethodKernel.HasValue && s_generation_DeviceMethodKernel == currentGen) return;
+lock (s_lock_DeviceMethodKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_DeviceMethodKernel.HasValue && s_generation_DeviceMethodKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_DeviceMethodKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_90_93_CoreSyntaxKernels_DeviceMethodKernel");
+s_generation_DeviceMethodKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchDeviceMethodKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -582,12 +610,21 @@ items[tid]=item;
 ";
 public static readonly string PaddedStructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + PaddedStructKernel_Source;
 private static IntPtr? s_hfunc_PaddedStructKernel;
+private static int s_generation_PaddedStructKernel = -1;
+private static readonly object s_lock_PaddedStructKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerPaddedStructKernel()
 {
-if (s_hfunc_PaddedStructKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_PaddedStructKernel.HasValue && s_generation_PaddedStructKernel == currentGen) return;
+lock (s_lock_PaddedStructKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_PaddedStructKernel.HasValue && s_generation_PaddedStructKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_PaddedStructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_90_93_CoreSyntaxKernels_PaddedStructKernel");
+s_generation_PaddedStructKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchPaddedStructKernel(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct[] items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -724,12 +761,21 @@ vectors[tid]=v;
 ";
 public static readonly string StructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + StructKernel_Source;
 private static IntPtr? s_hfunc_StructKernel;
+private static int s_generation_StructKernel = -1;
+private static readonly object s_lock_StructKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerStructKernel()
 {
-if (s_hfunc_StructKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_StructKernel.HasValue && s_generation_StructKernel == currentGen) return;
+lock (s_lock_StructKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_StructKernel.HasValue && s_generation_StructKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_StructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_90_93_CoreSyntaxKernels_StructKernel");
+s_generation_StructKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchStructKernel(global::Kassyi.GSharp.Tests.Syntax.Vector2[] vectors, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)

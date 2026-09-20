@@ -3,37 +3,36 @@
 #nullable enable
 using System;
 using System.Threading;
-
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_SnapshotTest
 {
 private static IntPtr? s_hModule;
+private static int s_generation = -1;
 private static readonly object s_lock = new object();
-
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
 public static IntPtr GetOrLoadModule()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 lock (s_lock)
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
-
 byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
 return s_hModule.Value;
 }
 }
-
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
 /// </summary>
@@ -46,7 +45,9 @@ global::Kassyi.GSharp.Tests.Syntax.SYN_46_50_ConcurrencyAndWarpKernelsWrapper.Wa
 global::Kassyi.GSharp.Tests.Syntax.SYN_46_50_ConcurrencyAndWarpKernelsWrapper.WarmupFunctionPointerIntrinsicsKernel();
 global::Kassyi.GSharp.Tests.Syntax.SYN_46_50_ConcurrencyAndWarpKernelsWrapper.WarmupFunctionPointerAtomicAddStressKernel();
 global::Kassyi.GSharp.Tests.Syntax.SYN_46_50_ConcurrencyAndWarpKernelsWrapper.WarmupFunctionPointerAtomicOrMaxStressKernel();
-}}}
+}
+}
+}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs
@@ -81,12 +82,21 @@ atomicAdd(&globalSum[0],1);
 ";
 public static readonly string AtomicAddStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AtomicAddStressKernel_Source;
 private static IntPtr? s_hfunc_AtomicAddStressKernel;
+private static int s_generation_AtomicAddStressKernel = -1;
+private static readonly object s_lock_AtomicAddStressKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerAtomicAddStressKernel()
 {
-if (s_hfunc_AtomicAddStressKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_AtomicAddStressKernel.HasValue && s_generation_AtomicAddStressKernel == currentGen) return;
+lock (s_lock_AtomicAddStressKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_AtomicAddStressKernel.HasValue && s_generation_AtomicAddStressKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_AtomicAddStressKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel");
+s_generation_AtomicAddStressKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchAtomicAddStressKernel(global::System.Int32[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -208,12 +218,21 @@ atomicMax(&globalState[1],(unsigned int)tid);
 ";
 public static readonly string AtomicOrMaxStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AtomicOrMaxStressKernel_Source;
 private static IntPtr? s_hfunc_AtomicOrMaxStressKernel;
+private static int s_generation_AtomicOrMaxStressKernel = -1;
+private static readonly object s_lock_AtomicOrMaxStressKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerAtomicOrMaxStressKernel()
 {
-if (s_hfunc_AtomicOrMaxStressKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_AtomicOrMaxStressKernel.HasValue && s_generation_AtomicOrMaxStressKernel == currentGen) return;
+lock (s_lock_AtomicOrMaxStressKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_AtomicOrMaxStressKernel.HasValue && s_generation_AtomicOrMaxStressKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_AtomicOrMaxStressKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel");
+s_generation_AtomicOrMaxStressKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchAtomicOrMaxStressKernel(global::System.UInt32[] globalState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -339,12 +358,21 @@ data[1]=max(data[0],100);
 ";
 public static readonly string IntrinsicsKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + IntrinsicsKernel_Source;
 private static IntPtr? s_hfunc_IntrinsicsKernel;
+private static int s_generation_IntrinsicsKernel = -1;
+private static readonly object s_lock_IntrinsicsKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerIntrinsicsKernel()
 {
-if (s_hfunc_IntrinsicsKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_IntrinsicsKernel.HasValue && s_generation_IntrinsicsKernel == currentGen) return;
+lock (s_lock_IntrinsicsKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_IntrinsicsKernel.HasValue && s_generation_IntrinsicsKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_IntrinsicsKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel");
+s_generation_IntrinsicsKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchIntrinsicsKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -475,12 +503,21 @@ data[tid]=sStatic[tid]+sDyn1[tid];
 ";
 public static readonly string SharedMemoryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SharedMemoryKernel_Source;
 private static IntPtr? s_hfunc_SharedMemoryKernel;
+private static int s_generation_SharedMemoryKernel = -1;
+private static readonly object s_lock_SharedMemoryKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerSharedMemoryKernel()
 {
-if (s_hfunc_SharedMemoryKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_SharedMemoryKernel.HasValue && s_generation_SharedMemoryKernel == currentGen) return;
+lock (s_lock_SharedMemoryKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_SharedMemoryKernel.HasValue && s_generation_SharedMemoryKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_SharedMemoryKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel");
+s_generation_SharedMemoryKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSharedMemoryKernel(global::System.Int32[] data, global::System.Int32 dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -611,12 +648,21 @@ data[tid]=sMem[size-1-tid];
 ";
 public static readonly string SharedMemoryReverseKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SharedMemoryReverseKernel_Source;
 private static IntPtr? s_hfunc_SharedMemoryReverseKernel;
+private static int s_generation_SharedMemoryReverseKernel = -1;
+private static readonly object s_lock_SharedMemoryReverseKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerSharedMemoryReverseKernel()
 {
-if (s_hfunc_SharedMemoryReverseKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_SharedMemoryReverseKernel.HasValue && s_generation_SharedMemoryReverseKernel == currentGen) return;
+lock (s_lock_SharedMemoryReverseKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_SharedMemoryReverseKernel.HasValue && s_generation_SharedMemoryReverseKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_SharedMemoryReverseKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel");
+s_generation_SharedMemoryReverseKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSharedMemoryReverseKernel(global::System.Int32[] data, global::System.Int32 size, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)

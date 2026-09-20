@@ -24,12 +24,21 @@ data[tid]=Square(data[tid]);
 ";
 public static readonly string LocalFunctionExpressionBodyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LocalFunctionExpressionBodyKernel_Source;
 private static IntPtr? s_hfunc_LocalFunctionExpressionBodyKernel;
+private static int s_generation_LocalFunctionExpressionBodyKernel = -1;
+private static readonly object s_lock_LocalFunctionExpressionBodyKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerLocalFunctionExpressionBodyKernel()
 {
-if (s_hfunc_LocalFunctionExpressionBodyKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_LocalFunctionExpressionBodyKernel.HasValue && s_generation_LocalFunctionExpressionBodyKernel == currentGen) return;
+lock (s_lock_LocalFunctionExpressionBodyKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_LocalFunctionExpressionBodyKernel.HasValue && s_generation_LocalFunctionExpressionBodyKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_LocalFunctionExpressionBodyKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel");
+s_generation_LocalFunctionExpressionBodyKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLocalFunctionExpressionBodyKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -151,12 +160,21 @@ data[tid]=ComputeTotal(data[tid]);
 ";
 public static readonly string LocalFunctionValueReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LocalFunctionValueReturnKernel_Source;
 private static IntPtr? s_hfunc_LocalFunctionValueReturnKernel;
+private static int s_generation_LocalFunctionValueReturnKernel = -1;
+private static readonly object s_lock_LocalFunctionValueReturnKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerLocalFunctionValueReturnKernel()
 {
-if (s_hfunc_LocalFunctionValueReturnKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_LocalFunctionValueReturnKernel.HasValue && s_generation_LocalFunctionValueReturnKernel == currentGen) return;
+lock (s_lock_LocalFunctionValueReturnKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_LocalFunctionValueReturnKernel.HasValue && s_generation_LocalFunctionValueReturnKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_LocalFunctionValueReturnKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel");
+s_generation_LocalFunctionValueReturnKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLocalFunctionValueReturnKernel(global::System.Int32[] data, global::System.Int32 bonus, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -282,12 +300,21 @@ MultiplyByTwo();
 ";
 public static readonly string LocalFunctionVoidKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LocalFunctionVoidKernel_Source;
 private static IntPtr? s_hfunc_LocalFunctionVoidKernel;
+private static int s_generation_LocalFunctionVoidKernel = -1;
+private static readonly object s_lock_LocalFunctionVoidKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerLocalFunctionVoidKernel()
 {
-if (s_hfunc_LocalFunctionVoidKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_LocalFunctionVoidKernel.HasValue && s_generation_LocalFunctionVoidKernel == currentGen) return;
+lock (s_lock_LocalFunctionVoidKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_LocalFunctionVoidKernel.HasValue && s_generation_LocalFunctionVoidKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_LocalFunctionVoidKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel");
+s_generation_LocalFunctionVoidKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLocalFunctionVoidKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -418,12 +445,21 @@ result[tid]=ClampAdd(a[tid],b[tid],0,100);
 ";
 public static readonly string MultiParamLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MultiParamLocalFunctionKernel_Source;
 private static IntPtr? s_hfunc_MultiParamLocalFunctionKernel;
+private static int s_generation_MultiParamLocalFunctionKernel = -1;
+private static readonly object s_lock_MultiParamLocalFunctionKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerMultiParamLocalFunctionKernel()
 {
-if (s_hfunc_MultiParamLocalFunctionKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_MultiParamLocalFunctionKernel.HasValue && s_generation_MultiParamLocalFunctionKernel == currentGen) return;
+lock (s_lock_MultiParamLocalFunctionKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_MultiParamLocalFunctionKernel.HasValue && s_generation_MultiParamLocalFunctionKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_MultiParamLocalFunctionKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel");
+s_generation_MultiParamLocalFunctionKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchMultiParamLocalFunctionKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -620,12 +656,21 @@ data[tid]=OuterMultiplyAndAdd(data[tid]);
 ";
 public static readonly string NestedLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NestedLocalFunctionKernel_Source;
 private static IntPtr? s_hfunc_NestedLocalFunctionKernel;
+private static int s_generation_NestedLocalFunctionKernel = -1;
+private static readonly object s_lock_NestedLocalFunctionKernel = new object();
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerNestedLocalFunctionKernel()
 {
-if (s_hfunc_NestedLocalFunctionKernel.HasValue) return;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_NestedLocalFunctionKernel.HasValue && s_generation_NestedLocalFunctionKernel == currentGen) return;
+lock (s_lock_NestedLocalFunctionKernel)
+{
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hfunc_NestedLocalFunctionKernel.HasValue && s_generation_NestedLocalFunctionKernel == currentGen) return;
 IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
 s_hfunc_NestedLocalFunctionKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel");
+s_generation_NestedLocalFunctionKernel = currentGen;
+}
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchNestedLocalFunctionKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
@@ -726,37 +771,36 @@ finally
 #nullable enable
 using System;
 using System.Threading;
-
 namespace Kassyi.GSharp.Generated
 {
 public static class GSharpModuleContext_SnapshotTest
 {
 private static IntPtr? s_hModule;
+private static int s_generation = -1;
 private static readonly object s_lock = new object();
-
 /// <summary>
 /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
 /// </summary>
 public static IntPtr GetOrLoadModule()
 {
-if (s_hModule.HasValue) return s_hModule.Value;
+var currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 lock (s_lock)
 {
-if (s_hModule.HasValue) return s_hModule.Value;
-
+currentGen = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.Generation;
+if (s_hModule.HasValue && s_generation == currentGen) return s_hModule.Value;
 var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
 }
-
 byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
 s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+s_generation = currentGen;
 return s_hModule.Value;
 }
 }
-
 /// <summary>
 /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
 /// </summary>
@@ -769,7 +813,9 @@ global::Kassyi.GSharp.Tests.Syntax.GSH_03_LocalFunctionLoweringKernelsWrapper.Wa
 global::Kassyi.GSharp.Tests.Syntax.GSH_03_LocalFunctionLoweringKernelsWrapper.WarmupFunctionPointerLocalFunctionExpressionBodyKernel();
 global::Kassyi.GSharp.Tests.Syntax.GSH_03_LocalFunctionLoweringKernelsWrapper.WarmupFunctionPointerNestedLocalFunctionKernel();
 global::Kassyi.GSharp.Tests.Syntax.GSH_03_LocalFunctionLoweringKernelsWrapper.WarmupFunctionPointerMultiParamLocalFunctionKernel();
-}}}
+}
+}
+}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs
