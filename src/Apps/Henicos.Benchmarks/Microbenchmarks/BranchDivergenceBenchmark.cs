@@ -72,7 +72,7 @@ public class BranchDivergenceBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        BranchDivergenceKernelsWrapper.Launch_BranchDivergenceKernel_Device(
+        BranchDivergenceKernelsWrapper.LaunchBranchDivergenceKernel_Device(
             _dData!.DevicePointer, N,
             gridDimX: GridDimX, gridDimY: 1, blockDimX: BlockSize, blockDimY: 1);
 

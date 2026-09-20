@@ -88,7 +88,7 @@ public class BlackScholesBenchmark
 
         uint blockSize = 256;
         uint numBlocks = (N + blockSize - 1) / blockSize;
-        BlackScholesKernelsWrapper.Launch_BlackScholesKernel_Device(
+        BlackScholesKernelsWrapper.LaunchBlackScholesKernel_Device(
             _dS!.DevicePointer, _dX!.DevicePointer, _dT!.DevicePointer, _r, _v,
             _dCall!.DevicePointer, _dPut!.DevicePointer, N,
             gridDimX: numBlocks, blockDimX: blockSize);

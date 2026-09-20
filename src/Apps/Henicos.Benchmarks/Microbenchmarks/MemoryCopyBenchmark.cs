@@ -63,7 +63,7 @@ public class MemoryCopyBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        MemoryCopyKernelsWrapper.Launch_MemoryCopyKernel_Device(
+        MemoryCopyKernelsWrapper.LaunchMemoryCopyKernel_Device(
             _dSrc!.DevicePointer, _dDst!.DevicePointer, N,
             gridDimX: GridDimX, gridDimY: 1, blockDimX: BlockSize, blockDimY: 1);
 

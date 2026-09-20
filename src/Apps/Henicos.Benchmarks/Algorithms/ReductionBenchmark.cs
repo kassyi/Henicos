@@ -78,7 +78,7 @@ public class ReductionBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        ReductionKernelsWrapper.Launch_ReductionKernel_Device(
+        ReductionKernelsWrapper.LaunchReductionKernel_Device(
             _dInput!.DevicePointer, _dOutput!.DevicePointer, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 

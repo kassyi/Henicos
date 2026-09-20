@@ -70,7 +70,7 @@ public class TransposeBenchmark
         using var timer = new CudaEventTimer();
         timer.Start();
 
-        TransposeKernelsWrapper.Launch_TransposeKernel_Device(
+        TransposeKernelsWrapper.LaunchTransposeKernel_Device(
             _dInput!.DevicePointer, _dOutput!.DevicePointer, N, N,
             gridDimX: GridDimX, gridDimY: GridDimY, blockDimX: BlockDimX, blockDimY: BlockDimY);
 
