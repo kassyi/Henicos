@@ -71,6 +71,16 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
         : ((IEnumerable<T>)_array).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public override string ToString()
+    {
+        if (_array.IsDefault)
+        {
+            return "[]";
+        }
+
+        return "[" + string.Join(", ", _array) + "]";
+    }
 }
 
 internal static class EquatableArrayExtensions

@@ -19,6 +19,8 @@ internal readonly struct EquatableDiagnostic(Diagnostic diagnostic) : IEquatable
 
     public static bool operator ==(EquatableDiagnostic left, EquatableDiagnostic right) => left.Equals(right);
     public static bool operator !=(EquatableDiagnostic left, EquatableDiagnostic right) => !left.Equals(right);
+
+    public override string ToString() => Diagnostic.ToString();
 }
 
 internal static class EquatableDiagnosticExtensions
