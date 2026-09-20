@@ -5,18 +5,36 @@ public static class MegaCompilationCache
 {
     private static readonly Lazy<CSharpCompilation> s_baseCompilation = new(() =>
     {
+        var baseDir = AppContext.BaseDirectory;
         var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
         var references = trustedAssemblies!
             .Split(Path.PathSeparator)
             .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => (MetadataReference)MetadataReference.CreateFromImage(File.ReadAllBytes(p)))
+            .Select(p => 
+            {
+                // To avoid MSB3026 (file lock by testhost.exe), load assemblies built by us (in the test output directory) in-memory.
+                // System and framework assemblies can be safely loaded from file to massively improve performance.
+                if (p.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (MetadataReference)MetadataReference.CreateFromImage(File.ReadAllBytes(p));
+                }
+                return (MetadataReference)MetadataReference.CreateFromFile(p);
+            })
             .ToList();
 
+        // Ensure Core assembly is referenced (it might not be in trustedAssemblies if the test doesn't explicitly reference it)
         var coreDllPath = typeof(Kassyi.GSharp.Core.Gpu).Assembly.Location;
+        if (!references.Any(r => string.Equals(r.Display, coreDllPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(coreDllPath)));
+        }
+
+        // Implicitly reference Math library if present in the same directory, to support standard library tests
         var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath)!, "Kassyi.GSharp.Stdlib.Math.dll");
-        
-        references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(coreDllPath)));
-        references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));
+        if (File.Exists(mathDllPath) && !references.Any(r => string.Equals(r.Display, mathDllPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));
+        }
 
         var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
