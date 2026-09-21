@@ -93,7 +93,7 @@ public static class RoslynTestUtility
 
     /// <summary>Executes the GpuKernelGenerator on the given source text and produces the output compilation and diagnostics.</summary>
     public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
-        RunGenerator(string source, string targetDialect = "Cuda")
+        RunGenerator(string source, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
     {
         var compilation = CreateCompilation(source);
 
@@ -103,7 +103,7 @@ public static class RoslynTestUtility
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: new CSharpParseOptions(LanguageVersion.CSharp11),
-            optionsProvider: new TestAnalyzerConfigOptionsProvider(targetDialect));
+            optionsProvider: new TestAnalyzerConfigOptionsProvider(targetDialect, additionalOptions));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
         return (driver, outputCompilation, diagnostics);
@@ -271,9 +271,9 @@ internal class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 {
     public override AnalyzerConfigOptions GlobalOptions { get; }
 
-    public TestAnalyzerConfigOptionsProvider(string targetDialect = "Cuda")
+    public TestAnalyzerConfigOptionsProvider(string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
     {
-        GlobalOptions = new TestAnalyzerConfigOptions(targetDialect);
+        GlobalOptions = new TestAnalyzerConfigOptions(targetDialect, additionalOptions);
     }
 
     public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
@@ -283,10 +283,12 @@ internal class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 internal class TestAnalyzerConfigOptions : AnalyzerConfigOptions
 {
     private readonly string _targetDialect;
+    private readonly Dictionary<string, string>? _additionalOptions;
 
-    public TestAnalyzerConfigOptions(string targetDialect)
+    public TestAnalyzerConfigOptions(string targetDialect, Dictionary<string, string>? additionalOptions)
     {
         _targetDialect = targetDialect;
+        _additionalOptions = additionalOptions;
     }
 
 #pragma warning disable CS8765
@@ -298,6 +300,12 @@ internal class TestAnalyzerConfigOptions : AnalyzerConfigOptions
             value = _targetDialect;
             return true;
         }
+
+        if (_additionalOptions != null && _additionalOptions.TryGetValue(key, out value))
+        {
+            return true;
+        }
+
         value = null;
         return false;
     }
