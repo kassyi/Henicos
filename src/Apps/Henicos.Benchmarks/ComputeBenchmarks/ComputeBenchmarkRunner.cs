@@ -1,3 +1,4 @@
+using System.Text.Json;
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class ComputeBenchmarkRunner
@@ -37,7 +38,7 @@ public static class ComputeBenchmarkRunner
         bool Success,
         string ErrorMessage = "");
 
-    public static bool RunSuite(string suiteName, int iterations = 10)
+    public static bool RunSuite(string suiteName, int iterations = 10, bool jsonOutput = false)
     {
         var benchmarks = new List<IComputeBenchmark>();
 
@@ -177,6 +178,15 @@ public static class ComputeBenchmarkRunner
                 gsharpStats,
                 nativeSuccess && gsharpSuccess && string.IsNullOrEmpty(errorMessage),
                 errorMessage));
+        }
+
+        if (jsonOutput)
+        {
+            var json = JsonSerializer.Serialize(results,
+                    new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+                );
+            Console.WriteLine(json);
+            return allSucceeded;
         }
 
         // Summary Table
