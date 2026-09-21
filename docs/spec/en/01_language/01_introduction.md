@@ -2,15 +2,18 @@
 
 ---
 
-## G# Core Design Philosophy & Manifest
+## Architectural Motivation & Design Tenets
 
-> **"Bringing C#'s existing mental model directly into the GPU realm delivers the ultimate developer experience (DX)."**
+G# bridges the Microsoft Roslyn compiler platform with the NVIDIA CUDA compilation toolchain (NVCC) to enable high-throughput GPU computing directly from standard C# source code.
 
-G# strictly adheres to three uncompromising technical tenets:
+Instead of introducing a proprietary external language or standalone runtime, G# leverages Roslyn's semantic analysis to validate and translate C# Abstract Syntax Trees (AST) into optimized CUDA C++ device code. Furthermore, because G# kernel logic adheres strictly to standard C# syntax and semantics, kernels maintain dual-target execution capability: executing directly on the CPU/.NET runtime without a physical GPU for local debugging and CI/CD verification, while transpiling to native CUDA C++ for production GPU workloads.
 
-1. **YES AST (Roslyn Syntax Nodes & Semantic Models)**: All code analysis, transpilation, and safety enforcement are performed strictly via Roslyn Abstract Syntax Trees and Semantic Models at compile-time.
-2. **YES Zero-Allocation**: GPU device-side execution fundamentally enforces a zero-allocation guarantee—prohibiting dynamic reference-type heap allocations while fully leveraging value types (`struct`) and stack/register memory.
-3. **YES Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection, NO LINQ, and NO Dynamic Dispatch**.
+### Core Technical Tenets
+
+1. **AST-Driven Transpilation (Roslyn)**: All syntactic analysis, semantic validation, and code emission are performed at compile-time via Roslyn Syntax Nodes and Semantic Models.
+2. **Zero-Allocation**: Device execution fundamentally prohibits managed heap allocations (`class`, `string`, dynamic allocations). All kernel operations strictly utilize value types (`struct`), stack/register memory, and device buffers.
+3. **Static Determinism**: Kernel logic and type resolution must be fully determinable at compile time. Dynamic dispatch, reflection, and runtime LINQ are strictly prohibited.
+4. **Ubiquitous Execution (Host-Device Equivalence)**: G# kernels maintain dual-target equivalence: fully transpilable into native CUDA C++ for high-throughput GPU execution, while preserving complete CPU execution compatibility for low-cost, GPU-less testing and deterministic debugging.
 
 ---
 
@@ -40,7 +43,7 @@ Because G# uses C# syntax to write GPU kernels, this specification uses the foll
 The G# framework strictly operates on a **Pure AOT (Ahead-Of-Time) Static Execution Model**. All C# kernel logic is completely resolved and compiled during the .NET build phase.
 
 - The **AOT Generator (`Kassyi.Generators.GSharp`)** translates C# syntax into CUDA C++ and orchestrates the native compilation into machine code (`.fatbin`) during the standard MSBuild process.
-- The **Runtime Loader (`Kassyi.GSharp.Runtime`)** serves as an ultra-lightweight loader that validates, decrypts, and loads the precompiled AOT binaries directly into the NVIDIA driver, instantly dispatching the kernel with zero compilation overhead.
+- The **Runtime Loader (`Kassyi.GSharp.Runtime`)** serves as an ultra-lightweight loader that validates binary integrity (via [trailing hash verification](../02_architecture/02_runtime_loader.md#22-aot-module-loading-and-validation)) and loads the precompiled AOT binaries directly into the NVIDIA driver, instantly dispatching the kernel with zero compilation overhead.
 
 ## 1.3 Transpiler Dialect Architecture (Two-Tier Design)
 

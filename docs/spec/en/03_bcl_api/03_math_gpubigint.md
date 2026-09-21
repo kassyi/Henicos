@@ -24,7 +24,7 @@ public class GpuContext : IDisposable
 
 **Remarks**
 * Must be instantiated before allocating any `GpuBigInteger` instances.
-* Supports a Dual-Engine architecture (`GSharpAot` for pure C# JIT/AOT kernels, `LegacyNative` for C++ DLLs).
+* Supports a Multi-Engine architecture (`GSharpAot` for pure C# GPU kernels, `CpuFallback` for local CPU testing, `LegacyNative` for C++ DLLs).
 
 ### `GpuUIntBigInteger` Class
 
@@ -38,7 +38,9 @@ public class GpuUIntBigInteger : IDisposable
     public GpuUIntBigInteger(GpuContext context, uint[] hostData);
     public uint[] ToHostArray();
     public static GpuUIntBigInteger FromBigInteger(GpuContext context, BigInteger value, int minWords = 0);
+    public static GpuUIntBigInteger FromHexString(GpuContext context, string hexString, int minWords = 0);
     public BigInteger ToBigInteger();
+    public string ToHexString();
     public void Dispose();
 }
 ```
@@ -318,17 +320,40 @@ When `.Evaluate()` is called, the runtime analyzes the expression tree and execu
 1. **Buffer Pooling**: Intermediate results are routed to a pre-allocated pool of temporary buffers managed by `GpuContext`. This reduces `cudaMalloc` allocations to **zero** during tight computational loops.
 2. **Kernel Fusion (Future)**: The execution engine may dynamically generate and JIT-compile fused CUDA kernels (combining operations like Add and And into a single memory pass) to minimize global memory bandwidth.
 
+### Dynamic Sign Resolution (`SignResolutionKind`)
+
+The standard library (`Kassyi.GSharp.Stdlib.Math`) has been enhanced to support runtime sign evaluation for the `GpuBigIntExpr` type without requiring kernel recompilation.
+
+By introducing the `SignResolutionKind` (`StaticPositive`, `StaticNegative`, `Dynamic`) and encapsulating inner expression representation via `IGpuBigIntExpression`, operations on large integers evaluate their mathematical signs dynamically on the GPU at runtime. This expands the mathematical robustness of the G# BigInt type system.
+
+**Example**
+```csharp
+using Kassyi.GSharp.Stdlib.Math;
+
+[GpuKernel]
+public static void EvaluateBigInt(uint* data, int dynamicValue)
+{
+    // 'a' has a dynamically resolved sign at runtime based on 'dynamicValue'
+    GpuBigIntExpr a = GpuBigInt.FromInt32(dynamicValue);
+    GpuBigIntExpr b = GpuBigInt.FromInt32(42); 
+    
+    // The multiplication seamlessly handles positive/negative permutations dynamically
+    GpuBigIntExpr result = a * b;
+}
+```
+
 ---
 
 ## Part D: Internal Architecture and Debugging
 
-### Dual-Engine Architecture
+### Multi-Engine Architecture
 
-The module utilizes a highly decoupled architecture with a **Dual-Engine Execution Model** (`GpuExecutionEngine`). The physical file structure is divided into specific domains (`Kernels/`, `Providers/`, `Contexts/`, `Interop/`) to maintain modularity:
+The module utilizes a highly decoupled architecture with a **Multi-Engine Execution Model** (`GpuExecutionEngine`). The physical file structure is divided into specific domains (`Kernels/`, `Providers/`, `Contexts/`, `Interop/`) to maintain modularity:
 
 1.  **C# GpuBigInteger (Host Wrapper)**: A `IDisposable` C# class that manages the `IntPtr` to the GPU device memory. It provides the high-level API for the host application to allocate, copy, and invoke operations.
 2.  **Native C++ Backend (`GpuExecutionEngine.LegacyNative`)**: Handled via `Providers/NativeProvider.cs` and `Interop/NativeMethods.cs`, this exposes the legacy hand-written CUDA C++ library for memory management (`cudaMalloc`) and executing NTT/FFT kernels.
 3.  **G# Kernels (`GpuExecutionEngine.GSharpAot`)**: Handled via `Providers/GSharpAotProvider.cs`, this is a pure C# JIT backend where the mathematical operations are natively written in C# using `[GpuKernel]` inside the `Kernels/` directory (e.g., `GpuBigIntFermatKernels.cu.cs`, `GpuBigIntMulKernels.cu.cs`). **By convention, all C# files containing G# GPU kernels must use the `.cu.cs` file extension.** In this mode, the managed code directly performs CUDA allocations (`cuMemAlloc_v2`) and dispatches the kernels dynamically, bypassing the C++ DLL completely.
+4.  **CPU Fallback Backend (`GpuExecutionEngine.CpuFallback`)**: A purely native CPU-side fallback for executing the identical C# kernel implementations locally for debugging and validation.
 
 _Complex kernel signatures are neatly encapsulated by utilizing `ref struct` wrappers (e.g., `ref FermatContext` inside `Contexts/`) powered by the Deep Struct Marshaling engine, eliminating the need to pass dozens of arrays manually._
 
@@ -357,7 +382,7 @@ Debugging complex mathematical algorithms directly within GpuBigInt kernels (e.g
 In addition to core arithmetic, the standard library includes specialized high-performance math structures designed for GPU execution:
 
 * **PQT Structures (Hypergeometric Series)**: Data structures (`PQT`) for evaluating hypergeometric series natively on the GPU. These are essential for algorithms like Chudnovsky's Pi calculation.
-* **GPU Radix Converter**: Fast, parallelized radix conversion algorithms (e.g., base-2 to base-10) for extremely large numbers, removing the CPU bottleneck when formatting millions of digits for output.
+* **GPU Radix Converter**: Fast, parallelized radix conversion algorithms (e.g., base-2 to base-10) for extremely large numbers, removing the CPU bottleneck when formatting millions of digits for output. This includes `GpuRadixConverter.ToString` for memory-efficient I/O formatting and `HeadTailTrackerWriter` for streaming extremely large outputs dynamically.
 
 ### Zero-Allocation BigInt Building (`GpuUIntBuilder` and `LimbBuffer`)
 

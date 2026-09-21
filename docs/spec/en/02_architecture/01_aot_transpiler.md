@@ -27,30 +27,45 @@ flowchart TD
 
 The core translation logic resides in the `RoslynToCudaVisitor` class, inheriting from `CSharpSyntaxWalker`. It traverses the C# syntax nodes recursively and emits equivalent C++ tokens.
 
-
 ### 1.2.1 Struct Extraction and Generation
+
 During AST traversal, if the transpiler encounters a user-defined custom `struct` (whether passed by value, by pointer, or used as an array element), it tracks it in a `_usedStructs` set. Before generating the final C++ method, the transpiler dynamically emits the C++ equivalent of all collected `struct` definitions at the top of the source string to ensure type definitions are valid in CUDA.
 
 > [!NOTE]
 > To prevent Multiple Definition errors (e.g., `class has already been defined`) when multiple kernels utilizing the same struct are JIT-compiled together in a shared dynamic source string, the generator automatically wraps every emitted struct definition with a preprocessor header guard (e.g., `#ifndef __GSHARP_STRUCT_Name__`).
 
 ### 1.2.2 Parameter Filtering
+
 The transpiler analyzes parameter attributes during signature generation.
-* Parameters marked with `[Constant]` are intentionally omitted from the generated `__global__ void` C++ signature.
-* Instead, they are deferred to the `GpuKernelGenerator` for preprocessor `#define` injection.
+
+- Parameters marked with `[Constant]` are intentionally omitted from the generated `__global__ void` C++ signature.
+- Instead, they are deferred to the `GpuKernelGenerator` for preprocessor `#define` injection.
 
 ### 1.2.3 Transpiler Dialect Architecture (Two-Tier Design)
+
 A defining and powerful feature of the G# Transpiler is its "Two-Tier Architecture." The core AST traversal and logical analysis (e.g., semantic resolution, hoisting, control flow) are entirely decoupled from the target language's syntax generation.
 
 This separation of concerns is achieved through the `ITranspilerDialect` interface. The `RoslynToCudaVisitor` does not hardcode C++ strings directly; instead, it delegates syntax formatting to the active Dialect.
 
-* **Current Implementation**: The transpiler utilizes two distinct dialects during the build process:
+- **Yaml Dialect Generation**: Dialects are not manually implemented in C#. Instead, the transpiler uses a data-driven YAML generation system (`YamlDialectGenerator`). Dialects are defined via `.yml` files (specifying Types, Intrinsics, StructPrefix, etc.) which are compiled into `ITranspilerDialect` C# classes (e.g., `GSharpCudaDialect.g.cs`) at build-time.
+
+- **Current Implementation**: The transpiler utilizes two distinct dialects during the build process:
     1. **`CpuDialect` (Default Fallback)**: Transpiles C# into standard C++17. This dialect ensures that every GPU kernel has a functional, native CPU-side fallback compiled as a shared library. It implements parallel grid-stride loops using OpenMP (`#pragma omp parallel for`) and standard `std::thread` constructs. It does not support CUDA-specific intrinsic synchronization (e.g., `__syncthreads()`) or warp-level shuffle operations, gracefully falling back to standard barriers where possible.
     2. **`CudaCppDialect` (Hardware Execution)**: Layers G# over NVIDIA's CUDA C++. It handles the translation of C# syntax into valid CUDA C++ equivalents, maps mathematical built-ins to fast PTX hardware intrinsics (e.g., `__sinf`), and manages execution grid dimensions. It generates the encrypted CUDA Fatbin payload.
 
 Both dialects share core responsibilities like converting C# `ref` to C++ pointers, pointer-arithmetic array accesses, and resolving custom struct dependencies.
 
-* **Future-Proof Extensibility**: Because of this decoupling, G# can easily "speak" different languages. By simply defining a new dialect (e.g., `OpenCLDialect`, `MetalDialect`, or `HlslDialect`) and swapping the `ITranspilerDialect` implementation, the exact same C# kernel can be natively compiled for AMD, Apple Silicon, or DirectX backends without rewriting the core AST transpilation engine.
+- **Future-Proof Extensibility**: Because of this decoupling, G# can easily "speak" different languages. By simply defining a new dialect (e.g., `OpenCLDialect`, `MetalDialect`, or `HlslDialect`) and swapping the `ITranspilerDialect` implementation, the exact same C# kernel can be natively compiled for AMD, Apple Silicon, or DirectX backends without rewriting the core AST transpilation engine.
+
+### 1.2.4 Structural Macro Expansion (`MacroTranspiler`)
+
+To provide C# developers with idiomatic, high-level control structures without incurring runtime delegate invocation overhead, the G# compiler incorporates a dedicated `MacroTranspiler` subsystem based on extensible transpiler rules.
+
+Instead of translating AST nodes directly into literal C++ function calls, the `MacroTranspiler` intercepts specific method invocations (such as `Gpu.GridStrideLoop` and `Gpu.ForUnroll`) and performs deep structural rewriting of the AST at compile-time (e.g., lambda inlining and native CUDA `for` loop emission).
+
+> [!NOTE]
+> For a detailed explanation of the supported macros, their C# syntax, and the resulting CUDA C++ equivalent code, please refer to the API reference:
+> **[2.6 Transpiler Macros](../03_bcl_api/02_gpu_class.md#26-transpiler-macros)**.
 
 ## 1.3 Output Buffer Contract & Auto-Allocation
 
@@ -58,12 +73,14 @@ Traditionally, standard C# methods can return arbitrary values, while GPU kernel
 
 **1. Explicit Output Buffer Contract (`void` kernels)**
 This is the recommended approach for strict Zero-Allocation environments:
+
 1. Allocate an output array (e.g., `float[] results`) on the host.
 2. Pass it directly into the generated `Launch_` wrapper.
 3. The transpiler seamlessly maps this array to a device pointer and copies the mutated data back to the host after execution.
 
 **2. Auto-Allocated Returns (Value/Array returning kernels)**
 For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types or single-dimensional arrays. When a kernel specifies a non-void return type:
+
 1. The `Launch_` method dynamically allocates an output array of size `gridDim * blockDim` on the host.
 2. Under the hood, the transpiler injects an implicit `__gsharp_auto_result` device pointer into the kernel signature.
 3. Each thread evaluates the `return` statement and assigns the result directly into `__gsharp_auto_result[tid]`.
@@ -74,32 +91,39 @@ For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types
 Once the CUDA C++ string is constructed, `GpuKernelGenerator` creates a C# partial class containing a launcher method (e.g., `Launch[MethodName]`).
 
 ### 1.4.1 Launcher Signature
+
 The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively:
+
 ```csharp
 // Context: Host C# (CPU)
 public static void Launch_[KernelName](
     /* Original non-Constant parameters */,
-    uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, 
-    uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, 
+    uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
+    uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
     uint sharedMemBytes = 0)
 ```
 
-### 1.4.2 Dynamic String Assembly
-The generated launcher method constructs the final C++ source string dynamically at runtime:
-1. It injects `#define [Name] [Value]` directives at the top of the string for all parameters marked with `[Constant]`.
-2. It appends the static C++ logic generated by `RoslynToCudaVisitor`.
+### 1.4.2 Ahead-Of-Time (AOT) Fatbin Loading
+
+The generated launcher method does **not** dynamically construct or compile C++ strings at runtime. Instead, it utilizes an Ahead-Of-Time (AOT) loading strategy:
+
+1. The launcher invokes `GpuKernelLoader.LoadAotKernel` to load a pre-compiled `.fatbin` or `.dll` payload directly from disk.
+2. The `macros` argument in the launcher signature (intended for dynamic `#define` injections) is unused in the current AOT implementation.
 
 ### 1.4.3 Zero-Allocation Pointer Marshaling
+
 The launcher generates `unsafe` memory marshaling code to construct the kernel parameters array. To achieve zero-allocation kernel dispatch, the launcher allocates the parameter array on the stack using `stackalloc void*[N]`, completely bypassing the garbage collector (GC) and eliminating heap allocation overhead.
 
-* **Array Marshaling**: If a parameter is an array, the launcher automatically computes its byte size, allocates GPU memory (`cuMemAlloc_v2`), pins the host array (`GCHandle.Alloc`), and copies the data Host-to-Device (`cuMemcpyHtoD_v2`).
+- **Array Marshaling**: If a parameter is an array, the launcher automatically computes its byte size, allocates GPU memory (`cuMemAlloc_v2`), pins the host array (`GCHandle.Alloc`), and copies the data Host-to-Device (`cuMemcpyHtoD_v2`).
 
 ### 1.4.4 Deep Struct Marshaling
+
 To support advanced contexts (e.g., `NttContext` in GpuBigInt) containing managed arrays (`T[]`), the transpiler implements a recursive Deep Struct Marshaling protocol.
 
 When a struct parameter is detected, the `GpuKernelGenerator` recursively traverses its AST graph to locate any internal `IArrayTypeSymbol` fields. If found, the generator emits:
+
 1. **Shadow Structures**: A native proxy struct (e.g., `__Native_NttContext`) where all `T[]` fields are replaced with `IntPtr`.
-2. **Deep Allocation**: During invocation, `Marshal_NttContext` performs a deep traversal. For every non-null host array field, it computes the total byte length, issues `cuMemAlloc_v2`, pins the host array with `GCHandle`, executes a `cuMemcpyHtoD_v2`, and injects the resulting GPU device pointer into the corresponding `IntPtr` field of the shadow structure.
+2. **Deep Allocation**: During invocation, `Marshal_NttContext` performs a deep traversal. For every non-null host array field (including arrays of custom structs), it computes the total byte length, issues `cuMemAlloc_v2`, pins the host array with `GCHandle`, executes a `cuMemcpyHtoD_v2`, and injects the resulting GPU device pointer into the corresponding `IntPtr` field of the shadow structure. If it is an array of custom structs, it dynamically allocates a temporary shadow array (`__Native_T[]`) on the host, recursively marshals each element, and then pins and copies the shadow array to the device.
 3. **Data Recovery**: After kernel execution, `Unmarshal_NttContext` traverses the shadow struct and issues `cuMemcpyDtoH_v2` calls to pull modified array data from the GPU back into the host's managed arrays before cleaning up the handles.
 
 > [!IMPORTANT]
@@ -122,34 +146,27 @@ var ctx = new AdvancedContext { Data = new float[100] };
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
 KernelWrapper.Launch_Process(ctx);
 
-// ❌ Prohibited: The _Device overload expects pre-allocated device pointers. 
+// ❌ Prohibited: The _Device overload expects pre-allocated device pointers.
 // A struct containing a managed array (T[]) cannot be mapped safely here.
 // Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
 KernelWrapper.Launch_Process_Device(ctx);
 ```
 
-* **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
-* **Execution & Cleanup**: The launcher invokes the runtime via `CpuKernelLoader.LoadAotKernel` (or `GpuKernelLoader.LoadAotKernel` for GPU execution) and subsequently dispatches the execution logic (e.g., `cuLaunchKernel`). Post-execution, it automatically copies the array data back Device-to-Host (`cuMemcpyDtoH_v2`) and frees all allocated device memory.
-* **Exceptions**: `[Constant]` parameters are strictly excluded from this marshaling array, as they exist exclusively in the preprocessor domain.
+- **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
+- **Execution & Cleanup**: The launcher invokes the runtime via `CpuKernelLoader.LoadAotKernel` (or `GpuKernelLoader.LoadAotKernel` for GPU execution) and subsequently dispatches the execution logic (e.g., `cuLaunchKernel`). Post-execution, it automatically copies the array data back Device-to-Host (`cuMemcpyDtoH_v2`) and frees all allocated device memory.
+- **Exceptions**: `[Constant]` parameters are strictly excluded from this marshaling array, as they exist exclusively in the preprocessor domain.
 
 ### 1.4.5 CPU Launcher Generation (`WriteCpuLauncher`)
-When the transpiler is configured to use the `CpuDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_KernelName`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native `.dll` or `.so` to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
 
-## 1.5 Security and Virtualization-Based Obfuscation (VBO)
+When the transpiler is configured to use the `CpuDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_KernelName`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native binary to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
 
-To protect proprietary AOT kernel binaries from reverse engineering, the generator supports Virtualization-Based Obfuscation (VBO) and static payload encryption.
+> [!NOTE]
+> The CPU compilation task (`CompileCppToNativeTask`) is currently hardcoded for Windows. It strictly requires MSVC (`cl.exe`, `vswhere.exe`) and only outputs Windows `.dll` binaries for x64 and arm64. There is currently no implementation for Linux/macOS `.so` files via GCC/Clang. Furthermore, the build process (`ArtifactHelper.cs`) silently appends a 32-byte SHA256 checksum to the end of every compiled artifact (`.fatbin` and `.dll`) for integrity validation.
 
-### 1.5.1 AOT Kernel Encryption
-During the AOT build phase, the generator conditionally generates a secure 256-bit AES-256-CBC key for each kernel. The transpiled CUDA source string (or the compiled PTX/Fatbin) is encrypted at rest using this key.
-The wrapper emitter injects the encrypted payload directly into the host C# assembly alongside a magic header (`GSHPENC1`), immediately followed by the 16-byte randomly generated Initialization Vector (IV), and then the ciphertext.
+## 1.5 MSBuild Configuration Properties
 
-### 1.5.2 VBO Strategies (`IVmStrategy`)
-Instead of embedding the raw AES key inside the host binary where it can be easily extracted, the generator employs a Strategy Pattern (`IVmStrategy`) to emit a deterministic Virtual Machine that derives the key at runtime.
-Supported strategies (in `Kassyi.GSharp.Compiler.VmObfuscation`) include:
-- `ArithmeticVmStrategy`: Uses an arithmetic accumulator VM.
-- `AutomatonVmStrategy`: A state-machine permutation automaton.
-- `NandStackVmStrategy`: A minimal Turing-complete NAND stack VM.
-- `RegisterVmStrategy`: A multi-register load/store/xor VM.
+The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOptions` to control the compilation pipeline. These properties must be prefixed with `build_property.` when accessed:
 
-The C# wrapper executes this VM to compute the correct decryption key dynamically before passing the decrypted payload to the NVIDIA driver via the Runtime Loader.
-
+- `GSharpTargetDialect`: Specifies the target transpilation dialect (e.g., `Cuda` or `Cpu`).
+- `GSharpEmitSource`: If `true`, the compiler emits the intermediate C++ source files to disk for debugging.
+- `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.

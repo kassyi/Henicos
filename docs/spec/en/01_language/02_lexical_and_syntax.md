@@ -15,7 +15,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). |
 | `switch` expression | Yes | Lambda (IIFE) | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
-| `return` | Yes | `return` | Kernels (`[GpuKernel]`) must return `void` to enforce zero-allocation output buffer contracts (enforced by **GSH0004**). Helpers (`[GpuDeviceFunction]`) can return value types. |
+| `return` | Yes | `return` | Kernels (`[GpuKernel]`) can now directly return primitive types and value structs. When invoked from the host CPU, the runtime automatically handles device output buffer allocation and host-bound memory copying. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
 | Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
 | `goto` | No | - | Strictly prohibited to ensure static analyzability and structured control flow. |
@@ -115,4 +115,21 @@ public static void LocalMathKernel(int[] data, int factor)
 > [!IMPORTANT]
 > **Closure Constraints**
 > Local functions and lambdas can freely capture local `struct` variables, primitive types, and kernel parameters. However, capturing managed reference types (classes) or performing actions that force a managed heap closure allocation is strictly prohibited and will trigger an AOT transpilation error.
+
+### 2.5.3 `null` to `nullptr` Mapping
+
+In C#, the `null` keyword represents a null reference. During AOT transpilation to CUDA C++, G# explicitly remaps all `null` literal expressions to the `nullptr` keyword. This guarantees strict C++ type safety and prevents implicit integer conversions (e.g., `0`) that could cause compilation failures in modern CUDA drivers.
+
+**Example**
+```csharp
+[GpuKernel]
+public static void ProcessPointer(int* ptr)
+{
+    // The C# 'null' keyword is transparently lowered to 'nullptr' in CUDA C++
+    if (ptr == null)
+    {
+        return;
+    }
+}
+```
 
