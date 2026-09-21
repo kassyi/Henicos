@@ -21,6 +21,7 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Ternary Operator (`? :`)** | Standard conditional ternary operators are supported. |
 | **Braceless `if` Statements** | **Supported.** Transpiler automatically injects `{ }` block scoping into the C++ source for single-statement control flow branches. |
 | **Delegates & Lambda Expressions** | **Partially Supported.** Non-capturing lambdas and local functions, or those capturing only value types, are extracted and expanded as C++ `__device__` functions (or lambdas). Complex closures requiring managed heap allocations (e.g., capturing reference types) are not supported. |
+| **`switch` Expressions** | **Partially Supported.** Only `ConstantPattern` (literals) and `DiscardPattern` (`_`) are supported. Using `when` clauses or complex pattern matching (like property patterns) will result in a compiler error (`UnsupportedSyntax`). |
 | **`ref switch` Expressions** | **Unsupported by C#.** C# does not currently support `ref switch` expressions (`ref var r = x switch { ... }`). Use `if/else` or `ref ? :` for conditional `ref` assignment. |
 
 ## 5.2 Dialect Syntax Support
@@ -52,7 +53,7 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | **GSH0001** | Error | Object creation not supported | Triggered when `new` or `new()` is used on anything other than `SharedMemory<T>` or unmanaged `struct` types. |
 | **GSH0002** | Error | String usage not supported | Triggered when the `string` keyword is used. |
 | **GSH0003** | Error | Unsupported syntax | Triggered when unknown/unsupported C# syntax nodes are encountered. |
-| **GSH0004** | Error | GpuKernel unsupported return type | Triggered when a `[GpuKernel]` method declares an unsupported return type (like `string` or multidimensional arrays). `void`, unmanaged value types, and single-dimensional arrays are supported. |
+| **GSH0004** | Error | GpuKernel unsupported return type | Triggered when a `[GpuKernel]` method declares an unsupported return type (like `string` or arrays). Only `void` and unmanaged value types are supported. |
 | **GSH0005** | Error | GpuBigIntExpr Direct Assignment | Triggered when a `GpuBigIntExpr` (from lazy evaluation operators) is assigned to a local variable (`var x = a + b;`) without being resolved into `.Value`. Prevents silent "computation lost" bugs. |
 | **GSH0006** | Error | InlinePtx non-constant argument | Triggered when `Gpu.InlinePtx` receives a dynamic string instead of a compile-time string literal. |
 | **GSH0007** | Error | `foreach` loop not supported | Triggered when a `foreach` loop is used on a type that allocates an `IEnumerator`. Spans and Arrays are safely excluded. |
@@ -61,6 +62,9 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | **GSH0010** | Error | GSharp Prelude missing | Triggered when the AOT transpiler fails to locate the necessary C++ runtime prelude headers. |
 | **GSH0011** | Error | Macro lambda requires a parameter | Triggered when a `[GpuOperatorMacro]` lambda mapping does not declare expected parameters. |
 | **GSH0012** | Error | Macro arguments must be compile-time constants | Triggered when a macro argument cannot be folded into a constant value during transpilation. |
-| **GSH1001** | Warning | Excessive static shared memory | Triggered when a static `SharedMemory<T>` allocation exceeds 32,768 bytes, which can reduce warp occupancy. |
-| **GSH1002** | Warning | Large struct passed by value | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by array pointer or `ref` to conserve constant memory. |
+| **GSH0013** | Warning | Excessive static shared memory | Triggered when a static `SharedMemory<T>` allocation exceeds 32,768 bytes, which can reduce warp occupancy. |
+| **GSH0014** | Warning | Large struct passed by value | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by array pointer or `ref` to conserve constant memory. |
+| **GSH0015** | Warning | Auto-allocate return in loop | Triggered when a kernel launch method that triggers an **auto-allocated array return** is invoked from within a host CPU loop (`for`, `while`, `foreach`). This prevents unbounded implicit device buffer allocations per iteration. |
+| **GSH0016** | Error | CudaCpp Dialect Not Active | Triggered when a CUDA-specific hardware intrinsic is invoked while the `CpuFallback` dialect is active. |
+| **RS0030** | Error | GPU intrinsic invoked from host code | Triggered via `BannedApiAnalyzers` when a GPU-specific intrinsic (e.g., `ThreadIndex.X`, `Gpu.SyncThreads()`) is illegally invoked from standard CPU host code. |
 

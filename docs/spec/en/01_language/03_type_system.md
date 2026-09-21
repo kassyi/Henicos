@@ -58,6 +58,37 @@ G# generates structurally compatible C++ definitions for C# custom structs. To e
 * **Explicit Packing**: If a `Pack = X` property is defined on `[StructLayout]`, the transpiler translates this accurately into `#pragma pack(push, X)` and `#pragma pack(pop)` blocks surrounding the C++ struct.
 * **Alignment Guarantees**: The transpiler emits appropriate padding and layout attributes (`__Native_Struct` mapping to `#pragma pack` or `alignas`), guaranteeing that host memory arrays can be safely memcopied to device memory without alignment corruption.
 
+### 2.2.5 CUDA Vector Value Types & Lowering Rules
+
+G# introduces sequentially laid-out vector value types (e.g., `Float2/3/4`, `Int2/3/4`, `UInt2/3/4`, `Double2/3/4`, `Long2/3/4`, `ULong2/3/4`) matching CUDA memory layouts to saturate memory bandwidth effectively (e.g., executing 128-bit vector loads). 
+
+**Transpiler Lowering Rules**
+To maintain idiomatic C# coding standards, developers interact with these structs using uppercase properties (`.X`, `.Y`, `.Z`, `.W`). The Roslyn transpilation engine unconditionally lowers these member accesses to their CUDA C++ lowercase equivalents (`.x`, `.y`) during code generation. 
+
+**Nested Vector Alignment (CUDA ABI)**
+Nested vector types strictly respect CUDA ABI natural alignment requirements. For example, passing a C# struct with a nested `Float4` vector requires strict 16-byte alignment. The `CudaLayoutRules` enforces specific sizing and alignment based on the number of components:
+
+- **2-component and 4-component vectors** (e.g., `Float2`, `Float4`) align to their total size.
+- **3-component vectors**: `Float3`, `Int3`, and `UInt3` are 12 bytes in size with a 4-byte alignment constraint. `Double3`, `Long3`, and `ULong3` are 24 bytes in size with an 8-byte alignment constraint.
+
+G# automatically resolves memory layout discrepancies between the .NET CLR and NVIDIA CUDA ABI by generating `LayoutKind.Explicit` native shadow structs. These explicitly specify field offsets and pad unaligned preceding fields, preventing field offset divergence and device-side memory corruption.
+
+```csharp
+[GpuKernel]
+public static void VectorLoadStore(Float4* input, Float4* output)
+{
+    // Triggers a 128-bit coalesced memory load
+    Float4 vec = input[ThreadIndex.X];
+
+    // C# uppercase properties are lowered to "vec.x", "vec.y" in emitted C++
+    vec.X += 1.0f;
+    vec.Y *= 2.0f;
+
+    // Triggers a 128-bit coalesced memory store
+    output[ThreadIndex.X] = vec;
+}
+```
+
 ## 2.3 Memory Model and Pointers
 
 G# enforces strict rules on memory access to ensure valid device pointer dereferencing and thread safety.
@@ -121,3 +152,4 @@ G# fully supports the use of `const` fields and local variables. The AST transpi
 
 1. **`const` Fields:** When a kernel or device method references a class or struct `const` field (e.g., `public const uint MyConst = 42;`), the transpiler directly evaluates the Roslyn `ConstantValue` and substitutes the literal `42` into the generated C++ source.
 2. **Local `const`:** Local variable declarations using `const` (e.g., `const int offset = 5;`) are transpiled natively as `const int offset = 5;` in C++, permitting the NVCC compiler to apply standard constant folding and dead-code elimination.
+3. **`[GpuConst]` Attribute:** Struct fields annotated with the `[GpuConst]` attribute instruct the transpiler to emit a `const` qualifier on the field in the resulting C++ struct definition. This provides a strong immutability guarantee at the C++ compiler level for specific struct properties.

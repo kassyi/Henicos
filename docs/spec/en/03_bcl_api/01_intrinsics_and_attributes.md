@@ -18,7 +18,6 @@ The `[GpuKernel]` attribute acts as the entry point marker for a G# transpilatio
 public class GpuKernelAttribute : Attribute
 {
     public bool Cooperative { get; set; }
-    public string EncryptionKeyProvider { get; set; }
 }
 ```
 
@@ -26,7 +25,6 @@ public class GpuKernelAttribute : Attribute
 * **Return Type**: Can be `void`, unmanaged value types, or single-dimensional arrays. If a non-void type is returned, the generated launcher automatically allocates and returns a host array containing the returned values from each thread.
 * **Accessibility**: Must be `public static` or `internal static`.
 * **Calling Constraints (CRITICAL)**: A `[GpuKernel]` method **CANNOT** be called by another `[GpuKernel]` method (as CUDA does not allow `__global__` to call `__global__` without Dynamic Parallelism). Use `[GpuDeviceFunction]` instead.
-* **EncryptionKeyProvider**: Allows specifying a custom static method for AOT kernel decryption (overriding VBO strategy).
 * **Cooperative**: If set to `true`, the kernel is compiled and launched as a Cooperative Kernel (`cuLaunchCooperativeKernel`), allowing grid-wide synchronization via `Gpu.SyncGrid()`.
 
 **Example**
@@ -59,12 +57,13 @@ public class GpuDeviceFunctionAttribute : Attribute
 **Remarks**
 * Can return primitive types.
 * Can only be called by `[GpuKernel]` methods or other `[GpuDeviceFunction]` methods.
-* Translates to `inline __device__` in CUDA. Control inlining behavior using `[MethodImpl(MethodImplOptions.NoInlining)]`.
+* Translates to `__device__` in CUDA.
+* Control inlining behavior using the `[GpuInline]` (translates to `__forceinline__`) or `[GpuNoInline]` (translates to `__noinline__`) custom attributes. (Note: The standard `[MethodImpl]` attribute is ignored by the transpiler).
 
 **Example**
 ```csharp
 [GpuDeviceFunction]
-[MethodImpl(MethodImplOptions.AggressiveInlining)]
+[GpuInline]
 public static float FastInverseSqrt(float number)
 {
     // Implementation ...
@@ -132,10 +131,44 @@ public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int
 
 The `Kassyi.GSharp.Core` package includes advanced attributes used primarily by the standard library to map C# constructs to native CUDA C++ representations during transpilation.
 * **`[CudaIntrinsic]`**: Maps a C# method to a specific CUDA C++ function call.
-* **`[CudaIntrinsicPattern]`**: Maps a C# method to a templated or patterned C++ expression (e.g., `__gsharp_add_cc({0}, {1}, {2})`).
-* **`[BclIntrinsicMap]`**: Marks a struct as a direct map to a BCL type, directing the transpiler to use the mapped implementations.
-* **`[GpuOperatorMacro]`**: Maps a C# method to a lambda expression or macro string for inline transpilation.
+* **`[CudaIntrinsicPattern]`**: A Class/Struct-level attribute used to map all members of a type to a C++ pattern. The `{0}` token represents the lowercase name of the invoked member (e.g., `[CudaIntrinsicPattern("threadIdx.{0}")]` maps `ThreadIndex.X` to `threadIdx.x`).
+* **`[BclIntrinsicMap]`**: An assembly-level attribute used by the transpiler to map specific BCL method signatures (e.g., `System.Numerics.BitOperations.PopCount`) directly to GPU hardware intrinsics (e.g., `__popc`).
+* **`[GpuOperatorMacro]`**: Maps C# operator overloads (like `+` or `*`) to specific GPU device functions via `TargetType` and `TargetMethod`.
 * **`[SkipSnapshotConsistency]`**: Used in testing to bypass snapshot consistency verification for specific kernels.
+
+### `[TakesOwnership]` Attribute
+
+Marks a dependency-injected GPU resource as being owned by the receiving class.
+
+**Syntax**
+```csharp
+[AttributeUsage(AttributeTargets.Parameter)]
+public class TakesOwnershipAttribute : Attribute
+```
+
+**Remarks**
+* **Memory Safety / Zero-Leak Analyzer**: By default, injecting a disposable GPU resource (like `GpuContext` or `GpuBuffer<T>`) into a constructor implies **Borrowing**. The analyzer (e.g., `GSH021`, `GSH022`) enforces that borrowed resources must *not* be disposed by the receiving class to prevent double-free errors.
+* Applying `[TakesOwnership]` explicitly transfers ownership to the receiving class. The analyzer then enforces that the receiving class must implement `IDisposable` and must properly dispose of the resource.
+
+**Example**
+```csharp
+public class ComputePipeline : IDisposable
+{
+    private readonly GpuContext _context;
+
+    // Explicitly takes ownership of the injected context
+    public ComputePipeline([TakesOwnership] GpuContext context)
+    {
+        _context = context;
+    }
+
+    public void Dispose()
+    {
+        // Enforced by the Zero-Leak Analyzer
+        _context.Dispose();
+    }
+}
+```
 
 ---
 
@@ -231,18 +264,17 @@ Abstracts CUDA's `__shared__` memory space for ultra-fast, block-local data shar
 `public ref struct SharedMemory<T> where T : unmanaged`
 
 **Remarks**
-* **Static Allocation**: If instantiated with a compile-time constant size (or `[Constant]`), it transpiles to a static `__shared__ T smem[Size]`.
+* **Static Allocation**: If instantiated with a compile-time constant size, it transpiles to a static `__shared__ T smem[Size]`.
 * **Dynamic Allocation**: If instantiated with a dynamic variable, it utilizes the `extern __shared__ char __gsharp_dynamic_smem[]` buffer with dynamic pointer alignment. Host launcher must supply `sharedMemBytes`.
 * **No Bounds Checking**: Attempting to index out of bounds will result in silent memory corruption or a GPU fault.
 
 **Example**
 ```csharp
 [GpuKernel]
-public static unsafe void DynamicSmemKernel([Constant] int size1, int dynamicSize)
+public static unsafe void DynamicSmemKernel(int dynamicSize)
 {
     // Static Allocation (Size known at compile time)
     SharedMemory<int> staticSmem = new(256);
-    SharedMemory<int> staticSmem2 = new(size1); 
 
     // Dynamic Allocation (Size determined at runtime)
     SharedMemory<float> dynamicSmem = new(dynamicSize); 
@@ -279,6 +311,86 @@ The `Gpu` class provides high-level macro methods that are expanded directly int
 * **`Gpu.SingleThread(Action body)`**: Wraps the body in a thread execution guard (`if (threadIdx.x == 0 && blockIdx.x == 0) { ... }`), ensuring the code runs only once per grid.
 * **`Gpu.Constant(string expression)`**: Directly injects the given string literal or identifier token as a raw C++ constant expression (e.g., `#define` text or enum values) into the transpiled source.
 
+### Loop Unroll Hint (`Gpu.Hint.Unroll`)
+
+#### Overview & Motivation
+
+`Gpu.Hint.Unroll` is a zero-allocation compiler marker API designed to control loop unrolling behavior within GPU kernels.
+Placing this method immediately before a `for` or `while` loop instructs the transpiler to emit a `#pragma unroll` directive in the generated CUDA C++ code.
+
+**Why was it introduced over `Gpu.ForUnroll`?**
+While the macro `Gpu.ForUnroll(start, count, Action<int> body)` is perfectly transpiled into a highly optimized, flat `for` loop on the GPU (with zero allocations), it presents a problem during **CPU fallback execution**. When executed natively in C#, passing a capturing lambda expression or local function to `ForUnroll` causes an implicit closure allocation on the managed heap. This violates the strict zero-allocation requirement of high-performance G# kernels.
+`Gpu.Hint.Unroll` resolves this by acting as a standalone syntactic marker preceding a standard C# `for` or `while` loop. This approach guarantees zero allocations across both GPU and CPU execution contexts, bypassing delegate overhead entirely.
+
+#### Syntax & Example
+
+```csharp
+public static void Unroll(int factor = 0)
+```
+
+- **`factor`** (Optional): The unroll factor limit.
+  - A value of `0` (or omitted) instructs the compiler to fully unroll the loop if the loop bounds are known at compile time (translates to `#pragma unroll`).
+  - A value of `n > 0` translates to `#pragma unroll n`, unrolling the loop exactly `n` times per evaluation.
+
+```csharp
+[GpuKernel]
+public static void ProcessArray(int* data)
+{
+    // [1] Full Unrolling (factor = 0 / omitted)
+    // Instructs the compiler to fully unroll the subsequent loop (4 iterations).
+    Gpu.Hint.Unroll();
+    for (int i = 0; i < 4; i++)
+    {
+        data[i] = i * 2;
+    }
+
+    // [2] Partial Unrolling by a Factor (e.g., factor = 2)
+    // The argument `2` instructs the compiler to unroll the loop body by a factor of 2.
+    // This halves the loop overhead without bloating the binary size with 100 fully unrolled instructions.
+    Gpu.Hint.Unroll(2);
+    for (int i = 0; i < 100; i++)
+    {
+        data[i] += 1;
+    }
+}
+```
+
+### Warp Shuffle Intrinsics
+
+#### Overview
+
+The `Gpu` intrinsic class provides direct access to warp-level shuffle operations (`__shfl_sync`, etc.). These instructions allow threads within the same warp (32 threads) to directly exchange or broadcast register variables without the latency overhead of accessing shared memory.
+
+#### Available Intrinsics
+
+- `Gpu.ShuffleSync(mask, var, srcLane)`
+- `Gpu.ShuffleDownSync(mask, var, delta)`
+- `Gpu.ShuffleUpSync(mask, var, delta)`
+- `Gpu.ShuffleXorSync(mask, var, laneMask)`
+
+#### Code Example: Warp Reduction
+
+```csharp
+[GpuKernel]
+public static void WarpSumReduction(int* data)
+{
+    int val = data[ThreadIndex.X];
+    uint mask = Gpu.ActiveMask();
+
+    // Build a reduction tree by halving the offset distance
+    for (uint offset = 16; offset > 0; offset /= 2)
+    {
+        val += Gpu.ShuffleDownSync(mask, val, offset);
+    }
+
+    // Lane 0 holds the final sum for the entire warp
+    if (ThreadIndex.X % 32 == 0)
+    {
+        data[ThreadIndex.X] = val;
+    }
+}
+```
+
 ### Built-in Vector Types (`System.Numerics`)
 
 G# transparently maps `System.Numerics.Vector2`, `Vector3`, and `Vector4` to CUDA's native `float2`, `float3`, and `float4`.
@@ -300,3 +412,34 @@ public static unsafe void VectorCompute(Vector3* vectors)
 Standard C# math functions from `System.Math` and `System.MathF` are natively supported and transpiled to their CUDA hardware-accelerated intrinsic equivalents.
 * **Supported Methods**: `Exp`, `Log`, `Sqrt`, `Min`, `Max`, `Abs`, etc.
 * **Translation**: `Math.Sqrt(double)` translates to `sqrt()`, while `MathF.Sqrt(float)` translates to the faster single-precision `sqrtf()`.
+
+### `System.Numerics.BitOperations`
+
+The G# compiler supports seamless transpilation of standard .NET `System.Numerics.BitOperations` into their highly optimized PTX instruction equivalents, expanding Base Class Library (BCL) integration inside GPU Kernels.
+
+* **Supported Methods**:
+  * `PopCount` (Mapped to `__popc`)
+  * `LeadingZeroCount` (Mapped to `__clz`)
+  * `TrailingZeroCount`
+  * `RotateLeft` / `RotateRight`
+
+* **Analyzer Enforcement**: Invoking unsupported `BitOperations` methods triggers the analyzer diagnostic **`GSH0003`** during compilation, preventing silent failures.
+
+### Hardware FastMath Intrinsics
+
+To achieve maximum throughput for compute-bound mathematical kernels, G# provides the `Kassyi.GSharp.Core.FastMath` class. These intrinsics map directly to CUDA hardware-accelerated approximate instructions (e.g., `__expf`, `__logf`, `__fsqrt_rn`). They bypass standard IEEE-754 precision safeguards to maximize instruction throughput per clock cycle.
+
+**Example**
+```csharp
+using Kassyi.GSharp.Core;
+
+[GpuKernel]
+public static void ComputeFastOptions(float* results, float d1)
+{
+    // Evaluates directly to the high-throughput __expf and __fsqrt_rn PTX instructions
+    float expValue = FastMath.Exp(-0.5f * d1 * d1);
+    float sqrtValue = FastMath.Sqrt(d1);
+    
+    results[ThreadIndex.X] = expValue * sqrtValue;
+}
+```

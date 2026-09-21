@@ -26,7 +26,8 @@ The `LoadAotKernel` method is responsible for validating and loading the precomp
 When a kernel is compiled using the `CpuDialect` (Standard C++ fallback), it generates standard dynamic libraries (`.dll` or `.so`) rather than CUDA Fatbins.
 The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 * It reads the compiled host library and performs the identical **Trailing Hash Validation** and **AES Decryption** process as the GPU loader, ensuring that CPU-side proprietary algorithms remain equally protected at rest.
-* Upon successful decryption, it materializes the library into a secure temporary location, loads it into the host process via standard OS API (`NativeLibrary.Load`), and returns a strongly-typed managed delegate pointing to the `__gsharp_launch_KernelName` C-export symbol.
+* Upon successful decryption, it materializes the library into a secure temporary location, loads it into the host process via standard OS APIs (`NativeLibrary.Load`), and uses `NativeLibrary.GetExport` to retrieve the `__gsharp_launch_KernelName` C-export symbol.
+* It then uses `Marshal.GetDelegateForFunctionPointer<TDelegate>` to return a strongly-typed managed delegate, allowing the generated C# stub to directly invoke the native CPU code with the exact same API signature as the GPU launcher, making the CPU fallback execution entirely transparent to the caller.
 
 ### 2.2.3 Caching and Memory Management
 
@@ -36,11 +37,19 @@ The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 ## 2.3 Execution and Marshaling (`KernelLauncher`)
 
-Upon successful module loading, the runtime yields a `CUfunction` handle.
+Upon successful module loading, the runtime yields a `CUfunction` handle (or a CPU Delegate). The generated source produces two distinct launcher stubs to handle different marshaling requirements:
 
-1. **Grid and Block Dimensions**: The host logic determines the `gridDim` and `blockDim` parameters based on the workload size.
-2. **Argument Array**: The launcher constructs an array of `IntPtr` where each element points to the memory address of a kernel parameter.
-3. **Dispatch**: The runtime invokes `cuLaunchKernel`, passing the function handle, dimensions, and the marshaled argument array directly to the GPU driver.
+### 2.3.1 Host Launcher (`Launch_KernelName`)
+This stub accepts standard C# managed arrays (e.g., `T[]`, custom structs).
+1. **Deep Struct Marshaling**: If a parameter is a custom struct containing nested arrays, it invokes `Marshal_T` to perform deep traversals. It creates temporary shadow structures (`__Native_T`), allocates device memory, and copies host data to the device (unless optimized out by `[Out]`).
+2. **Grid and Block Dimensions**: The host logic determines the `gridDim` and `blockDim` parameters based on the workload size.
+3. **Dispatch**: Constructs the `IntPtr` argument array and invokes `cuLaunchKernel` (or the CPU delegate). After execution, it invokes `Unmarshal_T` to copy results back to the managed arrays and cleans up handles.
+
+### 2.3.2 Device Launcher (`Launch_KernelName_Device`)
+This stub accepts only raw pointers (`T*`) or device abstractions (e.g., `GpuBuffer<T>`).
+1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory allocation logic. **Passing structs with managed arrays to a `_Device` launcher is explicitly prohibited and will cause a compilation error.**
+2. **Grid and Block Dimensions**: Determines `gridDim` and `blockDim`.
+3. **Dispatch**: Immediately constructs the `IntPtr` argument array and invokes `cuLaunchKernel`.
 
 ## 2.4 Telemetry and Logging Architecture
 
@@ -57,3 +66,34 @@ Because log flushes are deferred to a background task, abrupt application termin
 To prevent this, developers should call `Logger.Shutdown()` during application exit. This method signals the channel writer to complete and employs a synchronized `Task.Wait()` to guarantee that the background task flushes all remaining buffered messages to disk before returning. 
 Additionally, file deletion commands (e.g., `Logger.Clear()`) are synchronized through the same `__CLEAR__` message queue to prevent disk access contention.
 
+## 2.5 Runtime Utilities
+
+### 2.5.1 `GpuBuffer<T>` (Native Memory Wrapper)
+
+G# introduces the `GpuBuffer<T>` abstraction in the Runtime space to provide a safe, strongly-typed unmanaged memory wrapper over raw CUDA device pointers. It enables zero-allocation device memory management and seamless Host-to-Device/Device-to-Host transfers.
+
+```csharp
+// Safely allocate and copy memory without raw P/Invoke overhead
+using var buffer = new GpuBuffer<int>(1024);
+
+// Synchronously copies data from Host (ReadOnlySpan<T>) to Device
+buffer.CopyToDevice(hostSpan);
+
+// Access the raw CuPointer for kernel invocation
+IntPtr devPtr = buffer.DevicePointer;
+```
+
+### 2.5.2 CUDA Event Timers (`GpuTimer`)
+
+The runtime provides `GpuTimer` (implemented as `CudaEventTimer`), an abstraction over native CUDA Driver Events (`cuEventCreate`, `cuEventRecord`, `cuEventElapsedTime`) to allow highly precise, asynchronous GPU throughput measurements without stalling the host pipeline.
+
+```csharp
+using var timer = new GpuTimer();
+
+timer.Start();
+// Launch device kernel asynchronously
+Launch_KernelName(args);
+timer.Stop();
+
+Console.WriteLine($"Kernel executed in: {timer.ElapsedMilliseconds} ms");
+```
