@@ -7,14 +7,19 @@ internal static class MarshalingEmitter
 {
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
+        // Exclude Kassyi.GSharp.Core vector types to bypass the CLR Explicit nesting bug.
+        // Nesting explicit structs can silently corrupt data (zeroed fields) due to runtime memory mapping issues.
+        // Instead, we flatten them into fixed byte arrays and use pointer casts for direct binary copying.
         return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
-               !named.ContainingNamespace.IsSystemOrNumerics();
+               !named.ContainingNamespace.IsSystemOrNumerics() &&
+               !named.ContainingNamespace.IsCoreNamespace();
     }
 
     internal static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
-            named.ContainingNamespace.IsSystemOrNumerics())
+            named.ContainingNamespace.IsSystemOrNumerics() ||
+            named.ContainingNamespace.IsCoreNamespace())
         {
             return;
         }
@@ -56,41 +61,107 @@ internal static class MarshalingEmitter
         }
     }
 
+    private static (int Size, int Alignment)? GetPredefinedLayout(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol)
+        {
+            return (8, 8); // Device pointer size and alignment in 64-bit CUDA
+        }
+
+        var primitive = type.SpecialType switch
+        {
+            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => (1, 1),
+            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 => (2, 2),
+            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => (4, 4),
+            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => (8, 8),
+            _ => default((int, int)?),
+        };
+
+        if (primitive.HasValue)
+        {
+            return primitive;
+        }
+
+        if (type.ContainingNamespace.IsCoreNamespace())
+        {
+            return type.Name switch
+            {
+                "Float2" or "Int2" or "UInt2" => (8, 8),
+                "Float3" or "Int3" or "UInt3" => (12, 4),
+                "Float4" or "Int4" or "UInt4" => (16, 16),
+                "Double2" or "Long2" or "ULong2" => (16, 16),
+                "Double3" or "Long3" or "ULong3" => (24, 8),
+                "Double4" or "Long4" or "ULong4" => (32, 16),
+                _ => null,
+            };
+        }
+
+        return null;
+    }
+
+    private static int AlignUp(int offset, int alignment)
+    {
+        var remainder = offset % alignment;
+        return remainder == 0 ? offset : offset + (alignment - remainder);
+    }
+
+    private static (int Size, int Alignment) GetCudaLayout(ITypeSymbol type)
+    {
+        if (GetPredefinedLayout(type) is { } predefined)
+        {
+            return predefined;
+        }
+
+        // Fallback for custom structs
+        if (type is not INamedTypeSymbol namedStruct)
+        {
+            return (4, 4);
+        }
+
+        var size = 0;
+        var maxAlign = 1;
+
+        foreach (var member in namedStruct.GetMembers())
+        {
+            if (member is not IFieldSymbol { IsStatic: false } structField)
+            {
+                continue;
+            }
+
+            var (fieldSize, fieldAlign) = GetCudaLayout(structField.Type);
+            size = AlignUp(size, fieldAlign) + fieldSize;
+            maxAlign = Math.Max(maxAlign, fieldAlign);
+        }
+
+        size = AlignUp(size, maxAlign);
+        return (Math.Max(size, 1), maxAlign);
+    }
+
     private static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
     {
-        int? packValue = null;
-        var structLayoutAttr = s.GetAttributes().FirstOrDefault(a => a.IsStructLayoutAttribute());
-        if (structLayoutAttr != null)
-        {
-            var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;
-            if (packArg is { IsNull: false, Value: int p and > 0 })
-            {
-                packValue = p;
-            }
-        }
+        var (totalSize, _) = GetCudaLayout(s);
 
-        if (packValue.HasValue)
-        {
-            writer.AppendLine(
-                $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = {packValue.Value})]");
-        }
-        else
-        {
-            writer.AppendLine(
-                "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
-        }
-
-        writer.Append("public struct __Native_");
+        writer.AppendLine(
+            $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {totalSize})]");
+        writer.Append("public unsafe struct __Native_");
         writer.AppendFullyQualifiedCppName(s);
         writer.AppendLine();
         using (writer.Scope())
         {
+            var currentOffset = 0;
             foreach (var member in s.GetMembers())
             {
                 if (member is not IFieldSymbol { IsStatic: false } field)
                 {
                     continue;
                 }
+
+                var (fieldSize, fieldAlign) = GetCudaLayout(field.Type);
+                currentOffset = AlignUp(currentOffset, fieldAlign);
+
+                writer.AppendLine(
+                    $"public const string DebugName_{field.Name} = \"{field.Type.GetFullyQualifiedName()}\";");
+                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({currentOffset})]");
 
                 if (field.Type is IArrayTypeSymbol)
                 {
@@ -109,10 +180,19 @@ internal static class MarshalingEmitter
                         writer.AppendLine($"#error Unsupported reference type in struct field: {field.Name}");
                     }
 
-                    writer.Append("public ");
-                    writer.AppendFullyQualifiedCsharpName(field.Type);
-                    writer.AppendLine($" {field.Name};");
+                    if (field.Type.SpecialType != SpecialType.None)
+                    {
+                        writer.Append("public ");
+                        writer.AppendFullyQualifiedCsharpName(field.Type);
+                        writer.AppendLine($" {field.Name};");
+                    }
+                    else
+                    {
+                        writer.AppendLine($"public fixed byte {field.Name}[{fieldSize}];");
+                    }
                 }
+
+                currentOffset += fieldSize;
             }
         }
 
@@ -121,23 +201,21 @@ internal static class MarshalingEmitter
 
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)
     {
-        writer.Append("public static unsafe __Native_");
-        writer.AppendFullyQualifiedCppName(s);
+        writer.Append("public static unsafe void");
         writer.Append(" Marshal_");
         writer.AppendFullyQualifiedCppName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs");
+            writer.Append(" host, ref __Native_");
+            writer.AppendFullyQualifiedCppName(s);
+            writer.Append(" native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs");
         }
 
         writer.AppendLine();
         using (writer.Scope())
         {
-            writer.Append("var native = new __Native_");
-            writer.AppendFullyQualifiedCppName(s);
-            writer.AppendLine("();");
             foreach (var member in s.GetMembers())
             {
                 if (member is IFieldSymbol { IsStatic: false } field)
@@ -145,8 +223,6 @@ internal static class MarshalingEmitter
                     WriteMarshalMember(writer, field);
                 }
             }
-
-            writer.AppendLine("return native;");
         }
 
         writer.AppendLine();
@@ -160,18 +236,29 @@ internal static class MarshalingEmitter
         }
         else if (IsCustomStruct(member.Type))
         {
-            writer.Append($"native.{member.Name} = Marshal_");
+            writer.Append("Marshal_");
             writer.AppendFullyQualifiedCppName(member.Type);
             using (writer.Parentheses())
             {
-                writer.Append($"ref host.{member.Name}, isDevicePtr, allocatedPtrs");
+                writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr, allocatedPtrs");
             }
 
             writer.AppendLine(";");
         }
         else
         {
-            writer.AppendLine($"native.{member.Name} = host.{member.Name};");
+            if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
+            {
+                writer.AppendLine($"native.{member.Name} = host.{member.Name};");
+            }
+            else
+            {
+                writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"*(({member.Type.GetFullyQualifiedName()}*)pField) = host.{member.Name};");
+                }
+            }
         }
     }
 
@@ -264,7 +351,18 @@ internal static class MarshalingEmitter
         }
         else
         {
-            writer.AppendLine($"host.{member.Name} = native.{member.Name};");
+            if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
+            {
+                writer.AppendLine($"host.{member.Name} = native.{member.Name};");
+            }
+            else
+            {
+                writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"host.{member.Name} = *(({member.Type.GetFullyQualifiedName()}*)pField);");
+                }
+            }
         }
     }
 
@@ -392,32 +490,34 @@ internal static class MarshalingEmitter
             WriteParameterUnmarshal(writer, p, isDevicePtr);
         }
 
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        if (method.ReturnType.SpecialType == SpecialType.System_Void)
         {
-            writer.AppendLine("if (__gsharp_auto_result != null && d___gsharp_auto_result != IntPtr.Zero)");
+            return;
+        }
+
+        writer.AppendLine("if (__gsharp_auto_result != null && d___gsharp_auto_result != IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.Append("int size = __gsharp_auto_result.Length * sizeof(");
+            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
+            writer.AppendLine(");");
+
+            writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                writer.Append("int size = __gsharp_auto_result.Length * sizeof(");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine(");");
-
-                writer.AppendLine("if (size > 0)");
+                writer.AppendLine(
+                    "var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                writer.AppendLine("try");
                 using (writer.Scope())
                 {
                     writer.AppendLine(
-                        "var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                    writer.AppendLine("try");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine(
-                            "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, size));");
-                    }
+                        "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, size));");
+                }
 
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("handle.Free();");
-                    }
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    writer.AppendLine("handle.Free();");
                 }
             }
         }
@@ -430,13 +530,15 @@ internal static class MarshalingEmitter
             WriteParameterFree(writer, p, isDevicePtr);
         }
 
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        if (method.ReturnType.SpecialType == SpecialType.System_Void)
         {
-            writer.AppendLine("if (d___gsharp_auto_result != IntPtr.Zero)");
-            using (writer.Scope())
-            {
-                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemFree_v2(d___gsharp_auto_result));");
-            }
+            return;
+        }
+
+        writer.AppendLine("if (d___gsharp_auto_result != IntPtr.Zero)");
+        using (writer.Scope())
+        {
+            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuMemFree_v2(d___gsharp_auto_result));");
         }
     }
 
@@ -471,12 +573,15 @@ internal static class MarshalingEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        writer.Append($"var native_{p.Name} = Marshal_");
+        writer.Append($"__Native_");
+        writer.AppendFullyQualifiedCppName(p.Type);
+        writer.AppendLine($" native_{p.Name} = default;");
+        writer.Append($"Marshal_");
         writer.AppendFullyQualifiedCppName(p.Type);
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}");
+                $"ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}");
         }
 
         writer.AppendLine(";");
@@ -647,9 +752,7 @@ internal static class MarshalingEmitter
 
     private static void WriteCustomStructUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        var isDevicePointerStruct = isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out);
-
-        if (isDevicePointerStruct)
+        if (isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out))
         {
             return;
         }
@@ -761,15 +864,21 @@ internal static class MarshalingEmitter
         foreach (var attr in p.GetAttributes())
         {
             var cls = attr.AttributeClass;
-            if (cls == null) continue;
 
-            if (cls.Name is "InAttribute" or "OutAttribute" &&
-                cls.ContainingNamespace?.Name == "InteropServices" &&
-                cls.ContainingNamespace.ContainingNamespace?.Name == "Runtime" &&
-                cls.ContainingNamespace.ContainingNamespace.ContainingNamespace?.Name == "System")
+            if (cls?.Name is not ("InAttribute" or "OutAttribute") ||
+                cls.ContainingNamespace?.GetFullNamespaceName() != "System.Runtime.InteropServices")
             {
-                if (cls.Name == "InAttribute") hasIn = true;
-                if (cls.Name == "OutAttribute") hasOut = true;
+                continue;
+            }
+
+            switch (cls.Name)
+            {
+                case "InAttribute":
+                    hasIn = true;
+                    break;
+                case "OutAttribute":
+                    hasOut = true;
+                    break;
             }
         }
     }
