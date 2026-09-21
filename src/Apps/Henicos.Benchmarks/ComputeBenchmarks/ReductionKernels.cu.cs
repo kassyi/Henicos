@@ -5,25 +5,49 @@ public static class ReductionKernels
     [GpuKernel]
     public static void ReductionKernel(float[] input, float[] output, int n)
     {
-        int bx = BlockIndex.X;
-        int threadsPerBlock = BlockDimension.X;
-        int elementsPerBlock = threadsPerBlock * 2;
-        int start = bx * elementsPerBlock;
-        int end = start + elementsPerBlock;
-        if (end > n)
+        SharedMemory<float> sdata = new(8);
+
+        int tid = ThreadIndex.X;
+        int i = BlockIndex.X * (BlockDimension.X * 2) + tid;
+
+        float sum = 0.0f;
+        if (i < n)
         {
-            end = n;
+            sum = input[i];
+        }
+        if (i + BlockDimension.X < n)
+        {
+            sum += input[i + BlockDimension.X];
         }
 
-        if (ThreadIndex.X == 0)
-        {
-            float blockSum = 0.0f;
-            for (int i = start; i < end; i++)
-            {
-                blockSum += input[i];
-            }
+        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 16);
+        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 8);
+        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 4);
+        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 2);
+        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 1);
 
-            output[bx] = blockSum;
+        int lane = tid % 32;
+        int warpId = tid / 32;
+
+        if (lane == 0)
+        {
+            sdata[warpId] = sum;
+        }
+
+        Gpu.SyncThreads();
+
+        if (warpId == 0)
+        {
+            float val = (tid < 8) ? sdata[tid] : 0.0f;
+
+            val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 4);
+            val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 2);
+            val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 1);
+
+            if (tid == 0)
+            {
+                output[BlockIndex.X] = val;
+            }
         }
     }
 }
