@@ -81,7 +81,7 @@ public class GEN56_NestedVectorAlignmentTests
         };
 
         var offsets = new int[6];
-        GEN56_NestedVectorAlignmentKernelsWrapper.Launch_WriteExpectedOffsetsKernel(offsets);
+        GEN56_NestedVectorAlignmentKernelsWrapper.LaunchWriteExpectedOffsetsKernel(offsets);
         _output.WriteLine($"C++ Field1_Byte: {offsets[0]}");
         _output.WriteLine($"C++ Field2_Float2: {offsets[1]}");
         _output.WriteLine($"C++ Field3_Float4: {offsets[2]}");
@@ -89,7 +89,7 @@ public class GEN56_NestedVectorAlignmentTests
         _output.WriteLine($"C++ Field5_Double2: {offsets[4]}");
         _output.WriteLine($"C++ Struct Size: {offsets[5]}");
 
-        GEN56_NestedVectorAlignmentKernelsWrapper.Launch_RoundtripKernel(ref data);
+        GEN56_NestedVectorAlignmentKernelsWrapper.LaunchRoundtripKernel(ref data);
 
         Assert.Equal((byte)10, data.Field1_Byte);
         

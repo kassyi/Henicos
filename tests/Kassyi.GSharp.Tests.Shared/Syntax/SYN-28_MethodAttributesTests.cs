@@ -48,7 +48,7 @@ public partial class SYN_28_MethodAttributesTests
         int[] input = [0, 5, 10, 20];
         int[] result = new int[4];
 
-        SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 4);
+        SYN_28_MethodAttributesKernelsWrapper.LaunchMethodAttributesKernel(input, result, blockDimX: 4);
 
         // input 0: (0 + 100) * 2 = 200
         Assert.Equal(200, result[0]);
@@ -69,7 +69,7 @@ public partial class SYN_28_MethodAttributesTests
         int[] result = [];
 
         var exception = Record.Exception(() =>
-            SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 1));
+            SYN_28_MethodAttributesKernelsWrapper.LaunchMethodAttributesKernel(input, result, blockDimX: 1));
 
         Assert.Null(exception);
     }
@@ -82,7 +82,7 @@ public partial class SYN_28_MethodAttributesTests
         int[] input = [42];
         int[] result = new int[1];
 
-        SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 1);
+        SYN_28_MethodAttributesKernelsWrapper.LaunchMethodAttributesKernel(input, result, blockDimX: 1);
 
         // (42 + 100) * 2 = 284
         Assert.Equal(284, result[0]);
@@ -108,7 +108,7 @@ public partial class SYN_28_MethodAttributesTests
         int[] input = [inputVal];
         int[] result = new int[1];
 
-        SYN_28_MethodAttributesKernelsWrapper.Launch_MethodAttributesKernel(input, result, blockDimX: 1);
+        SYN_28_MethodAttributesKernelsWrapper.LaunchMethodAttributesKernel(input, result, blockDimX: 1);
 
         Assert.Equal(expectedVal, result[0]);
     }

@@ -148,7 +148,7 @@ internal static class WrapperEmitter
             writer.Append("void ");
         }
 
-        writer.Append("Launch_");
+        writer.Append("Launch");
         writer.Append(method.Name);
         if (isDevicePtr)
         {

@@ -49,7 +49,7 @@ public class Sha256Benchmark : IComputeBenchmark
 
     public void RunGSharp()
     {
-        Sha256KernelsWrapper.Launch_Sha256Kernel(
+        Sha256KernelsWrapper.LaunchSha256Kernel(
             _input, _outputGsharp, N,
             gridDimX: (uint)Blocks, blockDimX: ThreadsPerBlock);
     }

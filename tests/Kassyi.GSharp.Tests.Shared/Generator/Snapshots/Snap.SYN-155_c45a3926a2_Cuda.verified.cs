@@ -34,7 +34,7 @@ public static readonly string Rotate32Kernel_FullSource = global::Kassyi.GSharp.
 private static byte[]? s_binaryData_Rotate32Kernel;
 private static bool s_isLoaded_Rotate32Kernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Rotate32Kernel(global::System.UInt32[] val, global::System.Int32[] shift, global::System.UInt32[] rotLeftRes, global::System.UInt32[] rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchRotate32Kernel(global::System.UInt32[] val, global::System.Int32[] shift, global::System.UInt32[] rotLeftRes, global::System.UInt32[] rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (val.Length == 0 || shift.Length == 0 || rotLeftRes.Length == 0 || rotRightRes.Length == 0){
 return;
@@ -207,7 +207,7 @@ if (d_rotRightRes != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_rotRightRes);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Rotate32Kernel_Device(IntPtr val, IntPtr shift, IntPtr rotLeftRes, IntPtr rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchRotate32Kernel_Device(IntPtr val, IntPtr shift, IntPtr rotLeftRes, IntPtr rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -281,7 +281,7 @@ public static readonly string Rotate64Kernel_FullSource = global::Kassyi.GSharp.
 private static byte[]? s_binaryData_Rotate64Kernel;
 private static bool s_isLoaded_Rotate64Kernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Rotate64Kernel(global::System.UInt64[] val, global::System.Int32[] shift, global::System.UInt64[] rotLeftRes, global::System.UInt64[] rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchRotate64Kernel(global::System.UInt64[] val, global::System.Int32[] shift, global::System.UInt64[] rotLeftRes, global::System.UInt64[] rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (val.Length == 0 || shift.Length == 0 || rotLeftRes.Length == 0 || rotRightRes.Length == 0){
 return;
@@ -454,7 +454,7 @@ if (d_rotRightRes != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_rotRightRes);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_Rotate64Kernel_Device(IntPtr val, IntPtr shift, IntPtr rotLeftRes, IntPtr rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchRotate64Kernel_Device(IntPtr val, IntPtr shift, IntPtr rotLeftRes, IntPtr rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
