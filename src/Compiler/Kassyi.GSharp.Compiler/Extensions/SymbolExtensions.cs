@@ -31,17 +31,42 @@ internal static class SymbolExtensions
             { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
         };
 
-    public static bool IsSystemNumericsVector(this ITypeSymbol? typeSymbol) =>
-        typeSymbol is
+    public static bool IsSystemNumericsVector(this ITypeSymbol? typeSymbol)
+    {
+        if (typeSymbol == null) return false;
+
+        // BCL System.Numerics.Vector*
+        if (typeSymbol.Name is TypeConstants.Vector2Type or TypeConstants.Vector3Type or TypeConstants.Vector4Type &&
+            typeSymbol.ContainingNamespace.Name == TypeConstants.NumericsNamespace &&
+            typeSymbol.ContainingNamespace.ContainingNamespace is
+                { Name: TypeConstants.SystemNamespace, IsGlobalNamespace: false } sysNs &&
+            sysNs.ContainingNamespace.IsGlobalNamespace)
         {
-            Name: TypeConstants.Vector2Type or TypeConstants.Vector3Type or TypeConstants.Vector4Type,
-            ContainingNamespace:
+            return true;
+        }
+
+        // Kassyi.GSharp.Core Vector Types
+        if (typeSymbol.ContainingNamespace is
             {
-                Name: TypeConstants.NumericsNamespace,
+                Name: "Core",
                 ContainingNamespace:
-                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-            }
-        };
+                { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
+            })
+        {
+            return typeSymbol.Name switch
+            {
+                "Float2" or "Float3" or "Float4" => true,
+                "Int2" or "Int3" or "Int4" => true,
+                "UInt2" or "UInt3" or "UInt4" => true,
+                "Double2" or "Double3" or "Double4" => true,
+                "Long2" or "Long3" or "Long4" => true,
+                "ULong2" or "ULong3" or "ULong4" => true,
+                _ => false
+            };
+        }
+
+        return false;
+    }
 
 
     /// <summary>
