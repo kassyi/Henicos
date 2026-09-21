@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Runtime.Interop;
-
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static unsafe class NativeKernelInvoker
@@ -210,7 +209,7 @@ public static unsafe class NativeKernelInvoker
     }
 
     public static void LaunchReduction(
-        float[] input, float[] output, int n,
+        Float4[] input, float[] output, int n,
         uint gridDimX, uint blockDimX)
     {
         if (input.Length == 0 || output.Length == 0)
@@ -224,13 +223,14 @@ public static unsafe class NativeKernelInvoker
         IntPtr d_in = IntPtr.Zero, d_out = IntPtr.Zero;
         try
         {
-            int inSize = input.Length * sizeof(float);
+            int inSize = input.Length * sizeof(Float4);
             int outSize = output.Length * sizeof(float);
 
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_in, inSize));
             CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_out, outSize));
 
-            fixed (float* pin = input, pout = output)
+            fixed (Float4* pin = input)
+            fixed (float* pout = output)
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_in, (IntPtr)pin, inSize));
 

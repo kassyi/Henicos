@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 
 // Native CUDA reference implementation for parallel reduction benchmark
-extern "C" __global__ void ReductionKernel_Native(float* input, float* output, int n)
+extern "C" __global__ void ReductionKernel_Native(float4* input, float* output, int n)
 {
     __shared__ float sdata[256];
 
@@ -12,11 +12,13 @@ extern "C" __global__ void ReductionKernel_Native(float* input, float* output, i
     float mySum = 0;
     if (i < n)
     {
-        mySum = input[i];
+        float4 v = input[i];
+        mySum = v.x + v.y + v.z + v.w;
     }
     if (i + blockDim.x < n)
     {
-        mySum += input[i + blockDim.x];
+        float4 v = input[i + blockDim.x];
+        mySum += v.x + v.y + v.z + v.w;
     }
     
     sdata[tid] = mySum;

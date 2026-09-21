@@ -5,7 +5,7 @@ namespace Henicos.Benchmarks.ComputeBenchmarks;
 public static class ReductionKernels
 {
     [GpuKernel]
-    public static void ReductionKernel([In] float[] input, [Out] float[] output, int n)
+    public static void ReductionKernel([In] Float4[] input, [Out] float[] output, int n)
     {
         SharedMemory<float> sdata = new(8);
 
@@ -15,11 +15,13 @@ public static class ReductionKernels
         float sum = 0.0f;
         if (i < n)
         {
-            sum = input[i];
+            var v = input[i];
+            sum = v.X + v.Y + v.Z + v.W;
         }
         if (i + BlockDimension.X < n)
         {
-            sum += input[i + BlockDimension.X];
+            var v = input[i + BlockDimension.X];
+            sum += v.X + v.Y + v.Z + v.W;
         }
 
         sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 16);
