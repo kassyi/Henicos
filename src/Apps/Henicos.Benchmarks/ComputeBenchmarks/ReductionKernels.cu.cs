@@ -1,9 +1,11 @@
+using System.Runtime.InteropServices;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class ReductionKernels
 {
     [GpuKernel]
-    public static void ReductionKernel(float[] input, float[] output, int n)
+    public static void ReductionKernel([In] float[] input, [Out] float[] output, int n)
     {
         SharedMemory<float> sdata = new(8);
 

@@ -1,9 +1,11 @@
+using System.Runtime.InteropServices;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class SgemmKernels
 {
     [GpuKernel]
-    public static void SgemmKernel(float[] a, float[] b, float[] c, int n)
+    public static void SgemmKernel([In] float[] a, [In] float[] b, [Out] float[] c, int n)
     {
         SharedMemory<float> As = new(256); // 16 * 16
         SharedMemory<float> Bs = new(256); // 16 * 16

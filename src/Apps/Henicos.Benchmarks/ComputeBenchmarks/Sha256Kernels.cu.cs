@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class Sha256Kernels
@@ -25,7 +27,7 @@ public static class Sha256Kernels
     private static uint MessageSigma1(uint x) => RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
 
     [GpuKernel]
-    public static void Sha256Kernel(byte[] input, uint[] output, int numMessages)
+    public static void Sha256Kernel([In] byte[] input, [Out] uint[] output, int numMessages)
     {
         Gpu.GridStrideLoop(numMessages, tid =>
         {
