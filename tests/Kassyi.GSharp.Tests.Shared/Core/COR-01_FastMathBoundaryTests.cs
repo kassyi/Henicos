@@ -21,21 +21,21 @@ public class COR_01_FastMathBoundaryTests
         Assert.Throws<GpuOnlyException>(() => FastMath.Abs(-1.0f));
     }
 
-    public static IEnumerable<object[]> GetBoundaryValues()
-    {
-        yield return [0.0f];
-        yield return [-0.0f];
-        yield return [1.0f];
-        yield return [-1.0f];
-        yield return [float.MaxValue];
-        yield return [float.MinValue];
-        yield return [float.Epsilon];
-        yield return [float.NaN];
-        yield return [float.PositiveInfinity];
-        yield return [float.NegativeInfinity];
-        yield return [BitConverter.Int32BitsToSingle(0x00400000)]; // Subnormal
-        yield return [BitConverter.Int32BitsToSingle(unchecked((int)0x80400000))]; // Negative subnormal
-    }
+    public static TheoryData<float> GetBoundaryValues() =>
+    [
+        0.0f,
+        -0.0f,
+        1.0f,
+        -1.0f,
+        float.MaxValue,
+        float.MinValue,
+        float.Epsilon,
+        float.NaN,
+        float.PositiveInfinity,
+        float.NegativeInfinity,
+        BitConverter.Int32BitsToSingle(0x00400000), // Subnormal
+        BitConverter.Int32BitsToSingle(unchecked((int)0x80400000)), // Negative subnormal
+    ];
 
     [SkippableTheory]
     [Trait("Category", "GpuExecution")]
