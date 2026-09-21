@@ -117,25 +117,23 @@ public static class YamlDialectGenerator
             }
 
             // Intrinsics
-            if (def.Intrinsics.Count <= 0)
+            if (def.Intrinsics.Count > 0)
             {
-                return writer.ToString();
-            }
-
-            writer.Line(
-                "protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
-            using (writer.Scope())
-            {
-                writer.Line("switch (signature)");
+                writer.Line(
+                    "protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
                 using (writer.Scope())
                 {
-                    foreach (var kvp in def.Intrinsics)
+                    writer.Line("switch (signature)");
+                    using (writer.Scope())
                     {
-                        writer.Line($"case \"{kvp.Key}\": mappedExpression = \"{kvp.Value}\"; return true;");
+                        foreach (var kvp in def.Intrinsics)
+                        {
+                            writer.Line($"case \"{kvp.Key}\": mappedExpression = \"{kvp.Value}\"; return true;");
+                        }
                     }
-                }
 
-                writer.Line("return base.TryMapIntrinsicCore(signature, out mappedExpression);");
+                    writer.Line("return base.TryMapIntrinsicCore(signature, out mappedExpression);");
+                }
             }
         }
 
