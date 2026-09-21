@@ -10,13 +10,13 @@ inline unsigned int Ch(unsigned int x, unsigned int y, unsigned int z);
 
 inline unsigned int Maj(unsigned int x, unsigned int y, unsigned int z);
 
-inline unsigned int Sigma0(unsigned int x);
+inline unsigned int RoundSigma0(unsigned int x);
 
-inline unsigned int Sigma1(unsigned int x);
+inline unsigned int RoundSigma1(unsigned int x);
 
-inline unsigned int sigma0(unsigned int x);
+inline unsigned int MessageSigma0(unsigned int x);
 
-inline unsigned int sigma1(unsigned int x);
+inline unsigned int MessageSigma1(unsigned int x);
 
 inline unsigned int RotR(unsigned int x, int n){
 return (x>>n)|(x<<(32-n));
@@ -30,19 +30,19 @@ inline unsigned int Maj(unsigned int x, unsigned int y, unsigned int z){
 return (x&y)^(x&z)^(y&z);
 }
 
-inline unsigned int Sigma0(unsigned int x){
+inline unsigned int RoundSigma0(unsigned int x){
 return RotR(x,2)^RotR(x,13)^RotR(x,22);
 }
 
-inline unsigned int Sigma1(unsigned int x){
+inline unsigned int RoundSigma1(unsigned int x){
 return RotR(x,6)^RotR(x,11)^RotR(x,25);
 }
 
-inline unsigned int sigma0(unsigned int x){
+inline unsigned int MessageSigma0(unsigned int x){
 return RotR(x,7)^RotR(x,18)^(x>>3);
 }
 
-inline unsigned int sigma1(unsigned int x){
+inline unsigned int MessageSigma1(unsigned int x){
 return RotR(x,17)^RotR(x,19)^(x>>10);
 }
 
@@ -78,7 +78,7 @@ w[i]=(unsigned int)(input[offset+i*4]<<24)|(unsigned int)(input[offset+i*4+1]<<1
 }
 for(int i = 16;i<64;i++)
 {
-w[i]=sigma1(w[i-2])+w[i-7]+sigma0(w[i-15])+w[i-16];
+w[i]=MessageSigma1(w[i-2])+w[i-7]+MessageSigma0(w[i-15])+w[i-16];
 }
 unsigned int a = 0x6a09e667;
 unsigned int b = 0xbb67ae85;
@@ -90,8 +90,8 @@ unsigned int g = 0x1f83d9ab;
 unsigned int h = 0x5be0cd19;
 for(int i = 0;i<64;i++)
 {
-unsigned int t1 = h+Sigma1(e)+Ch(e,f,g)+K[i]+w[i];
-unsigned int t2 = Sigma0(a)+Maj(a,b,c);
+unsigned int t1 = h+RoundSigma1(e)+Ch(e,f,g)+K[i]+w[i];
+unsigned int t2 = RoundSigma0(a)+Maj(a,b,c);
 h=g;
 g=f;
 f=e;

@@ -13,16 +13,16 @@ public static class Sha256Kernels
     private static uint Maj(uint x, uint y, uint z) => (x & y) ^ (x & z) ^ (y & z);
 
     [GpuDeviceFunction]
-    private static uint Sigma0(uint x) => RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22);
+    private static uint RoundSigma0(uint x) => RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22);
 
     [GpuDeviceFunction]
-    private static uint Sigma1(uint x) => RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25);
+    private static uint RoundSigma1(uint x) => RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25);
 
     [GpuDeviceFunction]
-    private static uint sigma0(uint x) => RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3);
+    private static uint MessageSigma0(uint x) => RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3);
 
     [GpuDeviceFunction]
-    private static uint sigma1(uint x) => RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
+    private static uint MessageSigma1(uint x) => RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10);
 
     [GpuKernel]
     public static void Sha256Kernel(byte[] input, uint[] output, int numMessages)
@@ -57,7 +57,7 @@ public static class Sha256Kernels
 
             for (int i = 16; i < 64; i++)
             {
-                w[i] = sigma1(w[i - 2]) + w[i - 7] + sigma0(w[i - 15]) + w[i - 16];
+                w[i] = MessageSigma1(w[i - 2]) + w[i - 7] + MessageSigma0(w[i - 15]) + w[i - 16];
             }
 
             uint a = 0x6a09e667;
@@ -71,8 +71,8 @@ public static class Sha256Kernels
 
             for (int i = 0; i < 64; i++)
             {
-                uint t1 = h + Sigma1(e) + Ch(e, f, g) + K[i] + w[i];
-                uint t2 = Sigma0(a) + Maj(a, b, c);
+                uint t1 = h + RoundSigma1(e) + Ch(e, f, g) + K[i] + w[i];
+                uint t2 = RoundSigma0(a) + Maj(a, b, c);
                 h = g;
                 g = f;
                 f = e;
