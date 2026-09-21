@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 
 namespace Kassyi.GSharp.Runtime.Aot;
 
@@ -112,7 +113,7 @@ public sealed class CpuKernelLoader
         var processed = new byte[fileData.Length - 32];
         Array.Copy(fileData, 0, processed, 0, fileData.Length - 32);
 
-        var actualHash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(processed));
+        var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
         if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException($"AOT native binary hash mismatch. Expected: {expectedHash}");

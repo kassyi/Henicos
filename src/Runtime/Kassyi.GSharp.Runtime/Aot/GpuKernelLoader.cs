@@ -1,5 +1,5 @@
 using System.Buffers.Binary;
-
+using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Aot;
@@ -172,7 +172,7 @@ public sealed class GpuKernelLoader
 
         // 1. Check if it's a valid plain text binary first.
         // This prevents a rare edge case where a plain text binary coincidentally starts with "GSHPENC1".
-        var plainHash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(processed));
+        var plainHash = Convert.ToHexStringLower(SHA256.HashData(processed));
         var isPlainText = string.Equals(plainHash, expectedHashString, StringComparison.OrdinalIgnoreCase);
 
         if (!isPlainText)
