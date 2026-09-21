@@ -1117,7 +1117,7 @@
       "csharp_example": "[GpuKernel]\npublic static void PatternMatchKernel(int mode, float[] data)\n{\n    // C# 8.0 switch expression with relational and logical patterns\n    data[0] = mode switch\n    {\n        >= 10 and <= 20 => 1.0f,\n        < 0 => -1.0f,\n        _ => 0.0f\n    };\n}",
       "current_behavior": "Supports statements only. Expression syntax cannot be parsed.",
       "target_cuda": "Expanded to an Immediately Invoked Function Expression (IIFE: [&]() { switch(mode) { ... } }()) or a chain of ternary operators.",
-      "strategy": "\u5b9f\u88c5\u4e88\u5b9a: \u30ea\u30ec\u30fc\u30b7\u30e7\u30ca\u30eb\u30fb\u8ad6\u7406\u30d1\u30bf\u30fc\u30f3\u3092C++\u306e if-else \u30c1\u30a7\u30fc\u30f3\u306b\u5c55\u958b\u3002\u5236\u7d04: \u5b9f\u884c\u6642\u306e\u578b\u60c5\u5831\u304c\u5fc5\u8981\u306aType\u30d1\u30bf\u30fc\u30f3(\u53c2\u7167\u578b\u30ad\u30e3\u30b9\u30c8\u7b49)\u306fGPU\u306e\u69cb\u9020\u4e0a\u30b5\u30dd\u30fc\u30c8\u4e0d\u53ef\u3002\u305f\u3060\u3057\u3001\u751f\u30dd\u30a4\u30f3\u30bf\u3078\u306eList\u30d1\u30bf\u30fc\u30f3\u306f\u4e0d\u53ef\u3067\u3042\u308b\u4e00\u65b9\u3001\u5185\u90e8\u3067\u9577\u3055\u3092\u4fdd\u6301\u3059\u308b GSharpArray<T> \u306b\u5bfe\u3059\u308bList\u30d1\u30bf\u30fc\u30f3\u306f\u5c06\u6765\u7684\u306b\u5bfe\u5fdc\u53ef\u80fd\u3002",
+      "strategy": "実装予定: リレーショナル・論理パターンをC++の if-else チェーンに展開。制約: 実行時の型情報が必要なTypeパターン(参照型キャスト等)はGPUの構造上サポート不可。ただし、生ポインタへのListパターンは不可である一方、内部で長さを保持する GSharpArray<T> に対するListパターンは将来的に対応可能。",
       "cpp_example": "extern \"C\" __global__ void PatternMatchKernel(int mode, float* __restrict__ data)\n{\n    /* Planned: Lowering advanced patterns to C++ if-else chains within an IIFE */\n    data[0] = ([&]() {\n        if (mode >= 10 && mode <= 20) return 1.0f;\n        else if (mode < 0) return -1.0f;\n        else return 0.0f;\n    }());\n}"
     },
     "score": 36,
@@ -1512,11 +1512,11 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "[GpuKernel]\npublic static void RangeKernel(Span<int> array)\n{\n    // 1. \u5f8c\u308d\u304b\u3089\u306e\u30a4\u30f3\u30c7\u30c3\u30af\u30b9 (^1 \u306f\u6700\u5f8c\u306e\u8981\u7d20)\n    int last = array[^1];\n    \n    // 2. \u7bc4\u56f2\u6307\u5b9a (1..5 \u306f index=1 \u304b\u3089 \u9577\u3055=4 \u306e\u30b9\u30e9\u30a4\u30b9)\n    Span<int> slice = array[1..5];\n}",
+      "csharp_example": "[GpuKernel]\npublic static void RangeKernel(Span<int> array)\n{\n    // 1. 後ろからのインデックス (^1 は最後の要素)\n    int last = array[^1];\n    \n    // 2. 範囲指定 (1..5 は index=1 から 長さ=4 のスライス)\n    Span<int> slice = array[1..5];\n}",
       "current_behavior": "IndexExpressionSyntax / RangeExpressionSyntax are unsupported.",
       "target_cuda": "Expanded to offset calculation buffer[length - 1] or pointer offset (buffer + 1).",
       "strategy": "Expand C# 8.0 Index (^1) and Range (1..5) operators into inline pointer arithmetic and length calculations (slicing) for spans and arrays on the GPU.",
-      "cpp_example": "extern \"C\" __global__ void RangeKernel(GSharpSpan<int32_t> array)\n{\n    // ^1 \u306f (length - 1) \u306b\u5c55\u958b\u3055\u308c\u308b\n    int32_t last = array.ptr[array.length - 1];\n    \n    // 1..5 \u306f\u30dd\u30a4\u30f3\u30bf\u306e\u30aa\u30d5\u30bb\u30c3\u30c8\u52a0\u7b97\u3068\u3001\u65b0\u305f\u306a length(5 - 1 = 4) \u306e\u8a08\u7b97\u306b\u5c55\u958b\u3055\u308c\u308b\n    GSharpSpan<int32_t> slice;\n    slice.ptr = array.ptr + 1;\n    slice.length = 4;\n}"
+      "cpp_example": "extern \"C\" __global__ void RangeKernel(GSharpSpan<int32_t> array)\n{\n    // ^1 は (length - 1) に展開される\n    int32_t last = array.ptr[array.length - 1];\n    \n    // 1..5 はポインタのオフセット加算と、新たな length(5 - 1 = 4) の計算に展開される\n    GSharpSpan<int32_t> slice;\n    slice.ptr = array.ptr + 1;\n    slice.length = 4;\n}"
     },
     "score": 29,
     "files": [
@@ -1877,7 +1877,7 @@
       "current_behavior": "C# 12 primary constructor syntax is unsupported.",
       "target_cuda": "Automatic output of C++ constructors like Point(int X, int Y) : X(X), Y(Y) {}.",
       "strategy": "Support C# 12 primary constructors by expanding constructor parameters into C++ struct member variables and automatically generating a matching C++ constructor with an initializer list.",
-      "cpp_example": "struct Vector3\n{\n    float X;\n    float Y;\n    float Z;\n    \n    // \u30c8\u30e9\u30f3\u30b9\u30d1\u30a4\u30e9\u304c\u30d7\u30e9\u30a4\u30de\u30ea\u30b3\u30f3\u30b9\u30c8\u30e9\u30af\u30bf\u3068\u7b49\u4fa1\u306aC++\u30b3\u30f3\u30b9\u30c8\u30e9\u30af\u30bf\u3092\u81ea\u52d5\u751f\u6210\n    __device__ Vector3(float X, float Y, float Z) : X(X), Y(Y), Z(Z) {}\n    \n    __device__ inline float get_LengthSquared() const {\n        return X * X + Y * Y + Z * Z;\n    }\n};\n\nextern \"C\" __global__ void VectorKernel()\n{\n    Vector3 v = Vector3(1.0f, 2.0f, 3.0f);\n}"
+      "cpp_example": "struct Vector3\n{\n    float X;\n    float Y;\n    float Z;\n    \n    // トランスパイラがプライマリコンストラクタと等価なC++コンストラクタを自動生成\n    __device__ Vector3(float X, float Y, float Z) : X(X), Y(Y), Z(Z) {}\n    \n    __device__ inline float get_LengthSquared() const {\n        return X * X + Y * Y + Z * Z;\n    }\n};\n\nextern \"C\" __global__ void VectorKernel()\n{\n    Vector3 v = Vector3(1.0f, 2.0f, 3.0f);\n}"
     },
     "score": 30,
     "files": [
@@ -2072,11 +2072,11 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "public readonly struct ImmutableVector\n{\n    public readonly float X;\n    public readonly float Y;\n\n    // readonly\u4fee\u98fe\u5b50\u304c\u4ed8\u4e0e\u3055\u308c\u305f\u30e1\u30bd\u30c3\u30c9\n    public readonly float GetLengthSq() => X * X + Y * Y;\n}",
+      "csharp_example": "public readonly struct ImmutableVector\n{\n    public readonly float X;\n    public readonly float Y;\n\n    // readonly修飾子が付与されたメソッド\n    public readonly float GetLengthSq() => X * X + Y * Y;\n}",
       "current_behavior": "Modifiers are not completely reflected in C++ const.",
       "target_cuda": "Appends the const modifier to C++ struct member functions.",
       "strategy": "Map C# readonly struct modifiers and readonly method modifiers to C++ const member functions to guarantee immutability on the GPU and encourage compiler optimizations for registers and caching.",
-      "cpp_example": "struct ImmutableVector\n{\n    float X;\n    float Y;\n\n    // readonly \u30e1\u30bd\u30c3\u30c9\u306f C++ \u306e const \u30e1\u30f3\u30d0\u95a2\u6570\u3068\u3057\u3066\u5c55\u958b\u3055\u308c\u308b\n    __device__ inline float get_GetLengthSq() const {\n        return X * X + Y * Y;\n    }\n};"
+      "cpp_example": "struct ImmutableVector\n{\n    float X;\n    float Y;\n\n    // readonly メソッドは C++ の const メンバ関数として展開される\n    __device__ inline float get_GetLengthSq() const {\n        return X * X + Y * Y;\n    }\n};"
     },
     "score": 29,
     "files": [
@@ -2149,11 +2149,11 @@
       "score": 31
     },
     "details": {
-      "csharp_example": "[GpuKernel]\npublic static void PrintKernel(int val)\n{\n    int threadId = Gpu.ThreadIndex.X;\n    \n    // \u88dc\u9593\u6587\u5b57\u5217\u304c\u30b3\u30f3\u30d1\u30a4\u30eb\u6642\u306b\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u3068\u5f15\u6570\u306b\u5206\u89e3\u3055\u308c\u308b\n    Gpu.Print($\"Thread {threadId}: val={val}\");\n}",
+      "csharp_example": "[GpuKernel]\npublic static void PrintKernel(int val)\n{\n    int threadId = Gpu.ThreadIndex.X;\n    \n    // 補間文字列がコンパイル時にフォーマットと引数に分解される\n    Gpu.Print($\"Thread {threadId}: val={val}\");\n}",
       "current_behavior": "Strings are prohibited on the GPU, so compilation fails.",
       "target_cuda": "Automatic format decomposition to CUDA printf(\"Thread %d: val=%u\\n\", threadIdx.x, val);.",
       "strategy": "Automatically decomposes string interpolation ($\"\") passed to Gpu.Print into a format string and argument list for C++ printf mapping at compile time.",
-      "cpp_example": "extern \"C\" __global__ void PrintKernel(int val)\n{\n    int threadId = threadIdx.x;\n    \n    // \u30c8\u30e9\u30f3\u30b9\u30d1\u30a4\u30e9\u304cC++ printf\u7528\u306b\u9069\u5207\u306a\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u6307\u5b9a\u5b50(%d\u306a\u3069)\u3092\u81ea\u52d5\u751f\u6210\n    printf(\"Thread %d: val=%d\\n\", threadId, val);\n}"
+      "cpp_example": "extern \"C\" __global__ void PrintKernel(int val)\n{\n    int threadId = threadIdx.x;\n    \n    // トランスパイラがC++ printf用に適切なフォーマット指定子(%dなど)を自動生成\n    printf(\"Thread %d: val=%d\\n\", threadId, val);\n}"
     },
     "score": 31,
     "files": [
@@ -2571,11 +2571,11 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "using System.Runtime.InteropServices;\n\n[GpuKernel]\npublic static void MarshalKernel(Span<byte> bytes)\n{\n    // Span<byte> \u3092 Span<uint> \u3078\u30ad\u30e3\u30b9\u30c8 (C#\u306e\u516c\u5f0f\u30fb\u6700\u901f\u306a\u624b\u6cd5)\n    Span<uint> uints = MemoryMarshal.Cast<byte, uint>(bytes);\n}",
+      "csharp_example": "using System.Runtime.InteropServices;\n\n[GpuKernel]\npublic static void MarshalKernel(Span<byte> bytes)\n{\n    // Span<byte> を Span<uint> へキャスト (C#の公式・最速な手法)\n    Span<uint> uints = MemoryMarshal.Cast<byte, uint>(bytes);\n}",
       "current_behavior": "Unresolved error as a BCL call.",
       "target_cuda": "Inline cast expansion to C++ reinterpret_cast<uint64_t*>.",
       "strategy": "Expand MemoryMarshal.Cast<TFrom, TTo>(Span<TFrom>) into inline C++ pointer reinterpret_cast and length recalculation based on sizeof ratios. Interface-based casting (IConvertible) is rejected to enforce zero-allocation guarantees.",
-      "cpp_example": "extern \"C\" __global__ void MarshalKernel(GSharpSpan<uint8_t> bytes)\n{\n    // C++\u5074\u3067\u30dd\u30a4\u30f3\u30bf\u306ereinterpret_cast\u3068\u3001sizeof\u3092\u7528\u3044\u305f\u914d\u5217\u9577\u306e\u518d\u8a08\u7b97\u3092\u30a4\u30f3\u30e9\u30a4\u30f3\u5c55\u958b\n    GSharpSpan<uint32_t> uints;\n    uints.ptr = reinterpret_cast<uint32_t*>(bytes.ptr);\n    uints.length = (bytes.length * sizeof(uint8_t)) / sizeof(uint32_t);\n}"
+      "cpp_example": "extern \"C\" __global__ void MarshalKernel(GSharpSpan<uint8_t> bytes)\n{\n    // C++側でポインタのreinterpret_castと、sizeofを用いた配列長の再計算をインライン展開\n    GSharpSpan<uint32_t> uints;\n    uints.ptr = reinterpret_cast<uint32_t*>(bytes.ptr);\n    uints.length = (bytes.length * sizeof(uint8_t)) / sizeof(uint32_t);\n}"
     },
     "score": 30,
     "files": [
@@ -2672,11 +2672,11 @@
       "score": 29
     },
     "details": {
-      "csharp_example": "using System.Runtime.Intrinsics;\n\n[GpuKernel]\npublic static unsafe void SimdKernel(Vector128<float>* src, Vector128<float>* dst)\n{\n    // 128-bit SIMD\u30d9\u30af\u30c8\u30eb\u3078\u306e\u30ed\u30fc\u30c9\u3068\u30b9\u30c8\u30a2\n    Vector128<float> vec = src[0];\n    dst[0] = vec;\n}",
+      "csharp_example": "using System.Runtime.Intrinsics;\n\n[GpuKernel]\npublic static unsafe void SimdKernel(Vector128<float>* src, Vector128<float>* dst)\n{\n    // 128-bit SIMDベクトルへのロードとストア\n    Vector128<float> vec = src[0];\n    dst[0] = vec;\n}",
       "current_behavior": "System.Runtime.Intrinsics is unmapped.",
       "target_cuda": "Replacement with CUDA vector built-in types (uint4, ulonglong2, int4).",
       "strategy": "Map .NET hardware SIMD types (e.g., Vector128<T>, Vector4) directly to CUDA built-in vector types (e.g., float4, uint4, ulonglong2) to enable 128-bit wide vectorized memory accesses from global memory.",
-      "cpp_example": "extern \"C\" __global__ void SimdKernel(float4* src, float4* dst)\n{\n    // Vector128<float> \u306f CUDA\u306e 128-bit \u578b\u3067\u3042\u308b float4 \u306b\u30de\u30c3\u30d7\u3055\u308c\u3001\n    // 1\u56de\u306e\u547d\u4ee4\u30674\u3064\u306efloat\u3092\u52b9\u7387\u3088\u304f\u30e1\u30e2\u30ea\u30a2\u30af\u30bb\u30b9\u3059\u308b\n    float4 vec = src[0];\n    dst[0] = vec;\n}"
+      "cpp_example": "extern \"C\" __global__ void SimdKernel(float4* src, float4* dst)\n{\n    // Vector128<float> は CUDAの 128-bit 型である float4 にマップされ、\n    // 1回の命令で4つのfloatを効率よくメモリアクセスする\n    float4 vec = src[0];\n    dst[0] = vec;\n}"
     },
     "score": 29,
     "files": [
@@ -2805,11 +2805,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "[GpuKernel]\npublic static unsafe void UnsafeKernel(int* ptr)\n{\n    // unsafe\u30ad\u30fc\u30ef\u30fc\u30c9\u30d5\u30a9\u30fc\u30ab\u30b9\u5185\u3067\u81ea\u7136\u306b\u30a2\u30c9\u30ec\u30b9\u3092\u52a0\u7b97\u30fb\u53c2\u7167\u3059\u308b\n    int* nextPtr = ptr + 1;\n    *nextPtr = 42;\n}",
+      "csharp_example": "[GpuKernel]\npublic static unsafe void UnsafeKernel(int* ptr)\n{\n    // unsafeキーワードフォーカス内で自然にアドレスを加算・参照する\n    int* nextPtr = ptr + 1;\n    *nextPtr = 42;\n}",
       "current_behavior": "System.Runtime.CompilerServices.Unsafe is unresolved.",
       "target_cuda": "Inline expansion to native C++ pointer addition and address difference calculations.",
       "strategy": "Map raw pointer arithmetic (ptr + 1, *ptr) inside unsafe blocks directly to native C++ pointer arithmetic.",
-      "cpp_example": "extern \"C\" __global__ void UnsafeKernel(int* ptr)\n{\n    // C#\u306e\u751f\u30dd\u30a4\u30f3\u30bf\u6f14\u7b97\u306f\u3001C++\u306e\u30dd\u30a4\u30f3\u30bf\u6f14\u7b97\u3078\u305d\u306e\u307e\u307e\u30b7\u30fc\u30e0\u30ec\u30b9\u306b\u5909\u63db\u3055\u308c\u308b\n    int* nextPtr = ptr + 1;\n    *nextPtr = 42;\n}"
+      "cpp_example": "extern \"C\" __global__ void UnsafeKernel(int* ptr)\n{\n    // C#の生ポインタ演算は、C++のポインタ演算へそのままシームレスに変換される\n    int* nextPtr = ptr + 1;\n    *nextPtr = 42;\n}"
     },
     "score": 32,
     "files": [
@@ -2870,11 +2870,11 @@
       "score": 31
     },
     "details": {
-      "csharp_example": "public unsafe struct StateBlock\n{\n    // C#\u306b\u304a\u3051\u308b\u69cb\u9020\u4f53\u5185\u306e\u56fa\u5b9a\u9577\u30d0\u30c3\u30d5\u30a1\n    public fixed uint Buffer[64];\n}",
+      "csharp_example": "public unsafe struct StateBlock\n{\n    // C#における構造体内の固定長バッファ\n    public fixed uint Buffer[64];\n}",
       "current_behavior": "FixedSizeBufferDeclarationSyntax is unsupported.",
       "target_cuda": "Expanded to C++ struct-embedded arrays uint32_t Buffer[64];.",
       "strategy": "Expands C# fixed-size buffers inside unsafe structs directly into C++ embedded arrays (e.g., uint32_t Buffer[64];). Constraints: The length must be a compile-time constant expression; variables are not allowed, though const fields are permitted.",
-      "cpp_example": "struct StateBlock\n{\n    // C++\u306e\u6a19\u6e96\u7684\u306a\u69cb\u9020\u4f53\u57cb\u3081\u8fbc\u307f\u914d\u5217\u3068\u3057\u3066\u5c55\u958b\n    uint32_t Buffer[64];\n};"
+      "cpp_example": "struct StateBlock\n{\n    // C++の標準的な構造体埋め込み配列として展開\n    uint32_t Buffer[64];\n};"
     },
     "score": 31,
     "files": [
@@ -2987,7 +2987,7 @@
       "current_behavior": "Auto-properties inside structs are not expanded to C++.",
       "target_cuda": "Expanded to C++ public member variables or inline getters/setters.",
       "strategy": "Auto-properties inside structs are expanded directly to C++ public member variables (fields) to minimize overhead and align with C++ struct paradigms.",
-      "cpp_example": "struct Config\n{\n    // \u30aa\u30fc\u30d0\u30fc\u30d8\u30c3\u30c9\u3092\u7121\u304f\u3059\u305f\u3081\u3001\u5358\u7d14\u306a\u30d5\u30a3\u30fc\u30eb\u30c9\u3068\u3057\u3066\u5c55\u958b\n    float Threshold;\n};\n\nextern \"C\" __global__ void PropertyKernel(Config cfg)\n{\n    cfg.Threshold = 1.0f;\n}"
+      "cpp_example": "struct Config\n{\n    // オーバーヘッドを無くすため、単純なフィールドとして展開\n    float Threshold;\n};\n\nextern \"C\" __global__ void PropertyKernel(Config cfg)\n{\n    cfg.Threshold = 1.0f;\n}"
     },
     "score": 32,
     "files": [
@@ -3053,7 +3053,7 @@
       "current_behavior": "Expression bodies for PropertyDeclarationSyntax are unsupported.",
       "target_cuda": "Expanded to C++ const member functions int ByteCount() const { return WordCount * 4; }.",
       "strategy": "Expression-bodied properties (=>) are expanded to inline const C++ member functions, and C# property access is transparently converted to C++ function calls.",
-      "cpp_example": "struct DataBlock\n{\n    int WordCount;\n    \n    // \u30a4\u30f3\u30e9\u30a4\u30f3\u306a const C++ \u30e1\u30f3\u30d0\u95a2\u6570\u3068\u3057\u3066\u5c55\u958b\n    __device__ inline int get_ByteCount() const\n    {\n        return WordCount * 4;\n    }\n};\n\nextern \"C\" __global__ void PropertyAccessKernel(DataBlock data)\n{\n    // \u30d7\u30ed\u30d1\u30c6\u30a3\u30a2\u30af\u30bb\u30b9\u3092\u30b2\u30c3\u30bf\u30fc\u306e\u95a2\u6570\u547c\u3073\u51fa\u3057\u306b\u5909\u63db\n    int bytes = data.get_ByteCount();\n}"
+      "cpp_example": "struct DataBlock\n{\n    int WordCount;\n    \n    // インラインな const C++ メンバ関数として展開\n    __device__ inline int get_ByteCount() const\n    {\n        return WordCount * 4;\n    }\n};\n\nextern \"C\" __global__ void PropertyAccessKernel(DataBlock data)\n{\n    // プロパティアクセスをゲッターの関数呼び出しに変換\n    int bytes = data.get_ByteCount();\n}"
     },
     "score": 32,
     "files": [
@@ -4214,11 +4214,11 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "[GpuKernel]\npublic static unsafe void NullPointerKernel(int* ptr)\n{\n    // Unsafe\u30af\u30e9\u30b9\u3067\u306f\u306a\u304f\u3001unsafe\u30b3\u30f3\u30c6\u30ad\u30b9\u30c8\u5185\u3067\u81ea\u7136\u306b\u30dd\u30a4\u30f3\u30bf\u6bd4\u8f03\u3092\u884c\u3046\n    if (ptr == null)\n    {\n        // null\u3092\u4ee3\u5165\n        int* newPtr = null;\n    }\n}",
+      "csharp_example": "[GpuKernel]\npublic static unsafe void NullPointerKernel(int* ptr)\n{\n    // Unsafeクラスではなく、unsafeコンテキスト内で自然にポインタ比較を行う\n    if (ptr == null)\n    {\n        // nullを代入\n        int* newPtr = null;\n    }\n}",
       "current_behavior": "Null-reference idiom is unresolved.",
       "target_cuda": "Inline expansion to C++ nullptr / pointer comparison.",
       "strategy": "Map C# null pointer checks (ptr == null) and assignments (ptr = null) within unsafe contexts seamlessly to C++ nullptr. Rejects unnatural Unsafe.NullRef API usages.",
-      "cpp_example": "extern \"C\" __global__ void NullPointerKernel(int* ptr)\n{\n    // C#\u306e null \u3068\u306e\u30dd\u30a4\u30f3\u30bf\u6bd4\u8f03\u306f\u3001C++\u306e nullptr \u6bd4\u8f03\u3078\u3068\u81ea\u7136\u306b\u5c55\u958b\u3055\u308c\u308b\n    if (ptr == nullptr)\n    {\n        int* newPtr = nullptr;\n    }\n}"
+      "cpp_example": "extern \"C\" __global__ void NullPointerKernel(int* ptr)\n{\n    // C#の null とのポインタ比較は、C++の nullptr 比較へと自然に展開される\n    if (ptr == nullptr)\n    {\n        int* newPtr = nullptr;\n    }\n}"
     },
     "score": 30,
     "files": [
@@ -4374,7 +4374,7 @@
       "current_behavior": "Platform-dependent integers are unsupported.",
       "target_cuda": "Mapped to CUDA size_t / uintptr_t.",
       "strategy": "Map C# platform-dependent native integers (nint, nuint) to CUDA-appropriate 64-bit integer types (ptrdiff_t/intptr_t and size_t/uintptr_t).",
-      "cpp_example": "extern \"C\" __global__ void NativeIntKernel(size_t size, ptrdiff_t offset)\n{\n    // nuint -> size_t (\u307e\u305f\u306f uintptr_t)\n    // nint -> ptrdiff_t (\u307e\u305f\u306f intptr_t)\n    size_t next = size + static_cast<size_t>(offset);\n}"
+      "cpp_example": "extern \"C\" __global__ void NativeIntKernel(size_t size, ptrdiff_t offset)\n{\n    // nuint -> size_t (または uintptr_t)\n    // nint -> ptrdiff_t (または intptr_t)\n    size_t next = size + static_cast<size_t>(offset);\n}"
     },
     "score": 30,
     "files": [
@@ -4849,7 +4849,7 @@
       "current_behavior": "Debug asserts are unresolved.",
       "target_cuda": "Outputs assert(...) only during debug builds, with zero-cost removal for release builds.",
       "strategy": "Map System.Diagnostics.Debug.Assert to CUDA device assert. Output assert only during debug builds, with zero-cost removal for release builds.",
-      "cpp_example": "#include <cassert> // Required for device assert\n\nextern \"C\" __global__ void AssertKernel(int x)\n{\n    // Debug\u30d3\u30eb\u30c9\u6642\u306e\u307fC++\u306eassert\u306b\u5909\u63db\u3055\u308c\u308b\n    assert(x > 0);\n}"
+      "cpp_example": "#include <cassert> // Required for device assert\n\nextern \"C\" __global__ void AssertKernel(int x)\n{\n    // Debugビルド時のみC++のassertに変換される\n    assert(x > 0);\n}"
     },
     "score": 32,
     "files": [
@@ -4954,11 +4954,11 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "using System.Diagnostics;\n\npublic struct Logger\n{\n    [Conditional(\"DEBUG\")]\n    public static void LogTrace(int value)\n    {\n        Gpu.Print(\"Trace: %d\", value);\n    }\n}\n\n[GpuKernel]\npublic static void ConditionalKernel(int x)\n{\n    // \"DEBUG\" \u30b7\u30f3\u30dc\u30eb\u304c\u306a\u3044\u5834\u5408\u3001\u3053\u306e\u547c\u3073\u51fa\u3057\u306fAST\u30ec\u30d9\u30eb\u3067\u5b8c\u5168\u306b\u6d88\u53bb\u3055\u308c\u308b\n    Logger.LogTrace(x);\n}",
+      "csharp_example": "using System.Diagnostics;\n\npublic struct Logger\n{\n    [Conditional(\"DEBUG\")]\n    public static void LogTrace(int value)\n    {\n        Gpu.Print(\"Trace: %d\", value);\n    }\n}\n\n[GpuKernel]\npublic static void ConditionalKernel(int x)\n{\n    // \"DEBUG\" シンボルがない場合、この呼び出しはASTレベルで完全に消去される\n    Logger.LogTrace(x);\n}",
       "current_behavior": "Conditional compilation attributes are unexpanded.",
       "target_cuda": "Completely removes method calls at the AST level when the specified symbol is undefined.",
       "strategy": "Honor [Conditional] attributes when resolving method calls. Completely remove method calls at the AST level when the specified symbol (e.g. DEBUG) is undefined.",
-      "cpp_example": "// LogTrace\u30e1\u30bd\u30c3\u30c9\u306f\u751f\u6210\u3055\u308c\u305a\u3001\u547c\u3073\u51fa\u3057\u3082\u9664\u53bb\u3055\u308c\u308b\nextern \"C\" __global__ void ConditionalKernel(int x)\n{\n    // \u7a7a\uff08\u547c\u3073\u51fa\u3057\u304c\u9664\u53bb\u3055\u308c\u3066\u3044\u308b\uff09\n}"
+      "cpp_example": "// LogTraceメソッドは生成されず、呼び出しも除去される\nextern \"C\" __global__ void ConditionalKernel(int x)\n{\n    // 空（呼び出しが除去されている）\n}"
     },
     "score": 32,
     "files": [
@@ -6401,7 +6401,7 @@
     },
     "details": {
       "current_behavior": "Current expression trees sequentially dispatch individual kernels (Add, Sub, Bitwise, etc.), consuming VRAM read/write bandwidth for intermediate buffers.",
-      "strategy": "JIT\u5ec3\u6b62\u306b\u4f34\u3044\u3001\u5b9f\u884c\u6642\u52d5\u7684\u30d5\u30e5\u30fc\u30b8\u30e7\u30f3\u304b\u3089\u3001Roslyn Source Generator (AOT) \u306b\u3088\u308b\u30b3\u30f3\u30d1\u30a4\u30eb\u6642\u306e\u69cb\u6587\u89e3\u6790\u3068\u878d\u5408\u30ab\u30fc\u30cd\u30eb\u306e\u4e8b\u524d\u751f\u6210\u3078\u3068\u79fb\u884c\u3059\u308b\u8a08\u753b\u3002",
+      "strategy": "JIT廃止に伴い、実行時動的フュージョンから、Roslyn Source Generator (AOT) によるコンパイル時の構文解析と融合カーネルの事前生成へと移行する計画。",
       "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuContext();\nvar a = new GpuBigInteger(context, \"100\");\nvar b = new GpuBigInteger(context, \"200\");\nvar c = new GpuBigInteger(context, \"300\");\n\n// The AOT Compiler (Source Generator) analyzes this expression tree at compile-time and emits a fused kernel\nvar result = (a + b) * c;",
       "cpp_example": "/* Planned: AOT Compiler emits a fused kernel for the compound expression tree ahead of time */\n// extern \"C\" __global__ void FusedKernel_Add_Mul(uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* out)"
     },
@@ -6948,8 +6948,8 @@
     "details": {
       "current_behavior": "Modular Inverse",
       "strategy": "Implement parallel modular multiplicative inverse algorithm (e.g., Extended Euclidean) for multi-limb GpuBigInteger numbers within the device mathematics library.",
-      "csharp_example": "[GpuKernel]\npublic static void ModInverseKernel(GpuBigInteger a, GpuBigInteger mod)\n{\n    // \u30e2\u30b8\u30e5\u30e9\u9006\u6570\u3092\u8a08\u7b97\n    GpuBigInteger inv = GpuBigInteger.ModInverse(a, mod);\n}",
-      "cpp_example": "extern \"C\" __global__ void ModInverseKernel(GpuBigInteger* a, GpuBigInteger* mod)\n{\n    // \u5185\u90e8\u7684\u306aGPU\u30ab\u30fc\u30cd\u30eb (\u62e1\u5f35\u30e6\u30fc\u30af\u30ea\u30c3\u30c9\u7b49) \u3078\u306e\u5c55\u958b\n    GpuBigInteger inv = Device_BigInt_ModInverse(a, mod);\n}"
+      "csharp_example": "[GpuKernel]\npublic static void ModInverseKernel(GpuBigInteger a, GpuBigInteger mod)\n{\n    // モジュラ逆数を計算\n    GpuBigInteger inv = GpuBigInteger.ModInverse(a, mod);\n}",
+      "cpp_example": "extern \"C\" __global__ void ModInverseKernel(GpuBigInteger* a, GpuBigInteger* mod)\n{\n    // 内部的なGPUカーネル (拡張ユークリッド等) への展開\n    GpuBigInteger inv = Device_BigInt_ModInverse(a, mod);\n}"
     },
     "score": 30,
     "files": [
@@ -7708,8 +7708,8 @@
     "details": {
       "current_behavior": "Normally, C# local variables generate zero-initialization code via = on the C++ side, but this is skipped if the [SkipLocalsInit] attribute is applied.",
       "strategy": "Detect [SkipLocalsInit] attributes via TranspileContext to suppress the default zero-initialization output for local variables, reducing PTX instructions and register pressure.",
-      "csharp_example": "using System.Runtime.CompilerServices;\n\n[GpuKernel]\n[SkipLocalsInit]\npublic static void UninitializedKernel()\n{\n    // [SkipLocalsInit]\u4e0b\u3067\u306f\u610f\u56f3\u7684\u306b\u521d\u671f\u5316\u3055\u308c\u306a\u3044\u30ed\u30fc\u30ab\u30eb\u5909\u6570\n    int uninit;\n    \n    uninit = 42;\n}",
-      "cpp_example": "extern \"C\" __global__ void UninitializedKernel()\n{\n    // \u30c8\u30e9\u30f3\u30b9\u30d1\u30a4\u30e9\u306f '= 0' \u306b\u3088\u308b\u30bc\u30ed\u521d\u671f\u5316\u30b3\u30fc\u30c9\u306e\u51fa\u529b\u3092\u30b9\u30ad\u30c3\u30d7\u3059\u308b\n    int32_t uninit; \n    \n    uninit = 42;\n}"
+      "csharp_example": "using System.Runtime.CompilerServices;\n\n[GpuKernel]\n[SkipLocalsInit]\npublic static void UninitializedKernel()\n{\n    // [SkipLocalsInit]下では意図的に初期化されないローカル変数\n    int uninit;\n    \n    uninit = 42;\n}",
+      "cpp_example": "extern \"C\" __global__ void UninitializedKernel()\n{\n    // トランスパイラは '= 0' によるゼロ初期化コードの出力をスキップする\n    int32_t uninit; \n    \n    uninit = 42;\n}"
     },
     "score": 30,
     "files": [],
@@ -7952,8 +7952,8 @@
     "details": {
       "current_behavior": "Matches the implicit operator of structs to the C++ native cast specification.",
       "strategy": "Automatically expands C# implicit operators (public static implicit operator TargetType) into C++ implicit constructors or conversion operators (operator T() const).",
-      "csharp_example": "public struct Half\n{\n    public short Value;\n    \n    // float\u304b\u3089Half\u3078\u306e\u6697\u9ed9\u306e\u5909\u63db\n    public static implicit operator Half(float f)\n    {\n        return new Half { Value = (short)f }; \n    }\n}",
-      "cpp_example": "struct Half\n{\n    short Value;\n    \n    // C#\u306eimplicit operator\u306b\u76f8\u5f53\u3059\u308bC++\u306e\u30b3\u30f3\u30b9\u30c8\u30e9\u30af\u30bf\u3068\u3057\u3066\u5c55\u958b\n    __device__ Half(float f)\n    {\n        Value = (short)f;\n    }\n};"
+      "csharp_example": "public struct Half\n{\n    public short Value;\n    \n    // floatからHalfへの暗黙の変換\n    public static implicit operator Half(float f)\n    {\n        return new Half { Value = (short)f }; \n    }\n}",
+      "cpp_example": "struct Half\n{\n    short Value;\n    \n    // C#のimplicit operatorに相当するC++のコンストラクタとして展開\n    __device__ Half(float f)\n    {\n        Value = (short)f;\n    }\n};"
     },
     "score": 31,
     "files": [
@@ -8194,8 +8194,8 @@
     "details": {
       "current_behavior": "Recursively traverses InterpolatedStringExpressionSyntax, outputting plain text parts as-is and falling back to C++ AST expansion for interpolated parts ({x + 1}).",
       "strategy": "Comprehensive AST expansion of all C# string representations (literal, verbatim, interpolated, raw, interpolated raw) to safely parse and bind C# variables into C++ inline assembly operands (e.g. asm volatile).",
-      "csharp_example": "[GpuKernel]\npublic static void PtxStringRepresentationsKernel(int offset)\n{\n    // 1. \u901a\u5e38\u306e\u6587\u5b57\u5217 (StringLiteralExpression)\n    Gpu.InlinePtx(\"nop;\");\n\n    // 2. \u9010\u8a9e\u7684\u6587\u5b57\u5217 (@\"...\") - \u30a8\u30b9\u30b1\u30fc\u30d7\u30b7\u30fc\u30b1\u30f3\u30b9\u3092\u7121\u8996\n    Gpu.InlinePtx(@\"add.u32 %r1, %r1, 1; // \\n is ignored here\");\n\n    // 3. \u6587\u5b57\u5217\u88dc\u9593 ($\"...\") - \u5909\u6570\u3092\u30aa\u30da\u30e9\u30f3\u30c9\u3068\u3057\u3066\u5c55\u958b\n    Gpu.InlinePtx($\"add.u32 %r2, %r2, {offset};\");\n\n    // 4. \u751f\u6587\u5b57\u5217\u30ea\u30c6\u30e9\u30eb (\"\"\"...\"\"\") - \u8907\u6570\u884c\u306e\u30a4\u30f3\u30c7\u30f3\u30c8\u3092\u7dad\u6301\u3057\u305f\u8a18\u8ff0\n    Gpu.InlinePtx(\"\"\"\n        add.u32 %r3, %r3, 1;\n        sub.u32 %r3, %r3, 2;\n    \"\"\");\n\n    // 5. \u88dc\u9593\u751f\u6587\u5b57\u5217 ($\"\"\"...\"\"\") - \u8907\u6570\u884c\u304b\u3064\u5909\u6570\u306e\u57cb\u3081\u8fbc\u307f\n    const string reg = \"r4\";\n    Gpu.InlinePtx($\"\"\"\n        add.u32 %{reg}, %{reg}, {offset};\n        mul.wide.u32 %{reg}, %{reg}, 2;\n    \"\"\");\n}",
-      "cpp_example": "extern \"C\" __global__ void PtxStringRepresentationsKernel(int offset)\n{\n    // \u30c8\u30e9\u30f3\u30b9\u30d1\u30a4\u30e9\u304c\u3059\u3079\u3066\u306eC#\u6587\u5b57\u5217\u8868\u73fe\u3092\u89e3\u91c8\u3057\u3001\u9069\u5207\u306aC++\u30de\u30af\u30ed\u3084asm\u6587\u306b\u5909\u63db\n    asm volatile (\"nop;\");\n    \n    asm volatile (\"add.u32 %r1, %r1, 1; // \\n is ignored here\");\n    \n    asm volatile (\"add.u32 %r2, %r2, %0;\" : : \"r\"(offset));\n    \n    asm volatile (\"add.u32 %r3, %r3, 1;\\nsub.u32 %r3, %r3, 2;\");\n    \n    asm volatile (\"add.u32 %r4, %r4, %0;\\nmul.wide.u32 %r4, %r4, 2;\" : : \"r\"(offset));\n}"
+      "csharp_example": "[GpuKernel]\npublic static void PtxStringRepresentationsKernel(int offset)\n{\n    // 1. 通常の文字列 (StringLiteralExpression)\n    Gpu.InlinePtx(\"nop;\");\n\n    // 2. 逐語的文字列 (@\"...\") - エスケープシーケンスを無視\n    Gpu.InlinePtx(@\"add.u32 %r1, %r1, 1; // \\n is ignored here\");\n\n    // 3. 文字列補間 ($\"...\") - 変数をオペランドとして展開\n    Gpu.InlinePtx($\"add.u32 %r2, %r2, {offset};\");\n\n    // 4. 生文字列リテラル (\"\"\"...\"\"\") - 複数行のインデントを維持した記述\n    Gpu.InlinePtx(\"\"\"\n        add.u32 %r3, %r3, 1;\n        sub.u32 %r3, %r3, 2;\n    \"\"\");\n\n    // 5. 補間生文字列 ($\"\"\"...\"\"\") - 複数行かつ変数の埋め込み\n    const string reg = \"r4\";\n    Gpu.InlinePtx($\"\"\"\n        add.u32 %{reg}, %{reg}, {offset};\n        mul.wide.u32 %{reg}, %{reg}, 2;\n    \"\"\");\n}",
+      "cpp_example": "extern \"C\" __global__ void PtxStringRepresentationsKernel(int offset)\n{\n    // トランスパイラがすべてのC#文字列表現を解釈し、適切なC++マクロやasm文に変換\n    asm volatile (\"nop;\");\n    \n    asm volatile (\"add.u32 %r1, %r1, 1; // \\n is ignored here\");\n    \n    asm volatile (\"add.u32 %r2, %r2, %0;\" : : \"r\"(offset));\n    \n    asm volatile (\"add.u32 %r3, %r3, 1;\\nsub.u32 %r3, %r3, 2;\");\n    \n    asm volatile (\"add.u32 %r4, %r4, %0;\\nmul.wide.u32 %r4, %r4, 2;\" : : \"r\"(offset));\n}"
     },
     "score": 32,
     "files": [],
@@ -8748,5 +8748,27 @@
       170
     ],
     "_searchableText": "gen55msbuildcompilationtasksnativeassetdeliveryandartifactcaching"
+  },
+  {
+    "id": "COR-01",
+    "domain": "COR",
+    "score": 10,
+    "metrics": {
+      "blocker": 0,
+      "difficulty": 2,
+      "score": 10,
+      "generality": 4
+    },
+    "files": [],
+    "pr": [],
+    "details": {
+      "strategy": "Add explicit boundary and failure-path tests to ensure edge cases are handled correctly.",
+      "current_behavior": "The FastMath API currently relies on indirect happy-path benchmark coverage."
+    },
+    "status": "in_progress",
+    "depends_on": [],
+    "_searchableText": "cor01addexplicitboundaryandfailurepathtestsforfastmathapi",
+    "category": "Core API",
+    "title": "[QA] Add explicit boundary and failure-path tests for FastMath API"
   }
 ]
