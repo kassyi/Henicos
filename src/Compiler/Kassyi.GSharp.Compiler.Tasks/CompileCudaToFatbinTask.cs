@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -7,10 +8,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
-    public string TargetArchitectures
-    {
-        get; set;
-    } =
+    public string TargetArchitectures { get; set; } =
         "compute_86,sm_86";
 
     public string NvccPath { get; set; } = "nvcc";
@@ -99,7 +97,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
 
-        if (File.Exists(outputFatbinPath) && File.GetLastWriteTimeUtc(outputFatbinPath) >= File.GetLastWriteTimeUtc(sourcePath))
+        if (File.Exists(outputFatbinPath) &&
+            File.GetLastWriteTimeUtc(outputFatbinPath) >= File.GetLastWriteTimeUtc(sourcePath))
         {
             var cachedTaskItem = new TaskItem(outputFatbinPath);
             cachedTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
@@ -155,6 +154,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         args.Append("-std=c++17 ");
         args.Append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING ");
         args.Append("-Xcompiler \"/wd4819\" ");
+        args.Append("--ptxas-options=-v,--warn-on-spills ");
         foreach (var arch in architectures)
         {
             var parts = arch.Split(',');
@@ -222,12 +222,27 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             process.WaitForExit();
             var error = errorBuilder.ToString();
 
+            if (NvccOutputParser.DetectRegisterSpill(output, error, out var errorMessage))
+            {
+                Log.LogWarning(errorMessage);
+            }
+
             if (process.ExitCode == 0)
             {
+                if (!string.IsNullOrWhiteSpace(error) &&
+                    error.IndexOf("ptxas info", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    Log.LogMessage(MessageImportance.Low, error);
+                }
+
                 return true;
             }
 
-            Log.LogError($"nvcc compilation failed with exit code {process.ExitCode}.");
+            if (process.ExitCode != 0)
+            {
+                Log.LogError($"nvcc compilation failed with exit code {process.ExitCode}.");
+            }
+
             if (!string.IsNullOrWhiteSpace(output))
             {
                 Log.LogMessage(MessageImportance.High, output);
@@ -240,5 +255,38 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
             return false;
         }
+    }
+}
+
+internal static class NvccOutputParser
+{
+    private static readonly Regex s_spillRegex =
+        new(@"[1-9]\d*\s+bytes spill", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    public static bool DetectRegisterSpill(string output, string error, out string errorMessage)
+    {
+        errorMessage = "";
+        var hasSpill = false;
+
+        // Check for actual warnings or non-zero spill bytes
+        if (error.IndexOf("warning", StringComparison.OrdinalIgnoreCase) >= 0 &&
+            error.IndexOf("spill", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            hasSpill = true;
+        }
+        else if (s_spillRegex.IsMatch(error) || s_spillRegex.IsMatch(output))
+        {
+            hasSpill = true;
+        }
+
+        if (!hasSpill)
+        {
+            return false;
+        }
+
+        errorMessage =
+            "Register spill detected during PTX compilation. " +
+            "Please reduce register pressure (e.g. by avoiding excessive inlining or large stack allocations in GPU kernels).";
+        return true;
     }
 }
