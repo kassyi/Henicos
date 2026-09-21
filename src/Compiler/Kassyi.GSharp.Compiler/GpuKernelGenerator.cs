@@ -1,6 +1,5 @@
 
 using Kassyi.GSharp.Compiler.Dialects;
-using Kassyi.GSharp.Compiler.Helpers;
 using Kassyi.GSharp.Compiler.Models;
 using Microsoft.CodeAnalysis.Text;
 
