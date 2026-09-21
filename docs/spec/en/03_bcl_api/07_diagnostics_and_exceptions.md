@@ -62,6 +62,9 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | **GSH0014** | Warning | **Large struct passed by value.** A struct parameter exceeds 32 bytes. Pass it via `ref` or as an array to save limited constant memory space. |
 | **GSH0015** | Warning | **Auto-allocate return in loop.** You called a kernel that returns an array from inside a `for` loop on the host. This allocates a new unmanaged buffer every iteration. |
 | **GSH0016** | Error | **CudaCpp Dialect Not Active.** Triggered when a CUDA-specific hardware intrinsic is invoked while the `CpuFallback` dialect is active. |
+| **GSH021** | Error | **Missing IDisposable implementation.** A class holds a disposable GPU resource (e.g., `GpuBuffer<T>`) but does not implement `IDisposable`. |
+| **GSH022** | Error | **Undisposed GPU Resource.** The `Dispose()` method does not explicitly invoke `.Dispose()` on all owned GPU resources. |
+| **GSW010** | Warning | **Manual unmanaged allocation detected.** You invoked `Gpu.Unsafe.Malloc()`. Ensure corresponding `Free()` is called to prevent VRAM leaks. |
 
 > [!TIP]
 > For a complete mapping of supported vs unsupported standard C# syntax, refer to [1.5 Limitations](../01_language/05_limitations.md).
