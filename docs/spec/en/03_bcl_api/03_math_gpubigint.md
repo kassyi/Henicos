@@ -338,9 +338,9 @@ The context routes execution to the specified engine and performs the following 
 * Pre-allocates working buffers within the workspace to avoid `cudaMalloc` overhead during computation.
 * Provides a `RentTemp` object pool to handle intermediate values (`GpuBigIntExpr`) dynamically without creating garbage.
 
-### Benchmarking (Henicos.PiBenchmark)
+### Benchmarking (Henicos.Benchmarks)
 
-To validate and measure the high-load performance of the `GpuBigInt` module, the `Henicos.PiBenchmark` project is provided. This project executes massive multi-precision math (such as calculating millions of digits of Pi using Chudnovsky's algorithm or similar formulas) entirely on the GPU.
+To validate and measure the high-load performance of the `GpuBigInt` module, the `Henicos.Benchmarks` project is provided. This project executes massive multi-precision math (such as calculating millions of digits of Pi using Chudnovsky's algorithm or similar formulas) entirely on the GPU.
 
 By isolating the heavy arithmetic to `GpuBigInt` expressions, the benchmark serves as a practical, real-world stress test for NTT multiplication, Newton-Raphson division, and memory pooling efficiencies, proving the module's capability to scale to extreme sizes.
 
