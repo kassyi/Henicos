@@ -1,22 +1,22 @@
-M:Microsoft.CodeAnalysis.ISymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.ITypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IMethodSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IPropertySymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IFieldSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IEventSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IParameterSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.ILocalSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IAliasSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.ILabelSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Use SourceWriter extensions (e.g., AppendFullyQualifiedCppName) or cache the result to avoid allocation/performance penalty in generator hot paths
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Use SourceWriter extensions (e.g., AppendFullyQualifiedCppName) or cache the result to avoid allocation/performance penalty in generator hot paths
+M:Microsoft.CodeAnalysis.ISymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ITypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IMethodSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IPropertySymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IFieldSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IEventSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IParameterSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ILocalSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IAliasSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ILabelSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
 T:System.Reflection.MethodInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
 T:System.Reflection.PropertyInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
 T:System.Reflection.FieldInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
