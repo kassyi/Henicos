@@ -33,7 +33,6 @@ NonVoidReturnKernel(__gsharp_auto_result);
 }
 ";
 public static readonly string NonVoidReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NonVoidReturnKernel_Source;
-private static byte[]? s_decryptionKey_NonVoidReturnKernel;
 private static byte[]? s_binaryData_NonVoidReturnKernel;
 private static bool s_isLoaded_NonVoidReturnKernel;
 #pragma warning disable CS8500
@@ -49,10 +48,9 @@ var dllName = $"ErrorKernels_NonVoidReturnKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_NonVoidReturnKernel)
 {
-s_decryptionKey_NonVoidReturnKernel = null;
 s_isLoaded_NonVoidReturnKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NonVoidReturnKernel_Delegate>("__gsharp_launch_NonVoidReturnKernel", dllPath, s_decryptionKey_NonVoidReturnKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NonVoidReturnKernel_Delegate>("__gsharp_launch_NonVoidReturnKernel", dllPath);
 fixed (global::System.Int32* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

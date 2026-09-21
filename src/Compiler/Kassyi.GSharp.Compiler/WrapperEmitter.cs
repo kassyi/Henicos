@@ -5,8 +5,7 @@ namespace Kassyi.GSharp.Compiler;
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
 {
-    public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config,
-        byte[]? aesKey = null, string? keyProvider = null)
+    public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config)
     {
         var className = method.ContainingType.Name + "Wrapper";
 
@@ -45,26 +44,17 @@ internal static class WrapperEmitter
                 WriteKernelSource(writer, method, source, config);
                 MarshalingEmitter.WriteStructMarshaling(writer, method);
 
-                writer.AppendLine($"private static byte[]? s_decryptionKey_{method.Name};");
                 writer.AppendLine($"private static byte[]? s_binaryData_{method.Name};");
                 writer.AppendLine($"private static bool s_isLoaded_{method.Name};");
 
-                if (aesKey != null)
-                {
-                    if (string.IsNullOrWhiteSpace(keyProvider))
-                    {
-                        VmObfuscatorEmitter.EmitKeyDerivationVm(writer, method, aesKey);
-                    }
-                }
-
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    WriteLaunchMethod(writer, method, false, aesKey != null, keyProvider);
-                    WriteLaunchMethod(writer, method, true, aesKey != null, keyProvider);
+                    WriteLaunchMethod(writer, method, false);
+                    WriteLaunchMethod(writer, method, true);
                 }
                 else
                 {
-                    WriteLaunchMethodCpu(writer, method, aesKey != null, keyProvider);
+                    WriteLaunchMethodCpu(writer, method);
                 }
             }
         }
@@ -85,8 +75,7 @@ internal static class WrapperEmitter
         }
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr,
-        bool hasAesKey, string? keyProvider)
+    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -105,7 +94,7 @@ internal static class WrapperEmitter
                 "using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
             using (writer.Scope())
             {
-                WriteCudaKernelCompilationCall(writer, method, hasAesKey, keyProvider);
+                WriteCudaKernelCompilationCall(writer, method);
                 MarshalingEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
 
                 writer.AppendLine("try");
@@ -127,8 +116,7 @@ internal static class WrapperEmitter
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method,
-        bool hasAesKey, string? keyProvider)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method)
     {
         writer.AppendLine("#pragma warning disable CS8500");
         WriteCpuDelegateDeclaration(writer, method);
@@ -138,7 +126,7 @@ internal static class WrapperEmitter
             WriteOutParameterDefaults(writer, method);
             WriteEmptyArrayGuards(writer, method);
             WriteAutoResultAllocation(writer, method);
-            WriteCpuDelegateGetOrCompile(writer, method, hasAesKey, keyProvider);
+            WriteCpuDelegateGetOrCompile(writer, method);
             WriteCpuFixedBlocksAndInvoke(writer, method);
         }
 
@@ -286,8 +274,7 @@ internal static class WrapperEmitter
     }
 
 
-    private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method,
-        bool hasAesKey, string? keyProvider)
+    private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
         writer.AppendLine($"if (!s_isLoaded_{method.Name})");
         using (writer.Scope())
@@ -298,22 +285,6 @@ internal static class WrapperEmitter
             using (writer.Scope())
             {
                 writer.AppendLine($"s_binaryData_{method.Name} = System.IO.File.ReadAllBytes(fatbinPath);");
-                if (hasAesKey)
-                {
-                    if (!string.IsNullOrWhiteSpace(keyProvider))
-                    {
-                        writer.AppendLine(
-                            $"s_decryptionKey_{method.Name} = {method.ContainingType.GetFullyQualifiedName()}.{keyProvider}();");
-                    }
-                    else
-                    {
-                        writer.AppendLine($"s_decryptionKey_{method.Name} = DeriveObfuscatedKey_{method.Name}();");
-                    }
-                }
-                else
-                {
-                    writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
-                }
             }
             writer.AppendLine("else");
             using (writer.Scope())
@@ -325,7 +296,7 @@ internal static class WrapperEmitter
         }
 
         writer.AppendLine(
-            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\", s_decryptionKey_{method.Name});");
+            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\");");
         writer.AppendLine();
     }
 
@@ -383,8 +354,7 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method,
-        bool hasAesKey, string? keyProvider)
+    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
     {
         writer.AppendLine(
             "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
@@ -396,28 +366,11 @@ internal static class WrapperEmitter
         writer.AppendLine($"if (!s_isLoaded_{method.Name})");
         using (writer.Scope())
         {
-            if (hasAesKey)
-            {
-                if (!string.IsNullOrWhiteSpace(keyProvider))
-                {
-                    writer.AppendLine(
-                        $"s_decryptionKey_{method.Name} = {method.ContainingType.GetFullyQualifiedName()}.{keyProvider}();");
-                }
-                else
-                {
-                    writer.AppendLine($"s_decryptionKey_{method.Name} = DeriveObfuscatedKey_{method.Name}();");
-                }
-            }
-            else
-            {
-                writer.AppendLine($"s_decryptionKey_{method.Name} = null;");
-            }
-
             writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath, s_decryptionKey_{method.Name});");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath);");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)

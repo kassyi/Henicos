@@ -30,7 +30,6 @@ ManagedParamKernel(obj);
 }
 ";
 public static readonly string ManagedParamKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ManagedParamKernel_Source;
-private static byte[]? s_decryptionKey_ManagedParamKernel;
 private static byte[]? s_binaryData_ManagedParamKernel;
 private static bool s_isLoaded_ManagedParamKernel;
 #pragma warning disable CS8500
@@ -43,10 +42,9 @@ var dllName = $"ErrorKernels_ManagedParamKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ManagedParamKernel)
 {
-s_decryptionKey_ManagedParamKernel = null;
 s_isLoaded_ManagedParamKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ManagedParamKernel_Delegate>("__gsharp_launch_ManagedParamKernel", dllPath, s_decryptionKey_ManagedParamKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ManagedParamKernel_Delegate>("__gsharp_launch_ManagedParamKernel", dllPath);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, obj);
 }
 #pragma warning restore CS8500

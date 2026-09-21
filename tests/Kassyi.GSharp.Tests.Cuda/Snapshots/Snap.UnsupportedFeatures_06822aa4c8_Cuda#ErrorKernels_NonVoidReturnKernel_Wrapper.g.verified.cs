@@ -20,7 +20,6 @@ return;
 }
 ";
 public static readonly string NonVoidReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NonVoidReturnKernel_Source;
-private static byte[]? s_decryptionKey_NonVoidReturnKernel;
 private static byte[]? s_binaryData_NonVoidReturnKernel;
 private static bool s_isLoaded_NonVoidReturnKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -37,7 +36,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorK
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_NonVoidReturnKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_NonVoidReturnKernel = null;
 }
 else
 {
@@ -45,7 +43,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_Non
 }
 s_isLoaded_NonVoidReturnKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonVoidReturnKernel, "NonVoidReturnKernel", s_decryptionKey_NonVoidReturnKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonVoidReturnKernel, "NonVoidReturnKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -108,7 +106,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorK
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_NonVoidReturnKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_NonVoidReturnKernel = null;
 }
 else
 {
@@ -116,7 +113,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_Non
 }
 s_isLoaded_NonVoidReturnKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonVoidReturnKernel, "NonVoidReturnKernel", s_decryptionKey_NonVoidReturnKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonVoidReturnKernel, "NonVoidReturnKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

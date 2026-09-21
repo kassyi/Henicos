@@ -20,7 +20,6 @@ cg::this_grid().sync();
 }
 ";
 public static readonly string CooperativePhysicsProcess_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + CooperativePhysicsProcess_Source;
-private static byte[]? s_decryptionKey_CooperativePhysicsProcess;
 private static byte[]? s_binaryData_CooperativePhysicsProcess;
 private static bool s_isLoaded_CooperativePhysicsProcess;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -37,7 +36,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Compre
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_CooperativePhysicsProcess = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_CooperativePhysicsProcess = null;
 }
 else
 {
@@ -45,7 +43,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpe
 }
 s_isLoaded_CooperativePhysicsProcess = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_CooperativePhysicsProcess, "CooperativePhysicsProcess", s_decryptionKey_CooperativePhysicsProcess);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_CooperativePhysicsProcess, "CooperativePhysicsProcess");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -108,7 +106,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Compre
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_CooperativePhysicsProcess = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_CooperativePhysicsProcess = null;
 }
 else
 {
@@ -116,7 +113,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpe
 }
 s_isLoaded_CooperativePhysicsProcess = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_CooperativePhysicsProcess, "CooperativePhysicsProcess", s_decryptionKey_CooperativePhysicsProcess);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_CooperativePhysicsProcess, "CooperativePhysicsProcess");
 try
 {
 void** kernelParams = stackalloc void*[1];

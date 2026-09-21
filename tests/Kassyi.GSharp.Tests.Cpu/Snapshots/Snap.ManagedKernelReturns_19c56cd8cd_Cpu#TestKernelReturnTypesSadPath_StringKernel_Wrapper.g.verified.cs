@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string StringKernel_Source = @"// GSharp Transpilation failed for StringKernel. Return type string is not supported.";
 public static readonly string StringKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + StringKernel_Source;
-private static byte[]? s_decryptionKey_StringKernel;
 private static byte[]? s_binaryData_StringKernel;
 private static bool s_isLoaded_StringKernel;
 #pragma warning disable CS8500
@@ -31,10 +30,9 @@ var dllName = $"TestKernelReturnTypesSadPath_StringKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_StringKernel)
 {
-s_decryptionKey_StringKernel = null;
 s_isLoaded_StringKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StringKernel_Delegate>("__gsharp_launch_StringKernel", dllPath, s_decryptionKey_StringKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StringKernel_Delegate>("__gsharp_launch_StringKernel", dllPath);
 fixed (global::System.String* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

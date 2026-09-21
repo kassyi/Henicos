@@ -1,5 +1,5 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
+
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Aot;
@@ -149,8 +149,7 @@ public sealed class GpuKernelLoader
     /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
     /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
-    public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName,
-        byte[]? decryptionKey = null)
+    public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName)
     {
         EnsureInitialized();
 
@@ -173,48 +172,12 @@ public sealed class GpuKernelLoader
 
         // 1. Check if it's a valid plain text binary first.
         // This prevents a rare edge case where a plain text binary coincidentally starts with "GSHPENC1".
-        var plainHash = Convert.ToHexStringLower(SHA256.HashData(processed));
+        var plainHash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(processed));
         var isPlainText = string.Equals(plainHash, expectedHashString, StringComparison.OrdinalIgnoreCase);
 
         if (!isPlainText)
         {
-            // 2. If plain hash doesn't match, check if it's encrypted
-            var isEncrypted = processed.Length > 8 && Encoding.ASCII.GetString(processed, 0, 8) == "GSHPENC1";
-
-            if (isEncrypted)
-            {
-                if (decryptionKey == null || decryptionKey.Length == 0)
-                {
-                    throw new InvalidOperationException(
-                        $"AOT kernel binary for '{kernelName}' is encrypted but no decryption key was provided.");
-                }
-
-                using var aes = Aes.Create();
-                aes.Key = decryptionKey;
-
-                var iv = new byte[16];
-                Array.Copy(processed, 8, iv, 0, 16);
-                aes.IV = iv;
-
-                using var decryptor = aes.CreateDecryptor();
-                using var ms = new MemoryStream(processed, 24, processed.Length - 24);
-                using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-                using var output = new MemoryStream();
-                cs.CopyTo(output);
-                processed = output.ToArray();
-
-                // 3. Hash Validation for decrypted data
-                var decryptedHash = Convert.ToHexStringLower(SHA256.HashData(processed));
-                if (!string.Equals(decryptedHash, expectedHashString, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"AOT Binary hash mismatch after decryption. Expected: {expectedHashString}");
-                }
-            }
-            else
-            {
-                // Not encrypted and plain hash mismatch
-                throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHashString}");
-            }
+            throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHashString}");
         }
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>

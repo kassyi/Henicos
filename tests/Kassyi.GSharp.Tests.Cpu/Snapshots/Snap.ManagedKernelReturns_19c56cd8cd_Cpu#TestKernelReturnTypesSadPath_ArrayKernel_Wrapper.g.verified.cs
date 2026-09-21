@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string ArrayKernel_Source = @"// GSharp Transpilation failed for ArrayKernel. Return type float[] is not supported.";
 public static readonly string ArrayKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ArrayKernel_Source;
-private static byte[]? s_decryptionKey_ArrayKernel;
 private static byte[]? s_binaryData_ArrayKernel;
 private static bool s_isLoaded_ArrayKernel;
 #pragma warning disable CS8500
@@ -31,10 +30,9 @@ var dllName = $"TestKernelReturnTypesSadPath_ArrayKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ArrayKernel)
 {
-s_decryptionKey_ArrayKernel = null;
 s_isLoaded_ArrayKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ArrayKernel_Delegate>("__gsharp_launch_ArrayKernel", dllPath, s_decryptionKey_ArrayKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ArrayKernel_Delegate>("__gsharp_launch_ArrayKernel", dllPath);
 fixed (global::System.Single[]* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

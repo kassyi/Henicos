@@ -22,7 +22,6 @@ return;
 }
 ";
 public static readonly string BadKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + BadKernel_Source;
-private static byte[]? s_decryptionKey_BadKernel;
 private static byte[]? s_binaryData_BadKernel;
 private static bool s_isLoaded_BadKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -39,7 +38,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorS
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_BadKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_BadKernel = null;
 }
 else
 {
@@ -47,7 +45,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ErrorSpecKernel_
 }
 s_isLoaded_BadKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BadKernel, "BadKernel", s_decryptionKey_BadKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BadKernel, "BadKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -110,7 +108,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorS
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_BadKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_BadKernel = null;
 }
 else
 {
@@ -118,7 +115,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ErrorSpecKernel_
 }
 s_isLoaded_BadKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BadKernel, "BadKernel", s_decryptionKey_BadKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BadKernel, "BadKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

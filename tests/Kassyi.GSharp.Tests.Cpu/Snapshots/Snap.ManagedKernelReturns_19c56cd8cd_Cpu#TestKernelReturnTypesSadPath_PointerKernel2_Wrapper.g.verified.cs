@@ -33,7 +33,6 @@ PointerKernel2(__gsharp_auto_result);
 }
 ";
 public static readonly string PointerKernel2_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + PointerKernel2_Source;
-private static byte[]? s_decryptionKey_PointerKernel2;
 private static byte[]? s_binaryData_PointerKernel2;
 private static bool s_isLoaded_PointerKernel2;
 #pragma warning disable CS8500
@@ -49,10 +48,9 @@ var dllName = $"TestKernelReturnTypesSadPath_PointerKernel2{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_PointerKernel2)
 {
-s_decryptionKey_PointerKernel2 = null;
 s_isLoaded_PointerKernel2 = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerKernel2_Delegate>("__gsharp_launch_PointerKernel2", dllPath, s_decryptionKey_PointerKernel2);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerKernel2_Delegate>("__gsharp_launch_PointerKernel2", dllPath);
 fixed (global::System.Single** p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

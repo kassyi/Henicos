@@ -17,7 +17,6 @@ public const string ManagedParamKernel_Source = @"extern ""C"" __global__ void M
 }
 ";
 public static readonly string ManagedParamKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ManagedParamKernel_Source;
-private static byte[]? s_decryptionKey_ManagedParamKernel;
 private static byte[]? s_binaryData_ManagedParamKernel;
 private static bool s_isLoaded_ManagedParamKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -31,7 +30,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorK
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_ManagedParamKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_ManagedParamKernel = null;
 }
 else
 {
@@ -39,7 +37,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_Man
 }
 s_isLoaded_ManagedParamKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedParamKernel, "ManagedParamKernel", s_decryptionKey_ManagedParamKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedParamKernel, "ManagedParamKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -72,7 +70,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorK
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_ManagedParamKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_ManagedParamKernel = null;
 }
 else
 {
@@ -80,7 +77,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_Man
 }
 s_isLoaded_ManagedParamKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedParamKernel, "ManagedParamKernel", s_decryptionKey_ManagedParamKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedParamKernel, "ManagedParamKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
