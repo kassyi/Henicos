@@ -71,12 +71,15 @@ internal static class MarshalingEmitter
 
         if (packValue.HasValue)
         {
-            writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = {packValue.Value})]");
+            writer.AppendLine(
+                $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = {packValue.Value})]");
         }
         else
         {
-            writer.AppendLine("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
+            writer.AppendLine(
+                "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
         }
+
         writer.Append("public struct __Native_");
         writer.AppendFullyQualifiedCppName(s);
         writer.AppendLine();
@@ -506,6 +509,28 @@ internal static class MarshalingEmitter
     private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, IArrayTypeSymbol arrayType,
         int paramIndex)
     {
+        var hasIn = false;
+        var hasOut = false;
+        foreach (var attr in p.GetAttributes())
+        {
+            var name = attr.AttributeClass?.Name;
+            var ns = attr.AttributeClass?.ContainingNamespace?.ToString();
+            if (ns == "System.Runtime.InteropServices")
+            {
+                if (name == "InAttribute")
+                {
+                    hasIn = true;
+                }
+
+                if (name == "OutAttribute")
+                {
+                    hasOut = true;
+                }
+            }
+        }
+
+        var isOutOnly = hasOut && !hasIn;
+
         writer.AppendLine($"// Marshal array: {p.Name}");
         writer.Append($"int {p.Name}_size = {p.Name}.Length * sizeof(");
         writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
@@ -516,21 +541,29 @@ internal static class MarshalingEmitter
         {
             writer.AppendLine(
                 $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
-            writer.AppendLine(
-                $"System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
 
-            writer.AppendLine("try");
-            using (writer.Scope())
+            if (isOutOnly)
             {
-                writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
-                writer.AppendLine(
-                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));");
+                writer.AppendLine($"// Skip HtoD copy for [Out] array: {p.Name}");
             }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
+            else
             {
-                writer.AppendLine($"handle_{p.Name}.Free();");
+                writer.AppendLine(
+                    $"System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+
+                writer.AppendLine("try");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
+                    writer.AppendLine(
+                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));");
+                }
+
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"handle_{p.Name}.Free();");
+                }
             }
         }
 
@@ -663,6 +696,36 @@ internal static class MarshalingEmitter
     {
         if (isDevicePtr)
         {
+            return;
+        }
+
+        var hasIn = false;
+        var hasOut = false;
+        foreach (var attr in p.GetAttributes())
+        {
+            var name = attr.AttributeClass?.Name;
+            var ns = attr.AttributeClass?.ContainingNamespace?.ToString();
+            if (ns != "System.Runtime.InteropServices")
+            {
+                continue;
+            }
+
+            switch (name)
+            {
+                case "InAttribute":
+                    hasIn = true;
+                    break;
+                case "OutAttribute":
+                    hasOut = true;
+                    break;
+            }
+        }
+
+        var isInOnly = hasIn && !hasOut;
+
+        if (isInOnly)
+        {
+            writer.AppendLine($"// Skip DtoH copy for [In] array: {p.Name}");
             return;
         }
 
