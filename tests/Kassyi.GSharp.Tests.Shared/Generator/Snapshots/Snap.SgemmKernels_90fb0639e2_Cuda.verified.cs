@@ -135,16 +135,7 @@ int c_size = c.Length * sizeof(global::System.Single);
 if (c_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, c_size));
-System.Runtime.InteropServices.GCHandle handle_c = System.Runtime.InteropServices.GCHandle.Alloc(c, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_c = handle_c.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_c, p_c, c_size));
-}
-finally
-{
-handle_c.Free();
-}
+// Skip HtoD copy for [Out] array: c
 }
 kernelParams[2] = &d_c;
 // Marshal scalar: n
@@ -158,34 +149,8 @@ IntPtr.Zero, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-// Copy back array: a
-if (a_size > 0 && d_a != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_a = handleBack_a.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_a, d_a, a_size));
-}
-finally
-{
-handleBack_a.Free();
-}
-}
-// Copy back array: b
-if (b_size > 0 && d_b != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_b = handleBack_b.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_b, d_b, b_size));
-}
-finally
-{
-handleBack_b.Free();
-}
-}
+// Skip DtoH copy for [In] array: a
+// Skip DtoH copy for [In] array: b
 // Copy back array: c
 if (c_size > 0 && d_c != IntPtr.Zero)
 {
