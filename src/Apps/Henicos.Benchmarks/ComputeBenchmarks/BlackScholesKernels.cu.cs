@@ -1,10 +1,12 @@
-namespace Henicos.PiBenchmark.ComputeBenchmarks;
+using System.Runtime.InteropServices;
+
+namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class BlackScholesKernels
 {
     [GpuKernel]
-    public static void BlackScholesKernel(float[] s, float[] x, float[] t, float r, float v, float[] callResult,
-        float[] putResult, int n)
+    public static void BlackScholesKernel([In] float[] s, [In] float[] x, [In] float[] t, float r, float v, [Out] float[] callResult,
+        [Out] float[] putResult, int n)
     {
         Gpu.GridStrideLoop(n, tid =>
         {

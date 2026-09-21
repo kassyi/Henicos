@@ -255,27 +255,43 @@ public static class Gpu
 
     /// <summary>Exchanges an integer variable between threads within a warp.</summary>
     [CudaIntrinsic("__shfl_sync")]
-    public static int ShflSync(uint mask, int var, int srcLane, int width = 32) => GpuOnlyException.Throw<int>();
+    public static int ShuffleSync(uint mask, int var, int srcLane, int width = 32) => GpuOnlyException.Throw<int>();
 
     /// <summary>Exchanges an unsigned integer variable between threads within a warp.</summary>
     [CudaIntrinsic("__shfl_sync")]
-    public static uint ShflSync(uint mask, uint var, int srcLane, int width = 32) => GpuOnlyException.Throw<uint>();
+    public static uint ShuffleSync(uint mask, uint var, int srcLane, int width = 32) => GpuOnlyException.Throw<uint>();
 
     /// <summary>Exchanges an integer variable from a thread with a higher ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_down_sync")]
-    public static int ShflDownSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
+    public static int ShuffleDownSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
 
     /// <summary>Exchanges an unsigned integer variable from a thread with a higher ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_down_sync")]
-    public static uint ShflDownSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
+    public static uint ShuffleDownSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
 
     /// <summary>Exchanges an integer variable from a thread with a lower ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_up_sync")]
-    public static int ShflUpSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
+    public static int ShuffleUpSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
 
     /// <summary>Exchanges an integer variable based on a bitwise XOR of the caller's lane ID.</summary>
     [CudaIntrinsic("__shfl_xor_sync")]
-    public static int ShflXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
+    public static int ShuffleXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
+
+    /// <summary>Exchanges a float variable between threads within a warp.</summary>
+    [CudaIntrinsic("__shfl_sync")]
+    public static float ShuffleSync(uint mask, float var, int srcLane, int width = 32) => GpuOnlyException.Throw<float>();
+
+    /// <summary>Exchanges a float variable from a thread with a higher ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_down_sync")]
+    public static float ShuffleDownSync(uint mask, float var, uint delta, int width = 32) => GpuOnlyException.Throw<float>();
+
+    /// <summary>Exchanges a float variable from a thread with a lower ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_up_sync")]
+    public static float ShuffleUpSync(uint mask, float var, uint delta, int width = 32) => GpuOnlyException.Throw<float>();
+
+    /// <summary>Exchanges a float variable based on a bitwise XOR of the caller's lane ID.</summary>
+    [CudaIntrinsic("__shfl_xor_sync")]
+    public static float ShuffleXorSync(uint mask, float var, int laneMask, int width = 32) => GpuOnlyException.Throw<float>();
 
     // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051

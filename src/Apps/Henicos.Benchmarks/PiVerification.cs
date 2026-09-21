@@ -1,5 +1,5 @@
 
-namespace Henicos.PiBenchmark;
+namespace Henicos.Benchmarks;
 
 /// <summary>
 /// Provides verification functionality for computed Pi digits.

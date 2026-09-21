@@ -44,11 +44,11 @@ test-alignment *args="":
 
 # Run compute benchmarks (sgemm, sha256, bs, reduce, all)
 run-bench suite="all" *args="":
-    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- compute-bench {{suite}} {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- compute-bench {{suite}} {{args}}
 
 # Alias for run-bench
 bench suite="all" *args="":
-    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- compute-bench {{suite}} {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- compute-bench {{suite}} {{args}}
 
 update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy
@@ -71,17 +71,17 @@ run-ui: roadmap
 
 # Run GPU Pi Benchmark (e.g. `just bench-pi 100k`, `just bench-pi 1M`, `just bench-pi 1M --hex`)
 bench-pi digits="100k" *args="":
-    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- gpu-pi {{digits}} {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} {{args}}
 
 # Short alias for GPU Pi Benchmark (e.g. `just pi 1M`, `just pi 100k`)
 pi digits="100k" *args="":
-    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- gpu-pi {{digits}} {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} {{args}}
 
 # Run GPU Pi Benchmark skipping decimal base conversion
 bench-pi-hex digits="100k" *args="":
-    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- gpu-pi {{digits}} --hex {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- gpu-pi {{digits}} --hex {{args}}
 
 # Run CPU baseline Pi Benchmark (e.g. `just bench-pi-cpu 10k`)
 bench-pi-cpu digits="10k" *args="":
-    dotnet run --project src/Apps/Henicos.PiBenchmark -c Release -- {{digits}} {{args}}
+    dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- {{digits}} {{args}}
 

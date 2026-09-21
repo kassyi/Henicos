@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Henicos.PiBenchmark.ComputeBenchmarks
+namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class BlackScholesKernelsWrapper
 {
@@ -122,16 +122,7 @@ int callResult_size = callResult.Length * sizeof(global::System.Single);
 if (callResult_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_callResult, callResult_size));
-System.Runtime.InteropServices.GCHandle handle_callResult = System.Runtime.InteropServices.GCHandle.Alloc(callResult, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_callResult = handle_callResult.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_callResult, p_callResult, callResult_size));
-}
-finally
-{
-handle_callResult.Free();
-}
+// Skip HtoD copy for [Out] array: callResult
 }
 kernelParams[5] = &d_callResult;
 // Marshal array: putResult
@@ -139,16 +130,7 @@ int putResult_size = putResult.Length * sizeof(global::System.Single);
 if (putResult_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_putResult, putResult_size));
-System.Runtime.InteropServices.GCHandle handle_putResult = System.Runtime.InteropServices.GCHandle.Alloc(putResult, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_putResult = handle_putResult.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_putResult, p_putResult, putResult_size));
-}
-finally
-{
-handle_putResult.Free();
-}
+// Skip HtoD copy for [Out] array: putResult
 }
 kernelParams[6] = &d_putResult;
 // Marshal scalar: n
@@ -162,48 +144,9 @@ IntPtr.Zero, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-// Copy back array: s
-if (s_size > 0 && d_s != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_s = System.Runtime.InteropServices.GCHandle.Alloc(s, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_s = handleBack_s.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_s, d_s, s_size));
-}
-finally
-{
-handleBack_s.Free();
-}
-}
-// Copy back array: x
-if (x_size > 0 && d_x != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_x = System.Runtime.InteropServices.GCHandle.Alloc(x, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_x = handleBack_x.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_x, d_x, x_size));
-}
-finally
-{
-handleBack_x.Free();
-}
-}
-// Copy back array: t
-if (t_size > 0 && d_t != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_t = System.Runtime.InteropServices.GCHandle.Alloc(t, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_t = handleBack_t.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_t, d_t, t_size));
-}
-finally
-{
-handleBack_t.Free();
-}
-}
+// Skip DtoH copy for [In] array: s
+// Skip DtoH copy for [In] array: x
+// Skip DtoH copy for [In] array: t
 // Copy back array: callResult
 if (callResult_size > 0 && d_callResult != IntPtr.Zero)
 {

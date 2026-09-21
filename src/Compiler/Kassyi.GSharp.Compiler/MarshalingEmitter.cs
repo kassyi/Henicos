@@ -71,12 +71,15 @@ internal static class MarshalingEmitter
 
         if (packValue.HasValue)
         {
-            writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = {packValue.Value})]");
+            writer.AppendLine(
+                $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = {packValue.Value})]");
         }
         else
         {
-            writer.AppendLine("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
+            writer.AppendLine(
+                "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]");
         }
+
         writer.Append("public struct __Native_");
         writer.AppendFullyQualifiedCppName(s);
         writer.AppendLine();
@@ -506,6 +509,10 @@ internal static class MarshalingEmitter
     private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, IArrayTypeSymbol arrayType,
         int paramIndex)
     {
+        GetArrayDirection(p, out var hasIn, out var hasOut);
+
+        var isOutOnly = hasOut && !hasIn;
+
         writer.AppendLine($"// Marshal array: {p.Name}");
         writer.Append($"int {p.Name}_size = {p.Name}.Length * sizeof(");
         writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
@@ -516,21 +523,29 @@ internal static class MarshalingEmitter
         {
             writer.AppendLine(
                 $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_{p.Name}, {p.Name}_size));");
-            writer.AppendLine(
-                $"System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
 
-            writer.AppendLine("try");
-            using (writer.Scope())
+            if (isOutOnly)
             {
-                writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
-                writer.AppendLine(
-                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));");
+                writer.AppendLine($"// Skip HtoD copy for [Out] array: {p.Name}");
             }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
+            else
             {
-                writer.AppendLine($"handle_{p.Name}.Free();");
+                writer.AppendLine(
+                    $"System.Runtime.InteropServices.GCHandle handle_{p.Name} = System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+
+                writer.AppendLine("try");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
+                    writer.AppendLine(
+                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_{p.Name}, p_{p.Name}, {p.Name}_size));");
+                }
+
+                writer.AppendLine("finally");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"handle_{p.Name}.Free();");
+                }
             }
         }
 
@@ -666,6 +681,16 @@ internal static class MarshalingEmitter
             return;
         }
 
+        GetArrayDirection(p, out var hasIn, out var hasOut);
+
+        var isInOnly = hasIn && !hasOut;
+
+        if (isInOnly)
+        {
+            writer.AppendLine($"// Skip DtoH copy for [In] array: {p.Name}");
+            return;
+        }
+
         writer.AppendLine($"// Copy back array: {p.Name}");
         writer.AppendLine($"if ({p.Name}_size > 0 && d_{p.Name} != IntPtr.Zero)");
         using (writer.Scope())
@@ -726,6 +751,26 @@ internal static class MarshalingEmitter
         if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
         {
             writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
+        }
+    }
+
+    private static void GetArrayDirection(IParameterSymbol p, out bool hasIn, out bool hasOut)
+    {
+        hasIn = false;
+        hasOut = false;
+        foreach (var attr in p.GetAttributes())
+        {
+            var cls = attr.AttributeClass;
+            if (cls == null) continue;
+
+            if (cls.Name is "InAttribute" or "OutAttribute" &&
+                cls.ContainingNamespace?.Name == "InteropServices" &&
+                cls.ContainingNamespace.ContainingNamespace?.Name == "Runtime" &&
+                cls.ContainingNamespace.ContainingNamespace.ContainingNamespace?.Name == "System")
+            {
+                if (cls.Name == "InAttribute") hasIn = true;
+                if (cls.Name == "OutAttribute") hasOut = true;
+            }
         }
     }
 }

@@ -16,11 +16,11 @@ public class GEN_16_WarpLevelConcurrencyKernels
 
         // Warp synchronous reduction
         uint mask = 0xffffffff;
-        val += Gpu.ShflDownSync(mask, val, 16);
-        val += Gpu.ShflDownSync(mask, val, 8);
-        val += Gpu.ShflDownSync(mask, val, 4);
-        val += Gpu.ShflDownSync(mask, val, 2);
-        val += Gpu.ShflDownSync(mask, val, 1);
+        val += Gpu.ShuffleDownSync(mask, val, 16);
+        val += Gpu.ShuffleDownSync(mask, val, 8);
+        val += Gpu.ShuffleDownSync(mask, val, 4);
+        val += Gpu.ShuffleDownSync(mask, val, 2);
+        val += Gpu.ShuffleDownSync(mask, val, 1);
 
         // First thread of each warp writes the result
         if (lane == 0)
@@ -38,12 +38,12 @@ public class GEN_16_WarpLevelConcurrencyKernels
         int val = input[tid];
         
         // Test all primitives to ensure they emit correct C++ intrinsics
-        val = Gpu.ShflSync(mask, val, 0);
-        val = (int)Gpu.ShflSync(mask, (uint)val, 0);
-        val = Gpu.ShflDownSync(mask, val, 1);
-        val = (int)Gpu.ShflDownSync(mask, (uint)val, 1);
-        val = Gpu.ShflUpSync(mask, val, 1);
-        val = Gpu.ShflXorSync(mask, val, 1);
+        val = Gpu.ShuffleSync(mask, val, 0);
+        val = (int)Gpu.ShuffleSync(mask, (uint)val, 0);
+        val = Gpu.ShuffleDownSync(mask, val, 1);
+        val = (int)Gpu.ShuffleDownSync(mask, (uint)val, 1);
+        val = Gpu.ShuffleUpSync(mask, val, 1);
+        val = Gpu.ShuffleXorSync(mask, val, 1);
         
         output[tid] = val;
     }

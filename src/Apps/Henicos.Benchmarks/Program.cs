@@ -1,7 +1,7 @@
 using System.Globalization;
-using Henicos.PiBenchmark.ComputeBenchmarks;
+using Henicos.Benchmarks.ComputeBenchmarks;
 
-namespace Henicos.PiBenchmark;
+namespace Henicos.Benchmarks;
 
 /// <summary>
 /// Console application entry point and command-line dispatcher for the Henicos Pi benchmark suite.
@@ -52,7 +52,7 @@ internal class Program
     private static int PrintUsage()
     {
         const string usage = """
-            Henicos.PiBenchmark - High-Performance GPU & CPU Number Theory Suite
+            Henicos.Benchmarks - High-Performance GPU & CPU Number Theory Suite
 
             Usage: dotnet run -c Release -- <command> [options]
 
@@ -67,6 +67,8 @@ internal class Program
               prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)
               bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
               compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, all) (default: all)
+                                         Options:
+                                           --json              Output benchmark results in JSON format
               help, -h, --help           Display this help message
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
@@ -84,8 +86,18 @@ internal class Program
 
     private static int RunComputeBench(string[] args)
     {
-        var suite = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
-        var success = ComputeBenchmarkRunner.RunSuite(suite);
+        var suite = "all";
+        var json = false;
+        
+        foreach (var arg in args)
+        {
+            if (arg.Equals("--json", StringComparison.OrdinalIgnoreCase))
+                json = true;
+            else
+                suite = arg.ToLowerInvariant();
+        }
+
+        var success = ComputeBenchmarkRunner.RunSuite(suite, jsonOutput: json);
         return success ? 0 : 1;
     }
 
@@ -132,7 +144,7 @@ internal class Program
 
     private static int RunCpuPi(string[] args)
     {
-        Logger<Program>.Info("Henicos.PiBenchmark - Chudnovsky Binary Splitting (CPU Baseline)");
+        Logger<Program>.Info("Henicos.Benchmarks - Chudnovsky Binary Splitting (CPU Baseline)");
 
         var digits = args.Length > 0 ? ParseDigits(args[0], 10000) : 10000;
 

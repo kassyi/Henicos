@@ -20,28 +20,45 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Henicos.PiBenchmark.ComputeBenchmarks
+namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class ReductionKernelsWrapper
 {
 public const string ReductionKernel_Source = @"extern ""C"" __global__ void ReductionKernel(float* __restrict__ input, float* __restrict__ output, int n){
-int bx = blockIdx.x;
-int threadsPerBlock = blockDim.x;
-int elementsPerBlock = threadsPerBlock*2;
-int start = bx*elementsPerBlock;
-int end = start+elementsPerBlock;
-if(end>n)
+__shared__ float sdata[8];
+int tid = threadIdx.x;
+int i = blockIdx.x*(blockDim.x*2)+tid;
+float sum = 0.0f;
+if(i<n)
 {
-end=n;
+sum=input[i];
 }
-if(threadIdx.x==0)
+if(i+blockDim.x<n)
 {
-float blockSum = 0.0f;
-for(int i = start;i<end;i++)
-{
-blockSum+=input[i];
+sum+=input[i+blockDim.x];
 }
-output[bx]=blockSum;
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,16);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,8);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,4);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,2);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,1);
+int lane = tid%32;
+int warpId = tid/32;
+if(lane==0)
+{
+sdata[warpId]=sum;
+}
+__syncthreads();
+if(warpId==0)
+{
+float val = ((tid<8)?sdata[tid]:0.0f);
+val+=__shfl_down_sync(0xFFFFFFFF,val,4);
+val+=__shfl_down_sync(0xFFFFFFFF,val,2);
+val+=__shfl_down_sync(0xFFFFFFFF,val,1);
+if(tid==0)
+{
+output[blockIdx.x]=val;
+}
 }
 }
 ";
@@ -97,16 +114,7 @@ int output_size = output.Length * sizeof(global::System.Single);
 if (output_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_output, output_size));
-System.Runtime.InteropServices.GCHandle handle_output = System.Runtime.InteropServices.GCHandle.Alloc(output, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_output = handle_output.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_output, p_output, output_size));
-}
-finally
-{
-handle_output.Free();
-}
+// Skip HtoD copy for [Out] array: output
 }
 kernelParams[1] = &d_output;
 // Marshal scalar: n
@@ -120,20 +128,7 @@ IntPtr.Zero, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-// Copy back array: input
-if (input_size > 0 && d_input != IntPtr.Zero)
-{
-System.Runtime.InteropServices.GCHandle handleBack_input = System.Runtime.InteropServices.GCHandle.Alloc(input, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
-{
-IntPtr p_input = handleBack_input.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_input, d_input, input_size));
-}
-finally
-{
-handleBack_input.Free();
-}
-}
+// Skip DtoH copy for [In] array: input
 // Copy back array: output
 if (output_size > 0 && d_output != IntPtr.Zero)
 {

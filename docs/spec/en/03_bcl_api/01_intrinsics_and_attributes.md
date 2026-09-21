@@ -101,6 +101,33 @@ public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
 }
 ```
 
+### Parameter Interop Attributes (`[In]`, `[Out]`)
+
+Standard .NET attributes `[In]` and `[Out]` from `System.Runtime.InteropServices` can be applied to array parameters to optimize memory transfers across the PCIe bus.
+
+**Syntax**
+```csharp
+using System.Runtime.InteropServices;
+
+[GpuKernel]
+public static void VectorAdd([In] float[] a, [In] float[] b, [Out] float[] c, int n)
+```
+
+**Remarks**
+* By default, G# assumes all arrays are read/write (`[In, Out]`) and generates AOT wrapper code that copies data both to the device before kernel execution and back to the host after execution.
+* **`[In]` Attribute**: Indicates the array is read-only. The AOT transpiler will **skip copying the array back** to the host (`cuMemcpyDtoH`) after execution, saving PCIe bandwidth.
+* **`[Out]` Attribute**: Indicates the array is write-only. The AOT transpiler will **skip copying the array to** the device (`cuMemcpyHtoD`) before execution. It still allocates memory on the device (`cuMemAlloc`).
+* Using these attributes appropriately is highly recommended for performance-critical kernels, as redundant PCIe transfers can drastically degrade performance compared to native CUDA.
+
+**Example**
+```csharp
+[GpuKernel]
+public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int numMessages)
+{
+    // The AOT wrapper will only copy 'input' to the GPU, and only copy 'output' back to the CPU.
+}
+```
+
 ### Advanced Mapping Attributes
 
 The `Kassyi.GSharp.Core` package includes advanced attributes used primarily by the standard library to map C# constructs to native CUDA C++ representations during transpilation.
