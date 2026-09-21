@@ -1,5 +1,8 @@
 using System.Runtime.InteropServices;
 
+// ReSharper disable UnusedMember.Global
+#pragma warning disable IDE0051 // Remove unused private members
+
 namespace Kassyi.GSharp.Core;
 
 // --- Float ---
