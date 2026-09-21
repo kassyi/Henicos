@@ -66,3 +66,34 @@ Because log flushes are deferred to a background task, abrupt application termin
 To prevent this, developers should call `Logger.Shutdown()` during application exit. This method signals the channel writer to complete and employs a synchronized `Task.Wait()` to guarantee that the background task flushes all remaining buffered messages to disk before returning. 
 Additionally, file deletion commands (e.g., `Logger.Clear()`) are synchronized through the same `__CLEAR__` message queue to prevent disk access contention.
 
+## 2.5 Runtime Utilities
+
+### 2.5.1 `GpuBuffer<T>` (Native Memory Wrapper)
+
+G# introduces the `GpuBuffer<T>` abstraction in the Runtime space to provide a safe, strongly-typed unmanaged memory wrapper over raw CUDA device pointers. It enables zero-allocation device memory management and seamless Host-to-Device/Device-to-Host transfers.
+
+```csharp
+// Safely allocate and copy memory without raw P/Invoke overhead
+using var buffer = new GpuBuffer<int>(1024);
+
+// Synchronously copies data from Host (ReadOnlySpan<T>) to Device
+buffer.CopyToDevice(hostSpan);
+
+// Access the raw CuPointer for kernel invocation
+IntPtr devPtr = buffer.DevicePointer;
+```
+
+### 2.5.2 CUDA Event Timers (`GpuTimer`)
+
+The runtime provides `GpuTimer` (implemented as `CudaEventTimer`), an abstraction over native CUDA Driver Events (`cuEventCreate`, `cuEventRecord`, `cuEventElapsedTime`) to allow highly precise, asynchronous GPU throughput measurements without stalling the host pipeline.
+
+```csharp
+using var timer = new GpuTimer();
+
+timer.Start();
+// Launch device kernel asynchronously
+Launch_KernelName(args);
+timer.Stop();
+
+Console.WriteLine($"Kernel executed in: {timer.ElapsedMilliseconds} ms");
+```
