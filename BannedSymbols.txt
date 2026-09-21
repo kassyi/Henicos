@@ -1,22 +1,22 @@
-M:Microsoft.CodeAnalysis.ISymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.ITypeSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IMethodSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IPropertySymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IFieldSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IEventSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IParameterSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.ILocalSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IAliasSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.ILabelSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Use ToDisplayString() instead
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Use custom helper instead to avoid performance penalty in generator hot paths
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Use custom helper instead to avoid performance penalty in generator hot paths
+M:Microsoft.CodeAnalysis.ISymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.ITypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IMethodSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IPropertySymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IFieldSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IEventSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IParameterSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.ILocalSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IAliasSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.ILabelSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Use SymbolExtensions helpers (e.g. GetFullyQualifiedName) instead to avoid performance penalty
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Use SourceWriter extensions (e.g., AppendFullyQualifiedCppName) or cache the result to avoid allocation/performance penalty in generator hot paths
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Use SourceWriter extensions (e.g., AppendFullyQualifiedCppName) or cache the result to avoid allocation/performance penalty in generator hot paths
 T:System.Reflection.MethodInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
 T:System.Reflection.PropertyInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
 T:System.Reflection.FieldInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
