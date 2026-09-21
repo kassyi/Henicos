@@ -17,7 +17,17 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        if (invocationSymbol.ContainingType?.Name != "Gpu")
+        var containingType = invocationSymbol.ContainingType;
+        if (containingType?.Name == "Hint" && containingType.ContainingType?.Name == "Gpu")
+        {
+            if (invocationSymbol.Name == "Unroll")
+            {
+                CheckUnrollHint(invocation, ref context);
+            }
+            return;
+        }
+
+        if (containingType?.Name != "Gpu")
         {
             return;
         }
@@ -41,6 +51,60 @@ internal sealed class GpuMacroArgumentRule
                 CheckStringLiteral(args[0].Expression, ref context);
             }
         }
+    }
+
+    private void CheckUnrollHint(InvocationExpressionSyntax invocation, ref ValidationContext context)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count >= 1)
+        {
+            var factorExpr = args[0].Expression;
+            var constant = context.SemanticModel.GetConstantValue(factorExpr);
+            if (!constant.HasValue || constant.Value is not int intVal || intVal < 0)
+            {
+                var diagnostic = Diagnostic.Create(
+                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
+                    factorExpr.GetLocation());
+                context.ReportDiagnostic(diagnostic);
+            }
+        }
+
+        if (invocation.Parent is ExpressionStatementSyntax exprStmt)
+        {
+            if (!PrecedesSupportedLoop(exprStmt))
+            {
+                var diagnostic = Diagnostic.Create(
+                    GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+                    invocation.GetLocation());
+                context.ReportDiagnostic(diagnostic);
+            }
+        }
+    }
+
+    public static bool PrecedesSupportedLoop(ExpressionStatementSyntax node)
+    {
+        SyntaxList<StatementSyntax> statements;
+        if (node.Parent is BlockSyntax block)
+        {
+            statements = block.Statements;
+        }
+        else if (node.Parent is SwitchSectionSyntax switchSection)
+        {
+            statements = switchSection.Statements;
+        }
+        else
+        {
+            return false;
+        }
+
+        var index = statements.IndexOf(node);
+        if (index < 0 || index + 1 >= statements.Count)
+        {
+            return false;
+        }
+
+        var nextStmt = statements[index + 1];
+        return nextStmt is ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax;
     }
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
@@ -79,4 +143,3 @@ internal sealed class GpuMacroArgumentRule
         }
     }
 }
-

@@ -128,6 +128,38 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor UnrollFactorMustBeNonNegativeConstant = new(
+        id: "GSH0016",
+        title: "Unroll factor must be a non-negative compile-time constant",
+        messageFormat: "The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrollHintMustPrecedeLoop = new(
+        id: "GSH0017",
+        title: "Unroll hint must precede a loop",
+        messageFormat: "Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ManualEnumeratorNotSupported = new(
+        id: "GSH0013",
+        title: "Manual GetEnumerator calls are not supported",
+        messageFormat: "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead to ensure proper state machine dispose routing and memory safety.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor HostIntrinsicCallError = new(
+        id: "GSH0018",
+        title: "GPU intrinsic called from host",
+        messageFormat: "The GPU intrinsic '{0}' cannot be called from a host method",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static bool ValidateKernelReturnType(IMethodSymbol methodSymbol, Action<Diagnostic>? reportDiagnostic)
     {
         if (methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
