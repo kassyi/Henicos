@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Runtime.Interop;
 
-namespace Henicos.PiBenchmark.ComputeBenchmarks;
+namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static unsafe class NativeKernelInvoker
 {

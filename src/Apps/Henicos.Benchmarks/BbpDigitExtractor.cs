@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Henicos.PiBenchmark;
+namespace Henicos.Benchmarks;
 
 /// <summary>
 /// Implements the Bailey-Borwein-Plouffe (BBP) spigot algorithm for direct extraction of arbitrary hexadecimal Pi digits.

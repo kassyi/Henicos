@@ -1,4 +1,4 @@
-namespace Henicos.PiBenchmark.ComputeBenchmarks;
+namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 /// <summary>
 /// Benchmarks raw SHA-256 single-block transformation / compression function compute throughput.

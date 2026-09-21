@@ -1,4 +1,4 @@
-using Henicos.PiBenchmark.ComputeBenchmarks;
+using Henicos.Benchmarks.ComputeBenchmarks;
 using Kassyi.GSharp.Tests.Helpers;
 using Xunit;
 

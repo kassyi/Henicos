@@ -2,7 +2,7 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
-namespace Henicos.PiBenchmark;
+namespace Henicos.Benchmarks;
 
 public class TrialFactoringBenchmark
 {

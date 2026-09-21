@@ -3,7 +3,7 @@ using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.IO;
 
-namespace Henicos.PiBenchmark;
+namespace Henicos.Benchmarks;
 
 /// <summary>
 /// GPU-accelerated Chudnovsky binary splitting algorithm for ultra-fast high-precision Pi computation.

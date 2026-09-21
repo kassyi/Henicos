@@ -1,4 +1,4 @@
-namespace Henicos.PiBenchmark.ComputeBenchmarks;
+namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public class ReductionBenchmark : IComputeBenchmark
 {

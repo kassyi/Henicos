@@ -62,7 +62,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Henicos.PiBenchmark.ComputeBenchmarks
+namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class Sha256KernelsWrapper
 {

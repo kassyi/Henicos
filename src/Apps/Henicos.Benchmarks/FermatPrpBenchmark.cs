@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace Henicos.PiBenchmark;
+namespace Henicos.Benchmarks;
 
 public class FermatPrpBenchmark
 {
