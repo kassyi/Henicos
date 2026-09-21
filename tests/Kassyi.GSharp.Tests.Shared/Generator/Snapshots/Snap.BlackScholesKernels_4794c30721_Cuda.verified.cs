@@ -14,26 +14,15 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 public static partial class BlackScholesKernelsWrapper
 {
 public const string BlackScholesKernel_Source = @"extern ""C"" __global__ void BlackScholesKernel(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n){
-int stride = blockDim.x*gridDim.x;
-for(int tid = blockIdx.x*blockDim.x+threadIdx.x;tid<n;tid+=stride)
+for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < n; tid += gridDim.x * blockDim.x)
 {
 float s_val = s[tid];
 float x_val = x[tid];
 float t_val = t[tid];
 float d1 = (logf(s_val/x_val)+(r+v*v/2.0f)*t_val)/(v*sqrtf(t_val));
 float d2 = d1-v*sqrtf(t_val);
-float K1 = 1.0f/(1.0f+0.2316419f*fabsf(d1));
-float cndD1 = 0.3989422804f*expf(-0.5f*d1*d1)*(K1*(0.31938153f+K1*(-0.356563782f+K1*(1.781477937f+K1*(-1.821255978f+K1*1.330274429f)))));
-if(d1>0)
-{
-cndD1=1.0f-cndD1;
-}
-float K2 = 1.0f/(1.0f+0.2316419f*fabsf(d2));
-float cndD2 = 0.3989422804f*expf(-0.5f*d2*d2)*(K2*(0.31938153f+K2*(-0.356563782f+K2*(1.781477937f+K2*(-1.821255978f+K2*1.330274429f)))));
-if(d2>0)
-{
-cndD2=1.0f-cndD2;
-}
+float cndD1 = CndGsharp(d1);
+float cndD2 = CndGsharp(d2);
 float expRT = expf(-r*t_val);
 callResult[tid]=s_val*cndD1-x_val*expRT*cndD2;
 putResult[tid]=x_val*expRT*(1.0f-cndD2)-s_val*(1.0f-cndD1);
@@ -319,6 +308,18 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"";
+public const string Source = @"inline __device__ float CndGsharp(float d);
+
+inline __device__ float CndGsharp(float d){
+float K = 1.0f/(1.0f+0.2316419f*fabsf(d));
+float cnd = 0.3989422804f*expf(-0.5f*d*d)*(K*(0.31938153f+K*(-0.356563782f+K*(1.781477937f+K*(-1.821255978f+K*1.330274429f)))));
+if(d>0)
+{
+cnd=1.0f-cnd;
+}
+return cnd;
+}
+
+";
 }
 }
