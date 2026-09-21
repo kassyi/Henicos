@@ -8770,5 +8770,32 @@
     "_searchableText": "cor01addexplicitboundaryandfailurepathtestsforfastmathapi",
     "category": "Core API",
     "title": "[QA] Add explicit boundary and failure-path tests for FastMath API"
+  },
+  {
+    "metrics": {
+      "score": 27,
+      "generality": 3,
+      "blocker": 3,
+      "difficulty": 3
+    },
+    "status": "implemented",
+    "_searchableText": "gen56supportcudacompatiblealignmentfornestedvectortypes",
+    "category": "Generator Infrastructure",
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs",
+      "tests/Kassyi.GSharp.Tests.Shared/Runtime/GEN-56_NestedVectorAlignmentTests.cs",
+      "tests/Kassyi.GSharp.Tests.Shared/Runtime/GEN-56_NestedVectorAlignmentKernels.cu.cs"
+    ],
+    "pr": null,
+    "title": "Support CUDA-compatible alignment for nested vector types",
+    "details": {
+      "csharp_example": "public struct NestedVectorStruct { public byte A; public Float4 B; }",
+      "current_behavior": "Vector types (Float4, etc.) in nested custom structs default to CLR alignment, causing host-device offset divergence.",
+      "strategy": "Implemented FieldOffset wire representation logic in MarshalingEmitter to dynamically construct CUDA ABI-compatible layouts.",
+      "cpp_example": "struct __Native_NestedVectorStruct { byte A; /* 15 bytes padding */ Float4 B; }"
+    },
+    "domain": "GEN",
+    "score": 27,
+    "id": "GEN-56"
   }
 ]

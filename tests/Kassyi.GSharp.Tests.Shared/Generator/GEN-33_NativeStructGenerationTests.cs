@@ -22,7 +22,7 @@ public class GEN_33_NativeStructGenerationTests
 
         // 1. Check native struct declaration and layout for ChildStruct where float[] is replaced by IntPtr
         Assert.Contains(
-            "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]",
+            "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]",
             allCode);
         Assert.Contains("struct __Native_Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct", allCode);
         Assert.Contains("IntPtr Values;", allCode);
@@ -43,8 +43,8 @@ public class GEN_33_NativeStructGenerationTests
         Assert.Contains("Marshal_Kassyi_GSharp_Tests_GeneratorTestCode_ParentStruct", allCode);
         Assert.Contains("Unmarshal_Kassyi_GSharp_Tests_GeneratorTestCode_ParentStruct", allCode);
 
-        // 5. Verify packed struct correctly emits Pack attribute on Native struct
-        Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, Pack = 2)]", allCode);
+        // 5. Verify packed struct (now emitted explicitly following CUDA ABI rules)
+        Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]", allCode);
         Assert.Contains("struct __Native_Kassyi_GSharp_Tests_GeneratorTestCode_PackedShadowStruct", allCode);
         Assert.Contains("IntPtr Data;", allCode);
         Assert.Contains("global::System.Byte Flag;", allCode);

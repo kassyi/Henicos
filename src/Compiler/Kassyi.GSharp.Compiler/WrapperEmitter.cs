@@ -1,6 +1,8 @@
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Compiler.Marshaling;
 
 namespace Kassyi.GSharp.Compiler;
+
 /// <summary>Generates host-side C# wrapper classes that JIT-compile and invoke GPU kernels.</summary>
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
@@ -42,7 +44,7 @@ internal static class WrapperEmitter
             using (writer.Scope())
             {
                 WriteKernelSource(writer, method, source, config);
-                MarshalingEmitter.WriteStructMarshaling(writer, method);
+                StructMarshalingEmitter.WriteStructMarshaling(writer, method);
 
                 writer.AppendLine($"private static byte[]? s_binaryData_{method.Name};");
                 writer.AppendLine($"private static bool s_isLoaded_{method.Name};");
@@ -95,18 +97,18 @@ internal static class WrapperEmitter
             using (writer.Scope())
             {
                 WriteCudaKernelCompilationCall(writer, method);
-                MarshalingEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
+                KernelLaunchEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
 
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    MarshalingEmitter.WriteMarshalAndLaunchKernel(writer, method, isDevicePtr);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, method, isDevicePtr);
                 }
 
                 writer.AppendLine("finally");
                 using (writer.Scope())
                 {
-                    MarshalingEmitter.WriteCleanup(writer, method, isDevicePtr);
+                    KernelLaunchEmitter.WriteCleanup(writer, method, isDevicePtr);
                 }
             }
 
@@ -286,12 +288,14 @@ internal static class WrapperEmitter
             {
                 writer.AppendLine($"s_binaryData_{method.Name} = System.IO.File.ReadAllBytes(fatbinPath);");
             }
+
             writer.AppendLine("else");
             using (writer.Scope())
             {
                 writer.AppendLine(
                     $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
             }
+
             writer.AppendLine($"s_isLoaded_{method.Name} = true;");
         }
 
