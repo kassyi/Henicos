@@ -23,3 +23,8 @@ Types:
   Kassyi.GSharp.Core.ULong2: "ulonglong2"
   Kassyi.GSharp.Core.ULong3: "ulonglong3"
   Kassyi.GSharp.Core.ULong4: "ulonglong4"
+Intrinsics:
+  Kassyi.GSharp.Core.FastMath.Exp(float): "__expf"
+  Kassyi.GSharp.Core.FastMath.Log(float): "__logf"
+  Kassyi.GSharp.Core.FastMath.Sqrt(float): "__fsqrt_rn"
+  Kassyi.GSharp.Core.FastMath.Abs(float): "fabsf"
