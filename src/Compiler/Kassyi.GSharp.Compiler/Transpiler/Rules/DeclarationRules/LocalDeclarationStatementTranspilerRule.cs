@@ -26,7 +26,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     {
         public VariableDeclaratorSyntax Declarator { get; } = declarator;
         public ExpressionSyntax SizeArgument { get; } = sizeArgument;
-        public int? ConstantSize { get; } = constantSize;
+        private int? ConstantSize { get; } = constantSize;
         public bool IsDynamic => !ConstantSize.HasValue;
         public int StaticSize => ConstantSize ?? 0;
     }
@@ -96,7 +96,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         return new SharedMemoryAllocation(
             declarator,
             sizeArg,
-            constantValue.HasValue ? Convert.ToInt32(constantValue.Value!) : null
+            constantValue.HasValue ? Convert.ToInt32(constantValue.Value ?? 0) : null
         );
     }
 
