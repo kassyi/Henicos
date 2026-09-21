@@ -24,18 +24,31 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class ReductionKernelsWrapper
 {
-public const string ReductionKernel_Source = @"extern ""C"" __global__ void ReductionKernel(float* __restrict__ input, float* __restrict__ output, int n){
+public const string ReductionKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Core_Float4__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Core_Float4__
+struct Kassyi_GSharp_Core_Float4
+{
+float X;
+float Y;
+float Z;
+float W;
+}
+;
+#endif
+extern ""C"" __global__ void ReductionKernel(float4* __restrict__ input, float* __restrict__ output, int n){
 __shared__ float sdata[8];
 int tid = threadIdx.x;
 int i = blockIdx.x*(blockDim.x*2)+tid;
 float sum = 0.0f;
 if(i<n)
 {
-sum=input[i];
+auto v = input[i];
+sum=v.x+v.y+v.z+v.w;
 }
 if(i+blockDim.x<n)
 {
-sum+=input[i+blockDim.x];
+auto v = input[i+blockDim.x];
+sum+=v.x+v.y+v.z+v.w;
 }
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,16);
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,8);
@@ -66,7 +79,7 @@ public static readonly string ReductionKernel_FullSource = global::Kassyi.GSharp
 private static byte[]? s_binaryData_ReductionKernel;
 private static bool s_isLoaded_ReductionKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void Launch_ReductionKernel(global::System.Single[] input, global::System.Single[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void Launch_ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, global::System.Single[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
 return;
@@ -93,7 +106,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: input
-int input_size = input.Length * sizeof(global::System.Single);
+int input_size = input.Length * sizeof(global::Kassyi.GSharp.Core.Float4);
 if (input_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_input, input_size));
