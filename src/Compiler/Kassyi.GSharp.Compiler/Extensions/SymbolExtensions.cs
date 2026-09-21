@@ -33,7 +33,10 @@ internal static class SymbolExtensions
 
     public static bool IsSystemNumericsVector(this ITypeSymbol? typeSymbol)
     {
-        if (typeSymbol == null) return false;
+        if (typeSymbol?.ContainingNamespace == null)
+        {
+            return false;
+        }
 
         // BCL System.Numerics.Vector*
         if (typeSymbol.Name is TypeConstants.Vector2Type or TypeConstants.Vector3Type or TypeConstants.Vector4Type &&
