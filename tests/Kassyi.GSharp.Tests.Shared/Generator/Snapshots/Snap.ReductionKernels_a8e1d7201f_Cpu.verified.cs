@@ -24,18 +24,31 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class ReductionKernelsWrapper
 {
-public const string ReductionKernel_Source = @"extern ""C"" __declspec(dllexport) void ReductionKernel(float* __restrict__ input, float* __restrict__ output, int n){
+public const string ReductionKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Core_Float4__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Core_Float4__
+struct Kassyi_GSharp_Core_Float4
+{
+float X;
+float Y;
+float Z;
+float W;
+}
+;
+#endif
+extern ""C"" __declspec(dllexport) void ReductionKernel(Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n){
 __shared__ float sdata[8];
 int tid = threadIdx.x;
 int i = blockIdx.x*(blockDim.x*2)+tid;
 float sum = 0.0f;
 if(i<n)
 {
-sum=input[i];
+auto v = input[i];
+sum=v.x+v.y+v.z+v.w;
 }
 if(i+blockDim.x<n)
 {
-sum+=input[i+blockDim.x];
+auto v = input[i+blockDim.x];
+sum+=v.x+v.y+v.z+v.w;
 }
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,16);
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,8);
@@ -61,7 +74,7 @@ output[blockIdx.x]=val;
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -80,8 +93,8 @@ private static byte[]? s_binaryData_ReductionKernel;
 private static bool s_isLoaded_ReductionKernel;
 #pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* input, global::System.Single* output, global::System.Int32 n);
-public static unsafe void Launch_ReductionKernel(global::System.Single[] input, global::System.Single[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private unsafe delegate void ReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Core.Float4* input, global::System.Single* output, global::System.Int32 n);
+public static unsafe void Launch_ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, global::System.Single[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
 return;
@@ -94,7 +107,7 @@ if (!s_isLoaded_ReductionKernel)
 s_isLoaded_ReductionKernel = true;
 }
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernel", dllPath);
-fixed (global::System.Single* p_input = input)
+fixed (global::Kassyi.GSharp.Core.Float4* p_input = input)
 fixed (global::System.Single* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_output, n);

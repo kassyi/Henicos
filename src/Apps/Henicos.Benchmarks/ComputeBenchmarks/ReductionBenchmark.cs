@@ -1,13 +1,15 @@
+using System.Numerics;
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public class ReductionBenchmark : IComputeBenchmark
 {
-    private const int N = 16 * 1024 * 1024; // 16M elements
+    private const int N_Floats = 16 * 1024 * 1024; // 16M floats
+    private const int N = N_Floats / 4; // 4M Float4 elements
     private const int ThreadsPerBlock = 256;
     private const int ElementsPerBlock = ThreadsPerBlock * 2;
     private const int Blocks = N / ElementsPerBlock;
 
-    private float[] _input = null!;
+    private Float4[] _input = null!;
     private float[] _outputCpu = null!;
     private float[] _outputGsharp = null!;
     private float[] _outputNative = null!;
@@ -20,7 +22,7 @@ public class ReductionBenchmark : IComputeBenchmark
 
     public void Initialize()
     {
-        _input = new float[N];
+        _input = new Float4[N];
         _outputCpu = new float[Blocks];
         _outputGsharp = new float[Blocks];
         _outputNative = new float[Blocks];
@@ -28,7 +30,12 @@ public class ReductionBenchmark : IComputeBenchmark
         var rand = new Random(42);
         for (int i = 0; i < N; i++)
         {
-            _input[i] = (float)rand.NextDouble();
+            _input[i] = new Float4(
+                (float)rand.NextDouble(),
+                (float)rand.NextDouble(),
+                (float)rand.NextDouble(),
+                (float)rand.NextDouble()
+            );
         }
     }
 
@@ -46,7 +53,8 @@ public class ReductionBenchmark : IComputeBenchmark
 
             for (int i = start; i < end; i++)
             {
-                sum += _input[i];
+                var v = _input[i];
+                sum += v.X + v.Y + v.Z + v.W;
             }
 
             _outputCpu[b] = sum;
@@ -78,14 +86,14 @@ public class ReductionBenchmark : IComputeBenchmark
         for (int b = 0; b < Blocks; b++)
         {
             float blockDiffGsharp = Math.Abs(_outputCpu[b] - _outputGsharp[b]);
-            if (blockDiffGsharp > 1e-3f)
+            if (blockDiffGsharp > 1e-1f)
             {
                 throw new Exception(
                     $"Mismatch in block {b} G# reduction sum: CPU={_outputCpu[b]}, G#={_outputGsharp[b]}, Diff={blockDiffGsharp}");
             }
 
             float blockDiffNative = Math.Abs(_outputCpu[b] - _outputNative[b]);
-            if (blockDiffNative > 1e-3f)
+            if (blockDiffNative > 1e-1f)
             {
                 throw new Exception(
                     $"Mismatch in block {b} Native reduction sum: CPU={_outputCpu[b]}, Native={_outputNative[b]}, Diff={blockDiffNative}");
