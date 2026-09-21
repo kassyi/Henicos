@@ -1,6 +1,5 @@
-using System.Security.Cryptography;
+
 using Kassyi.GSharp.Compiler.Dialects;
-using Kassyi.GSharp.Compiler.Helpers;
 using Kassyi.GSharp.Compiler.Models;
 using Microsoft.CodeAnalysis.Text;
 
@@ -17,10 +16,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .Select((options, _) =>
             {
                 options.GlobalOptions.TryGetValue("build_property.GSharpTargetDialect", out var dialect);
-                if (string.IsNullOrWhiteSpace(dialect))
-                {
-                    dialect = "Cpu";
-                }
+                var finalDialect = string.IsNullOrWhiteSpace(dialect) ? "Cpu" : dialect;
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
                 var emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
@@ -37,9 +33,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ? Path.Combine(projDir, objPath)
                     : null;
 
-                options.GlobalOptions.TryGetValue("build_property.GSharpAotEncryptionKey", out var customEncryptionKey);
-
-                return new GeneratorConfig(dialect!, emitSource, intermediatePath, customEncryptionKey);
+                return new GeneratorConfig(finalDialect ?? "Cpu", emitSource, intermediatePath);
             });
 
         var kernelMethods = context.SyntaxProvider
@@ -47,14 +41,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuKernel),
                 transform: static (ctx, _) => TranspileKernel(ctx, KnownAttributes.GpuKernel))
             .Where(static m => m.HasValue)
-            .Select(static (m, _) => m!.Value);
+            .Select(static (m, _) => m.GetValueOrDefault());
 
         var deviceMethods = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuDeviceFunction),
                 transform: static (ctx, _) => TranspileDeviceMethod(ctx, KnownAttributes.GpuDeviceFunction))
             .Where(static m => m.HasValue)
-            .Select(static (m, _) => m!.Value);
+            .Select(static (m, _) => m.GetValueOrDefault());
 
         var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());
         var allData = kernelsAndDevices.Combine(configProvider);
@@ -83,8 +77,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
         }, isDevice: false, cppDialect);
 
-        var keyProvider = ResolveKeyProvider(methodSymbol);
-
         var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
 
         return new TranspiledKernelResult(
@@ -94,7 +86,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
             cudaSource,
             cppSource,
-            keyProvider,
             equatableDiagnostics
         );
 
@@ -211,17 +202,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         EmitSharedSources(context, config, preludeSource, commonDeviceSource);
 
-        byte[]? aesKey = null;
-        if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
-        {
-            aesKey = ResolveEncryptionKey(config);
-        }
-
         // Use Distinct by fully qualified method name to avoid duplicates if partial classes define it twice (which is illegal in C# but AST parses it).
         // For IMethodSymbol, SymbolEqualityComparer.Default is fine here because they are from the SAME cached output if unchanged.
         foreach (var method in kernelMethods.Distinct())
         {
-            ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda, aesKey);
+            ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda);
         }
     }
 
@@ -292,7 +277,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static void ProcessKernelMethod(TranspiledKernelResult method, GeneratorConfig config,
         SourceProductionContext context, ITranspilerDialect dialect, string preludeSource, string commonDeviceSource,
-        bool isCuda, byte[]? aesKey)
+        bool isCuda)
     {
         foreach (var diag in method.Diagnostics)
         {
@@ -300,106 +285,45 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         string source = isCuda ? method.CudaSource : method.CppSource;
-        string? keyProvider = method.KeyProvider;
 
         if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
         {
-            if (keyProvider != null && string.IsNullOrWhiteSpace(config.CustomEncryptionKey))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        "GEN002", "Missing Encryption Key",
-                        $"Method '{method.MethodName}' specifies an EncryptionKeyProvider, but no build-time key was provided via <GSharpAotEncryptionKey> MSBuild property.",
-                        "GSharp", DiagnosticSeverity.Error, true),
-                    method.MethodSymbol.Locations.FirstOrDefault() ?? Location.None));
-            }
-
-            WriteAotArtifacts(method, config, aesKey!, preludeSource, commonDeviceSource, source, dialect);
+            WriteAotArtifacts(method, config, preludeSource, commonDeviceSource, source, dialect);
         }
 
-        var wrapperSource =
-            WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config, aesKey, keyProvider);
+        var wrapperSource = WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config);
         context.AddSource(method.ClassName + "_" + method.MethodName + "_Wrapper.g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
-    private static string? ResolveKeyProvider(IMethodSymbol method)
-    {
-        var attrData = method.GetAttributes().FirstOrDefault(a =>
-            a.AttributeClass != null &&
-            KnownAttributes.IsAttributeName(a.AttributeClass.Name, KnownAttributes.GpuKernel));
-        if (attrData == null)
-        {
-            return null;
-        }
 
-        foreach (var namedArg in attrData.NamedArguments)
-        {
-            if (namedArg is { Key: "EncryptionKeyProvider", Value.Value: string providerName } &&
-                !string.IsNullOrWhiteSpace(providerName))
-            {
-                return providerName;
-            }
-        }
 
-        return null;
-    }
-
-    private static byte[] ResolveEncryptionKey(GeneratorConfig config)
-    {
-        var aesKey = new byte[32];
-        if (!string.IsNullOrWhiteSpace(config.CustomEncryptionKey))
-        {
-            try
-            {
-                var decoded = Convert.FromBase64String(config.CustomEncryptionKey!);
-                if (decoded.Length == 32)
-                {
-                    return decoded;
-                }
-            }
-            catch
-            {
-                // Fallback to hashing below
-            }
-
-            using var sha = SHA256.Create();
-            return sha.ComputeHash(Encoding.UTF8.GetBytes(config.CustomEncryptionKey!));
-        }
-
-        using (var sha = SHA256.Create())
-        {
-            var defaultKeyHash =
-                sha.ComputeHash(Encoding.UTF8.GetBytes("GSharp_Default_VBO_Key_Fallback_" + config.TargetDialect));
-            Array.Copy(defaultKeyHash, aesKey, 32);
-        }
-
-        return aesKey;
-    }
-
-    private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config, byte[] aesKey,
+    private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config,
         string preludeSource, string commonDeviceSource, string kernelSource, ITranspilerDialect dialect)
     {
         var fullCudaSource = preludeSource + commonDeviceSource + kernelSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
         var fileName = $"{method.ClassName}_{method.MethodName}{ext}";
-        var filePath = Path.Combine(config.IntermediateOutputPath!, fileName);
-        var keyFilePath = filePath + ".key";
+        var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
+        if (string.IsNullOrEmpty(safeIntermediateOutputPath))
+        {
+            return;
+        }
+
+        var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
 
 #pragma warning disable RS1035 // Do not do file IO in analyzers
         try
         {
-            if (!Directory.Exists(config.IntermediateOutputPath))
+            if (!Directory.Exists(safeIntermediateOutputPath))
             {
-                Directory.CreateDirectory(config.IntermediateOutputPath!);
+                Directory.CreateDirectory(safeIntermediateOutputPath);
             }
 
             if (!File.Exists(filePath) || File.ReadAllText(filePath) != fullCudaSource)
             {
                 File.WriteAllText(filePath, fullCudaSource);
             }
-
-            File.WriteAllBytes(keyFilePath, aesKey);
         }
         catch
         {

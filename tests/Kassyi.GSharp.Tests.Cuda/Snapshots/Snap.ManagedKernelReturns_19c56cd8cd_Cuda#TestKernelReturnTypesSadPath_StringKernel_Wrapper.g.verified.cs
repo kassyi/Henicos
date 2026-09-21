@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string StringKernel_Source = @"// GSharp Transpilation failed for StringKernel. Return type string is not supported.";
 public static readonly string StringKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + StringKernel_Source;
-private static byte[]? s_decryptionKey_StringKernel;
 private static byte[]? s_binaryData_StringKernel;
 private static bool s_isLoaded_StringKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -32,7 +31,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKe
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_StringKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_StringKernel = null;
 }
 else
 {
@@ -40,7 +38,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturn
 }
 s_isLoaded_StringKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StringKernel, "StringKernel", s_decryptionKey_StringKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StringKernel, "StringKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -103,7 +101,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKe
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_StringKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_StringKernel = null;
 }
 else
 {
@@ -111,7 +108,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturn
 }
 s_isLoaded_StringKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StringKernel, "StringKernel", s_decryptionKey_StringKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_StringKernel, "StringKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

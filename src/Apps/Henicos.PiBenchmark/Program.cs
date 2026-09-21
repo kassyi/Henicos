@@ -1,4 +1,5 @@
 using System.Globalization;
+using Henicos.PiBenchmark.ComputeBenchmarks;
 
 namespace Henicos.PiBenchmark;
 
@@ -84,7 +85,7 @@ internal class Program
     private static int RunComputeBench(string[] args)
     {
         var suite = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
-        var success = ComputeBenchmarks.ComputeBenchmarkRunner.RunSuite(suite);
+        var success = ComputeBenchmarkRunner.RunSuite(suite);
         return success ? 0 : 1;
     }
 

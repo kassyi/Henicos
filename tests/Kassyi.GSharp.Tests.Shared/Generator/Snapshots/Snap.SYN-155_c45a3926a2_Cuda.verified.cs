@@ -31,7 +31,6 @@ rotRightRes[tid]=__gsharp_rotr32(val[tid],shift[tid]);
 }
 ";
 public static readonly string Rotate32Kernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Rotate32Kernel_Source;
-private static byte[]? s_decryptionKey_Rotate32Kernel;
 private static byte[]? s_binaryData_Rotate32Kernel;
 private static bool s_isLoaded_Rotate32Kernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -48,7 +47,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_15
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_Rotate32Kernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_Rotate32Kernel = null;
 }
 else
 {
@@ -56,7 +54,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_155_BitOpera
 }
 s_isLoaded_Rotate32Kernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate32Kernel, "Rotate32Kernel", s_decryptionKey_Rotate32Kernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate32Kernel, "Rotate32Kernel");
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_shift = IntPtr.Zero;
 IntPtr d_rotLeftRes = IntPtr.Zero;
@@ -219,7 +217,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_15
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_Rotate32Kernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_Rotate32Kernel = null;
 }
 else
 {
@@ -227,7 +224,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_155_BitOpera
 }
 s_isLoaded_Rotate32Kernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate32Kernel, "Rotate32Kernel", s_decryptionKey_Rotate32Kernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate32Kernel, "Rotate32Kernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -281,7 +278,6 @@ rotRightRes[tid]=__gsharp_rotr64(val[tid],shift[tid]);
 }
 ";
 public static readonly string Rotate64Kernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Rotate64Kernel_Source;
-private static byte[]? s_decryptionKey_Rotate64Kernel;
 private static byte[]? s_binaryData_Rotate64Kernel;
 private static bool s_isLoaded_Rotate64Kernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -298,7 +294,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_15
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_Rotate64Kernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_Rotate64Kernel = null;
 }
 else
 {
@@ -306,7 +301,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_155_BitOpera
 }
 s_isLoaded_Rotate64Kernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate64Kernel, "Rotate64Kernel", s_decryptionKey_Rotate64Kernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate64Kernel, "Rotate64Kernel");
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_shift = IntPtr.Zero;
 IntPtr d_rotLeftRes = IntPtr.Zero;
@@ -469,7 +464,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_15
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_Rotate64Kernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_Rotate64Kernel = null;
 }
 else
 {
@@ -477,7 +471,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'SYN_155_BitOpera
 }
 s_isLoaded_Rotate64Kernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate64Kernel, "Rotate64Kernel", s_decryptionKey_Rotate64Kernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Rotate64Kernel, "Rotate64Kernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

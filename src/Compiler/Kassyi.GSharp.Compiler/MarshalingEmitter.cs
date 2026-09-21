@@ -194,7 +194,7 @@ internal static class MarshalingEmitter
                 {
                     writer.AppendLine(
                         $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.{member.Name}, size));");
-                    writer.AppendLine($"allocatedPtrs!.Add(native.{member.Name});");
+                    writer.AppendLine($"allocatedPtrs?.Add(native.{member.Name});");
                     writer.AppendLine(
                         $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
                     writer.AppendLine("try");

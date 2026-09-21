@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 

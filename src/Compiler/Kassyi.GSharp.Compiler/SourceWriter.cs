@@ -2,8 +2,6 @@
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
-// ReSharper disable once UnusedMember.Global -- Library methods for Source Generators
-// ReSharper disable once UnusedMethod.Global -- Library methods for Source Generators
 #pragma warning disable IDE0051 // Justification: Library methods for Source Generators
 public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 {
@@ -15,10 +13,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder
-    {
-        get;
-    }
+    private StringBuilder Builder { get; }
 
     public SourceWriter()
     {
@@ -123,13 +118,19 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     [UnscopedRef]
     public ref readonly SourceWriter AppendConstantField(IFieldSymbol field)
     {
-        if (field.Type.SpecialType == SpecialType.System_Boolean)
+        if (field.ConstantValue is null)
         {
-            Append(((bool)field.ConstantValue!) ? "true" : "false");
+            Append("nullptr");
             return ref this;
         }
 
-        Append(field.ConstantValue!.ToString());
+        if (field.Type.SpecialType == SpecialType.System_Boolean)
+        {
+            Append(((bool)field.ConstantValue) ? "true" : "false");
+            return ref this;
+        }
+
+        Append(field.ConstantValue.ToString());
         switch (field.Type.SpecialType)
         {
             case SpecialType.System_UInt64:
@@ -155,7 +156,9 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     [UnscopedRef]
     public ref readonly SourceWriter AppendLine()
     {
+#pragma warning disable IDE0056
         if (Builder.Length > 0 && Builder[Builder.Length - 1] == '\n')
+#pragma warning restore IDE0056
         {
             return ref this;
         }

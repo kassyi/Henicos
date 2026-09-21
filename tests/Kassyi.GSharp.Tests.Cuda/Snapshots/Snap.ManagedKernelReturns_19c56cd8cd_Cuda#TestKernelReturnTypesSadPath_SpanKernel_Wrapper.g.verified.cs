@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string SpanKernel_Source = @"// GSharp Transpilation failed for SpanKernel. Return type System.ReadOnlySpan<float> is not supported.";
 public static readonly string SpanKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SpanKernel_Source;
-private static byte[]? s_decryptionKey_SpanKernel;
 private static byte[]? s_binaryData_SpanKernel;
 private static bool s_isLoaded_SpanKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -32,7 +31,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKe
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_SpanKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_SpanKernel = null;
 }
 else
 {
@@ -40,7 +38,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturn
 }
 s_isLoaded_SpanKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SpanKernel, "SpanKernel", s_decryptionKey_SpanKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SpanKernel, "SpanKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -103,7 +101,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKe
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_SpanKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_SpanKernel = null;
 }
 else
 {
@@ -111,7 +108,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturn
 }
 s_isLoaded_SpanKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SpanKernel, "SpanKernel", s_decryptionKey_SpanKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SpanKernel, "SpanKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

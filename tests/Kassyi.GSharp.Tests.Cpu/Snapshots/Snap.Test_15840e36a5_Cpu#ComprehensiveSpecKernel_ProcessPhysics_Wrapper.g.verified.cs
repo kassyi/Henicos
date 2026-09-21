@@ -263,7 +263,6 @@ host.FloatValue = native.FloatValue;
 host.DoubleValue = native.DoubleValue;
 }
 #pragma warning restore CS8500
-private static byte[]? s_decryptionKey_ProcessPhysics;
 private static byte[]? s_binaryData_ProcessPhysics;
 private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500
@@ -280,10 +279,9 @@ var dllName = $"ComprehensiveSpecKernel_ProcessPhysics{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ProcessPhysics)
 {
-s_decryptionKey_ProcessPhysics = null;
 s_isLoaded_ProcessPhysics = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath, s_decryptionKey_ProcessPhysics);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ProcessPhysics", dllPath);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)

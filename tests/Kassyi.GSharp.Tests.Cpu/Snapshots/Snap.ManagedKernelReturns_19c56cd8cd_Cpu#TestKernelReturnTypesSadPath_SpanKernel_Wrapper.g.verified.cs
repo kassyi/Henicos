@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string SpanKernel_Source = @"// GSharp Transpilation failed for SpanKernel. Return type System.ReadOnlySpan<float> is not supported.";
 public static readonly string SpanKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + SpanKernel_Source;
-private static byte[]? s_decryptionKey_SpanKernel;
 private static byte[]? s_binaryData_SpanKernel;
 private static bool s_isLoaded_SpanKernel;
 #pragma warning disable CS8500
@@ -31,10 +30,9 @@ var dllName = $"TestKernelReturnTypesSadPath_SpanKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_SpanKernel)
 {
-s_decryptionKey_SpanKernel = null;
 s_isLoaded_SpanKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SpanKernel_Delegate>("__gsharp_launch_SpanKernel", dllPath, s_decryptionKey_SpanKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SpanKernel_Delegate>("__gsharp_launch_SpanKernel", dllPath);
 fixed (global::System.ReadOnlySpan<global::System.Single>* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

@@ -18,14 +18,15 @@ public static class YamlDialectGenerator
             return;
         }
 
-        string inputDir = args[0];
-        string outputDir = args[1];
+        var inputDir = args[0];
+        var outputDir = args[1];
 
         Directory.CreateDirectory(outputDir);
 
         var yamlFiles = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories)
-            .Where(path => path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            .Select(path => File.ReadAllText(path));
+            .Where(path => path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
+                           path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            .Select(File.ReadAllText);
 
         var dialectDefinitions = yamlFiles.Select(text =>
         {
@@ -37,14 +38,14 @@ public static class YamlDialectGenerator
             {
                 return null;
             }
-        }).Where(def => def != null && !string.IsNullOrEmpty(def.Name)).ToList();
+        }).Where(def => def != null && !string.IsNullOrEmpty(def.Name)).Cast<DialectDefinition>().ToList();
 
-        var defMap = dialectDefinitions.ToDictionary(d => d!.Name, d => d!);
+        var defMap = dialectDefinitions.ToDictionary(d => d.Name, d => d);
 
         foreach (var def in dialectDefinitions)
         {
-            string source = GenerateDialectClass(def!, defMap);
-            File.WriteAllText(Path.Combine(outputDir, $"{def!.Name}Dialect.g.cs"), source, Encoding.UTF8);
+            string source = GenerateDialectClass(def, defMap);
+            File.WriteAllText(Path.Combine(outputDir, $"{def.Name}Dialect.g.cs"), source, Encoding.UTF8);
         }
     }
 
@@ -83,21 +84,21 @@ public static class YamlDialectGenerator
             }
 
             // StructPrefix
-            string? structPrefix = GetInheritedValue(def, definitions, d => d.StructPrefix);
+            var structPrefix = GetInheritedValue(def, definitions, d => d.StructPrefix);
             if (structPrefix != null)
             {
                 writer.Line($"public override string StructPrefix => \"{structPrefix}\";");
             }
 
             // MethodPrefix
-            string? methodPrefix = GetInheritedValue(def, definitions, d => d.MethodPrefix);
+            var methodPrefix = GetInheritedValue(def, definitions, d => d.MethodPrefix);
             if (methodPrefix != null)
             {
                 writer.Line($"public override string MethodPrefix => \"{methodPrefix}\";");
             }
 
             // Types
-            if (def.Types != null && def.Types.Count > 0)
+            if (def.Types.Count > 0)
             {
                 writer.Line("public override bool TryMapType(string fullyQualifiedName, out string mappedType)");
                 using (writer.Scope())
@@ -110,14 +111,16 @@ public static class YamlDialectGenerator
                             writer.Line($"case \"{kvp.Key}\": mappedType = \"{kvp.Value}\"; return true;");
                         }
                     }
+
                     writer.Line("return base.TryMapType(fullyQualifiedName, out mappedType);");
                 }
             }
 
             // Intrinsics
-            if (def.Intrinsics != null && def.Intrinsics.Count > 0)
+            if (def.Intrinsics.Count > 0)
             {
-                writer.Line("protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
+                writer.Line(
+                    "protected override bool TryMapIntrinsicCore(string signature, out string mappedExpression)");
                 using (writer.Scope())
                 {
                     writer.Line("switch (signature)");
@@ -128,6 +131,7 @@ public static class YamlDialectGenerator
                             writer.Line($"case \"{kvp.Key}\": mappedExpression = \"{kvp.Value}\"; return true;");
                         }
                     }
+
                     writer.Line("return base.TryMapIntrinsicCore(signature, out mappedExpression);");
                 }
             }
@@ -136,22 +140,22 @@ public static class YamlDialectGenerator
         return writer.ToString();
     }
 
-    private static void CollectHeaders(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, HashSet<string> headers)
+    private static void CollectHeaders(DialectDefinition def, Dictionary<string, DialectDefinition> definitions,
+        HashSet<string> headers)
     {
-        if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits!, out var parent))
+        if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits ?? "", out var parent))
         {
             CollectHeaders(parent, definitions, headers);
         }
-        if (def.RequiredHeaders != null)
+
+        foreach (var h in def.RequiredHeaders)
         {
-            foreach (var h in def.RequiredHeaders)
-            {
-                headers.Add(h);
-            }
+            headers.Add(h);
         }
     }
 
-    private static string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions, Func<DialectDefinition, string?> selector)
+    private static string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions,
+        Func<DialectDefinition, string?> selector)
     {
         var val = selector(def);
         if (!string.IsNullOrEmpty(val))
@@ -159,10 +163,11 @@ public static class YamlDialectGenerator
             return val;
         }
 
-        if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits!, out var parent))
+        if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits ?? "", out var parent))
         {
             return GetInheritedValue(parent, definitions, selector);
         }
+
         return null;
     }
 }

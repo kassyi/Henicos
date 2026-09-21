@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string ManagedStructKernel_Source = @"// GSharp Transpilation failed for ManagedStructKernel. Return type Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct is not supported.";
 public static readonly string ManagedStructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ManagedStructKernel_Source;
-private static byte[]? s_decryptionKey_ManagedStructKernel;
 private static byte[]? s_binaryData_ManagedStructKernel;
 private static bool s_isLoaded_ManagedStructKernel;
 #pragma warning disable CS8500
@@ -31,10 +30,9 @@ var dllName = $"TestKernelReturnTypesSadPath_ManagedStructKernel{archSuffix}.dll
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_ManagedStructKernel)
 {
-s_decryptionKey_ManagedStructKernel = null;
 s_isLoaded_ManagedStructKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ManagedStructKernel_Delegate>("__gsharp_launch_ManagedStructKernel", dllPath, s_decryptionKey_ManagedStructKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ManagedStructKernel_Delegate>("__gsharp_launch_ManagedStructKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

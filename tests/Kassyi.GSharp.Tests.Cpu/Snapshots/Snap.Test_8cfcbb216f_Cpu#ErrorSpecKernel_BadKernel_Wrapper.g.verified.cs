@@ -35,7 +35,6 @@ BadKernel(__gsharp_auto_result);
 }
 ";
 public static readonly string BadKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + BadKernel_Source;
-private static byte[]? s_decryptionKey_BadKernel;
 private static byte[]? s_binaryData_BadKernel;
 private static bool s_isLoaded_BadKernel;
 #pragma warning disable CS8500
@@ -51,10 +50,9 @@ var dllName = $"ErrorSpecKernel_BadKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_BadKernel)
 {
-s_decryptionKey_BadKernel = null;
 s_isLoaded_BadKernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BadKernel_Delegate>("__gsharp_launch_BadKernel", dllPath, s_decryptionKey_BadKernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BadKernel_Delegate>("__gsharp_launch_BadKernel", dllPath);
 fixed (global::System.Int32* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

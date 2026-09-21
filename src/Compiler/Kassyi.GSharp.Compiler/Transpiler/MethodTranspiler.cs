@@ -334,7 +334,12 @@ public static class MethodTranspiler
         for (var i = 0; i < validParameters.Count; i++)
         {
             var p = validParameters[i];
-            var typeSymbol = context.SemanticModel.GetTypeInfo(p.Type!).Type;
+            if (p.Type == null)
+            {
+                continue;
+            }
+
+            var typeSymbol = context.SemanticModel.GetTypeInfo(p.Type).Type;
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 

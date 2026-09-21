@@ -44,7 +44,6 @@ Rotate32Kernel(val, shift, rotLeftRes, rotRightRes);
 }
 ";
 public static readonly string Rotate32Kernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + Rotate32Kernel_Source;
-private static byte[]? s_decryptionKey_Rotate32Kernel;
 private static byte[]? s_binaryData_Rotate32Kernel;
 private static bool s_isLoaded_Rotate32Kernel;
 #pragma warning disable CS8500
@@ -60,10 +59,9 @@ var dllName = $"SYN_155_BitOperationsKernels_Rotate32Kernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Rotate32Kernel)
 {
-s_decryptionKey_Rotate32Kernel = null;
 s_isLoaded_Rotate32Kernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate32Kernel_Delegate>("__gsharp_launch_Rotate32Kernel", dllPath, s_decryptionKey_Rotate32Kernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate32Kernel_Delegate>("__gsharp_launch_Rotate32Kernel", dllPath);
 fixed (global::System.UInt32* p_val = val)
 fixed (global::System.Int32* p_shift = shift)
 fixed (global::System.UInt32* p_rotLeftRes = rotLeftRes)
@@ -112,7 +110,6 @@ Rotate64Kernel(val, shift, rotLeftRes, rotRightRes);
 }
 ";
 public static readonly string Rotate64Kernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + Rotate64Kernel_Source;
-private static byte[]? s_decryptionKey_Rotate64Kernel;
 private static byte[]? s_binaryData_Rotate64Kernel;
 private static bool s_isLoaded_Rotate64Kernel;
 #pragma warning disable CS8500
@@ -128,10 +125,9 @@ var dllName = $"SYN_155_BitOperationsKernels_Rotate64Kernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_Rotate64Kernel)
 {
-s_decryptionKey_Rotate64Kernel = null;
 s_isLoaded_Rotate64Kernel = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate64Kernel_Delegate>("__gsharp_launch_Rotate64Kernel", dllPath, s_decryptionKey_Rotate64Kernel);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate64Kernel_Delegate>("__gsharp_launch_Rotate64Kernel", dllPath);
 fixed (global::System.UInt64* p_val = val)
 fixed (global::System.Int32* p_shift = shift)
 fixed (global::System.UInt64* p_rotLeftRes = rotLeftRes)

@@ -250,7 +250,6 @@ host.FloatValue = native.FloatValue;
 host.DoubleValue = native.DoubleValue;
 }
 #pragma warning restore CS8500
-private static byte[]? s_decryptionKey_ProcessPhysics;
 private static byte[]? s_binaryData_ProcessPhysics;
 private static bool s_isLoaded_ProcessPhysics;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -268,7 +267,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Compre
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_ProcessPhysics = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_ProcessPhysics = null;
 }
 else
 {
@@ -276,7 +274,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpe
 }
 s_isLoaded_ProcessPhysics = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics");
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -378,7 +376,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Compre
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_ProcessPhysics = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_ProcessPhysics = null;
 }
 else
 {
@@ -386,7 +383,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpe
 }
 s_isLoaded_ProcessPhysics = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics", s_decryptionKey_ProcessPhysics);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics, "ProcessPhysics");
 try
 {
 void** kernelParams = stackalloc void*[6];

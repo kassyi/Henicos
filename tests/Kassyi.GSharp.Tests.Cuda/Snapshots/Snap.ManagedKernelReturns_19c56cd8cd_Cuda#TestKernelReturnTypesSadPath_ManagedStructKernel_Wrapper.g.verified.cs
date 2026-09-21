@@ -15,7 +15,6 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string ManagedStructKernel_Source = @"// GSharp Transpilation failed for ManagedStructKernel. Return type Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct is not supported.";
 public static readonly string ManagedStructKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ManagedStructKernel_Source;
-private static byte[]? s_decryptionKey_ManagedStructKernel;
 private static byte[]? s_binaryData_ManagedStructKernel;
 private static bool s_isLoaded_ManagedStructKernel;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -32,7 +31,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKe
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_ManagedStructKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_ManagedStructKernel = null;
 }
 else
 {
@@ -40,7 +38,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturn
 }
 s_isLoaded_ManagedStructKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedStructKernel, "ManagedStructKernel", s_decryptionKey_ManagedStructKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedStructKernel, "ManagedStructKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -103,7 +101,6 @@ var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "TestKe
 if (System.IO.File.Exists(fatbinPath))
 {
 s_binaryData_ManagedStructKernel = System.IO.File.ReadAllBytes(fatbinPath);
-s_decryptionKey_ManagedStructKernel = null;
 }
 else
 {
@@ -111,7 +108,7 @@ throw new System.InvalidOperationException($"AOT kernel binary 'TestKernelReturn
 }
 s_isLoaded_ManagedStructKernel = true;
 }
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedStructKernel, "ManagedStructKernel", s_decryptionKey_ManagedStructKernel);
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ManagedStructKernel, "ManagedStructKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

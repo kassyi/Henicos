@@ -33,7 +33,6 @@ CooperativePhysicsProcess(data);
 }
 ";
 public static readonly string CooperativePhysicsProcess_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + CooperativePhysicsProcess_Source;
-private static byte[]? s_decryptionKey_CooperativePhysicsProcess;
 private static byte[]? s_binaryData_CooperativePhysicsProcess;
 private static bool s_isLoaded_CooperativePhysicsProcess;
 #pragma warning disable CS8500
@@ -49,10 +48,9 @@ var dllName = $"ComprehensiveSpecKernel_CooperativePhysicsProcess{archSuffix}.dl
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (!s_isLoaded_CooperativePhysicsProcess)
 {
-s_decryptionKey_CooperativePhysicsProcess = null;
 s_isLoaded_CooperativePhysicsProcess = true;
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", dllPath, s_decryptionKey_CooperativePhysicsProcess);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

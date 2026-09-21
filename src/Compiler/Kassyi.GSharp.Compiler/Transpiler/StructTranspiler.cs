@@ -146,7 +146,7 @@ internal static class StructTranspiler
     private static void WriteInlineArrayDefinition(INamedTypeSymbol structSym, AttributeData inlineArrayAttr,
         ref TranspileContext context)
     {
-        var length = (int)inlineArrayAttr.ConstructorArguments[0].Value!;
+        var length = (int)(inlineArrayAttr.ConstructorArguments[0].Value ?? 0);
         var firstField = GetFirstInstanceField(structSym);
         if (firstField == null)
         {
