@@ -509,25 +509,7 @@ internal static class MarshalingEmitter
     private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, IArrayTypeSymbol arrayType,
         int paramIndex)
     {
-        var hasIn = false;
-        var hasOut = false;
-        foreach (var attr in p.GetAttributes())
-        {
-            var name = attr.AttributeClass?.Name;
-            var ns = attr.AttributeClass?.ContainingNamespace?.ToString();
-            if (ns == "System.Runtime.InteropServices")
-            {
-                if (name == "InAttribute")
-                {
-                    hasIn = true;
-                }
-
-                if (name == "OutAttribute")
-                {
-                    hasOut = true;
-                }
-            }
-        }
+        GetArrayDirection(p, out var hasIn, out var hasOut);
 
         var isOutOnly = hasOut && !hasIn;
 
@@ -699,27 +681,7 @@ internal static class MarshalingEmitter
             return;
         }
 
-        var hasIn = false;
-        var hasOut = false;
-        foreach (var attr in p.GetAttributes())
-        {
-            var name = attr.AttributeClass?.Name;
-            var ns = attr.AttributeClass?.ContainingNamespace?.ToString();
-            if (ns != "System.Runtime.InteropServices")
-            {
-                continue;
-            }
-
-            switch (name)
-            {
-                case "InAttribute":
-                    hasIn = true;
-                    break;
-                case "OutAttribute":
-                    hasOut = true;
-                    break;
-            }
-        }
+        GetArrayDirection(p, out var hasIn, out var hasOut);
 
         var isInOnly = hasIn && !hasOut;
 
@@ -789,6 +751,26 @@ internal static class MarshalingEmitter
         if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
         {
             writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_{p.Name});");
+        }
+    }
+
+    private static void GetArrayDirection(IParameterSymbol p, out bool hasIn, out bool hasOut)
+    {
+        hasIn = false;
+        hasOut = false;
+        foreach (var attr in p.GetAttributes())
+        {
+            var cls = attr.AttributeClass;
+            if (cls == null) continue;
+
+            if (cls.Name is "InAttribute" or "OutAttribute" &&
+                cls.ContainingNamespace?.Name == "InteropServices" &&
+                cls.ContainingNamespace.ContainingNamespace?.Name == "Runtime" &&
+                cls.ContainingNamespace.ContainingNamespace.ContainingNamespace?.Name == "System")
+            {
+                if (cls.Name == "InAttribute") hasIn = true;
+                if (cls.Name == "OutAttribute") hasOut = true;
+            }
         }
     }
 }

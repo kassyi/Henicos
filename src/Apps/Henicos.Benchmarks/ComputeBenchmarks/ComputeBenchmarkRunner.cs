@@ -40,6 +40,7 @@ public static class ComputeBenchmarkRunner
 
     public static bool RunSuite(string suiteName, int iterations = 10, bool jsonOutput = false)
     {
+        var logOut = jsonOutput ? Console.Error : Console.Out;
         var benchmarks = new List<IComputeBenchmark>();
 
         if (suiteName is "all" or "sgemm")
@@ -64,34 +65,35 @@ public static class ComputeBenchmarkRunner
 
         if (benchmarks.Count == 0)
         {
-            Console.WriteLine(
+            logOut.WriteLine(
                 $"No benchmarks found for suite '{suiteName}'. Available: sgemm, sha256, bs, reduce, all");
             return false;
         }
 
-        Console.WriteLine($"==========================================================================================");
-        Console.WriteLine($" Henicos / G# Compute Benchmark Suite ({benchmarks.Count} benchmarks, {iterations} iterations/sample)");
-        Console.WriteLine($"==========================================================================================");
+        logOut.WriteLine($"==========================================================================================");
+        logOut.WriteLine($" Henicos / G# Compute Benchmark Suite ({benchmarks.Count} benchmarks, {iterations} iterations/sample)");
+        logOut.WriteLine($"==========================================================================================");
 
         var allSucceeded = true;
         var results = new List<BenchmarkResult>();
 
         foreach (var benchmark in benchmarks)
         {
-            Console.WriteLine($"\n[>>> {benchmark.Name} <<<]");
-            Console.WriteLine("  Initializing...");
+            string errorMessage = "";
+            logOut.WriteLine($"\n[>>> {benchmark.Name} <<<]");
+            logOut.WriteLine("  Initializing...");
             benchmark.Initialize();
 
             // 1. CPU Reference
-            Console.WriteLine("  Running CPU Reference Baseline (1 sample)...");
+            logOut.WriteLine("  Running CPU Reference Baseline (1 sample)...");
             var swCpu = Stopwatch.StartNew();
             benchmark.RunReferenceCpu();
             swCpu.Stop();
             var cpuTime = swCpu.Elapsed.TotalMilliseconds;
-            Console.WriteLine($"  CPU Reference Time: {cpuTime:F2} ms");
+            logOut.WriteLine($"  CPU Reference Time: {cpuTime:F2} ms");
 
             // 2. Native CUDA C++
-            Console.WriteLine($"  Running Native CUDA C++ (Warmup + {iterations} iterations)...");
+            logOut.WriteLine($"  Running Native CUDA C++ (Warmup + {iterations} iterations)...");
             var nativeSamples = new double[iterations];
             var nativeSuccess = false;
             try
@@ -109,21 +111,21 @@ public static class ComputeBenchmarkRunner
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"  Native CUDA Execution Failed: {ex.Message}");
+                logOut.WriteLine($"  Native CUDA Execution Failed: {ex.Message}");
+                errorMessage = $"Native CUDA: {ex.Message}";
                 allSucceeded = false;
             }
 
             var nativeStats = nativeSuccess ? BenchmarkStats.Calculate(nativeSamples) : default;
             if (nativeSuccess)
             {
-                Console.WriteLine($"  Native CUDA Time: Min={nativeStats.Min:F2} ms | Med={nativeStats.Median:F2} ms | Mean={nativeStats.Mean:F2} ms");
+                logOut.WriteLine($"  Native CUDA Time: Min={nativeStats.Min:F2} ms | Med={nativeStats.Median:F2} ms | Mean={nativeStats.Mean:F2} ms");
             }
 
             // 3. G# CUDA
-            Console.WriteLine($"  Running G# CUDA Transpiled (Warmup + {iterations} iterations)...");
+            logOut.WriteLine($"  Running G# CUDA Transpiled (Warmup + {iterations} iterations)...");
             var gsharpSamples = new double[iterations];
             var gsharpSuccess = false;
-            string errorMessage = "";
             try
             {
                 // Warmup
@@ -139,36 +141,36 @@ public static class ComputeBenchmarkRunner
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"  G# CUDA Execution Failed: {ex.Message}");
-                errorMessage = ex.Message;
+                logOut.WriteLine($"  G# CUDA Execution Failed: {ex.Message}");
+                errorMessage = string.IsNullOrEmpty(errorMessage) ? ex.Message : $"{errorMessage} | G#: {ex.Message}";
                 allSucceeded = false;
             }
 
             var gsharpStats = gsharpSuccess ? BenchmarkStats.Calculate(gsharpSamples) : default;
             if (gsharpSuccess)
             {
-                Console.WriteLine($"  G# CUDA Time:     Min={gsharpStats.Min:F2} ms | Med={gsharpStats.Median:F2} ms | Mean={gsharpStats.Mean:F2} ms");
+                logOut.WriteLine($"  G# CUDA Time:     Min={gsharpStats.Min:F2} ms | Med={gsharpStats.Median:F2} ms | Mean={gsharpStats.Mean:F2} ms");
             }
 
             // 4. Verification
             if (nativeSuccess && gsharpSuccess)
             {
-                Console.Write("  Verifying Correctness (CPU == G# == Native)... ");
+                logOut.Write("  Verifying Correctness (CPU == G# == Native)... ");
                 try
                 {
                     benchmark.Verify();
-                    Console.WriteLine("PASS");
+                    logOut.WriteLine("PASS");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"FAIL - {ex.Message}");
+                    logOut.WriteLine($"FAIL - {ex.Message}");
                     errorMessage = ex.Message;
                     allSucceeded = false;
                 }
             }
             else
             {
-                Console.WriteLine("  Verification: SKIPPED (due to execution failure)");
+                logOut.WriteLine("  Verification: SKIPPED (due to execution failure)");
             }
 
             results.Add(new BenchmarkResult(
@@ -190,13 +192,13 @@ public static class ComputeBenchmarkRunner
         }
 
         // Summary Table
-        Console.WriteLine("\n");
-        Console.WriteLine("========================================================================================================================");
-        Console.WriteLine("                                    BENCHMARK COMPARISON & OVERHEAD SUMMARY                                             ");
-        Console.WriteLine("========================================================================================================================");
-        Console.WriteLine(string.Format("{0,-30} | {1,10} | {2,18} | {3,18} | {4,12} | {5,10}",
+        logOut.WriteLine("\n");
+        logOut.WriteLine("========================================================================================================================");
+        logOut.WriteLine("                                    BENCHMARK COMPARISON & OVERHEAD SUMMARY                                             ");
+        logOut.WriteLine("========================================================================================================================");
+        logOut.WriteLine(string.Format("{0,-30} | {1,10} | {2,18} | {3,18} | {4,12} | {5,10}",
             "Benchmark Name", "CPU (ms)", "Native CUDA (Mean)", "G# CUDA (Mean)", "G#/Native Ratio", "Speedup vs CPU"));
-        Console.WriteLine(new string('-', 120));
+        logOut.WriteLine(new string('-', 120));
 
         foreach (var r in results)
         {
@@ -204,16 +206,16 @@ public static class ComputeBenchmarkRunner
             {
                 double ratio = r.NativeStats.Mean > 0 ? r.GsharpStats.Mean / r.NativeStats.Mean : 1.0;
                 double speedup = r.GsharpStats.Mean > 0 ? r.CpuMeanMs / r.GsharpStats.Mean : 1.0;
-                Console.WriteLine(string.Format("{0,-30} | {1,10:F2} | {2,15:F2} ms | {3,15:F2} ms | {4,11:F2}x | {5,9:F1}x",
+                logOut.WriteLine(string.Format("{0,-30} | {1,10:F2} | {2,15:F2} ms | {3,15:F2} ms | {4,11:F2}x | {5,9:F1}x",
                     r.Name, r.CpuMeanMs, r.NativeStats.Mean, r.GsharpStats.Mean, ratio, speedup));
             }
             else
             {
-                Console.WriteLine(string.Format("{0,-30} | {1,10:F2} | {2,18} | {3,18} | {4,12} | {5,10}",
+                logOut.WriteLine(string.Format("{0,-30} | {1,10:F2} | {2,18} | {3,18} | {4,12} | {5,10}",
                     r.Name, r.CpuMeanMs, "FAIL", "FAIL", "N/A", "N/A"));
             }
         }
-        Console.WriteLine("========================================================================================================================");
+        logOut.WriteLine("========================================================================================================================");
 
         return allSucceeded;
     }

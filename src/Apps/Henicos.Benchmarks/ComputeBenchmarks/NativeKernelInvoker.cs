@@ -38,7 +38,6 @@ public static unsafe class NativeKernelInvoker
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_a, (IntPtr)pa, aSize));
                 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_b, (IntPtr)pb, bSize));
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_c, (IntPtr)pc, cSize));
 
                 void** kernelParams = stackalloc void*[4];
                 kernelParams[0] = &d_a;
