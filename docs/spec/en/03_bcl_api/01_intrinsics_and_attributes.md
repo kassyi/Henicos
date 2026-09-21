@@ -136,6 +136,40 @@ The `Kassyi.GSharp.Core` package includes advanced attributes used primarily by 
 * **`[GpuOperatorMacro]`**: Maps C# operator overloads (like `+` or `*`) to specific GPU device functions via `TargetType` and `TargetMethod`.
 * **`[SkipSnapshotConsistency]`**: Used in testing to bypass snapshot consistency verification for specific kernels.
 
+### `[TakesOwnership]` Attribute
+
+Marks a dependency-injected GPU resource as being owned by the receiving class.
+
+**Syntax**
+```csharp
+[AttributeUsage(AttributeTargets.Parameter)]
+public class TakesOwnershipAttribute : Attribute
+```
+
+**Remarks**
+* **Memory Safety / Zero-Leak Analyzer**: By default, injecting a disposable GPU resource (like `GpuContext` or `GpuBuffer<T>`) into a constructor implies **Borrowing**. The analyzer (e.g., `GSH021`, `GSH022`) enforces that borrowed resources must *not* be disposed by the receiving class to prevent double-free errors.
+* Applying `[TakesOwnership]` explicitly transfers ownership to the receiving class. The analyzer then enforces that the receiving class must implement `IDisposable` and must properly dispose of the resource.
+
+**Example**
+```csharp
+public class ComputePipeline : IDisposable
+{
+    private readonly GpuContext _context;
+
+    // Explicitly takes ownership of the injected context
+    public ComputePipeline([TakesOwnership] GpuContext context)
+    {
+        _context = context;
+    }
+
+    public void Dispose()
+    {
+        // Enforced by the Zero-Leak Analyzer
+        _context.Dispose();
+    }
+}
+```
+
 ---
 
 ## Part B: Intrinsics and Built-ins
