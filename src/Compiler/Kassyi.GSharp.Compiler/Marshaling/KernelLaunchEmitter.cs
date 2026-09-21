@@ -1,421 +1,19 @@
+using System;
+using Microsoft.CodeAnalysis;
+using Kassyi.GSharp.Compiler.Extensions;
 
-namespace Kassyi.GSharp.Compiler;
+namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>Emits native P/Invoke marshaling code, pinned struct conversions, and CUDA parameter setup.</summary>
-/// <remarks><para>Implements: <b>GEN-34, GEN-36</b></para></remarks>
-internal static class MarshalingEmitter
+/// <summary>
+/// Emits the main kernel P/Invoke wrapper body, handling argument marshaling, the kernel launch, and cleanup.
+/// </summary>
+internal static class KernelLaunchEmitter
 {
-    internal static bool IsCustomStruct(ITypeSymbol type)
-    {
-        // Exclude Kassyi.GSharp.Core vector types to bypass the CLR Explicit nesting bug.
-        // Nesting explicit structs can silently corrupt data (zeroed fields) due to runtime memory mapping issues.
-        // Instead, we flatten them into fixed byte arrays and use pointer casts for direct binary copying.
-        return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
-               !named.ContainingNamespace.IsSystemOrNumerics() &&
-               !named.ContainingNamespace.IsCoreNamespace();
-    }
-
-    internal static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
-    {
-        if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
-            named.ContainingNamespace.IsSystemOrNumerics() ||
-            named.ContainingNamespace.IsCoreNamespace())
-        {
-            return;
-        }
-
-        if (!structs.Add(named))
-        {
-            return;
-        }
-
-        foreach (var member in named.GetMembers())
-        {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                CollectStructs(field.Type, structs);
-            }
-        }
-    }
-
-    internal static void WriteStructMarshaling(SourceWriter writer, IMethodSymbol method)
-    {
-        var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        foreach (var parameter in method.Parameters)
-        {
-            CollectStructs(parameter.Type, structTypes);
-        }
-
-        if (structTypes.Count > 0)
-        {
-            writer.AppendLine(
-                "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
-            foreach (var s in structTypes)
-            {
-                WriteNativeStructDeclaration(writer, s);
-                WriteMarshalMethod(writer, s);
-                WriteUnmarshalMethod(writer, s);
-            }
-
-            writer.AppendLine("#pragma warning restore CS8500");
-        }
-    }
-
-    private static (int Size, int Alignment)? GetPredefinedLayout(ITypeSymbol type)
-    {
-        if (type is IArrayTypeSymbol)
-        {
-            return (8, 8); // Device pointer size and alignment in 64-bit CUDA
-        }
-
-        var primitive = type.SpecialType switch
-        {
-            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => (1, 1),
-            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 => (2, 2),
-            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => (4, 4),
-            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => (8, 8),
-            _ => default((int, int)?),
-        };
-
-        if (primitive.HasValue)
-        {
-            return primitive;
-        }
-
-        if (type.ContainingNamespace.IsCoreNamespace())
-        {
-            return type.Name switch
-            {
-                "Float2" or "Int2" or "UInt2" => (8, 8),
-                "Float3" or "Int3" or "UInt3" => (12, 4),
-                "Float4" or "Int4" or "UInt4" => (16, 16),
-                "Double2" or "Long2" or "ULong2" => (16, 16),
-                "Double3" or "Long3" or "ULong3" => (24, 8),
-                "Double4" or "Long4" or "ULong4" => (32, 16),
-                _ => null,
-            };
-        }
-
-        return null;
-    }
-
-    private static int AlignUp(int offset, int alignment)
-    {
-        var remainder = offset % alignment;
-        return remainder == 0 ? offset : offset + (alignment - remainder);
-    }
-
-    private static (int Size, int Alignment) GetCudaLayout(ITypeSymbol type)
-    {
-        if (GetPredefinedLayout(type) is { } predefined)
-        {
-            return predefined;
-        }
-
-        // Fallback for custom structs
-        if (type is not INamedTypeSymbol namedStruct)
-        {
-            return (4, 4);
-        }
-
-        var size = 0;
-        var maxAlign = 1;
-
-        foreach (var member in namedStruct.GetMembers())
-        {
-            if (member is not IFieldSymbol { IsStatic: false } structField)
-            {
-                continue;
-            }
-
-            var (fieldSize, fieldAlign) = GetCudaLayout(structField.Type);
-            size = AlignUp(size, fieldAlign) + fieldSize;
-            maxAlign = Math.Max(maxAlign, fieldAlign);
-        }
-
-        size = AlignUp(size, maxAlign);
-        return (Math.Max(size, 1), maxAlign);
-    }
-
-    private static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
-    {
-        var (totalSize, _) = GetCudaLayout(s);
-
-        writer.AppendLine(
-            $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {totalSize})]");
-        writer.Append("public unsafe struct __Native_");
-        writer.AppendFullyQualifiedCppName(s);
-        writer.AppendLine();
-        using (writer.Scope())
-        {
-            var currentOffset = 0;
-            foreach (var member in s.GetMembers())
-            {
-                if (member is not IFieldSymbol { IsStatic: false } field)
-                {
-                    continue;
-                }
-
-                var (fieldSize, fieldAlign) = GetCudaLayout(field.Type);
-                currentOffset = AlignUp(currentOffset, fieldAlign);
-
-                writer.AppendLine(
-                    $"public const string DebugName_{field.Name} = \"{field.Type.GetFullyQualifiedName()}\";");
-                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({currentOffset})]");
-
-                if (field.Type is IArrayTypeSymbol)
-                {
-                    writer.AppendLine($"public IntPtr {field.Name};");
-                }
-                else if (IsCustomStruct(field.Type))
-                {
-                    writer.Append("public __Native_");
-                    writer.AppendFullyQualifiedCppName(field.Type);
-                    writer.AppendLine($" {field.Name};");
-                }
-                else
-                {
-                    if (field.Type.IsReferenceType)
-                    {
-                        writer.AppendLine($"#error Unsupported reference type in struct field: {field.Name}");
-                    }
-
-                    if (field.Type.SpecialType != SpecialType.None)
-                    {
-                        writer.Append("public ");
-                        writer.AppendFullyQualifiedCsharpName(field.Type);
-                        writer.AppendLine($" {field.Name};");
-                    }
-                    else
-                    {
-                        writer.AppendLine($"public fixed byte {field.Name}[{fieldSize}];");
-                    }
-                }
-
-                currentOffset += fieldSize;
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-    private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)
-    {
-        writer.Append("public static unsafe void");
-        writer.Append(" Marshal_");
-        writer.AppendFullyQualifiedCppName(s);
-        using (writer.Parentheses())
-        {
-            writer.Append("ref ");
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref __Native_");
-            writer.AppendFullyQualifiedCppName(s);
-            writer.Append(" native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope())
-        {
-            foreach (var member in s.GetMembers())
-            {
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    WriteMarshalMember(writer, field);
-                }
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-    private static void WriteMarshalMember(SourceWriter writer, IFieldSymbol member)
-    {
-        if (member.Type is IArrayTypeSymbol arrayType)
-        {
-            WriteMarshalArrayMember(writer, member, arrayType);
-        }
-        else if (IsCustomStruct(member.Type))
-        {
-            writer.Append("Marshal_");
-            writer.AppendFullyQualifiedCppName(member.Type);
-            using (writer.Parentheses())
-            {
-                writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr, allocatedPtrs");
-            }
-
-            writer.AppendLine(";");
-        }
-        else
-        {
-            if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
-            {
-                writer.AppendLine($"native.{member.Name} = host.{member.Name};");
-            }
-            else
-            {
-                writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"*(({member.Type.GetFullyQualifiedName()}*)pField) = host.{member.Name};");
-                }
-            }
-        }
-    }
-
-    private static void WriteMarshalArrayMember(SourceWriter writer, IFieldSymbol member, IArrayTypeSymbol arrayType)
-    {
-        writer.AppendLine($"if (host.{member.Name} != null)");
-        using (writer.Scope())
-        {
-            writer.AppendLine("if (isDevicePtr)");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    "throw new System.NotSupportedException(\"Passing a struct with arrays is not supported when isDevicePtr is true.\");");
-            }
-
-            writer.AppendLine("else");
-            using (writer.Scope())
-            {
-                WriteArrayElementSize(writer, "host.", member.Name, arrayType);
-
-                writer.AppendLine("if (size > 0)");
-                using (writer.Scope())
-                {
-                    writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.{member.Name}, size));");
-                    writer.AppendLine($"allocatedPtrs?.Add(native.{member.Name});");
-                    writer.AppendLine(
-                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                    writer.AppendLine("try");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine(
-                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.{member.Name}, handle.AddrOfPinnedObject(), size));");
-                    }
-
-                    writer.AppendLine("finally");
-                    using (writer.Scope())
-                    {
-                        writer.AppendLine("handle.Free();");
-                    }
-                }
-            }
-        }
-    }
-
-    private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s)
-    {
-        writer.Append("public static unsafe void Unmarshal_");
-        writer.AppendFullyQualifiedCppName(s);
-        using (writer.Parentheses())
-        {
-            writer.Append("ref ");
-            writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref __Native_");
-            writer.AppendFullyQualifiedCppName(s);
-            writer.Append(" native, bool isDevicePtr");
-        }
-
-        writer.AppendLine();
-        using (writer.Scope())
-        {
-            foreach (var member in s.GetMembers())
-            {
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    WriteUnmarshalMember(writer, field);
-                }
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-    private static void WriteUnmarshalMember(SourceWriter writer, IFieldSymbol member)
-    {
-        if (member.Type is IArrayTypeSymbol arrayType)
-        {
-            WriteUnmarshalArrayMember(writer, member, arrayType);
-        }
-        else if (IsCustomStruct(member.Type))
-        {
-            writer.Append("Unmarshal_");
-            writer.AppendFullyQualifiedCppName(member.Type);
-            using (writer.Parentheses())
-            {
-                writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr");
-            }
-
-            writer.AppendLine(";");
-        }
-        else
-        {
-            if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
-            {
-                writer.AppendLine($"host.{member.Name} = native.{member.Name};");
-            }
-            else
-            {
-                writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"host.{member.Name} = *(({member.Type.GetFullyQualifiedName()}*)pField);");
-                }
-            }
-        }
-    }
-
-    private static void WriteUnmarshalArrayMember(SourceWriter writer, IFieldSymbol member, IArrayTypeSymbol arrayType)
-    {
-        writer.AppendLine($"if (host.{member.Name} != null && !isDevicePtr && native.{member.Name} != IntPtr.Zero)");
-        using (writer.Scope())
-        {
-            WriteArrayElementSize(writer, "host.", member.Name, arrayType);
-
-            writer.AppendLine("if (size > 0)");
-            using (writer.Scope())
-            {
-                writer.AppendLine(
-                    $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-                writer.AppendLine("try");
-                using (writer.Scope())
-                {
-                    writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.{member.Name}, size));");
-                }
-
-                writer.AppendLine("finally");
-                using (writer.Scope())
-                {
-                    writer.AppendLine("handle.Free();");
-                }
-            }
-        }
-    }
-
-    private static void WriteArrayElementSize(SourceWriter writer, string prefix, string name,
-        IArrayTypeSymbol arrayType)
-    {
-        if (IsCustomStruct(arrayType.ElementType))
-        {
-            writer.Append($"int size = {prefix}{name}.Length * sizeof(__Native_");
-            writer.AppendFullyQualifiedCppName(arrayType.ElementType);
-            writer.AppendLine(");");
-        }
-        else
-        {
-            writer.Append($"int size = {prefix}{name}.Length * sizeof(");
-            writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
-            writer.AppendLine(");");
-        }
-    }
-
     internal static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         foreach (var p in method.Parameters)
         {
-            if (IsCustomStruct(p.Type))
+            if (CudaLayoutRules.IsCustomStruct(p.Type))
             {
                 if (!isDevicePtr)
                 {
@@ -546,13 +144,13 @@ internal static class MarshalingEmitter
     {
         if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
         {
-            var kind = p.Type is IArrayTypeSymbol ? "array" : IsCustomStruct(p.Type) ? "struct" : "scalar";
+            var kind = p.Type is IArrayTypeSymbol ? "array" : CudaLayoutRules.IsCustomStruct(p.Type) ? "struct" : "scalar";
             writer.AppendLine($"// Marshal device {kind}: {p.Name}");
             writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
             return;
         }
 
-        if (IsCustomStruct(p.Type))
+        if (CudaLayoutRules.IsCustomStruct(p.Type))
         {
             WriteCustomStructMarshal(writer, p, paramIndex, isDevicePtr);
         }
@@ -736,7 +334,7 @@ internal static class MarshalingEmitter
 
     private static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (IsCustomStruct(p.Type))
+        if (CudaLayoutRules.IsCustomStruct(p.Type))
         {
             WriteCustomStructUnmarshal(writer, p, isDevicePtr);
         }
@@ -839,14 +437,14 @@ internal static class MarshalingEmitter
         }
     }
 
-    internal static void WriteParameterFree(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
+    private static void WriteParameterFree(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
         if (isDevicePtr)
         {
             return;
         }
 
-        if (IsCustomStruct(p.Type))
+        if (CudaLayoutRules.IsCustomStruct(p.Type))
         {
             writer.AppendLine($"foreach (var ptr in {p.Name}_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);");
         }

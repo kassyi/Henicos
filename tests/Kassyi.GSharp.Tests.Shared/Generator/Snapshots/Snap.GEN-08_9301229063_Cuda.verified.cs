@@ -91,16 +91,16 @@ DummyShiftOp(ctx,c,a,5);
 ";
 public static readonly string MacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MacroKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct __Native_TestNamespace_DummyContext
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
+public unsafe struct __Native_TestNamespace_DummyContext
 {
+public const string DebugName_State = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 State;
 }
-public static unsafe __Native_TestNamespace_DummyContext Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, ref __Native_TestNamespace_DummyContext native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
-var native = new __Native_TestNamespace_DummyContext();
 native.State = host.State;
-return native;
 }
 public static unsafe void Unmarshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, ref __Native_TestNamespace_DummyContext native, bool isDevicePtr)
 {
@@ -138,7 +138,8 @@ IntPtr d_dResult = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[4];
-var native_ctx = Marshal_TestNamespace_DummyContext(ref ctx, false, ctx_allocatedPtrs);
+__Native_TestNamespace_DummyContext native_ctx = default;
+Marshal_TestNamespace_DummyContext(ref ctx, ref native_ctx, false, ctx_allocatedPtrs);
 // Marshal scalar struct: ctx
 kernelParams[0] = &native_ctx;
 // Marshal array: dA
@@ -277,7 +278,8 @@ IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s
 try
 {
 void** kernelParams = stackalloc void*[4];
-var native_ctx = Marshal_TestNamespace_DummyContext(ref ctx, true, null);
+__Native_TestNamespace_DummyContext native_ctx = default;
+Marshal_TestNamespace_DummyContext(ref ctx, ref native_ctx, true, null);
 // Marshal scalar struct: ctx
 kernelParams[0] = &native_ctx;
 // Marshal device array: dA

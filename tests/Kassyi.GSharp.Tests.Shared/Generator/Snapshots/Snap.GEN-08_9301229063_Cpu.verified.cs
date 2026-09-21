@@ -104,16 +104,16 @@ MacroKernel(ctx, dA, dB, dResult);
 ";
 public static readonly string MacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MacroKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct __Native_TestNamespace_DummyContext
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
+public unsafe struct __Native_TestNamespace_DummyContext
 {
+public const string DebugName_State = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 State;
 }
-public static unsafe __Native_TestNamespace_DummyContext Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, ref __Native_TestNamespace_DummyContext native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
-var native = new __Native_TestNamespace_DummyContext();
 native.State = host.State;
-return native;
 }
 public static unsafe void Unmarshal_TestNamespace_DummyContext(ref global::TestNamespace.DummyContext host, ref __Native_TestNamespace_DummyContext native, bool isDevicePtr)
 {

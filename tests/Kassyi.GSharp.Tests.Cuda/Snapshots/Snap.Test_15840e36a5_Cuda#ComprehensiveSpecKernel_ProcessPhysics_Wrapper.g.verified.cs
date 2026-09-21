@@ -204,24 +204,45 @@ return;
 ";
 public static readonly string ProcessPhysics_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ProcessPhysics_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct __Native_DebugReduc_SpecTypes
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 48)]
+public unsafe struct __Native_DebugReduc_SpecTypes
 {
+public const string DebugName_BooleanValue = "global::System.Boolean";
+[System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Boolean BooleanValue;
+public const string DebugName_ByteValue = "global::System.Byte";
+[System.Runtime.InteropServices.FieldOffset(1)]
 public global::System.Byte ByteValue;
+public const string DebugName_SByteValue = "global::System.SByte";
+[System.Runtime.InteropServices.FieldOffset(2)]
 public global::System.SByte SByteValue;
+public const string DebugName_ShortValue = "global::System.Int16";
+[System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Int16 ShortValue;
+public const string DebugName_UShortValue = "global::System.UInt16";
+[System.Runtime.InteropServices.FieldOffset(6)]
 public global::System.UInt16 UShortValue;
+public const string DebugName_IntValue = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Int32 IntValue;
+public const string DebugName_UIntValue = "global::System.UInt32";
+[System.Runtime.InteropServices.FieldOffset(12)]
 public global::System.UInt32 UIntValue;
+public const string DebugName_LongValue = "global::System.Int64";
+[System.Runtime.InteropServices.FieldOffset(16)]
 public global::System.Int64 LongValue;
+public const string DebugName_ULongValue = "global::System.UInt64";
+[System.Runtime.InteropServices.FieldOffset(24)]
 public global::System.UInt64 ULongValue;
+public const string DebugName_FloatValue = "global::System.Single";
+[System.Runtime.InteropServices.FieldOffset(32)]
 public global::System.Single FloatValue;
+public const string DebugName_DoubleValue = "global::System.Double";
+[System.Runtime.InteropServices.FieldOffset(40)]
 public global::System.Double DoubleValue;
 }
-public static unsafe __Native_DebugReduc_SpecTypes Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, ref __Native_DebugReduc_SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
-var native = new __Native_DebugReduc_SpecTypes();
 native.BooleanValue = host.BooleanValue;
 native.ByteValue = host.ByteValue;
 native.SByteValue = host.SByteValue;
@@ -233,7 +254,6 @@ native.LongValue = host.LongValue;
 native.ULongValue = host.ULongValue;
 native.FloatValue = host.FloatValue;
 native.DoubleValue = host.DoubleValue;
-return native;
 }
 public static unsafe void Unmarshal_DebugReduc_SpecTypes(ref global::DebugReduc.SpecTypes host, ref __Native_DebugReduc_SpecTypes native, bool isDevicePtr)
 {
@@ -312,7 +332,8 @@ kernelParams[1] = &d_totalMagnitude;
 int successFlag_size = sizeof(global::System.Boolean);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
 kernelParams[2] = &d_successFlag;
-var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, false, largeStructVal_allocatedPtrs);
+__Native_DebugReduc_SpecTypes native_largeStructVal = default;
+Marshal_DebugReduc_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, largeStructVal_allocatedPtrs);
 // Marshal scalar struct: largeStructVal
 kernelParams[3] = &native_largeStructVal;
 // Marshal scalar: particleCount
@@ -393,7 +414,8 @@ kernelParams[0] = &particles;
 kernelParams[1] = &totalMagnitude;
 // Marshal device scalar: successFlag
 kernelParams[2] = &successFlag;
-var native_largeStructVal = Marshal_DebugReduc_SpecTypes(ref largeStructVal, true, null);
+__Native_DebugReduc_SpecTypes native_largeStructVal = default;
+Marshal_DebugReduc_SpecTypes(ref largeStructVal, ref native_largeStructVal, true, null);
 // Marshal scalar struct: largeStructVal
 kernelParams[3] = &native_largeStructVal;
 // Marshal scalar: particleCount

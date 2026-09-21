@@ -234,20 +234,24 @@ results[tid]=finalVal;
 ";
 public static readonly string AllInOneKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AllInOneKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
+public unsafe struct __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
 {
+public const string DebugName_IntVal = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 IntVal;
+public const string DebugName_FloatVal = "global::System.Single";
+[System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single FloatVal;
+public const string DebugName_BoolVal = "global::System.Boolean";
+[System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean BoolVal;
 }
-public static unsafe __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, ref __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
-var native = new __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct();
 native.IntVal = host.IntVal;
 native.FloatVal = host.FloatVal;
 native.BoolVal = host.BoolVal;
-return native;
 }
 public static unsafe void Unmarshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, ref __Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct native, bool isDevicePtr)
 {
@@ -339,7 +343,8 @@ handle_results.Free();
 }
 }
 kernelParams[2] = &d_results;
-var native_config = Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, false, config_allocatedPtrs);
+__Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct native_config = default;
+Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, ref native_config, false, config_allocatedPtrs);
 // Marshal scalar struct: config
 kernelParams[3] = &native_config;
 // Marshal array: globalCounter
@@ -469,7 +474,8 @@ kernelParams[0] = &intInput;
 kernelParams[1] = &floatInput;
 // Marshal device array: results
 kernelParams[2] = &results;
-var native_config = Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, true, null);
+__Native_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct native_config = default;
+Marshal_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct(ref config, ref native_config, true, null);
 // Marshal scalar struct: config
 kernelParams[3] = &native_config;
 // Marshal device array: globalCounter
