@@ -49,12 +49,7 @@ internal static class SymbolExtensions
         }
 
         // Kassyi.GSharp.Core Vector Types
-        if (typeSymbol.ContainingNamespace is
-            {
-                Name: "Core",
-                ContainingNamespace:
-                { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
-            })
+        if (typeSymbol.ContainingNamespace.IsCoreNamespace())
         {
             return typeSymbol.Name switch
             {
