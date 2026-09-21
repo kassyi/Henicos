@@ -25,15 +25,42 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 public static partial class SgemmKernelsWrapper
 {
 public const string SgemmKernel_Source = @"extern ""C"" __declspec(dllexport) void SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
-int row = blockIdx.y*blockDim.y+threadIdx.y;
-int col = blockIdx.x*blockDim.x+threadIdx.x;
+__shared__ float As[256];
+__shared__ float Bs[256];
+int bx = blockIdx.x;
+int by = blockIdx.y;
+int tx = threadIdx.x;
+int ty = threadIdx.y;
+int row = by*16+ty;
+int col = bx*16+tx;
+float cValue = 0.0f;
+for(int m = 0;m<(n+15)/16;m++)
+{
+if(row<n&&m*16+tx<n)
+{
+As[ty*16+tx]=a[row*n+m*16+tx];
+}
+else
+{
+As[ty*16+tx]=0.0f;
+}
+if(m*16+ty<n&&col<n)
+{
+Bs[ty*16+tx]=b[(m*16+ty)*n+col];
+}
+else
+{
+Bs[ty*16+tx]=0.0f;
+}
+__syncthreads();
+for(int k = 0;k<16;++k)
+{
+cValue+=As[ty*16+k]*Bs[k*16+tx];
+}
+__syncthreads();
+}
 if(row<n&&col<n)
 {
-float cValue = 0.0f;
-for(int k = 0;k<n;k++)
-{
-cValue+=a[row*n+k]*b[k*n+col];
-}
 c[row*n+col]=cValue;
 }
 }
