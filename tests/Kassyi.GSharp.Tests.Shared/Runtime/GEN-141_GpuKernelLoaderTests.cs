@@ -87,4 +87,21 @@ public class GEN141_GpuKernelLoaderTests
         });
         Assert.Contains("CudaErrorNotFound", ex.Message);
     }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GEN-141")]
+    [Trait("Category", "Runtime")]
+    [Trait("Category", "SadPath")]
+    public void Test_GEN141_HashMismatch_ThrowsInvalidOperationException()
+    {
+        var basePtx = Encoding.UTF8.GetBytes(".version 7.0\n.target sm_50\n.address_size 64\n.visible .entry empty_kernel() { ret; }\0");
+        var badHash = new byte[32]; // All zeros (incorrect hash)
+        byte[] corruptedArtifact = [.. basePtx, .. badHash];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadAotKernel(corruptedArtifact, "empty_kernel");
+        });
+        Assert.Contains("hash mismatch", ex.Message);
+    }
 }
