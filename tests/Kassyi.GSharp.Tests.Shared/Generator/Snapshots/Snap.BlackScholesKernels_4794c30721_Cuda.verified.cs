@@ -14,7 +14,8 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 public static partial class BlackScholesKernelsWrapper
 {
 public const string BlackScholesKernel_Source = @"extern ""C"" __global__ void BlackScholesKernel(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n){
-for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < n; tid += gridDim.x * blockDim.x)
+int stride = blockDim.x*gridDim.x;
+for(int tid = blockIdx.x*blockDim.x+threadIdx.x;tid<n;tid+=stride)
 {
 float s_val = s[tid];
 float x_val = x[tid];

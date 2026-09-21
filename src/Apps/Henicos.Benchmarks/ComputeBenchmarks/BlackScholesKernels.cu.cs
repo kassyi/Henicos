@@ -6,7 +6,8 @@ public static class BlackScholesKernels
     public static void BlackScholesKernel(float[] s, float[] x, float[] t, float r, float v, float[] callResult,
         float[] putResult, int n)
     {
-        Gpu.GridStrideLoop(n, tid =>
+        int stride = BlockDimension.X * GridDimension.X;
+        for (int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X; tid < n; tid += stride)
         {
             float s_val = s[tid];
             float x_val = x[tid];
@@ -37,6 +38,6 @@ public static class BlackScholesKernels
 
             callResult[tid] = s_val * cndD1 - x_val * expRT * cndD2;
             putResult[tid] = x_val * expRT * (1.0f - cndD2) - s_val * (1.0f - cndD1);
-        });
+        }
     }
 }
