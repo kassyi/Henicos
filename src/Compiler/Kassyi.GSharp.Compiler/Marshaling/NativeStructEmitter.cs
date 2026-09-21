@@ -68,6 +68,12 @@ internal static class NativeStructEmitter
             writer.AppendFullyQualifiedCsharpName(field.Type);
             writer.AppendLine($" {field.Name};");
         }
+        else if (field.Type.TypeKind == TypeKind.Enum)
+        {
+            writer.Append("public ");
+            writer.AppendFullyQualifiedCsharpName(field.Type);
+            writer.AppendLine($" {field.Name};");
+        }
         else
         {
             // Core vector types (Float4, etc.) or explicit structs are emitted as fixed byte arrays.

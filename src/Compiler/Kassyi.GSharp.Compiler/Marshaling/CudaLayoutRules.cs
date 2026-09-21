@@ -67,6 +67,29 @@ internal static class CudaLayoutRules
 
         var size = 0;
         var maxAlign = 1;
+        var pack = 0;
+
+        AttributeData structLayoutAttr = null;
+        foreach (var a in namedStruct.GetAttributes())
+        {
+            if (a.AttributeClass?.Name is "StructLayoutAttribute" or "StructLayout")
+            {
+                structLayoutAttr = a;
+                break;
+            }
+        }
+
+        if (structLayoutAttr != null)
+        {
+            foreach (var arg in structLayoutAttr.NamedArguments)
+            {
+                if (arg.Key == "Pack" && arg.Value.Value is int packValue)
+                {
+                    pack = packValue;
+                    break;
+                }
+            }
+        }
 
         foreach (var member in namedStruct.GetMembers())
         {
@@ -76,8 +99,10 @@ internal static class CudaLayoutRules
             }
 
             var fieldLayout = GetCudaLayout(structField.Type);
-            size = AlignUp(size, fieldLayout.Alignment) + fieldLayout.Size;
-            maxAlign = Math.Max(maxAlign, fieldLayout.Alignment);
+            var effectiveAlign = pack > 0 ? Math.Min(fieldLayout.Alignment, pack) : fieldLayout.Alignment;
+
+            size = AlignUp(size, effectiveAlign) + fieldLayout.Size;
+            maxAlign = Math.Max(maxAlign, effectiveAlign);
         }
 
         size = AlignUp(size, maxAlign);
@@ -95,10 +120,14 @@ internal static class CudaLayoutRules
 
     private static bool TryGetPredefinedLayout(ITypeSymbol type, out CudaLayoutInfo layout)
     {
-        if (type is IArrayTypeSymbol)
+        if (type is IArrayTypeSymbol or IPointerTypeSymbol)
         {
             layout = new CudaLayoutInfo(8, 8); // Device pointer size/alignment (64-bit CUDA)
             return true;
+        }
+        if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol namedEnum && namedEnum.EnumUnderlyingType != null)
+        {
+            return TryGetPredefinedLayout(namedEnum.EnumUnderlyingType, out layout);
         }
 
         var primitive = type.SpecialType switch

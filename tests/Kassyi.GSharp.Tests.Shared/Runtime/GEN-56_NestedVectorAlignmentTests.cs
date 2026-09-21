@@ -18,6 +18,7 @@ public class GEN56_NestedVectorAlignmentTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-56")]
     public void Test_GEN56_CUDA_ABI_Offsets()
     {
         // ジェネレーターが生成したワイヤ表現である `__Native_GEN56_AlignmentTestStruct` の
@@ -65,6 +66,7 @@ public class GEN56_NestedVectorAlignmentTests
     }
 
     [Fact]
+    [Trait("FeatureId", "GEN-56")]
     public void Test_GEN56_Roundtrip_Marshaling()
     {
         // ホスト側で値をセットし、デバイス側で書き換え、再度ホスト側で読むことで

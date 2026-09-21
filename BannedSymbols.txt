@@ -24,3 +24,4 @@ M:System.Type.GetMethod(System.String);Reflection is strictly prohibited in G# (
 M:System.Type.GetProperty(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
 M:System.Type.GetField(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
 M:System.Activator.CreateInstance(System.Type);Dynamic instantiation is prohibited. Use direct AST/Symbol resolution.
+N:System.Linq;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
