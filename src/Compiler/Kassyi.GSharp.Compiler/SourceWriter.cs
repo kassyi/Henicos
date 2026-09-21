@@ -2,8 +2,6 @@
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
-// ReSharper disable UnusedMember.Global
-// ReSharper disable UnusedMethod.Global
 #pragma warning disable IDE0051 // Justification: Library methods for Source Generators
 public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 {
@@ -120,13 +118,19 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     [UnscopedRef]
     public ref readonly SourceWriter AppendConstantField(IFieldSymbol field)
     {
-        if (field.Type.SpecialType == SpecialType.System_Boolean)
+        if (field.ConstantValue is null)
         {
-            Append(((bool)(field.ConstantValue ?? false)) ? "true" : "false");
+            Append("nullptr");
             return ref this;
         }
 
-        Append((field.ConstantValue ?? "").ToString());
+        if (field.Type.SpecialType == SpecialType.System_Boolean)
+        {
+            Append(((bool)field.ConstantValue) ? "true" : "false");
+            return ref this;
+        }
+
+        Append(field.ConstantValue.ToString());
         switch (field.Type.SpecialType)
         {
             case SpecialType.System_UInt64:
