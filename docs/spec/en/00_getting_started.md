@@ -14,126 +14,144 @@ Before diving into the complex architecture and deep API references, it is impor
 
 If you know C#, you already know how to write GPU code in G#.
 
-This guide will walk you through the "Hello World" of GPU programming: **Vector Addition** (adding two arrays together in parallel).
+> [!IMPORTANT]
+> **Prerequisites for Building & Running G#**
+> 
+> **1. GPU Execution (Default)**
+> - **Hardware & Drivers**: A **CUDA-capable NVIDIA GPU** and the **NVIDIA Display Driver**.
+> - **Build Tools**:
+>   - **[NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)**: Required for `nvcc` to compile the transpiled `.cu` files into native CUDA Fatbins (`.fatbin`). Ensure `nvcc` is available in your system `PATH`.
+>   - **[C++ Host Compiler](https://visualstudio.microsoft.com/downloads/)**: **Visual Studio C++ Build Tools (MSVC `cl.exe`)** on Windows or `gcc`/`clang` on Linux, required as the host backend compiler for `nvcc`.
+> 
+> **2. CPU Mode ([CpuDialect](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) / Fallback)**
+> - Requires only a standard **C++ Host Compiler** (MSVC/GCC/Clang). G# transpiles kernels to C++17 and compiles native shared libraries (`.dll`/`.so`).
+> - **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are significantly reduced, this allows seamless local debugging and CI/CD testing on GPU-less machines (see [Dialect Architecture](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) and [CPU Dialect Limitations](01_language/05_limitations.md#52-dialect-syntax-support)).
+
+This guide will walk you through the "Hello World" of GPU programming.
 
 ---
 
-## 0.1 The "Hello GPU" Example: Vector Addition
+## 0.1 The "Hello GPU" Example: Heavy Mathematical Simulation
 
-In traditional CUDA C++, parallel programming requires you to understand grids, blocks, and manually calculate global thread indices (e.g., `int tid = threadIdx.x + blockIdx.x * blockDim.x;`).
+A GPU's true advantage shines not in simple addition, but in executing computationally heavy workloads in parallel. Here is a complete, self-contained `Program.cs` that you can copy, paste, and run immediately (`dotnet run`). 
 
-G# eliminates this boilerplate. By using the built-in `Gpu.GridStrideLoop` macro, you can write GPU kernels that look exactly like standard C# `for` loops or LINQ expressions. The transpiler will automatically map this to the optimal parallel execution structure on the device.
-
-Here is how you write a GPU kernel in G#:
+It simulates a complex mathematical transformation (similar to physics or financial modeling) across **100 million elements**. A CPU would take seconds to process this massive dataset, but a modern GPU finishes it in milliseconds.
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+using System;
 using Kassyi.GSharp.Core;
 
 namespace MyGpuApp;
 
+// ==========================================
+// 1. GPU KERNEL DEFINITION
+// ==========================================
 public static partial class MathKernels
 {
-    // 1. Mark the method with [GpuKernel] to tell G# this runs on the GPU.
+    // Mark the method with [GpuKernel] to tell G# this executes on the GPU.
     [GpuKernel]
-    public static void AddVectors(float[] a, float[] b, float[] result, int length)
+    public static void ProcessHeavySimulation(float[] data, float[] result, int length)
     {
-        // 3. Use the GridStrideLoop macro. 
-        // You do NOT need to calculate thread indices manually!
+        // Gpu.GridStrideLoop automatically distributes work across thousands of GPU cores.
+        // No internal loops—each thread performs a complex operation once.
         Gpu.GridStrideLoop(length, i => 
         {
-            result[i] = a[i] + b[i];
+            float val = data[i];
+            
+            // A computationally expensive formula applied to tens of millions of elements
+            result[i] = MathF.Exp(-MathF.Abs(val)) * MathF.Sin(val) * MathF.Cos(val) + MathF.Sqrt(MathF.Abs(val));
         });
+    }
+}
+
+// ==========================================
+// 2. HOST (CPU) ORCHESTRATION & EXECUTION
+// ==========================================
+public class Program
+{
+    public static void Main()
+    {
+        int length = 100_000_000; // 100 Million elements
+
+        // Allocate standard C# arrays on the CPU (Host)
+        float[] data = new float[length];
+        float[] result = new float[length];
+
+        // Initialize data on the CPU
+        for (int i = 0; i < length; i++)
+        {
+            data[i] = (float)i / length;
+        }
+
+        Console.WriteLine("Launching GPU Kernel across 100,000,000 elements...");
+        Console.WriteLine("Processing complex mathematical transformations...");
+
+        // The Roslyn Source Generator automatically emits this companion 'Launch...' method!
+        MathKernels.LaunchProcessHeavySimulation(
+            data: data,
+            result: result,
+            length: length,
+            gridDimX: (length + 255) / 256, // Grid: (Total Elements + BlockSize - 1) / BlockSize
+            blockDimX: 256                  // Block: 256 threads per block (optimal baseline)
+        );
+
+        // The GPU modifies the memory directly and marshals results back.
+        Console.WriteLine($"Result[0]          = {result[0]}");
+        Console.WriteLine($"Result[{length - 1}] = {result[length - 1]}");
     }
 }
 ```
 
 > [!TIP]
-> Under the hood, `Gpu.GridStrideLoop` is automatically converted into a highly optimized CUDA loop. It safely divides the work across thousands of GPU cores without you having to manage the math.
+> **Best Practice: Separating Kernels into `.cu.cs` Files in Production**
+> While placing the kernel and host logic together in a single file is ideal for quick experiments and "Hello World" prototyping, in real-world production projects it is strongly recommended to isolate GPU kernels into dedicated files (such as `MathKernels.cu.cs`) or isolated classes.
+> Separating device code helps developers avoid confusing CPU and GPU execution contexts, and allows automated code review tools and Roslyn analyzers to clearly enforce architectural boundaries.
 
-### (Optional) For CUDA Veterans: The Manual Way
+---
 
-If you are coming from a traditional CUDA C++ background, you might be wondering where `threadIdx.x` and `blockIdx.x` went. Do not worry! G# provides a direct 1:1 mapping to all CUDA intrinsics. You can write the exact same kernel using traditional manual index math if you prefer fine-grained control:
+## 0.2 Understanding Kernel & Host Mechanics
+
+### 1. Writing Kernels with Macros vs Manual Indexing
+
+The `Gpu.GridStrideLoop` macro used above is converted at compile time into a highly optimized CUDA loop. It safely divides work across thousands of GPU cores without you having to manage hardware thread indexing.
+
+#### (Optional) For CUDA Veterans: The Manual Way
+If you come from a traditional CUDA C++ background and want fine-grained control over `threadIdx.x` and `blockIdx.x`, G# provides direct 1:1 hardware intrinsics:
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
-public static void AddVectorsManual(float[] a, float[] b, float[] result, int length)
+public static void ProcessHeavySimulationManual(float[] data, float[] result, int length)
 {
     // Direct equivalent to: int tid = threadIdx.x + blockIdx.x * blockDim.x;
     int tid = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
     
     if (tid < length)
     {
-        result[tid] = a[tid] + b[tid];
+        float val = data[tid];
+        result[tid] = MathF.Exp(-MathF.Abs(val)) * MathF.Sin(val) * MathF.Cos(val) + MathF.Sqrt(MathF.Abs(val));
     }
 }
 ```
-Both the macro and the manual approach transpile to native CUDA C++ and run with identical performance.
+Both the macro and manual approaches transpile to native CUDA C++ with identical performance.
 
----
+### 2. Understanding Grid and Block Dimensions
+When launching a GPU kernel, you specify how hardware should parallelize execution:
+- **`blockDimX`**: The number of threads in a block. NVIDIA GPUs schedule execution in physical units of 32 threads known as **Warps**. Your block size should always be a multiple of 32. **`256`** is a safe and optimal baseline.
+- **`gridDimX`**: The number of blocks needed to process the dataset. Calculate this using integer ceiling division: `(TotalElements + BlockSize - 1) / BlockSize`.
 
-## 0.2 Executing from the Host (CPU)
-
-Writing the kernel is only half the battle. In GPU programming, you must orchestrate the **Host-Device Interaction**: allocating memory on the CPU, sending it to the GPU, and launching the kernel.
-
-G# orchestrates this seamlessly. When you write a `[GpuKernel]`, the Roslyn Source Generator automatically creates a companion C# method prefixed with `Launch` (in this case, `LaunchAddVectors`). 
-
-You simply call this generated method from your standard CPU code!
-
-```csharp
-// Execution Context: Host (CPU)
-using System;
-using MyGpuApp;
-
-public class Program
-{
-    public static unsafe void Main()
-    {
-        int length = 1_000_000; // 1 Million elements
-
-        // 1. Allocate standard C# arrays on the CPU (Host)
-        float[] arrayA = new float[length];
-        float[] arrayB = new float[length];
-        float[] result = new float[length];
-
-        // Initialize data
-        for (int i = 0; i < length; i++)
-        {
-            arrayA[i] = 1.0f;
-            arrayB[i] = 2.0f;
-        }
-
-        Console.WriteLine("Launching GPU Kernel...");
-
-        // 2. The transpiler automatically generates this 'LaunchAddVectors' wrapper!
-        MathKernels.LaunchAddVectors(
-            a: arrayA,
-            b: arrayB,
-            result: result,
-            length: length,
-            gridDimX: (length + 255) / 256, // Grid: (Total Elements + BlockSize - 1) / BlockSize
-            blockDimX: 256                  // Block: 256 is a safe and optimal default for beginners
-        );
-
-        // 3. The GPU modifies the memory directly.
-        Console.WriteLine($"Result[0] = {result[0]}"); // Output: 3.0
-    }
-}
-```
-
-> [!TIP]
-> **Understanding Grid and Block Dimensions**
-> When launching a GPU kernel, you must specify how the hardware should parallelize your work.
-> - **`blockDimX`**: The number of threads in a group (Block). NVIDIA GPUs schedule execution in physical units of 32 threads known as **Warps**. To prevent performance degradation (Warp Divergence or under-utilization), your block size should always be a multiple of 32. **`256`** is a highly optimal baseline for most workloads.
-> - **`gridDimX`**: The number of groups (Grids) needed to process your entire dataset. Calculate this using integer division: `(TotalElements + BlockSize - 1) / BlockSize`.
-> 
-> To learn the precise concepts behind Grids and Blocks, see [Execution Context](../03_bcl_api/execution_context/00_index.md).
+To learn more about Grids and Blocks, see [Execution Context](03_bcl_api/execution_context/00_index.md).
 
 > [!WARNING]
-> **PCIe Memory Transfer Costs**
-> The `Launch` method abstracts away the underlying P/Invoke and `cuMemcpy` calls. However, every time you pass a C# array to the GPU, it incurs a significant hardware transfer cost across the PCIe bus. By default, arrays are copied Host-to-Device before execution, and Device-to-Host after execution. 
-> To eliminate redundant transfers in performance-critical code, explicitly decorate your arrays with `[In]` (Host-to-Device only) or `[Out]` (Device-to-Host only) attributes. See [Parameter Interop Attributes](../03_bcl_api/attributes/ParameterInteropAttributes.md) for details.
+> **PCIe Memory Transfer Costs & Implicit Device Allocation**
+> The `Launch` method abstracts away the underlying CUDA Driver API calls. However, passing standard managed C# arrays (e.g., `float[]`) directly to the GPU incurs two critical overheads per execution:
+> 1. **Implicit Device Memory Allocation**: The host runtime must allocate temporary device buffers (`cuMemAlloc`) and free them (`cuMemFree`) for every launch call.
+> 2. **PCIe Bus Transfers**: Data is marshaled across the physical PCIe bus—Host-to-Device before execution, and Device-to-Host after execution.
+> 
+> While passing C# arrays directly offers unmatched convenience for prototyping and one-off batch processing, executing this inside high-frequency hot paths (such as 60+ FPS game loops or real-time simulation updates) causes driver overhead and PCIe saturation.
+> For peak performance and strict **Zero-Allocation**, allocate persistent device memory upfront using [`GpuBuffer<T>`](02_architecture/02_runtime_loader.md#251-gpubuffert-native-memory-wrapper) or pre-allocated native device pointers and reuse them across frames.
+> 
+> *Tip: When passing standard arrays, you can also decorate parameters with `[In]` or `[Out]` to eliminate one-way redundant copies. See [Parameter Interop Attributes](03_bcl_api/attributes/ParameterInteropAttributes.md).*
 
 ---
 
@@ -169,7 +187,7 @@ float[] magnitudes = MathKernels.LaunchComputeMagnitude(
 ```
 
 > [!WARNING]
-> While Auto-Allocation is incredibly convenient for prototyping and rapid development, allocating large arrays during hot game loops (e.g., `Update()`) can trigger Managed Heap Garbage Collection (GC) pauses. For performance-critical code, it is recommended to fallback to the **Explicit Output Buffer Pattern** by passing pre-allocated arrays to `void` returning kernels to adhere to strict **Zero-Allocation** best practices.
+> While Auto-Allocation is incredibly convenient for prototyping and rapid development, allocating large arrays during hot game loops (e.g., `Update()`) triggers Managed Heap Garbage Collection (GC) pauses on the CPU. For performance-critical code, fallback to the **Explicit Output Buffer Pattern** by passing pre-allocated buffers (either reusable managed arrays or [`GpuBuffer<T>`](02_architecture/02_runtime_loader.md#251-gpubuffert-native-memory-wrapper) instances) to `void`-returning kernels to adhere to strict **Zero-Allocation** best practices.
 
 ---
 
