@@ -1,3 +1,11 @@
+---
+title: "0. Getting Started with G# (GSharp)"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "Welcome to G#!"
+---
+
 # 0. Getting Started with G# (GSharp)
 
 Welcome to G#! 
@@ -19,6 +27,7 @@ G# eliminates this boilerplate. By using the built-in `Gpu.GridStrideLoop` macro
 Here is how you write a GPU kernel in G#:
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 using Kassyi.GSharp.Core;
 
 namespace MyGpuApp;
@@ -40,13 +49,14 @@ public static partial class MathKernels
 ```
 
 > [!TIP]
-> Under the hood, `Gpu.GridStrideLoop` is intercepted by the G# Transpiler at compile-time and converted into a highly optimized CUDA C++ loop. It safely divides the work across thousands of GPU cores without you having to manage the math.
+> Under the hood, `Gpu.GridStrideLoop` is automatically converted into a highly optimized CUDA loop. It safely divides the work across thousands of GPU cores without you having to manage the math.
 
 ### (Optional) For CUDA Veterans: The Manual Way
 
 If you are coming from a traditional CUDA C++ background, you might be wondering where `threadIdx.x` and `blockIdx.x` went. Do not worry! G# provides a direct 1:1 mapping to all CUDA intrinsics. You can write the exact same kernel using traditional manual index math if you prefer fine-grained control:
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void AddVectorsManual(float[] a, float[] b, float[] result, int length)
 {
@@ -67,11 +77,12 @@ Both the macro and the manual approach transpile to native CUDA C++ and run with
 
 Writing the kernel is only half the battle. In GPU programming, you must orchestrate the **Host-Device Interaction**: allocating memory on the CPU, sending it to the GPU, and launching the kernel.
 
-G# makes this incredibly easy. When you write a `[GpuKernel]`, the Roslyn Source Generator automatically creates a companion C# method prefixed with `Launch` (in this case, `LaunchAddVectors`). 
+G# orchestrates this seamlessly. When you write a `[GpuKernel]`, the Roslyn Source Generator automatically creates a companion C# method prefixed with `Launch` (in this case, `LaunchAddVectors`). 
 
 You simply call this generated method from your standard CPU code!
 
 ```csharp
+// Execution Context: Host (CPU)
 using System;
 using MyGpuApp;
 
@@ -101,8 +112,8 @@ public class Program
             b: arrayB,
             result: result,
             length: length,
-            gridDimX: 256,          // Customize CUDA Grid dimensions here
-            blockDimX: 256          // Customize CUDA Block dimensions here
+            gridDimX: (length + 255) / 256, // Grid: (Total Elements + BlockSize - 1) / BlockSize
+            blockDimX: 256                  // Block: 256 is a safe and optimal default for beginners
         );
 
         // 3. The GPU modifies the memory directly.
@@ -111,8 +122,18 @@ public class Program
 }
 ```
 
-> [!IMPORTANT]
-> The `Launch` method handles all the heavy lifting of P/Invoke and DLL loading for you. Because G# focuses on **Zero-Allocation**, you use C# arrays and pass them by `ref` or as pointers to avoid creating expensive copies on the Managed Heap.
+> [!TIP]
+> **Understanding Grid and Block Dimensions**
+> When launching a GPU kernel, you must specify how the hardware should parallelize your work.
+> - **`blockDimX`**: The number of threads in a group (Block). NVIDIA GPUs schedule execution in physical units of 32 threads known as **Warps**. To prevent performance degradation (Warp Divergence or under-utilization), your block size should always be a multiple of 32. **`256`** is a highly optimal baseline for most workloads.
+> - **`gridDimX`**: The number of groups (Grids) needed to process your entire dataset. Calculate this using integer division: `(TotalElements + BlockSize - 1) / BlockSize`.
+> 
+> To learn the precise concepts behind Grids and Blocks, see [Execution Context](../03_bcl_api/execution_context/00_index.md).
+
+> [!WARNING]
+> **PCIe Memory Transfer Costs**
+> The `Launch` method abstracts away the underlying P/Invoke and `cuMemcpy` calls. However, every time you pass a C# array to the GPU, it incurs a significant hardware transfer cost across the PCIe bus. By default, arrays are copied Host-to-Device before execution, and Device-to-Host after execution. 
+> To eliminate redundant transfers in performance-critical code, explicitly decorate your arrays with `[In]` (Host-to-Device only) or `[Out]` (Device-to-Host only) attributes. See [Parameter Interop Attributes](../03_bcl_api/attributes/ParameterInteropAttributes.md) for details.
 
 ---
 
@@ -123,6 +144,7 @@ Traditional CUDA kernels must return `void`. While G# supports this (and it is r
 If your `[GpuKernel]` returns a value type (e.g., `float`, `int`, `struct`) or an array, the transpiler will automatically convert this into an explicit output buffer under the hood. The `Launch` method will dynamically allocate an array of size `gridDim * blockDim` (one element per thread) and return it to you!
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static float ComputeMagnitude(PhysicsVector[] particles)
 {
@@ -137,6 +159,7 @@ public static float ComputeMagnitude(PhysicsVector[] particles)
 On the host side, you simply call the `Launch` method. G# automatically allocates the array for you and populates it with each thread's result:
 
 ```csharp
+// Execution Context: Host (CPU)
 // The generated Launch method returns a float[] sized exactly to the total thread count!
 float[] magnitudes = MathKernels.LaunchComputeMagnitude(
     particles: particlesArray,
@@ -150,11 +173,11 @@ float[] magnitudes = MathKernels.LaunchComputeMagnitude(
 
 ---
 
-## 0.4 The G# Philosophy: Rust-like Memory Safety
+## 0.4 The G# Philosophy: Strict Ownership Model
 
 When dealing with scarce GPU memory and high-performance orchestration on the CPU, managing `IDisposable` resources can quickly lead to memory leaks or double-dispose hazards. Standard C# struggles to enforce strict ownership rules for injected dependencies.
 
-To solve this, G# implements a **Rust-like Ownership Model** for `IDisposable` resources via its custom Roslyn Analyzer (`ObjectLifecycleAnalyzer`). 
+To solve this, G# implements a **Strict Ownership Model** for `IDisposable` resources via its custom Roslyn Analyzer (`ObjectLifecycleAnalyzer`). 
 
 * By default, injected resources are considered **Borrowed** (the receiving class must not dispose them). 
 * When ownership must be transferred, G# uses the `[TakesOwnership]` attribute, strictly enforcing that the receiving class fully manages and disposes the resource.
@@ -175,23 +198,19 @@ sequenceDiagram
     participant D as Compiled DLL (.cu.dll)
     
     C->>R: 1. [GpuKernel] AddVectors()
-    Note over R: Generates C#35; LaunchAddVectors() using P/Invoke
-    R->>R: 2. Transpiles C#35; AST to .cu (CPP)
-    R->>NV: 3. Passes .cu code
-    Note over NV: Compiles to native GPU binary
+    Note over R: Generates C#35; LaunchAddVectors()
+    R->>R: 2. Transpiles to C++
+    R->>NV: 3. Passes to Compiler
+    Note over NV: Compiles to GPU binary
     NV->>D: 4. Emits Native DLL
     D-->>C: 5. Loaded at runtime!
 ```
 
-1. **Interception**: The G# Roslyn Source Generator detects the `[GpuKernel]` attribute.
-2. **Transpilation**: It translates the C# AST (Abstract Syntax Tree) directly into raw CUDA C++ (`.cu`). The `GridStrideLoop` is expanded into native thread math.
-3. **Native Compilation**: It silently invokes NVIDIA's `nvcc` compiler to build a native `.dll` / `.so`.
-    * **NVCC Fallback**: If `nvcc` is not installed or not found in the system PATH, the transpiler safely skips the C++ compilation phase and emits a mock CPU-based C# stub. This allows developers on non-GPU hardware (like MacBooks) to still compile and write code without breaking the .NET build.
-4. **P/Invoke Generation**: It generates the `LaunchAddVectors` method in your C# project, seamlessly bridging the managed and unmanaged worlds.
+G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` methods at compile-time and translates them into highly optimized NVIDIA GPU binaries. It also generates the `LaunchAddVectors` method so you can easily call your GPU code from standard C# without manually managing unmanaged pointers or native DLL loading.
 
 ## 0.6 Next Steps
 
 Now that you know how to write and launch a basic kernel, you can explore the advanced features of G#:
 * Learn about the syntax constraints in [01_language/05_limitations.md](01_language/05_limitations.md).
-* Explore built-in mathematical limits in [03_bcl_api/02_math_gpubigfloat.md](03_bcl_api/02_math_gpubigfloat.md).
+* Browse all GPU intrinsics and math APIs in the [BCL API Overview](03_bcl_api/01_api_overview.md).
 * Deep dive into the transpiler architecture in [02_architecture/01_aot_transpiler.md](02_architecture/01_aot_transpiler.md).
