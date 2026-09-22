@@ -2,6 +2,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
+[Trait("Category", "GpuExecution")]
 public class MEM_02_ObjectLifecycleTests
 {
     [Theory]
