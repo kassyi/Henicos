@@ -20,7 +20,7 @@ public class MyWrapper
 // 11.3.1 Missing IDisposable on Class
 public class ClassMissingIDisposable
 {
-    private GpuContext _c = new GpuContext(); // Error: GSH021
+    private GpuContext _c = new GpuContext(); // Error: GSH0020
 }
 
 // 11.3.1 Undisposed Field in Dispose()
@@ -30,7 +30,7 @@ public class ClassUndisposedField : IDisposable
 
     public void Dispose()
     {
-        // Error: GSH022 - AST missing _c.Dispose()
+        // Error: GSH0021 - AST missing _c.Dispose()
     }
 }
 
@@ -52,7 +52,7 @@ public class ClassUnsafeFieldOverwrite : IDisposable
 
     public void Update()
     {
-        _c = new GpuContext(); // Error: Overwrite without disposal
+        _c = new GpuContext(); // Error: GSH0022
     }
 
     public void Dispose()
@@ -64,7 +64,7 @@ public class ClassUnsafeFieldOverwrite : IDisposable
 // 11.3.2 Property Getter Side-Effects
 public class ClassPropertyGetterSideEffect
 {
-    public GpuContext Context => new GpuContext(); // Error: Property getters must not allocate disposable resources
+    public GpuContext Context => new GpuContext(); // Error: GSH0023
 
     public void Execute()
     {
@@ -77,7 +77,7 @@ public class ClassImplicitCastInvocation
 {
     public void TestImplicitCast(MyWrapper wrapper)
     {
-        GpuContext ctx = wrapper; // Error: Implicit allocation via conversion operator
+        GpuContext ctx = wrapper; // Error: GSH0024
     }
 }
 
@@ -90,7 +90,7 @@ public class ClassUnguardedMultiAllocation
     public ClassUnguardedMultiAllocation()
     {
         _c1 = new GpuContext();
-        _c2 = new GpuContext(); // Error: Risk of partial leak if _c2 constructor or initialization throws
+        _c2 = new GpuContext(); // Error: GSH0025
     }
 }
 
@@ -131,7 +131,7 @@ public class ClassFactoryPattern : IDisposable
 // 11.3.3 Static Lifecycle
 public static class GpuCache
 {
-    public static readonly GpuContext GlobalCtx = new GpuContext(); // Error: Static allocations create permanent leaks
+    public static readonly GpuContext GlobalCtx = new GpuContext(); // Error: GSH0026
 }
 
 // 11.3.4 Standard Injection (Borrowing)
@@ -146,7 +146,7 @@ public class BorrowedResourceClass : IDisposable
 
     public void Dispose()
     {
-        _c.Dispose(); // Double-dispose hazard / borrowing violation
+        _c.Dispose(); // Error: GSH0027
     }
 }
 
@@ -171,6 +171,6 @@ public interface IResourceBlackbox
 {
     void Process(GpuContext ctx)
     {
-        ctx.Dispose(); // Error: Default implementations taking ownership or disposing resources are banned
+        ctx.Dispose(); // Error: GSH0028
     }
 }

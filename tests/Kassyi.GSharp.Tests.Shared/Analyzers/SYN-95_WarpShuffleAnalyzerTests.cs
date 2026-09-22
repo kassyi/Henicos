@@ -12,7 +12,6 @@ public class SYN_95_WarpShuffleAnalyzerTests : TranspilerTestBase
 
     [SkippableFact]
     [Trait("Category", "SadPath")]
-    [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
     public async Task Test_95_HostCallToShuffleDownSync_ReportsExpectedError()
     {
@@ -20,5 +19,14 @@ public class SYN_95_WarpShuffleAnalyzerTests : TranspilerTestBase
         // Replace with actual analyzer if HostIntrinsicAnalyzer doesn't exist
         await RoslynTestUtility.TestAnalyzer("Analyzers/SYN-95_WarpShuffleSadPath.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0018");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "HappyPath")]
+    [Trait("FeatureId", "SYN-95")]
+    public async Task Test_95_GpuCallToShuffleDownSync_ReportsNoError()
+    {
+        await RoslynTestUtility.TestAnalyzer("Analyzers/SYN-95_WarpShuffleHappyPath.cs", s_analyzer)
+                               .ReportsNoDiagnosticsAsync();
     }
 }

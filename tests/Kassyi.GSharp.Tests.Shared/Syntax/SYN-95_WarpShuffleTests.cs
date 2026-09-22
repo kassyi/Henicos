@@ -14,7 +14,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
 
     [SkippableTheory]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
     [InlineData(0xFFFFFFFF, 1, 32)] // Full warp, delta=1
     [InlineData(0xFFFFFFFF, 31, 32)] // Full warp, delta=31
@@ -63,7 +62,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_WarpReduceSum_CalculatesCorrectly()
     {
@@ -100,7 +98,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_WarpShuffleBoundaryOffsets()
     {
@@ -139,7 +136,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_WarpDivergence()
     {
@@ -175,7 +171,6 @@ public class SYN_95_WarpShuffleTests : TranspilerTestBase
 
     [SkippableFact]
     [Trait("Category", "Syntax")]
-    [Trait("FeatureId", "154")]
     [Trait("FeatureId", "SYN-95")]
     public void Test_95_Transpilation_MapsToCudaNativeShuffle()
     {
