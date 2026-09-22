@@ -43,8 +43,16 @@ output[tid]=val;
 }
 ";
 public static readonly string WarpDivergenceKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WarpDivergenceKernel_Source;
-private static byte[]? s_binaryData_WarpDivergenceKernel;
-private static bool s_isLoaded_WarpDivergenceKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_WarpDivergenceKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpDivergenceKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpDivergenceKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWarpDivergenceKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -53,20 +61,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpDivergenceKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpDivergenceKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpDivergenceKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpDivergenceKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpDivergenceKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpDivergenceKernel, "WarpDivergenceKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpDivergenceKernel.Value, "WarpDivergenceKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -157,20 +152,7 @@ public static unsafe void LaunchWarpDivergenceKernel_Device(IntPtr input, IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpDivergenceKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpDivergenceKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpDivergenceKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpDivergenceKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpDivergenceKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpDivergenceKernel, "WarpDivergenceKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpDivergenceKernel.Value, "WarpDivergenceKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -231,8 +213,16 @@ output[warpId]=val;
 }
 ";
 public static readonly string WarpReductionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WarpReductionKernel_Source;
-private static byte[]? s_binaryData_WarpReductionKernel;
-private static bool s_isLoaded_WarpReductionKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_WarpReductionKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpReductionKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpReductionKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWarpReductionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -241,20 +231,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpReductionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpReductionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpReductionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpReductionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpReductionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReductionKernel, "WarpReductionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReductionKernel.Value, "WarpReductionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -345,20 +322,7 @@ public static unsafe void LaunchWarpReductionKernel_Device(IntPtr input, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpReductionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpReductionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpReductionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpReductionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpReductionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReductionKernel, "WarpReductionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReductionKernel.Value, "WarpReductionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -411,8 +375,16 @@ outputBoundary32[tid]=__shfl_down_sync(mask,val,32);
 }
 ";
 public static readonly string WarpShuffleBoundaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WarpShuffleBoundaryKernel_Source;
-private static byte[]? s_binaryData_WarpShuffleBoundaryKernel;
-private static bool s_isLoaded_WarpShuffleBoundaryKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_WarpShuffleBoundaryKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWarpShuffleBoundaryKernel(global::System.Int32[] input, global::System.Int32[] outputBoundary0, global::System.Int32[] outputBoundary31, global::System.Int32[] outputBoundary32, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -421,20 +393,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpShuffleBoundaryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpShuffleBoundaryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpShuffleBoundaryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleBoundaryKernel, "WarpShuffleBoundaryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleBoundaryKernel.Value, "WarpShuffleBoundaryKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_outputBoundary0 = IntPtr.Zero;
 IntPtr d_outputBoundary31 = IntPtr.Zero;
@@ -591,20 +550,7 @@ public static unsafe void LaunchWarpShuffleBoundaryKernel_Device(IntPtr input, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpShuffleBoundaryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpShuffleBoundaryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpShuffleBoundaryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleBoundaryKernel, "WarpShuffleBoundaryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleBoundaryKernel.Value, "WarpShuffleBoundaryKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -657,8 +603,16 @@ output[tid]=__shfl_down_sync(mask,input[tid],delta,width);
 }
 ";
 public static readonly string WarpShuffleExtremaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WarpShuffleExtremaKernel_Source;
-private static byte[]? s_binaryData_WarpShuffleExtremaKernel;
-private static bool s_isLoaded_WarpShuffleExtremaKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_WarpShuffleExtremaKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWarpShuffleExtremaKernel(global::System.UInt32 mask, global::System.Int32[] input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -667,20 +621,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpShuffleExtremaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpShuffleExtremaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpShuffleExtremaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleExtremaKernel, "WarpShuffleExtremaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleExtremaKernel.Value, "WarpShuffleExtremaKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -777,20 +718,7 @@ public static unsafe void LaunchWarpShuffleExtremaKernel_Device(global::System.U
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WarpShuffleExtremaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WarpShuffleExtremaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WarpShuffleExtremaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleExtremaKernel, "WarpShuffleExtremaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpShuffleExtremaKernel.Value, "WarpShuffleExtremaKernel");
 try
 {
 void** kernelParams = stackalloc void*[5];

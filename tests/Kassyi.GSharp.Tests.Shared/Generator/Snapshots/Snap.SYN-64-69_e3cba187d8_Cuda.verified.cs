@@ -42,8 +42,16 @@ u64Data[6]=__gsharp_rotr64(u64Val,7);
 }
 ";
 public static readonly string BitOperationsTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + BitOperationsTestKernel_Source;
-private static byte[]? s_binaryData_BitOperationsTestKernel;
-private static bool s_isLoaded_BitOperationsTestKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_BitOperationsTestKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchBitOperationsTestKernel(global::System.UInt32[] u32Data, global::System.UInt64[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -52,20 +60,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_BitOperationsTestKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_BitOperationsTestKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_BitOperationsTestKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BitOperationsTestKernel, "BitOperationsTestKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BitOperationsTestKernel.Value, "BitOperationsTestKernel");
 IntPtr d_u32Data = IntPtr.Zero;
 IntPtr d_u64Data = IntPtr.Zero;
 try
@@ -156,20 +151,7 @@ public static unsafe void LaunchBitOperationsTestKernel_Device(IntPtr u32Data, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_BitOperationsTestKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_BitOperationsTestKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_BitOperationsTestKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BitOperationsTestKernel, "BitOperationsTestKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_BitOperationsTestKernel.Value, "BitOperationsTestKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

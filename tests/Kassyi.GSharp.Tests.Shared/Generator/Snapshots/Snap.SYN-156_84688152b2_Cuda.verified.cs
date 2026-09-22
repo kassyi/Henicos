@@ -35,8 +35,16 @@ data[0]=sum;
 }
 ";
 public static readonly string LoopUnrollFactorKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LoopUnrollFactorKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollFactorKernel;
-private static bool s_isLoaded_LoopUnrollFactorKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_LoopUnrollFactorKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLoopUnrollFactorKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -45,20 +53,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollFactorKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollFactorKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollFactorKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollFactorKernel, "LoopUnrollFactorKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollFactorKernel.Value, "LoopUnrollFactorKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -116,20 +111,7 @@ public static unsafe void LaunchLoopUnrollFactorKernel_Device(IntPtr data, uint 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollFactorKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollFactorKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollFactorKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollFactorKernel, "LoopUnrollFactorKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollFactorKernel.Value, "LoopUnrollFactorKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -181,8 +163,16 @@ data[0]=sum;
 }
 ";
 public static readonly string LoopUnrollForKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LoopUnrollForKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollForKernel;
-private static bool s_isLoaded_LoopUnrollForKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_LoopUnrollForKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollForKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollForKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLoopUnrollForKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -191,20 +181,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollForKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollForKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollForKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollForKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollForKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollForKernel, "LoopUnrollForKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollForKernel.Value, "LoopUnrollForKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -262,20 +239,7 @@ public static unsafe void LaunchLoopUnrollForKernel_Device(IntPtr data, uint gri
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollForKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollForKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollForKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollForKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollForKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollForKernel, "LoopUnrollForKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollForKernel.Value, "LoopUnrollForKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -330,8 +294,16 @@ data[0]=sum;
 }
 ";
 public static readonly string LoopUnrollNestedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LoopUnrollNestedKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollNestedKernel;
-private static bool s_isLoaded_LoopUnrollNestedKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_LoopUnrollNestedKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLoopUnrollNestedKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -340,20 +312,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollNestedKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollNestedKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollNestedKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollNestedKernel, "LoopUnrollNestedKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollNestedKernel.Value, "LoopUnrollNestedKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -411,20 +370,7 @@ public static unsafe void LaunchLoopUnrollNestedKernel_Device(IntPtr data, uint 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollNestedKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollNestedKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollNestedKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollNestedKernel, "LoopUnrollNestedKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollNestedKernel.Value, "LoopUnrollNestedKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -476,8 +422,16 @@ data[0]=sum;
 }
 ";
 public static readonly string LoopUnrollSingleStatementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LoopUnrollSingleStatementKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollSingleStatementKernel;
-private static bool s_isLoaded_LoopUnrollSingleStatementKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_LoopUnrollSingleStatementKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLoopUnrollSingleStatementKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -486,20 +440,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollSingleStatementKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollSingleStatementKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollSingleStatementKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollSingleStatementKernel, "LoopUnrollSingleStatementKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollSingleStatementKernel.Value, "LoopUnrollSingleStatementKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -557,20 +498,7 @@ public static unsafe void LaunchLoopUnrollSingleStatementKernel_Device(IntPtr da
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollSingleStatementKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollSingleStatementKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollSingleStatementKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollSingleStatementKernel, "LoopUnrollSingleStatementKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollSingleStatementKernel.Value, "LoopUnrollSingleStatementKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -624,8 +552,16 @@ data[0]=sum;
 }
 ";
 public static readonly string LoopUnrollWhileKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + LoopUnrollWhileKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollWhileKernel;
-private static bool s_isLoaded_LoopUnrollWhileKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_LoopUnrollWhileKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchLoopUnrollWhileKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -634,20 +570,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollWhileKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollWhileKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollWhileKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollWhileKernel, "LoopUnrollWhileKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollWhileKernel.Value, "LoopUnrollWhileKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -705,20 +628,7 @@ public static unsafe void LaunchLoopUnrollWhileKernel_Device(IntPtr data, uint g
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_LoopUnrollWhileKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_LoopUnrollWhileKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_LoopUnrollWhileKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollWhileKernel, "LoopUnrollWhileKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_LoopUnrollWhileKernel.Value, "LoopUnrollWhileKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];

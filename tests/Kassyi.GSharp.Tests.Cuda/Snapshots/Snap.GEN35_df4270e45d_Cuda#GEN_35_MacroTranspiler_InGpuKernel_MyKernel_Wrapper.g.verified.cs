@@ -36,15 +36,14 @@ sum+=100;
 }
 ";
 public static readonly string MyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MyKernel_Source;
-private static readonly System.Lazy<IntPtr> s_hfunc_MyKernel = new System.Lazy<IntPtr>(() =>
+private static readonly System.Lazy<byte[]> s_binaryData_MyKernel = new System.Lazy<byte[]>(() =>
 {
 var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {
 throw new System.InvalidOperationException($"AOT kernel binary 'GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin' was not found at '{fatbinPath}'.");
 }
-byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
-return global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(binaryData, "MyKernel");
+return System.IO.File.ReadAllBytes(fatbinPath);
 }
 , System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
@@ -52,7 +51,7 @@ public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, u
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = s_hfunc_MyKernel.Value;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyKernel.Value, "MyKernel");
 try
 {
 void** kernelParams = stackalloc void*[0];
@@ -77,7 +76,7 @@ public static unsafe void LaunchMyKernel_Device(uint gridDimX = 1, uint gridDimY
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = s_hfunc_MyKernel.Value;
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyKernel.Value, "MyKernel");
 try
 {
 void** kernelParams = stackalloc void*[0];

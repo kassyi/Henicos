@@ -50,11 +50,9 @@ AllocationTestKernel(ioVal, outVal, arrayVal, constantVal);
 }
 ";
 public static readonly string AllocationTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + AllocationTestKernel_Source;
-private static byte[]? s_binaryData_AllocationTestKernel;
-private static bool s_isLoaded_AllocationTestKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void AllocationTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* ioVal, global::System.Single* outVal, global::System.Int32* arrayVal);
+#pragma warning disable CS8500
 public static unsafe void LaunchAllocationTestKernel(ref global::System.Int32 ioVal, out global::System.Single outVal, global::System.Int32[] arrayVal, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 outVal = default;
@@ -64,10 +62,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_AllocationTestKernel)
-{
-s_isLoaded_AllocationTestKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath);
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_ioVal = &ioVal)

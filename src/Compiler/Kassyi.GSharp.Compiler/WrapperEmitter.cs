@@ -55,7 +55,6 @@ internal static class WrapperEmitter
                 else
                 {
                     WriteCpuDelegateDeclaration(writer, method);
-                    WriteCpuLazyInitialization(writer, method);
                     WriteLaunchMethodCpu(writer, method);
                 }
             }
@@ -277,13 +276,13 @@ internal static class WrapperEmitter
 
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine($"IntPtr hfunc = s_hfunc_{method.Name}.Value;");
+        writer.AppendLine($"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}.Value, \"{method.Name}\");");
         writer.AppendLine();
     }
 
     private static void WriteCudaLazyInitialization(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine($"private static readonly System.Lazy<IntPtr> s_hfunc_{method.Name} = new System.Lazy<IntPtr>(() =>");
+        writer.AppendLine($"private static readonly System.Lazy<byte[]> s_binaryData_{method.Name} = new System.Lazy<byte[]>(() =>");
         using (writer.Scope())
         {
             writer.AppendLine(
@@ -295,9 +294,7 @@ internal static class WrapperEmitter
                     $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
             }
 
-            writer.AppendLine("byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);");
-            writer.AppendLine(
-                $"return global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(binaryData, \"{method.Name}\");");
+            writer.AppendLine("return System.IO.File.ReadAllBytes(fatbinPath);");
         }
 
         writer.AppendLine(", System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);");
@@ -360,27 +357,14 @@ internal static class WrapperEmitter
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine($"var hfunc = s_hfunc_{method.Name}.Value;");
-    }
-
-    private static void WriteCpuLazyInitialization(SourceWriter writer, IMethodSymbol method)
-    {
-        writer.AppendLine($"private static readonly System.Lazy<{method.Name}_Delegate> s_hfunc_{method.Name} = new System.Lazy<{method.Name}_Delegate>(() =>");
-        using (writer.Scope())
-        {
-            writer.AppendLine(
-                "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
-            writer.AppendLine(
-                $"var dllName = $\"{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\";");
-            writer.AppendLine(
-                "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
-
-            writer.AppendLine(
-                $"return global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath);");
-        }
-
-        writer.AppendLine(", System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);");
-        writer.AppendLine();
+        writer.AppendLine(
+            "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
+        writer.AppendLine(
+            $"var dllName = $\"{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\";");
+        writer.AppendLine(
+            "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
+        writer.AppendLine(
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath);");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)

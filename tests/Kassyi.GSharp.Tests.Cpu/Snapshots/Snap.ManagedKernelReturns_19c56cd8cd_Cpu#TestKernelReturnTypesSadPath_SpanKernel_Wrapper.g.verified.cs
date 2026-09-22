@@ -15,11 +15,9 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string SpanKernel_Source = @"// GSharp Transpilation failed for SpanKernel. Return type System.ReadOnlySpan<float> is not supported.";
 public static readonly string SpanKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + SpanKernel_Source;
-private static byte[]? s_binaryData_SpanKernel;
-private static bool s_isLoaded_SpanKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void SpanKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.ReadOnlySpan<global::System.Single>* __gsharp_auto_result);
+#pragma warning disable CS8500
 public static unsafe global::System.ReadOnlySpan<global::System.Single>[] LaunchSpanKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
@@ -28,10 +26,6 @@ var __gsharp_auto_result = new global::System.ReadOnlySpan<global::System.Single
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"TestKernelReturnTypesSadPath_SpanKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_SpanKernel)
-{
-s_isLoaded_SpanKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SpanKernel_Delegate>("__gsharp_launch_SpanKernel", dllPath);
 fixed (global::System.ReadOnlySpan<global::System.Single>* p___gsharp_auto_result = __gsharp_auto_result)
 {

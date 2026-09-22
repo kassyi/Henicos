@@ -54,8 +54,16 @@ success[tid]=0;
 }
 ";
 public static readonly string HappyPathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + HappyPathKernel_Source;
-private static byte[]? s_binaryData_HappyPathKernel;
-private static bool s_isLoaded_HappyPathKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_HappyPathKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchHappyPathKernel(global::System.Int32[] input, global::System.Int32[] output, global::System.Int32[] success, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -64,20 +72,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_HappyPathKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_HappyPathKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_HappyPathKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel.Value, "HappyPathKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 IntPtr d_success = IntPtr.Zero;
@@ -201,20 +196,7 @@ public static unsafe void LaunchHappyPathKernel_Device(IntPtr input, IntPtr outp
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_HappyPathKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_HappyPathKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_HappyPathKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_HappyPathKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel, "HappyPathKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_HappyPathKernel.Value, "HappyPathKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -273,8 +255,16 @@ output[tid]=val-10;
 }
 ";
 public static readonly string IfConditionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + IfConditionKernel_Source;
-private static byte[]? s_binaryData_IfConditionKernel;
-private static bool s_isLoaded_IfConditionKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_IfConditionKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchIfConditionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -283,20 +273,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_IfConditionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_IfConditionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_IfConditionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IfConditionKernel, "IfConditionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IfConditionKernel.Value, "IfConditionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -387,20 +364,7 @@ public static unsafe void LaunchIfConditionKernel_Device(IntPtr input, IntPtr ou
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_IfConditionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_IfConditionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_IfConditionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_IfConditionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IfConditionKernel, "IfConditionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IfConditionKernel.Value, "IfConditionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -457,8 +421,16 @@ output[tid]=sum;
 }
 ";
 public static readonly string WhileConditionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WhileConditionKernel_Source;
-private static byte[]? s_binaryData_WhileConditionKernel;
-private static bool s_isLoaded_WhileConditionKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_WhileConditionKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWhileConditionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -467,20 +439,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WhileConditionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WhileConditionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WhileConditionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WhileConditionKernel, "WhileConditionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WhileConditionKernel.Value, "WhileConditionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -571,20 +530,7 @@ public static unsafe void LaunchWhileConditionKernel_Device(IntPtr input, IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_WhileConditionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_WhileConditionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_03_InlineOutVarKernels_WhileConditionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_WhileConditionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WhileConditionKernel, "WhileConditionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WhileConditionKernel.Value, "WhileConditionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

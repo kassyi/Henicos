@@ -76,8 +76,16 @@ output[blockIdx.x]=val;
 }
 ";
 public static readonly string ReductionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ReductionKernel_Source;
-private static byte[]? s_binaryData_ReductionKernel;
-private static bool s_isLoaded_ReductionKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_ReductionKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ReductionKernels_ReductionKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'ReductionKernels_ReductionKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, global::System.Single[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -86,20 +94,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ReductionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ReductionKernels_ReductionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ReductionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'ReductionKernels_ReductionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ReductionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ReductionKernel, "ReductionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ReductionKernel.Value, "ReductionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -170,20 +165,7 @@ public static unsafe void LaunchReductionKernel_Device(IntPtr input, IntPtr outp
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ReductionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ReductionKernels_ReductionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ReductionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'ReductionKernels_ReductionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ReductionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ReductionKernel, "ReductionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ReductionKernel.Value, "ReductionKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];

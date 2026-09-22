@@ -55,8 +55,16 @@ data[tid].B+=3;
 }
 ";
 public static readonly string ModifyPackedInlineArrayKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ModifyPackedInlineArrayKernel_Source;
-private static byte[]? s_binaryData_ModifyPackedInlineArrayKernel;
-private static bool s_isLoaded_ModifyPackedInlineArrayKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_ModifyPackedInlineArrayKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -65,20 +73,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ModifyPackedInlineArrayKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ModifyPackedInlineArrayKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ModifyPackedInlineArrayKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel, "ModifyPackedInlineArrayKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel.Value, "ModifyPackedInlineArrayKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -136,20 +131,7 @@ public static unsafe void LaunchModifyPackedInlineArrayKernel_Device(IntPtr data
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ModifyPackedInlineArrayKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ModifyPackedInlineArrayKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyPackedInlineArrayKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ModifyPackedInlineArrayKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel, "ModifyPackedInlineArrayKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyPackedInlineArrayKernel.Value, "ModifyPackedInlineArrayKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -210,8 +192,16 @@ data[tid].C-=1.0f;
 }
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ModifyStructLayoutKernel_Source;
-private static byte[]? s_binaryData_ModifyStructLayoutKernel;
-private static bool s_isLoaded_ModifyStructLayoutKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_ModifyStructLayoutKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -220,20 +210,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ModifyStructLayoutKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ModifyStructLayoutKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ModifyStructLayoutKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel.Value, "ModifyStructLayoutKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -291,20 +268,7 @@ public static unsafe void LaunchModifyStructLayoutKernel_Device(IntPtr data, uin
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ModifyStructLayoutKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ModifyStructLayoutKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_33_StructLayoutKernels_ModifyStructLayoutKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ModifyStructLayoutKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel, "ModifyStructLayoutKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ModifyStructLayoutKernel.Value, "ModifyStructLayoutKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
