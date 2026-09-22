@@ -1,12 +1,12 @@
 ---
-title: "Warp.ShuffleUp Method (G#)"
+title: "Warp.ShuffleUpSync Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Exchanges a variable by shifting data up by a specified delta."
 ---
 
-## Warp.ShuffleUp Method
+## Warp.ShuffleUpSync Method
 
 ## Definition
 
@@ -19,119 +19,165 @@ Exchanges a variable by shifting data up by a specified delta.
 
 | Name | Description |
 | --- | --- |
-| [ShuffleUp(int, uint, int)](#shuffleup-int-uint-int) | Exchanges a 32-bit signed integer by shifting data up by a specified delta. |
-| [ShuffleUp(uint, uint, int)](#shuffleup-uint-uint-int) | Exchanges a 32-bit unsigned integer by shifting data up by a specified delta. |
-| [ShuffleUp(float, uint, int)](#shuffleup-float-uint-int) | Exchanges a single-precision floating-point number by shifting data up by a specified delta. |
+| [ShuffleUpSync(uint, int, uint, int)](#shuffleupsync-uint-int-uint-int) | Exchanges a 32-bit signed integer by shifting data up by a specified delta. |
+| [ShuffleUpSync(uint, uint, uint, int)](#shuffleupsync-uint-uint-uint-int) | Exchanges a 32-bit unsigned integer by shifting data up by a specified delta. |
+| [ShuffleUpSync(uint, float, uint, int)](#shuffleupsync-uint-float-uint-int) | Exchanges a single-precision floating-point number by shifting data up by a specified delta. |
 
-## ShuffleUp(int, uint, int)
+## ShuffleUpSync(uint, int, uint, int)
 
 Exchanges a 32-bit signed integer by shifting data up by a specified delta.
 
 ```csharp
-public static int ShuffleUp(int var, uint delta, int width);
+[GpuKernel]
+public static int ShuffleUpSync(uint mask, int var, uint delta, int width);
 ```
 
 #### Parameters
 
-`var`
-`int`
+`mask` <i>uint</i><br>
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gpu.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+
+`var` <i>int</i><br>
 The variable to exchange.
 
-`delta`
-`uint`
+`delta` <i>uint</i><br>
 The offset to shift the lane ID up by.
 
-`width`
-`int`
+`width` <i>int</i><br>
 The logical warp width (default is 32).
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The value exchanged from the source thread.
 
-## ShuffleUp(uint, uint, int)
+## ShuffleUpSync(uint, uint, uint, int)
 
 Exchanges a 32-bit unsigned integer by shifting data up by a specified delta.
 
 ```csharp
-public static uint ShuffleUp(uint var, uint delta, int width);
+public static uint ShuffleUpSync(uint mask, uint var, uint delta, int width);
 ```
 
 #### Parameters
 
-`var`
-`uint`
+`mask` <i>uint</i><br>
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gpu.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+
+`var` <i>uint</i><br>
 The variable to exchange.
 
-`delta`
-`uint`
+`delta` <i>uint</i><br>
 The offset to shift the lane ID up by.
 
-`width`
-`int`
+`width` <i>int</i><br>
 The logical warp width (default is 32).
 
 #### Returns
 
-`uint`
+<i>uint</i><br>
 The value exchanged from the source thread.
 
-## ShuffleUp(float, uint, int)
+## ShuffleUpSync(uint, float, uint, int)
 
 Exchanges a single-precision floating-point number by shifting data up by a specified delta.
 
 ```csharp
-public static float ShuffleUp(float var, uint delta, int width);
+[GpuKernel]
+public static float ShuffleUpSync(uint mask, float var, uint delta, int width);
 ```
 
 #### Parameters
 
-`var`
-`float`
+`mask` <i>uint</i><br>
+The 32-bit active thread mask. Typically `0xFFFFFFFF` for all 32 threads, or `Gpu.ActiveMask()` if called inside divergent branches. See [Determining the 'mask' Parameter](#determining-the-mask-parameter).
+
+`var` <i>float</i><br>
 The variable to exchange.
 
-`delta`
-`uint`
+`delta` <i>uint</i><br>
 The offset to shift the lane ID up by.
 
-`width`
-`int`
+`width` <i>int</i><br>
 The logical warp width (default is 32).
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The value exchanged from the source thread.
+
+## Conceptual Behavior
+
+Warp Shuffle operations can be unintuitive. Think of `ShuffleUpSync` as **"Shifting data to the right (to higher thread IDs)"**. 
+
+In real-world GPU algorithms, this is heavily used in **Stencil Computations (e.g., Gaussian Blur, Image Convolution)** where each pixel (thread) needs to cheaply read the values held by its left-adjacent neighbors without hitting memory.
+
+If a warp has 4 active threads holding values `[A, B, C, D]`, calling `ShuffleUpSync(mask, val, 1, 4)` shifts data "up" the lane IDs by 1:
+
+| Current Lane ID | Initial Value | Target Lane ID (`LaneId - 1`) | Action | Final Value |
+| :--- | :--- | :--- | :--- | :--- |
+| **0** | `A` | `0 - 1 = -1` (Out of bounds) | Keeps its own value | `A` |
+| **1** | `B` | `1 - 1 = 0` | Fetches value from Lane 0 | `A` |
+| **2** | `C` | `2 - 1 = 1` | Fetches value from Lane 1 | `B` |
+| **3** | `D` | `3 - 1 = 2` | Fetches value from Lane 2 | `C` |
+
+## Determining the `mask` Parameter
+
+The `mask` parameter is a 32-bit unsigned integer (`uint`) where each bit corresponds to a lane in the warp (Lane 0 to Lane 31). A bit set to `1` indicates that the corresponding thread participates in the shuffle operation.
+
+In practice, choosing `mask` follows three common patterns:
+
+| Scenario | Recommended Value | Why / Description |
+| :--- | :--- | :--- |
+| **All threads participate (95%+ of cases)** | `0xFFFFFFFF` | Used when all 32 threads in the warp execute the shuffle unconditionally (e.g., prefix sums, convolutions, reductions). In binary, this sets all 32 bits to `1`. |
+| **Divergent execution (`if` branch)** | `Gpu.ActiveMask()` | When only a subset of threads inside an `if` block call shuffle, passing `0xFFFFFFFF` causes a **GPU deadlock**. Calling `Gpu.ActiveMask()` dynamically computes the bitmask of currently active threads. |
+| **Partial warp (Tail boundary)** | `(1u << count) - 1` | When processing data where the final warp only has $K$ valid elements (e.g., $K=10$), use `(1u << 10) - 1` (`0x3FF`) to mark only the first 10 threads as active. |
+
+> [!CAUTION]
+> **GPU Deadlock Warning**: Never pass `0xFFFFFFFF` if some threads in the warp cannot reach the shuffle instruction (e.g., in an `if (ThreadIndex.X % 2 == 0)` branch without the other threads calling it). The GPU hardware will pause and wait indefinitely for inactive threads to reach the barrier.
+
+For comprehensive details on active masks, hardware scheduling, and deadlock avoidance, see the [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md).
 
 ## Examples
 
-### Warp Reduction
+### Warp-Level Inclusive Scan (Prefix Sum)
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
-public static unsafe void WarpReduceKernel(int* data)
+public static unsafe void WarpInclusiveScanKernel(int* data)
 {
     int val = data[ThreadIndex.X];
+    int laneId = ThreadIndex.X % 32;
     
-    // Reduce values across the warp using ShuffleDown
-    for (uint offset = 16; offset > 0; offset /= 2)
+    // Perform an inclusive scan (prefix sum) across the warp.
+    // Each thread pulls data from the thread 'offset' lanes below it.
+    for (uint offset = 1; offset <= 16; offset *= 2)
     {
-        val += Warp.ShuffleDown(val, offset, 32);
+        int pulledVal = Warp.ShuffleUpSync(0xFFFFFFFF, val, offset, 32);
+        
+        // Only accumulate if the current lane is higher than the offset
+        if (laneId >= offset)
+        {
+            val += pulledVal;
+        }
     }
     
-    if (ThreadIndex.X % 32 == 0)
-    {
-        data[ThreadIndex.X] = val; // Store result
-    }
+    // Now 'val' contains the prefix sum up to the current lane
+    data[ThreadIndex.X] = val;
 }
 ```
 
 ## Remarks
 
-Maps to PTX `shfl.sync` instructions. Thread synchronization across the warp is implicit, avoiding the need for `Gpu.SyncThreads()`.
+Warp Shuffle operations allow threads within the same warp (32 threads) to directly exchange data through GPU registers, completely bypassing shared memory (`SharedMemory<T>`). This results in dramatically lower latency and frees up shared memory for other uses.
+
+`ShuffleUpSync` shifts data from a lower lane ID to a higher lane ID. Specifically, the thread at `LaneId` receives the value of `var` from the thread at `LaneId - delta`. This is the standard primitive for implementing **inclusive/exclusive scans (prefix sums)** within a warp.
+
+Maps to PTX `shfl.up.sync` instructions. Thread synchronization across the active mask is implicit, avoiding the need for `Gpu.SyncThreads()`.
 
 ## See also
 
+- [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)
 - [SyncThreads](SyncThreads.md)
 - [Gpu BCL API Overview](../01_api_overview.md)
