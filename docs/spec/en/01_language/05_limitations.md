@@ -22,7 +22,7 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | :--- | :--- | :--- |
 | **Object Instantiation (`new`)** | **Device Only** | Lack of a managed heap and garbage collector on the GPU. (Note: Stack-allocated `struct` instantiation, `SharedMemory<T>`, `stackalloc` implicit arrays, and C# 12 Collection Expressions `[]` are exceptions and fully supported). |
 | **Strings (`string`)** | **Device Only** | Strings are managed reference types. Fixed-size character arrays must be used instead, though not natively supported yet. (Fine to use on Host). |
-| **Console I/O (`Console.WriteLine`)** | **Device Only** | `Console.WriteLine` and standard I/O streams are completely unavailable on the GPU.<br><br>To inspect variable state during debugging, you must allocate a dedicated debug array on the Host CPU and write your values to it inside the kernel using thread-safe atomics:<br><br>```csharp\n// Thread-safe logging to a pre-allocated array\nint idx = Gpu.AtomicAdd(ref debugIndex[0], 1);\nif (idx < debugBuffer.Length)\n{\n    debugBuffer[idx] = myValue;\n}\n``` |
+| **Console I/O (`Console.WriteLine`)** | **Device Only** | `Console.WriteLine` and standard I/O streams are completely unavailable on the GPU. To inspect variable state during debugging, use a pre-allocated telemetry array (see [Guide: Print Debugging](../04_guides/06_antipatterns_and_best_practices.md#6-print-debugging-the-consolewriteline-trap)). |
 | **LINQ (`System.Linq`)** | **Device Only** | Relies heavily on delegates, iterators, and dynamic allocations. (Enforced by **GSH0008**) |
 | **`foreach` Loops** | **Device Only** | Implicitly allocates `IEnumerator` instances on the managed heap, which is generally incompatible with GPU memory execution. However, iterating over `Span<T>`, `ReadOnlySpan<T>`, `InlineArray`, or fixed arrays does NOT allocate and is explicitly supported. (Enforced by **GSH0007**) |
 | **Virtual Methods / Interfaces** | **Device Only** | Dynamic dispatch (v-tables) is unsupported in the current AOT transpiler. |
@@ -95,3 +95,12 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 
 For individual guides, see the [Diagnostics Reference Catalog](../03_bcl_api/diagnostics/00_index.md).
+
+## See also
+
+- [1. Language Introduction](01_introduction.md)
+- [4. Execution and Concurrency Model](04_execution_model.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Diagnostics and Exceptions Reference](../03_bcl_api/04_diagnostics_and_exceptions.md)
+- [Diagnostics Reference Index](../03_bcl_api/diagnostics/00_index.md)
+- [Antipatterns and Best Practices Guide](../04_guides/06_antipatterns_and_best_practices.md)

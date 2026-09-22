@@ -30,4 +30,19 @@ Used exclusively in testing to bypass snapshot consistency verification for spec
 
 ## See also
 
+### Related Attributes
+- [Attributes Index](00_index.md)
+- [GpuKernelAttribute](GpuKernelAttribute.md)
+- [GpuDeviceFunctionAttribute](GpuDeviceFunctionAttribute.md)
+
+### Transpiler Architecture
+- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
+- [4. Bignum Transpiler Internals](../../02_architecture/04_bignum_internals.md)
+
+### BCL & Mapping References
 - [Gpu BCL API Overview](../00_overview.md)
+- [BCL Mappings Reference](../05_bcl_mappings.md)
+- [Gpu.InlinePtx](../gpu_class/InlinePtx.md)
+
+### Guides
+- [Advanced Custom Math Kernels Guide](../../04_guides/08_advanced_custom_math_kernels.md)

@@ -66,3 +66,10 @@ AI agents often try to access `array[x, y]`.
 ### ❌ Hallucination: Using `Interlocked` for floats
 AI agents often try to use `Interlocked.Add` for floats, which does not exist in standard C#, or they ignore the GSharp atomic intrinsic.
 * **Rule**: Use `System.Threading.Interlocked` for standard integer atomics. Use `Gpu.AtomicAdd` specifically when you need atomic operations on `float` or `double`.
+
+## See also
+
+- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
+- [5. Limitations and Diagnostics](../01_language/05_limitations.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)

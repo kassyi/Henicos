@@ -57,3 +57,10 @@ Whenever possible, explicitly use `System.MathF` equivalents for trigonometric, 
 If you need even higher throughput and can tolerate slight losses in precision, G# provides the `Kassyi.GSharp.Core.FastMath` namespace.
 
 These methods (`FastMath.Exp`, `FastMath.Log`, `FastMath.Sqrt`) map directly to specialized hardware-accelerated approximation instructions (`__expf`, `__logf`, etc.) that execute in fewer clock cycles than the fully IEEE-754 compliant `MathF` equivalents.
+
+## See also
+
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Standard Math Primitives Index](../03_bcl_api/math_primitives/00_index.md)
+- [Warp-Level Programming Guide](01_warp_programming_guide.md)
+- [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)

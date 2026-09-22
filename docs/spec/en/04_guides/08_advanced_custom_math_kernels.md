@@ -50,7 +50,7 @@ public static class MyCustomMath
 
 You might wonder why we extract `.Value` (which returns a `GpuUIntBigInteger`) in Step 2, instead of just passing `GpuBigInteger` or operating on `GpuUIntBigInteger` inside the kernel.
 
-[GpuUIntBigInteger](../03_bcl_api/stdlib_math/gpu_big_int_and_uint/GpuUIntBigInteger.md) is **also a Host-Side orchestration type**. While `GpuBigInteger` handles the *sign* (Signed Wrapper), `GpuUIntBigInteger` handles the *memory* (Unsigned Wrapper). It is responsible for allocating GPU memory, managing its lifecycle (`IDisposable`), and tracking references.
+[GpuUIntBigInteger](../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md) is **also a Host-Side orchestration type**. While `GpuBigInteger` handles the *sign* (Signed Wrapper), `GpuUIntBigInteger` handles the *memory* (Unsigned Wrapper). It is responsible for allocating GPU memory, managing its lifecycle (`IDisposable`), and tracking references.
 
 Because it is a managed class running on the CPU, you cannot instantiate or call methods on `GpuUIntBigInteger` inside a GPU kernel. 
 
@@ -182,3 +182,10 @@ public static class MyCustomMath_StrategyB
 ## Summary
 
 By properly isolating the **Host-Side Sign Evaluation** from the **GPU-Side Unsigned Math**, and rigorously utilizing the `GpuContext` memory pool, you can seamlessly extend GSharp's `Stdlib.Math` library with any advanced algorithm imaginable.
+
+## See also
+
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Standard Math Primitives Index](../03_bcl_api/math_primitives/00_index.md)
+- [Stdlib Math and Lazy Evaluation Guide](07_stdlib_math_and_lazy_evaluation.md)
+- [Precision and Performance Guide](05_precision_and_performance_guide.md)

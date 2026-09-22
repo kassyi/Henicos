@@ -175,6 +175,17 @@ Maps to PTX `shfl.bfly.sync` instructions. Thread synchronization across the act
 
 ## See also
 
-- [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)
+### Warp Shuffle Primitives
+- [WarpShuffleDown](WarpShuffleDown.md)
+- [WarpShuffleUp](WarpShuffleUp.md)
 - [SyncThreads](SyncThreads.md)
+
+### Concurrency & Architecture
+- [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
+- [Execution Context Overview](../execution_context/00_index.md)
 - [Gpu BCL API Overview](../00_overview.md)
+
+### Guides
+- [Warp-Level Programming Guide](../../04_guides/01_warp_programming_guide.md)
+- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)

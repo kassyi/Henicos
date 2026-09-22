@@ -44,12 +44,17 @@ Intrinsic static methods and macros providing direct access to GPU hardware feat
 ### 4. Memory
 * **[SharedMemory<T>](memory/SharedMemory.md)**: Abstracts CUDA's high-throughput `__shared__` block-local memory allocations.
 
-### 5. Math and Numerics
+### 5. Math and Numerics (Primitives)
 Standard C# math functions are transpiled to their highly-optimized CUDA equivalents.
-* **[System.Math and System.MathF](math/00_index.md)**
-* **[System.Numerics.BitOperations](math/00_index.md)**
-* **[FastMath](math/00_index.md)**: Hardware-accelerated approximate instructions (`__expf`, `__logf`).
-* **[Built-in Vector Types](math/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
+
+> [!NOTE]
+> **Device & Host Execution**
+> Because these are standard C# BCL methods (like `System.Math.Sin`), they can naturally be executed on the Host (CPU). GSharp's transpiler extends this capability, allowing them to also be executed seamlessly inside GPU kernels (Device).
+
+* **[System.Math and System.MathF](math_primitives/00_index.md)**
+* **[System.Numerics.BitOperations](math_primitives/00_index.md)**
+* **[FastMath](math_primitives/00_index.md)**: Hardware-accelerated approximate instructions (`__expf`, `__logf`).
+* **[Built-in Vector Types](math_primitives/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
 
 ### 6. Standard BCL and Diagnostics
 * **[Standard BCL Mappings](05_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
@@ -58,11 +63,27 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 
 ---
 
-## Group 2: Domain Specific Libraries (`Stdlib.Math`)
+## Group 2: Domain Specific Libraries (`Stdlib.Math` / BigNum)
 
 The `Stdlib.Math` library is a highly specialized suite built on top of the Core Framework, designed for arbitrary-precision arithmetic and advanced algorithmic orchestration on the GPU.
 
-* **[Stdlib.Math Overview](stdlib_math/00_overview.md)**
-* **[GPU Big Integer (Signed & Unsigned)](stdlib_math/gpu_big_int_and_uint/00_overview.md)**
-* **[GPU Big Float](stdlib_math/gpu_big_float/00_overview.md)**
-* **[GPU Execution Contexts](stdlib_math/gpu_context/GpuContext.md)**
+> [!WARNING]
+> **Host-Side Only API**
+> Unlike standard C# math primitives, BigNum operations orchestrate multiple GPU kernels and allocate device memory. Therefore, these APIs are strictly **Host-Only** and *cannot* be called from within a `[GpuKernel]`.
+
+* **[BigNum Overview](math_bignum/00_overview.md)**
+* **[GPU Big Integer (Signed & Unsigned)](math_bignum/gpu_big_int_and_uint/00_overview.md)**
+* **[GPU Big Float](math_bignum/gpu_big_float/00_overview.md)**
+* **[GPU Execution Contexts](math_bignum/gpu_context/GpuContext.md)**
+
+## See also
+
+- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
+- [Diagnostics and Exceptions Reference](04_diagnostics_and_exceptions.md)
+- [BCL Mappings Reference](05_bcl_mappings.md)
+- [Attributes Index](attributes/00_index.md)
+- [Execution Context Index](execution_context/00_index.md)
+- [GPU Intrinsic Class Index](gpu_class/00_index.md)
+- [Standard Math Primitives Index](math_primitives/00_index.md)
+- [Arbitrary-Precision Math Overview](math_bignum/00_overview.md)
+- [Memory Architecture Index](memory/00_index.md)

@@ -47,5 +47,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 
 ## See Also
 
+- [Gpu BCL API Overview](../00_overview.md)
+
 - [04_diagnostics_and_exceptions.md](../04_diagnostics_and_exceptions.md)
 - [05_limitations.md](../../01_language/05_limitations.md)

@@ -40,4 +40,20 @@ public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int
 
 ## See also
 
+### Related Attributes
+- [Attributes Index](00_index.md)
+- [GpuKernelAttribute](GpuKernelAttribute.md)
+- [ConstantAttribute](ConstantAttribute.md)
+
+### Language & Architecture
+- [3. Type System](../../01_language/03_type_system.md)
+- [2. Runtime Kernel Loader](../../02_architecture/02_runtime_loader.md)
+- [3. Comprehensive End-to-End Pipeline Example](../../02_architecture/03_comprehensive_example.md)
+
+### BCL & Memory Architecture
 - [Gpu BCL API Overview](../00_overview.md)
+- [Memory Architecture Index](../memory/00_index.md)
+
+### Guides
+- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)

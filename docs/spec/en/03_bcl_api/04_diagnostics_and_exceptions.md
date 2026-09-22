@@ -56,3 +56,10 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0028**](diagnostics/GSH0028.md) | Error    | **Disposable resource in Default Interface Method.** Default Interface Methods (DIM) cannot take ownership or dispose of resources.                                                               |
 | [**GSH0029**](diagnostics/GSH0029.md) | Warning  | **Manual unmanaged allocation detected.** You invoked manual unmanaged allocation (e.g., `Gpu.Unsafe.Malloc()`). Ensure corresponding `Free()` is called to prevent VRAM leaks.                   |
 | [**RS0030**](diagnostics/RS0030.md)   | Error    | **Banned API in GPU kernel.** Triggered when a banned .NET API is used in GPU kernels or GPU intrinsics are invoked from host CPU code.                                                           |
+
+## See also
+
+- [Gpu BCL API Overview](00_overview.md)
+- [Diagnostics Reference Index](diagnostics/00_index.md)
+- [5. Limitations and Diagnostics](../01_language/05_limitations.md)
+- [Exception Handling Guide](../04_guides/03_exception_handling_guide.md)

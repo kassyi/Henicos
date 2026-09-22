@@ -4,7 +4,7 @@ GSharp provides an incredibly powerful capability: writing C# code that executes
 
 A developer approaching GPU programming with a pure CPU-centric mental model will almost certainly encounter catastrophic performance cliffs, unexpected deadlocks, or compiler rejections.
 
-This guide outlines the five most common traps C# developers fall into when writing GSharp code, why they happen, and the best practices to overcome them.
+This guide outlines the six most common traps C# developers fall into when writing GSharp code, why they happen, and the best practices to overcome them.
 
 ---
 
@@ -269,3 +269,94 @@ public void ExecuteBatchedPipeline(float[] hostData) {
     LaunchProcessBatchKernel(deviceBuffer, gridDimX: (uint)((hostData.Length + 255) / 256), blockDimX: 256);
 }
 ```
+
+---
+
+## 6. Print Debugging (The `Console.WriteLine` Trap)
+
+### ❌ CPU Intuition (The Trap)
+
+When a CPU calculation produces unexpected results, the first reflex for most C# developers is to sprinkle `Console.WriteLine($"debug: x={x}");` across methods to observe runtime variable states and inspect control flow.
+
+### ⚠️ GPU Reality (The Pitfall)
+
+NVIDIA GPU cores do not have standard I/O pipes, consoles, or text streams attached to them. Furthermore, because thousands of GPU threads execute concurrently, attempting to output text synchronously from each thread would completely stall SIMT execution units. Consequently, `Console.WriteLine` and standard .NET I/O streams are completely prohibited inside a `[GpuKernel]`.
+
+> [!NOTE]
+> **What happens if you call `Console.WriteLine` or unsupported library methods?**
+>
+> If you attempt to invoke `Console.WriteLine`—or **any unmapped third-party library or BCL method**—inside a `[GpuKernel]`, G# will reject the code immediately at **build time (compile time)**. It does *not* wait until runtime to crash on the GPU:
+>
+> - **[GSH0003](../03_bcl_api/diagnostics/GSH0003.md) (Unsupported syntax in GPU kernel)**: Triggered because the method is not mapped to a native CUDA/PTX intrinsic. Any unfamiliar method invocation is rejected.
+> - **[GSH0002](../03_bcl_api/diagnostics/GSH0002.md) (String usage not supported in GPU kernels)**: Triggered if string literals or interpolated strings are passed as arguments.
+> - **[RS0030](../03_bcl_api/diagnostics/RS0030.md) (Banned API in GPU kernel)**: Triggered by Roslyn analyzers for prohibited standard .NET runtime APIs.
+>
+> This enforcement adheres to G#'s **Static Determinism** principle: all code must be fully resolved at compile time, guaranteeing that invalid API calls are highlighted with red squiggles in your IDE before code ever touches the GPU.
+
+### ✅ Best Practice in G#
+
+**Telemetry-Driven Buffer Logging.**
+
+Allocate a dedicated, pre-allocated debug array on the Host CPU and pass it to the GPU kernel. Inside the kernel, record telemetry values and variable states into the buffer using thread-safe hardware atomics (`Gpu.AtomicAdd`). Once the kernel finishes, inspect the recorded values on the Host CPU.
+
+#### 1. Device Kernel Implementation
+
+```csharp
+// Execution Context: G# Kernel (Device/GPU)
+using Kassyi.GSharp.Core;
+
+public static class DebugExampleKernels
+{
+    [GpuKernel]
+    public static void ProcessWithDebugLog(
+        int[] input, 
+        int[] output, 
+        int[] debugBuffer, 
+        int[] debugIndex)
+    {
+        int tid = ThreadIndex.X;
+        int myValue = input[tid] * 2;
+        output[tid] = myValue;
+
+        // Thread-safe logging to a pre-allocated debug array
+        int idx = Gpu.AtomicAdd(ref debugIndex[0], 1);
+        if (idx < debugBuffer.Length)
+        {
+            debugBuffer[idx] = myValue;
+        }
+    }
+}
+```
+
+#### 2. Host Orchestration & Verification
+
+```csharp
+// Execution Context: Host (CPU)
+using System;
+
+// 1. Allocate input, output, and telemetry debug buffers
+var input = new int[] { 10, 20, 30, 40 };
+var output = new int[input.Length];
+var debugBuffer = new int[64];
+var debugIndex = new int[1]; // Atomic counter initialized to 0
+
+// 2. Launch kernel (using auto-generated Launch method)
+DebugExampleKernels.LaunchProcessWithDebugLog(
+    input, output, debugBuffer, debugIndex, 
+    gridDimX: 1, blockDimX: input.Length
+);
+
+// 3. Inspect the logged values on the CPU
+int loggedCount = Math.Min(debugIndex[0], debugBuffer.Length);
+for (int i = 0; i < loggedCount; i++)
+{
+    Console.WriteLine($"[GPU Log {i}] value = {debugBuffer[i]}");
+}
+```
+
+## See also
+
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [5. Limitations and Diagnostics](../01_language/05_limitations.md)
+- [Memory Safety Patterns Guide](02_memory_safety_patterns.md)
+- [Precision and Performance Guide](05_precision_and_performance_guide.md)

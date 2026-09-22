@@ -162,3 +162,12 @@ G# fully supports the use of `const` fields and local variables. The AST transpi
 1. **`const` Fields:** When a kernel or device method references a class or struct `const` field (e.g., `public const uint MyConst = 42;`), the transpiler directly evaluates the Roslyn `ConstantValue` and substitutes the literal `42` into the generated C++ source.
 2. **Local `const`:** Local variable declarations using `const` (e.g., `const int offset = 5;`) are transpiled natively as `const int offset = 5;` in C++, permitting the NVCC compiler to apply standard constant folding and dead-code elimination.
 3. **`[GpuConst]` Attribute:** Struct fields annotated with the `[GpuConst]` attribute instruct the transpiler to emit a `const` qualifier on the field in the resulting C++ struct definition. This provides a strong immutability guarantee at the C++ compiler level for specific struct properties.
+
+## See also
+
+- [1. Language Introduction](01_introduction.md)
+- [2. Lexical Structure and Syntax](02_lexical_and_syntax.md)
+- [4. Execution and Concurrency Model](04_execution_model.md)
+- [5. Limitations and Diagnostics](05_limitations.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Vector Types](../03_bcl_api/math_primitives/VectorTypes.md)
