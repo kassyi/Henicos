@@ -223,59 +223,18 @@ gpuA.Value.Square(1024); // Squares gpuA's underlying unsigned value in place
 
 ## Part C: Operator Overloading & Expression Trees (Host-Only)
 
+> [!NOTE]
+> **For detailed architectural explanations:**
+> For a deep dive into how Computational Graphs and Lazy Evaluation work, how to prevent `GSH0005` (computation loss errors), and how Dynamic Sign Resolution functions, please refer to the **[BigNum Expression Trees Guide](../04_guides/04_bignum_expression_trees_guide.md)**.
+
 To provide highly readable syntax without sacrificing GPU memory allocation performance (`cudaMalloc` overhead), `GpuBigInt` employs a **Lazy Evaluation / Computational Graph** architecture.
 
-Instead of computing immediately, operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`) construct an AST (Abstract Syntax Tree).
+Instead of computing immediately, operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`) construct an AST (Abstract Syntax Tree) represented by `GpuBigIntExpr`.
 
 ### Supported Operator Overloads
 * **Arithmetic**: `+`, `-`, `*`, `/`
 * **Bitwise**: `&`, `|`, `^`, `~`
 * **Bit Shifts**: `<<`, `>>`
-
-**Example: Comprehensive Expression Tree**
-```csharp
-// Execution Context: G# Kernel (GPU)
-// Evaluate the tree and return the result as a new buffer
-var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
-using var gpuResult = expr.Node.Evaluate(context, null);
-```
-
-### Diagnostic GSH0005: Preventing Computation Loss
-
-Because operators only build an AST and do not execute any kernels natively, failing to evaluate the resulting expression leads to a silent "computation lost" bug (the GPU kernel is never dispatched).
-
-To prevent this, the G# Roslyn Analyzer introduces `GSH0005` (GpuBigIntExpr Direct Assignment). This diagnostic produces a **hard compiler error** if a `GpuBigIntExpr` is declared or assigned to a local variable without being resolved or evaluated.
-
-```csharp
-// Execution Context: G# Kernel (GPU)
-// ❌ INCORRECT: Triggers hard compiler error GSH0005
-// var recipe = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
-
-// ✨ CORRECT: Enforced evaluation
-var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
-using var gpuResult = expr.Node.Evaluate(context, null);
-```
-
-### Dynamic Sign Resolution (`SignResolutionKind`)
-
-The standard library (`Kassyi.GSharp.Stdlib.Math`) has been enhanced to support runtime sign evaluation for the `GpuBigIntExpr` type without requiring kernel recompilation.
-
-**Example**
-```csharp
-// Execution Context: G# Kernel (GPU)
-using Kassyi.GSharp.Stdlib.Math;
-
-[GpuKernel]
-public static void EvaluateBigInt(uint* data, int dynamicValue)
-{
-    // 'a' has a dynamically resolved sign at runtime based on 'dynamicValue'
-    GpuBigIntExpr a = GpuBigInt.FromInt32(dynamicValue);
-    GpuBigIntExpr b = GpuBigInt.FromInt32(42); 
-    
-    // The multiplication seamlessly handles positive/negative permutations dynamically
-    GpuBigIntExpr result = a * b;
-}
-```
 
 ---
 
