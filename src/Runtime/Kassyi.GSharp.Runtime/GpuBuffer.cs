@@ -66,10 +66,27 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        fixed (T* ptr = source)
+        bool pushed = false;
+        try
         {
-            nint copySize = checked((nint)source.Length * sizeof(T));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, copySize));
+            if (_owningContext != IntPtr.Zero)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPushCurrent_v2(_owningContext));
+                pushed = true;
+            }
+
+            fixed (T* ptr = source)
+            {
+                nint copySize = checked((nint)source.Length * sizeof(T));
+                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, copySize));
+            }
+        }
+        finally
+        {
+            if (pushed)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
+            }
         }
     }
 
@@ -90,10 +107,27 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        fixed (T* ptr = destination)
+        bool pushed = false;
+        try
         {
-            nint copySize = checked((nint)destination.Length * sizeof(T));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, (IntPtr)copySize));
+            if (_owningContext != IntPtr.Zero)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPushCurrent_v2(_owningContext));
+                pushed = true;
+            }
+
+            fixed (T* ptr = destination)
+            {
+                nint copySize = checked((nint)destination.Length * sizeof(T));
+                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, (IntPtr)copySize));
+            }
+        }
+        finally
+        {
+            if (pushed)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
+            }
         }
     }
 
@@ -113,7 +147,10 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
                 res = CudaDriverApi.cuMemFree_v2(_devicePointer);
             }
 
-            _devicePointer = IntPtr.Zero;
+            if (res == CUresult.CudaSuccess)
+            {
+                _devicePointer = IntPtr.Zero;
+            }
             return res;
         }
 
@@ -125,8 +162,11 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         if (!_isDisposed)
         {
             var res = ReleaseUnmanagedResources();
-            _isDisposed = true;
-            GC.SuppressFinalize(this);
+            if (res == CUresult.CudaSuccess)
+            {
+                _isDisposed = true;
+                GC.SuppressFinalize(this);
+            }
             CudaException.ThrowIfError(res);
         }
     }
@@ -135,8 +175,11 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     {
         if (!_isDisposed)
         {
-            _ = ReleaseUnmanagedResources();
-            _isDisposed = true;
+            var res = ReleaseUnmanagedResources();
+            if (res == CUresult.CudaSuccess)
+            {
+                _isDisposed = true;
+            }
         }
     }
 }

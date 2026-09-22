@@ -9,29 +9,51 @@ public sealed class CudaEventTimer : IDisposable
     private IntPtr _endEvent;
     private bool _disposed;
 
+#pragma warning disable IDE0051 // Intended for external kernel consumers
+    // ReSharper disable UnusedMember.Global
+
     public CudaEventTimer()
     {
         // CU_EVENT_DEFAULT = 0x0
         CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _startEvent, 0));
-        CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _endEvent, 0));
+        try
+        {
+            CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _endEvent, 0));
+        }
+        catch
+        {
+            CudaDriverApi.cuEventDestroy_v2(_startEvent);
+            _startEvent = IntPtr.Zero;
+            throw;
+        }
     }
 
     /// <summary>
     /// Records the start event in the specified stream.
     /// </summary>
-    public void Start(IntPtr hStream = 0) =>
+    public void Start(IntPtr hStream = 0)
+    {
+        ThrowIfDisposed();
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_startEvent, hStream));
+    }
 
     /// <summary>
     /// Records the end event in the specified stream.
     /// </summary>
-    public void Stop(IntPtr hStream = 0) =>
+    public void Stop(IntPtr hStream = 0)
+    {
+        ThrowIfDisposed();
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_endEvent, hStream));
+    }
 
     /// <summary>
     /// Synchronizes the host thread until the end event has been recorded.
     /// </summary>
-    public void Synchronize() => CudaException.ThrowIfError(CudaDriverApi.cuEventSynchronize(_endEvent));
+    public void Synchronize()
+    {
+        ThrowIfDisposed();
+        CudaException.ThrowIfError(CudaDriverApi.cuEventSynchronize(_endEvent));
+    }
 
     /// <summary>
     /// Computes the elapsed time between Start and Stop events in milliseconds.
@@ -39,8 +61,15 @@ public sealed class CudaEventTimer : IDisposable
     /// </summary>
     public float GetElapsedTimeMilliseconds()
     {
+        ThrowIfDisposed();
         CudaException.ThrowIfError(CudaDriverApi.cuEventElapsedTime(out var ms, _startEvent, _endEvent));
         return ms;
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(CudaEventTimer));
     }
 
     public void Dispose()
@@ -64,4 +93,7 @@ public sealed class CudaEventTimer : IDisposable
 
         _disposed = true;
     }
+
+    // ReSharper restore UnusedMember.Global
+#pragma warning restore IDE0051
 }
