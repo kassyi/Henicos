@@ -49,21 +49,20 @@ MyKernel();
 }
 ";
 public static readonly string MyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MyKernel_Source;
-private static byte[]? s_binaryData_MyKernel;
-private static bool s_isLoaded_MyKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);
-public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+private static readonly System.Lazy<MyKernel_Delegate> s_hfunc_MyKernel = new System.Lazy<MyKernel_Delegate>(() =>
 {
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GEN_35_MacroTranspiler_InGpuKernel_MyKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_MyKernel)
-{
-s_isLoaded_MyKernel = true;
+return global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyKernel_Delegate>("__gsharp_launch_MyKernel", dllPath);
 }
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyKernel_Delegate>("__gsharp_launch_MyKernel", dllPath);
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+#pragma warning disable CS8500
+public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+var hfunc = s_hfunc_MyKernel.Value;
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }
 #pragma warning restore CS8500
