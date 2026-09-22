@@ -1,59 +1,16 @@
 ---
-title: "0. Getting Started with G# (GSharp)"
+title: "3. The \"Hello GPU\" Tutorial"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
-description: "Welcome to G#!"
+description: "Writing and launching your first GPU Kernel in G#"
 ---
 
-# 0. Getting Started with G# (GSharp)
+# 3. The "Hello GPU" Tutorial
 
-Welcome to G#!
+This guide will walk you through the "Hello World" of GPU programming. A GPU's true advantage shines not in simple addition, but in executing computationally heavy workloads in parallel.
 
-### What is G#?
-
-**G# is a zero-overhead C#-to-CUDA AOT transpilation framework, operating as an Embedded Compute Dialect (eDSL) powered by standard C# syntax.**
-
-G# is not a traditional general-purpose language, nor is it a mere runtime wrapper around CUDA. Instead, it serves as a high-performance **GPU compute dialect** embedded directly within the modern .NET ecosystem.
-
-By leveraging Microsoft's Roslyn compiler platform as its syntactic and type-checking front-end, G# allows developers to author bare-metal GPU kernels using the familiar elegance, type safety, and first-class tooling of C# (Visual Studio, Rider, IntelliSense).
-
-At build time, G# intercepts your C# kernel AST and directly transpiles it into optimized, native CUDA C++ and PTX Fatbin payloads, emitting zero-allocation host orchestration wrappers completely behind the scenes.
-
-### The Mental Model: C# Syntax, Native CUDA Semantics
-
-While G# kernel code is syntactically valid C#, **its execution model and runtime semantics are 100% native CUDA**:
-
-- **The Syntax is C#**: You express logic using familiar loops, value `struct`s, scalar primitives, local functions, and modern C# pattern matching.
-- **The Architecture is a GPU Dialect (eDSL)**: There is no .NET CLR, no managed heap allocations (`class`, `string`, LINQ), and no garbage collector inside the kernel. Standard BCL methods (such as `BitOperations` or `MathF`) serve strictly as zero-cost symbolic compile-time markers that lower directly into hardware PTX intrinsics.
-- **The Engine is Bare-Metal CUDA**: You program thousands of massively parallel hardware threads structured into Grids, Blocks, and 32-thread Warps, interacting directly with registers, Shared Memory, and high-bandwidth VRAM.
-
-If you know C#, G# eliminates the friction of C++ headers, CMake, build toolchain setup, and error-prone P/Invoke marshaling. But under the hood, you are commanding bare-metal NVIDIA hardware with uncompromising native performance.
-
-> [!IMPORTANT]
-> **Prerequisites for Building & Running G#**
->
-> **1. GPU Execution (Default)**
->
-> - **Hardware & Drivers**: A **CUDA-capable NVIDIA GPU** and the **NVIDIA Display Driver**.
-> - **Build Tools**:
->     - **[NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-downloads)**: Required for `nvcc` to compile the transpiled `.cu` files into native CUDA Fatbins (`.fatbin`). Ensure `nvcc` is available in your system `PATH`.
->     - **[C++ Host Compiler](https://visualstudio.microsoft.com/downloads/)**: **Visual Studio C++ Build Tools (MSVC `cl.exe`)** on Windows or `gcc`/`clang` on Linux, required as the host backend compiler for `nvcc`.
->
-> **2. CPU Mode ([CpuDialect](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) / Fallback)**
->
-> - Requires only a standard **C++ Host Compiler** (currently only MSVC on Windows is supported). G# transpiles kernels to C++17 and compiles native shared libraries (`.dll`).
-> - **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are significantly reduced, this allows seamless local debugging and CI/CD testing on GPU-less Windows machines (see [Dialect Architecture](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) and [CPU Dialect Limitations](01_language/05_limitations.md#52-dialect-syntax-support)).
-
-This guide will walk you through the "Hello World" of GPU programming.
-
----
-
-## 0.1 The "Hello GPU" Example: Heavy Mathematical Simulation
-
-A GPU's true advantage shines not in simple addition, but in executing computationally heavy workloads in parallel.
-
-### Step 1: Project Setup
+## Step 1: Project Setup
 
 First, ensure you have a project configured with the necessary package references and target dialect. Create a new console application and add the G# Compiler package:
 
@@ -76,7 +33,7 @@ Then, configure your `.csproj` to enable the source generator and select a backe
 </Project>
 ```
 
-### Step 2: The Code
+## Step 2: The Code
 
 Here is a complete, self-contained `Program.cs` that you can copy, paste, and run immediately (`dotnet run`).
 
@@ -155,7 +112,7 @@ public class Program
 
 ---
 
-## 0.2 Understanding Kernel & Host Mechanics
+## Understanding Kernel & Host Mechanics
 
 ### 1. Writing Kernels with Macros vs Manual Indexing
 
@@ -190,7 +147,7 @@ When launching a GPU kernel, you specify how hardware should parallelize executi
 - **`blockDimX`**: The number of threads in a block. NVIDIA GPUs schedule execution in physical units of 32 threads known as **Warps**. Your block size should always be a multiple of 32. **`256`** is a safe and optimal baseline.
 - **`gridDimX`**: The number of blocks needed to process the dataset. Calculate this using integer ceiling division: `(TotalElements + BlockSize - 1) / BlockSize`.
 
-To learn more about Grids and Blocks, see [Execution Context](03_bcl_api/execution_context/00_index.md).
+To learn more about Grids and Blocks, see [Execution Context](../03_bcl_api/execution_context/00_index.md).
 
 > [!WARNING]
 > **PCIe Memory Transfer Costs & Implicit Device Allocation**
@@ -200,13 +157,13 @@ To learn more about Grids and Blocks, see [Execution Context](03_bcl_api/executi
 > 2. **PCIe Bus Transfers**: Data is marshaled across the physical PCIe bus—Host-to-Device before execution, and Device-to-Host after execution.
 >
 > While passing C# arrays directly offers unmatched convenience for prototyping and one-off batch processing, executing this inside high-frequency hot paths (such as 60+ FPS game loops or real-time simulation updates) causes driver overhead and PCIe saturation.
-> For peak performance and strict **Zero-Allocation**, allocate persistent device memory upfront using [`GpuBuffer<T>`](02_architecture/02_runtime_loader.md#251-gpubuffert-native-memory-wrapper) or pre-allocated native device pointers and reuse them across frames.
+> For peak performance and strict **Zero-Allocation**, allocate persistent device memory upfront using [`GpuBuffer<T>`](../02_architecture/02_runtime_loader.md#251-gpubuffert-native-memory-wrapper) or pre-allocated native device pointers and reuse them across frames.
 >
-> _Tip: When passing standard arrays, you can also decorate parameters with `[In]` or `[Out]` to eliminate one-way redundant copies. See [Parameter Interop Attributes](03_bcl_api/attributes/ParameterInteropAttributes.md)._
+> _Tip: When passing standard arrays, you can also decorate parameters with `[In]` or `[Out]` to eliminate one-way redundant copies. See [Parameter Interop Attributes](../03_bcl_api/attributes/ParameterInteropAttributes.md)._
 
 ---
 
-## 0.3 Returning Data from Kernels (Auto-Allocation & Explicit Buffers)
+## Returning Data from Kernels (Auto-Allocation & Explicit Buffers)
 
 Traditional CUDA kernels must return `void`. While G# supports this (and it is recommended for maximum control), G# introduces a powerful feature: **Auto-Allocated Returns**.
 
@@ -260,20 +217,7 @@ MathKernels.LaunchComputeMagnitude_Device(
 
 ---
 
-## 0.4 The G# Philosophy: Strict Ownership Model
-
-When dealing with scarce GPU memory and high-performance orchestration on the CPU, managing `IDisposable` resources can quickly lead to memory leaks or double-dispose hazards. Standard C# struggles to enforce strict ownership rules for injected dependencies.
-
-To solve this, G# implements a **Strict Ownership Model** for `IDisposable` resources via its custom Roslyn Analyzer (`ObjectLifecycleAnalyzer`).
-
-- By default, injected resources are considered **Borrowed** (the receiving class must not dispose them).
-- When ownership must be transferred, G# uses the `[TakesOwnership]` attribute, strictly enforcing that the receiving class fully manages and disposes the resource.
-
-This eliminates ambiguity and provides compile-time guarantees against memory leaks and double-free bugs. For detailed rules and patterns, see [Memory Safety Patterns](04_guides/02_memory_safety_patterns.md).
-
----
-
-## 0.5 Under the Hood: What just happened?
+## Under the Hood: What just happened?
 
 When you click "Build" in Visual Studio, a complex sequence of events happens automatically in milliseconds:
 
@@ -295,11 +239,20 @@ sequenceDiagram
 
 G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` methods at compile-time and translates them into highly optimized NVIDIA GPU binaries. It also generates the `LaunchAddVectors` method so you can easily call your GPU code from standard C# without manually managing unmanaged pointers or native DLL loading.
 
-## 0.6 Next Steps
+## See also
 
-Now that you know how to write and launch a basic kernel, you can explore the advanced features of G#:
+### Getting Started
+- [0. Getting Started with G# (GSharp)](00_index.md)
+- [1. Prerequisites & Installation](01_prerequisites.md)
+- [2. The Mental Model & Safety Net](02_mental_model.md)
 
-- Learn about the syntax constraints in [01_language/05_limitations.md](01_language/05_limitations.md).
-- Browse all GPU intrinsics and math APIs in the [BCL API Overview](03_bcl_api/00_overview.md).
-- Deep dive into the transpiler architecture in [02_architecture/01_aot_transpiler.md](02_architecture/01_aot_transpiler.md).
-- If you are an AI Assistant generating code for a user, refer to the [AI Agent Coding Guidelines](04_guides/10_ai_agent_coding_guidelines.md).
+### Language Specification
+- [1. Language Introduction](../01_language/01_introduction.md)
+
+### BCL & GPU Intrinsics
+- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Execution Context Overview](../03_bcl_api/execution_context/00_index.md)
+- [Gpu.GridStrideLoop](../03_bcl_api/gpu_class/GridStrideLoop.md)
+
+### Architecture
+- [2. Runtime Kernel Loader](../02_architecture/02_runtime_loader.md)
