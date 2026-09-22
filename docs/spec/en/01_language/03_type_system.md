@@ -35,7 +35,7 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 
 G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel. 
 
-To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler strictly applies **Fully Qualified Name Mangling** (e.g., a C# struct `Math.Vector2` becomes `Math_Vector2` in C++).
+To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler handles namespace collisions transparently under the hood. You do not need to worry about naming conflicts across different namespaces.
 
 ### 2.2.1 Struct Constraints
 * **Unmanaged Types & Arrays**: Structs should primarily contain primitive types or other structs. While standard reference types (`class`, `string`) are strictly prohibited, **C# managed arrays (`T[]`) are explicitly permitted** as struct fields. The generator transparently applies "Deep Struct Marshaling" to automatically transpose these host arrays into valid device pointers (`T*`) during execution.

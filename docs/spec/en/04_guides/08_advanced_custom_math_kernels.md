@@ -164,10 +164,10 @@ public static class MyCustomMath_StrategyB
         // 2. The final result buffer that we will return (do not dispose this one!)
         var finalResult = GpuUIntBigInteger.Allocate(context);
 
-        // 3. Dispatch your custom kernel via the auto-generated Wrapper class.
-        // The GSharp Source Generator automatically creates {ClassName}Wrapper 
-        // with Launch{MethodName} methods for any [GpuKernel].
-        MyCustomMathKernelsWrapper.LaunchMyCustomUnsignedKernel(
+        // 3. Dispatch your custom kernel via the auto-generated method.
+        // The GSharp Source Generator automatically injects Launch{MethodName} 
+        // methods directly into your partial class for any [GpuKernel].
+        MyCustomMathKernels.LaunchMyCustomUnsignedKernel(
             uA, uB, finalResult, context.MaxWords,
             gridDimX: 1, blockDimX: 1
         );

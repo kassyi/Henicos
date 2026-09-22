@@ -39,6 +39,8 @@ The core translation logic resides in the `RoslynToCudaVisitor` class, inheritin
 
 During AST traversal, if the transpiler encounters a user-defined custom `struct` (whether passed by value, by pointer, or used as an array element), it tracks it in a `_usedStructs` set. Before generating the final C++ method, the transpiler dynamically emits the C++ equivalent of all collected `struct` definitions at the top of the source string to ensure type definitions are valid in CUDA.
 
+To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler strictly applies **Fully Qualified Name Mangling** (e.g., a C# struct `Math.Vector2` becomes `Math_Vector2` in C++).
+
 > [!NOTE]
 > To prevent Multiple Definition errors (e.g., `class has already been defined`) when multiple kernels utilizing the same struct are JIT-compiled together in a shared dynamic source string, the generator automatically wraps every emitted struct definition with a preprocessor header guard (e.g., `#ifndef __GSHARP_STRUCT_Name__`).
 
@@ -96,15 +98,26 @@ For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types
 
 ## 1.4 Stub Emission (`GpuKernelGenerator`)
 
-Once the CUDA C++ string is constructed, `GpuKernelGenerator` creates a C# partial class containing a launcher method (e.g., `Launch[MethodName]`).
+Once the CUDA C++ string is constructed, `GpuKernelGenerator` injects a launcher method into the user's codebase.
 
-### 1.4.1 Launcher Signature
+### 1.4.1 Generated Host API Specifications
 
-The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively:
+The transpiler strictly adheres to the following naming conventions and rules when emitting the host launcher:
+
+1. **Partial Class Mandate**: The user's class containing the `[GpuKernel]` method **must** be declared as a `public static partial class`. The Source Generator does *not* create a separate `Wrapper` class. It injects the launcher directly into this partial class.
+2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`).
+3. **Trailing Execution Dimensions**: The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively.
+4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
 
 ```csharp
-public static void Launch[KernelName](
-    /* Original non-Constant parameters */,
+// Original Kernel Signature
+// public static partial class MyKernels {
+//     [GpuKernel] public static T KernelName(int arg1) { ... }
+// }
+
+// Generated Launcher Signature
+public static T[] LaunchKernelName(
+    int arg1, // Original non-Constant parameters
     uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
     uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
     uint sharedMemBytes = 0)
@@ -145,19 +158,22 @@ public struct AdvancedContext
     public float[] Data;
 }
 
-[GpuKernel]
-public static void Process(AdvancedContext ctx) { /* ... */ }
+public static partial class MyKernels
+{
+    [GpuKernel]
+    public static void Process(AdvancedContext ctx) { /* ... */ }
+}
 
 // Host Invocation:
 var ctx = new AdvancedContext { Data = new float[100] };
 
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
-KernelWrapper.LaunchProcess(ctx);
+MyKernels.LaunchProcess(ctx);
 
 // ❌ Prohibited: The _Device overload expects pre-allocated device pointers.
 // A struct containing a managed array (T[]) cannot be mapped safely here.
 // Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
-KernelWrapper.LaunchProcess_Device(ctx);
+MyKernels.LaunchProcess_Device(ctx);
 ```
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
