@@ -28,7 +28,7 @@ Arbitrary-precision GPU floating-point operations require predictable memory acc
 To guarantee static determinism and seamless mapping to CUDA C++ registers and shared memory, all types enforce sequential layout (`[StructLayout(LayoutKind.Sequential)]`):
 
 ```csharp
-// Execution Context: Host (CPU) & G# Kernel (GPU)
+// Execution Context: Host (CPU)
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -133,8 +133,8 @@ Because floating-point operations ultimately delegate to integer significand ari
 | :--- | :--- |
 | **Zero Significand** | Represented as $M = 0$ and $E = 0$. $0 + X = X$ and $0 \times X = 0$. |
 | **Exact Power of Two** | $M$ has exactly 1 bit set. Alignment and normalization preserve bit position. |
-| **Exponent Overflow** | Exponent exceeds `int.MaxValue`. Saturates or signals infinity state depending on context. |
-| **Exponent Underflow** | Exponent drops below `int.MinValue`. Flushes to zero (FTZ) under denormal handling rules. |
+| **Exponent Overflow** | Exponent exceeds `int.MaxValue`. The current implementation triggers checked-arithmetic overflow. |
+| **Exponent Underflow** | Exponent drops below `int.MinValue`. The current implementation triggers checked-arithmetic underflow. |
 | **Maximum Shift ($\Delta E \ge \text{Bits}$)** | Smaller operand becomes 0 with Sticky Bit $S = 1$ if any non-zero bits were shifted out. |
 | **Sign Equivalence ($+0$ vs $-0$)** | Signed float $-0$ and $+0$ compare equal ($+0 == -0$). |
 
@@ -166,7 +166,7 @@ These structs act as ultra-thin, zero-overhead wrappers around the generic `GpuB
 Traditional C# arrays (`new uint[] { 1, 2 }`) allocate memory on the managed heap, which is strictly prohibited for GPU device-side execution. To solve this, the module implements zero-allocation initialization using C# 12 Collection Expressions:
 
 ```csharp
-// Execution Context: Host (CPU) or G# Kernel (GPU)
+// Execution Context: Host (CPU)
 // Seamlessly initializes a 128-bit GPU float from an array-like syntax.
 // The C# compiler optimizes this into a stack/register allocated sequence.
 GpuUInt128 significand = [0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000];
@@ -262,16 +262,12 @@ To construct large constant values or intermediate configurations natively insid
 // Execution Context: G# Kernel (GPU)
 // Example: Using GpuUIntBuilder inside a [GpuKernel]
 [GpuKernel]
-public static void SetupInitialState(uint* globalOutput)
+public static void SetupInitialState(uint[] globalOutput)
 {
-    // Allocates a 16-word (512-bit) array entirely in GPU registers/stack
-    var buffer = new LimbBuffer16(); 
-    var builder = new GpuUIntBuilder(ref buffer);
+    // Create a 16-word (512-bit) structure from a ReadOnlySpan
+    ReadOnlySpan<uint> limbs = new uint[] { 12345, 0, 0, 0 };
+    var builder = GpuUIntBuilder.Create<LimbBuffer16>(limbs);
     
-    builder.SetBit(511); // Sets the highest bit
-    builder.Add(12345);
-    
-    // Write out the result safely to global memory
-    builder.CopyTo(globalOutput);
+    // ...
 }
 ```

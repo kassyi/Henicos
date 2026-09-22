@@ -63,6 +63,7 @@ Here is a complete, self-contained `Program.cs` that you can copy, paste, and ru
 It simulates a complex mathematical transformation (similar to physics or financial modeling) across **100 million elements**. A CPU would take seconds to process this massive dataset, but a modern GPU finishes it in milliseconds.
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
 
@@ -219,6 +220,7 @@ float[] magnitudes = MathKernels.LaunchComputeMagnitude(
 For peak performance, allocate persistent device memory upfront using `GpuBuffer<T>` and reuse it. Pass the `DevicePointer` directly to the `_Device` variant of the generated launcher:
 
 ```csharp
+// Execution Context: Host (CPU)
 // 1. Allocate a persistent device buffer once (e.g., during initialization)
 using GpuBuffer<float> gpuMagnitudes = new GpuBuffer<float>(25600);
 

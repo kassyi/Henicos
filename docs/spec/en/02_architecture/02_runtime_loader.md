@@ -81,6 +81,7 @@ Additionally, file deletion commands (e.g., `Logger.Clear()`) are synchronized t
 G# introduces the `GpuBuffer<T>` abstraction in the Runtime space to provide a safe, strongly-typed unmanaged memory wrapper over raw CUDA device pointers. It enables zero-allocation device memory management and seamless Host-to-Device/Device-to-Host transfers.
 
 ```csharp
+// Execution Context: Host (CPU)
 // Safely allocate and copy memory without raw P/Invoke overhead
 using var buffer = new GpuBuffer<int>(1024);
 
@@ -96,6 +97,7 @@ IntPtr devPtr = buffer.DevicePointer;
 The runtime provides `GpuTimer` (implemented as `CudaEventTimer`), an abstraction over native CUDA Driver Events (`cuEventCreate`, `cuEventRecord`, `cuEventElapsedTime`) to allow highly precise, asynchronous GPU throughput measurements without stalling the host pipeline.
 
 ```csharp
+// Execution Context: Host (CPU)
 using var timer = new GpuTimer();
 
 timer.Start();

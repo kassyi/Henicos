@@ -38,7 +38,11 @@ When threads within the same warp take different execution paths due to data-dep
 
 G# natively supports hardware Warp-level intrinsics, allowing threads within the same warp to communicate and synchronize efficiently without relying on Shared Memory.
 These include **Warp Synchronization** (ensuring memory visibility at the warp level) and **Warp Shuffles** (exchanging register values directly).
-_(For specific method signatures like `Gpu.WarpShuffleXor`, refer to the BCL reference [Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md))._
+
+All warp shuffle operations require an active thread mask (`uint mask`) to coordinate synchronization under modern GPU Independent Thread Scheduling.
+
+_(For an in-depth explanation of active masks, deadlock prevention, and shuffle patterns, refer to the [Warp Primitives and Thread Masking Guide](../04_guides/01_warp_programming_guide.md). For method signatures, see the [Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md))._
+
 
 ## 4.3 Memory Consistency and Synchronization
 

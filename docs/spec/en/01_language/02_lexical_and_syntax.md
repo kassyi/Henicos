@@ -75,6 +75,7 @@ Switch expressions provide a concise, expression-based way to implement pattern 
 
 **Example: Value and Relational Pattern Matching**
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void CategorizeValuesKernel(int[] input, float[] output)
 {
@@ -102,6 +103,7 @@ G# natively supports C# local functions and lambda expressions. They are highly 
 
 **Example: Local Functions and Capturing Lambdas**
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void LocalMathKernel(int[] data, int factor)
 {
@@ -130,6 +132,7 @@ In C#, the `null` keyword represents a null reference. During AOT transpilation 
 
 **Example**
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void ProcessPointer(int* ptr)
 {

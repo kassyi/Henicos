@@ -103,7 +103,6 @@ Once the CUDA C++ string is constructed, `GpuKernelGenerator` creates a C# parti
 The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively:
 
 ```csharp
-// Execution Context: Host (CPU)
 public static void Launch[KernelName](
     /* Original non-Constant parameters */,
     uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
@@ -139,6 +138,7 @@ When a struct parameter is detected, the `GpuKernelGenerator` recursively traver
 > However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. When invoking the zero-allocation `Launch*_Device` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally throws a `NotSupportedException` in the `_Device` launcher to prevent corrupted pointer mapping.
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Example: A struct containing a managed array field
 public struct AdvancedContext
 {
@@ -186,6 +186,7 @@ To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = 
 When the transpiler encounters these nodes in the Roslyn AST, it lowers them into inline C++ lambda closures:
 
 ```cpp
+// Execution Context: Generated C++ (GPU)
 // C# switch expression lowered to C++ IIFE
 output = [&]() {
     switch(val) {

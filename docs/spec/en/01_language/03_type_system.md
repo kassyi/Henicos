@@ -82,6 +82,7 @@ Nested vector types strictly respect CUDA ABI natural alignment requirements. Fo
 G# automatically resolves memory layout discrepancies between the .NET CLR and NVIDIA CUDA ABI by generating `LayoutKind.Explicit` native shadow structs. These explicitly specify field offsets and pad unaligned preceding fields, preventing field offset divergence and device-side memory corruption.
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void VectorLoadStore(Float4* input, Float4* output)
 {
@@ -123,7 +124,7 @@ Unsafe pointer arithmetic is fully permitted and transpiles 1:1 to C++ (e.g., `i
 G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
 var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
 ```
