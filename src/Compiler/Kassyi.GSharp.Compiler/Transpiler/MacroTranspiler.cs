@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Microsoft.CodeAnalysis.Operations;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -13,17 +14,28 @@ internal static class MacroTranspiler
     {
         return node.Expression switch
         {
-            InvocationExpressionSyntax invocation => TryTranspileInvocation(invocation, ref context),
+            InvocationExpressionSyntax invocation => TryTranspileInvocation(invocation, node, ref context),
             AssignmentExpressionSyntax assignment => TryTranspileAssignment(assignment, ref context),
             _ => false
         };
     }
 
-    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ref TranspileContext context)
+    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ExpressionStatementSyntax statement, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
-            symbol.ContainingType.Name != TypeConstants.GpuType ||
             !symbol.ContainingNamespace.IsCoreNamespace())
+        {
+            return false;
+        }
+
+        var typeName = symbol.ContainingType.Name;
+        if (typeName == "Hint" && symbol.ContainingType.ContainingType?.Name == TypeConstants.GpuType)
+        {
+            if (symbol.Name == "Unroll") return TranspileHintUnroll(invocation, statement, ref context);
+            return false;
+        }
+
+        if (typeName != TypeConstants.GpuType)
         {
             return false;
         }
@@ -35,6 +47,46 @@ internal static class MacroTranspiler
             "SingleThread" => TranspileSingleThread(invocation, ref context),
             _ => false
         };
+    }
+
+    private static bool TranspileHintUnroll(InvocationExpressionSyntax invocation, ExpressionStatementSyntax statement,
+        ref TranspileContext context)
+    {
+        if (!GpuMacroArgumentRule.PrecedesSupportedLoop(statement))
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+                invocation.GetLocation()));
+            return true;
+        }
+
+        var args = invocation.ArgumentList.Arguments;
+        int factor = 0;
+        if (args.Count > 0)
+        {
+            var factorExpr = args[0].Expression;
+            var constantValue = context.SemanticModel.GetConstantValue(factorExpr);
+            if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
+            {
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
+                    factorExpr.GetLocation()));
+                return true;
+            }
+
+            factor = intVal;
+        }
+
+        if (factor > 0)
+        {
+            context.Writer.AppendLine($"#pragma unroll {factor}");
+        }
+        else
+        {
+            context.Writer.AppendLine("#pragma unroll");
+        }
+
+        return true;
     }
 
     private static bool TranspileForUnroll(InvocationExpressionSyntax invocation, ref TranspileContext context,

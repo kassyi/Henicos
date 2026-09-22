@@ -12,7 +12,10 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.LinqNotSupported,
         GSharpDiagnostics.ImplicitVarNeedsSuffix,
         GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
-        GSharpDiagnostics.MacroArgumentMustBeConstant);
+        GSharpDiagnostics.MacroArgumentMustBeConstant,
+        GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
+        GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+        GSharpDiagnostics.ManualEnumeratorNotSupported);
 
     public override void Initialize(AnalysisContext context)
     {

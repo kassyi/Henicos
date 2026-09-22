@@ -147,7 +147,7 @@ public class TakesOwnershipAttribute : Attribute
 ```
 
 **Remarks**
-* **Memory Safety / Zero-Leak Analyzer**: By default, injecting a disposable GPU resource (like `GpuContext` or `GpuBuffer<T>`) into a constructor implies **Borrowing**. The analyzer (e.g., `GSH021`, `GSH022`) enforces that borrowed resources must *not* be disposed by the receiving class to prevent double-free errors.
+* **Memory Safety / Zero-Leak Analyzer**: By default, injecting a disposable GPU resource (like `GpuContext` or `GpuBuffer<T>`) into a constructor implies **Borrowing**. The analyzer (e.g., `GSH0020`, `GSH0021`) enforces that borrowed resources must *not* be disposed by the receiving class to prevent double-free errors.
 * Applying `[TakesOwnership]` explicitly transfers ownership to the receiving class. The analyzer then enforces that the receiving class must implement `IDisposable` and must properly dispose of the resource.
 
 **Example**

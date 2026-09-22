@@ -25,7 +25,7 @@ public class GEN_16_WarpLevelConcurrencyTests
         }
 
         // Output array initialized to 0
-        GEN_16_WarpLevelConcurrencyKernelsWrapper.Launch_WarpReduceSumKernel(
+        GEN_16_WarpLevelConcurrencyKernelsWrapper.LaunchWarpReduceSumKernel(
             input,
             output,
             blockDimX: (uint)length
@@ -46,7 +46,7 @@ public class GEN_16_WarpLevelConcurrencyTests
         var input = new int[length];
         var output = new int[length];
         
-        GEN_16_WarpLevelConcurrencyKernelsWrapper.Launch_WarpPrimitivesKernel(
+        GEN_16_WarpLevelConcurrencyKernelsWrapper.LaunchWarpPrimitivesKernel(
             input,
             output,
             blockDimX: 32

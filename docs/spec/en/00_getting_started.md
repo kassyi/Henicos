@@ -67,7 +67,7 @@ Both the macro and the manual approach transpile to native CUDA C++ and run with
 
 Writing the kernel is only half the battle. In GPU programming, you must orchestrate the **Host-Device Interaction**: allocating memory on the CPU, sending it to the GPU, and launching the kernel.
 
-G# makes this incredibly easy. When you write a `[GpuKernel]`, the Roslyn Source Generator automatically creates a companion C# method prefixed with `Launch_` (in this case, `Launch_AddVectors`). 
+G# makes this incredibly easy. When you write a `[GpuKernel]`, the Roslyn Source Generator automatically creates a companion C# method prefixed with `Launch` (in this case, `LaunchAddVectors`). 
 
 You simply call this generated method from your standard CPU code!
 
@@ -95,8 +95,8 @@ public class Program
 
         Console.WriteLine("Launching GPU Kernel...");
 
-        // 2. The transpiler automatically generates this 'Launch_AddVectors' wrapper!
-        MathKernels.Launch_AddVectors(
+        // 2. The transpiler automatically generates this 'LaunchAddVectors' wrapper!
+        MathKernels.LaunchAddVectors(
             a: arrayA,
             b: arrayB,
             result: result,
@@ -112,7 +112,7 @@ public class Program
 ```
 
 > [!IMPORTANT]
-> The `Launch_` method handles all the heavy lifting of P/Invoke and DLL loading for you. Because G# focuses on **Zero-Allocation**, you use C# arrays and pass them by `ref` or as pointers to avoid creating expensive copies on the Managed Heap.
+> The `Launch` method handles all the heavy lifting of P/Invoke and DLL loading for you. Because G# focuses on **Zero-Allocation**, you use C# arrays and pass them by `ref` or as pointers to avoid creating expensive copies on the Managed Heap.
 
 ---
 
@@ -120,7 +120,7 @@ public class Program
 
 Traditional CUDA kernels must return `void`. While G# supports this (and it is recommended for maximum control), G# introduces a powerful feature: **Auto-Allocated Returns**.
 
-If your `[GpuKernel]` returns a value type (e.g., `float`, `int`, `struct`) or an array, the transpiler will automatically convert this into an explicit output buffer under the hood. The `Launch_` method will dynamically allocate an array of size `gridDim * blockDim` (one element per thread) and return it to you!
+If your `[GpuKernel]` returns a value type (e.g., `float`, `int`, `struct`) or an array, the transpiler will automatically convert this into an explicit output buffer under the hood. The `Launch` method will dynamically allocate an array of size `gridDim * blockDim` (one element per thread) and return it to you!
 
 ```csharp
 [GpuKernel]
@@ -134,11 +134,11 @@ public static float ComputeMagnitude(PhysicsVector[] particles)
 }
 ```
 
-On the host side, you simply call the `Launch_` method. G# automatically allocates the array for you and populates it with each thread's result:
+On the host side, you simply call the `Launch` method. G# automatically allocates the array for you and populates it with each thread's result:
 
 ```csharp
-// The generated Launch_ method returns a float[] sized exactly to the total thread count!
-float[] magnitudes = MathKernels.Launch_ComputeMagnitude(
+// The generated Launch method returns a float[] sized exactly to the total thread count!
+float[] magnitudes = MathKernels.LaunchComputeMagnitude(
     particles: particlesArray,
     gridDimX: 100,
     blockDimX: 256  // Returns a float[25600]
@@ -150,7 +150,20 @@ float[] magnitudes = MathKernels.Launch_ComputeMagnitude(
 
 ---
 
-## 0.4 Under the Hood: What just happened?
+## 0.4 The G# Philosophy: Rust-like Memory Safety
+
+When dealing with scarce GPU memory and high-performance orchestration on the CPU, managing `IDisposable` resources can quickly lead to memory leaks or double-dispose hazards. Standard C# struggles to enforce strict ownership rules for injected dependencies.
+
+To solve this, G# implements a **Rust-like Ownership Model** for `IDisposable` resources via its custom Roslyn Analyzer (`ObjectLifecycleAnalyzer`). 
+
+* By default, injected resources are considered **Borrowed** (the receiving class must not dispose them). 
+* When ownership must be transferred, G# uses the `[TakesOwnership]` attribute, strictly enforcing that the receiving class fully manages and disposes the resource.
+
+This eliminates ambiguity and provides compile-time guarantees against memory leaks and double-free bugs. For detailed rules and patterns, see [Memory Safety Patterns](04_guides/02_memory_safety_patterns.md).
+
+---
+
+## 0.5 Under the Hood: What just happened?
 
 When you click "Build" in Visual Studio, a complex sequence of events happens automatically in milliseconds:
 
@@ -162,7 +175,7 @@ sequenceDiagram
     participant D as Compiled DLL (.cu.dll)
     
     C->>R: 1. [GpuKernel] AddVectors()
-    Note over R: Generates C#35; Launch_AddVectors() using P/Invoke
+    Note over R: Generates C#35; LaunchAddVectors() using P/Invoke
     R->>R: 2. Transpiles C#35; AST to .cu (CPP)
     R->>NV: 3. Passes .cu code
     Note over NV: Compiles to native GPU binary
@@ -174,9 +187,9 @@ sequenceDiagram
 2. **Transpilation**: It translates the C# AST (Abstract Syntax Tree) directly into raw CUDA C++ (`.cu`). The `GridStrideLoop` is expanded into native thread math.
 3. **Native Compilation**: It silently invokes NVIDIA's `nvcc` compiler to build a native `.dll` / `.so`.
     * **NVCC Fallback**: If `nvcc` is not installed or not found in the system PATH, the transpiler safely skips the C++ compilation phase and emits a mock CPU-based C# stub. This allows developers on non-GPU hardware (like MacBooks) to still compile and write code without breaking the .NET build.
-4. **P/Invoke Generation**: It generates the `Launch_AddVectors` method in your C# project, seamlessly bridging the managed and unmanaged worlds.
+4. **P/Invoke Generation**: It generates the `LaunchAddVectors` method in your C# project, seamlessly bridging the managed and unmanaged worlds.
 
-## 0.5 Next Steps
+## 0.6 Next Steps
 
 Now that you know how to write and launch a basic kernel, you can explore the advanced features of G#:
 * Learn about the syntax constraints in [01_language/05_limitations.md](01_language/05_limitations.md).

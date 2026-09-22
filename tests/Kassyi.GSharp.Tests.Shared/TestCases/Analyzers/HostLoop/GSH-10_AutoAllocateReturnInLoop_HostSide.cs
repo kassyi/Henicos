@@ -14,10 +14,10 @@ public class TestLoopAnalyzer
     {
         for (int i = 0; i < 10; i++)
         {
-            var result = Launch_KernelTest();
+            var result = LaunchKernelTest();
         }
     }
 
     // Stub for the generated launch method so analyzer doesn't complain about undefined method
-    public static float[] Launch_KernelTest() => new float[0];
+    public static float[] LaunchKernelTest() => new float[0];
 }

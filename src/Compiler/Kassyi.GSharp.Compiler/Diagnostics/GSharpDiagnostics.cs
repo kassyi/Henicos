@@ -1,4 +1,6 @@
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Compiler.Diagnostics", Justification = "Public API exposed for compiler usage")]
+[assembly:
+    SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
+        Target = "Kassyi.GSharp.Compiler.Diagnostics", Justification = "Public API exposed for compiler usage")]
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
@@ -11,7 +13,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ObjectCreationNotSupported = new(
         id: "GSH0001",
         title: "Object creation not supported in GPU kernels",
-        messageFormat: "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
+        messageFormat:
+        "Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -35,7 +38,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor KernelReturnMustBeVoidOrBlittable = new(
         id: "GSH0004",
         title: "GpuKernel return type must be void or blittable",
-        messageFormat: "Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.",
+        messageFormat:
+        "Method '{0}' is marked with [GpuKernel] but returns unsupported type '{1}'. GpuKernel methods must return void or an unmanaged blittable type.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -43,7 +47,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
         id: "GSH0013",
         title: "Excessive static shared memory usage",
-        messageFormat: "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
+        messageFormat:
+        "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -51,7 +56,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
         id: "GSH0014",
         title: "Large struct passed by value",
-        messageFormat: "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+        messageFormat:
+        "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -59,7 +65,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
         id: "GSH0015",
         title: "Auto-allocated array in loop",
-        messageFormat: "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
+        messageFormat:
+        "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -67,7 +74,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor GpuBigIntExprDirectAssignment = new(
         id: "GSH0005",
         title: "GpuBigIntExpr must be assigned via .Value",
-        messageFormat: "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
+        messageFormat:
+        "Direct assignment or local declaration of GpuBigIntExpr is not supported. Use 'gpuResult.Value = expr' to evaluate the expression directly into the target buffer.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -83,7 +91,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ForeachNotSupported = new(
         id: "GSH0007",
         title: "Foreach is not allowed in GPU kernels",
-        messageFormat: "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead.",
+        messageFormat:
+        "The GPU method '{0}' uses a foreach loop. Use a standard for loop instead to avoid IEnumerator allocation overhead.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -99,7 +108,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ImplicitVarNeedsSuffix = new(
         id: "GSH0009",
         title: "Implicit var with literal needs suffix",
-        messageFormat: "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'.",
+        messageFormat:
+        "The variable '{0}' is implicitly typed (var) and assigned a numeric literal without a suffix. Use a suffix (like 'U' or 'UL') or explicitly type it as 'uint' or 'ulong'.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -128,6 +138,119 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor UnrollFactorMustBeNonNegativeConstant = new(
+        id: "GSH0016",
+        title: "Unroll factor must be a non-negative compile-time constant",
+        messageFormat: "The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrollHintMustPrecedeLoop = new(
+        id: "GSH0017",
+        title: "Unroll hint must precede a loop",
+        messageFormat: "Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ManualEnumeratorNotSupported = new(
+        id: "GSH0019",
+        title: "Manual GetEnumerator calls are not supported",
+        messageFormat:
+        "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead to ensure proper state machine dispose routing and memory safety.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor HostIntrinsicCallError = new(
+        id: "GSH0018",
+        title: "GPU intrinsic called from host",
+        messageFormat: "The GPU intrinsic '{0}' cannot be called from a host method",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor MissingIDisposable = new(
+        id: "GSH0020",
+        title: "Missing IDisposable implementation",
+        messageFormat: "A class holds a disposable GPU resource (e.g., GpuContext) but does not implement IDisposable",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UndisposedField = new(
+        id: "GSH0021",
+        title: "Undisposed GPU resource",
+        messageFormat: "The Dispose() method does not explicitly invoke .Dispose() on all owned GPU resources",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnsafeFieldOverwrite = new(
+        id: "GSH0022",
+        title: "Unsafe field overwrite",
+        messageFormat: "A disposable field is overwritten without prior disposal",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor PropertyGetterSideEffect = new(
+        id: "GSH0023",
+        title: "Property getter side-effect",
+        messageFormat: "Property getters must not allocate disposable resources",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor CastOperatorSideEffect = new(
+        id: "GSH0024",
+        title: "Cast operator side-effect",
+        messageFormat: "Implicit or explicit cast operators must not allocate disposable resources",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnguardedMultiAllocation = new(
+        id: "GSH0025",
+        title: "Unguarded multi-allocation",
+        messageFormat: "Multiple allocations in a constructor must be guarded with try-catch to avoid partial leaks",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor StaticDisposableAllocation = new(
+        id: "GSH0026",
+        title: "Static disposable allocation",
+        messageFormat: "Static fields must not allocate disposable resources",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor DisposingBorrowedResource = new(
+        id: "GSH0027",
+        title: "Disposing borrowed resource",
+        messageFormat: "Disposing a borrowed resource creates a double-dispose hazard. If taking ownership, use [TakesOwnership].",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor DisposableInDim = new(
+        id: "GSH0028",
+        title: "Disposable resource in Default Interface Method",
+        messageFormat: "Default Interface Methods (DIM) cannot take ownership or dispose of resources",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ManualUnmanagedAllocation = new(
+        id: "GSH0029",
+        title: "Manual unmanaged allocation detected",
+        messageFormat: "Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     public static bool ValidateKernelReturnType(IMethodSymbol methodSymbol, Action<Diagnostic>? reportDiagnostic)
     {
         if (methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
@@ -140,16 +263,13 @@ public static class GSharpDiagnostics
             return true;
         }
 
-        if (reportDiagnostic != null)
-        {
-            reportDiagnostic(Diagnostic.Create(
-                KernelReturnMustBeVoidOrBlittable,
-                methodSymbol.Locations.FirstOrDefault() ?? Location.None,
-                methodSymbol.Name,
+        reportDiagnostic?.Invoke(Diagnostic.Create(
+            KernelReturnMustBeVoidOrBlittable,
+            methodSymbol.Locations.FirstOrDefault() ?? Location.None,
+            methodSymbol.Name,
 #pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
-                methodSymbol.ReturnType.ToDisplayString()));
+            methodSymbol.ReturnType.ToDisplayString()));
 #pragma warning restore RS0030
-        }
 
         return false;
     }

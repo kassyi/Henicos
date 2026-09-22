@@ -57,7 +57,7 @@ public class BlackScholesBenchmark : IComputeBenchmark
     {
         uint blockSize = 256;
         uint numBlocks = (uint)((N + blockSize - 1) / blockSize);
-        BlackScholesKernelsWrapper.Launch_BlackScholesKernel(
+        BlackScholesKernelsWrapper.LaunchBlackScholesKernel(
             _s, _x, _t, _r, _v, _callResultGsharp, _putResultGsharp, N,
             gridDimX: numBlocks, blockDimX: blockSize);
     }

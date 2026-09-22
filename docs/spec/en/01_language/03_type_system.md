@@ -97,7 +97,7 @@ G# enforces strict rules on memory access to ensure valid device pointer derefer
 C# arrays provided as kernel parameters are exclusively passed as flat pointers to device memory (Global Memory).
 * A C# parameter `int[] data` transpiles to `int* data` in CUDA.
 * Multidimensional arrays (`int[,]`) are unsupported. Developers must manually compute offsets on flattened 1D arrays (e.g., `y * width + x`).
-* **Implicit Marshaling**: When invoking the generated `Launch_X` stub, the host C# array is automatically pinned via `GCHandle`, allocated on the GPU (`cuMemAlloc`), copied to device memory (`cuMemcpyHtoD`), and copied back after execution (`cuMemcpyDtoH`).
+* **Implicit Marshaling**: When invoking the generated `LaunchX` stub, the host C# array is automatically pinned via `GCHandle`, allocated on the GPU (`cuMemAlloc`), copied to device memory (`cuMemcpyHtoD`), and copied back after execution (`cuMemcpyDtoH`).
 
 ### 2.3.2 Modifiers (`ref` and `out`)
 C# parameter modifiers denote specific pointer behaviors:

@@ -28,7 +28,7 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
             identifier = memberAccess.Name as IdentifierNameSyntax;
         }
 
-        if (identifier == null || !identifier.Identifier.Text.StartsWith("Launch_"))
+        if (identifier == null || !identifier.Identifier.Text.StartsWith("Launch"))
         {
             return;
         }

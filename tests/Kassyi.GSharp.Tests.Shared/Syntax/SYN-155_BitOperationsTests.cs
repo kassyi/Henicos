@@ -29,7 +29,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
         uint[] rotLeft = new uint[1];
         uint[] rotRight = new uint[1];
 
-        SYN_155_BitOperationsKernelsWrapper.Launch_Rotate32Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
+        SYN_155_BitOperationsKernelsWrapper.LaunchRotate32Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
 
         Assert.Equal(BitOperations.RotateLeft(val, shift), rotLeft[0]);
         Assert.Equal(BitOperations.RotateRight(val, shift), rotRight[0]);
@@ -54,7 +54,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
         ulong[] rotLeft = new ulong[1];
         ulong[] rotRight = new ulong[1];
 
-        SYN_155_BitOperationsKernelsWrapper.Launch_Rotate64Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
+        SYN_155_BitOperationsKernelsWrapper.LaunchRotate64Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
 
         Assert.Equal(BitOperations.RotateLeft(val, shift), rotLeft[0]);
         Assert.Equal(BitOperations.RotateRight(val, shift), rotRight[0]);

@@ -19,31 +19,19 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <summary>
     /// Gets the native GPU global device memory pointer (<c>CUdeviceptr</c>) holding the integer limb data.
     /// </summary>
-    public IntPtr DevicePointer
-    {
-        get;
-    }
+    public IntPtr DevicePointer { get; }
 
     /// <summary>
     /// Gets the total number of 32-bit words (limbs) allocated for this big integer.
     /// </summary>
-    public int NumWords
-    {
-        get;
-    }
+    public int NumWords { get; }
 
     /// <summary>
     /// Gets the parent <see cref="GpuContext"/> associated with this instance.
     /// </summary>
-    public GpuContext Context
-    {
-        get;
-    }
+    public GpuContext Context { get; }
 
-    internal bool IsTemp
-    {
-        get; set;
-    }
+    internal bool IsTemp { get; set; }
 
     internal bool Disposed;
 
@@ -170,7 +158,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <param name="leftOperand">The value to shift.</param>
     /// <param name="shiftBits">The number of bits to shift.</param>
     /// <returns>A deferred expression representing the right shift.</returns>
-    public static GpuBigUIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) =>
+    public static GpuBigUIntExpr operator >> (GpuUIntBigInteger leftOperand, int shiftBits) =>
         new(new ShiftRightExpression(leftOperand, shiftBits));
 
     /// <summary>Performs bitwise OR on two big integers using lazy expression evaluation.</summary>
@@ -297,7 +285,8 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <param name="destOffsetWords">The starting word offset in this destination buffer.</param>
     /// <param name="srcOffsetWords">The starting word offset in the source buffer.</param>
     /// <param name="numWords">The number of 32-bit limbs to copy, or <see langword="null"/> to copy maximum available.</param>
-    public void CopyFrom(GpuUIntBigInteger source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null)
+    public void CopyFrom(GpuUIntBigInteger source, int destOffsetWords = 0, int srcOffsetWords = 0,
+        int? numWords = null)
     {
         var wordsToCopy = numWords ?? System.Math.Min(NumWords - destOffsetWords, source.NumWords - srcOffsetWords);
 

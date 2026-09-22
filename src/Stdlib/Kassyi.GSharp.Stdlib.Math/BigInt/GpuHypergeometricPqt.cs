@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 /// <summary>
@@ -11,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 ///   <item><description><see cref="T"/>: <c>T(a, b) = \sum ...</c></description></item>
 /// </list>
 /// </remarks>
-public readonly struct GpuHypergeometricPqt(GpuBigInteger p, GpuUIntBigInteger q, GpuBigInteger t) : IDisposable
+public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [TakesOwnership] GpuUIntBigInteger q, [TakesOwnership] GpuBigInteger t) : IDisposable
 {
     public GpuBigInteger P { get; } = p;
     public GpuUIntBigInteger Q { get; } = q ?? throw new ArgumentNullException(nameof(q));

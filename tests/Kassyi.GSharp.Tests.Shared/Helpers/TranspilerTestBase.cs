@@ -15,6 +15,11 @@ public abstract class TranspilerTestBase
     protected bool IsCudaDialect => CurrentDialect.IsCuda;
     protected bool IsCpuDialect => !CurrentDialect.IsCuda;
 
+    protected void SkipIfCpuDialect(string reason = "This test requires GPU hardware features and cannot run on CPU.")
+    {
+        Xunit.Skip.If(IsCpuDialect, reason);
+    }
+
     protected void EnsureCapability(DialectCapabilities required)
     {
         Skip.IfNot(CurrentDialect.Capabilities.HasFlag(required), $"Current dialect does not support {required}");

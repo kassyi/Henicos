@@ -27,7 +27,7 @@ public class Tier1_IntegrationTests : TranspilerTestBase
         }
 
         // We can just execute the CPU JIT which sets the thread index properly!
-        Tier1IntegrationKernelsWrapper.Launch_AllInOneKernel(
+        Tier1IntegrationKernelsWrapper.LaunchAllInOneKernel(
             intInput,
             floatInput,
             gpuResults,

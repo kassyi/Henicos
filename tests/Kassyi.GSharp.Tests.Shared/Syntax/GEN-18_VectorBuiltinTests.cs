@@ -23,7 +23,7 @@ public class GEN_18_VectorBuiltinTests
 
         System.Numerics.Vector2[] result = new System.Numerics.Vector2[arrayLength];
 
-        GEN_18_VectorBuiltinKernelsWrapper.Launch_Vector2AddKernel(a, b, result, arrayLength, blockDimX: 32);
+        GEN_18_VectorBuiltinKernelsWrapper.LaunchVector2AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
         for (int i = 0; i < arrayLength; i++)
         {
@@ -53,7 +53,7 @@ public class GEN_18_VectorBuiltinTests
 
         System.Numerics.Vector3[] result = new System.Numerics.Vector3[arrayLength];
 
-        GEN_18_VectorBuiltinKernelsWrapper.Launch_Vector3AddKernel(a, b, result, arrayLength, blockDimX: 32);
+        GEN_18_VectorBuiltinKernelsWrapper.LaunchVector3AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
         for (int i = 0; i < arrayLength; i++)
         {
@@ -84,7 +84,7 @@ public class GEN_18_VectorBuiltinTests
 
         System.Numerics.Vector4[] result = new System.Numerics.Vector4[arrayLength];
 
-        GEN_18_VectorBuiltinKernelsWrapper.Launch_Vector4AddKernel(a, b, result, arrayLength, blockDimX: 32);
+        GEN_18_VectorBuiltinKernelsWrapper.LaunchVector4AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
         for (int i = 0; i < arrayLength; i++)
         {

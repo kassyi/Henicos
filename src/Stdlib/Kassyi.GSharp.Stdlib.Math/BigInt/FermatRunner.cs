@@ -16,10 +16,7 @@ public class FermatRunner : IDisposable
     ///   <item><description><see cref="E"/>: <c>F_n = 2^(2^E) + 1</c></description></item>
     /// </list>
     /// </remarks>
-    public int E
-    {
-        get;
-    }
+    public int E { get; }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
     public int OutNumWords => _outNumWords;
@@ -52,15 +49,30 @@ public class FermatRunner : IDisposable
         _bitOffset2E1 = (2 * E + 1) % 32;
         _exponent = E;
 
-        _gpuContext = new GpuContext(_outNumWords);
-        _valueT = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-        _valueTReduced = new GpuUIntBigInteger(_gpuContext, _numWords);
-        _mulResult = new GpuUIntBigInteger(_gpuContext, _numWords * 2);
+        try
+        {
+            _gpuContext = new GpuContext(_outNumWords);
+            _valueT = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+            _valueTReduced = new GpuUIntBigInteger(_gpuContext, _numWords);
+            _mulResult = new GpuUIntBigInteger(_gpuContext, _numWords * 2);
 
-        _quotient = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-        _remainder = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-        _remainderMask = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-        _temp = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+            _quotient = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+            _remainder = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+            _remainderMask = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+            _temp = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+        }
+        catch
+        {
+            _gpuContext?.Dispose();
+            _valueT?.Dispose();
+            _valueTReduced?.Dispose();
+            _mulResult?.Dispose();
+            _quotient?.Dispose();
+            _remainder?.Dispose();
+            _remainderMask?.Dispose();
+            _temp?.Dispose();
+            throw;
+        }
 
         // Init ValueT = 2
         var initArray = new uint[_outNumWords];
@@ -113,7 +125,7 @@ public class FermatRunner : IDisposable
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
 
         // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
-        GpuBigIntFermatKernelsWrapper.Launch_Kernel_FermatReduce_Mega_Device(
+        GpuBigIntFermatKernelsWrapper.LaunchKernel_FermatReduce_Mega_Device(
             _valueT.DevicePointer, _mulResult.DevicePointer, _quotient.DevicePointer, _remainder.DevicePointer,
             _temp.DevicePointer, _remainderMask.DevicePointer,
             _numWords, _outNumWords, 2 * E + 1, _exponent,
@@ -148,21 +160,38 @@ public class FermatRunner : IDisposable
         GpuKernelLoader.SynchronizeDevice();
     }
 
+    private bool _disposed;
+
     protected virtual void Dispose(bool disposing)
     {
-        _valueT.Dispose();
-        _valueTReduced.Dispose();
-        _mulResult.Dispose();
-        _quotient.Dispose();
-        _remainder.Dispose();
-        _remainderMask.Dispose();
-        _temp.Dispose();
-        _gpuContext.Dispose();
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            _valueT.Dispose();
+            _valueTReduced.Dispose();
+            _mulResult.Dispose();
+            _quotient.Dispose();
+            _remainder.Dispose();
+            _remainderMask.Dispose();
+            _temp.Dispose();
+            _gpuContext.Dispose();
+        }
+
+        _disposed = true;
     }
 
     public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
+    }
+
+    ~FermatRunner()
+    {
+        Dispose(false);
     }
 }

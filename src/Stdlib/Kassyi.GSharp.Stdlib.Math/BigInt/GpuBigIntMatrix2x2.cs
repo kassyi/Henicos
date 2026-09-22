@@ -22,10 +22,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the top-left element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M00
-    {
-        get;
-    }
+    public GpuUIntBigInteger M00 { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 0, column 1 ($M_{01}$) in GPU device memory.
@@ -33,10 +30,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the top-right element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M01
-    {
-        get;
-    }
+    public GpuUIntBigInteger M01 { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 1, column 0 ($M_{10}$) in GPU device memory.
@@ -44,10 +38,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the bottom-left element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M10
-    {
-        get;
-    }
+    public GpuUIntBigInteger M10 { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 1, column 1 ($M_{11}$) in GPU device memory.
@@ -55,10 +46,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the bottom-right element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M11
-    {
-        get;
-    }
+    public GpuUIntBigInteger M11 { get; }
 
     /// <summary>
     /// Gets a value indicating whether this matrix represents an odd number of reduction steps in the Euclidean algorithm.
@@ -69,10 +57,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <remarks>
     /// In Half-GCD computations, step parity determines the sign and operand ordering when applying the matrix to reduce operand pairs.
     /// </remarks>
-    public bool IsOddStep
-    {
-        get;
-    }
+    public bool IsOddStep { get; }
 
     /// <summary>
     /// Gets the parent <see cref="GpuContext"/> managing the GPU device memory and execution provider for this matrix.
@@ -80,10 +65,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The active GPU context associated with this matrix and all its constituent elements.
     /// </value>
-    public GpuContext Context
-    {
-        get;
-    }
+    public GpuContext Context { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with uninitialized memory for each matrix element.
@@ -101,10 +83,22 @@ public class GpuBigIntMatrix2x2 : IDisposable
 
         Context = context;
         IsOddStep = isOddStep;
-        M00 = new GpuUIntBigInteger(context, numWords);
-        M01 = new GpuUIntBigInteger(context, numWords);
-        M10 = new GpuUIntBigInteger(context, numWords);
-        M11 = new GpuUIntBigInteger(context, numWords);
+
+        try
+        {
+            M00 = new GpuUIntBigInteger(context, numWords);
+            M01 = new GpuUIntBigInteger(context, numWords);
+            M10 = new GpuUIntBigInteger(context, numWords);
+            M11 = new GpuUIntBigInteger(context, numWords);
+        }
+        catch
+        {
+            M00?.Dispose();
+            M01?.Dispose();
+            M10?.Dispose();
+            M11?.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -289,18 +283,38 @@ public class GpuBigIntMatrix2x2 : IDisposable
         outB.CopyFrom(resB, numWords: System.Math.Min(outB.NumWords, tempWords));
     }
 
+    private bool _disposed;
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (disposing)
+        {
+            M00.Dispose();
+            M01.Dispose();
+            M10.Dispose();
+            M11.Dispose();
+        }
+
+        _disposed = true;
+    }
+
     /// <inheritdoc />
     /// <remarks>
     /// Disposes all four constituent <see cref="GpuUIntBigInteger"/> instances (<see cref="M00"/>, <see cref="M01"/>, <see cref="M10"/>, and <see cref="M11"/>) and releases their GPU device memory allocations.
     /// </remarks>
     public void Dispose()
     {
-        M00.Dispose();
-        M01.Dispose();
-        M10.Dispose();
-        M11.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~GpuBigIntMatrix2x2()
+    {
+        Dispose(false);
     }
 }
-
-
-

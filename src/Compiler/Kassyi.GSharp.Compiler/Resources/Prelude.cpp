@@ -11,6 +11,14 @@ struct float3 { float x, y, z; };
 struct float4 { float x, y, z, w; };
 
 inline uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }
+inline float __gsharp_float_cast(float x) { return x; }
+inline float __gsharp_float_cast(double x) { return (float)x; }
+inline double __gsharp_double_cast(float x) { return (double)x; }
+inline double __gsharp_double_cast(double x) { return x; }
+inline int __gsharp_int_cast(float x) { return (int)x; }
+inline int __gsharp_int_cast(double x) { return (int)x; }
+inline uint32_t __gsharp_uint_cast(float x) { return (uint32_t)x; }
+inline uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 inline uint64_t __gsharp_rotr64(uint64_t value, int offset) { return _rotr64(value, offset); }
 inline uint32_t __gsharp_rotl32(uint32_t value, int offset) { return _rotl(value, offset); }
 inline uint64_t __gsharp_rotl64(uint64_t value, int offset) { return _rotl64(value, offset); }
@@ -125,4 +133,15 @@ extern "C" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint3
     blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
     blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
     gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
+}
+
+namespace Warp {
+    inline int ShuffleDownSync(uint32_t mask, int var, uint32_t delta, int width = 32) { return var; }
+    inline uint32_t ShuffleDownSync(uint32_t mask, uint32_t var, uint32_t delta, int width = 32) { return var; }
+    inline float ShuffleDownSync(uint32_t mask, float var, uint32_t delta, int width = 32) { return var; }
+    inline double ShuffleDownSync(uint32_t mask, double var, uint32_t delta, int width = 32) { return var; }
+}
+
+namespace Hint {
+    inline void Unroll() {}
 }
