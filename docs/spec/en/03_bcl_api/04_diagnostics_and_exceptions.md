@@ -29,7 +29,7 @@ If a hardware fault occurs (such as an illegal memory access or an out-of-bounds
 You will notice that all intrinsic methods in `Kassyi.GSharp.Core` (e.g., `Gpu.SyncThreads()`, `ThreadIndex.X`) throw a `GpuOnlyException`.
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU)
 public static int X => GpuOnlyException.Throw<int>();
 ```
 
