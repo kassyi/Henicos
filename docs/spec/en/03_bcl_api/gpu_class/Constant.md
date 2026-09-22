@@ -37,8 +37,8 @@ The string literal containing the C++ macro or preprocessor `#define` name.
 
 #### Returns
 
-`T`
-Returns the specified type `T` (at compile-time, this forces the C# type checker to accept it, while the transpiler blindly pastes the string).
+`int`
+Returns the specified type `int` (at compile-time, this forces the C# type checker to accept it, while the transpiler blindly pastes the string).
 
 ## Examples
 

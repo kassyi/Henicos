@@ -18,7 +18,7 @@ Standard math functions, fast math approximations, and hardware bit operations.
 - [Math_Exp](Math_Exp.md): Returns e raised to the specified power.
 - [Math_Log](Math_Log.md): Returns the natural logarithm of a specified number.
 - [Math_Sqrt](Math_Sqrt.md): Returns the square root of a specified number.
-- [Math_Pow](Math_Pow.md): Returns a specified number raised to the specified power.
+
 - [Math_Sin](Math_Sin.md): Returns the sine of the specified angle.
 - [Math_Cos](Math_Cos.md): Returns the cosine of the specified angle.
 - [Math_Tan](Math_Tan.md): Returns the tangent of the specified angle.

@@ -77,4 +77,4 @@ public enum GpuBigFloatRoundingMode
 ## Part B: Architecture and Implementation Details (Advanced)
 
 For deep internal architecture details regarding IEEE 754 bit-alignment, NTT multiplication, and memory safety invariants, refer to:
-**[BigNum Internals](../02_architecture/04_bignum_internals.md)**
+**[BigNum Internals](../../02_architecture/04_bignum_internals.md)**

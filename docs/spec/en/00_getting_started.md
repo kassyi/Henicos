@@ -24,8 +24,8 @@ If you know C#, you already know how to write GPU code in G#.
 >   - **[C++ Host Compiler](https://visualstudio.microsoft.com/downloads/)**: **Visual Studio C++ Build Tools (MSVC `cl.exe`)** on Windows or `gcc`/`clang` on Linux, required as the host backend compiler for `nvcc`.
 > 
 > **2. CPU Mode ([CpuDialect](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) / Fallback)**
-> - Requires only a standard **C++ Host Compiler** (MSVC/GCC/Clang). G# transpiles kernels to C++17 and compiles native shared libraries (`.dll`/`.so`).
-> - **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are significantly reduced, this allows seamless local debugging and CI/CD testing on GPU-less machines (see [Dialect Architecture](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) and [CPU Dialect Limitations](01_language/05_limitations.md#52-dialect-syntax-support)).
+> - Requires only a standard **C++ Host Compiler** (currently only MSVC on Windows is supported). G# transpiles kernels to C++17 and compiles native shared libraries (`.dll`).
+> - **No NVIDIA GPU, Driver, or CUDA Toolkit is required**. While execution speeds are significantly reduced, this allows seamless local debugging and CI/CD testing on GPU-less Windows machines (see [Dialect Architecture](02_architecture/01_aot_transpiler.md#123-dialect-based-code-generation) and [CPU Dialect Limitations](01_language/05_limitations.md#52-dialect-syntax-support)).
 
 This guide will walk you through the "Hello World" of GPU programming.
 
@@ -33,7 +33,32 @@ This guide will walk you through the "Hello World" of GPU programming.
 
 ## 0.1 The "Hello GPU" Example: Heavy Mathematical Simulation
 
-A GPU's true advantage shines not in simple addition, but in executing computationally heavy workloads in parallel. Here is a complete, self-contained `Program.cs` that you can copy, paste, and run immediately (`dotnet run`). 
+A GPU's true advantage shines not in simple addition, but in executing computationally heavy workloads in parallel.
+
+### Step 1: Project Setup
+First, ensure you have a project configured with the necessary package references and target dialect. Create a new console application and add the G# Compiler package:
+
+```bash
+dotnet new console -n MyGpuApp
+cd MyGpuApp
+dotnet add package Kassyi.GSharp.Compiler
+```
+
+Then, configure your `.csproj` to enable the source generator and select a backend dialect (e.g., `Cuda` or `Cpu`):
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- G# Configuration -->
+    <GSharpDialect>Cuda</GSharpDialect>
+  </PropertyGroup>
+</Project>
+```
+
+### Step 2: The Code
+Here is a complete, self-contained `Program.cs` that you can copy, paste, and run immediately (`dotnet run`). 
 
 It simulates a complex mathematical transformation (similar to physics or financial modeling) across **100 million elements**. A CPU would take seconds to process this massive dataset, but a modern GPU finishes it in milliseconds.
 
@@ -187,7 +212,24 @@ float[] magnitudes = MathKernels.LaunchComputeMagnitude(
 ```
 
 > [!WARNING]
-> While Auto-Allocation is incredibly convenient for prototyping and rapid development, allocating large arrays during hot game loops (e.g., `Update()`) triggers Managed Heap Garbage Collection (GC) pauses on the CPU. For performance-critical code, fallback to the **Explicit Output Buffer Pattern** by passing pre-allocated buffers (either reusable managed arrays or [`GpuBuffer<T>`](02_architecture/02_runtime_loader.md#251-gpubuffert-native-memory-wrapper) instances) to `void`-returning kernels to adhere to strict **Zero-Allocation** best practices.
+> While Auto-Allocation is incredibly convenient for prototyping and rapid development, allocating large arrays during hot game loops (e.g., `Update()`) triggers Managed Heap Garbage Collection (GC) pauses on the CPU. For performance-critical code, fallback to the **Explicit Output Buffer Pattern** to adhere to strict **Zero-Allocation** best practices.
+
+### The Explicit Output Buffer Pattern
+
+For peak performance, allocate persistent device memory upfront using `GpuBuffer<T>` and reuse it. Pass the `DevicePointer` directly to the `_Device` variant of the generated launcher:
+
+```csharp
+// 1. Allocate a persistent device buffer once (e.g., during initialization)
+using GpuBuffer<float> gpuMagnitudes = new GpuBuffer<float>(25600);
+
+// 2. In your hot loop, launch using the _Device suffix method and pass the pointer
+MathKernels.LaunchComputeMagnitude_Device(
+    particles: particlesArray,
+    magnitudes: gpuMagnitudes.DevicePointer, // Pass the native device pointer
+    gridDimX: 100,
+    blockDimX: 256
+);
+```
 
 ---
 

@@ -1,12 +1,12 @@
 ---
-title: "GridDim Struct (Kassyi.GSharp.Core)"
+title: "GridDimension Struct (Kassyi.GSharp.Core)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Gets the dimensions of the grid."
 ---
 
-## GridDim Struct
+## GridDimension Struct
 
 ## Definition
 
@@ -16,16 +16,16 @@ description: "Gets the dimensions of the grid."
 Gets the dimensions of the grid.
 
 ```csharp
-public readonly struct GridDim
+public readonly struct GridDimension
 ```
 
 ## Properties
 
 | Name | Description |
 | --- | --- |
-| [GridDim.X](#x) | The X dimension. |
-| [GridDim.Y](#y) | The Y dimension. |
-| [GridDim.Z](#z) | The Z dimension. |
+| [GridDimension.X](#x) | The X dimension. |
+| [GridDimension.Y](#y) | The Y dimension. |
+| [GridDimension.Z](#z) | The Z dimension. |
 
 ## X
 

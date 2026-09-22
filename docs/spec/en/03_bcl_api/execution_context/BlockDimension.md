@@ -1,12 +1,12 @@
 ---
-title: "BlockDim Struct (Kassyi.GSharp.Core)"
+title: "BlockDimension Struct (Kassyi.GSharp.Core)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Gets the dimensions of the thread block."
 ---
 
-## BlockDim Struct
+## BlockDimension Struct
 
 ## Definition
 
@@ -16,16 +16,16 @@ description: "Gets the dimensions of the thread block."
 Gets the dimensions of the thread block.
 
 ```csharp
-public readonly struct BlockDim
+public readonly struct BlockDimension
 ```
 
 ## Properties
 
 | Name | Description |
 | --- | --- |
-| [BlockDim.X](#x) | The X dimension. |
-| [BlockDim.Y](#y) | The Y dimension. |
-| [BlockDim.Z](#z) | The Z dimension. |
+| [BlockDimension.X](#x) | The X dimension. |
+| [BlockDimension.Y](#y) | The Y dimension. |
+| [BlockDimension.Z](#z) | The Z dimension. |
 
 ## X
 

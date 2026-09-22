@@ -27,8 +27,8 @@ Provides access to CUDA's built-in execution context variables.
 
 - **[ThreadIndex](./execution_context/ThreadIndex.md)** (`threadIdx`)
 - **[BlockIndex](./execution_context/BlockIndex.md)** (`blockIdx`)
-- **[BlockDim](./execution_context/BlockDim.md)** (`blockDim`)
-- **[GridDim](./execution_context/GridDim.md)** (`gridDim`)
+- **[BlockDimension](./execution_context/BlockDimension.md)** (`blockDim`)
+- **[GridDimension](./execution_context/GridDimension.md)** (`gridDim`)
 
 ## The Gpu Class Intrinsics
 
