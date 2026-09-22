@@ -39,8 +39,16 @@ default: return -1.0f;
 }
 ";
 public static readonly string FloatingPointReturnSwitchKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + FloatingPointReturnSwitchKernel_Source;
-private static byte[]? s_binaryData_FloatingPointReturnSwitchKernel;
-private static bool s_isLoaded_FloatingPointReturnSwitchKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_FloatingPointReturnSwitchKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchFloatingPointReturnSwitchKernel(global::System.Int32[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -49,20 +57,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_FloatingPointReturnSwitchKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_FloatingPointReturnSwitchKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_FloatingPointReturnSwitchKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FloatingPointReturnSwitchKernel, "FloatingPointReturnSwitchKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FloatingPointReturnSwitchKernel.Value, "FloatingPointReturnSwitchKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -153,20 +148,7 @@ public static unsafe void LaunchFloatingPointReturnSwitchKernel_Device(IntPtr in
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_FloatingPointReturnSwitchKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_FloatingPointReturnSwitchKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_FloatingPointReturnSwitchKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_FloatingPointReturnSwitchKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FloatingPointReturnSwitchKernel, "FloatingPointReturnSwitchKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FloatingPointReturnSwitchKernel.Value, "FloatingPointReturnSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -226,8 +208,16 @@ default: return 0;
 }
 ";
 public static readonly string MultipleArmsBoundarySwitchKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MultipleArmsBoundarySwitchKernel_Source;
-private static byte[]? s_binaryData_MultipleArmsBoundarySwitchKernel;
-private static bool s_isLoaded_MultipleArmsBoundarySwitchKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_MultipleArmsBoundarySwitchKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchMultipleArmsBoundarySwitchKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -236,20 +226,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_MultipleArmsBoundarySwitchKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_MultipleArmsBoundarySwitchKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_MultipleArmsBoundarySwitchKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MultipleArmsBoundarySwitchKernel, "MultipleArmsBoundarySwitchKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MultipleArmsBoundarySwitchKernel.Value, "MultipleArmsBoundarySwitchKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -340,20 +317,7 @@ public static unsafe void LaunchMultipleArmsBoundarySwitchKernel_Device(IntPtr i
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_MultipleArmsBoundarySwitchKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_MultipleArmsBoundarySwitchKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_MultipleArmsBoundarySwitchKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MultipleArmsBoundarySwitchKernel, "MultipleArmsBoundarySwitchKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MultipleArmsBoundarySwitchKernel.Value, "MultipleArmsBoundarySwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -411,8 +375,16 @@ default: return -1;
 }
 ";
 public static readonly string SimpleConstantSwitchKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SimpleConstantSwitchKernel_Source;
-private static byte[]? s_binaryData_SimpleConstantSwitchKernel;
-private static bool s_isLoaded_SimpleConstantSwitchKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_SimpleConstantSwitchKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSimpleConstantSwitchKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -421,20 +393,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SimpleConstantSwitchKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SimpleConstantSwitchKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SimpleConstantSwitchKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleConstantSwitchKernel, "SimpleConstantSwitchKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleConstantSwitchKernel.Value, "SimpleConstantSwitchKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -525,20 +484,7 @@ public static unsafe void LaunchSimpleConstantSwitchKernel_Device(IntPtr input, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SimpleConstantSwitchKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SimpleConstantSwitchKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_SwitchExpressionKernels_SimpleConstantSwitchKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SimpleConstantSwitchKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleConstantSwitchKernel, "SimpleConstantSwitchKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleConstantSwitchKernel.Value, "SimpleConstantSwitchKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

@@ -33,8 +33,16 @@ result[tid]=(x>y?((y>z?1:2)):((x>z?3:4)));
 }
 ";
 public static readonly string NestedTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NestedTernaryKernel_Source;
-private static byte[]? s_binaryData_NestedTernaryKernel;
-private static bool s_isLoaded_NestedTernaryKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_NestedTernaryKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchNestedTernaryKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] c, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -43,20 +51,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NestedTernaryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NestedTernaryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NestedTernaryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedTernaryKernel, "NestedTernaryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedTernaryKernel.Value, "NestedTernaryKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -213,20 +208,7 @@ public static unsafe void LaunchNestedTernaryKernel_Device(IntPtr a, IntPtr b, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NestedTernaryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NestedTernaryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NestedTernaryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NestedTernaryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedTernaryKernel, "NestedTernaryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedTernaryKernel.Value, "NestedTernaryKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -285,8 +267,16 @@ return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coale
 }
 ";
 public static readonly string NullCoalescingAssignmentSideEffectKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NullCoalescingAssignmentSideEffectKernel_Source;
-private static byte[]? s_binaryData_NullCoalescingAssignmentSideEffectKernel;
-private static bool s_isLoaded_NullCoalescingAssignmentSideEffectKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_NullCoalescingAssignmentSideEffectKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchNullCoalescingAssignmentSideEffectKernel(global::System.Nullable<global::System.Int32>[] targetArray, global::System.Int32[] sideEffectTracker, global::System.Int32[] values, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -295,20 +285,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NullCoalescingAssignmentSideEffectKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NullCoalescingAssignmentSideEffectKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NullCoalescingAssignmentSideEffectKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel, "NullCoalescingAssignmentSideEffectKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel.Value, "NullCoalescingAssignmentSideEffectKernel");
 IntPtr d_targetArray = IntPtr.Zero;
 IntPtr d_sideEffectTracker = IntPtr.Zero;
 IntPtr d_values = IntPtr.Zero;
@@ -432,20 +409,7 @@ public static unsafe void LaunchNullCoalescingAssignmentSideEffectKernel_Device(
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NullCoalescingAssignmentSideEffectKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NullCoalescingAssignmentSideEffectKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NullCoalescingAssignmentSideEffectKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel, "NullCoalescingAssignmentSideEffectKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingAssignmentSideEffectKernel.Value, "NullCoalescingAssignmentSideEffectKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -501,8 +465,16 @@ return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
 }
 ";
 public static readonly string NullCoalescingKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NullCoalescingKernel_Source;
-private static byte[]? s_binaryData_NullCoalescingKernel;
-private static bool s_isLoaded_NullCoalescingKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_NullCoalescingKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchNullCoalescingKernel(global::System.Nullable<global::System.Int32>[] nullableInputs, global::System.Int32[] fallbackValues, global::System.Int32[] results, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -511,20 +483,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NullCoalescingKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NullCoalescingKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NullCoalescingKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingKernel, "NullCoalescingKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingKernel.Value, "NullCoalescingKernel");
 IntPtr d_nullableInputs = IntPtr.Zero;
 IntPtr d_fallbackValues = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -648,20 +607,7 @@ public static unsafe void LaunchNullCoalescingKernel_Device(IntPtr nullableInput
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NullCoalescingKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NullCoalescingKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_NullCoalescingKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NullCoalescingKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingKernel, "NullCoalescingKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NullCoalescingKernel.Value, "NullCoalescingKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -719,8 +665,16 @@ b[tid]=valuesToAssign[tid];
 }
 ";
 public static readonly string RefSwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + RefSwitchExpressionKernel_Source;
-private static byte[]? s_binaryData_RefSwitchExpressionKernel;
-private static bool s_isLoaded_RefSwitchExpressionKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_RefSwitchExpressionKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchRefSwitchExpressionKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] selectors, global::System.Int32[] valuesToAssign, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -729,20 +683,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_RefSwitchExpressionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_RefSwitchExpressionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_RefSwitchExpressionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel, "RefSwitchExpressionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel.Value, "RefSwitchExpressionKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_selectors = IntPtr.Zero;
@@ -899,20 +840,7 @@ public static unsafe void LaunchRefSwitchExpressionKernel_Device(IntPtr a, IntPt
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_RefSwitchExpressionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_RefSwitchExpressionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_RefSwitchExpressionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel, "RefSwitchExpressionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RefSwitchExpressionKernel.Value, "RefSwitchExpressionKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];
@@ -965,8 +893,16 @@ result[tid]=(a[tid]>b[tid]?a[tid]:b[tid]*1.5);
 }
 ";
 public static readonly string SimpleTernaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SimpleTernaryKernel_Source;
-private static byte[]? s_binaryData_SimpleTernaryKernel;
-private static bool s_isLoaded_SimpleTernaryKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_SimpleTernaryKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSimpleTernaryKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Double[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -975,20 +911,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SimpleTernaryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SimpleTernaryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SimpleTernaryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleTernaryKernel, "SimpleTernaryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleTernaryKernel.Value, "SimpleTernaryKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -1112,20 +1035,7 @@ public static unsafe void LaunchSimpleTernaryKernel_Device(IntPtr a, IntPtr b, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SimpleTernaryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SimpleTernaryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_SimpleTernaryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SimpleTernaryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleTernaryKernel, "SimpleTernaryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SimpleTernaryKernel.Value, "SimpleTernaryKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -1185,8 +1095,16 @@ default: return 99;
 }
 ";
 public static readonly string SwitchExpressionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SwitchExpressionKernel_Source;
-private static byte[]? s_binaryData_SwitchExpressionKernel;
-private static bool s_isLoaded_SwitchExpressionKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_SwitchExpressionKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSwitchExpressionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -1195,20 +1113,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SwitchExpressionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SwitchExpressionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SwitchExpressionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SwitchExpressionKernel, "SwitchExpressionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SwitchExpressionKernel.Value, "SwitchExpressionKernel");
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -1299,20 +1204,7 @@ public static unsafe void LaunchSwitchExpressionKernel_Device(IntPtr input, IntP
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SwitchExpressionKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SwitchExpressionKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_01_09_ControlFlowKernels_SwitchExpressionKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SwitchExpressionKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SwitchExpressionKernel, "SwitchExpressionKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SwitchExpressionKernel.Value, "SwitchExpressionKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

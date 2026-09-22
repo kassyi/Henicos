@@ -97,14 +97,6 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
 
-        if (File.Exists(outputFatbinPath) &&
-            File.GetLastWriteTimeUtc(outputFatbinPath) >= File.GetLastWriteTimeUtc(sourcePath))
-        {
-            var cachedTaskItem = new TaskItem(outputFatbinPath);
-            cachedTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
-            return [cachedTaskItem];
-        }
-
         if (MockCompilation)
         {
             File.WriteAllText(outputFatbinPath, "Mock Fatbin Content");

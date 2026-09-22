@@ -48,11 +48,9 @@ LoopUnrollFactorKernel(data);
 }
 ";
 public static readonly string LoopUnrollFactorKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LoopUnrollFactorKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollFactorKernel;
-private static bool s_isLoaded_LoopUnrollFactorKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LoopUnrollFactorKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollFactorKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -61,10 +59,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LoopUnrollFactorKernel)
-{
-s_isLoaded_LoopUnrollFactorKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollFactorKernel_Delegate>("__gsharp_launch_LoopUnrollFactorKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -115,11 +109,9 @@ LoopUnrollForKernel(data);
 }
 ";
 public static readonly string LoopUnrollForKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LoopUnrollForKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollForKernel;
-private static bool s_isLoaded_LoopUnrollForKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LoopUnrollForKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollForKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -128,10 +120,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollForKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LoopUnrollForKernel)
-{
-s_isLoaded_LoopUnrollForKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollForKernel_Delegate>("__gsharp_launch_LoopUnrollForKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -185,11 +173,9 @@ LoopUnrollNestedKernel(data);
 }
 ";
 public static readonly string LoopUnrollNestedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LoopUnrollNestedKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollNestedKernel;
-private static bool s_isLoaded_LoopUnrollNestedKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LoopUnrollNestedKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollNestedKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -198,10 +184,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LoopUnrollNestedKernel)
-{
-s_isLoaded_LoopUnrollNestedKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollNestedKernel_Delegate>("__gsharp_launch_LoopUnrollNestedKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -252,11 +234,9 @@ LoopUnrollSingleStatementKernel(data);
 }
 ";
 public static readonly string LoopUnrollSingleStatementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LoopUnrollSingleStatementKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollSingleStatementKernel;
-private static bool s_isLoaded_LoopUnrollSingleStatementKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LoopUnrollSingleStatementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollSingleStatementKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -265,10 +245,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LoopUnrollSingleStatementKernel)
-{
-s_isLoaded_LoopUnrollSingleStatementKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollSingleStatementKernel_Delegate>("__gsharp_launch_LoopUnrollSingleStatementKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -321,11 +297,9 @@ LoopUnrollWhileKernel(data);
 }
 ";
 public static readonly string LoopUnrollWhileKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LoopUnrollWhileKernel_Source;
-private static byte[]? s_binaryData_LoopUnrollWhileKernel;
-private static bool s_isLoaded_LoopUnrollWhileKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LoopUnrollWhileKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollWhileKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -334,10 +308,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LoopUnrollWhileKernel)
-{
-s_isLoaded_LoopUnrollWhileKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollWhileKernel_Delegate>("__gsharp_launch_LoopUnrollWhileKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {

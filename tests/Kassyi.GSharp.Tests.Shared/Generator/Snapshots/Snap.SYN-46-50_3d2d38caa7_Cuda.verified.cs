@@ -29,8 +29,16 @@ atomicAdd(&globalSum[0],1);
 }
 ";
 public static readonly string AtomicAddStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AtomicAddStressKernel_Source;
-private static byte[]? s_binaryData_AtomicAddStressKernel;
-private static bool s_isLoaded_AtomicAddStressKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_AtomicAddStressKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchAtomicAddStressKernel(global::System.Int32[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -39,20 +47,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_AtomicAddStressKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_AtomicAddStressKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_AtomicAddStressKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicAddStressKernel, "AtomicAddStressKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicAddStressKernel.Value, "AtomicAddStressKernel");
 IntPtr d_globalSum = IntPtr.Zero;
 try
 {
@@ -110,20 +105,7 @@ public static unsafe void LaunchAtomicAddStressKernel_Device(IntPtr globalSum, u
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_AtomicAddStressKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_AtomicAddStressKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_AtomicAddStressKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicAddStressKernel, "AtomicAddStressKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicAddStressKernel.Value, "AtomicAddStressKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -174,8 +156,16 @@ atomicMax(&globalState[1],(unsigned int)tid);
 }
 ";
 public static readonly string AtomicOrMaxStressKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + AtomicOrMaxStressKernel_Source;
-private static byte[]? s_binaryData_AtomicOrMaxStressKernel;
-private static bool s_isLoaded_AtomicOrMaxStressKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_AtomicOrMaxStressKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchAtomicOrMaxStressKernel(global::System.UInt32[] globalState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -184,20 +174,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_AtomicOrMaxStressKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_AtomicOrMaxStressKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_AtomicOrMaxStressKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel, "AtomicOrMaxStressKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel.Value, "AtomicOrMaxStressKernel");
 IntPtr d_globalState = IntPtr.Zero;
 try
 {
@@ -255,20 +232,7 @@ public static unsafe void LaunchAtomicOrMaxStressKernel_Device(IntPtr globalStat
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_AtomicOrMaxStressKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_AtomicOrMaxStressKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_AtomicOrMaxStressKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel, "AtomicOrMaxStressKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AtomicOrMaxStressKernel.Value, "AtomicOrMaxStressKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -323,8 +287,16 @@ data[1]=max(data[0],100);
 }
 ";
 public static readonly string IntrinsicsKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + IntrinsicsKernel_Source;
-private static byte[]? s_binaryData_IntrinsicsKernel;
-private static bool s_isLoaded_IntrinsicsKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_IntrinsicsKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchIntrinsicsKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -333,20 +305,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_IntrinsicsKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_IntrinsicsKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_IntrinsicsKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IntrinsicsKernel, "IntrinsicsKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IntrinsicsKernel.Value, "IntrinsicsKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -404,20 +363,7 @@ public static unsafe void LaunchIntrinsicsKernel_Device(IntPtr data, uint gridDi
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_IntrinsicsKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_IntrinsicsKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_IntrinsicsKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IntrinsicsKernel, "IntrinsicsKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_IntrinsicsKernel.Value, "IntrinsicsKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -477,8 +423,16 @@ data[tid]=sStatic[tid]+sDyn1[tid];
 }
 ";
 public static readonly string SharedMemoryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SharedMemoryKernel_Source;
-private static byte[]? s_binaryData_SharedMemoryKernel;
-private static bool s_isLoaded_SharedMemoryKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_SharedMemoryKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSharedMemoryKernel(global::System.Int32[] data, global::System.Int32 dynSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -487,20 +441,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SharedMemoryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SharedMemoryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SharedMemoryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryKernel, "SharedMemoryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryKernel.Value, "SharedMemoryKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -560,20 +501,7 @@ public static unsafe void LaunchSharedMemoryKernel_Device(IntPtr data, global::S
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SharedMemoryKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SharedMemoryKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SharedMemoryKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryKernel, "SharedMemoryKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryKernel.Value, "SharedMemoryKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -631,8 +559,16 @@ data[tid]=sMem[size-1-tid];
 }
 ";
 public static readonly string SharedMemoryReverseKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SharedMemoryReverseKernel_Source;
-private static byte[]? s_binaryData_SharedMemoryReverseKernel;
-private static bool s_isLoaded_SharedMemoryReverseKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_SharedMemoryReverseKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSharedMemoryReverseKernel(global::System.Int32[] data, global::System.Int32 size, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -641,20 +577,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SharedMemoryReverseKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SharedMemoryReverseKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SharedMemoryReverseKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel, "SharedMemoryReverseKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel.Value, "SharedMemoryReverseKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -714,20 +637,7 @@ public static unsafe void LaunchSharedMemoryReverseKernel_Device(IntPtr data, gl
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SharedMemoryReverseKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SharedMemoryReverseKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SharedMemoryReverseKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel, "SharedMemoryReverseKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SharedMemoryReverseKernel.Value, "SharedMemoryReverseKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

@@ -36,11 +36,9 @@ LocalFunctionExpressionBodyKernel(data);
 }
 ";
 public static readonly string LocalFunctionExpressionBodyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LocalFunctionExpressionBodyKernel_Source;
-private static byte[]? s_binaryData_LocalFunctionExpressionBodyKernel;
-private static bool s_isLoaded_LocalFunctionExpressionBodyKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LocalFunctionExpressionBodyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLocalFunctionExpressionBodyKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -49,10 +47,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LocalFunctionExpressionBodyKernel)
-{
-s_isLoaded_LocalFunctionExpressionBodyKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionExpressionBodyKernel_Delegate>("__gsharp_launch_LocalFunctionExpressionBodyKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -102,11 +96,9 @@ LocalFunctionValueReturnKernel(data, bonus);
 }
 ";
 public static readonly string LocalFunctionValueReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LocalFunctionValueReturnKernel_Source;
-private static byte[]? s_binaryData_LocalFunctionValueReturnKernel;
-private static bool s_isLoaded_LocalFunctionValueReturnKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LocalFunctionValueReturnKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data, global::System.Int32 bonus);
+#pragma warning disable CS8500
 public static unsafe void LaunchLocalFunctionValueReturnKernel(global::System.Int32[] data, global::System.Int32 bonus, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -115,10 +107,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LocalFunctionValueReturnKernel)
-{
-s_isLoaded_LocalFunctionValueReturnKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionValueReturnKernel_Delegate>("__gsharp_launch_LocalFunctionValueReturnKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -168,11 +156,9 @@ LocalFunctionVoidKernel(data);
 }
 ";
 public static readonly string LocalFunctionVoidKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + LocalFunctionVoidKernel_Source;
-private static byte[]? s_binaryData_LocalFunctionVoidKernel;
-private static bool s_isLoaded_LocalFunctionVoidKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void LocalFunctionVoidKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchLocalFunctionVoidKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -181,10 +167,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_LocalFunctionVoidKernel)
-{
-s_isLoaded_LocalFunctionVoidKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionVoidKernel_Delegate>("__gsharp_launch_LocalFunctionVoidKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
@@ -243,11 +225,9 @@ MultiParamLocalFunctionKernel(a, b, result);
 }
 ";
 public static readonly string MultiParamLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MultiParamLocalFunctionKernel_Source;
-private static byte[]? s_binaryData_MultiParamLocalFunctionKernel;
-private static bool s_isLoaded_MultiParamLocalFunctionKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MultiParamLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* result);
+#pragma warning disable CS8500
 public static unsafe void LaunchMultiParamLocalFunctionKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (a.Length == 0 || b.Length == 0 || result.Length == 0){
@@ -256,10 +236,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_MultiParamLocalFunctionKernel)
-{
-s_isLoaded_MultiParamLocalFunctionKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MultiParamLocalFunctionKernel_Delegate>("__gsharp_launch_MultiParamLocalFunctionKernel", dllPath);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
@@ -316,11 +292,9 @@ NestedLocalFunctionKernel(data);
 }
 ";
 public static readonly string NestedLocalFunctionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + NestedLocalFunctionKernel_Source;
-private static byte[]? s_binaryData_NestedLocalFunctionKernel;
-private static bool s_isLoaded_NestedLocalFunctionKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NestedLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
 public static unsafe void LaunchNestedLocalFunctionKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
@@ -329,10 +303,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_NestedLocalFunctionKernel)
-{
-s_isLoaded_NestedLocalFunctionKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedLocalFunctionKernel_Delegate>("__gsharp_launch_NestedLocalFunctionKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {

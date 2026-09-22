@@ -54,11 +54,9 @@ AggregateInitKernel(output);
 }
 ";
 public static readonly string AggregateInitKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + AggregateInitKernel_Source;
-private static byte[]? s_binaryData_AggregateInitKernel;
-private static bool s_isLoaded_AggregateInitKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void AggregateInitKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchAggregateInitKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
@@ -67,10 +65,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_StructAggregateInitKernels_AggregateInitKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_AggregateInitKernel)
-{
-s_isLoaded_AggregateInitKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_AggregateInitKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
@@ -137,11 +131,9 @@ DeeplyNestedInitKernel(output);
 }
 ";
 public static readonly string DeeplyNestedInitKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + DeeplyNestedInitKernel_Source;
-private static byte[]? s_binaryData_DeeplyNestedInitKernel;
-private static bool s_isLoaded_DeeplyNestedInitKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void DeeplyNestedInitKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchDeeplyNestedInitKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (output.Length == 0){
@@ -150,10 +142,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_DeeplyNestedInitKernel)
-{
-s_isLoaded_DeeplyNestedInitKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_DeeplyNestedInitKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {

@@ -34,8 +34,16 @@ data[tid]=LocalAdd(data[tid],100);
 }
 ";
 public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ImmediatelyEvaluatedLambdaKernel_Source;
-private static byte[]? s_binaryData_ImmediatelyEvaluatedLambdaKernel;
-private static bool s_isLoaded_ImmediatelyEvaluatedLambdaKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_ImmediatelyEvaluatedLambdaKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchImmediatelyEvaluatedLambdaKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -44,20 +52,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ImmediatelyEvaluatedLambdaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ImmediatelyEvaluatedLambdaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ImmediatelyEvaluatedLambdaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel, "ImmediatelyEvaluatedLambdaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel.Value, "ImmediatelyEvaluatedLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -115,20 +110,7 @@ public static unsafe void LaunchImmediatelyEvaluatedLambdaKernel_Device(IntPtr d
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ImmediatelyEvaluatedLambdaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ImmediatelyEvaluatedLambdaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ImmediatelyEvaluatedLambdaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel, "ImmediatelyEvaluatedLambdaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ImmediatelyEvaluatedLambdaKernel.Value, "ImmediatelyEvaluatedLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -184,8 +166,16 @@ return;
 }
 ";
 public static readonly string NestedReturnsKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NestedReturnsKernel_Source;
-private static byte[]? s_binaryData_NestedReturnsKernel;
-private static bool s_isLoaded_NestedReturnsKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_NestedReturnsKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NestedReturnsKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NestedReturnsKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe global::System.Single[] LaunchNestedReturnsKernel(global::System.Int32 someValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -194,20 +184,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NestedReturnsKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NestedReturnsKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NestedReturnsKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NestedReturnsKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NestedReturnsKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedReturnsKernel, "NestedReturnsKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedReturnsKernel.Value, "NestedReturnsKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -266,20 +243,7 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NestedReturnsKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NestedReturnsKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NestedReturnsKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NestedReturnsKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NestedReturnsKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedReturnsKernel, "NestedReturnsKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NestedReturnsKernel.Value, "NestedReturnsKernel");
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -359,8 +323,16 @@ data[tid]=doubleValue(data[tid]);
 }
 ";
 public static readonly string NonCapturingLambdaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NonCapturingLambdaKernel_Source;
-private static byte[]? s_binaryData_NonCapturingLambdaKernel;
-private static bool s_isLoaded_NonCapturingLambdaKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_NonCapturingLambdaKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchNonCapturingLambdaKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -369,20 +341,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NonCapturingLambdaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NonCapturingLambdaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NonCapturingLambdaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel, "NonCapturingLambdaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel.Value, "NonCapturingLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -440,20 +399,7 @@ public static unsafe void LaunchNonCapturingLambdaKernel_Device(IntPtr data, uin
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_NonCapturingLambdaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_NonCapturingLambdaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_NonCapturingLambdaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel, "NonCapturingLambdaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonCapturingLambdaKernel.Value, "NonCapturingLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -505,8 +451,16 @@ data[tid]=calc(data[tid])+value;
 }
 ";
 public static readonly string ShadowedVariableCaptureKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ShadowedVariableCaptureKernel_Source;
-private static byte[]? s_binaryData_ShadowedVariableCaptureKernel;
-private static bool s_isLoaded_ShadowedVariableCaptureKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_ShadowedVariableCaptureKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchShadowedVariableCaptureKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -515,20 +469,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ShadowedVariableCaptureKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ShadowedVariableCaptureKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ShadowedVariableCaptureKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel, "ShadowedVariableCaptureKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel.Value, "ShadowedVariableCaptureKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -586,20 +527,7 @@ public static unsafe void LaunchShadowedVariableCaptureKernel_Device(IntPtr data
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ShadowedVariableCaptureKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ShadowedVariableCaptureKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ShadowedVariableCaptureKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel, "ShadowedVariableCaptureKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ShadowedVariableCaptureKernel.Value, "ShadowedVariableCaptureKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -650,8 +578,16 @@ data[tid]=multiply(data[tid]);
 }
 ";
 public static readonly string ValueCapturingLambdaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ValueCapturingLambdaKernel_Source;
-private static byte[]? s_binaryData_ValueCapturingLambdaKernel;
-private static bool s_isLoaded_ValueCapturingLambdaKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_ValueCapturingLambdaKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchValueCapturingLambdaKernel(global::System.Int32[] data, global::System.Int32 factor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -660,20 +596,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ValueCapturingLambdaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ValueCapturingLambdaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ValueCapturingLambdaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel, "ValueCapturingLambdaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel.Value, "ValueCapturingLambdaKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -733,20 +656,7 @@ public static unsafe void LaunchValueCapturingLambdaKernel_Device(IntPtr data, g
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_ValueCapturingLambdaKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_ValueCapturingLambdaKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_08_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_ValueCapturingLambdaKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel, "ValueCapturingLambdaKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ValueCapturingLambdaKernel.Value, "ValueCapturingLambdaKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

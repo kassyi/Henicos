@@ -85,19 +85,6 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 }
             }
 
-            if (File.Exists(outputDllPath) &&
-                File.GetLastWriteTimeUtc(outputDllPath) >= File.GetLastWriteTimeUtc(sourcePath))
-            {
-                var cachedTaskItem = new TaskItem(outputDllPath);
-                cachedTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                lock (lockObj)
-                {
-                    items.Add(cachedTaskItem);
-                }
-
-                return;
-            }
-
             if (MockCompilation)
             {
                 File.WriteAllText(outputDllPath, "Mock Native DLL Content");

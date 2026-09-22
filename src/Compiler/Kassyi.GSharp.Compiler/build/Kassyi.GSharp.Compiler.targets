@@ -47,6 +47,8 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Link>%(Filename)%(Extension)</Link>
       </Content>
+      <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
+      <FileWrites Include="@(_GSharpCudaSources);@(_GSharpCompiledFatbins)" />
     </ItemGroup>
   </Target>
 
@@ -75,6 +77,8 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <Link>%(Filename)%(Extension)</Link>
       </Content>
+      <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
+      <FileWrites Include="@(_GSharpCppSources);@(_GSharpCompiledDlls)" />
     </ItemGroup>
   </Target>
 </Project>

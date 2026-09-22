@@ -32,8 +32,16 @@ p[1]=p[0]+10;
 }
 ";
 public static readonly string FixedBufferKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + FixedBufferKernel_Source;
-private static byte[]? s_binaryData_FixedBufferKernel;
-private static bool s_isLoaded_FixedBufferKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_FixedBufferKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchFixedBufferKernel(global::System.UInt32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -42,20 +50,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_FixedBufferKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_FixedBufferKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_FixedBufferKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FixedBufferKernel, "FixedBufferKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FixedBufferKernel.Value, "FixedBufferKernel");
 IntPtr d_data = IntPtr.Zero;
 try
 {
@@ -113,20 +108,7 @@ public static unsafe void LaunchFixedBufferKernel_Device(IntPtr data, uint gridD
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_FixedBufferKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_FixedBufferKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_FixedBufferKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FixedBufferKernel, "FixedBufferKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_FixedBufferKernel.Value, "FixedBufferKernel");
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -181,8 +163,16 @@ dest[*ptrI++]=*ptrV+++10u;
 }
 ";
 public static readonly string PointerComplexAssignmentKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + PointerComplexAssignmentKernel_Source;
-private static byte[]? s_binaryData_PointerComplexAssignmentKernel;
-private static bool s_isLoaded_PointerComplexAssignmentKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_PointerComplexAssignmentKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchPointerComplexAssignmentKernel(global::System.UInt32[] idx, global::System.UInt32[] val, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -191,20 +181,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_PointerComplexAssignmentKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_PointerComplexAssignmentKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_PointerComplexAssignmentKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerComplexAssignmentKernel, "PointerComplexAssignmentKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerComplexAssignmentKernel.Value, "PointerComplexAssignmentKernel");
 IntPtr d_idx = IntPtr.Zero;
 IntPtr d_val = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
@@ -328,20 +305,7 @@ public static unsafe void LaunchPointerComplexAssignmentKernel_Device(IntPtr idx
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_PointerComplexAssignmentKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_PointerComplexAssignmentKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_PointerComplexAssignmentKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerComplexAssignmentKernel, "PointerComplexAssignmentKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerComplexAssignmentKernel.Value, "PointerComplexAssignmentKernel");
 try
 {
 void** kernelParams = stackalloc void*[3];
@@ -400,8 +364,16 @@ for(int i = 0;i<3;i++)
 }
 ";
 public static readonly string PointerDecrementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + PointerDecrementKernel_Source;
-private static byte[]? s_binaryData_PointerDecrementKernel;
-private static bool s_isLoaded_PointerDecrementKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_PointerDecrementKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchPointerDecrementKernel(global::System.UInt32[] src, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -410,20 +382,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_PointerDecrementKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_PointerDecrementKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_PointerDecrementKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerDecrementKernel, "PointerDecrementKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerDecrementKernel.Value, "PointerDecrementKernel");
 IntPtr d_src = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
 try
@@ -514,20 +473,7 @@ public static unsafe void LaunchPointerDecrementKernel_Device(IntPtr src, IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_PointerDecrementKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_PointerDecrementKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_PointerDecrementKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerDecrementKernel, "PointerDecrementKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerDecrementKernel.Value, "PointerDecrementKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -584,8 +530,16 @@ for(int i = 0;i<3;i++)
 }
 ";
 public static readonly string PointerIncrementKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + PointerIncrementKernel_Source;
-private static byte[]? s_binaryData_PointerIncrementKernel;
-private static bool s_isLoaded_PointerIncrementKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_PointerIncrementKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchPointerIncrementKernel(global::System.UInt32[] src, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -594,20 +548,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_PointerIncrementKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_PointerIncrementKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_PointerIncrementKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerIncrementKernel, "PointerIncrementKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerIncrementKernel.Value, "PointerIncrementKernel");
 IntPtr d_src = IntPtr.Zero;
 IntPtr d_dest = IntPtr.Zero;
 try
@@ -698,20 +639,7 @@ public static unsafe void LaunchPointerIncrementKernel_Device(IntPtr src, IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_PointerIncrementKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_PointerIncrementKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_PointerIncrementKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerIncrementKernel, "PointerIncrementKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_PointerIncrementKernel.Value, "PointerIncrementKernel");
 try
 {
 void** kernelParams = stackalloc void*[2];

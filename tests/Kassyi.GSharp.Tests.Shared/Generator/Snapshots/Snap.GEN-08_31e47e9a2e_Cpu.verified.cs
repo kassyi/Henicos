@@ -49,11 +49,9 @@ ChunkAddKernel(dA, dB, dResult, carryBuffer, numWords, chunkSize);
 }
 ";
 public static readonly string ChunkAddKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ChunkAddKernel_Source;
-private static byte[]? s_binaryData_ChunkAddKernel;
-private static bool s_isLoaded_ChunkAddKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ChunkAddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* dA, global::System.UInt32* dB, global::System.UInt32* dResult, global::System.Int64* carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize);
+#pragma warning disable CS8500
 public static unsafe void LaunchChunkAddKernel(global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, global::System.Int64[] carryBuffer, global::System.Int32 numWords, global::System.Int32 chunkSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Length == 0){
@@ -62,10 +60,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"GpuBigIntKernels_ChunkAddKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_ChunkAddKernel)
-{
-s_isLoaded_ChunkAddKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", dllPath);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)

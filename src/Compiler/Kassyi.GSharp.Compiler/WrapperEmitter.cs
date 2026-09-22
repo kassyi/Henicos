@@ -46,16 +46,15 @@ internal static class WrapperEmitter
                 WriteKernelSource(writer, method, source, config);
                 StructMarshalingEmitter.WriteStructMarshaling(writer, method);
 
-                writer.AppendLine($"private static byte[]? s_binaryData_{method.Name};");
-                writer.AppendLine($"private static bool s_isLoaded_{method.Name};");
-
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
+                    WriteCudaLazyInitialization(writer, method);
                     WriteLaunchMethod(writer, method, false);
                     WriteLaunchMethod(writer, method, true);
                 }
                 else
                 {
+                    WriteCpuDelegateDeclaration(writer, method);
                     WriteLaunchMethodCpu(writer, method);
                 }
             }
@@ -121,7 +120,6 @@ internal static class WrapperEmitter
     private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method)
     {
         writer.AppendLine("#pragma warning disable CS8500");
-        WriteCpuDelegateDeclaration(writer, method);
         WriteLaunchMethodSignature(writer, method, false);
         using (writer.Scope())
         {
@@ -278,29 +276,28 @@ internal static class WrapperEmitter
 
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine($"if (!s_isLoaded_{method.Name})");
+        writer.AppendLine($"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}.Value, \"{method.Name}\");");
+        writer.AppendLine();
+    }
+
+    private static void WriteCudaLazyInitialization(SourceWriter writer, IMethodSymbol method)
+    {
+        writer.AppendLine($"private static readonly System.Lazy<byte[]> s_binaryData_{method.Name} = new System.Lazy<byte[]>(() =>");
         using (writer.Scope())
         {
             writer.AppendLine(
                 $"var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, \"{method.ContainingType.Name}_{method.Name}.fatbin\");");
-            writer.AppendLine("if (System.IO.File.Exists(fatbinPath))");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"s_binaryData_{method.Name} = System.IO.File.ReadAllBytes(fatbinPath);");
-            }
-
-            writer.AppendLine("else");
+            writer.AppendLine("if (!System.IO.File.Exists(fatbinPath))");
             using (writer.Scope())
             {
                 writer.AppendLine(
                     $"throw new System.InvalidOperationException($\"AOT kernel binary '{method.ContainingType.Name}_{method.Name}.fatbin' was not found at '{{fatbinPath}}'.\");");
             }
 
-            writer.AppendLine($"s_isLoaded_{method.Name} = true;");
+            writer.AppendLine("return System.IO.File.ReadAllBytes(fatbinPath);");
         }
 
-        writer.AppendLine(
-            $"IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_{method.Name}, \"{method.Name}\");");
+        writer.AppendLine(", System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);");
         writer.AppendLine();
     }
 
@@ -366,13 +363,6 @@ internal static class WrapperEmitter
             $"var dllName = $\"{method.ContainingType.Name}_{method.Name}{{archSuffix}}.dll\";");
         writer.AppendLine(
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
-
-        writer.AppendLine($"if (!s_isLoaded_{method.Name})");
-        using (writer.Scope())
-        {
-            writer.AppendLine($"s_isLoaded_{method.Name} = true;");
-        }
-
         writer.AppendLine(
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{method.Name}\", dllPath);");
     }

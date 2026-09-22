@@ -56,11 +56,9 @@ WarpDivergenceKernel(input, output);
 }
 ";
 public static readonly string WarpDivergenceKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpDivergenceKernel_Source;
-private static byte[]? s_binaryData_WarpDivergenceKernel;
-private static bool s_isLoaded_WarpDivergenceKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpDivergenceKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchWarpDivergenceKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -69,10 +67,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_95_WarpShuffleKernels_WarpDivergenceKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_WarpDivergenceKernel)
-{
-s_isLoaded_WarpDivergenceKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpDivergenceKernel_Delegate>("__gsharp_launch_WarpDivergenceKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
@@ -131,11 +125,9 @@ WarpReductionKernel(input, output);
 }
 ";
 public static readonly string WarpReductionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpReductionKernel_Source;
-private static byte[]? s_binaryData_WarpReductionKernel;
-private static bool s_isLoaded_WarpReductionKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchWarpReductionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -144,10 +136,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_95_WarpShuffleKernels_WarpReductionKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_WarpReductionKernel)
-{
-s_isLoaded_WarpReductionKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpReductionKernel_Delegate>("__gsharp_launch_WarpReductionKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
@@ -198,11 +186,9 @@ WarpShuffleBoundaryKernel(input, outputBoundary0, outputBoundary31, outputBounda
 }
 ";
 public static readonly string WarpShuffleBoundaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpShuffleBoundaryKernel_Source;
-private static byte[]? s_binaryData_WarpShuffleBoundaryKernel;
-private static bool s_isLoaded_WarpShuffleBoundaryKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpShuffleBoundaryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* outputBoundary0, global::System.Int32* outputBoundary31, global::System.Int32* outputBoundary32);
+#pragma warning disable CS8500
 public static unsafe void LaunchWarpShuffleBoundaryKernel(global::System.Int32[] input, global::System.Int32[] outputBoundary0, global::System.Int32[] outputBoundary31, global::System.Int32[] outputBoundary32, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || outputBoundary0.Length == 0 || outputBoundary31.Length == 0 || outputBoundary32.Length == 0){
@@ -211,10 +197,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_WarpShuffleBoundaryKernel)
-{
-s_isLoaded_WarpShuffleBoundaryKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpShuffleBoundaryKernel_Delegate>("__gsharp_launch_WarpShuffleBoundaryKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_outputBoundary0 = outputBoundary0)
@@ -263,11 +245,9 @@ WarpShuffleExtremaKernel(mask, input, delta, width, output);
 }
 ";
 public static readonly string WarpShuffleExtremaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpShuffleExtremaKernel_Source;
-private static byte[]? s_binaryData_WarpShuffleExtremaKernel;
-private static bool s_isLoaded_WarpShuffleExtremaKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpShuffleExtremaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32 mask, global::System.Int32* input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchWarpShuffleExtremaKernel(global::System.UInt32 mask, global::System.Int32[] input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -276,10 +256,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_WarpShuffleExtremaKernel)
-{
-s_isLoaded_WarpShuffleExtremaKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpShuffleExtremaKernel_Delegate>("__gsharp_launch_WarpShuffleExtremaKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)

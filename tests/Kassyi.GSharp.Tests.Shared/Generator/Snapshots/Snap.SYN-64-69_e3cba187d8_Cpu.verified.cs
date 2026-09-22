@@ -55,11 +55,9 @@ BitOperationsTestKernel(u32Data, u64Data);
 }
 ";
 public static readonly string BitOperationsTestKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + BitOperationsTestKernel_Source;
-private static byte[]? s_binaryData_BitOperationsTestKernel;
-private static bool s_isLoaded_BitOperationsTestKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void BitOperationsTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* u32Data, global::System.UInt64* u64Data);
+#pragma warning disable CS8500
 public static unsafe void LaunchBitOperationsTestKernel(global::System.UInt32[] u32Data, global::System.UInt64[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (u32Data.Length == 0 || u64Data.Length == 0){
@@ -68,10 +66,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"SYN_64_69_NumericsAndHwMathKernels_BitOperationsTestKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_BitOperationsTestKernel)
-{
-s_isLoaded_BitOperationsTestKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BitOperationsTestKernel_Delegate>("__gsharp_launch_BitOperationsTestKernel", dllPath);
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)

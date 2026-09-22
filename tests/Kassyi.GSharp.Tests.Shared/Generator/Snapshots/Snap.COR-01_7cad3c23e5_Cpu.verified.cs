@@ -32,11 +32,9 @@ Kernel_COR01_FastMath_Abs(input, output);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Abs_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + Kernel_COR01_FastMath_Abs_Source;
-private static byte[]? s_binaryData_Kernel_COR01_FastMath_Abs;
-private static bool s_isLoaded_Kernel_COR01_FastMath_Abs;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void Kernel_COR01_FastMath_Abs_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* input, global::System.Single* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchKernel_COR01_FastMath_Abs(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -45,10 +43,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_Kernel_COR01_FastMath_Abs)
-{
-s_isLoaded_Kernel_COR01_FastMath_Abs = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Abs_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Abs", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
@@ -95,11 +89,9 @@ Kernel_COR01_FastMath_Exp(input, output);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Exp_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + Kernel_COR01_FastMath_Exp_Source;
-private static byte[]? s_binaryData_Kernel_COR01_FastMath_Exp;
-private static bool s_isLoaded_Kernel_COR01_FastMath_Exp;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void Kernel_COR01_FastMath_Exp_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* input, global::System.Single* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchKernel_COR01_FastMath_Exp(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -108,10 +100,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_Kernel_COR01_FastMath_Exp)
-{
-s_isLoaded_Kernel_COR01_FastMath_Exp = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Exp_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Exp", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
@@ -158,11 +146,9 @@ Kernel_COR01_FastMath_Log(input, output);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Log_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + Kernel_COR01_FastMath_Log_Source;
-private static byte[]? s_binaryData_Kernel_COR01_FastMath_Log;
-private static bool s_isLoaded_Kernel_COR01_FastMath_Log;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void Kernel_COR01_FastMath_Log_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* input, global::System.Single* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchKernel_COR01_FastMath_Log(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -171,10 +157,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_Kernel_COR01_FastMath_Log)
-{
-s_isLoaded_Kernel_COR01_FastMath_Log = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Log_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Log", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
@@ -221,11 +203,9 @@ Kernel_COR01_FastMath_Sqrt(input, output);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Sqrt_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + Kernel_COR01_FastMath_Sqrt_Source;
-private static byte[]? s_binaryData_Kernel_COR01_FastMath_Sqrt;
-private static bool s_isLoaded_Kernel_COR01_FastMath_Sqrt;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void Kernel_COR01_FastMath_Sqrt_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* input, global::System.Single* output);
+#pragma warning disable CS8500
 public static unsafe void LaunchKernel_COR01_FastMath_Sqrt(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
@@ -234,10 +214,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_Kernel_COR01_FastMath_Sqrt)
-{
-s_isLoaded_Kernel_COR01_FastMath_Sqrt = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Sqrt_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Sqrt", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)

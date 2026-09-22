@@ -66,8 +66,16 @@ c[row*n+col]=cValue;
 }
 ";
 public static readonly string SgemmKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + SgemmKernel_Source;
-private static byte[]? s_binaryData_SgemmKernel;
-private static bool s_isLoaded_SgemmKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_SgemmKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SgemmKernels_SgemmKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'SgemmKernels_SgemmKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchSgemmKernel(global::System.Single[] a, global::System.Single[] b, global::System.Single[] c, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -76,20 +84,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SgemmKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SgemmKernels_SgemmKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SgemmKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SgemmKernels_SgemmKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SgemmKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SgemmKernel, "SgemmKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SgemmKernel.Value, "SgemmKernel");
 IntPtr d_a = IntPtr.Zero;
 IntPtr d_b = IntPtr.Zero;
 IntPtr d_c = IntPtr.Zero;
@@ -180,20 +175,7 @@ public static unsafe void LaunchSgemmKernel_Device(IntPtr a, IntPtr b, IntPtr c,
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_SgemmKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "SgemmKernels_SgemmKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_SgemmKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'SgemmKernels_SgemmKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_SgemmKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SgemmKernel, "SgemmKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_SgemmKernel.Value, "SgemmKernel");
 try
 {
 void** kernelParams = stackalloc void*[4];

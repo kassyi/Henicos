@@ -15,11 +15,9 @@ public static partial class TestKernelReturnTypesSadPathWrapper
 {
 public const string ArrayKernel_Source = @"// GSharp Transpilation failed for ArrayKernel. Return type float[] is not supported.";
 public static readonly string ArrayKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + ArrayKernel_Source;
-private static byte[]? s_binaryData_ArrayKernel;
-private static bool s_isLoaded_ArrayKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ArrayKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single[]* __gsharp_auto_result);
+#pragma warning disable CS8500
 public static unsafe global::System.Single[][] LaunchArrayKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
@@ -28,10 +26,6 @@ var __gsharp_auto_result = new global::System.Single[][__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"TestKernelReturnTypesSadPath_ArrayKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_ArrayKernel)
-{
-s_isLoaded_ArrayKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ArrayKernel_Delegate>("__gsharp_launch_ArrayKernel", dllPath);
 fixed (global::System.Single[]* p___gsharp_auto_result = __gsharp_auto_result)
 {

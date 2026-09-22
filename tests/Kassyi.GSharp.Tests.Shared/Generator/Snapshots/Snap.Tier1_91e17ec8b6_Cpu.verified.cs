@@ -273,11 +273,9 @@ host.FloatVal = native.FloatVal;
 host.BoolVal = native.BoolVal;
 }
 #pragma warning restore CS8500
-private static byte[]? s_binaryData_AllInOneKernel;
-private static bool s_isLoaded_AllInOneKernel;
-#pragma warning disable CS8500
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* intInput, global::System.Single* floatInput, global::System.Single* results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64* globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
+#pragma warning disable CS8500
 public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
@@ -286,10 +284,6 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Tier1IntegrationKernels_AllInOneKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-if (!s_isLoaded_AllInOneKernel)
-{
-s_isLoaded_AllInOneKernel = true;
-}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", dllPath);
 fixed (global::System.Int32* p_intInput = intInput)
 fixed (global::System.Single* p_floatInput = floatInput)

@@ -260,8 +260,16 @@ host.FloatVal = native.FloatVal;
 host.BoolVal = native.BoolVal;
 }
 #pragma warning restore CS8500
-private static byte[]? s_binaryData_AllInOneKernel;
-private static bool s_isLoaded_AllInOneKernel;
+private static readonly System.Lazy<byte[]> s_binaryData_AllInOneKernel = new System.Lazy<byte[]>(() =>
+{
+var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Tier1IntegrationKernels_AllInOneKernel.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary 'Tier1IntegrationKernels_AllInOneKernel.fatbin' was not found at '{fatbinPath}'.");
+}
+return System.IO.File.ReadAllBytes(fatbinPath);
+}
+, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -270,20 +278,7 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_AllInOneKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Tier1IntegrationKernels_AllInOneKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_AllInOneKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'Tier1IntegrationKernels_AllInOneKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_AllInOneKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllInOneKernel, "AllInOneKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllInOneKernel.Value, "AllInOneKernel");
 IntPtr d_intInput = IntPtr.Zero;
 IntPtr d_floatInput = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
@@ -451,20 +446,7 @@ public static unsafe void LaunchAllInOneKernel_Device(IntPtr intInput, IntPtr fl
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-if (!s_isLoaded_AllInOneKernel)
-{
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "Tier1IntegrationKernels_AllInOneKernel.fatbin");
-if (System.IO.File.Exists(fatbinPath))
-{
-s_binaryData_AllInOneKernel = System.IO.File.ReadAllBytes(fatbinPath);
-}
-else
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'Tier1IntegrationKernels_AllInOneKernel.fatbin' was not found at '{fatbinPath}'.");
-}
-s_isLoaded_AllInOneKernel = true;
-}
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllInOneKernel, "AllInOneKernel");
+IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_AllInOneKernel.Value, "AllInOneKernel");
 try
 {
 void** kernelParams = stackalloc void*[7];

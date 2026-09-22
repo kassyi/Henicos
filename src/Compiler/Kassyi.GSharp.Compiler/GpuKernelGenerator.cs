@@ -320,10 +320,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 Directory.CreateDirectory(safeIntermediateOutputPath);
             }
 
-            if (!File.Exists(filePath) || File.ReadAllText(filePath) != fullCudaSource)
-            {
-                File.WriteAllText(filePath, fullCudaSource);
-            }
+            File.WriteAllText(filePath, fullCudaSource);
         }
         catch
         {

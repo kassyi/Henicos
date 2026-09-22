@@ -133,7 +133,7 @@ public class CompileTasksTests
 
     [Fact]
     [Trait("FeatureId", "GEN-55")]
-    public void Test_CompileCppToNativeTask_CacheReuse_And_Recompilation()
+    public void Test_CompileCppToNativeTask_AlwaysRecompiles_And_IgnoresCache()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "CompileCppTaskTest_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
@@ -158,21 +158,11 @@ public class CompileTasksTests
             var outputDll = Assert.Single(task.OutputDlls).ItemSpec;
             Assert.True(File.Exists(outputDll));
 
-            // Write custom sentinel to verify whether file is overwritten or reused
+            // Write custom sentinel
             File.WriteAllText(outputDll, "PRESERVED_CACHED_CONTENT");
             File.SetLastWriteTimeUtc(outputDll, baseTime.AddSeconds(10));
 
-            // 2. Output is newer than source -> should reuse cache without recompiling
-            Assert.True(task.Execute());
-            Assert.Equal("PRESERVED_CACHED_CONTENT", File.ReadAllText(outputDll));
-
-            // 3. Output is equal timestamp to source -> boundary test: should still reuse cache
-            File.SetLastWriteTimeUtc(outputDll, baseTime);
-            Assert.True(task.Execute());
-            Assert.Equal("PRESERVED_CACHED_CONTENT", File.ReadAllText(outputDll));
-
-            // 4. Source is newer than output -> should recompile and overwrite cached output
-            File.SetLastWriteTimeUtc(sourcePath, baseTime.AddMinutes(5));
+            // 2. Execute again -> should unconditionally recompile and overwrite cached output
             Assert.True(task.Execute());
             Assert.NotEqual("PRESERVED_CACHED_CONTENT", File.ReadAllText(outputDll));
         }
@@ -187,7 +177,7 @@ public class CompileTasksTests
 
     [Fact]
     [Trait("FeatureId", "GEN-55")]
-    public void Test_CompileCudaToFatbinTask_CacheReuse_And_Recompilation()
+    public void Test_CompileCudaToFatbinTask_AlwaysRecompiles_And_IgnoresCache()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "CompileCudaTaskTest_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
@@ -212,21 +202,11 @@ public class CompileTasksTests
             var outputFatbin = Assert.Single(task.OutputFatbins).ItemSpec;
             Assert.True(File.Exists(outputFatbin));
 
-            // Write custom sentinel to verify cache reuse
+            // Write custom sentinel
             File.WriteAllText(outputFatbin, "PRESERVED_CACHED_FATBIN");
             File.SetLastWriteTimeUtc(outputFatbin, baseTime.AddSeconds(10));
 
-            // 2. Output is newer than source -> should reuse cache without recompiling
-            Assert.True(task.Execute());
-            Assert.Equal("PRESERVED_CACHED_FATBIN", File.ReadAllText(outputFatbin));
-
-            // 3. Output is equal timestamp to source -> boundary test: should still reuse cache
-            File.SetLastWriteTimeUtc(outputFatbin, baseTime);
-            Assert.True(task.Execute());
-            Assert.Equal("PRESERVED_CACHED_FATBIN", File.ReadAllText(outputFatbin));
-
-            // 4. Source is newer than output -> should recompile and overwrite cached output
-            File.SetLastWriteTimeUtc(sourcePath, baseTime.AddMinutes(5));
+            // 2. Execute again -> should unconditionally recompile and overwrite cached output
             Assert.True(task.Execute());
             Assert.NotEqual("PRESERVED_CACHED_FATBIN", File.ReadAllText(outputFatbin));
         }
