@@ -5,6 +5,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
+[Trait("Category", "GpuExecution")]
 public class GEN56_GpuBufferTests : TranspilerTestBase
 {
     public GEN56_GpuBufferTests()

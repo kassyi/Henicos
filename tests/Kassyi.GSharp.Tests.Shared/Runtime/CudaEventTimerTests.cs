@@ -6,6 +6,7 @@ using Kassyi.GSharp.Tests.Helpers;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
+[Trait("Category", "GpuExecution")]
 public class CudaEventTimerTests : TranspilerTestBase
 {
     public CudaEventTimerTests()
