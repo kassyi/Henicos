@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// A lightweight value type wrapping a <see cref="GpuUIntBigInteger"/> with a sign bit,
 /// used for tracking alternating series or arbitrary signed integers on the GPU.
 /// </summary>
-public readonly struct GpuBigInteger(GpuUIntBigInteger value, bool isNegative)
+public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, bool isNegative)
     : IDisposable, IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>
 {
     /// <summary>

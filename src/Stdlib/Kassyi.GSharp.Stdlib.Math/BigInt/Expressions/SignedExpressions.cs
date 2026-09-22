@@ -44,7 +44,7 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
 
         GpuBigInteger leftResult = default;
         GpuBigInteger rightResult = default;
-        GpuUIntBigInteger? finalBuffer = targetResult;
+        var finalBuffer = targetResult;
 
         try
         {
