@@ -1,3 +1,11 @@
+---
+title: "10. Standard BCL Mappings"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "The G# Transpiler maps a specific subset of the standard .NET Base Class Library (BCL) directly to optimized NVIDIA CUDA intrinsic hardware instruc..."
+---
+
 # 10. Standard BCL Mappings
 
 The G# Transpiler maps a specific subset of the standard .NET Base Class Library (BCL) directly to optimized NVIDIA CUDA intrinsic hardware instructions.
@@ -21,6 +29,7 @@ These methods are mapped directly to PTX (Parallel Thread Execution) instruction
 
 #### Example
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void CalculatePopCount(uint[] data, int[] results)
 {

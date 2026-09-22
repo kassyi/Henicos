@@ -1,0 +1,85 @@
+---
+title: "Math / MathF.Exp Method"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "Returns e raised to the specified power."
+---
+
+## Math / MathF.Exp Method
+
+## Definition
+
+**Namespace:** `System`  
+**Assembly:** `System.Runtime.dll`
+
+> [!NOTE]
+> **Transpilation Marker**
+> The `System` assembly references are required for standard C# compilation, IDE intellisense, and CPU fallback execution. However, during G# AOT transpilation to the GPU, this method call acts strictly as a marker. It is completely erased and mapped directly to a native CUDA hardware intrinsic. No actual .NET BCL method invocation, overhead, or dependency exists in the generated C++ device code.
+
+
+Returns e raised to the specified power.
+
+## Overloads
+
+| Name | Description |
+| --- | --- |
+| [Exp(float)](#exp-float) | Returns e raised to the specified power. |
+| [Exp(double)](#exp-double) | Returns e raised to the specified power. |
+
+## Exp(float)
+
+Returns e raised to the specified power.
+
+```csharp
+public static float Exp(float x);
+```
+
+#### Parameters
+
+`x`
+`float`
+A single-precision floating-point number.
+
+#### Returns
+
+`float`
+The computed value.
+
+## Exp(double)
+
+Returns e raised to the specified power.
+
+```csharp
+public static double Exp(double x);
+```
+
+#### Parameters
+
+`x`
+`double`
+A double-precision floating-point number.
+
+#### Returns
+
+`double`
+The computed value.
+
+## Examples
+
+### Usage
+
+```csharp
+// Float precision (MathF)
+float f = MathF.Exp(1.0f);
+// Double precision (Math)
+double d = Math.Exp(1.0);
+```
+
+## Remarks
+
+Maps natively to `expf()` for float, and `exp()` for double in CUDA C++.
+
+## See also
+
+- [Gpu BCL API Overview](../01_api_overview.md)

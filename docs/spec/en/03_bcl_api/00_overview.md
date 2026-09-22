@@ -1,3 +1,11 @@
+---
+title: "BCL API and Hardware Intrinsics Reference"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "The `03_bcl_api` section of the G# specification provides a comprehensive, MSDN-style reference for all public APIs, types, and hardware intrinsics..."
+---
+
 # BCL API and Hardware Intrinsics Reference
 
 The `03_bcl_api` section of the G# specification provides a comprehensive, MSDN-style reference for all public APIs, types, and hardware intrinsics exposed by the `Kassyi.GSharp.Core` namespace, as well as the officially supported mappings to the standard .NET Base Class Library (BCL).

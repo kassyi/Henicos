@@ -1,3 +1,11 @@
+---
+title: "7. Diagnostics and Exceptions"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "The G# compilation and execution pipelines impose strict boundaries between host CPU code and device GPU kernels. This document details how excepti..."
+---
+
 # 7. Diagnostics and Exceptions
 
 The G# compilation and execution pipelines impose strict boundaries between host CPU code and device GPU kernels. This document details how exceptions are handled (or prohibited) and catalogs the diagnostic errors emitted by the G# Roslyn analyzer and transpiler.
@@ -21,6 +29,7 @@ If a hardware fault occurs (such as an illegal memory access or an out-of-bounds
 You will notice that all intrinsic methods in `Kassyi.GSharp.Core` (e.g., `Gpu.SyncThreads()`, `ThreadIndex.X`) throw a `GpuOnlyException`.
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 public static int X => GpuOnlyException.Throw<int>();
 ```
 

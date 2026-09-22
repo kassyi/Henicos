@@ -1,0 +1,85 @@
+---
+title: "Math / MathF.Cos Method"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "Returns the cosine of the specified angle."
+---
+
+## Math / MathF.Cos Method
+
+## Definition
+
+**Namespace:** `System`  
+**Assembly:** `System.Runtime.dll`
+
+> [!NOTE]
+> **Transpilation Marker**
+> The `System` assembly references are required for standard C# compilation, IDE intellisense, and CPU fallback execution. However, during G# AOT transpilation to the GPU, this method call acts strictly as a marker. It is completely erased and mapped directly to a native CUDA hardware intrinsic. No actual .NET BCL method invocation, overhead, or dependency exists in the generated C++ device code.
+
+
+Returns the cosine of the specified angle.
+
+## Overloads
+
+| Name | Description |
+| --- | --- |
+| [Cos(float)](#cos-float) | Returns the cosine of the specified angle. |
+| [Cos(double)](#cos-double) | Returns the cosine of the specified angle. |
+
+## Cos(float)
+
+Returns the cosine of the specified angle.
+
+```csharp
+public static float Cos(float x);
+```
+
+#### Parameters
+
+`x`
+`float`
+A single-precision floating-point number.
+
+#### Returns
+
+`float`
+The computed value.
+
+## Cos(double)
+
+Returns the cosine of the specified angle.
+
+```csharp
+public static double Cos(double x);
+```
+
+#### Parameters
+
+`x`
+`double`
+A double-precision floating-point number.
+
+#### Returns
+
+`double`
+The computed value.
+
+## Examples
+
+### Usage
+
+```csharp
+// Float precision (MathF)
+float f = MathF.Cos(1.0f);
+// Double precision (Math)
+double d = Math.Cos(1.0);
+```
+
+## Remarks
+
+Maps natively to `cosf()` for float, and `cos()` for double in CUDA C++.
+
+## See also
+
+- [Gpu BCL API Overview](../01_api_overview.md)
