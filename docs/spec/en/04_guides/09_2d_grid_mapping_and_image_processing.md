@@ -8,12 +8,12 @@ This guide provides the standard idiomatic patterns for calculating 2D and 3D fl
 
 ## 1. The Multi-Dimensional Challenge
 
-Unlike CPU C#, **G# prohibits the use of multi-dimensional arrays (`T[,]` or `T[,,]`) inside `[GpuKernel]` signatures**. Attempting to use them will result in a **compile error**. This is because GPU memory is fundamentally flat and linear, and passing multi-dimensional object headers would violate the strict zero-allocation memory layout required by CUDA.
+Unlike CPU C#, **G# prohibits the use of multi-dimensional arrays (`T[,]` or `T[,,]`) inside `[GpuKernel]` signatures**. Attempting to use them violates the [[GpuKernel] Parameter Whitelist](../03_bcl_api/attributes/GpuKernelAttribute.md#allowed-parameter-types-signature-whitelist) and results in a **compile error** ([GSH0003: Unsupported syntax in GPU kernel](../03_bcl_api/diagnostics/GSH0003.md); or [GSH0001](../03_bcl_api/diagnostics/GSH0001.md) if dynamically allocating with `new`). This is because GPU memory is fundamentally flat and linear, and passing multi-dimensional object headers would violate the strict zero-allocation memory layout required by CUDA.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
 
-// ❌ COMPILE ERROR: Multi-dimensional arrays are prohibited
+// ❌ COMPILE ERROR (GSH0003 / GSH0001): Multi-dimensional arrays are prohibited
 [GpuKernel]
 public static void ProcessImage(float[,] image, int width, int height) { ... }
 
