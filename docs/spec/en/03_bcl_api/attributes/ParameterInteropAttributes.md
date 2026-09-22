@@ -11,6 +11,7 @@ The standard .NET **`[In]`** and **`[Out]`** attributes from `System.Runtime.Int
 ## Syntax
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 using System.Runtime.InteropServices;
 
 [GpuKernel]
@@ -30,7 +31,6 @@ Using these attributes appropriately is highly recommended for performance-criti
 ### Hash Kernel Data Transfer Optimization
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int numMessages)
 {

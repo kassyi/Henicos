@@ -24,6 +24,7 @@ public sealed class GpuDeviceFunctionAttribute : Attribute
 ### Usage
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuDeviceFunction]
 public static float ComputeDelta(float a, float b)
 {

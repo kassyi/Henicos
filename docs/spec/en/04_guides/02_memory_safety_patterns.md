@@ -25,7 +25,6 @@ To solve this, G# implements a **Strict Ownership Model** applied strictly to `I
 1. **Borrowing (Default)**: By default, when an `IDisposable` resource is passed into a method or constructor, it is **Borrowed**. The receiving class _must not_ call `.Dispose()`. If it does, the analyzer throws `GSH0027` (Double-dispose hazard). Furthermore, holding a borrowed resource does not require the receiving class to implement `IDisposable` (`GSH0020` is suppressed).
 
 ```csharp
-// Execution Context: Host (CPU)
 // Example: Borrowing
 // GpuBigIntLeafExpression does NOT need to implement IDisposable because `value` is borrowed.
 public class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpression
@@ -37,13 +36,14 @@ public class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpression
 2. **Moving / Ownership Transfer (`[TakesOwnership]`)**: When ownership must be transferred (e.g., factories, context wrappers), the parameter is marked with `[TakesOwnership]`. This explicit contract dictates that the caller is relinquishing control, and the receiving class is now the sole owner. The analyzer then strongly enforces that the receiving class _must_ implement `IDisposable` (`GSH0020`) and _must_ explicitly call `.Dispose()` on that resource in its own `Dispose()` method (`GSH0021`).
 
 ```csharp
-// Execution Context: Host (CPU) & Device (GPU)
+// Execution Context: G# Kernel (GPU)
 // Example: Moving / Ownership Transfer
 // GpuBigInteger MUST implement IDisposable because it takes ownership of `value`.
 public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value) : IDisposable
 {
     // ❌ ERROR (GSH0021) if Dispose is missing or doesn't dispose `value`.
     // Note: Dispose() is only invoked on the Host side.
+    [GpuKernel]
     public void Dispose()
     {
         value.Dispose(); // ✅ REQUIRED
@@ -76,7 +76,7 @@ Lifecycle of resources allocated and scoped within a single method execution.
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 
 // ❌ Error: Immediate leak. Instantiated without binding or scope management.
 new GpuContext();
@@ -108,12 +108,12 @@ Patterns where the allocating method does not dispose of the resource, but clean
 | :--------------------------------- | :-------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
 | **Return Value Transfer**          | `return new GpuContext();`        | ⭕ **OK**: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation.             |
 | **Output Parameter (`out`)**       | `out var ctx = new GpuContext();` | ⭕ **OK**: Ownership propagates to the caller's target variable.                                                        |
-| **Deferred Enumeration (`yield`)** | `yield return new GpuContext();`  | ⭕ **OK**: Ownership transfers to the `IEnumerable` consumer. Disposed automatically when the consumer exits `foreach`. |
+| **Deferred Enumeration (`yield`)** | `yield return new GpuContext();`  | ⭕ **OK**: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items. |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 
 // ⭕ OK: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation.
 public GpuContext CreateContext() {
@@ -121,13 +121,21 @@ public GpuContext CreateContext() {
 }
 
 // ⭕ OK: Ownership propagates to the caller's target variable.
+[GpuKernel]
 public void TryCreate(out GpuContext ctx) {
     ctx = new GpuContext();
 }
 
-// ⭕ OK: Ownership transfers to the `IEnumerable` consumer.
+// ⭕ OK: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items.
 public IEnumerable<GpuContext> GenerateContexts() {
     yield return new GpuContext();
+}
+public void ConsumeContexts() {
+    foreach (var ctx in GenerateContexts()) {
+        using (ctx) { 
+            // use ctx 
+        }
+    }
 }
 ```
 
@@ -147,7 +155,7 @@ Patterns where resources are retained as class fields and their lifecycle is tie
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 
 // ❌ Error (GSH0020): Class `A` holds a disposable GPU resource but does not implement `IDisposable`.
 class A {
@@ -157,6 +165,7 @@ class A {
 // ❌ Error (GSH0021): `Dispose()` AST does not contain an invocation of `_c.Dispose()`.
 class B : IDisposable {
     GpuContext _c = new GpuContext();
+    [GpuKernel]
     public void Dispose() { }
 }
 
@@ -192,7 +201,7 @@ Patterns where an existing resource is injected from the outside. Distinguishes 
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 
 // ⚠️ Default (Borrowed): Class `A` does not own `_c`.
 // Calling `_c.Dispose()` inside `A.Dispose()` is flagged as a double-dispose hazard.
@@ -204,6 +213,7 @@ public class A(GpuContext c) {
 // Class `B` is now required to dispose of `_c` in its `Dispose()` implementation.
 public class B([TakesOwnership] GpuContext c) : IDisposable {
     private readonly GpuContext _c = c;
+    [GpuKernel]
     public void Dispose() => _c.Dispose();
 }
 ```
@@ -216,28 +226,22 @@ Aggregation of multiple disposable GPU instances.
 
 | Pattern                         | Code Example                                                     | Analyzer Evaluation & Diagnostics                                                            |
 | :------------------------------ | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| **Collection Ingestion**        | `var list = new List<GpuContext>(); list.Add(new GpuContext());` | ⭕ **OK**: Ownership is transferred to the collection container.                             |
-| **Undisposed Collection Field** | (Field `List<GpuContext> _list` left unhandled)                  | ❌ **Error**: Container class `Dispose()` lacks an iteration/clear loop over elements.       |
-| **Exhaustive Loop Disposal**    | `foreach (var c in list) c.Dispose();`                           | ⭕ **OK**: AST confirms an exhaustive traversal loop executing `.Dispose()` on each element. |
+| **Collection Ingestion**        | `var list = new List<GpuContext>(); list.Add(new GpuContext());` | ⚠️ **Not Tracked**: Collection element ownership is not currently tracked by the analyzer.   |
+| **Manual Loop Disposal**        | `foreach (var c in list) c.Dispose();`                           | ⭕ **Required**: The developer must manually ensure exhaustive traversal and disposal.         |
 
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 
-// ⭕ OK: Ownership is transferred to the collection container.
+// ⚠️ Not Tracked: Collection element ownership is not currently tracked by the analyzer.
 var list = new List<GpuContext>();
 list.Add(new GpuContext());
 
-// ❌ Error: Container class `Dispose()` lacks an iteration/clear loop over elements.
-class Container : IDisposable {
-    List<GpuContext> _list = new();
-    public void Dispose() { } // Leaks all elements in _list
-}
-
-// ⭕ OK: AST confirms an exhaustive traversal loop executing `.Dispose()` on each element.
+// ⭕ Required: The developer must manually ensure exhaustive traversal and disposal.
 class SafeContainer : IDisposable {
     List<GpuContext> _list = new();
+    [GpuKernel]
     public void Dispose() {
         foreach (var c in _list) c.Dispose();
     }
@@ -258,7 +262,7 @@ Handling partial failures during object initialization when multiple resources a
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 
 // ❌ Error: Multiple allocations in a constructor can leak if one throws.
 class UnsafeAlloc : IDisposable {
@@ -267,6 +271,7 @@ class UnsafeAlloc : IDisposable {
         _c1 = new GpuContext();
         _c2 = new GpuContext(); // If this throws, _c1 is permanently leaked
     }
+    [GpuKernel]
     public void Dispose() { _c1.Dispose(); _c2.Dispose(); }
 }
 
@@ -306,7 +311,7 @@ Honoring C#'s foundational philosophy: **"Safe by default, explicitly bounded in
 **Code Examples:**
 
 ```csharp
-// Execution Context: Host (CPU) & Device (GPU) Depending on usage
+// Execution Context: G# Kernel (GPU)
 
 // ❌ C# Compile Error: Prohibited by standard C# language semantics.
 int* ptr = ...;

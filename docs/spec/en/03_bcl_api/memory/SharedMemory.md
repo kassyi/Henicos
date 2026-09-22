@@ -6,7 +6,7 @@ language: "en"
 description: "Provides high-speed, on-chip block-local memory allocations."
 ---
 
-## SharedMemory<T> Class
+## SharedMemory<T> Struct
 
 ## Definition
 
@@ -16,56 +16,44 @@ description: "Provides high-speed, on-chip block-local memory allocations."
 Provides high-speed, on-chip block-local memory allocations.
 
 ```csharp
-public static class SharedMemory<T> where T : unmanaged
+public readonly ref struct SharedMemory<T> where T : unmanaged
 ```
-## Methods
 
-| Name | Description |
-| --- | --- |
-| Allocate(Int32) | Allocates statically-sized shared memory. |
-| AllocateDynamic() | Allocates dynamically-sized shared memory specified at kernel launch. |
+## Constructors
 
-## Allocate(Int32)
+| Name              | Description                               |
+| ----------------- | ----------------------------------------- |
+| SharedMemory(int) | Allocates statically-sized shared memory. |
+
+## Properties
+
+| Name      | Description                                      |
+| --------- | ------------------------------------------------ |
+| Item[int] | Gets or sets the element at the specified index. |
+
+## SharedMemory(int)
 
 Allocates statically-sized shared memory.
 
 ```csharp
-public static T* Allocate(int count);
+public SharedMemory(int length);
 ```
 
 #### Parameters
 
-`count`
-`int`
+`length` <i>int</i><br>
 The number of elements to allocate.
-
-#### Returns
-
-`T*`
-A pointer to the beginning of the shared memory array.
-
-## AllocateDynamic()
-
-Allocates dynamically-sized shared memory specified at kernel launch.
-
-```csharp
-public static T* AllocateDynamic();
-```
-
-#### Returns
-
-`T*`
-A pointer to the beginning of the dynamically allocated shared memory array.
 
 ## Examples
 
 ### Static Allocation
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
-public static unsafe void SmoothKernel(float* input)
+public static void SmoothKernel(float[] input)
 {
-    var cache = SharedMemory<float>.Allocate(256);
+    var cache = new SharedMemory<float>(256);
     cache[ThreadIndex.X] = input[ThreadIndex.X];
     Gpu.SyncThreads();
     // ...
