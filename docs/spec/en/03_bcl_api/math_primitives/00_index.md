@@ -6,9 +6,13 @@ language: "en"
 description: "Standard math functions, fast math approximations, and hardware bit operations."
 ---
 
-# Math and BitOperations
+# Math and BitOperations (Primitives)
 
 Standard math functions, fast math approximations, and hardware bit operations.
+
+> [!NOTE]
+> **Device & Host Execution**
+> Because these are standard C# BCL methods (like `System.Math.Sin`), they can naturally be executed on the Host (CPU). GSharp's transpiler extends this capability, allowing them to also be executed seamlessly inside GPU kernels (Device).
 
 ## In This Section
 
@@ -29,3 +33,13 @@ Standard math functions, fast math approximations, and hardware bit operations.
 - [BitOperations_LeadingZeroCount](BitOperations_LeadingZeroCount.md): Count the number of leading zero bits.
 - [BitOperations_TrailingZeroCount](BitOperations_TrailingZeroCount.md): Count the number of trailing zero bits.
 - [VectorTypes](VectorTypes.md): SIMD vector types like float3, int4.
+
+## See also
+
+- [Gpu BCL API Overview](../00_overview.md)
+- [Math.Sin](Math_Sin.md)
+- [Math.Cos](Math_Cos.md)
+- [Math.Log](Math_Log.md)
+- [Math.Exp](Math_Exp.md)
+- [FastMath.Sqrt](FastMath_Sqrt.md)
+- [VectorTypes](VectorTypes.md)

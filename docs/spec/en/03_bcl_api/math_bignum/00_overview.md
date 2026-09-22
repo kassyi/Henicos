@@ -13,7 +13,7 @@ The `Kassyi.GSharp.Stdlib.Math` namespace provides high-performance, arbitrary-p
 > [!WARNING]
 > **Host-Side Only API**
 > 
-> The vast majority of the advanced types in this namespace (such as `GpuBigInteger`, `GpuBigFloat`, and their operator overloads) are designed **exclusively for host-side orchestration**. 
+> Unlike standard C# math primitives (which execute naturally on both Host and Device), the vast majority of the advanced types in this namespace (such as `GpuBigInteger`, `GpuBigFloat`, and their operator overloads) are designed **exclusively for host-side orchestration**. 
 > You **cannot** use these types or call their `+`, `-`, `*`, `/` operators directly from *inside* a `[GpuKernel]` method.
 > 
 > All arbitrary-precision arithmetic operations involve orchestrating multiple low-level CUDA kernels and managing workspace memory pools. Therefore, you must dispatch and evaluate them from the CPU (Host) using the `GpuContext`. For a detailed explanation of *why* this is restricted and what alternatives exist, see the **[Advanced Math & Lazy Evaluation Guide](../../04_guides/07_stdlib_math_and_lazy_evaluation.md)**.
@@ -34,3 +34,23 @@ This module is split into several logical sub-components:
 ## Shared Memory and Allocations
 
 Because GSharp enforces a strict Zero-Allocation rule inside GPU kernels, the `Stdlib.Math` library relies entirely on pre-allocated device memory managed by a `GpuContext`. All temporary buffers required for arithmetic carry-propagation or intermediate multiplication steps are checked out from the context's memory pool and recycled instantly, eliminating `cudaMalloc` overhead during execution.
+
+## See also
+
+### Data Types
+- [GpuBigInteger and GpuUIntBigInteger Overview](gpu_big_int_and_uint/00_overview.md)
+- [GpuBigFloat Overview](gpu_big_float/00_overview.md)
+- [GpuContext](gpu_context/GpuContext.md)
+
+### Mathematical Algorithms
+- [GpuBigInteger Algorithms (GCD, NTT, Matrix2x2, etc.)](gpu_big_int_and_uint/00_overview.md#algorithms)
+- [Standard Math Primitives Index](../math_primitives/00_index.md)
+
+### Transpiler Internals & Architecture
+- [4. Bignum Transpiler Internals](../../02_architecture/04_bignum_internals.md)
+- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
+- [Gpu BCL API Overview](../00_overview.md)
+
+### Guides
+- [Bignum Expression Trees Guide](../../04_guides/04_bignum_expression_trees_guide.md)
+- [Stdlib Math and Lazy Evaluation Guide](../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
