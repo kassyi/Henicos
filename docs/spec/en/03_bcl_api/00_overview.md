@@ -12,7 +12,9 @@ The `03_bcl_api` section of the G# specification provides a comprehensive, MSDN-
 
 Because G# kernels execute on GPUs—architectures that lack garbage collectors, runtime type metadata, and dynamic dispatch—these APIs are highly specialized. They map directly to native CUDA C++ / PTX instructions at compile time via the AOT Transpiler.
 
-## Table of Contents
+## Group 1: Core G# Framework
+
+The Core Framework provides the essential building blocks for writing, synchronizing, and launching GPU kernels.
 
 ### 1. Core Attributes
 Specialized C# attributes that govern compilation, entry point semantics, and JIT optimizations.
@@ -49,11 +51,18 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 * **[FastMath](math/00_index.md)**: Hardware-accelerated approximate instructions (`__expf`, `__logf`).
 * **[Built-in Vector Types](math/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
 
-### 6. Big Number Arithmetic (GPU-Native)
-* **[`GpuBigInt`](03_math_gpubigint.md)** — Zero-allocation, arbitrary-precision integer arithmetic optimized for CUDA.
-* **[`GpuBigFloat`](02_math_gpubigfloat.md)** — Zero-allocation, arbitrary-precision floating-point arithmetic.
-
-### 7. Standard BCL and Diagnostics
+### 6. Standard BCL and Diagnostics
 * **[Standard BCL Mappings](05_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
 * **[Diagnostics and Exceptions](04_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
 * **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0029`, `RS0030`).
+
+---
+
+## Group 2: Domain Specific Libraries (`Stdlib.Math`)
+
+The `Stdlib.Math` library is a highly specialized suite built on top of the Core Framework, designed for arbitrary-precision arithmetic and advanced algorithmic orchestration on the GPU.
+
+* **[Stdlib.Math Overview](stdlib_math/00_overview.md)**
+* **[GPU Big Integer (Signed & Unsigned)](stdlib_math/gpu_big_int_and_uint/00_overview.md)**
+* **[GPU Big Float](stdlib_math/gpu_big_float/00_overview.md)**
+* **[GPU Execution Contexts](stdlib_math/gpu_context/GpuContext.md)**

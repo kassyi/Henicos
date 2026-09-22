@@ -54,7 +54,11 @@ Standard .NET Interlocked operations are safely mapped to CUDA atomic instructio
 | `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `atomicCAS` (Compare And Swap) |
 
 > [!NOTE]
-> Floating-point atomics (`float`) are not supported by the standard `System.Threading.Interlocked` class in .NET. To perform atomic additions on floats, you must use the `Gpu.AtomicAdd(ref float, float)` intrinsic instead.
+> **Interlocked vs Gpu.AtomicAdd**
+> 
+> G# supports both `System.Threading.Interlocked` and `Gpu.AtomicAdd`. How should you choose?
+> - **Use `Interlocked` (Recommended):** For standard integer atomics (e.g., `Interlocked.Add(ref myInt, 1)`). This is the C# standard, making your code highly portable and compatible with CPU fallback modes.
+> - **Use `Gpu.AtomicAdd`:** When you need atomic operations on `float` or `double`. The standard C# `.NET` BCL does not support floating-point atomic additions natively via `Interlocked`, but GPU hardware does. Use `Gpu.AtomicAdd` to unlock hardware-accelerated floating-point atomics.
 
 ---
 
