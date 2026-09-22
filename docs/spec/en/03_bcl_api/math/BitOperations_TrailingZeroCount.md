@@ -32,18 +32,18 @@ Count the number of trailing zero bits in an integer.
 Count the number of trailing zero bits in an integer. (32-bit)
 
 ```csharp
+[GpuKernel]
 public static int TrailingZeroCount(uint value);
 ```
 
 #### Parameters
 
-`value`
-`uint`
+`value` <i>uint</i><br>
 The 32-bit unsigned integer.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The number of bits.
 
 ## TrailingZeroCount(ulong)
@@ -51,31 +51,65 @@ The number of bits.
 Count the number of trailing zero bits in an integer. (64-bit)
 
 ```csharp
+[GpuKernel]
 public static int TrailingZeroCount(ulong value);
 ```
 
 #### Parameters
 
-`value`
-`ulong`
+`value` <i>ulong</i><br>
 The 64-bit unsigned integer.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The number of bits.
+
+## Conceptual Behavior
+
+Given a 32-bit unsigned integer `value`, it counts consecutive `0` bits starting from the **right** (Least Significant Bit).
+
+- **Input (Binary)**: `0b_0000_0000_0000_0000_0000_1111_0101_0000`
+- **Output (Count)**: `4` (There are 4 consecutive `0`s at the end before the first `1` appears)
 
 ## Examples
 
-### Bit Manipulation
+### Finding the First Active Thread (Lowest Set Bit)
 
 ```csharp
-int bits = BitOperations.TrailingZeroCount(0b_1010_1010_1010_1010u);
+// Execution Context: G# Kernel (GPU)
+[GpuKernel]
+public static void FindFirstActiveThread()
+{
+    // Assume some complex condition
+    bool needsProcessing = ThreadIndex.X > 15;
+    
+    // Get a bitmask representing threads that need processing
+    uint ballotMask = Gpu.WarpBallotSync(0xFFFFFFFF, needsProcessing);
+    
+    if (ballotMask != 0)
+    {
+        // Trailing zero count perfectly maps to the Lane ID of the first '1' bit
+        int leaderLaneId = BitOperations.TrailingZeroCount(ballotMask);
+        
+        if (ThreadIndex.X % 32 == leaderLaneId)
+        {
+            // Only the first active thread executes this block (Leader election)
+        }
+    }
+}
 ```
 
 ## Remarks
 
-Maps to specialized CUDA bit manipulation intrinsics (`__popc`, `__clz`, `__ffs`).
+Counts the number of consecutive `0` bits starting from the Least Significant Bit (LSB) up to the Most Significant Bit (MSB). If the value is `0`, it returns `32` (for `uint`) or `64` (for `ulong`).
+
+In GPU programming, `TrailingZeroCount` is a critical primitive for:
+- **Warp Leader Election**: When combined with a ballot mask (`Gpu.WarpBallotSync`), it returns the exact warp lane ID (0-31) of the lowest-numbered thread that voted true.
+- **Bitmask Iteration**: Quickly jumping to the next set bit in a mask without checking every bit in a loop.
+- **Divisibility Checks**: Determining the largest power of 2 that divides a number.
+
+Maps natively to `__gsharp_tzc_32()` for 32-bit, and `__gsharp_tzc_64()` for 64-bit in CUDA C++ (which wrap the `__ffs` intrinsic).
 
 ## See also
 

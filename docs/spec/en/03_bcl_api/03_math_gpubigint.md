@@ -23,10 +23,11 @@ Manages a thread-safe workspace pointer and pre-allocates intermediate buffers o
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 public class GpuContext : IDisposable
 {
     public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot);
+    [GpuKernel]
     public void Dispose();
 }
 ```
@@ -37,7 +38,7 @@ A host-wrapper class (`IDisposable`) that manages the `IntPtr` to the GPU device
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 public class GpuUIntBigInteger : IDisposable
 {
     public GpuUIntBigInteger(GpuContext context, int numWords);
@@ -47,6 +48,7 @@ public class GpuUIntBigInteger : IDisposable
     public static GpuUIntBigInteger FromHexString(GpuContext context, string hexString, int minWords = 0);
     public BigInteger ToBigInteger();
     public string ToHexString();
+    [GpuKernel]
     public void Dispose();
 }
 ```
@@ -57,12 +59,13 @@ A host-wrapper struct that pairs a `GpuUIntBigInteger` with a sign bit.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 public readonly struct GpuBigInteger : IDisposable, IComparable<GpuBigInteger>
 {
     public GpuBigInteger(GpuUIntBigInteger value, bool isNegative = false);
     public GpuUIntBigInteger Value { get; }
     public bool IsNegative { get; }
+    [GpuKernel]
     public void Dispose();
 }
 ```
@@ -80,7 +83,7 @@ Performs ripple-carry addition or borrow-based subtraction across multiple chunk
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 var expr = gpuA + gpuB - gpuC;
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
@@ -94,7 +97,7 @@ Highly optimized multiplication for massive sizes.
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 var expr = gpuA * gpuB;
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
@@ -105,7 +108,6 @@ Performs approximate division using Newton-Raphson iteration for reciprocals.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 public static void Div(GpuBigInteger a, GpuBigInteger b, GpuBigInteger result);
 ```
 
@@ -118,14 +120,13 @@ Integer square root computation.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 // Note: Sqrt is only supported for unsigned BigIntegers.
 public static GpuBigIntExpr Sqrt(GpuUIntBigInteger a);
 ```
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 var expr = GpuBigInteger.Sqrt(gpuUIntA);
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
@@ -136,13 +137,12 @@ Fast computation of $10^M$, optimized for arbitrary precision decimal scaling.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 public static GpuBigIntExpr Pow10(int exponent);
 ```
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 var expr = GpuBigInteger.Pow10(100); // Calculates 10^100
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
@@ -153,7 +153,6 @@ Word-by-word bitwise AND, OR, XOR, NOT operations, and arbitrary bit shifts acro
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 public static GpuBigIntExpr BitwiseAnd(GpuBigInteger a, GpuBigInteger b);
 public static GpuBigIntExpr BitwiseOr(GpuBigInteger a, GpuBigInteger b);
 public static GpuBigIntExpr BitwiseXor(GpuBigInteger a, GpuBigInteger b);
@@ -164,7 +163,7 @@ public static GpuBigIntExpr ShiftRight(GpuBigInteger a, int shiftBits);
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 // Easily composed via standard C# operators using Expression Trees
 var expr = (~gpuA & gpuB) << 256;
 using var gpuResult = expr.Node.Evaluate(context, null);
@@ -176,13 +175,12 @@ Multi-precision Greatest Common Divisor computation.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 public static GpuBigIntExpr Gcd(GpuBigInteger a, GpuBigInteger b);
 ```
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 var expr = GpuBigInteger.Gcd(gpuA, gpuB);
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
@@ -193,13 +191,12 @@ Binary exponentiation $a^b \pmod m$ on GPU.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 public static GpuBigIntExpr ModPow(GpuBigInteger a, GpuBigInteger exponent, GpuBigInteger modulus);
 ```
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 var expr = GpuBigInteger.ModPow(gpuA, exponent, modulus);
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
@@ -210,7 +207,6 @@ Highly optimized in-place squaring.
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU)
 public void Square(int precisionWords);
 ```
 
@@ -219,7 +215,7 @@ This is an in-place mutation operation. For extremely large integers, calling `S
 
 **Example**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 gpuA.Value.Square(1024); // Squares gpuA's underlying unsigned value in place
 ```
 
@@ -238,7 +234,7 @@ Instead of computing immediately, operator overloads (`+`, `-`, `*`, `/`, `<<`, 
 
 **Example: Comprehensive Expression Tree**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 // Evaluate the tree and return the result as a new buffer
 var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
 using var gpuResult = expr.Node.Evaluate(context, null);
@@ -251,7 +247,7 @@ Because operators only build an AST and do not execute any kernels natively, fai
 To prevent this, the G# Roslyn Analyzer introduces `GSH0005` (GpuBigIntExpr Direct Assignment). This diagnostic produces a **hard compiler error** if a `GpuBigIntExpr` is declared or assigned to a local variable without being resolved or evaluated.
 
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 // ❌ INCORRECT: Triggers hard compiler error GSH0005
 // var recipe = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
 

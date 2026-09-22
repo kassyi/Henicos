@@ -32,18 +32,18 @@ Returns the absolute value of a specified number.
 Returns the absolute value of a specified number.
 
 ```csharp
+[GpuKernel]
 public static float Abs(float x);
 ```
 
 #### Parameters
 
-`x`
-`float`
+`x` <i>float</i><br>
 A single-precision floating-point number.
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The computed value.
 
 ## Abs(double)
@@ -51,18 +51,18 @@ The computed value.
 Returns the absolute value of a specified number.
 
 ```csharp
+[GpuKernel]
 public static double Abs(double x);
 ```
 
 #### Parameters
 
-`x`
-`double`
+`x` <i>double</i><br>
 A double-precision floating-point number.
 
 #### Returns
 
-`double`
+<i>double</i><br>
 The computed value.
 
 ## Examples
@@ -70,6 +70,7 @@ The computed value.
 ### Usage
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Float precision (MathF)
 float f = MathF.Abs(1.0f);
 // Double precision (Math)
@@ -78,7 +79,7 @@ double d = Math.Abs(1.0);
 
 ## Remarks
 
-Maps natively to `absf()` for float, and `abs()` for double in CUDA C++.
+Maps natively to `fabsf()` for float, `fabs()` for double, and `abs()` for int in CUDA C++.
 
 ## See also
 

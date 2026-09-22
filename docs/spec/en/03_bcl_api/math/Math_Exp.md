@@ -32,18 +32,18 @@ Returns e raised to the specified power.
 Returns e raised to the specified power.
 
 ```csharp
+[GpuKernel]
 public static float Exp(float x);
 ```
 
 #### Parameters
 
-`x`
-`float`
+`x` <i>float</i><br>
 A single-precision floating-point number.
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The computed value.
 
 ## Exp(double)
@@ -51,18 +51,18 @@ The computed value.
 Returns e raised to the specified power.
 
 ```csharp
+[GpuKernel]
 public static double Exp(double x);
 ```
 
 #### Parameters
 
-`x`
-`double`
+`x` <i>double</i><br>
 A double-precision floating-point number.
 
 #### Returns
 
-`double`
+<i>double</i><br>
 The computed value.
 
 ## Examples
@@ -70,6 +70,7 @@ The computed value.
 ### Usage
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Float precision (MathF)
 float f = MathF.Exp(1.0f);
 // Double precision (Math)

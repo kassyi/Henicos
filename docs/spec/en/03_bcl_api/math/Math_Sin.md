@@ -32,18 +32,18 @@ Returns the sine of the specified angle.
 Returns the sine of the specified angle.
 
 ```csharp
+[GpuKernel]
 public static float Sin(float x);
 ```
 
 #### Parameters
 
-`x`
-`float`
+`x` <i>float</i><br>
 A single-precision floating-point number.
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The computed value.
 
 ## Sin(double)
@@ -51,18 +51,18 @@ The computed value.
 Returns the sine of the specified angle.
 
 ```csharp
+[GpuKernel]
 public static double Sin(double x);
 ```
 
 #### Parameters
 
-`x`
-`double`
+`x` <i>double</i><br>
 A double-precision floating-point number.
 
 #### Returns
 
-`double`
+<i>double</i><br>
 The computed value.
 
 ## Examples
@@ -70,6 +70,7 @@ The computed value.
 ### Usage
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Float precision (MathF)
 float f = MathF.Sin(1.0f);
 // Double precision (Math)

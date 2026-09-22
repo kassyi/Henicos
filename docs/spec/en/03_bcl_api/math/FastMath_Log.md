@@ -18,18 +18,18 @@ Returns the natural (base e) logarithm using hardware fast-math.
 Returns the natural (base e) logarithm using hardware fast-math.
 
 ```csharp
+[GpuKernel]
 public static float Log(float x);
 ```
 
 #### Parameters
 
-`x`
-`float`
+`x` <i>float</i><br>
 A single-precision floating-point number.
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The computed fast-math value.
 
 ## Examples
@@ -37,7 +37,7 @@ The computed fast-math value.
 ### Fast Math Approximation
 
 ```csharp
-// Execution Context: G# Kernel
+// Execution Context: G# Kernel (GPU)
 float result = FastMath.Log(x);
 ```
 

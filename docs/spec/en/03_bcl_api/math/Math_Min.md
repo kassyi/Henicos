@@ -32,22 +32,21 @@ Returns the smaller of two specified numbers.
 Returns the smaller of two specified numbers.
 
 ```csharp
+[GpuKernel]
 public static float Min(float val1, float val2);
 ```
 
 #### Parameters
 
-`val1`
-`float`
+`val1` <i>float</i><br>
 The first single-precision floating-point number.
 
-`val2`
-`float`
+`val2` <i>float</i><br>
 The second single-precision floating-point number.
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The computed value.
 
 ## Min(double, double)
@@ -55,22 +54,21 @@ The computed value.
 Returns the smaller of two specified numbers.
 
 ```csharp
+[GpuKernel]
 public static double Min(double val1, double val2);
 ```
 
 #### Parameters
 
-`val1`
-`double`
+`val1` <i>double</i><br>
 The first double-precision floating-point number.
 
-`val2`
-`double`
+`val2` <i>double</i><br>
 The second double-precision floating-point number.
 
 #### Returns
 
-`double`
+<i>double</i><br>
 The computed value.
 
 ## Examples
@@ -78,6 +76,7 @@ The computed value.
 ### Usage
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Float precision (MathF)
 float f = MathF.Min(1.0f, 2.0f);
 // Double precision (Math)
@@ -86,7 +85,7 @@ double d = Math.Min(1.0, 2.0);
 
 ## Remarks
 
-Maps natively to `minf()` for float, and `min()` for double in CUDA C++.
+Maps natively to `fminf()` for float, `fmin()` for double, and `min()` for int in CUDA C++.
 
 ## See also
 

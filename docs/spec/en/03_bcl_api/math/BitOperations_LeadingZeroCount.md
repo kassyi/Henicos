@@ -32,18 +32,18 @@ Count the number of leading zero bits in an integer.
 Count the number of leading zero bits in an integer. (32-bit)
 
 ```csharp
+[GpuKernel]
 public static int LeadingZeroCount(uint value);
 ```
 
 #### Parameters
 
-`value`
-`uint`
+`value` <i>uint</i><br>
 The 32-bit unsigned integer.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The number of bits.
 
 ## LeadingZeroCount(ulong)
@@ -51,31 +51,56 @@ The number of bits.
 Count the number of leading zero bits in an integer. (64-bit)
 
 ```csharp
+[GpuKernel]
 public static int LeadingZeroCount(ulong value);
 ```
 
 #### Parameters
 
-`value`
-`ulong`
+`value` <i>ulong</i><br>
 The 64-bit unsigned integer.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The number of bits.
+
+## Conceptual Behavior
+
+Given a 32-bit unsigned integer `value`, it counts consecutive `0` bits starting from the **left** (Most Significant Bit).
+
+- **Input (Binary)**: `0b_0000_0000_0000_0000_0000_1111_0101_0000`
+- **Output (Count)**: `20` (There are 20 consecutive `0`s before the first `1` appears)
 
 ## Examples
 
-### Bit Manipulation
+### Fast Base-2 Logarithm (Highest Set Bit)
 
 ```csharp
-int bits = BitOperations.LeadingZeroCount(0b_1010_1010_1010_1010u);
+// Execution Context: G# Kernel (GPU)
+[GpuKernel]
+public static void FastLog2Example()
+{
+    uint value = 0b_0000_1000_0000_0000u; // 2048
+    
+    // Count leading zeros (from MSB to LSB)
+    int lz = BitOperations.LeadingZeroCount(value); // Returns 20 (for 32-bit)
+    
+    // Find the index of the highest set bit (floor(log2(x)))
+    int highestBit = 31 - lz; // Returns 11
+}
 ```
 
 ## Remarks
 
-Maps to specialized CUDA bit manipulation intrinsics (`__popc`, `__clz`, `__ffs`).
+Counts the number of consecutive `0` bits starting from the Most Significant Bit (MSB) down to the Least Significant Bit (LSB). If the value is `0`, it returns `32` (for `uint`) or `64` (for `ulong`).
+
+In GPU programming, `LeadingZeroCount` is frequently used for:
+- **Fast Base-2 Logarithms**: Finding `floor(log2(x))` instantly without using floating-point math units (`31 - LeadingZeroCount(x)`).
+- **Radix Trees / Prefix Sums**: Quickly finding the most significant differing bit between two hash values or Morton codes.
+- **Memory Allocators**: Finding the appropriately sized bucket/bin for a given dynamic allocation size.
+
+Maps natively to `__gsharp_lzc_32()` for 32-bit, and `__gsharp_lzc_64()` for 64-bit in CUDA C++ (which wrap the `__clz` / `__clzll` intrinsics). These map directly to the hardware `clz` PTX instructions.
 
 ## See also
 

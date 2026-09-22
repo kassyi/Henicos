@@ -22,7 +22,7 @@ Concrete unmanaged wrapper structs for signed arbitrary-precision floating-point
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU) & G# Kernel (GPU)
+// Execution Context: G# Kernel (GPU)
 public struct GpuFloat128
 {
     public GpuFloat128(GpuUInt128 significand, int exponent, bool isNegative) { ... }
@@ -31,7 +31,7 @@ public struct GpuFloat128
 
 **Example 1: Initialization on the Host (CPU)**
 ```csharp
-// Execution Context: Host (CPU)
+// Execution Context: G# Kernel (GPU)
 using Kassyi.GSharp.Stdlib.Math.BigFloat;
 
 // 1. Initialize the significand (mantissa) using Collection Expressions
@@ -62,7 +62,7 @@ Specifies the IEEE 754 compliant rounding mode to use during mathematical operat
 
 **Syntax**
 ```csharp
-// Execution Context: Host (CPU) & G# Kernel (GPU)
+// Execution Context: G# Kernel (GPU)
 public enum GpuBigFloatRoundingMode
 {
     RoundToNearestEven = 0,

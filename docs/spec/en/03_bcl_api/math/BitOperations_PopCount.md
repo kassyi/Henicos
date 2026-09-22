@@ -32,18 +32,18 @@ Returns the population count (number of bits set) of a mask.
 Returns the population count (number of bits set) of a mask. (32-bit)
 
 ```csharp
+[GpuKernel]
 public static int PopCount(uint value);
 ```
 
 #### Parameters
 
-`value`
-`uint`
+`value` <i>uint</i><br>
 The 32-bit unsigned integer.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The number of bits.
 
 ## PopCount(ulong)
@@ -51,31 +51,57 @@ The number of bits.
 Returns the population count (number of bits set) of a mask. (64-bit)
 
 ```csharp
+[GpuKernel]
 public static int PopCount(ulong value);
 ```
 
 #### Parameters
 
-`value`
-`ulong`
+`value` <i>ulong</i><br>
 The 64-bit unsigned integer.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 The number of bits.
+
+## Conceptual Behavior
+
+Given a 32-bit unsigned integer `value`, it simply counts the number of `1` bits.
+
+- **Input (Binary)**: `0b_0000_0000_0000_0000_0000_1111_0101_0000`
+- **Output (Count)**: `6` (Because there are six `1` bits)
 
 ## Examples
 
-### Bit Manipulation
+### Counting Active Threads in a Warp (Ballot Mask)
 
 ```csharp
-int bits = BitOperations.PopCount(0b_1010_1010_1010_1010u);
+// Execution Context: G# Kernel (GPU)
+[GpuKernel]
+public static void ProcessActiveThreads()
+{
+    // Evaluate a condition for all threads in the warp
+    bool isActive = ThreadIndex.X % 2 == 0;
+    
+    // Get a 32-bit bitmask where each bit represents a thread's result
+    uint ballotMask = Gpu.WarpBallotSync(0xFFFFFFFF, isActive);
+    
+    // Quickly count how many threads in this warp met the condition
+    int activeCount = BitOperations.PopCount(ballotMask);
+}
 ```
 
 ## Remarks
 
-Maps to specialized CUDA bit manipulation intrinsics (`__popc`, `__clz`, `__ffs`).
+Also known as the **Hamming weight** or population count. This function returns the total number of bits set to `1` in the binary representation of the given integer. 
+
+In GPU programming, `PopCount` is extremely common for:
+- **Warp-level reductions**: Counting the total number of threads that passed a condition using a ballot mask (`Gpu.WarpBallotSync`).
+- **Parity checks** and cryptography kernels.
+- **Sparse array compaction**: Calculating offsets for threads to write their results into a dense array without atomic locks.
+
+Maps natively to `__popc()` for 32-bit, and `__popcll()` for 64-bit in CUDA C++. These translate directly to the hardware `popc` PTX instructions, executing in a single clock cycle.
 
 ## See also
 

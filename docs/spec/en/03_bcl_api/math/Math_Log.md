@@ -32,18 +32,18 @@ Returns the natural (base e) logarithm of a specified number.
 Returns the natural (base e) logarithm of a specified number.
 
 ```csharp
+[GpuKernel]
 public static float Log(float x);
 ```
 
 #### Parameters
 
-`x`
-`float`
+`x` <i>float</i><br>
 A single-precision floating-point number.
 
 #### Returns
 
-`float`
+<i>float</i><br>
 The computed value.
 
 ## Log(double)
@@ -51,18 +51,18 @@ The computed value.
 Returns the natural (base e) logarithm of a specified number.
 
 ```csharp
+[GpuKernel]
 public static double Log(double x);
 ```
 
 #### Parameters
 
-`x`
-`double`
+`x` <i>double</i><br>
 A double-precision floating-point number.
 
 #### Returns
 
-`double`
+<i>double</i><br>
 The computed value.
 
 ## Examples
@@ -70,6 +70,7 @@ The computed value.
 ### Usage
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Float precision (MathF)
 float f = MathF.Log(1.0f);
 // Double precision (Math)
