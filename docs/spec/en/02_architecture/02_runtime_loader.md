@@ -1,3 +1,11 @@
+---
+title: "2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document defines the internal architecture of the runtime loader, context management, and the native hardware execution pipeline for AOT-compi..."
+---
+
 # 2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)
 
 This document defines the internal architecture of the runtime loader, context management, and the native hardware execution pipeline for AOT-compiled kernels.

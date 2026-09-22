@@ -1,10 +1,22 @@
+---
+title: "8. Comprehensive Example"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document provides a 'Rosetta Stone' example that validates all of the specifications detailed in this repository. It demonstrates how a single..."
+---
+
 # 8. Comprehensive Example
+
+> [!WARNING]
+> **Compiler Validation Reference Code**
+> This file is **not** a beginner tutorial or a getting-started guide. It is a comprehensive "Rosetta Stone" test-case designed to demonstrate how the G# transpiler converts all supported C# features into C++. It contains intentional edge-cases and hundreds of lines of code, serving primarily as a compiler validation reference.
 
 This document provides a "Rosetta Stone" example that validates all of the specifications detailed in this repository. It demonstrates how a single G# C# file utilizes custom `struct` definitions, `[GpuKernel]`, `[GpuDeviceFunction]`, `[Constant]`, intrinsic math functions, static/dynamic shared memory, atomics, thread synchronization, and implicit array marshaling.
 
 ## 8.1 The G# Source Code
 
-// Context: G# Kernel Definitions
+// Execution Context: G# Kernel (GPU)
 
 <!-- BEGIN CSHARP -->
 ```csharp
@@ -268,201 +280,6 @@ public static partial class ComprehensiveSpecKernel
 ```
 <!-- END CSHARP -->
 
-        public ulong Flags;
-    }
-
-    [GpuKernel]
-    [SkipSnapshotConsistency("Has intentional diagnostics errors")]
-    public static void ProcessPhysics(
-        PhysicsVector[] particles,
-        ref float totalMagnitude,
-        out bool successFlag,
-        SpecTypes largeStructVal, // Triggers GSH1002 (>= 32 bytes passed by value)
-        int particleCount,
-        [Constant] int unrollFactor)
-    {
-        successFlag = false;
-
-        const float Gravity = 9.8f; // Triggers const evaluation in C++
-
-        // 1. All Intrinsics Indexing
-        int tx = ThreadIndex.X;
-        int ty = ThreadIndex.Y;
-        int tz = ThreadIndex.Z;
-
-        int bx = BlockIndex.X;
-        int by = BlockIndex.Y;
-        int bz = BlockIndex.Z;
-
-        int bdimX = BlockDimension.X;
-        int bdimY = BlockDimension.Y;
-        int bdimZ = BlockDimension.Z;
-
-        int gdimX = GridDimension.X;
-        int gdimY = GridDimension.Y;
-        int gdimZ = GridDimension.Z;
-
-        int tid = tx + bx * bdimX;
-
-        // 2. Shared Memory (Static & Dynamic)
-        SharedMemory<int> staticCache = new SharedMemory<int>(10000); // Triggers GSH1001 (>32768 bytes)
-        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
-        SharedMemory<int> targetTypedCache = new(256); // Target-typed new support
-
-        if (tid < particleCount)
-        {
-            // 3. Custom Struct extraction & Array pointer dereferencing
-            PhysicsVector p = particles[tid];
-            SpecTypes types = largeStructVal; // Proves compilation of all primitive types
-
-            // 3.5 Record struct and var keyword support
-            var origin = new Point(0, 0);
-            var distance = origin.X + p.X;
-
-            // 3.6 Nested Structs
-            var nested = new NestedPhysicsState
-            {
-                Position = p,
-                Velocity = p,
-                StatusFlag = 1
-            };
-
-            // 4. All Math Mappings and Device Method invocation
-            float mag = ComputeMagnitude(p);
-            mag = (float)System.Math.Abs(mag);
-
-            // 5. Automatic Loop Unrolling via Constant (for)
-            for (int i = 0; i < unrollFactor; i++)
-            {
-                if (i == 1) continue;
-                mag = (float)System.Math.Max(mag, p.X * i + Gravity);
-            }
-
-            if (!IsPositive(mag))
-            {
-                mag = 0;
-            }
-
-            // 6. Other Loop Syntaxes
-            int counter = 0;
-            while (counter < 2)
-            {
-                mag = (float)System.Math.Min(mag, mag + 1);
-                counter++;
-            }
-
-            do
-            {
-                counter--;
-            } while (counter > 0);
-
-            // 7. Switch statement
-            switch (tx)
-            {
-                case 0:
-                    mag += 1;
-                    break;
-                default:
-                    mag += 0;
-                    break;
-            }
-
-            // 8. Memory writes
-            staticCache[tx] = tid;
-            dynamicCache[tx] = mag;
-
-            // 9. Synchronization
-            Gpu.SyncThreads();
-
-            // 10. Atomics and Out parameter
-            if (tx == 0)
-            {
-                Gpu.AtomicAdd(ref totalMagnitude, dynamicCache[0]);
-                successFlag = true;
-            }
-
-            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
-            Vector8 inlineVec = new Vector8();
-            inlineVec[0] = 123;
-            inlineVec[1] = 456;
-
-            unsafe
-            {
-                PhysicsState state = new PhysicsState();
-
-                // Pointer operators and sizeof
-                PhysicsState* pState = &state;
-                // int stateSize = sizeof(PhysicsState); // GSH0003
-
-                state.Buffer[0] = inlineVec[0];
-                state.Buffer[1] = inlineVec[1];
-
-                ulong carry = 0;
-                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
-
-                long borrow = 0;
-                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
-
-                if (sum > diff)
-                {
-                    state.Flags = 1;
-                }
-            }
-
-            // 11.6 Operators (Ternary, Bitwise, Logical, else if)
-            bool condition1 = tx > 0;
-            bool condition2 = ty == 0;
-            if (condition1 && condition2) // Logical short-circuit
-            {
-                int bitwise = (tx << 2) | (ty >> 1) ^ 0xFF;
-                bitwise &= ~1; // Bitwise assignment and NOT
-
-                // mag = (bitwise > 0) ? mag * 2.0f : mag / 2.0f; // Ternary conditional - GSH0003
-            }
-            else if (condition1 || !condition2)
-            {
-                mag += 1.5f;
-            }
-
-            // 11.5 Inline PTX
-            Gpu.InlinePtx("/* test ptx inline */");
-
-            // 12. Early return
-            if (ty > 0)
-            {
-                return;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Demonstrates the host-side AST construction for GpuBigInt.
-    /// This method is ignored by the GSharp Transpiler because it lacks [GpuKernel] or [GpuDeviceFunction].
-    /// </summary>
-    public static void HostSideGpuBigIntDemo()
-    {
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
-
-        using var a = new GpuUIntBigInteger(context, 1024);
-        using var b = new GpuUIntBigInteger(context, 1024);
-        using var result = new GpuUIntBigInteger(context, 1024);
-
-        // AST Construction: evaluated lazily and dispatched to GPU
-        result.Value = a + b;
-        b.Value = result - a;
-    }
-
-    [GpuKernel(Cooperative = true)]
-    public static void CooperativePhysicsProcess(int[] data)
-    {
-        int tid = ThreadIndex.X;
-        data[tid] = tid;
-        Gpu.SyncGrid();
-    }
-}
-```
-<!-- END CSHARP -->
-
 ## 8.2 Build Output (Diagnostics)
 
 When building this code, MSBuild natively catches the strict constraints via the `Kassyi.Generators.GSharp` analyzers:
@@ -474,7 +291,7 @@ ComprehensiveSpecKernel.cs(76,63): warning GSH1001: The kernel allocates 40000 b
 
 ## 8.3 The Transpiled CUDA C++ Output
 
-// Context: Transpiled CUDA C++ Code
+// Execution Context: Transpiled CUDA C++ (Internal)
 
 <!-- BEGIN CPP -->
 ```cpp

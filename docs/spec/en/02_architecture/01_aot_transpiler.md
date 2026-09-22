@@ -1,3 +1,11 @@
+---
+title: "1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators."
+---
+
 # 1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)
 
 This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators.
@@ -95,7 +103,7 @@ Once the CUDA C++ string is constructed, `GpuKernelGenerator` creates a C# parti
 The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively:
 
 ```csharp
-// Context: Host C# (CPU)
+// Execution Context: Host (CPU)
 public static void Launch[KernelName](
     /* Original non-Constant parameters */,
     uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
@@ -170,3 +178,21 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 - `GSharpTargetDialect`: Specifies the target transpilation dialect (e.g., `Cuda` or `Cpu`).
 - `GSharpEmitSource`: If `true`, the compiler emits the intermediate C++ source files to disk for debugging.
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
+
+## 1.6 Expression Lowering (IIFE)
+
+To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = (b,a)`, and null-coalescing `??` without incurring managed heap allocations or breaking C++ structural constraints, the transpiler employs **Immediately Invoked Function Expressions (IIFE)**.
+
+When the transpiler encounters these nodes in the Roslyn AST, it lowers them into inline C++ lambda closures:
+
+```cpp
+// C# switch expression lowered to C++ IIFE
+output = [&]() {
+    switch(val) {
+        case 1: return 3.14f;
+        default: return -1.0f;
+    }
+}();
+```
+
+Because this lambda is executed immediately and captures scope by reference (`[&]`), the CUDA compiler (`nvcc`) aggressively inlines the closure during PTX generation. This guarantees that modern C# branching logic executes with strictly zero-allocation overhead on the device.
