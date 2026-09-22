@@ -73,7 +73,7 @@ Instead of translating AST nodes directly into literal C++ function calls, the `
 
 > [!NOTE]
 > For a detailed explanation of the supported macros, their C# syntax, and the resulting CUDA C++ equivalent code, please refer to the API reference:
-> **[2.6 Transpiler Macros](../03_bcl_api/02_gpu_class.md#26-transpiler-macros)**.
+> **[Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md)**.
 
 ## 1.3 Output Buffer Contract & Auto-Allocation
 

@@ -596,7 +596,7 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_particles
 
 ## 8.4 Sad Path Compilation Errors (Diagnostics)
 
-To ensure that the constraints outlined in [../../01_language/05_limitations.md](../../01_language/05_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests/Kassyi.GSharp.Tests.Shared/Generator/GEN-05-07_GeneratorDiagnosticsTests.cs`).
+To ensure that the constraints outlined in [01_language/05_limitations.md](../01_language/05_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests/Kassyi.GSharp.Tests.Shared/Generator/GEN-05-07_GeneratorDiagnosticsTests.cs`).
 
 For example, when attempting to write invalid C# code in a kernel:
 
