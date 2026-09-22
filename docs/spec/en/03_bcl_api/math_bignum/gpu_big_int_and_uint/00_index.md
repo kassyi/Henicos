@@ -63,11 +63,11 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - [Hypergeometric](algorithms/Hypergeometric.md)
 
 ### Architecture & Floating Point
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [GpuBigFloat Overview](../gpu_big_float/00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [GpuBigFloat Overview](../gpu_big_float/00_index.md)
 - [GpuContext](../gpu_context/GpuContext.md)
 - [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Gpu BCL API Overview](../../00_index.md)
 
 ### Guides
 - [Bignum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)

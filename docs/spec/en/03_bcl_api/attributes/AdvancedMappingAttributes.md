@@ -40,8 +40,8 @@ Used exclusively in testing to bypass snapshot consistency verification for spec
 - [4. Bignum Transpiler Internals](../../02_architecture/04_bignum_internals.md)
 
 ### BCL & Mapping References
-- [Gpu BCL API Overview](../00_overview.md)
-- [BCL Mappings Reference](../05_bcl_mappings.md)
+- [Gpu BCL API Overview](../00_index.md)
+- [BCL Mappings Reference](../02_bcl_mappings.md)
 - [Gpu.InlinePtx](../gpu_class/InlinePtx.md)
 
 ### Guides

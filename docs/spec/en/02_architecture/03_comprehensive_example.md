@@ -633,7 +633,8 @@ This explicit trace proves that:
 
 ## See also
 
+- [2. Architecture Overview](00_index.md)
 - [1. AOT Transpiler Architecture](01_aot_transpiler.md)
 - [2. Runtime Kernel Loader](02_runtime_loader.md)
 - [3. The "Hello GPU" Tutorial](../00_getting_started/03_hello_gpu.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)

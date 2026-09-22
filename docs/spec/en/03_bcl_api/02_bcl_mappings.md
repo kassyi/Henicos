@@ -89,7 +89,7 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 
 ## See also
 
-- [Gpu BCL API Overview](00_overview.md)
+- [Gpu BCL API Overview](00_index.md)
 - [Standard Math Primitives Index](math_primitives/00_index.md)
 - [GPU Intrinsic Class Index](gpu_class/00_index.md)
 - [2. Lexical Structure and Syntax](../01_language/02_lexical_and_syntax.md)

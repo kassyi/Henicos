@@ -87,8 +87,8 @@ The `GpuContext` must be explicitly passed into all memory allocation calls (`Fr
 ## See also
 
 ### Related Bignum Types
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](../gpu_big_int_and_uint/00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [GpuBigInteger and GpuUIntBigInteger Overview](../gpu_big_int_and_uint/00_index.md)
 - [GpuBigInteger](../gpu_big_int_and_uint/GpuBigInteger.md)
 - [GpuUIntBigInteger](../gpu_big_int_and_uint/GpuUIntBigInteger.md)
 - [GpuBigFloat](../gpu_big_float/GpuBigFloat.md)
@@ -96,7 +96,7 @@ The `GpuContext` must be explicitly passed into all memory allocation calls (`Fr
 ### Memory & Ownership
 - [TakesOwnershipAttribute](../../attributes/TakesOwnershipAttribute.md)
 - [SharedMemory](../../memory/SharedMemory.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Gpu BCL API Overview](../../00_index.md)
 
 ### Guides
 - [Memory Safety Patterns Guide](../../../04_guides/02_memory_safety_patterns.md)

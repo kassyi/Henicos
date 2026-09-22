@@ -42,7 +42,7 @@ Core static methods for GPU hardware interaction, synchronization, and intrinsic
 - [WarpShuffleXor](WarpShuffleXor.md)
 
 ### Architecture & Execution Context
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [Execution Context Overview](../execution_context/00_index.md)
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
 

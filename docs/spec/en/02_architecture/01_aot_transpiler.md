@@ -216,7 +216,8 @@ Because this lambda is executed immediately and captures scope by reference (`[&
 
 ## See also
 
+- [2. Architecture Overview](00_index.md)
 - [2. Runtime Kernel Loader](02_runtime_loader.md)
 - [3. Comprehensive End-to-End Pipeline Example](03_comprehensive_example.md)
 - [1. Language Introduction](../01_language/01_introduction.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)

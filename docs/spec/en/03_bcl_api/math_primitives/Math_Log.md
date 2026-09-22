@@ -83,4 +83,4 @@ Maps natively to `logf()` for float, and `log()` for double in CUDA C++.
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

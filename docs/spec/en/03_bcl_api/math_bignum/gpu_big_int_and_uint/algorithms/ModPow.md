@@ -97,10 +97,10 @@ This orchestration leverages Montgomery reduction to prevent massive allocation 
 ### Integer Types & Architecture
 - [GpuBigInteger](../GpuBigInteger.md)
 - [GpuUIntBigInteger](../GpuUIntBigInteger.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](../00_overview.md)
+- [GpuBigInteger and GpuUIntBigInteger Overview](../00_index.md)
 - [GpuContext](../../gpu_context/GpuContext.md)
-- [Arbitrary-Precision Math Overview](../../00_overview.md)
-- [Gpu BCL API Overview](../../../00_overview.md)
+- [Arbitrary-Precision Math Overview](../../00_index.md)
+- [Gpu BCL API Overview](../../../00_index.md)
 
 ### Guides
 - [Stdlib Math and Lazy Evaluation Guide](../../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)

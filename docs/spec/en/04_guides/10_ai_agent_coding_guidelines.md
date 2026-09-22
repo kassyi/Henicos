@@ -59,7 +59,7 @@ float[] results = MyKernels.LaunchCompute(gridDimX: 10, blockDimX: 256);
 
 ### ❌ Hallucination: Multi-dimensional array indexing
 AI agents often try to access `array[x, y]`.
-* **Rule**: You must manually flatten the indices and include a boundary guard. See the [2D/3D Grid Mapping Guide](11_2d_grid_mapping_and_image_processing.md) for the exact pattern.
+* **Rule**: You must manually flatten the indices and include a boundary guard. See the [2D/3D Grid Mapping Guide](09_2d_grid_mapping_and_image_processing.md) for the exact pattern.
 
 ## 5. Threading and Atomics
 
@@ -69,7 +69,8 @@ AI agents often try to use `Interlocked.Add` for floats, which does not exist in
 
 ## See also
 
+- [4. Practical Guides Overview](00_index.md)
 - [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)

@@ -32,7 +32,7 @@ Attributes for marking kernels, device functions, and optimizing parameters.
 - [AdvancedMappingAttributes](AdvancedMappingAttributes.md)
 
 ### BCL & Architecture
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
 - [2. Runtime Kernel Loader](../../02_architecture/02_runtime_loader.md)
 

@@ -160,7 +160,8 @@ public static void ProcessVolume(float[] voxels, int width, int height, int dept
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [BlockDimension](../03_bcl_api/execution_context/BlockDimension.md)
 - [ThreadIndex](../03_bcl_api/execution_context/ThreadIndex.md)
 - [GridDimension](../03_bcl_api/execution_context/GridDimension.md)

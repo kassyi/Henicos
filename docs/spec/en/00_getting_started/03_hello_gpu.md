@@ -250,7 +250,7 @@ G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` metho
 - [1. Language Introduction](../01_language/01_introduction.md)
 
 ### BCL & GPU Intrinsics
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [Execution Context Overview](../03_bcl_api/execution_context/00_index.md)
 - [Gpu.GridStrideLoop](../03_bcl_api/gpu_class/GridStrideLoop.md)
 

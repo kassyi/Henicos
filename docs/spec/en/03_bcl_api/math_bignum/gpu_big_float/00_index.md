@@ -33,12 +33,12 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 - [Operators](Operators.md)
 
 ### Integer Bignum Types
-- [GpuBigInteger and GpuUIntBigInteger Overview](../gpu_big_int_and_uint/00_overview.md)
+- [GpuBigInteger and GpuUIntBigInteger Overview](../gpu_big_int_and_uint/00_index.md)
 - [GpuContext](../gpu_context/GpuContext.md)
 
 ### BCL & Architecture
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [Gpu BCL API Overview](../../00_index.md)
 - [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
 
 ### Guides

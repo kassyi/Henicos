@@ -24,7 +24,7 @@ This section contains everything you need to get up to speed with writing your f
 ### Next Steps (After Getting Started)
 
 - Learn about syntax constraints in [5. Limitations and Diagnostics](../01_language/05_limitations.md).
-- Browse all GPU intrinsics and math APIs in the [BCL API Overview](../03_bcl_api/00_overview.md).
+- Browse all GPU intrinsics and math APIs in the [BCL API Overview](../03_bcl_api/00_index.md).
 - Deep dive into the transpiler architecture in [1. AOT Transpiler](../02_architecture/01_aot_transpiler.md).
 - If you are an AI Assistant generating code for a user, refer to the [AI Agent Coding Guidelines](../04_guides/10_ai_agent_coding_guidelines.md).
 
@@ -39,4 +39,4 @@ This section contains everything you need to get up to speed with writing your f
 - [1. Language Introduction](../01_language/01_introduction.md)
 
 ### BCL & Architecture
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)

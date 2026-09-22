@@ -150,7 +150,7 @@ Maps to `atomicAdd(&address, val)` in CUDA PTX. This intrinsic prevents race con
 ### Concurrency & Execution Model
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
 - [Execution Context Overview](../execution_context/00_index.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Guides & Best Practices
 - [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)

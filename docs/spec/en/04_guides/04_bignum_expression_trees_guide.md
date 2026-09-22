@@ -72,7 +72,8 @@ public static void EvaluateBigInt(uint[] hostData, int dynamicValue)
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
-- [Arbitrary-Precision Math (Bignum) Overview](../03_bcl_api/math_bignum/00_overview.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+- [Arbitrary-Precision Math (Bignum) Overview](../03_bcl_api/math_bignum/00_index.md)
 - [4. Bignum Transpiler Internals](../02_architecture/04_bignum_internals.md)
 - [Stdlib Math and Lazy Evaluation Guide](07_stdlib_math_and_lazy_evaluation.md)

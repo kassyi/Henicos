@@ -89,4 +89,4 @@ Maps natively to `fmaxf()` for float, `fmax()` for double, and `max()` for int i
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

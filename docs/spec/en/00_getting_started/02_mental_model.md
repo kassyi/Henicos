@@ -87,7 +87,7 @@ Now that you understand the rules of the road, proceed to [3. The "Hello GPU" Tu
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
 
 ### BCL & Architecture
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [TakesOwnershipAttribute](../03_bcl_api/attributes/TakesOwnershipAttribute.md)
 
 ### Guides

@@ -48,4 +48,4 @@ Maps to `__sqrtf()` in CUDA PTX for hardware-accelerated approximate calculation
 ## See also
 
 - [Math / MathF Sqrt](Math_Sqrt.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

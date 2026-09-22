@@ -63,7 +63,7 @@ The `[GpuKernel]` method signature strictly permits only the following types:
 - [2. Runtime Kernel Loader](../../02_architecture/02_runtime_loader.md)
 
 ### BCL & GPU Intrinsics
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [Execution Context Overview](../execution_context/00_index.md)
 - [Gpu.GridStrideLoop](../gpu_class/GridStrideLoop.md)
 

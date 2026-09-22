@@ -51,7 +51,7 @@ public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int
 - [3. Comprehensive End-to-End Pipeline Example](../../02_architecture/03_comprehensive_example.md)
 
 ### BCL & Memory Architecture
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [Memory Architecture Index](../memory/00_index.md)
 
 ### Guides

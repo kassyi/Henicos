@@ -49,7 +49,7 @@ Methods marked with this attribute are mapped to `__device__` functions in CUDA 
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
 
 ### BCL & Math APIs
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [Standard Math Primitives Index](../math_primitives/00_index.md)
 
 ### Guides

@@ -185,7 +185,7 @@ Maps to PTX `shfl.up.sync` instructions. Thread synchronization across the activ
 ### Concurrency & Architecture
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
 - [Execution Context Overview](../execution_context/00_index.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Guides
 - [Warp-Level Programming Guide](../../04_guides/01_warp_programming_guide.md)

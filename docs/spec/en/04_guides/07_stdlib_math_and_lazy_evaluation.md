@@ -196,7 +196,8 @@ When working with `Stdlib.Math`, always remember:
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
-- [Arbitrary-Precision Math Overview](../03_bcl_api/math_bignum/00_overview.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+- [Arbitrary-Precision Math Overview](../03_bcl_api/math_bignum/00_index.md)
 - [Bignum Expression Trees Guide](04_bignum_expression_trees_guide.md)
 - [Advanced Custom Math Kernels Guide](08_advanced_custom_math_kernels.md)

@@ -146,8 +146,9 @@ public static void ProcessPointer(int* ptr)
 
 ## See also
 
+- [1. Language Specification Overview](00_index.md)
 - [1. Language Introduction](01_introduction.md)
 - [3. Type System](03_type_system.md)
 - [4. Execution and Concurrency Model](04_execution_model.md)
 - [5. Limitations and Diagnostics](05_limitations.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)

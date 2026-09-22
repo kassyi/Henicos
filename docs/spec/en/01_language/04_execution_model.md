@@ -75,9 +75,10 @@ Standard CUDA lacks a built-in mechanism to synchronize all threads across an en
 
 ## See also
 
+- [1. Language Specification Overview](00_index.md)
 - [1. Language Introduction](01_introduction.md)
 - [3. Type System](03_type_system.md)
 - [5. Limitations and Diagnostics](05_limitations.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [Execution Context Overview](../03_bcl_api/execution_context/00_index.md)
 - [Warp-Level Programming Guide](../04_guides/01_warp_programming_guide.md)

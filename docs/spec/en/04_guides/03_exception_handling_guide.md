@@ -50,11 +50,12 @@ For example, attempting to use standard LINQ extension methods (which heavily re
 **Error RS0030: The API 'System.Linq.Enumerable' is banned in this project.**
 
 > [!TIP]
-> For the comprehensive reference table of Transpiler Diagnostic Codes (GSHxxxx), see the [Diagnostics Reference Catalog](../03_bcl_api/04_diagnostics_and_exceptions.md).
+> For the comprehensive reference table of Transpiler Diagnostic Codes (GSHxxxx), see the [Diagnostics Reference Catalog](../03_bcl_api/01_diagnostics_and_exceptions.md).
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
-- [Diagnostics and Exceptions Reference](../03_bcl_api/04_diagnostics_and_exceptions.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+- [Diagnostics and Exceptions Reference](../03_bcl_api/01_diagnostics_and_exceptions.md)
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
 - [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)

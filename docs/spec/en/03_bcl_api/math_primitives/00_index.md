@@ -36,7 +36,7 @@ Standard math functions, fast math approximations, and hardware bit operations.
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [Math.Sin](Math_Sin.md)
 - [Math.Cos](Math_Cos.md)
 - [Math.Log](Math_Log.md)

@@ -53,8 +53,8 @@ This method allows utilizing low-level hardware features not explicitly covered 
 
 ### Low-Level & Intrinsic APIs
 - [AdvancedMappingAttributes](../attributes/AdvancedMappingAttributes.md)
-- [BCL Mappings Reference](../05_bcl_mappings.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [BCL Mappings Reference](../02_bcl_mappings.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Language & Transpiler Model
 - [2. The Mental Model & Safety Net](../../00_getting_started/02_mental_model.md)

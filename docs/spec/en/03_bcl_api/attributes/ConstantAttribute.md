@@ -47,7 +47,7 @@ The parameter is removed from the generated C++ function signature entirely. Ins
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
 
 ### BCL & Memory Architecture
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [Gpu.Constant<T>](../gpu_class/Constant.md)
 - [Memory Architecture Index](../memory/00_index.md)
 

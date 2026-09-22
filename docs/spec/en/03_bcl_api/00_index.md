@@ -57,8 +57,8 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 * **[Built-in Vector Types](math_primitives/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
 
 ### 6. Standard BCL and Diagnostics
-* **[Standard BCL Mappings](05_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
-* **[Diagnostics and Exceptions](04_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
+* **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
+* **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
 * **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0029`, `RS0030`).
 
 ---
@@ -71,19 +71,19 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 > **Host-Side Only API**
 > Unlike standard C# math primitives, BigNum operations orchestrate multiple GPU kernels and allocate device memory. Therefore, these APIs are strictly **Host-Only** and *cannot* be called from within a `[GpuKernel]`.
 
-* **[BigNum Overview](math_bignum/00_overview.md)**
-* **[GPU Big Integer (Signed & Unsigned)](math_bignum/gpu_big_int_and_uint/00_overview.md)**
-* **[GPU Big Float](math_bignum/gpu_big_float/00_overview.md)**
+* **[BigNum Overview](math_bignum/00_index.md)**
+* **[GPU Big Integer (Signed & Unsigned)](math_bignum/gpu_big_int_and_uint/00_index.md)**
+* **[GPU Big Float](math_bignum/gpu_big_float/00_index.md)**
 * **[GPU Execution Contexts](math_bignum/gpu_context/GpuContext.md)**
 
 ## See also
 
 - [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
-- [Diagnostics and Exceptions Reference](04_diagnostics_and_exceptions.md)
-- [BCL Mappings Reference](05_bcl_mappings.md)
+- [Diagnostics and Exceptions Reference](01_diagnostics_and_exceptions.md)
+- [BCL Mappings Reference](02_bcl_mappings.md)
 - [Attributes Index](attributes/00_index.md)
 - [Execution Context Index](execution_context/00_index.md)
 - [GPU Intrinsic Class Index](gpu_class/00_index.md)
 - [Standard Math Primitives Index](math_primitives/00_index.md)
-- [Arbitrary-Precision Math Overview](math_bignum/00_overview.md)
+- [Arbitrary-Precision Math Overview](math_bignum/00_index.md)
 - [Memory Architecture Index](memory/00_index.md)

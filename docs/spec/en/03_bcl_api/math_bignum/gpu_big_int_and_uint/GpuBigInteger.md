@@ -102,7 +102,7 @@ if (signedGpuNum.IsNegative)
 
 ## Remarks
 
-GSharp uses a **Sign-Magnitude** representation. To avoid Warp Divergence on the GPU, all GPU kernels operate strictly on the unsigned `Value`. For detailed architectural context on why this design was chosen over Two's Complement, see [The Architecture: Signed vs. Unsigned Separation](../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
+GSharp uses a **Sign-Magnitude** representation. To avoid Warp Divergence on the GPU, all GPU kernels operate strictly on the unsigned `Value`. For detailed architectural context on why this design was chosen over Two's Complement, see [The Architecture: Signed vs. Unsigned Separation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
 
 ## See also
 
@@ -110,7 +110,7 @@ GSharp uses a **Sign-Magnitude** representation. To avoid Warp Divergence on the
 - [GpuUIntBigInteger](GpuUIntBigInteger.md)
 - [Operators](Operators.md)
 - [IO_GpuRadixConverter](IO_GpuRadixConverter.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](00_overview.md)
+- [GpuBigInteger and GpuUIntBigInteger Overview](00_index.md)
 
 ### Algorithms
 - [DivRem](algorithms/DivRem.md)
@@ -119,8 +119,8 @@ GSharp uses a **Sign-Magnitude** representation. To avoid Warp Divergence on the
 
 ### Architecture & Context
 - [GpuContext](../gpu_context/GpuContext.md)
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [Gpu BCL API Overview](../../00_index.md)
 - [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
 
 ### Guides

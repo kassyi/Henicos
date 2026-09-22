@@ -54,7 +54,7 @@ public class ComputePipeline : IDisposable
 - [2. Runtime Kernel Loader](../../02_architecture/02_runtime_loader.md)
 
 ### BCL & Resource Management
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [GpuContext](../math_bignum/gpu_context/GpuContext.md)
 
 ### Guides

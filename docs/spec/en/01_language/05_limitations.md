@@ -98,9 +98,10 @@ For individual guides, see the [Diagnostics Reference Catalog](../03_bcl_api/dia
 
 ## See also
 
+- [1. Language Specification Overview](00_index.md)
 - [1. Language Introduction](01_introduction.md)
 - [4. Execution and Concurrency Model](04_execution_model.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
-- [Diagnostics and Exceptions Reference](../03_bcl_api/04_diagnostics_and_exceptions.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+- [Diagnostics and Exceptions Reference](../03_bcl_api/01_diagnostics_and_exceptions.md)
 - [Diagnostics Reference Index](../03_bcl_api/diagnostics/00_index.md)
 - [Antipatterns and Best Practices Guide](../04_guides/06_antipatterns_and_best_practices.md)

@@ -64,7 +64,7 @@ This macro guarantees zero allocations at runtime. The transpiler directly subst
 ### Language & Transpiler Architecture
 - [3. Type System (Constants)](../../01_language/03_type_system.md#26-constants-const)
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Performance Guides
 - [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)

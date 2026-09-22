@@ -16,6 +16,6 @@ Types for allocating and managing device memory, such as Shared Memory.
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [SharedMemory](SharedMemory.md)
 - [Memory Safety Patterns Guide](../../04_guides/02_memory_safety_patterns.md)

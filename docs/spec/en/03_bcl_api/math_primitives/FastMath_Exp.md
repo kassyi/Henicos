@@ -48,4 +48,4 @@ Maps natively to `expf()` or `__expf()` for float in CUDA C++.
 ## See also
 
 - [Math / MathF Exp](Math_Exp.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

@@ -25,10 +25,10 @@ This module is split into several logical sub-components:
 1. **[GpuContext](gpu_context/GpuContext.md)**
    The core memory pool and execution state manager required for all lazy-evaluated expressions and multi-precision operations.
    
-2. **[Arbitrary-Precision Integers (GpuBigInt)](gpu_big_int_and_uint/00_overview.md)**
+2. **[Arbitrary-Precision Integers (GpuBigInt)](gpu_big_int_and_uint/00_index.md)**
    Provides `GpuUIntBigInteger` (unsigned) and `GpuBigInteger` (signed) types capable of handling numbers with millions of bits.
 
-3. **[Arbitrary-Precision Floats (GpuBigFloat)](gpu_big_float/00_overview.md)**
+3. **[Arbitrary-Precision Floats (GpuBigFloat)](gpu_big_float/00_index.md)**
    Provides `GpuBigFloat` for floating-point calculations requiring extreme precision.
 
 ## Shared Memory and Allocations
@@ -38,18 +38,18 @@ Because GSharp enforces a strict Zero-Allocation rule inside GPU kernels, the `S
 ## See also
 
 ### Data Types
-- [GpuBigInteger and GpuUIntBigInteger Overview](gpu_big_int_and_uint/00_overview.md)
-- [GpuBigFloat Overview](gpu_big_float/00_overview.md)
+- [GpuBigInteger and GpuUIntBigInteger Overview](gpu_big_int_and_uint/00_index.md)
+- [GpuBigFloat Overview](gpu_big_float/00_index.md)
 - [GpuContext](gpu_context/GpuContext.md)
 
 ### Mathematical Algorithms
-- [GpuBigInteger Algorithms (GCD, NTT, Matrix2x2, etc.)](gpu_big_int_and_uint/00_overview.md#algorithms)
+- [GpuBigInteger Algorithms (GCD, NTT, Matrix2x2, etc.)](gpu_big_int_and_uint/00_index.md#algorithms)
 - [Standard Math Primitives Index](../math_primitives/00_index.md)
 
 ### Transpiler Internals & Architecture
 - [4. Bignum Transpiler Internals](../../02_architecture/04_bignum_internals.md)
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Guides
 - [Bignum Expression Trees Guide](../../04_guides/04_bignum_expression_trees_guide.md)

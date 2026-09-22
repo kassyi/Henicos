@@ -89,4 +89,4 @@ Maps natively to `fminf()` for float, `fmin()` for double, and `min()` for int i
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

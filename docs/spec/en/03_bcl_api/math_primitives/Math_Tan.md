@@ -83,4 +83,4 @@ Maps natively to `tanf()` for float, and `tan()` for double in CUDA C++.
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

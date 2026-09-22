@@ -86,12 +86,12 @@ Console.WriteLine($"IsNegative: {floatVal.IsNegative}");
 
 Unlike hardware IEEE 754 floats, `GpuBigFloat` separates the mantissa and exponent entirely. The GPU kernels only perform unsigned integer math on the `Mantissa` buffer, while the Host CPU orchestrates the alignment of the `Exponent` during addition/subtraction.
 
-For more information on the separation of Signed and Unsigned components to prevent Warp Divergence, see [The Architecture: Signed vs. Unsigned Separation](../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
+For more information on the separation of Signed and Unsigned components to prevent Warp Divergence, see [The Architecture: Signed vs. Unsigned Separation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
 
 ## See also
 
 ### BigFloat APIs
-- [GpuBigFloat Overview](00_overview.md)
+- [GpuBigFloat Overview](00_index.md)
 - [Operators](Operators.md)
 
 ### Related Bignum Types
@@ -100,8 +100,8 @@ For more information on the separation of Signed and Unsigned components to prev
 - [GpuContext](../gpu_context/GpuContext.md)
 
 ### BCL & Architecture
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [Gpu BCL API Overview](../../00_index.md)
 - [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
 
 ### Guides

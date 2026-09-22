@@ -64,9 +64,10 @@ A defining strength of G# is its **Two-Tier Transpiler Architecture**. Rather th
 
 ## See also
 
+- [1. Language Specification Overview](00_index.md)
 - [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
 - [2. Lexical Structure and Syntax](02_lexical_and_syntax.md)
 - [3. Type System](03_type_system.md)
 - [4. Execution and Concurrency Model](04_execution_model.md)
 - [5. Limitations and Diagnostics](05_limitations.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)

@@ -69,7 +69,7 @@ Maps to `#pragma unroll` or `#pragma unroll N`. Must be placed immediately befor
 ### Language & Transpiler Architecture
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Performance Guides
 - [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)

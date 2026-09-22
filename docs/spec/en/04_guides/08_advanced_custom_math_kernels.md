@@ -185,7 +185,8 @@ By properly isolating the **Host-Side Sign Evaluation** from the **GPU-Side Unsi
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [Standard Math Primitives Index](../03_bcl_api/math_primitives/00_index.md)
 - [Stdlib Math and Lazy Evaluation Guide](07_stdlib_math_and_lazy_evaluation.md)
 - [Precision and Performance Guide](05_precision_and_performance_guide.md)

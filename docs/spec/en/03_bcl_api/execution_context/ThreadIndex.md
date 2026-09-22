@@ -74,4 +74,4 @@ These properties are strictly designed for execution within a `[GpuKernel]` or `
 ## See also
 
 - [Execution Context](./00_index.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)

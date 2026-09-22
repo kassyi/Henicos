@@ -112,7 +112,7 @@ BigInteger result = gpuBuffer.ToBigInteger();
 
 ## Remarks
 
-Unlike `GpuBigInteger`, `GpuUIntBigInteger` contains no sign information. It represents pure magnitude. For more architectural context, see [The Architecture: Signed vs. Unsigned Separation](../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
+Unlike `GpuBigInteger`, `GpuUIntBigInteger` contains no sign information. It represents pure magnitude. For more architectural context, see [The Architecture: Signed vs. Unsigned Separation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
 
 ## See also
 
@@ -120,7 +120,7 @@ Unlike `GpuBigInteger`, `GpuUIntBigInteger` contains no sign information. It rep
 - [GpuBigInteger](GpuBigInteger.md)
 - [Operators](Operators.md)
 - [IO_GpuRadixConverter](IO_GpuRadixConverter.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](00_overview.md)
+- [GpuBigInteger and GpuUIntBigInteger Overview](00_index.md)
 
 ### Algorithms
 - [DivRem](algorithms/DivRem.md)
@@ -130,8 +130,8 @@ Unlike `GpuBigInteger`, `GpuUIntBigInteger` contains no sign information. It rep
 
 ### Architecture & Context
 - [GpuContext](../gpu_context/GpuContext.md)
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [Gpu BCL API Overview](../../00_index.md)
 - [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
 
 ### Guides

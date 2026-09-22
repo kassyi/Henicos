@@ -41,4 +41,4 @@ Once your environment is set up, proceed to [2. The Mental Model & Safety Net](0
 
 ### Architecture & BCL
 - [1. AOT Transpiler Architecture](../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)

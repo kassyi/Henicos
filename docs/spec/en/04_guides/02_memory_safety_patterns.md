@@ -349,7 +349,8 @@ This achieves a memory management architecture that brings C#'s expressive ergon
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [TakesOwnershipAttribute](../03_bcl_api/attributes/TakesOwnershipAttribute.md)
 - [2. Runtime Kernel Loader](../02_architecture/02_runtime_loader.md)
 - [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)

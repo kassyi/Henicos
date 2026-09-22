@@ -12,14 +12,14 @@ Structs and properties for determining grid and block dimensions and indices.
 
 ## In This Section
 
-- [GridDim](GridDim.md): Gets the dimensions of the grid.
-- [BlockDim](BlockDim.md): Gets the dimensions of the thread block.
+- [GridDimension](GridDimension.md): Gets the dimensions of the grid.
+- [BlockDimension](BlockDimension.md): Gets the dimensions of the thread block.
 - [BlockIndex](BlockIndex.md): Gets the block index within the grid.
 - [ThreadIndex](ThreadIndex.md): Gets the thread index within the block.
 
 ## See also
 
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 - [ThreadIndex](ThreadIndex.md)
 - [BlockIndex](BlockIndex.md)
 - [BlockDimension](BlockDimension.md)

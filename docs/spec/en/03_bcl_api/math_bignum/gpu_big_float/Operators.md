@@ -132,15 +132,15 @@ Floating-point addition and subtraction require exponent alignment. The AST orch
 
 ### BigFloat APIs
 - [GpuBigFloat](GpuBigFloat.md)
-- [GpuBigFloat Overview](00_overview.md)
+- [GpuBigFloat Overview](00_index.md)
 
 ### Related Operators & Types
 - [Integer Operators](../gpu_big_int_and_uint/Operators.md)
 - [GpuBigInteger](../gpu_big_int_and_uint/GpuBigInteger.md)
 
 ### BCL & Architecture
-- [Arbitrary-Precision Math Overview](../00_overview.md)
-- [Gpu BCL API Overview](../../00_overview.md)
+- [Arbitrary-Precision Math Overview](../00_index.md)
+- [Gpu BCL API Overview](../../00_index.md)
 - [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
 
 ### Guides

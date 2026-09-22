@@ -80,7 +80,7 @@ for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x *
 ### Language & Architecture
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
 - [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_overview.md)
+- [Gpu BCL API Overview](../00_index.md)
 
 ### Tutorials & Guides
 - [3. The "Hello GPU" Tutorial](../../00_getting_started/03_hello_gpu.md)

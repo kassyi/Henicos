@@ -356,7 +356,8 @@ for (int i = 0; i < loggedCount; i++)
 
 ## See also
 
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [4. Practical Guides Overview](00_index.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
 - [Memory Safety Patterns Guide](02_memory_safety_patterns.md)
 - [Precision and Performance Guide](05_precision_and_performance_guide.md)

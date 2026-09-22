@@ -110,7 +110,8 @@ Console.WriteLine($"Kernel executed in: {timer.ElapsedMilliseconds} ms");
 
 ## See also
 
+- [2. Architecture Overview](00_index.md)
 - [1. AOT Transpiler Architecture](01_aot_transpiler.md)
 - [3. Comprehensive End-to-End Pipeline Example](03_comprehensive_example.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_overview.md)
+- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 - [Memory Safety Patterns Guide](../04_guides/02_memory_safety_patterns.md)
