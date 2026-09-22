@@ -1,3 +1,11 @@
+---
+title: "1. Foundation and Domain"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "G# bridges the Microsoft Roslyn compiler platform with the NVIDIA CUDA compilation toolchain (NVCC) to enable high-throughput GPU computing directl..."
+---
+
 # 1. Foundation and Domain
 
 ---

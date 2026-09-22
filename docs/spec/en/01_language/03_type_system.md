@@ -1,3 +1,11 @@
+---
+title: "2. Type System and Mapping"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document specifies the strict mapping rules between C# primitive types and CUDA C++ types, as well as the pointer and memory semantics enforce..."
+---
+
 # 2. Type System and Mapping
 
 This document specifies the strict mapping rules between C# primitive types and CUDA C++ types, as well as the pointer and memory semantics enforced by the G# framework.
@@ -45,7 +53,7 @@ While heap-allocated objects (`class`) remain strictly forbidden on the GPU, sta
 The AOT transpiler supports classic initialization (`new MyStruct()`), C# 9.0 **Target-typed `new` expressions** (`new()`), and C# 10 **`record struct` / Primary Constructors** (`new Point(0, 0)`).
 
 ```csharp
-// Context: G# Kernel (GPU)
+// Execution Context: G# Kernel (GPU)
 // All expressions are perfectly valid inside a [GpuKernel]
 Vector8 vec1 = new Vector8 { X = 1, Y = 2 };
 Vector8 vec2 = new() { X = 1, Y = 2 };
@@ -115,7 +123,7 @@ Unsafe pointer arithmetic is fully permitted and transpiles 1:1 to C++ (e.g., `i
 G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
 
 ```csharp
-// Context: G# Kernel (GPU)
+// Execution Context: G# Kernel (GPU)
 var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
 var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
 ```

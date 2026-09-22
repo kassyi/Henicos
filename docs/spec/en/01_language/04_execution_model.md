@@ -1,3 +1,11 @@
+---
+title: "4. Execution and Concurrency Model"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "G# is designed strictly for Massively Parallel Processor (MPP) architectures, mapping C# constructs directly to NVIDIA's CUDA execution model. Unde..."
+---
+
 # 4. Execution and Concurrency Model
 
 G# is designed strictly for Massively Parallel Processor (MPP) architectures, mapping C# constructs directly to NVIDIA's CUDA execution model. Understanding this model is critical for writing correct and performant G# code.

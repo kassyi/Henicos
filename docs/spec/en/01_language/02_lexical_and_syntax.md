@@ -1,3 +1,11 @@
+---
+title: "2. Lexical and Syntactic Grammar"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document defines the strict subset of C# lexical and syntactic rules supported by the G# transpiler. Because G# translates C# Abstract Syntax ..."
+---
+
 # 2. Lexical and Syntactic Grammar
 
 This document defines the strict subset of C# lexical and syntactic rules supported by the G# transpiler. Because G# translates C# Abstract Syntax Trees (AST) directly into CUDA C++ during the AOT phase, it supports a very specific footprint of C# constructs.
@@ -13,7 +21,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | `while` loop | Yes | `while` loop | Supported. |
 | `do...while` loop | Yes | `do...while` loop | Supported. |
 | `switch` statement | Yes | `switch` statement | Pattern matching is **supported** (including constant and relational patterns). |
-| `switch` expression | Yes | Lambda (IIFE) | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
+| `switch` expression | Yes | Zero-allocation branch | Supported for pattern matching and value switching. Note: C# does not support `ref switch` expressions (`ref var r = x switch { ... }`), so use `if/else` or `ref ? :` for conditional `ref` assignment. |
 | `break` / `continue` | Yes | `break` / `continue` | Supported within loops and switches. |
 | `return` | Yes | `return` | Kernels (`[GpuKernel]`) can now directly return primitive types and value structs. When invoked from the host CPU, the runtime automatically handles device output buffer allocation and host-bound memory copying. |
 | Expression-bodied (`=>`) | Yes | Function body | Supported for both `void` and value-returning methods (automatically injects `return`). |
@@ -31,7 +39,7 @@ Variables in G# are strictly translated to native C++ variables.
 * **`var` keyword:** Fully supported. The transpiler infers the equivalent C++ type (e.g., `auto`).
 * **Variable Shadowing:** Supported, following standard C# scope rules.
 * **Inline `out var`:** Supported. Generates the equivalent variable declaration and reference pass in C++.
-* **Tuple Swaps / Assignments:** Supported for simple tuple swaps `(a, b) = (b, a)` via generated C++ IIFE (Immediately Invoked Lambda Expressions). Full C# tuple deconstruction into managed types remains unsupported.
+* **Tuple Swaps / Assignments:** Supported for simple tuple swaps `(a, b) = (b, a)` (evaluated without destructive assignment). Full C# tuple deconstruction into managed types remains unsupported.
 * **Target-Typed `new()`:** Fully supported. The transpiler infers the correct structural type instantiation.
 * **Heap Allocation (`new Class()`):** Prohibited. All local variables must be primitive types or value types (`struct`), which are allocated in GPU registers or local memory.
 * **Arrays (`T[]`) and Collections:** Explicit local instantiation on the managed heap (`new int[10]`) is prohibited. Implicit stack arrays (`stackalloc[]`) and C# 12 collection expressions (`[]`) are fully supported and optimized into C++ local stack arrays. However, **zero-length arrays** (e.g., `stackalloc int[0]`) are explicitly unsupported due to C++ compilation constraints.
@@ -47,8 +55,8 @@ Standard C# operators map directly to their CUDA C++ counterparts with identical
 * **Bitwise:** `&`, `|`, `^`, `~`, `<<`, `>>`
 * **Logical:** `&&`, `||`, `!` (Short-circuit evaluation is fully supported)
 * **Relational:** `==`, `!=`, `<`, `>`, `<=`, `>=`
-* **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`. Tuple Swaps `(a, b) = (b, a)` are safely lowered into Immediately Invoked Function Expressions (IIFE) using temporary variables to prevent destructive assignments.
-* **Ternary Conditional & Null-Coalescing:** `? :`, `??`, `??=`. Null-coalescing operators are fully supported and lowered into C++ IIFE closures (e.g., `[&]() { auto tmp = ...; return tmp.HasValue ? tmp.Value : ...; }()`).
+* **Assignment:** `=`, `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`. Tuple Swaps `(a, b) = (b, a)` are safely evaluated using temporary variables to prevent destructive assignments.
+* **Ternary Conditional & Null-Coalescing:** `? :`, `??`, `??=`. Null-coalescing operators are fully supported with zero-allocation branching.
 * **Pointer Operators:** `*` (dereference), `&` (address-of), `->` (member access), as well as postfix increment/decrement (`ptr++`, `ptr--`). *Note: The `unsafe` keyword must be used in the C# method signature.*
 * **`sizeof(T)`:** Supported. Translated directly to `sizeof(T)` in C++.
 
@@ -63,7 +71,7 @@ To help you write highly expressive and allocation-free GPU code, G# uniquely su
 
 ### 2.5.1 Switch Expressions
 
-Switch expressions provide a concise, expression-based way to implement pattern matching. G# fully supports switch expressions and automatically translates them into Immediately Invoked Function Expressions (IIFE) in C++ to guarantee zero-allocation and perfect execution on the GPU.
+Switch expressions provide a concise, expression-based way to implement pattern matching. G# fully supports switch expressions and guarantees zero-allocation and optimal execution on the GPU.
 
 **Example: Value and Relational Pattern Matching**
 ```csharp
@@ -86,7 +94,7 @@ public static void CategorizeValuesKernel(int[] input, float[] output)
 
 > [!NOTE]
 > **Performance Characteristics**
-> The G# transpiler lowers switch expressions into an inline C++ lambda expression (`[&]() { ... }()`). The CUDA compiler (`nvcc`) aggressively inlines this during the PTX generation phase, resulting in branching logic with absolutely zero invocation overhead.
+> The G# transpiler lowers switch expressions into strict zero-allocation structures that the CUDA compiler (`nvcc`) aggressively inlines during the PTX generation phase, resulting in branching logic with absolutely zero invocation overhead.
 
 ### 2.5.2 Local Functions and Lambdas
 
