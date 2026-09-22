@@ -276,3 +276,4 @@ Now that you know how to write and launch a basic kernel, you can explore the ad
 * Learn about the syntax constraints in [01_language/05_limitations.md](01_language/05_limitations.md).
 * Browse all GPU intrinsics and math APIs in the [BCL API Overview](03_bcl_api/00_overview.md).
 * Deep dive into the transpiler architecture in [02_architecture/01_aot_transpiler.md](02_architecture/01_aot_transpiler.md).
+* If you are an AI Assistant generating code for a user, refer to the [AI Agent Coding Guidelines](04_guides/10_ai_agent_coding_guidelines.md).
