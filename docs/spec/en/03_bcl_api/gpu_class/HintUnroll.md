@@ -1,12 +1,12 @@
 ---
-title: "Gpu.HintUnroll Method (G#)"
+title: "Gpu.Hint.Unroll Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Hints the compiler to unroll the immediately following loop."
 ---
 
-## Gpu.HintUnroll Method
+## Gpu.Hint.Unroll Method
 
 ## Definition
 
@@ -19,45 +19,37 @@ Hints the compiler to unroll the immediately following loop.
 
 | Name | Description |
 | --- | --- |
-| [HintUnroll()](#hintunroll) | Hints the compiler to unroll the immediately following loop completely. |
-| [HintUnroll(int)](#hintunroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor. |
+| [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (or completely if 0). |
 
-## HintUnroll()
-
-Hints the compiler to unroll the immediately following loop completely.
-
-```csharp
-public static void HintUnroll();
-```
-
-## HintUnroll(int)
+## Unroll(int)
 
 Hints the compiler to unroll the immediately following loop by a specific factor.
 
 ```csharp
-public static void HintUnroll(int factor);
+[GpuKernel]
+public static void Unroll(int factor = 0);
 ```
 
 #### Parameters
 
-`factor`
-`int`
-The unroll factor.
+`factor` <i>int</i><br>
+The unroll factor. If `0`, the loop is completely unrolled.
 
 ## Examples
 
 ### Loop Unrolling
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Completely unroll the loop (assuming fixed bounds)
-Gpu.HintUnroll();
+Gpu.Hint.Unroll();
 for (int i = 0; i < 4; i++)
 {
     // ...
 }
 
 // Unroll by a factor of 2
-Gpu.HintUnroll(2);
+Gpu.Hint.Unroll(2);
 for (int i = 0; i < count; i++)
 {
     // ...

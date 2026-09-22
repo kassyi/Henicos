@@ -26,17 +26,16 @@ Executes a standard CUDA grid-stride loop.
 Executes a standard CUDA grid-stride loop.
 
 ```csharp
+[GpuKernel]
 public static void GridStrideLoop(int count, Action<int> body);
 ```
 
 #### Parameters
 
-`count`
-`int`
+`count` <i>int</i><br>
 The total number of elements to process.
 
-`body`
-`Action<int>`
+`body` <i>Action&lt;int&gt;</i><br>
 A delegate or lambda expressing the loop body. The integer parameter represents the global index.
 
 ## Examples
@@ -44,6 +43,7 @@ A delegate or lambda expressing the loop body. The integer parameter represents 
 ### Grid Stride Loop
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static unsafe void VectorAdd(int count, float* a, float* b, float* c)
 {
@@ -58,6 +58,7 @@ public static unsafe void VectorAdd(int count, float* a, float* b, float* c)
 
 Expands into a flat loop without any delegate allocation:
 ```cpp
+// Execution Context: Generated C++ (GPU)
 for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x * gridDim.x)
 {
     // body...

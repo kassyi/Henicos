@@ -26,13 +26,13 @@ Injects raw PTX assembly directly into the generated kernel.
 Injects raw PTX assembly directly into the generated kernel.
 
 ```csharp
+[GpuKernel]
 public static void InlinePtx(string ptxCode);
 ```
 
 #### Parameters
 
-`ptxCode`
-`string`
+`ptxCode` <i>string</i><br>
 The PTX instruction string to embed.
 
 ## Examples
@@ -40,6 +40,7 @@ The PTX instruction string to embed.
 ### Custom PTX Instructions
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Wait for a memory operation using raw PTX
 Gpu.InlinePtx("membar.gl;");
 ```

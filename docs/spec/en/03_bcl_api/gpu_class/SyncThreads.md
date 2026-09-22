@@ -26,6 +26,7 @@ Synchronizes all threads in a thread block.
 Synchronizes all threads in a thread block.
 
 ```csharp
+[GpuKernel]
 public static void SyncThreads();
 ```
 
@@ -34,6 +35,7 @@ public static void SyncThreads();
 ### Shared Memory Synchronization
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static unsafe void SharedMemKernel(float* input, float* output)
 {

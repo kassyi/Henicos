@@ -26,13 +26,13 @@ Wraps the provided body in a thread execution guard.
 Wraps the provided body in a thread execution guard.
 
 ```csharp
+[GpuKernel]
 public static void SingleThread(Action body);
 ```
 
 #### Parameters
 
-`body`
-`Action`
+`body` <i>Action</i><br>
 A delegate or lambda expressing the body to execute once.
 
 ## Examples
@@ -40,6 +40,7 @@ A delegate or lambda expressing the body to execute once.
 ### Execution Guard
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static unsafe void InitializeMemory()
 {
@@ -55,6 +56,7 @@ public static unsafe void InitializeMemory()
 
 Expands into an execution guard:
 ```cpp
+// Execution Context: Generated C++ (GPU)
 if (threadIdx.x == 0 && blockIdx.x == 0) 
 { 
     // body...

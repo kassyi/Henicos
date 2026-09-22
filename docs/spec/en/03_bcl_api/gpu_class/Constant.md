@@ -26,18 +26,18 @@ Directly injects a string literal as a raw C++ expression.
 Directly injects a string literal as a raw C++ expression.
 
 ```csharp
-public static T Constant<T>(string expression);
+[GpuKernel]
+public static int Constant(string expression);
 ```
 
 #### Parameters
 
-`expression`
-`string`
+`expression` <i>string</i><br>
 The string literal containing the C++ macro or preprocessor `#define` name.
 
 #### Returns
 
-`int`
+<i>int</i><br>
 Returns the specified type `int` (at compile-time, this forces the C# type checker to accept it, while the transpiler blindly pastes the string).
 
 ## Examples
@@ -45,8 +45,9 @@ Returns the specified type `int` (at compile-time, this forces the C# type check
 ### Preprocessor Inject
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Injects the C++ macro MAX_BUFFER_SIZE as an integer constant
-int maxBufferSize = Gpu.Constant<int>("MAX_BUFFER_SIZE");
+int maxBufferSize = Gpu.Constant("MAX_BUFFER_SIZE");
 ```
 
 ## Remarks
