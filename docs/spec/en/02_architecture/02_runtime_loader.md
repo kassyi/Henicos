@@ -39,13 +39,13 @@ The `CpuKernelLoader` serves as the runtime equivalent for CPU execution:
 
 Upon successful module loading, the runtime yields a `CUfunction` handle (or a CPU Delegate). The generated source produces two distinct launcher stubs to handle different marshaling requirements:
 
-### 2.3.1 Host Launcher (`Launch_KernelName`)
+### 2.3.1 Host Launcher (`LaunchKernelName`)
 This stub accepts standard C# managed arrays (e.g., `T[]`, custom structs).
 1. **Deep Struct Marshaling**: If a parameter is a custom struct containing nested arrays, it invokes `Marshal_T` to perform deep traversals. It creates temporary shadow structures (`__Native_T`), allocates device memory, and copies host data to the device (unless optimized out by `[Out]`).
 2. **Grid and Block Dimensions**: The host logic determines the `gridDim` and `blockDim` parameters based on the workload size.
 3. **Dispatch**: Constructs the `IntPtr` argument array and invokes `cuLaunchKernel` (or the CPU delegate). After execution, it invokes `Unmarshal_T` to copy results back to the managed arrays and cleans up handles.
 
-### 2.3.2 Device Launcher (`Launch_KernelName_Device`)
+### 2.3.2 Device Launcher (`LaunchKernelName_Device`)
 This stub accepts only raw pointers (`T*`) or device abstractions (e.g., `GpuBuffer<T>`).
 1. **Zero-Allocation**: It completely bypasses all managed array (`T[]`) pinning, deep struct marshaling, and memory allocation logic. **Passing structs with managed arrays to a `_Device` launcher is explicitly prohibited and will cause a compilation error.**
 2. **Grid and Block Dimensions**: Determines `gridDim` and `blockDim`.
@@ -92,7 +92,7 @@ using var timer = new GpuTimer();
 
 timer.Start();
 // Launch device kernel asynchronously
-Launch_KernelName(args);
+LaunchKernelName(args);
 timer.Stop();
 
 Console.WriteLine($"Kernel executed in: {timer.ElapsedMilliseconds} ms");

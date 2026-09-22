@@ -61,10 +61,20 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | **GSH0013** | Warning | **Excessive static shared memory.** A `SharedMemory<T>` allocation exceeds 32KB. This can severely reduce SM warp occupancy. |
 | **GSH0014** | Warning | **Large struct passed by value.** A struct parameter exceeds 32 bytes. Pass it via `ref` or as an array to save limited constant memory space. |
 | **GSH0015** | Warning | **Auto-allocate return in loop.** You called a kernel that returns an array from inside a `for` loop on the host. This allocates a new unmanaged buffer every iteration. |
-| **GSH0016** | Error | **CudaCpp Dialect Not Active.** Triggered when a CUDA-specific hardware intrinsic is invoked while the `CpuFallback` dialect is active. |
-| **GSH021** | Error | **Missing IDisposable implementation.** A class holds a disposable GPU resource (e.g., `GpuBuffer<T>`) but does not implement `IDisposable`. |
-| **GSH022** | Error | **Undisposed GPU Resource.** The `Dispose()` method does not explicitly invoke `.Dispose()` on all owned GPU resources. |
-| **GSW010** | Warning | **Manual unmanaged allocation detected.** You invoked `Gpu.Unsafe.Malloc()`. Ensure corresponding `Free()` is called to prevent VRAM leaks. |
+| **GSH0016** | Error | **Unroll factor must be a non-negative compile-time constant.** The argument `factor` of `Gpu.Hint.Unroll` must be a compile-time non-negative integer. |
+| **GSH0017** | Error | **Unroll hint must precede a loop.** `Gpu.Hint.Unroll` must immediately precede a `for`, `while`, or `do-while` loop. |
+| **GSH0018** | Error | **GPU intrinsic called from host.** Triggered when a GPU-specific intrinsic is invoked from a CPU host method. |
+| **GSH0019** | Error | **Manual GetEnumerator calls are not supported.** Explicit calls to `GetEnumerator()` are prohibited to ensure zero-allocation. Use a `foreach` loop over supported types like `Span<T>` instead. |
+| **GSH0020** | Error | **Missing IDisposable implementation.** A class holds a disposable GPU resource (e.g., `GpuContext`) but does not implement `IDisposable`. |
+| **GSH0021** | Error | **Undisposed GPU Resource.** The `Dispose()` method does not explicitly invoke `.Dispose()` on all owned GPU resources. |
+| **GSH0022** | Error | **Unsafe field overwrite.** A disposable field is overwritten without prior disposal. |
+| **GSH0023** | Error | **Property getter side-effect.** Property getters must not allocate disposable resources. |
+| **GSH0024** | Error | **Cast operator side-effect.** Implicit or explicit cast operators must not allocate disposable resources. |
+| **GSH0025** | Error | **Unguarded multi-allocation.** Multiple allocations in a constructor must be guarded with try-catch to avoid partial leaks. |
+| **GSH0026** | Error | **Static disposable allocation.** Static fields must not allocate disposable resources. |
+| **GSH0027** | Error | **Disposing borrowed resource.** Disposing a borrowed resource creates a double-dispose hazard. If taking ownership, use `[TakesOwnership]`. |
+| **GSH0028** | Error | **Disposable resource in Default Interface Method.** Default Interface Methods (DIM) cannot take ownership or dispose of resources. |
+| **GSH0029** | Warning | **Manual unmanaged allocation detected.** You invoked manual unmanaged allocation (e.g., `Gpu.Unsafe.Malloc()`). Ensure corresponding `Free()` is called to prevent VRAM leaks. |
 
 > [!TIP]
 > For a complete mapping of supported vs unsupported standard C# syntax, refer to [1.5 Limitations](../01_language/05_limitations.md).

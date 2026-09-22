@@ -75,16 +75,16 @@ Traditionally, standard C# methods can return arbitrary values, while GPU kernel
 This is the recommended approach for strict Zero-Allocation environments:
 
 1. Allocate an output array (e.g., `float[] results`) on the host.
-2. Pass it directly into the generated `Launch_` wrapper.
+2. Pass it directly into the generated `Launch` wrapper.
 3. The transpiler seamlessly maps this array to a device pointer and copies the mutated data back to the host after execution.
 
 **2. Auto-Allocated Returns (Value/Array returning kernels)**
 For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types or single-dimensional arrays. When a kernel specifies a non-void return type:
 
-1. The `Launch_` method dynamically allocates an output array of size `gridDim * blockDim` on the host.
+1. The `Launch` method dynamically allocates an output array of size `gridDim * blockDim` on the host.
 2. Under the hood, the transpiler injects an implicit `__gsharp_auto_result` device pointer into the kernel signature.
 3. Each thread evaluates the `return` statement and assigns the result directly into `__gsharp_auto_result[tid]`.
-4. The populated array is returned directly by the `Launch_` wrapper.
+4. The populated array is returned directly by the `Launch` wrapper.
 
 ## 1.4 Stub Emission (`GpuKernelGenerator`)
 
@@ -96,7 +96,7 @@ The generator appends seven implicit trailing parameters to every launcher metho
 
 ```csharp
 // Context: Host C# (CPU)
-public static void Launch_[KernelName](
+public static void Launch[KernelName](
     /* Original non-Constant parameters */,
     uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
     uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
@@ -128,7 +128,7 @@ When a struct parameter is detected, the `GpuKernelGenerator` recursively traver
 
 > [!IMPORTANT]
 > This implicit deep marshaling empowers developers to pass complex, nested C# objects into the GPU without manually writing verbose and unsafe P/Invoke memory management code.
-> However, deep marshaling applies **only to the standard `Launch_*` (host-array) path**. When invoking the zero-allocation `Launch_*_Device` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally throws a `NotSupportedException` in the `_Device` launcher to prevent corrupted pointer mapping.
+> However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. When invoking the zero-allocation `Launch*_Device` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally throws a `NotSupportedException` in the `_Device` launcher to prevent corrupted pointer mapping.
 
 ```csharp
 // Example: A struct containing a managed array field
@@ -144,12 +144,12 @@ public static void Process(AdvancedContext ctx) { /* ... */ }
 var ctx = new AdvancedContext { Data = new float[100] };
 
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
-KernelWrapper.Launch_Process(ctx);
+KernelWrapper.LaunchProcess(ctx);
 
 // ❌ Prohibited: The _Device overload expects pre-allocated device pointers.
 // A struct containing a managed array (T[]) cannot be mapped safely here.
 // Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
-KernelWrapper.Launch_Process_Device(ctx);
+KernelWrapper.LaunchProcess_Device(ctx);
 ```
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
