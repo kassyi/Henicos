@@ -50,21 +50,21 @@ Because threads execute concurrently and asynchronously, G# provides explicit me
 
 ### 4.3.1 Barrier Synchronization
 
+> [!WARNING]
+> If a block barrier is placed inside a divergent branch (`if`), it will cause a hardware deadlock and crash the GPU driver, as disabled threads will never reach the barrier.
+
 Calling a thread block barrier (`Gpu.SyncThreads()`) creates a synchronization point for all threads within a **Thread Block**.
 _(For detailed usage, refer to the BCL reference [Gpu.SyncThreads](../03_bcl_api/gpu_class/SyncThreads.md))._
 
 - **Rule:** No thread in the block can proceed past the barrier until all threads in the block have reached it.
 - **Use Case:** Primarily used to ensure that all threads have finished writing to shared memory before any thread attempts to read from it, preventing Read-After-Write (RAW) hazards.
 
-> [!WARNING]
-> If a block barrier is placed inside a divergent branch (`if`), it will cause a hardware deadlock and crash the GPU driver, as disabled threads will never reach the barrier.
-
 ### 4.3.2 Atomic Operations
-
-When multiple threads across the Grid need to update the same global memory address concurrently, standard arithmetic operators (e.g., `sum += val`) will cause race conditions resulting in data loss.
 
 > [!NOTE]
 > **Solution:** G# provides Atomic intrinsic operations. These operations perform a Read-Modify-Write sequence indivisibly, guaranteeing correct results at the cost of serialization contention. _(Refer to the BCL reference [AtomicAdd](../03_bcl_api/gpu_class/AtomicAdd.md) and [Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md) for available atomic methods)._
+
+When multiple threads across the Grid need to update the same global memory address concurrently, standard arithmetic operators (e.g., `sum += val`) will cause race conditions resulting in data loss.
 
 ### 4.3.3 Cooperative Groups (Grid-Level Synchronization)
 

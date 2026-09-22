@@ -12,6 +12,9 @@ This document specifies the strict mapping rules between C# primitive types and 
 
 ## 2.1 Primitive Type Mappings
 
+> [!NOTE]
+> `nint` and `nuint` are unsupported due to the ambiguity of target pointer sizes between host and device architectures. Use explicit `long` or `ulong` for 64-bit address offsets.
+
 The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA C++ counterparts. Any type not explicitly defined in this mapping is currently unsupported and will result in a compilation error.
 
 | C# Type | .NET SpecialType | CUDA C++ Type | Size (Bytes) |
@@ -27,9 +30,6 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 | `float` | `System_Single` | `float` | 4 |
 | `double` | `System_Double` | `double` | 8 |
 | `bool` | `System_Boolean` | `bool` | 1 |
-
-> [!NOTE]
-> `nint` and `nuint` are unsupported due to the ambiguity of target pointer sizes between host and device architectures. Use explicit `long` or `ulong` for 64-bit address offsets.
 
 ## 2.2 Custom Structs (User-Defined Types)
 
@@ -121,15 +121,6 @@ Unsafe pointer arithmetic is fully permitted and transpiles 1:1 to C++ (e.g., `i
 
 ## 2.4 Implicit Typing (`var`)
 
-G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
-
-```csharp
-// Execution Context: Host (CPU)
-var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
-var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
-```
-This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the AOT phase.
-
 > [!WARNING]
 > **Literal Initialization Constraints**: To prevent subtle type-casting bugs in CUDA C++ (where `auto` might mistakenly infer a signed `int` for `0` when an `unsigned int` was expected), G# prohibits initializing `var` with untyped bare literals. You must use explicit literal suffixes.
 > 
@@ -138,6 +129,15 @@ This enables developers to write highly readable, modern C# code, while offloadi
 > * ✨ `var magnitude = 1.0f;` (Correct: explicitly typed as `float`)
 >
 > This safety constraint is intentionally designed to be "user-friendly" by strictly preventing silent precision loss or signedness errors on the GPU.
+
+G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
+
+```csharp
+// Execution Context: Host (CPU)
+var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
+var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
+```
+This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the AOT phase.
 
 ## 2.3 Prohibited Allocations
 

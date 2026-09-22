@@ -71,6 +71,10 @@ To help you write highly expressive and allocation-free GPU code, G# uniquely su
 
 ### 2.5.1 Switch Expressions
 
+> [!NOTE]
+> **Performance Characteristics**
+> The G# transpiler lowers switch expressions into strict zero-allocation structures that the CUDA compiler (`nvcc`) aggressively inlines during the PTX generation phase, resulting in branching logic with absolutely zero invocation overhead.
+
 Switch expressions provide a concise, expression-based way to implement pattern matching. G# fully supports switch expressions and guarantees zero-allocation and optimal execution on the GPU.
 
 **Example: Value and Relational Pattern Matching**
@@ -93,11 +97,11 @@ public static void CategorizeValuesKernel(int[] input, float[] output)
 }
 ```
 
-> [!NOTE]
-> **Performance Characteristics**
-> The G# transpiler lowers switch expressions into strict zero-allocation structures that the CUDA compiler (`nvcc`) aggressively inlines during the PTX generation phase, resulting in branching logic with absolutely zero invocation overhead.
-
 ### 2.5.2 Local Functions and Lambdas
+
+> [!IMPORTANT]
+> **Closure Constraints**
+> Local functions and lambdas can freely capture local `struct` variables, primitive types, and kernel parameters. However, capturing managed reference types (classes) or performing actions that force a managed heap closure allocation is strictly prohibited and will trigger an AOT transpilation error.
 
 G# natively supports C# local functions and lambda expressions. They are highly effective for organizing complex math pipelines or algorithm steps without leaving the scope of the `[GpuKernel]`.
 
@@ -121,10 +125,6 @@ public static void LocalMathKernel(int[] data, int factor)
     data[tid] = multiply(LocalAdd(data[tid], 100));
 }
 ```
-
-> [!IMPORTANT]
-> **Closure Constraints**
-> Local functions and lambdas can freely capture local `struct` variables, primitive types, and kernel parameters. However, capturing managed reference types (classes) or performing actions that force a managed heap closure allocation is strictly prohibited and will trigger an AOT transpilation error.
 
 ### 2.5.3 `null` to `nullptr` Mapping
 
