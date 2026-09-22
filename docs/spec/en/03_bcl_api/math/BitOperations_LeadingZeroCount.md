@@ -104,4 +104,4 @@ Maps natively to `__gsharp_lzc_32()` for 32-bit, and `__gsharp_lzc_64()` for 64-
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

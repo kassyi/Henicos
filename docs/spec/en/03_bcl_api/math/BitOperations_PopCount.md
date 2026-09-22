@@ -105,4 +105,4 @@ Maps natively to `__popc()` for 32-bit, and `__popcll()` for 64-bit in CUDA C++.
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

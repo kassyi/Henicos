@@ -57,4 +57,4 @@ Maps to `__syncthreads()`. Acts as a barrier at which all threads in the block m
 ## See also
 
 - [SharedMemory](../memory/SharedMemory.md)
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

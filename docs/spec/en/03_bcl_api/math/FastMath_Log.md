@@ -48,4 +48,4 @@ Maps to `__logf()` in CUDA PTX for hardware-accelerated approximate calculations
 ## See also
 
 - [Math / MathF Log](Math_Log.md)
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

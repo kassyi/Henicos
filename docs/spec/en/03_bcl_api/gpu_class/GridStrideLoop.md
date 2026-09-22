@@ -67,4 +67,4 @@ for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x *
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

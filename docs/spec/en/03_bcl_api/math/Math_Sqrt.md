@@ -83,4 +83,4 @@ Maps natively to `sqrtf()` for float, and `sqrt()` for double in CUDA C++.
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

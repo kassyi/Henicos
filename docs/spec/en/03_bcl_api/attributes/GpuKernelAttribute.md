@@ -37,4 +37,4 @@ Methods marked with this attribute are mapped to `__global__` functions in CUDA 
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

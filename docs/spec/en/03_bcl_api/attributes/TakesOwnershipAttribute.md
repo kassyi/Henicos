@@ -46,4 +46,4 @@ public class ComputePipeline : IDisposable
 ## See also
 
 - [Memory Safety Patterns](../../04_guides/02_memory_safety_patterns.md)
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

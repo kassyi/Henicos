@@ -274,5 +274,5 @@ G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` metho
 
 Now that you know how to write and launch a basic kernel, you can explore the advanced features of G#:
 * Learn about the syntax constraints in [01_language/05_limitations.md](01_language/05_limitations.md).
-* Browse all GPU intrinsics and math APIs in the [BCL API Overview](03_bcl_api/01_api_overview.md).
+* Browse all GPU intrinsics and math APIs in the [BCL API Overview](03_bcl_api/00_overview.md).
 * Deep dive into the transpiler architecture in [02_architecture/01_aot_transpiler.md](02_architecture/01_aot_transpiler.md).

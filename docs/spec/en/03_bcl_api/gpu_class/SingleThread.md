@@ -65,4 +65,4 @@ if (threadIdx.x == 0 && blockIdx.x == 0)
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

@@ -51,4 +51,4 @@ This method allows utilizing low-level hardware features not explicitly covered 
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

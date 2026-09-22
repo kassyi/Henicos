@@ -175,4 +175,4 @@ Maps to PTX `shfl.down.sync` instructions. Thread synchronization across the act
 
 - [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)
 - [SyncThreads](SyncThreads.md)
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

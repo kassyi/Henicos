@@ -40,4 +40,4 @@ public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int
 
 ## See also
 
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)

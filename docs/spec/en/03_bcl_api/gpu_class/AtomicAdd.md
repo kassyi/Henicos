@@ -136,4 +136,4 @@ Maps to `atomicAdd(&address, val)` in CUDA PTX. This intrinsic prevents race con
 ## See also
 
 - [SyncThreads](SyncThreads.md)
-- [Gpu BCL API Overview](../01_api_overview.md)
+- [Gpu BCL API Overview](../00_overview.md)
