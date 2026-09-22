@@ -31,19 +31,19 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var parentMethod = invocation.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-        if (parentMethod != null)
+        var enclosingSymbol = context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart);
+        while (enclosingSymbol != null)
         {
-            var parentMethodSymbol = context.SemanticModel.GetDeclaredSymbol(parentMethod);
-            var isGpuKernelOrDevice = parentMethodSymbol?.GetAttributes().Any(a =>
+            var isGpuKernelOrDevice = enclosingSymbol.GetAttributes().Any(a =>
                 a.AttributeClass?.Name == "GpuKernelAttribute" ||
                 a.AttributeClass?.Name == "GpuKernel" ||
                 a.AttributeClass?.Name == "GpuDeviceFunctionAttribute" ||
-                a.AttributeClass?.Name == "GpuDeviceFunction") == true;
+                a.AttributeClass?.Name == "GpuDeviceFunction");
             if (isGpuKernelOrDevice)
             {
                 return;
             }
+            enclosingSymbol = enclosingSymbol.ContainingSymbol;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.HostIntrinsicCallError, invocation.GetLocation(),
