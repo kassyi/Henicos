@@ -32,7 +32,7 @@ Returns the smaller of two specified numbers.
 Returns the smaller of two specified numbers.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Min(float val1, float val2);
 ```
 
@@ -54,7 +54,7 @@ The computed value.
 Returns the smaller of two specified numbers.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Min(double val1, double val2);
 ```
 

@@ -19,12 +19,11 @@ This is the absolute core foundation of all `Stdlib.Math` operations in GSharp. 
 
 ## Methods
 
-| Name | Description |
-| --- | --- |
-| [FromBigInteger(GpuContext, BigInteger)](#frombiginteger-gpucontext-biginteger) | Allocates a GPU buffer from a .NET `BigInteger`. |
-| [FromByteArray(GpuContext, byte[])](#frombytearray-gpucontext-byte) | Allocates a GPU buffer from a raw byte array. |
-| [ToBigInteger()](#tobiginteger) | Downloads the buffer to the CPU and converts it to a `BigInteger`. |
-| [ToByteArray()](#tobytearray) | Downloads the buffer to the CPU as a raw byte array. |
+| Name                                                                            | Description                                                        |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [FromBigInteger(GpuContext, BigInteger)](#frombiginteger-gpucontext-biginteger) | Allocates a GPU buffer from a .NET `BigInteger`.                   |
+| [ToBigInteger()](#tobiginteger)                                                 | Downloads the buffer to the CPU and converts it to a `BigInteger`. |
+| [ToHostArray()](#tohostarray)                                                   | Downloads the buffer to the CPU as a raw `uint[]` array.           |
 
 ## FromBigInteger(GpuContext, BigInteger)
 
@@ -43,26 +42,7 @@ The context pool that defines the maximum bit-length capacity.
 The source .NET `BigInteger`. (If negative, its absolute value is taken).
 
 #### Returns
-_GpuUIntBigInteger_<br>
-The allocated GPU buffer.
 
-## FromByteArray(GpuContext, byte[])
-
-Allocates a new GPU buffer from a little-endian byte array.
-
-```csharp
-public static GpuUIntBigInteger FromByteArray(GpuContext context, byte[] data);
-```
-
-#### Parameters
-
-`context` _GpuContext_<br>
-The context pool.
-
-`data` _byte[]_<br>
-The raw byte array (Little-Endian).
-
-#### Returns
 _GpuUIntBigInteger_<br>
 The allocated GPU buffer.
 
@@ -75,20 +55,22 @@ public BigInteger ToBigInteger();
 ```
 
 #### Returns
+
 _BigInteger_<br>
 The resulting .NET `BigInteger`.
 
-## ToByteArray()
+## ToHostArray()
 
-Synchronously downloads the VRAM buffer to Host memory as a little-endian byte array.
+Synchronously downloads the VRAM buffer to Host memory as a raw `uint[]` array.
 
 ```csharp
-public byte[] ToByteArray();
+public uint[] ToHostArray();
 ```
 
 #### Returns
-_byte[]_<br>
-The raw byte array.
+
+_uint[]_<br>
+The downloaded `uint[]` array containing the raw buffer data.
 
 ## Examples
 
@@ -116,11 +98,8 @@ Unlike `GpuBigInteger`, `GpuUIntBigInteger` contains no sign information. It rep
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
 - [GpuBigInteger and GpuUIntBigInteger Operators (G#)](Operators.md)
 - [GpuBigInteger Struct (G#)](GpuBigInteger.md)
-

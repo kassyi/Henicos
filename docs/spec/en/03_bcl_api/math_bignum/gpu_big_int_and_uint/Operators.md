@@ -117,7 +117,7 @@ An expression tree node that computes the quotient when evaluated.
 Returns a lazy-evaluated expression tree node for modulo operation.
 
 ```csharp
-public static GpuBigIntExpr operator %(GpuBigInteger dividend, GpuBigInteger divisor);
+// Modulus (%) is not supported directly due to ambiguity. Use DivRem.
 public static GpuBigUIntExpr operator %(GpuUIntBigInteger dividend, GpuUIntBigInteger divisor);
 ```
 

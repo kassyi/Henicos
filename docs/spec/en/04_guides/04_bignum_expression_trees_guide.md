@@ -22,7 +22,7 @@ When you use operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`), the opera
 ```csharp
 // Execution Context: Host (CPU)
 // 1. Construct the AST (No GPU execution yet)
-var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+var expr = (GpuBigIntExpr.Pow10(gpuA + gpuB) / gpuC) & gpuA;
 
 // 2. Evaluate the tree and return the result as a new buffer
 using var gpuResult = expr.Node.Evaluate(context, null);
@@ -41,10 +41,10 @@ To prevent this, the G# Roslyn Analyzer introduces **GSH0005** (`GpuBigIntExpr` 
 ```csharp
 // Execution Context: Host (CPU)
 // ❌ INCORRECT: Triggers hard compiler error GSH0005
-// var recipe = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+// var recipe = (GpuBigIntExpr.Pow10(gpuA + gpuB) / gpuC) & gpuA;
 
 // ✨ CORRECT: Enforced evaluation
-var expr = (GpuBigIntExpr.Sqrt(gpuA + gpuB) / gpuC) & gpuA;
+var expr = (GpuBigIntExpr.Pow10(gpuA + gpuB) / gpuC) & gpuA;
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 

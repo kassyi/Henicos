@@ -32,7 +32,7 @@ Returns the cosine of the specified angle.
 Returns the cosine of the specified angle.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Cos(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns the cosine of the specified angle.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Cos(double x);
 ```
 

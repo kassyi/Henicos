@@ -32,7 +32,7 @@ Returns the absolute value of a specified number.
 Returns the absolute value of a specified number.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Abs(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns the absolute value of a specified number.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Abs(double x);
 ```
 

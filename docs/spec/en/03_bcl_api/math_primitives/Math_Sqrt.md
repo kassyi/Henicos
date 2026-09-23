@@ -32,7 +32,7 @@ Returns the square root of a specified number.
 Returns the square root of a specified number.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Sqrt(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns the square root of a specified number.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Sqrt(double x);
 ```
 

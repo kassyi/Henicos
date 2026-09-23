@@ -16,7 +16,7 @@ description: "Gets the block index within the grid."
 Gets the block index within the grid.
 
 ```csharp
-public readonly struct BlockIndex
+public static class BlockIndex
 ```
 
 ## Properties

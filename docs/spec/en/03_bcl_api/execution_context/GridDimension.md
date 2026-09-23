@@ -16,7 +16,7 @@ description: "Gets the dimensions of the grid."
 Gets the dimensions of the grid.
 
 ```csharp
-public readonly struct GridDimension
+public static class GridDimension
 ```
 
 ## Properties

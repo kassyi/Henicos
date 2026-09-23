@@ -18,7 +18,7 @@ Returns e raised to the specified power using hardware fast-math.
 Returns e raised to the specified power using hardware fast-math.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Exp(float x);
 ```
 

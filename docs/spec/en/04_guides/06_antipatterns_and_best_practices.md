@@ -145,7 +145,7 @@ Because Thread 1 is spinning, the instruction pointer for the _entire warp_ is s
 ### ✅ Best Practice in G#
 
 - **Never use locks.**
-- Use `System.Threading.Interlocked` operations (which map to hardware atomic instructions like `atomicAdd` or `atomicCAS`) for un-contended shared modifications.
+- Use `Gpu.AtomicAdd` operations (which map to hardware atomic instructions like `atomicAdd` or `atomicCAS`) for un-contended shared modifications.
 - For block-level synchronization, use `Gpu.SyncThreads()` to ensure all threads reach a safe barrier.
 - When dealing with warp-level synchronization (like `WarpShuffle`), ensure all active threads in the warp participate to prevent divergence deadlocks.
 
@@ -178,7 +178,7 @@ public static void ProcessWithSpinLock(ref int lockValue, ref int sharedTotal, i
 public static void ProcessWithAtomics(ref int sharedTotal, int localValue) {
     // Instead of locking a mutex to safely update, use hardware atomics directly on the data.
     // G# maps standard .NET Interlocked directly to PTX atomic instructions.
-    Interlocked.Add(ref sharedTotal, localValue);
+    Gpu.AtomicAdd(ref sharedTotal, localValue);
 }
 ```
 
@@ -203,7 +203,7 @@ public static void SyncVsAtomicExample(int[] data, int[] histogram) {
     // Multiple threads might process the same 'localValue' and try
     // to increment the same histogram bin simultaneously.
     // Atomics ensure the bin count is safely incremented without locks.
-    Interlocked.Add(ref histogram[localValue], 1);
+    Gpu.AtomicAdd(ref histogram[localValue], 1);
 
     // -------------------------------------------------------------
     // 2. Execution Barrier: SyncThreads

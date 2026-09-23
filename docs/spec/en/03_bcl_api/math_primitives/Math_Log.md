@@ -32,7 +32,7 @@ Returns the natural (base e) logarithm of a specified number.
 Returns the natural (base e) logarithm of a specified number.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Log(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns the natural (base e) logarithm of a specified number.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Log(double x);
 ```
 

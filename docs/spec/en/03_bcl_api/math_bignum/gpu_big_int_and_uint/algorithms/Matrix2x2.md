@@ -32,7 +32,7 @@ $$
 Initializes a new instance of the 2x2 matrix.
 
 ```csharp
-public GpuBigIntMatrix2x2(GpuBigInteger m00, GpuBigInteger m01, GpuBigInteger m10, GpuBigInteger m11);
+public GpuBigIntMatrix2x2(GpuContext context, int wordCount, bool oddStep);
 ```
 
 #### Parameters

@@ -28,7 +28,7 @@ Then, configure your `.csproj` to enable the source generator and select a backe
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <!-- G# Configuration -->
-    <GSharpDialect>Cuda</GSharpDialect>
+    <GSharpTargetDialect>Cuda</GSharpTargetDialect>
   </PropertyGroup>
 </Project>
 ```
@@ -90,7 +90,7 @@ public class Program
         Console.WriteLine("Processing complex mathematical transformations...");
 
         // The Roslyn Source Generator automatically emits this companion 'Launch...' method!
-        MathKernels.LaunchProcessHeavySimulation(
+        MathKernelsWrapper.LaunchProcessHeavySimulation(
             data: data,
             result: result,
             length: length,
@@ -187,7 +187,7 @@ On the host side, you simply call the `Launch` method. G# automatically allocate
 ```csharp
 // Execution Context: Host (CPU)
 // The generated Launch method returns a float[] sized exactly to the total thread count!
-float[] magnitudes = MathKernels.LaunchComputeMagnitude(
+float[] magnitudes = MathKernelsWrapper.LaunchComputeMagnitude(
     particles: particlesArray,
     gridDimX: 100,
     blockDimX: 256  // Returns a float[25600]
@@ -207,7 +207,7 @@ For peak performance, allocate persistent device memory upfront using `GpuBuffer
 using GpuBuffer<float> gpuMagnitudes = new GpuBuffer<float>(25600);
 
 // 2. In your hot loop, launch using the _Device suffix method and pass the pointer
-MathKernels.LaunchComputeMagnitude_Device(
+MathKernelsWrapper.LaunchComputeMagnitude_Device(
     particles: particlesArray,
     magnitudes: gpuMagnitudes.DevicePointer, // Pass the native device pointer
     gridDimX: 100,
@@ -241,8 +241,6 @@ G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` metho
 
 ## See also
 
-
-
 ### Architecture
 
 - [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
@@ -256,4 +254,3 @@ G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` metho
 
 - [Gpu Class](../03_bcl_api/gpu_class/00_index.md)
 - [Gpu.GridStrideLoop Method (G#)](../03_bcl_api/gpu_class/GridStrideLoop.md)
-

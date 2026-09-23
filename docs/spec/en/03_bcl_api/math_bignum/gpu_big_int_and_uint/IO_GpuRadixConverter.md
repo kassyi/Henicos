@@ -19,29 +19,43 @@ Converting a multi-megabyte integer from binary (Base-2) into a decimal string (
 
 ## Methods
 
-| Name | Description |
-| --- | --- |
-| [ToString(GpuBigInteger, int)](#tostring-gpubiginteger-int) | Converts a massive GpuBigInteger to a Base-10 string. |
+| Name                                                                                                                                       | Description                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| [ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)](#convertandwrite-gpucontext-gpuuintbiginteger-int-textwriter-bool) | Converts a massive GpuUIntBigInteger to Base-10 and writes it to a stream. |
 
-## ToString(GpuBigInteger, int)
+## ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)
 
-Executes the divide-and-conquer base conversion algorithm across the GPU and returns the resulting string to the Host.
+Executes the divide-and-conquer base conversion algorithm across the GPU and streams the resulting text directly to the provided writer.
 
 ```csharp
-public static string ToString(GpuBigInteger value, int radix = 10);
+public static void ConvertAndWrite(
+    GpuContext context,
+    GpuUIntBigInteger value,
+    int targetDigits,
+    TextWriter writer,
+    bool isMostSignificant = false);
 ```
 
 #### Parameters
 
-`value` _GpuBigInteger_<br>
+`context` _GpuContext_<br>
+The GPU computation context.
+
+`value` _GpuUIntBigInteger_<br>
 The massive integer to convert.
 
-`radix` _int_<br>
-The numerical base to convert to (currently optimized and restricted to 10).
+`targetDigits` _int_<br>
+The number of digits to generate.
+
+`writer` _TextWriter_<br>
+The output stream writer.
+
+`isMostSignificant` _bool_<br>
+True if formatting the integer part with a decimal point (e.g., "3.1415...").
 
 #### Returns
-_string_<br>
-A massive string representing the number in Base-10.
+
+_void_
 
 ## Examples
 
@@ -53,15 +67,18 @@ A massive string representing the number in Base-10.
 using var context = new GpuContext(maxWords: 524288);
 
 // Assume we just finished calculating a massive factorial or Pi
-var resultGpu = CalculateMassiveFactorial(context);
+GpuUIntBigInteger resultGpu = CalculateMassiveFactorial(context);
 
 Console.WriteLine("Starting base-10 conversion (this might take a few seconds)...");
 
 // The converter orchestrates thousands of recursive division kernels on the GPU
-string decimalString = GpuRadixConverter.ToString(resultGpu, radix: 10);
+// and streams the result directly to a file without allocating a massive string.
+using (var writer = new StreamWriter("result.txt"))
+{
+    GpuRadixConverter.ConvertAndWrite(context, resultGpu, targetDigits: 10_000_000, writer);
+}
 
-Console.WriteLine($"Length of string: {decimalString.Length} characters.");
-File.WriteAllText("result.txt", decimalString);
+Console.WriteLine("Conversion complete. Output written to result.txt.");
 ```
 
 ## Remarks
@@ -70,10 +87,7 @@ Because the conversion involves hundreds of recursive Division and Remainder (`D
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
 - [GpuBigInteger Struct (G#)](GpuBigInteger.md)
-

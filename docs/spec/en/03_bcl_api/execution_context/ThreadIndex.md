@@ -16,7 +16,7 @@ description: "Gets the thread index within the block."
 Gets the thread index within the block.
 
 ```csharp
-public readonly struct ThreadIndex
+public static class ThreadIndex
 ```
 
 ## Properties

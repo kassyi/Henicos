@@ -43,7 +43,6 @@ public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value) :
 {
     // ❌ ERROR (GSH0021) if Dispose is missing or doesn't dispose `value`.
     // Note: Dispose() is only invoked on the Host side.
-    [GpuKernel]
     public void Dispose()
     {
         value.Dispose(); // ✅ REQUIRED
@@ -165,7 +164,6 @@ class A {
 // ❌ Error (GSH0021): `Dispose()` AST does not contain an invocation of `_c.Dispose()`.
 class B : IDisposable {
     GpuContext _c = new GpuContext();
-    [GpuKernel]
     public void Dispose() { }
 }
 
@@ -213,7 +211,6 @@ public class A(GpuContext c) {
 // Class `B` is now required to dispose of `_c` in its `Dispose()` implementation.
 public class B([TakesOwnership] GpuContext c) : IDisposable {
     private readonly GpuContext _c = c;
-    [GpuKernel]
     public void Dispose() => _c.Dispose();
 }
 ```
@@ -241,7 +238,6 @@ list.Add(new GpuContext());
 // ⭕ Required: The developer must manually ensure exhaustive traversal and disposal.
 class SafeContainer : IDisposable {
     List<GpuContext> _list = new();
-    [GpuKernel]
     public void Dispose() {
         foreach (var c in _list) c.Dispose();
     }
@@ -271,7 +267,6 @@ class UnsafeAlloc : IDisposable {
         _c1 = new GpuContext();
         _c2 = new GpuContext(); // If this throws, _c1 is permanently leaked
     }
-    [GpuKernel]
     public void Dispose() { _c1.Dispose(); _c2.Dispose(); }
 }
 

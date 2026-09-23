@@ -32,7 +32,7 @@ Count the number of leading zero bits in an integer.
 Count the number of leading zero bits in an integer. (32-bit)
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static int LeadingZeroCount(uint value);
 ```
 
@@ -51,7 +51,7 @@ The number of bits.
 Count the number of leading zero bits in an integer. (64-bit)
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static int LeadingZeroCount(ulong value);
 ```
 

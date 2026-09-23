@@ -28,7 +28,7 @@ When performing division (`/`) or modulo (`%`) on massive multi-precision intege
 Returns a tuple of lazy-evaluated expression trees representing the Quotient and Remainder.
 
 ```csharp
-public static (GpuBigIntExpr Quotient, GpuBigIntExpr Remainder) DivRem(GpuBigInteger dividend, GpuBigInteger divisor);
+public static void DivRem(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger quotientBuffer, GpuUIntBigInteger remainderBuffer);
 ```
 
 #### Parameters

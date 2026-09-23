@@ -17,14 +17,13 @@ description: "Count the number of trailing zero bits in an integer."
 > **Transpilation Marker**
 > The `System` assembly references are required for standard C# compilation, IDE intellisense, and CPU fallback execution. However, during G# AOT transpilation to the GPU, this method call acts strictly as a marker. It is completely erased and mapped directly to a native CUDA hardware intrinsic. No actual .NET BCL method invocation, overhead, or dependency exists in the generated C++ device code.
 
-
 Count the number of trailing zero bits in an integer.
 
 ## Overloads
 
-| Name | Description |
-| --- | --- |
-| [TrailingZeroCount(uint)](#trailingzerocount-uint) | Count the number of trailing zero bits in an integer. (32-bit) |
+| Name                                                 | Description                                                    |
+| ---------------------------------------------------- | -------------------------------------------------------------- |
+| [TrailingZeroCount(uint)](#trailingzerocount-uint)   | Count the number of trailing zero bits in an integer. (32-bit) |
 | [TrailingZeroCount(ulong)](#trailingzerocount-ulong) | Count the number of trailing zero bits in an integer. (64-bit) |
 
 ## TrailingZeroCount(uint)
@@ -32,7 +31,7 @@ Count the number of trailing zero bits in an integer.
 Count the number of trailing zero bits in an integer. (32-bit)
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static int TrailingZeroCount(uint value);
 ```
 
@@ -51,7 +50,7 @@ The number of bits.
 Count the number of trailing zero bits in an integer. (64-bit)
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static int TrailingZeroCount(ulong value);
 ```
 
@@ -74,27 +73,24 @@ Given a 32-bit unsigned integer `value`, it counts consecutive `0` bits starting
 
 ## Examples
 
-### Finding the First Active Thread (Lowest Set Bit)
+### Finding the First Set Bit (Index)
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
-public static void FindFirstActiveThread()
+public static void FindFirstActiveTask()
 {
-    // Assume some complex condition
-    bool needsProcessing = ThreadIndex.X > 15;
-    
-    // Get a bitmask representing threads that need processing
-    uint ballotMask = Gpu.WarpBallotSync(0xFFFFFFFF, needsProcessing);
-    
-    if (ballotMask != 0)
+    // Example: A bitmask representing active tasks
+    uint taskMask = 0b_0000_0000_0000_0000_0000_0000_0001_0000;
+
+    if (taskMask != 0)
     {
-        // Trailing zero count perfectly maps to the Lane ID of the first '1' bit
-        int leaderLaneId = BitOperations.TrailingZeroCount(ballotMask);
-        
-        if (ThreadIndex.X % 32 == leaderLaneId)
+        // Find the index of the first active task (which is 4)
+        int firstTaskIndex = BitOperations.TrailingZeroCount(taskMask);
+
+        if (ThreadIndex.X == firstTaskIndex)
         {
-            // Only the first active thread executes this block (Leader election)
+            // Only the thread matching the first active task index executes this block
         }
     }
 }
@@ -105,6 +101,7 @@ public static void FindFirstActiveThread()
 Counts the number of consecutive `0` bits starting from the Least Significant Bit (LSB) up to the Most Significant Bit (MSB). If the value is `0`, it returns `32` (for `uint`) or `64` (for `ulong`).
 
 In GPU programming, `TrailingZeroCount` is a critical primitive for:
+
 - **Warp Leader Election**: When combined with a ballot mask (`Gpu.WarpBallotSync`), it returns the exact warp lane ID (0-31) of the lowest-numbered thread that voted true.
 - **Bitmask Iteration**: Quickly jumping to the next set bit in a mask without checking every bit in a loop.
 - **Divisibility Checks**: Determining the largest power of 2 that divides a number.
@@ -112,8 +109,6 @@ In GPU programming, `TrailingZeroCount` is a critical primitive for:
 Maps natively to `__gsharp_tzc_32()` for 32-bit, and `__gsharp_tzc_64()` for 64-bit in CUDA C++ (which wrap the `__ffs` intrinsic).
 
 ## See also
-
-
 
 ### Language Specification
 
@@ -124,4 +119,3 @@ Maps natively to `__gsharp_tzc_32()` for 32-bit, and `__gsharp_tzc_64()` for 64-
 
 - [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
 - [5. Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
-

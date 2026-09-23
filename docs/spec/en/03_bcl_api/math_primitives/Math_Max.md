@@ -32,7 +32,7 @@ Returns the larger of two specified numbers.
 Returns the larger of two specified numbers.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Max(float val1, float val2);
 ```
 
@@ -54,7 +54,7 @@ The computed value.
 Returns the larger of two specified numbers.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Max(double val1, double val2);
 ```
 

@@ -65,7 +65,7 @@ uint gridDimX = (uint)((width + blockDimX - 1) / blockDimX);
 uint gridDimY = (uint)((height + blockDimY - 1) / blockDimY);
 
 // Launch the kernel via the generated partial class
-ImageKernels.LaunchProcessImage(
+ImageKernelsWrapper.LaunchProcessImage(
     imagePixels, width, height,
     gridDimX: gridDimX, gridDimY: gridDimY,
     blockDimX: blockDimX, blockDimY: blockDimY
@@ -160,9 +160,6 @@ public static void ProcessVolume(float[] voxels, int width, int height, int dept
 
 ## See also
 
-
-
-
 ### BCL API > Execution Context
 
 - [Execution Context](../03_bcl_api/execution_context/00_index.md)
@@ -173,4 +170,3 @@ public static void ProcessVolume(float[] voxels, int width, int height, int dept
 
 - [Gpu Class](../03_bcl_api/gpu_class/00_index.md)
 - [Gpu.GridStrideLoop Method (G#)](../03_bcl_api/gpu_class/GridStrideLoop.md)
-

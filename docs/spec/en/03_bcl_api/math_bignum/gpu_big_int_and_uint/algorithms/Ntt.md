@@ -28,7 +28,7 @@ To solve this, GSharp provides an ultra-optimized **Number Theoretic Transform (
 Builds a lazy-evaluated expression tree node for NTT-based multiplication. 
 
 ```csharp
-public static GpuBigIntExpr NttMultiply(GpuBigInteger left, GpuBigInteger right);
+public static void Mul(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
@@ -71,11 +71,8 @@ var b = new GpuBigInteger(gpuDataB);
 // 2. Forward Transform (B -> B')
 // 3. Pointwise Multiplication (A' * B' = C')
 // 4. Inverse Transform (C' -> C)
-var nttExpr = GpuBigInteger.NttMultiply(a, b);
-
-// Evaluate: The orchestrator dispatches the complex sequence of 
-// Cooley-Tukey butterfly kernels across the GPU seamlessly.
-using var result = nttExpr.Node.Evaluate(context, null);
+using var result = new GpuUIntBigInteger(context, a.Value.NumWords + b.Value.NumWords);
+GpuBigIntMath.Mul(a.Value, b.Value, result);
 
 Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 ```

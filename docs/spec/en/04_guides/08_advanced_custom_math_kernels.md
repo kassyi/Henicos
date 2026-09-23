@@ -158,8 +158,8 @@ public static class MyCustomMath_StrategyB
     private static GpuUIntBigInteger DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB)
     {
         // 1. Checkout temporary buffers from the pre-allocated pool
-        using var scratch1 = context.CheckoutBuffer();
-        using var scratch2 = context.CheckoutBuffer();
+        using var scratch1 = new GpuUIntBigInteger(context, size);
+        using var scratch2 = new GpuUIntBigInteger(context, size);
         
         // 2. The final result buffer that we will return (do not dispose this one!)
         var finalResult = GpuUIntBigInteger.Allocate(context);

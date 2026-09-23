@@ -32,7 +32,7 @@ Returns the sine of the specified angle.
 Returns the sine of the specified angle.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Sin(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns the sine of the specified angle.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Sin(double x);
 ```
 

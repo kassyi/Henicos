@@ -26,7 +26,7 @@ Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers
 Builds a lazy-evaluated expression tree node for calculating the Greatest Common Divisor.
 
 ```csharp
-public static GpuBigIntExpr Gcd(GpuBigInteger left, GpuBigInteger right);
+public static void Gcd(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters

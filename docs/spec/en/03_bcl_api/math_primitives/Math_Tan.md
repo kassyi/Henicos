@@ -32,7 +32,7 @@ Returns the tangent of the specified angle.
 Returns the tangent of the specified angle.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Tan(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns the tangent of the specified angle.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Tan(double x);
 ```
 

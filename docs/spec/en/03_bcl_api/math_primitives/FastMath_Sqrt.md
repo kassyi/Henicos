@@ -18,7 +18,7 @@ Returns the square root using hardware fast-math.
 Returns the square root using hardware fast-math.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Sqrt(float x);
 ```
 

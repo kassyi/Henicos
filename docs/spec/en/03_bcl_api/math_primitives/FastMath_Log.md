@@ -18,7 +18,7 @@ Returns the natural (base e) logarithm using hardware fast-math.
 Returns the natural (base e) logarithm using hardware fast-math.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Log(float x);
 ```
 

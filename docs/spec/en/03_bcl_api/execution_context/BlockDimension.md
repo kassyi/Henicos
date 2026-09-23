@@ -16,7 +16,7 @@ description: "Gets the dimensions of the thread block."
 Gets the dimensions of the thread block.
 
 ```csharp
-public readonly struct BlockDimension
+public static class BlockDimension
 ```
 
 ## Properties

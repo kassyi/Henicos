@@ -104,23 +104,24 @@ Once the CUDA C++ string is constructed, `GpuKernelGenerator` injects a launcher
 
 The transpiler strictly adheres to the following naming conventions and rules when emitting the host launcher:
 
-1. **Partial Class Mandate**: The user's class containing the `[GpuKernel]` method **must** be declared as a `public static partial class`. The Source Generator does *not* create a separate `Wrapper` class. It injects the launcher directly into this partial class.
+1. **Partial Class Mandate**: The user's class containing the `[GpuKernel]` method **must** be declared as a `public static partial class`. The Source Generator does _not_ create a separate `Wrapper` class. It injects the launcher directly into this partial class.
 2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`).
 3. **Trailing Execution Dimensions**: The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively.
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
 
 ```csharp
 // Original Kernel Signature
-// public static partial class MyKernels {
+// public static class MyKernels {
 //     [GpuKernel] public static T KernelName(int arg1) { ... }
 // }
 
-// Generated Launcher Signature
+// Generated Launcher Signature (in MyKernelsWrapper class)
 public static T[] LaunchKernelName(
     int arg1, // Original non-Constant parameters
     uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
     uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
-    uint sharedMemBytes = 0)
+    uint sharedMemBytes = 0,
+    ReadOnlySpan<KeyValuePair<string, string>> macros = default)
 ```
 
 ### 1.4.2 Ahead-Of-Time (AOT) Fatbin Loading
@@ -158,7 +159,7 @@ public struct AdvancedContext
     public float[] Data;
 }
 
-public static partial class MyKernels
+public static class MyKernels
 {
     [GpuKernel]
     public static void Process(AdvancedContext ctx) { /* ... */ }
@@ -168,12 +169,12 @@ public static partial class MyKernels
 var ctx = new AdvancedContext { Data = new float[100] };
 
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
-MyKernels.LaunchProcess(ctx);
+MyKernelsWrapper.LaunchProcess(ctx);
 
 // ❌ Prohibited: The _Device overload expects pre-allocated device pointers.
 // A struct containing a managed array (T[]) cannot be mapped safely here.
 // Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
-MyKernels.LaunchProcess_Device(ctx);
+MyKernelsWrapper.LaunchProcess_Device(ctx);
 ```
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
@@ -216,8 +217,6 @@ Because this lambda is executed immediately and captures scope by reference (`[&
 
 ## See also
 
-
-
 ### Language Specification
 
 - [1. Language Specification](../01_language/00_index.md)
@@ -227,4 +226,3 @@ Because this lambda is executed immediately and captures scope by reference (`[&
 
 - [2. Compiler and Runtime Architecture](00_index.md)
 - [8. Comprehensive Example](03_comprehensive_example.md)
-

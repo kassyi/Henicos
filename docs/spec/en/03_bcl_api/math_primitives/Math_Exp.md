@@ -32,7 +32,7 @@ Returns e raised to the specified power.
 Returns e raised to the specified power.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static float Exp(float x);
 ```
 
@@ -51,7 +51,7 @@ The computed value.
 Returns e raised to the specified power.
 
 ```csharp
-[GpuKernel]
+[GpuDevice]
 public static double Exp(double x);
 ```
 
