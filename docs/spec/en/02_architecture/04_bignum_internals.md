@@ -265,7 +265,7 @@ To construct large constant values or intermediate configurations natively insid
 public static void SetupInitialState(uint[] globalOutput)
 {
     // Create a 16-word (512-bit) structure from a ReadOnlySpan
-    ReadOnlySpan<uint> limbs = stackalloc uint[] { 12345, 0, 0, 0 };
+    ReadOnlySpan<uint> limbs = [12345, 0, 0, 0];
     var builder = GpuUIntBuilder.Create<LimbBuffer16>(limbs);
     
     // ...

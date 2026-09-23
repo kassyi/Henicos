@@ -19,31 +19,34 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. T
 
 | Name | Description |
 | --- | --- |
-| [ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)](#modpow) | Computes the modular exponentiation of a number. |
+| [ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#modpow) | Computes the modular exponentiation of a number. |
 
-## GpuBigIntDivRem.ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)
+## GpuBigIntDivRem.ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes the modular exponentiation eagerly into the provided result buffer.
 
 ```csharp
-public static void ModPow(ref GpuUIntBigInteger<TSize> value, ref GpuUIntBigInteger<TSize> exponent, ref GpuUIntBigInteger<TSize> modulus, out GpuUIntBigInteger<TSize> result);
+public static void ModPow(GpuUIntBigInteger baseVal, GpuUIntBigInteger exp, GpuUIntBigInteger mod, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`value` _ref GpuUIntBigInteger<TSize>_<br>
+`baseVal` _GpuUIntBigInteger_<br>
 The base number.
 
-`exponent` _ref GpuUIntBigInteger<TSize>_<br>
+`exp` _GpuUIntBigInteger_<br>
 The exponent.
 
-`modulus` _ref GpuUIntBigInteger<TSize>_<br>
+`mod` _GpuUIntBigInteger_<br>
 The modulus.
+
+`resultBuffer` _GpuUIntBigInteger_<br>
+The buffer to hold the result.
 
 #### Returns
 
 _void_<br>
-The operation writes its result to the `result` buffer parameter directly.
+The operation writes its result to the `resultBuffer` parameter directly.
 
 ## Examples
 
@@ -68,8 +71,8 @@ using var gpuPrivateKey = GpuUIntBigInteger.FromByteArray(context, privateKeyD);
 using var gpuCiphertext = GpuUIntBigInteger.FromByteArray(context, ciphertextBytes);
 
 // 3. Eagerly evaluate: c^d mod n
-using var decryptedResult = new GpuUIntBigInteger<L2048>(context);
-GpuBigIntDivRem.ModPow(ref gpuCiphertext, ref gpuPrivateKey, ref gpuModulus, out decryptedResult);
+using var decryptedResult = new GpuUIntBigInteger(context, 64);
+GpuBigIntDivRem.ModPow(gpuCiphertext, gpuPrivateKey, gpuModulus, decryptedResult);
 
 // 5. Download the decrypted message back to the CPU
 byte[] originalMessage = decryptedResult.ToByteArray();

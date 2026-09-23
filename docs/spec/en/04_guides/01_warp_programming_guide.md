@@ -162,9 +162,12 @@ public static void PartialWarpProcessing(int totalElements, int warpOffset, int 
 {
     // SAFE: Explicitly mask out threads that are out of bounds.
     int validThreads = Math.Min(32, totalElements - warpOffset);
-    uint tailMask = validThreads == 32 ? 0xFFFFFFFFu : (1u << validThreads) - 1u;
+    uint tailMask = validThreads <= 0 ? 0u : (validThreads == 32 ? 0xFFFFFFFFu : (1u << validThreads) - 1u);
 
-    int result = Gpu.ShuffleDownSync(tailMask, val, 1);
+    if (tailMask != 0)
+    {
+        int result = Gpu.ShuffleDownSync(tailMask, val, 1);
+    }
 }
 ```
 

@@ -106,16 +106,16 @@ The transpiler strictly adheres to the following naming conventions and rules wh
 
 1. **Partial Class Mandate**: The user's class containing the `[GpuKernel]` method **must** be declared as a `public static partial class`. The Source Generator does _not_ create a separate `Wrapper` class. It injects the launcher directly into this partial class.
 2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`).
-3. **Trailing Execution Dimensions**: The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively.
+3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
 
 ```csharp
 // Original Kernel Signature
-// public static class MyKernels {
+// public static partial class MyKernels {
 //     [GpuKernel] public static T KernelName(int arg1) { ... }
 // }
 
-// Generated Launcher Signature (in MyKernelsWrapper class)
+// Generated Launcher Signature (in MyKernels partial class)
 public static T[] LaunchKernelName(
     int arg1, // Original non-Constant parameters
     uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
