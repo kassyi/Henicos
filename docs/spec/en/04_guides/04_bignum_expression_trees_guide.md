@@ -22,7 +22,7 @@ When you use operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`), the opera
 ```csharp
 // Execution Context: Host (CPU)
 // 1. Construct the AST (No GPU execution yet)
-var expr = (GpuBigIntExpr.Pow10(gpuA + gpuB) / gpuC) & gpuA;
+var expr = (GpuBigIntExpr.Log2(gpuA + gpuB) / gpuC) + gpuA;
 
 // 2. Evaluate the tree and return the result as a new buffer
 using var gpuResult = expr.Node.Evaluate(context, null);
@@ -41,10 +41,10 @@ To prevent this, the G# Roslyn Analyzer introduces **GSH0005** (`GpuBigIntExpr` 
 ```csharp
 // Execution Context: Host (CPU)
 // ❌ INCORRECT: Triggers hard compiler error GSH0005
-// var recipe = (GpuBigIntExpr.Pow10(gpuA + gpuB) / gpuC) & gpuA;
+// GpuBigIntExpr recipe = (GpuBigIntExpr.Log2(gpuA + gpuB) / gpuC) + gpuA;
 
 // ✨ CORRECT: Enforced evaluation
-var expr = (GpuBigIntExpr.Pow10(gpuA + gpuB) / gpuC) & gpuA;
+var expr = (GpuBigIntExpr.Log2(gpuA + gpuB) / gpuC) + gpuA;
 using var gpuResult = expr.Node.Evaluate(context, null);
 ```
 
@@ -57,13 +57,18 @@ The standard library (`Kassyi.GSharp.Stdlib.Math`) has been enhanced to support 
 **Example**
 ```csharp
 // Execution Context: Host (CPU)
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 public static void EvaluateBigInt(uint[] hostData, int dynamicValue)
 {
     // 'a' has a dynamically resolved sign at runtime based on 'dynamicValue'
-    GpuBigIntExpr a = GpuBigInt.FromInt32(dynamicValue);
-    GpuBigIntExpr b = GpuBigInt.FromInt32(42); 
+    using var gpuA = new GpuUIntBigInteger<L1024>(context);
+    gpuA.SetFrom(dynamicValue);
+    GpuBigIntExpr a = gpuA;
+    using var gpuB = new GpuUIntBigInteger<L1024>(context);
+    gpuB.SetFrom(42);
+    GpuBigIntExpr b = gpuB; 
     
     // The multiplication seamlessly handles positive/negative permutations dynamically
     GpuBigIntExpr result = a * b;

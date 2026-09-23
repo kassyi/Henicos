@@ -112,7 +112,7 @@ description: 自律検証型コードレビューガイドライン (GSharp / GP
   "verification_summary": "エージェントが実行したテスト・ビルド・静的解析等の結果概要。",
   "defects": {
     "robustness": {
-      "fatal": ["関数XXXでforeachループを使用している"],
+      "fatal": ["関数XXXでIEnumeratorアロケーションを伴うforeachループを使用している"],
       "major": []
     },
     "responsibility": {

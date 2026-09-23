@@ -19,31 +19,31 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. T
 
 | Name | Description |
 | --- | --- |
-| [ModPow(GpuBigInteger, GpuBigInteger, GpuBigInteger)](#modpow-gpubiginteger-gpubiginteger-gpubiginteger) | Computes the modular exponentiation of a number. |
+| [ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)](#modpow) | Computes the modular exponentiation of a number. |
 
-## ModPow(GpuBigInteger, GpuBigInteger, GpuBigInteger)
+## ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)
 
-Builds a lazy-evaluated expression tree node for the ModPow operation.
+Computes the modular exponentiation eagerly into the provided result buffer.
 
 ```csharp
-public static GpuBigIntExpr ModPow(GpuBigInteger value, GpuBigInteger exponent, GpuBigInteger modulus);
+public static void ModPow(ref GpuUIntBigInteger<TSize> value, ref GpuUIntBigInteger<TSize> exponent, ref GpuUIntBigInteger<TSize> modulus, out GpuUIntBigInteger<TSize> result);
 ```
 
 #### Parameters
 
-`value` _GpuBigInteger_<br>
+`value` _ref GpuUIntBigInteger<TSize>_<br>
 The base number.
 
-`exponent` _GpuBigInteger_<br>
+`exponent` _ref GpuUIntBigInteger<TSize>_<br>
 The exponent.
 
-`modulus` _GpuBigInteger_<br>
+`modulus` _ref GpuUIntBigInteger<TSize>_<br>
 The modulus.
 
 #### Returns
 
-_GpuBigIntExpr_<br>
-An expression tree node that, when evaluated, produces the result of $value^{exponent} \pmod{modulus}$.
+_void_<br>
+The operation writes its result to the `result` buffer parameter directly.
 
 ## Examples
 
@@ -67,15 +67,9 @@ using var gpuModulus = GpuUIntBigInteger.FromByteArray(context, modulusN);
 using var gpuPrivateKey = GpuUIntBigInteger.FromByteArray(context, privateKeyD);
 using var gpuCiphertext = GpuUIntBigInteger.FromByteArray(context, ciphertextBytes);
 
-var n = new GpuBigInteger(gpuModulus);
-var d = new GpuBigInteger(gpuPrivateKey);
-var c = new GpuBigInteger(gpuCiphertext);
-
-// 3. Build the Lazy Expression for Decryption: c^d mod n
-var decryptExpr = GpuBigInteger.ModPow(c, d, n);
-
-// 4. Dispatch kernels and Evaluate
-using var decryptedResult = decryptExpr.Node.Evaluate(context, null);
+// 3. Eagerly evaluate: c^d mod n
+using var decryptedResult = new GpuUIntBigInteger<L2048>(context);
+GpuUIntBigInteger<L2048>.ModPow(ref gpuCiphertext, ref gpuPrivateKey, ref gpuModulus, out decryptedResult);
 
 // 5. Download the decrypted message back to the CPU
 byte[] originalMessage = decryptedResult.ToByteArray();

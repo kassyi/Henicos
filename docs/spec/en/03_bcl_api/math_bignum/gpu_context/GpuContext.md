@@ -15,7 +15,7 @@ description: "Reference for managing GPU memory pools and execution context for 
 
 The `GpuContext` manages the lifecycle and memory pooling for arbitrary-precision integers on the GPU. 
 
-Because `cudaMalloc` operations are extremely slow and cause synchronization bottlenecks, GSharp enforces a **Zero-Allocation** paradigm within its math kernels. The `GpuContext` pre-allocates a massive memory pool on the GPU during instantiation. AST evaluators and algorithms dynamically "checkout" and "return" scratch buffers from this pool in nanoseconds.
+Because `cudaMalloc` operations are extremely slow and cause synchronization bottlenecks, GSharp enforces a **Zero-Allocation** paradigm within its math kernels. The `GpuContext` dynamically allocates memory pools on the GPU upon first use or pool misses. AST evaluators and algorithms "checkout" and "return" scratch buffers from this pool in nanoseconds.
 
 ## Constructors
 

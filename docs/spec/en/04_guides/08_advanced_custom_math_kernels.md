@@ -32,14 +32,16 @@ public static class MyCustomMath
         bool isResultNegative = a.IsNegative ^ b.IsNegative; // Example: XOR logic for multiplication-like operations
 
         // 2. Dispatch Unsigned Logic
-        GpuUIntBigInteger absoluteResult = DispatchUnsignedLogic(context, a.Value, b.Value);
+        using var finalResult = new GpuUIntBigInteger<L1024>(context);
+        DispatchUnsignedLogic(context, a.Value, b.Value, finalResult);
+        GpuUIntBigInteger absoluteResult = finalResult;
 
         // 3. Return a new Signed Wrapper
         return new GpuBigInteger(absoluteResult, isResultNegative);
     }
 
     // Implementation depends on chosen strategy (see below)
-    private static GpuUIntBigInteger DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB) 
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult) 
         => throw new NotImplementedException();
 }
 ```
@@ -76,7 +78,7 @@ public static class MyCustomMath_StrategyA
 {
     // ... Compute() method from above ...
 
-    private static GpuUIntBigInteger DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB)
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult)
     {
         // Re-wrap temporarily just to build the AST
         var tempA = new GpuBigInteger(uA);
@@ -86,7 +88,8 @@ public static class MyCustomMath_StrategyA
         var expr = (tempA * tempA) + (tempB * tempB);
 
         // Let the GSharp runtime automatically pool memory and fuse kernels!
-        return expr.Node.Evaluate(context, null).Value;
+        using var evalResult = expr.Evaluate(context, null);
+        // copy result into output buffer
     }
 }
 ```
@@ -155,24 +158,22 @@ public static class MyCustomMath_StrategyB
 {
     // ... Compute() method from above ...
 
-    private static GpuUIntBigInteger DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB)
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult)
     {
         // 1. Checkout temporary buffers from the pre-allocated pool
-        using var scratch1 = new GpuUIntBigInteger(context, size);
-        using var scratch2 = new GpuUIntBigInteger(context, size);
+        using var scratch1 = new GpuUIntBigInteger<L1024>(context);
+        using var scratch2 = new GpuUIntBigInteger<L1024>(context);
         
         // 2. The final result buffer that we will return (do not dispose this one!)
-        var finalResult = GpuUIntBigInteger.Allocate(context);
+        var finalResult = new GpuUIntBigInteger<L1024>(context);
 
         // 3. Dispatch your custom kernel via the auto-generated method.
         // The GSharp Source Generator automatically injects Launch{MethodName} 
         // methods directly into your partial class for any [GpuKernel].
         MyCustomMathKernels.LaunchMyCustomUnsignedKernel(
-            uA, uB, finalResult, context.MaxWords,
+            uA.DevicePointer, uB.DevicePointer, finalResult.DevicePointer, context.MaxWords,
             gridDimX: 1, blockDimX: 1
         );
-
-        return finalResult;
     }
 }
 ```
