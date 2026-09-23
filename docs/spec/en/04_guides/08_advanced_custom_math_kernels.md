@@ -32,7 +32,7 @@ public static class MyCustomMath
         bool isResultNegative = a.IsNegative ^ b.IsNegative; // Example: XOR logic for multiplication-like operations
 
         // 2. Dispatch Unsigned Logic
-        using var finalResult = new GpuUIntBigInteger<L1024>(context);
+        using var finalResult = new GpuUIntBigInteger(context, context.MaxWords);
         DispatchUnsignedLogic(context, a.Value, b.Value, finalResult);
         GpuUIntBigInteger absoluteResult = finalResult;
 
@@ -41,7 +41,7 @@ public static class MyCustomMath
     }
 
     // Implementation depends on chosen strategy (see below)
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult)
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
         => throw new NotImplementedException();
 }
 ```
@@ -78,7 +78,7 @@ public static class MyCustomMath_StrategyA
 {
     // ... Compute() method from above ...
 
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult)
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
     {
         // Re-wrap temporarily just to build the AST
         var tempA = new GpuBigInteger(uA);
@@ -160,11 +160,11 @@ public static class MyCustomMath_StrategyB
 {
     // ... Compute() method from above ...
 
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult)
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
     {
         // 1. Checkout temporary buffers from the pre-allocated pool
-        using var scratch1 = new GpuUIntBigInteger<L1024>(context);
-        using var scratch2 = new GpuUIntBigInteger<L1024>(context);
+        using var scratch1 = new GpuUIntBigInteger(context, context.MaxWords);
+        using var scratch2 = new GpuUIntBigInteger(context, context.MaxWords);
 
         // 2. Dispatch your custom kernel via the auto-generated wrapper method.
         // The GSharp Source Generator automatically injects Launch{MethodName}

@@ -18,6 +18,10 @@ Instead of computing immediately, operator overloads construct an AST (Abstract 
 
 When you use operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`), the operation is not dispatched to the GPU immediately. Instead, a lightweight expression node is created on the host CPU.
 
+> [!WARNING]
+> **Host-Side Allocations Occur Here**
+> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads *does* allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
+
 **Example: Comprehensive Expression Tree**
 ```csharp
 // Execution Context: Host (CPU)

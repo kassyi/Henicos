@@ -16,6 +16,10 @@ description: "Reference for standard arithmetic operators on GpuBigInteger and G
 `GpuBigInteger` (Signed) and `GpuUIntBigInteger` (Unsigned) provide standard C# operator overloads (`+`, `-`, `*`, `/`, `%`). 
 Because of the **Lazy Evaluation** architecture, these operators **do not execute immediately**. Instead, they return an Abstract Syntax Tree (AST) node (`GpuBigIntExpr` or `GpuBigUIntExpr`) that represents the operation.
 
+> [!WARNING]
+> **Host-Side Allocations Occur Here**
+> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads *does* allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
+
 > [!NOTE]
 > **Behavioral Differences**
 > - **`GpuBigInteger` (Signed Wrapper)**: When the Host CPU encounters an addition like `A + (-B)`, it evaluates the sign bits natively and transparently transforms the AST node into subtraction `A - B` before dispatching to the GPU. For details, see [The Architecture: Signed vs. Unsigned Separation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).

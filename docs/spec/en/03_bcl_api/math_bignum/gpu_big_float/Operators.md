@@ -16,6 +16,10 @@ description: "Reference for standard arithmetic operators on GpuBigFloat."
 `GpuBigFloat` provides standard C# operator overloads (`+`, `-`, `*`, `/`). 
 Just like `GpuBigInteger`, these operators rely on the **Lazy Evaluation** architecture. They return an Abstract Syntax Tree (AST) node (`GpuBigFloatExpr`) rather than executing immediately.
 
+> [!WARNING]
+> **Host-Side Allocations Occur Here**
+> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads *does* allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
+
 ## Overloads
 
 | Operator | Description |
