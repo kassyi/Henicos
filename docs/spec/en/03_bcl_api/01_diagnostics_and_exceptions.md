@@ -59,7 +59,19 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 
 ## See also
 
-- [Gpu BCL API Overview](00_index.md)
-- [Diagnostics Reference Index](diagnostics/00_index.md)
+
+
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
-- [Exception Handling Guide](../04_guides/03_exception_handling_guide.md)
+
+### BCL API > Diagnostics
+
+- [Transpiler and Analyzer Diagnostics (GSHxxxx)](diagnostics/00_index.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../04_guides/00_index.md)
+- [3. Exception Handling and Diagnostics Guide](../04_guides/03_exception_handling_guide.md)
+

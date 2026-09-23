@@ -31,14 +31,15 @@ Once your environment is set up, proceed to [2. The Mental Model & Safety Net](0
 
 ## See also
 
-### Getting Started
-- [0. Getting Started with G# (GSharp)](00_index.md)
-- [2. The Mental Model & Safety Net](02_mental_model.md)
-- [3. The "Hello GPU" Tutorial](03_hello_gpu.md)
+
 
 ### Language Specification
-- [1. Language Introduction](../01_language/01_introduction.md)
 
-### Architecture & BCL
-- [1. AOT Transpiler Architecture](../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+- [1. Language Specification](../01_language/00_index.md)
+- [1. Foundation and Domain](../01_language/01_introduction.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+- [2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)](../02_architecture/02_runtime_loader.md)
+

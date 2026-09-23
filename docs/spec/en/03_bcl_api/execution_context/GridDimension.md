@@ -73,5 +73,20 @@ These properties are strictly designed for execution within a `[GpuKernel]` or `
 
 ## See also
 
-- [Execution Context](./00_index.md)
-- [Gpu BCL API Overview](../00_index.md)
+
+
+### Language Specification
+
+- [1. Language Specification](../../01_language/00_index.md)
+- [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../gpu_class/00_index.md)
+- [Gpu.GridStrideLoop Method (G#)](../gpu_class/GridStrideLoop.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [2D/3D Grid Mapping and Image Processing Patterns](../../04_guides/09_2d_grid_mapping_and_image_processing.md)
+

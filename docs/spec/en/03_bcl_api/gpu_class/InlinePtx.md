@@ -51,16 +51,20 @@ This method allows utilizing low-level hardware features not explicitly covered 
 
 ## See also
 
-### Low-Level & Intrinsic APIs
-- [AdvancedMappingAttributes](../attributes/AdvancedMappingAttributes.md)
-- [BCL Mappings Reference](../02_bcl_mappings.md)
-- [Gpu BCL API Overview](../00_index.md)
 
-### Language & Transpiler Model
-- [2. The Mental Model & Safety Net](../../00_getting_started/02_mental_model.md)
-- [5. Limitations and Diagnostics](../../01_language/05_limitations.md)
-- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
 
-### Advanced Guides
-- [Advanced Custom Math Kernels Guide](../../04_guides/08_advanced_custom_math_kernels.md)
-- [Warp-Level Programming Guide](../../04_guides/01_warp_programming_guide.md)
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../../02_architecture/01_aot_transpiler.md)
+
+### BCL API > Attributes
+
+- [Attributes](../attributes/00_index.md)
+- [Kassyi.GSharp.Core: Advanced Mapping Attributes](../attributes/AdvancedMappingAttributes.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Advanced: Extending GpuBigInteger with Custom Algorithms](../../04_guides/08_advanced_custom_math_kernels.md)
+

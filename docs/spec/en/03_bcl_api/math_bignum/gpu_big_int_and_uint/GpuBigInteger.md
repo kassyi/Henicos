@@ -106,23 +106,11 @@ GSharp uses a **Sign-Magnitude** representation. To avoid Warp Divergence on the
 
 ## See also
 
-### Related Integer Types
-- [GpuUIntBigInteger](GpuUIntBigInteger.md)
-- [Operators](Operators.md)
-- [IO_GpuRadixConverter](IO_GpuRadixConverter.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](00_index.md)
 
-### Algorithms
-- [DivRem](algorithms/DivRem.md)
-- [Gcd](algorithms/Gcd.md)
-- [ModPow](algorithms/ModPow.md)
 
-### Architecture & Context
-- [GpuContext](../gpu_context/GpuContext.md)
-- [Arbitrary-Precision Math Overview](../00_index.md)
-- [Gpu BCL API Overview](../../00_index.md)
-- [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
+### BCL API > Math Bignum
 
-### Guides
-- [Stdlib Math and Lazy Evaluation Guide](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
-- [Bignum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
+- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](Operators.md)
+- [GpuUIntBigInteger Struct (G#)](GpuUIntBigInteger.md)
+

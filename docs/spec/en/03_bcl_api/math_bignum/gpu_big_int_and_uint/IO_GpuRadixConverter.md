@@ -70,16 +70,10 @@ Because the conversion involves hundreds of recursive Division and Remainder (`D
 
 ## See also
 
-### Related Integer Types
-- [GpuBigInteger](GpuBigInteger.md)
-- [GpuUIntBigInteger](GpuUIntBigInteger.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](00_index.md)
 
-### Architecture & Context
-- [GpuContext](../gpu_context/GpuContext.md)
-- [Arbitrary-Precision Math Overview](../00_index.md)
-- [Gpu BCL API Overview](../../00_index.md)
 
-### Guides
-- [Precision and Performance Guide](../../../04_guides/05_precision_and_performance_guide.md)
-- [Memory Safety Patterns Guide](../../../04_guides/02_memory_safety_patterns.md)
+### BCL API > Math Bignum
+
+- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [GpuBigInteger Struct (G#)](GpuBigInteger.md)
+

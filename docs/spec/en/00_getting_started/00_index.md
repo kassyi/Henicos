@@ -30,13 +30,18 @@ This section contains everything you need to get up to speed with writing your f
 
 ## See also
 
-### Getting Started
-- [1. Prerequisites & Installation](01_prerequisites.md)
-- [2. The Mental Model & Safety Net](02_mental_model.md)
-- [3. The "Hello GPU" Tutorial](03_hello_gpu.md)
+
 
 ### Language Specification
-- [1. Language Introduction](../01_language/01_introduction.md)
 
-### BCL & Architecture
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+- [1. Language Specification](../01_language/00_index.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../03_bcl_api/00_index.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../04_guides/00_index.md)
+- [AI Agent Coding Guidelines (Anti-Hallucination Checklist)](../04_guides/10_ai_agent_coding_guidelines.md)
+

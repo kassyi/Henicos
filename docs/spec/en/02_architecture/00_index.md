@@ -25,14 +25,13 @@ This section details the inner workings of the transpilation engine, binary veri
 
 ## See also
 
-### Getting Started & Language
-- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
-- [1. Language Specification Overview](../01_language/00_index.md)
 
-### BCL API Reference
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Arbitrary-Precision Math (Bignum) Overview](../03_bcl_api/math_bignum/00_index.md)
 
-### Guides
-- [Memory Safety Patterns Guide](../04_guides/02_memory_safety_patterns.md)
-- [Bignum Expression Trees Guide](../04_guides/04_bignum_expression_trees_guide.md)
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../03_bcl_api/00_index.md)
+

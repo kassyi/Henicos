@@ -349,8 +349,21 @@ This achieves a memory management architecture that brings C#'s expressive ergon
 
 ## See also
 
-- [4. Practical Guides Overview](00_index.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [TakesOwnershipAttribute](../03_bcl_api/attributes/TakesOwnershipAttribute.md)
-- [2. Runtime Kernel Loader](../02_architecture/02_runtime_loader.md)
-- [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)
+
+
+
+### Getting Started
+
+- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
+- [2. The Mental Model & Safety Net](../00_getting_started/02_mental_model.md)
+
+### BCL API > Attributes
+
+- [Attributes](../03_bcl_api/attributes/00_index.md)
+- [Kassyi.GSharp.Core: TakesOwnershipAttribute class](../03_bcl_api/attributes/TakesOwnershipAttribute.md)
+
+### BCL API > Memory
+
+- [Memory Management](../03_bcl_api/memory/00_index.md)
+- [SharedMemory<T> Class (G#)](../03_bcl_api/memory/SharedMemory.md)
+

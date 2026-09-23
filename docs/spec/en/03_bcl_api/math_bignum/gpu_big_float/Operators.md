@@ -130,19 +130,10 @@ Floating-point addition and subtraction require exponent alignment. The AST orch
 
 ## See also
 
-### BigFloat APIs
-- [GpuBigFloat](GpuBigFloat.md)
-- [GpuBigFloat Overview](00_index.md)
 
-### Related Operators & Types
-- [Integer Operators](../gpu_big_int_and_uint/Operators.md)
-- [GpuBigInteger](../gpu_big_int_and_uint/GpuBigInteger.md)
 
-### BCL & Architecture
-- [Arbitrary-Precision Math Overview](../00_index.md)
-- [Gpu BCL API Overview](../../00_index.md)
-- [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
+### BCL API > Math Bignum
 
-### Guides
-- [Bignum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
-- [Stdlib Math and Lazy Evaluation Guide](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [GpuBigFloat Struct (G#)](GpuBigFloat.md)
+

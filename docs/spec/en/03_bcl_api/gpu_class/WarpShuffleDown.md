@@ -173,17 +173,20 @@ Maps to PTX `shfl.down.sync` instructions. Thread synchronization across the act
 
 ## See also
 
-### Warp Shuffle Primitives
-- [WarpShuffleUp](WarpShuffleUp.md)
-- [WarpShuffleXor](WarpShuffleXor.md)
-- [SyncThreads](SyncThreads.md)
 
-### Concurrency & Architecture
+
+### Language Specification
+
+- [1. Language Specification](../../01_language/00_index.md)
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
-- [Execution Context Overview](../execution_context/00_index.md)
-- [Gpu BCL API Overview](../00_index.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](00_index.md)
+- [Gpu.SyncThreads Method (G#)](SyncThreads.md)
 
 ### Guides
-- [Warp-Level Programming Guide](../../04_guides/01_warp_programming_guide.md)
-- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
-- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)
+

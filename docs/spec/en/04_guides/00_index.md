@@ -35,8 +35,22 @@ Writing high-performance GPU code requires shifting from a CPU-centric mental mo
 
 ## See also
 
-### Specifications & APIs
+
+
+
+### Getting Started
+
 - [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
-- [1. Language Specification Overview](../01_language/00_index.md)
-- [2. Compiler and Runtime Architecture Overview](../02_architecture/00_index.md)
-- [3. Gpu BCL API Overview](../03_bcl_api/00_index.md)
+
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../03_bcl_api/00_index.md)
+

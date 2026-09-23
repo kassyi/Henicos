@@ -17,8 +17,8 @@ Directly injects a string literal as a raw C++ expression.
 
 ## Overloads
 
-| Name | Description |
-| --- | --- |
+| Name                                 | Description                                                |
+| ------------------------------------ | ---------------------------------------------------------- |
 | [Constant(string)](#constant-string) | Directly injects a string literal as a raw C++ expression. |
 
 ## Constant(string)
@@ -56,16 +56,17 @@ This macro guarantees zero allocations at runtime. The transpiler directly subst
 
 ## See also
 
-### Related Attributes & Memory
-- [ConstantAttribute](../attributes/ConstantAttribute.md)
-- [Memory Architecture Index](../memory/00_index.md)
-- [SharedMemory](../memory/SharedMemory.md)
+### Language Specification
 
-### Language & Transpiler Architecture
-- [3. Type System (Constants)](../../01_language/03_type_system.md#26-constants-const)
-- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_index.md)
+- [1. Language Specification](../../01_language/00_index.md)
+- [2. Type System and Mapping](../../01_language/03_type_system.md)
 
-### Performance Guides
-- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
-- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)
+### BCL API > Attributes
+
+- [Attributes](../attributes/00_index.md)
+- [ConstantAttribute Class (G#)](../attributes/ConstantAttribute.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [5. Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)

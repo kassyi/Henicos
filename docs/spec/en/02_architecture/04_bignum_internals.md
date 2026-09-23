@@ -274,8 +274,14 @@ public static void SetupInitialState(uint[] globalOutput)
 
 ## See also
 
-- [2. Architecture Overview](00_index.md)
-- [1. AOT Transpiler Architecture](01_aot_transpiler.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Arbitrary-Precision Math (Bignum) Overview](../03_bcl_api/math_bignum/00_index.md)
-- [Bignum Expression Trees Guide](../04_guides/04_bignum_expression_trees_guide.md)
+
+
+### BCL API > Math Bignum
+
+- [Standard Math Library (Stdlib.Math)](../03_bcl_api/math_bignum/00_index.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../04_guides/00_index.md)
+- [4. BigNum Expression Trees Guide](../04_guides/04_bignum_expression_trees_guide.md)
+

@@ -633,8 +633,16 @@ This explicit trace proves that:
 
 ## See also
 
-- [2. Architecture Overview](00_index.md)
-- [1. AOT Transpiler Architecture](01_aot_transpiler.md)
-- [2. Runtime Kernel Loader](02_runtime_loader.md)
+
+
+### Getting Started
+
+- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
 - [3. The "Hello GPU" Tutorial](../00_getting_started/03_hello_gpu.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](01_aot_transpiler.md)
+- [2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)](02_runtime_loader.md)
+

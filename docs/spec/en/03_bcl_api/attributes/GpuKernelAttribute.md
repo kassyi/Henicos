@@ -51,23 +51,29 @@ The `[GpuKernel]` method signature strictly permits only the following types:
 
 ## See also
 
-### Related Attributes
-- [Attributes Index](00_index.md)
-- [GpuDeviceFunctionAttribute](GpuDeviceFunctionAttribute.md)
-- [ParameterInteropAttributes](ParameterInteropAttributes.md)
-- [ConstantAttribute](ConstantAttribute.md)
 
-### Language & Execution Model
-- [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
-- [5. Limitations and Diagnostics](../../01_language/05_limitations.md)
-- [2. Runtime Kernel Loader](../../02_architecture/02_runtime_loader.md)
 
-### BCL & GPU Intrinsics
-- [Gpu BCL API Overview](../00_index.md)
-- [Execution Context Overview](../execution_context/00_index.md)
-- [Gpu.GridStrideLoop](../gpu_class/GridStrideLoop.md)
+### Getting Started
 
-### Guides & Tutorials
+- [0. Getting Started with G# (GSharp)](../../00_getting_started/00_index.md)
 - [3. The "Hello GPU" Tutorial](../../00_getting_started/03_hello_gpu.md)
-- [2D Grid Mapping and Image Processing Guide](../../04_guides/09_2d_grid_mapping_and_image_processing.md)
-- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)
+
+### Language Specification
+
+- [1. Language Specification](../../01_language/00_index.md)
+- [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../02_architecture/00_index.md)
+- [2. Runtime Execution and AOT Loader Pipeline (`Kassyi.GSharp.Runtime`)](../../02_architecture/02_runtime_loader.md)
+
+### BCL API > Execution Context
+
+- [Execution Context](../execution_context/00_index.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../gpu_class/00_index.md)
+- [Gpu.GridStrideLoop Method (G#)](../gpu_class/GridStrideLoop.md)
+

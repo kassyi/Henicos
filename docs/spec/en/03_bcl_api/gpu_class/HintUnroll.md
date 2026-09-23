@@ -62,15 +62,15 @@ Maps to `#pragma unroll` or `#pragma unroll N`. Must be placed immediately befor
 
 ## See also
 
-### Loop & Kernel Flow Control
-- [GridStrideLoop](GridStrideLoop.md)
-- [SingleThread](SingleThread.md)
 
-### Language & Transpiler Architecture
-- [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
-- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_index.md)
 
-### Performance Guides
-- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
-- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../../02_architecture/01_aot_transpiler.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [5. Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+

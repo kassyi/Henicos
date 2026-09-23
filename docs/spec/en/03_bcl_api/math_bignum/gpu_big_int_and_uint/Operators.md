@@ -156,17 +156,15 @@ Console.WriteLine(result.ToBigInteger());
 
 ## See also
 
-### Related Integer Types
-- [GpuBigInteger](GpuBigInteger.md)
-- [GpuUIntBigInteger](GpuUIntBigInteger.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](00_index.md)
-- [BigFloat Operators](../gpu_big_float/Operators.md)
 
-### Architecture & Internals
-- [Arbitrary-Precision Math Overview](../00_index.md)
-- [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
-- [Gpu BCL API Overview](../../00_index.md)
+
+### BCL API > Math Bignum
+
+- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [GpuBigInteger Struct (G#)](GpuBigInteger.md)
 
 ### Guides
-- [Bignum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
-- [Stdlib Math and Lazy Evaluation Guide](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+
+- [4. Practical Guides and Best Practices](../../../04_guides/00_index.md)
+- [4. BigNum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
+

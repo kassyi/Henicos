@@ -69,8 +69,15 @@ AI agents often try to use `Interlocked.Add` for floats, which does not exist in
 
 ## See also
 
-- [4. Practical Guides Overview](00_index.md)
+
+
+
+### Getting Started
+
 - [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
-- [5. Limitations and Diagnostics](../01_language/05_limitations.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](00_index.md)
+- [The CPU to GPU Paradigm Shift: Anti-Patterns & Best Practices](06_antipatterns_and_best_practices.md)
+

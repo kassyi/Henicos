@@ -56,7 +56,7 @@ public static void DemonstrateItsBehavior(int myVal)
         // [ITS Behavior] Threads 0-15 arrive here. Threads 16-31 are doing something else.
         // If we tell the hardware "Wait for all 32 threads" (0xFFFFFFFF), it will wait forever!
         // We must pass a mask indicating ONLY threads 0-15 are participating.
-        uint mask = Gpu.ActiveMask(); 
+        uint mask = Gpu.ActiveMask();
         int val = Gpu.ShuffleDownSync(mask, myVal, 1);
     }
 }
@@ -86,6 +86,7 @@ bool isLane5Active = (mask & (1u << 5)) != 0;
 ```
 
 As demonstrated above:
+
 - **Bit 0 (rightmost bit)** corresponds to Lane 0.
 - **Bit 31 (leftmost bit)** corresponds to Lane 31.
 
@@ -93,11 +94,11 @@ If a bit is set to `1`, that thread is expected to arrive at the synchronization
 
 ### Common Mask Constants
 
-| Hex Literal | Binary Representation | Practical Use Case |
-| :--- | :--- | :--- |
-| **`0xFFFFFFFF`** | `1111...1111` (All 32 bits = `1`) | Entire warp participates unconditionally. |
-| **`0x55555555`** | `0101...0101` (Even bits = `1`) | Only even lane IDs participate. |
-| **`0xAAAAAAAA`** | `1010...1010` (Odd bits = `1`) | Only odd lane IDs participate. |
+| Hex Literal         | Binary Representation                | Practical Use Case                                |
+| :------------------ | :----------------------------------- | :------------------------------------------------ |
+| **`0xFFFFFFFF`**    | `1111...1111` (All 32 bits = `1`)    | Entire warp participates unconditionally.         |
+| **`0x55555555`**    | `0101...0101` (Even bits = `1`)      | Only even lane IDs participate.                   |
+| **`0xAAAAAAAA`**    | `1010...1010` (Odd bits = `1`)       | Only odd lane IDs participate.                    |
 | **`(1u << K) - 1`** | `0000...1111` (First $K$ bits = `1`) | Partial warp handling (first $K$ threads active). |
 
 ---
@@ -118,7 +119,9 @@ flowchart TD
 ### Safe Implementation Patterns
 
 #### Pattern 1: Uniform Execution (95%+ of cases)
+
 When all 32 threads in the warp execute the shuffle together unconditionally (e.g., standard reductions, scans, matrix tiles, **outside of any `if` blocks**):
+
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
@@ -131,7 +134,9 @@ public static void UniformExecution(int val)
 ```
 
 #### Pattern 2: Divergent Execution (`if` branches)
+
 When the shuffle occurs inside a conditional block where some threads in the warp do not enter:
+
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
@@ -147,7 +152,9 @@ public static void DivergentExecution(int val)
 ```
 
 #### Pattern 3: Partial Warp Processing (Tail Boundaries)
+
 When the total data size $N$ is not a multiple of 32, the final warp only processes $K$ active items:
+
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
@@ -173,6 +180,7 @@ If `mask` includes a thread that never reaches the shuffle instruction, the hard
 Think of the `mask` as an attendance roster presented to the hardware at the exact moment the shuffle method is invoked. The hardware reads this roster and forces all currently arrived threads to wait (suspend execution) until every thread marked as "participating" on the roster also arrives. If a thread listed on the roster bypassed the shuffle instruction due to an `if` branch, the waiting threads will wait forever.
 
 ### Dangerous Antipattern:
+
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
@@ -191,6 +199,7 @@ public static void DeadlockExample(int val)
 ```
 
 ### Safe Solution:
+
 ```csharp
 // Execution Context: G# Kernel (GPU)
 [GpuKernel]
@@ -209,12 +218,12 @@ public static void SafeActiveMaskExample(int val)
 
 ## 6. Warp Shuffle Operation Summary
 
-| Method | Conceptual Action | Key Use Cases |
-| :--- | :--- | :--- |
-| **`ShuffleSync(mask, var, srcLane)`** | Broadcasts from a specific `srcLane` | Pivot distribution, broadcasting warp leader's value. |
-| **`ShuffleDownSync(mask, var, delta)`** | Reads from higher lane (`LaneId + delta`) | Parallel tree reductions (Sum, Max, Min). |
-| **`ShuffleUpSync(mask, var, delta)`** | Reads from lower lane (`LaneId - delta`) | Prefix sums (scans), 1D/2D stencil neighbor reads. |
-| **`ShuffleXorSync(mask, var, laneMask)`** | Swaps with paired lane (`LaneId ^ laneMask`) | Butterfly reductions, Bitonic sort, FFT. |
+| Method                                    | Conceptual Action                            | Key Use Cases                                         |
+| :---------------------------------------- | :------------------------------------------- | :---------------------------------------------------- |
+| **`ShuffleSync(mask, var, srcLane)`**     | Broadcasts from a specific `srcLane`         | Pivot distribution, broadcasting warp leader's value. |
+| **`ShuffleDownSync(mask, var, delta)`**   | Reads from higher lane (`LaneId + delta`)    | Parallel tree reductions (Sum, Max, Min).             |
+| **`ShuffleUpSync(mask, var, delta)`**     | Reads from lower lane (`LaneId - delta`)     | Prefix sums (scans), 1D/2D stencil neighbor reads.    |
+| **`ShuffleXorSync(mask, var, laneMask)`** | Swaps with paired lane (`LaneId ^ laneMask`) | Butterfly reductions, Bitonic sort, FFT.              |
 
 ---
 
@@ -269,12 +278,17 @@ public static unsafe void WarpButterflyAllReduce(int* data)
 
 ---
 
-## 8. See Also
+## See Also
 
-- [4. Practical Guides Overview](00_index.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Gpu.ActiveMask BCL Reference](../03_bcl_api/gpu_class/00_index.md)
-- [Gpu.ShuffleUpSync](../03_bcl_api/gpu_class/WarpShuffleUp.md)
-- [Gpu.ShuffleDownSync](../03_bcl_api/gpu_class/WarpShuffleDown.md)
-- [Gpu.ShuffleXorSync](../03_bcl_api/gpu_class/WarpShuffleXor.md)
-- [Execution and Concurrency Model](../01_language/04_execution_model.md)
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
+- [4. Execution and Concurrency Model](../01_language/04_execution_model.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../03_bcl_api/gpu_class/00_index.md)
+- [Warp.ShuffleXorSync Method (G#)](../03_bcl_api/gpu_class/WarpShuffleXor.md)
+- [Warp.ShuffleUpSync Method (G#)](../03_bcl_api/gpu_class/WarpShuffleUp.md)
+- [Warp.ShuffleDownSync Method (G#)](../03_bcl_api/gpu_class/WarpShuffleDown.md)
+- [Gpu.SyncThreads Method (G#)](../03_bcl_api/gpu_class/SyncThreads.md)

@@ -17,11 +17,11 @@ Performs an atomic read-modify-write addition to a memory address.
 
 ## Overloads
 
-| Name | Description |
-| --- | --- |
-| [AtomicAdd(ref int, int)](#atomicadd-ref-int-int) | Performs an atomic read-modify-write addition on a 32-bit signed integer. |
-| [AtomicAdd(ref uint, uint)](#atomicadd-ref-uint-uint) | Performs an atomic read-modify-write addition on a 32-bit unsigned integer. |
-| [AtomicAdd(ref ulong, ulong)](#atomicadd-ref-ulong-ulong) | Performs an atomic read-modify-write addition on a 64-bit unsigned integer. |
+| Name                                                      | Description                                                                                |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [AtomicAdd(ref int, int)](#atomicadd-ref-int-int)         | Performs an atomic read-modify-write addition on a 32-bit signed integer.                  |
+| [AtomicAdd(ref uint, uint)](#atomicadd-ref-uint-uint)     | Performs an atomic read-modify-write addition on a 32-bit unsigned integer.                |
+| [AtomicAdd(ref ulong, ulong)](#atomicadd-ref-ulong-ulong) | Performs an atomic read-modify-write addition on a 64-bit unsigned integer.                |
 | [AtomicAdd(ref float, float)](#atomicadd-ref-float-float) | Performs an atomic read-modify-write addition on a single-precision floating-point number. |
 
 ## AtomicAdd(ref int, int)
@@ -67,8 +67,6 @@ The value to add to the address.
 <i>uint</i><br>
 The old value observed at `address` before the addition occurred.
 
-
-
 ## AtomicAdd(ref ulong, ulong)
 
 Performs an atomic read-modify-write addition on a 64-bit unsigned integer.
@@ -112,8 +110,6 @@ The value to add to the address.
 <i>float</i><br>
 The old value observed at `address` before the addition occurred.
 
-
-
 ## Examples
 
 ### Histogram Generation
@@ -125,7 +121,7 @@ public static unsafe void HistogramKernel(int* data, int* bins)
 {
     int value = data[ThreadIndex.X];
     // Atomically increment the bin counter to prevent data loss
-    Gpu.AtomicAdd(ref bins[value], 1); 
+    Gpu.AtomicAdd(ref bins[value], 1);
 }
 ```
 
@@ -135,23 +131,20 @@ Maps to `atomicAdd(&address, val)` in CUDA PTX. This intrinsic prevents race con
 
 > [!NOTE]
 > **Interlocked vs Gpu.AtomicAdd**
-> 
+>
 > G# supports both `System.Threading.Interlocked` and `Gpu.AtomicAdd`. How should you choose?
+>
 > - **Use `Interlocked` (Recommended):** For standard integer atomics (e.g., `Interlocked.Add(ref myInt, 1)`). This is the C# standard, making your code highly portable and compatible with CPU fallback modes.
 > - **Use `Gpu.AtomicAdd`:** When you need atomic operations on `float` or `double`. The standard C# `.NET` BCL does not support floating-point atomic additions natively via `Interlocked`, but GPU hardware does. Use `Gpu.AtomicAdd` to unlock hardware-accelerated floating-point atomics.
 
 ## See also
 
-### Synchronization & Memory
-- [SyncThreads](SyncThreads.md)
-- [Constant](Constant.md)
-- [SharedMemory](../memory/SharedMemory.md)
+### BCL API > Memory
 
-### Concurrency & Execution Model
-- [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
-- [Execution Context Overview](../execution_context/00_index.md)
-- [Gpu BCL API Overview](../00_index.md)
+- [Memory Management](../memory/00_index.md)
+- [SharedMemory<T> Class (G#)](../memory/SharedMemory.md)
 
-### Guides & Best Practices
-- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)
-- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)

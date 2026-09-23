@@ -60,8 +60,17 @@ These methods (`FastMath.Exp`, `FastMath.Log`, `FastMath.Sqrt`) map directly to 
 
 ## See also
 
-- [4. Practical Guides Overview](00_index.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Standard Math Primitives Index](../03_bcl_api/math_primitives/00_index.md)
-- [Warp-Level Programming Guide](01_warp_programming_guide.md)
-- [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)
+
+
+
+### BCL API > Math Primitives
+
+- [Math and BitOperations](../03_bcl_api/math_primitives/00_index.md)
+- [Vector2, Vector3, Vector4 Structs (System.Numerics)](../03_bcl_api/math_primitives/VectorTypes.md)
+- [FastMath.Exp Method](../03_bcl_api/math_primitives/FastMath_Exp.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](00_index.md)
+- [The CPU to GPU Paradigm Shift: Anti-Patterns & Best Practices](06_antipatterns_and_best_practices.md)
+

@@ -36,10 +36,19 @@ Standard math functions, fast math approximations, and hardware bit operations.
 
 ## See also
 
-- [Gpu BCL API Overview](../00_index.md)
-- [Math.Sin](Math_Sin.md)
-- [Math.Cos](Math_Cos.md)
-- [Math.Log](Math_Log.md)
-- [Math.Exp](Math_Exp.md)
-- [FastMath.Sqrt](FastMath_Sqrt.md)
-- [VectorTypes](VectorTypes.md)
+
+
+### Language Specification
+
+- [1. Language Specification](../../01_language/00_index.md)
+- [2. Type System and Mapping](../../01_language/03_type_system.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../00_index.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Advanced Math & Lazy Evaluation (Expression Trees)](../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+

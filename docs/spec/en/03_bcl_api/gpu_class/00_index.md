@@ -25,27 +25,16 @@ Core static methods for GPU hardware interaction, synchronization, and intrinsic
 
 ## See also
 
-### Kernel Execution & Flow Control
-- [GridStrideLoop](GridStrideLoop.md)
-- [SingleThread](SingleThread.md)
-- [HintUnroll](HintUnroll.md)
+### Language Specification
 
-### Synchronization & Memory
-- [SyncThreads](SyncThreads.md)
-- [AtomicAdd](AtomicAdd.md)
-- [Constant](Constant.md)
-- [SharedMemory](../memory/SharedMemory.md)
-
-### Warp-Level Intrinsics
-- [WarpShuffleDown](WarpShuffleDown.md)
-- [WarpShuffleUp](WarpShuffleUp.md)
-- [WarpShuffleXor](WarpShuffleXor.md)
-
-### Architecture & Execution Context
-- [Gpu BCL API Overview](../00_index.md)
-- [Execution Context Overview](../execution_context/00_index.md)
+- [1. Language Specification](../../01_language/00_index.md)
 - [4. Execution and Concurrency Model](../../01_language/04_execution_model.md)
 
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../00_index.md)
+
 ### Guides
-- [Warp-Level Programming Guide](../../04_guides/01_warp_programming_guide.md)
-- [Antipatterns and Best Practices Guide](../../04_guides/06_antipatterns_and_best_practices.md)
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)

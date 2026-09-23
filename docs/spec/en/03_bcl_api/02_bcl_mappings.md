@@ -89,7 +89,20 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 
 ## See also
 
-- [Gpu BCL API Overview](00_index.md)
-- [Standard Math Primitives Index](math_primitives/00_index.md)
-- [GPU Intrinsic Class Index](gpu_class/00_index.md)
-- [2. Lexical Structure and Syntax](../01_language/02_lexical_and_syntax.md)
+
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../02_architecture/01_aot_transpiler.md)
+
+### BCL API > Attributes
+
+- [Attributes](attributes/00_index.md)
+- [Kassyi.GSharp.Core: Advanced Mapping Attributes](attributes/AdvancedMappingAttributes.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../04_guides/00_index.md)
+- [Advanced: Extending GpuBigInteger with Custom Algorithms](../04_guides/08_advanced_custom_math_kernels.md)
+

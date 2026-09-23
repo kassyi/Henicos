@@ -27,14 +27,18 @@ This section defines the core language syntax, type system constraints, executio
 
 ## See also
 
-### Getting Started & Overview
+
+
+### Getting Started
+
 - [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
 
-### Architecture & Internals
-- [1. AOT Transpiler Architecture](../02_architecture/01_aot_transpiler.md)
-- [2. Runtime Kernel Loader](../02_architecture/02_runtime_loader.md)
+### Architecture
 
-### Guides
-- [Antipatterns and Best Practices Guide](../04_guides/06_antipatterns_and_best_practices.md)
-- [Warp-Level Programming Guide](../04_guides/01_warp_programming_guide.md)
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../02_architecture/01_aot_transpiler.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../03_bcl_api/00_index.md)
+

@@ -37,20 +37,19 @@ Because GSharp enforces a strict Zero-Allocation rule inside GPU kernels, the `S
 
 ## See also
 
-### Data Types
-- [GpuBigInteger and GpuUIntBigInteger Overview](gpu_big_int_and_uint/00_index.md)
-- [GpuBigFloat Overview](gpu_big_float/00_index.md)
-- [GpuContext](gpu_context/GpuContext.md)
 
-### Mathematical Algorithms
-- [GpuBigInteger Algorithms (GCD, NTT, Matrix2x2, etc.)](gpu_big_int_and_uint/00_index.md#algorithms)
-- [Standard Math Primitives Index](../math_primitives/00_index.md)
 
-### Transpiler Internals & Architecture
-- [4. Bignum Transpiler Internals](../../02_architecture/04_bignum_internals.md)
-- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
-- [Gpu BCL API Overview](../00_index.md)
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../02_architecture/00_index.md)
+- [4. BigNum (BigInt/BigFloat) Internal Architecture](../../02_architecture/04_bignum_internals.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../00_index.md)
 
 ### Guides
-- [Bignum Expression Trees Guide](../../04_guides/04_bignum_expression_trees_guide.md)
-- [Stdlib Math and Lazy Evaluation Guide](../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [4. BigNum Expression Trees Guide](../../04_guides/04_bignum_expression_trees_guide.md)
+

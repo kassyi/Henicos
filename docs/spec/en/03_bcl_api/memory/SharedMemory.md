@@ -66,4 +66,16 @@ Maps to `__shared__` memory in CUDA. Shared memory is dramatically faster than g
 
 ## See also
 
-- [Gpu BCL API Overview](../00_index.md)
+
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../gpu_class/00_index.md)
+- [Gpu.SyncThreads Method (G#)](../gpu_class/SyncThreads.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)
+- [11. Strict Memory Management and Ownership Patterns (Zero-Leak Analyzer)](../../04_guides/02_memory_safety_patterns.md)
+

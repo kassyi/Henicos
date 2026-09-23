@@ -54,8 +54,20 @@ For example, attempting to use standard LINQ extension methods (which heavily re
 
 ## See also
 
-- [4. Practical Guides Overview](00_index.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Diagnostics and Exceptions Reference](../03_bcl_api/01_diagnostics_and_exceptions.md)
+
+
+
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
-- [Antipatterns and Best Practices Guide](06_antipatterns_and_best_practices.md)
+
+### BCL API
+
+- [BCL API and Hardware Intrinsics Reference](../03_bcl_api/00_index.md)
+- [7. Diagnostics and Exceptions](../03_bcl_api/01_diagnostics_and_exceptions.md)
+
+### BCL API > Diagnostics
+
+- [Transpiler and Analyzer Diagnostics (GSHxxxx)](../03_bcl_api/diagnostics/00_index.md)
+

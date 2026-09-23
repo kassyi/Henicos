@@ -78,12 +78,18 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 
 ## See also
 
-- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
-- [Diagnostics and Exceptions Reference](01_diagnostics_and_exceptions.md)
-- [BCL Mappings Reference](02_bcl_mappings.md)
-- [Attributes Index](attributes/00_index.md)
-- [Execution Context Index](execution_context/00_index.md)
-- [GPU Intrinsic Class Index](gpu_class/00_index.md)
-- [Standard Math Primitives Index](math_primitives/00_index.md)
-- [Arbitrary-Precision Math Overview](math_bignum/00_index.md)
-- [Memory Architecture Index](memory/00_index.md)
+
+
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
+- [1. Foundation and Domain](../01_language/01_introduction.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../04_guides/00_index.md)
+

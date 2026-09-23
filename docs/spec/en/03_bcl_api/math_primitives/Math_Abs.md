@@ -83,4 +83,10 @@ Maps natively to `fabsf()` for float, `fabs()` for double, and `abs()` for int i
 
 ## See also
 
-- [Gpu BCL API Overview](../00_index.md)
+
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [Advanced Math & Lazy Evaluation (Expression Trees)](../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+

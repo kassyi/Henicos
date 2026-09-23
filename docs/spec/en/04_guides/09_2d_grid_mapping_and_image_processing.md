@@ -160,8 +160,17 @@ public static void ProcessVolume(float[] voxels, int width, int height, int dept
 
 ## See also
 
-- [4. Practical Guides Overview](00_index.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [BlockDimension](../03_bcl_api/execution_context/BlockDimension.md)
-- [ThreadIndex](../03_bcl_api/execution_context/ThreadIndex.md)
-- [GridDimension](../03_bcl_api/execution_context/GridDimension.md)
+
+
+
+### BCL API > Execution Context
+
+- [Execution Context](../03_bcl_api/execution_context/00_index.md)
+- [BlockDimension Struct (Kassyi.GSharp.Core)](../03_bcl_api/execution_context/BlockDimension.md)
+- [ThreadIndex Struct (Kassyi.GSharp.Core)](../03_bcl_api/execution_context/ThreadIndex.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../03_bcl_api/gpu_class/00_index.md)
+- [Gpu.GridStrideLoop Method (G#)](../03_bcl_api/gpu_class/GridStrideLoop.md)
+

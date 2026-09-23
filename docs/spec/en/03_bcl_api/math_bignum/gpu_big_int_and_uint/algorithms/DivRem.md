@@ -69,19 +69,10 @@ Console.WriteLine($"Q: {quotient.ToBigInteger()}, R: {remainder.ToBigInteger()}"
 
 ## See also
 
-### Related Algorithms
-- [Gcd](Gcd.md)
-- [ModPow](ModPow.md)
-- [Matrix2x2](Matrix2x2.md)
 
-### Integer Types & Architecture
-- [GpuBigInteger](../GpuBigInteger.md)
-- [GpuUIntBigInteger](../GpuUIntBigInteger.md)
-- [GpuBigInteger and GpuUIntBigInteger Overview](../00_index.md)
-- [GpuContext](../../gpu_context/GpuContext.md)
-- [Arbitrary-Precision Math Overview](../../00_index.md)
-- [Gpu BCL API Overview](../../../00_index.md)
 
-### Guides
-- [Stdlib Math and Lazy Evaluation Guide](../../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
-- [Precision and Performance Guide](../../../../04_guides/05_precision_and_performance_guide.md)
+### BCL API > Math Bignum
+
+- [Standard Math Library (Stdlib.Math)](../../00_index.md)
+- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
+

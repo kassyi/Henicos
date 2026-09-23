@@ -113,4 +113,15 @@ Maps natively to `__gsharp_tzc_32()` for 32-bit, and `__gsharp_tzc_64()` for 64-
 
 ## See also
 
-- [Gpu BCL API Overview](../00_index.md)
+
+
+### Language Specification
+
+- [1. Language Specification](../../01_language/00_index.md)
+- [2. Type System and Mapping](../../01_language/03_type_system.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [5. Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+

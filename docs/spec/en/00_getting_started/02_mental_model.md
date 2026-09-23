@@ -50,7 +50,7 @@ int i = ThreadIndex.X;
 ### The Safety Net: Compile-Time Verification (Static Determinism)
 
 A natural concern when writing GPU kernels in high-level C# is:
-*"What happens if I accidentally call `Console.WriteLine`, an unmapped .NET API, or a third-party NuGet package inside a `[GpuKernel]`?"*
+_"What happens if I accidentally call `Console.WriteLine`, an unmapped .NET API, or a third-party NuGet package inside a `[GpuKernel]`?"_
 
 **The answer is: It will fail immediately at compile time.**
 
@@ -76,19 +76,21 @@ Now that you understand the rules of the road, proceed to [3. The "Hello GPU" Tu
 
 ## See also
 
-### Getting Started
-- [0. Getting Started with G# (GSharp)](00_index.md)
-- [1. Prerequisites & Installation](01_prerequisites.md)
-- [3. The "Hello GPU" Tutorial](03_hello_gpu.md)
+
 
 ### Language Specification
-- [1. Language Introduction](../01_language/01_introduction.md)
+
+- [1. Language Specification](../01_language/00_index.md)
 - [4. Execution and Concurrency Model](../01_language/04_execution_model.md)
 - [5. Limitations and Diagnostics](../01_language/05_limitations.md)
 
-### BCL & Architecture
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [TakesOwnershipAttribute](../03_bcl_api/attributes/TakesOwnershipAttribute.md)
+### BCL API > Attributes
+
+- [Attributes](../03_bcl_api/attributes/00_index.md)
+- [Kassyi.GSharp.Core: TakesOwnershipAttribute class](../03_bcl_api/attributes/TakesOwnershipAttribute.md)
 
 ### Guides
-- [Memory Safety Patterns Guide](../04_guides/02_memory_safety_patterns.md)
+
+- [4. Practical Guides and Best Practices](../04_guides/00_index.md)
+- [11. Strict Memory Management and Ownership Patterns (Zero-Leak Analyzer)](../04_guides/02_memory_safety_patterns.md)
+

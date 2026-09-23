@@ -47,28 +47,10 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 
 ## See also
 
-### Integer Types & Operators
-- [GpuBigInteger](GpuBigInteger.md)
-- [GpuUIntBigInteger](GpuUIntBigInteger.md)
-- [Operators](Operators.md)
-- [IO_GpuRadixConverter](IO_GpuRadixConverter.md)
 
-### Common Algorithms
-- [DivRem](algorithms/DivRem.md)
-- [Gcd](algorithms/Gcd.md)
-- [ModPow](algorithms/ModPow.md)
-- [Ntt](algorithms/Ntt.md)
-- [Matrix2x2](algorithms/Matrix2x2.md)
-- [Fermat](algorithms/Fermat.md)
-- [Hypergeometric](algorithms/Hypergeometric.md)
 
-### Architecture & Floating Point
-- [Arbitrary-Precision Math Overview](../00_index.md)
-- [GpuBigFloat Overview](../gpu_big_float/00_index.md)
-- [GpuContext](../gpu_context/GpuContext.md)
-- [4. Bignum Transpiler Internals](../../../02_architecture/04_bignum_internals.md)
-- [Gpu BCL API Overview](../../00_index.md)
+### BCL API > Math Bignum
 
-### Guides
-- [Bignum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
-- [Stdlib Math and Lazy Evaluation Guide](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [Arbitrary-Precision Floats (GpuBigFloat)](../gpu_big_float/00_index.md)
+

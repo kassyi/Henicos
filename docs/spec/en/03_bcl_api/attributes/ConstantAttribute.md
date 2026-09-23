@@ -37,19 +37,24 @@ The parameter is removed from the generated C++ function signature entirely. Ins
 
 ## See also
 
-### Related Attributes
-- [Attributes Index](00_index.md)
-- [GpuKernelAttribute](GpuKernelAttribute.md)
-- [GpuDeviceFunctionAttribute](GpuDeviceFunctionAttribute.md)
 
-### Language & Type System
-- [3. Type System (Constants)](../../01_language/03_type_system.md#26-constants-const)
-- [1. AOT Transpiler Architecture](../../02_architecture/01_aot_transpiler.md)
 
-### BCL & Memory Architecture
-- [Gpu BCL API Overview](../00_index.md)
-- [Gpu.Constant<T>](../gpu_class/Constant.md)
-- [Memory Architecture Index](../memory/00_index.md)
+### Language Specification
+
+- [1. Language Specification](../../01_language/00_index.md)
+- [2. Type System and Mapping](../../01_language/03_type_system.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../gpu_class/00_index.md)
+- [Gpu.Constant Method (G#)](../gpu_class/Constant.md)
+
+### BCL API > Memory
+
+- [Memory Management](../memory/00_index.md)
 
 ### Guides
-- [Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [5. Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+

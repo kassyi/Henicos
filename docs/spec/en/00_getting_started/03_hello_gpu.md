@@ -1,5 +1,5 @@
 ---
-title: "3. The \"Hello GPU\" Tutorial"
+title: '3. The "Hello GPU" Tutorial'
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
@@ -241,18 +241,19 @@ G# acts as a seamless bridge. It automatically analyzes your `[GpuKernel]` metho
 
 ## See also
 
-### Getting Started
-- [0. Getting Started with G# (GSharp)](00_index.md)
-- [1. Prerequisites & Installation](01_prerequisites.md)
-- [2. The Mental Model & Safety Net](02_mental_model.md)
 
-### Language Specification
-- [1. Language Introduction](../01_language/01_introduction.md)
-
-### BCL & GPU Intrinsics
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Execution Context Overview](../03_bcl_api/execution_context/00_index.md)
-- [Gpu.GridStrideLoop](../03_bcl_api/gpu_class/GridStrideLoop.md)
 
 ### Architecture
-- [2. Runtime Kernel Loader](../02_architecture/02_runtime_loader.md)
+
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+- [8. Comprehensive Example](../02_architecture/03_comprehensive_example.md)
+
+### BCL API > Execution Context
+
+- [Execution Context](../03_bcl_api/execution_context/00_index.md)
+
+### BCL API > Gpu Class
+
+- [Gpu Class](../03_bcl_api/gpu_class/00_index.md)
+- [Gpu.GridStrideLoop Method (G#)](../03_bcl_api/gpu_class/GridStrideLoop.md)
+

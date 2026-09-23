@@ -165,10 +165,15 @@ G# fully supports the use of `const` fields and local variables. The AST transpi
 
 ## See also
 
-- [1. Language Specification Overview](00_index.md)
-- [1. Language Introduction](01_introduction.md)
-- [2. Lexical Structure and Syntax](02_lexical_and_syntax.md)
-- [4. Execution and Concurrency Model](04_execution_model.md)
-- [5. Limitations and Diagnostics](05_limitations.md)
-- [Gpu BCL API Overview](../03_bcl_api/00_index.md)
-- [Vector Types](../03_bcl_api/math_primitives/VectorTypes.md)
+
+
+### BCL API > Attributes
+
+- [Attributes](../03_bcl_api/attributes/00_index.md)
+- [ConstantAttribute Class (G#)](../03_bcl_api/attributes/ConstantAttribute.md)
+
+### BCL API > Math Primitives
+
+- [Math and BitOperations](../03_bcl_api/math_primitives/00_index.md)
+- [Vector2, Vector3, Vector4 Structs (System.Numerics)](../03_bcl_api/math_primitives/VectorTypes.md)
+
