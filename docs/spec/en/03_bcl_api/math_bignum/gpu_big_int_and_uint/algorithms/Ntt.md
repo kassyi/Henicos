@@ -17,32 +17,14 @@ When multiplying two numbers, the standard "schoolbook" multiplication algorithm
 
 To solve this, GSharp provides an ultra-optimized **Number Theoretic Transform (NTT)** implementation. NTT is a discrete Fourier transform over a finite field. It reduces the time complexity of multiplication from $O(N^2)$ to $O(N \log N)$ by converting the multiplication into a convolution in the frequency domain.
 
-## Overloads
+## Mechanism
 
-| Name | Description |
-| --- | --- |
-| [NttMultiply(GpuBigInteger, GpuBigInteger)](#nttmultiply-gpubiginteger-gpubiginteger) | Computes multiplication using the Number Theoretic Transform. |
-
-## NttMultiply(GpuBigInteger, GpuBigInteger)
-
-Builds a lazy-evaluated expression tree node for NTT-based multiplication. 
+The NTT multiplication is an **internal algorithm**. There is no public `NttMultiply` or `Mul` method. Instead, the standard `*` operator (or expression tree multiplication) automatically routes to the NTT implementation when the size of the operands crosses a performance threshold.
 
 ```csharp
-public static void Mul(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+// Internally dispatched when evaluating:
+var expr = gpuA * gpuB; 
 ```
-
-#### Parameters
-
-`left` _GpuBigInteger_<br>
-The first value to multiply.
-
-`right` _GpuBigInteger_<br>
-The second value to multiply.
-
-#### Returns
-
-_GpuBigIntExpr_<br>
-An expression tree node that, when evaluated, produces the product using an $O(N \log N)$ convolution.
 
 ## Examples
 

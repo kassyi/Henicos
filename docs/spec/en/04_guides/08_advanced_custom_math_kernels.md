@@ -41,7 +41,7 @@ public static class MyCustomMath
     }
 
     // Implementation depends on chosen strategy (see below)
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult) 
+    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger<L1024> uA, GpuUIntBigInteger<L1024> uB, GpuUIntBigInteger<L1024> finalResult)
         => throw new NotImplementedException();
 }
 ```
@@ -52,9 +52,9 @@ public static class MyCustomMath
 
 You might wonder why we extract `.Value` (which returns a `GpuUIntBigInteger`) in Step 2, instead of just passing `GpuBigInteger` or operating on `GpuUIntBigInteger` inside the kernel.
 
-[GpuUIntBigInteger](../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md) is **also a Host-Side orchestration type**. While `GpuBigInteger` handles the *sign* (Signed Wrapper), `GpuUIntBigInteger` handles the *memory* (Unsigned Wrapper). It is responsible for allocating GPU memory, managing its lifecycle (`IDisposable`), and tracking references.
+[GpuUIntBigInteger](../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md) is **also a Host-Side orchestration type**. While `GpuBigInteger` handles the _sign_ (Signed Wrapper), `GpuUIntBigInteger` handles the _memory_ (Unsigned Wrapper). It is responsible for allocating GPU memory, managing its lifecycle (`IDisposable`), and tracking references.
 
-Because it is a managed class running on the CPU, you cannot instantiate or call methods on `GpuUIntBigInteger` inside a GPU kernel. 
+Because it is a managed class running on the CPU, you cannot instantiate or call methods on `GpuUIntBigInteger` inside a GPU kernel.
 
 When you pass a `GpuUIntBigInteger` as an argument to a `[GpuKernel]` from the Host, the GSharp transpiler automatically unwraps it. The kernel itself only ever sees the underlying `DevicePointer`—represented in C# as a raw `uint[]` buffer. Therefore, your custom kernel signature must accept `uint[]`, not `GpuUIntBigInteger`.
 
@@ -93,6 +93,7 @@ public static class MyCustomMath_StrategyA
     }
 }
 ```
+
 **Benefits**: Zero manual memory management, automatic kernel fusion, and built-in optimization.
 
 ### Strategy B: Writing a Custom Kernel
@@ -112,8 +113,8 @@ public static class MyCustomMathKernels
     [GpuKernel]
     public static void MyCustomUnsignedKernel(uint[] arrayA, uint[] arrayB, uint[] result, int maxWords)
     {
-        ulong carry = 0; 
-        
+        ulong carry = 0;
+
         // Process words from least significant to most significant
         for (int i = 0; i < maxWords; i++)
         {
@@ -130,17 +131,18 @@ public static class MyCustomMathKernels
 
 ## 3. Memory Management (The Zero-Allocation Rule)
 
-If you chose Strategy B (Custom Kernel), you must manually manage your temporary buffers. 
+If you chose Strategy B (Custom Kernel), you must manually manage your temporary buffers.
 
 > [!WARNING]
-> **Never use `GpuUIntBigInteger.Allocate()` to create intermediate scratch space during a loop.** This calls `cudaMalloc` under the hood and will instantly destroy performance and fragment GPU VRAM.
+> **Never use unpooled `GpuBuffer<T>` to create intermediate scratch space during a loop.** This calls `cudaMalloc` under the hood and will instantly destroy performance and fragment GPU VRAM.
 
 **❌ Bad: Allocating memory in a loop (Anti-Pattern)**
+
 ```csharp
 // This will trigger cudaMalloc 1000 times! Extremely slow.
 for (int i = 0; i < 1000; i++)
 {
-    using var temp = GpuUIntBigInteger.Allocate(context); 
+    using var temp = new GpuBuffer<uint>(1024); // ❌ Bypasses context pool
     // ...
 }
 ```
@@ -163,14 +165,11 @@ public static class MyCustomMath_StrategyB
         // 1. Checkout temporary buffers from the pre-allocated pool
         using var scratch1 = new GpuUIntBigInteger<L1024>(context);
         using var scratch2 = new GpuUIntBigInteger<L1024>(context);
-        
-        // 2. The final result buffer that we will return (do not dispose this one!)
-        var finalResult = new GpuUIntBigInteger<L1024>(context);
 
-        // 3. Dispatch your custom kernel via the auto-generated method.
-        // The GSharp Source Generator automatically injects Launch{MethodName} 
-        // methods directly into your partial class for any [GpuKernel].
-        MyCustomMathKernels.LaunchMyCustomUnsignedKernel(
+        // 2. Dispatch your custom kernel via the auto-generated wrapper method.
+        // The GSharp Source Generator automatically injects Launch{MethodName}
+        // methods into the <KernelClass>Wrapper for any [GpuKernel].
+        MyCustomMathKernelsWrapper.LaunchMyCustomUnsignedKernel(
             uA.DevicePointer, uB.DevicePointer, finalResult.DevicePointer, context.MaxWords,
             gridDimX: 1, blockDimX: 1
         );
@@ -186,9 +185,6 @@ By properly isolating the **Host-Side Sign Evaluation** from the **GPU-Side Unsi
 
 ## See also
 
-
-
-
 ### BCL API > Attributes
 
 - [Attributes](../03_bcl_api/attributes/00_index.md)
@@ -202,4 +198,3 @@ By properly isolating the **Host-Side Sign Evaluation** from the **GPU-Side Unsi
 
 - [4. Practical Guides and Best Practices](00_index.md)
 - [Advanced Math & Lazy Evaluation (Expression Trees)](07_stdlib_math_and_lazy_evaluation.md)
-

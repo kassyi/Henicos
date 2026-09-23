@@ -6,7 +6,7 @@ language: "en"
 description: "Reference for multi-precision Modular Exponentiation (RSA) on the GPU."
 ---
 
-## GpuBigInteger.ModPow Method
+## GpuBigIntDivRem.ModPow Method
 
 ## Definition
 
@@ -21,7 +21,7 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. T
 | --- | --- |
 | [ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)](#modpow) | Computes the modular exponentiation of a number. |
 
-## ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)
+## GpuBigIntDivRem.ModPow(ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, ref GpuUIntBigInteger<TSize>, out GpuUIntBigInteger<TSize>)
 
 Computes the modular exponentiation eagerly into the provided result buffer.
 
@@ -69,7 +69,7 @@ using var gpuCiphertext = GpuUIntBigInteger.FromByteArray(context, ciphertextByt
 
 // 3. Eagerly evaluate: c^d mod n
 using var decryptedResult = new GpuUIntBigInteger<L2048>(context);
-GpuUIntBigInteger<L2048>.ModPow(ref gpuCiphertext, ref gpuPrivateKey, ref gpuModulus, out decryptedResult);
+GpuBigIntDivRem.ModPow(ref gpuCiphertext, ref gpuPrivateKey, ref gpuModulus, out decryptedResult);
 
 // 5. Download the decrypted message back to the CPU
 byte[] originalMessage = decryptedResult.ToByteArray();

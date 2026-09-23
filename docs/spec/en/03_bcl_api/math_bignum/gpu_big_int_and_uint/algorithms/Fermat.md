@@ -3,102 +3,77 @@ title: "FermatRunner Class (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
-description: "Reference for Fermat primality testing and factorization on the GPU."
+description: "Reference for Fermat primality testing on the GPU."
 ---
 
 ## FermatRunner Class
 
-## Definition
-
 **Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-Provides algorithms based on Fermat's Little Theorem. While probabilistic primality tests (like Miller-Rabin) are common, Fermat factorization is highly effective when a composite number is the product of two primes that are close to each other.
-
-Because Fermat factorization requires searching for integer square roots across a massive search space ($x^2 - N = y^2$), it is highly parallelizable and perfectly suited for the GPU.
+Provides highly optimized algorithms for executing Probable Prime (PRP) tests based on Fermat's Little Theorem. The runner is explicitly tuned to handle massive numbers over millions of loop iterations completely within GPU VRAM, bypassing the host CPU to eliminate PCIe transfer bottlenecks.
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [FermatRunner(GpuContext)](#fermatrunner-gpucontext) | Initializes a new instance of the FermatRunner using the specified context. |
+| [FermatRunner(int)](#fermatrunner-int) | Initializes a new instance of the FermatRunner targeting a specific Fermat number exponent `e`. |
 
-## FermatRunner(GpuContext)
+## FermatRunner(int)
 
-Initializes a new instance of the FermatRunner using the specified context.
+Initializes a new instance of the FermatRunner targeting a specific exponent `e` for the Fermat number $F_e = 2^{2^e} + 1$ (or variants thereof).
 
 ```csharp
-public FermatRunner(GpuContext context);
+public FermatRunner(int e);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The context memory pool to use for dynamic search allocations.
+`e` _int_<br>
+The exponent defining the size and iteration bounds of the target number to test.
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [TryFactor(GpuBigInteger, out GpuBigInteger, out GpuBigInteger)](#tryfactor-gpubiginteger-out-gpubiginteger-out-gpubiginteger) | Attempts to factor a composite number using Fermat's method. |
+| [RunFermatPrp()](#runfermatprp) | Executes the Probable Prime test natively on the GPU and returns the result. |
 
-## TryFactor(GpuBigInteger, out GpuBigInteger, out GpuBigInteger)
+## RunFermatPrp()
 
-Searches for factors using thousands of concurrent GPU threads. The runner will automatically chunk the search space and dispatch kernels until it finds a valid $y$ such that $x^2 - N = y^2$.
+Dispatches the complete Fermat PRP loop on the GPU and synchronizes with the host once finished.
 
 ```csharp
-public bool TryFactor(GpuBigInteger n, out GpuBigInteger factorP, out GpuBigInteger factorQ);
+public bool RunFermatPrp();
 ```
-
-#### Parameters
-
-`n` _GpuBigInteger_<br>
-The composite number to factor.
-
-`factorP` _out GpuBigInteger_<br>
-When this method returns, contains the first prime factor if found; otherwise, an uninitialized value.
-
-`factorQ` _out GpuBigInteger_<br>
-When this method returns, contains the second prime factor if found; otherwise, an uninitialized value.
 
 #### Returns
 
 _bool_<br>
-`true` if factors were successfully found within the search limit; otherwise, `false`.
+`true` if the number passes the Fermat primality test (it is a Probable Prime); otherwise, `false` (it is composite).
 
 ## Examples
 
-### Factoring a Composite Number via Parallel Search
+### Running a Native GPU PRP Test
 
-This example demonstrates how to orchestrate a brute-force Fermat search across the GPU, where each thread checks a different $x$ offset simultaneously.
+This example demonstrates how to orchestrate a Fermat test across the GPU. The runner manages its own internal `GpuContext` and executes all iterations internally.
 
 ```csharp
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(maxWords: 128); // 4096-bit composite number
+// Initialize the runner for a specific exponent (e.g., e = 1000)
+var runner = new FermatRunner(1000);
 
-// The massive composite number we want to factor
-var compositeN = BigInteger.Parse("... massive number ...");
-using var gpuN = GpuUIntBigInteger.FromBigInteger(context, compositeN);
+// Dispatch the GPU kernels. 
+// This will block the CPU until the GPU finishes all millions of loop iterations.
+bool isPrime = runner.RunFermatPrp();
 
-// Initialize the runner
-var runner = new FermatRunner(context);
-
-// Dispatch the GPU kernels
-bool found = runner.TryFactor(new GpuBigInteger(gpuN), out GpuBigInteger factorP, out GpuBigInteger factorQ);
-
-if (found)
+if (isPrime)
 {
-    Console.WriteLine($"Found prime factor P: {factorP.ToBigInteger()}");
-    Console.WriteLine($"Found prime factor Q: {factorQ.ToBigInteger()}");
-    
-    // Clean up the dynamically allocated results
-    factorP.Dispose();
-    factorQ.Dispose();
+    Console.WriteLine("Target is a Probable Prime (PRP)!");
 }
 else
 {
-    Console.WriteLine("No factors found within the search limit.");
+    Console.WriteLine("Target is definitively composite.");
 }
 ```
 
@@ -108,10 +83,7 @@ Instead of returning a simple AST node, Fermat algorithms in GSharp use the `Fer
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
-- [GpuBigInteger.ModPow Method (G#)](ModPow.md)
-
+- [GpuUIntBigInteger Struct (G#)](../GpuUIntBigInteger.md)

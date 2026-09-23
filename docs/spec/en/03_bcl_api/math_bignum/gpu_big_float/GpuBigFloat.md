@@ -28,12 +28,12 @@ Similar to `GpuBigInteger`, this struct is a Host-Side wrapper that orchestrates
 Initializes a new wrapper around a raw mantissa buffer and a scalar exponent.
 
 ```csharp
-public GpuBigFloat(GpuUIntBigInteger mantissa, long exponent, bool isNegative = false);
+public GpuBigFloat(GpuUIntBigInteger<TSize> mantissa, long exponent, bool isNegative = false);
 ```
 
 #### Parameters
 
-`mantissa` _GpuUIntBigInteger_<br>
+`mantissa` _GpuUIntBigInteger<TSize>_<br>
 The underlying magnitude residing on the GPU.
 
 `exponent` _long_<br>

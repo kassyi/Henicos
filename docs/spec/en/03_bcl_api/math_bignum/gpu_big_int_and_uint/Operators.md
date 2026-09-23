@@ -112,25 +112,7 @@ The number to divide by.
 _GpuBigIntExpr_ | _GpuBigUIntExpr_<br>
 An expression tree node that computes the quotient when evaluated.
 
-## Modulus (%)
 
-Returns a lazy-evaluated expression tree node for modulo operation.
-
-```csharp
-// Modulus (%) is not supported directly due to ambiguity. Use DivRem.
-public static GpuBigUIntExpr operator %(GpuUIntBigInteger dividend, GpuUIntBigInteger divisor);
-```
-
-#### Parameters
-`dividend` _GpuBigInteger_ | _GpuUIntBigInteger_<br>
-The number to be divided.
-
-`divisor` _GpuBigInteger_ | _GpuUIntBigInteger_<br>
-The number to divide by.
-
-#### Returns
-_GpuBigIntExpr_ | _GpuBigUIntExpr_<br>
-An expression tree node that computes the remainder when evaluated.
 
 ## Examples
 

@@ -195,7 +195,8 @@ When moving away from CPU `lock` paradigms, it is crucial to understand the dist
 // ✅ Good: Appropriate use of Synchronization Primitives
 [GpuKernel]
 public static void SyncVsAtomicExample(int[] data, int[] histogram) {
-    int localValue = data[ThreadIndex.Global.X];
+    int globalIdx = ThreadIndex.X + BlockIndex.X * BlockDimension.X;
+    int localValue = data[globalIdx];
 
     // -------------------------------------------------------------
     // 1. Data Protection: Atomics
@@ -251,7 +252,7 @@ public void ExecuteChattyPipeline(float[] hostData) {
     for (int i = 0; i < 1000; i++) {
         // Uploading a single float per iteration incurs huge PCIe latency
         float[] singleElement = new[] { hostData[i] };
-        deviceBuffer.CopyToDevice(singleElement, offset: i, length: 1);
+        deviceBuffer.CopyToDevice(singleElement);
 
         // Launching a kernel for a tiny payload wastes GPU compute potential
         LaunchProcessItemKernel(deviceBuffer, i, gridDimX: 1, blockDimX: 1);
