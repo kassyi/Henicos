@@ -134,7 +134,7 @@ public static class MyCustomMathKernels
 If you chose Strategy B (Custom Kernel), you must manually manage your temporary buffers.
 
 > [!WARNING]
-> **Never use unpooled `GpuBuffer<T>` to create intermediate scratch space during a loop.** This calls `cudaMalloc` under the hood and will instantly destroy performance and fragment GPU VRAM.
+> **Never use naked `GpuBuffer<T>` to create intermediate scratch space during a loop.** This calls `cudaMalloc` under the hood and will instantly destroy performance and fragment GPU VRAM.
 
 **❌ Bad: Allocating memory in a loop (Anti-Pattern)**
 
@@ -142,13 +142,13 @@ If you chose Strategy B (Custom Kernel), you must manually manage your temporary
 // This will trigger cudaMalloc 1000 times! Extremely slow.
 for (int i = 0; i < 1000; i++)
 {
-    using var temp = new GpuBuffer<uint>(1024); // ❌ Bypasses context pool
+    using var temp = new GpuBuffer<uint>(1024); 
     // ...
 }
 ```
 
-**✅ Good: Checking out from the Context Pool**
-Always checkout scratch buffers from the `GpuContext` and dispose them immediately when done.
+**✅ Good: Hoisting Allocations and Using Context-Bound Types**
+Allocate `GpuUIntBigInteger` buffers once, outside of your hot loops, and reuse them across dispatches. These types encapsulate the underlying `GpuBuffer` and ensure sizes remain strictly compatible with the `GpuContext`.
 
 ```csharp
 // Execution Context: Host (CPU)
@@ -162,7 +162,7 @@ public static class MyCustomMath_StrategyB
 
     private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
     {
-        // 1. Checkout temporary buffers from the pre-allocated pool
+        // 1. Allocate context-bound temporary buffers (do this outside loops in real apps)
         using var scratch1 = new GpuUIntBigInteger(context, context.MaxWords);
         using var scratch2 = new GpuUIntBigInteger(context, context.MaxWords);
 
