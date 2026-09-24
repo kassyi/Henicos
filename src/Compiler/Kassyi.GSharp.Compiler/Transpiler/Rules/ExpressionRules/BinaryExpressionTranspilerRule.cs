@@ -26,13 +26,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append("&");
-            }
-
-            context.Writer.Append("() ");
-            using (context.Writer.Scope())
+            using (context.Writer.ImmediatelyInvokedLambda())
             {
                 context.Writer.Append("auto __coalesce_tmp = ");
                 context.Visitor.Visit(node.Left);
@@ -42,8 +36,6 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                 context.Visitor.Visit(node.Right);
                 context.Writer.AppendSemiColonLine();
             }
-
-            context.Writer.AppendParentheses();
 
             return;
         }

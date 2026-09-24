@@ -1,9 +1,9 @@
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-/// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
+namespace Kassyi.GSharp.Compiler.Transpiler;/// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
 // ReSharper disable once UnusedType.Global -- Used implicitly by Roslyn compiler infra
 // ReSharper disable once UnusedMember.Global -- Used implicitly by Roslyn compiler infra
 internal static class MacroTranspiler
@@ -457,8 +457,7 @@ internal static class MacroTranspiler
             }
             else if (expr != null)
             {
-                var isExprPointer = localContext.SemanticModel.GetTypeInfo(expr).Type is IPointerTypeSymbol;
-                if (isPointer && !isExprPointer)
+                if (isPointer && RefSyntaxHelper.NeedsAddressOf(expr, localContext.SemanticModel))
                 {
                     localContext.Writer.Append("&");
                 }

@@ -25,13 +25,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
             // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append("&");
-            }
-
-            context.Writer.AppendParentheses();
-            using (context.Writer.Scope())
+            using (context.Writer.ImmediatelyInvokedLambda())
             {
                 for (var i = 0; i < rightTuple.Arguments.Count; i++)
                 {
@@ -49,19 +43,12 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 }
             }
 
-            context.Writer.AppendParentheses();
             return;
         }
 
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            using (context.Writer.Brackets())
-            {
-                context.Writer.Append("&");
-            }
-
-            context.Writer.Append("() -> decltype(auto) ");
-            using (context.Writer.Scope())
+            using (context.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
             {
                 context.Writer.Append("auto& __coalesce_target = ");
                 context.Visitor.Visit(node.Left);
@@ -76,8 +63,6 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
                 context.Writer.AppendLine(" : __coalesce_target.Value;");
             }
-
-            context.Writer.AppendParentheses();
 
             return;
         }
