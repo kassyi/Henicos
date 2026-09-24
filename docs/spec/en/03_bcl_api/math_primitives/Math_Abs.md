@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Abs(1.0f);
-// Double precision (Math)
-double d = Math.Abs(1.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Abs operates on single-precision floating point
+float f = MathF.Abs(-5.5f);
+Console.WriteLine($"MathF.Abs(-5.5f) = {f:F1}");
+
+// Math.Abs operates on double-precision floating point
+double d = Math.Abs(-10.25);
+Console.WriteLine($"Math.Abs(-10.25) = {d:F2}");
 ```
-
-## Remarks
-
-Maps natively to `fabsf()` for float, `fabs()` for double, and `abs()` for int in CUDA C++.
-
 ## See also
 
 

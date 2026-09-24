@@ -73,33 +73,19 @@ Given a 32-bit unsigned integer `value`, it simply counts the number of `1` bits
 
 ## Examples
 
-### Counting Set Bits in a Mask
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static void ProcessActiveFlags()
-{
-    // Example: A bitmask representing active flags (e.g., loaded from memory)
-    uint activeFlags = 0b_0000_1111_0000_1111_0000_1111_0000_1111;
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+using System.Numerics;
 
-    // Quickly count how many bits are set
-    int activeCount = BitOperations.PopCount(activeFlags);
-}
+// Count the number of set bits (1s)
+uint value = 0b1011; // 11 in decimal
+int setBits = BitOperations.PopCount(value);
+Console.WriteLine($"PopCount(0b1011) = {setBits}");
 ```
-
-## Remarks
-
-Also known as the **Hamming weight** or population count. This function returns the total number of bits set to `1` in the binary representation of the given integer.
-
-In GPU programming, `PopCount` is extremely common for:
-
-- **Warp-level reductions**: Counting the total number of threads that passed a condition using a ballot mask (`Gpu.WarpBallotSync`).
-- **Parity checks** and cryptography kernels.
-- **Sparse array compaction**: Calculating offsets for threads to write their results into a dense array without atomic locks.
-
-Maps natively to `__popc()` for 32-bit, and `__popcll()` for 64-bit in CUDA C++. These translate directly to the hardware `popc` PTX instructions, executing in a single clock cycle.
-
 ## See also
 
 ### Language Specification

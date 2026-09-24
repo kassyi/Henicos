@@ -16,8 +16,17 @@ description: "Returns the absolute value of a specified number using hardware fa
 Returns the absolute value of a specified number using hardware fast-math.
 
 ```csharp
-[GpuDevice]
-public static float Abs(float x);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Abs uses fast hardware intrinsics on GPU
+    float f = FastMath.Abs(-5.5f);
+    Console.WriteLine($"FastMath.Abs(-5.5f) = {f}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("FastMath functions can only be executed on the GPU.");
+}
 ```
 
 #### Parameters
@@ -32,26 +41,22 @@ The computed fast-math absolute value.
 
 ## Examples
 
-### Fast Math Approximation
-
-> [!NOTE] Requires assemblies: Kassyi.GSharp.Core
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-public class Example
-{
-    [GpuDeviceFunction]
-    public static void Kernel(float x)
-    {
-        float result = FastMath.Abs(x);
-    }
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Abs uses fast hardware intrinsics on GPU
+    float f = FastMath.Abs(-5.5f);
+    Console.WriteLine($"FastMath.Abs(-5.5f) = {f:F1}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("FastMath functions can only be executed on the GPU.");
 }
 ```
-
-## Remarks
-
-Maps natively to `fabsf()` or `__fbsf()` for float in CUDA C++.
-
 ## See also
 
 

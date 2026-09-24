@@ -74,34 +74,20 @@ Given a 32-bit unsigned integer `value`, it counts consecutive `0` bits starting
 
 ## Examples
 
-### Fast Base-2 Logarithm (Highest Set Bit)
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static void FastLog2Example()
-{
-    uint value = 0b_0000_1000_0000_0000u; // 2048
-    
-    // Count leading zeros (from MSB to LSB)
-    int lz = BitOperations.LeadingZeroCount(value); // Returns 20 (for 32-bit)
-    
-    // Find the index of the highest set bit (floor(log2(x)))
-    int highestBit = 31 - lz; // Returns 11
-}
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+using System.Numerics;
+
+// Count the number of leading zero bits
+uint value = 0b1011; // 11 in decimal (32-bit integer)
+int leadingZeros = BitOperations.LeadingZeroCount(value);
+// 32 - 4 = 28 leading zeros
+Console.WriteLine($"LeadingZeroCount(0b1011) = {leadingZeros}");
 ```
-
-## Remarks
-
-Counts the number of consecutive `0` bits starting from the Most Significant Bit (MSB) down to the Least Significant Bit (LSB). If the value is `0`, it returns `32` (for `uint`) or `64` (for `ulong`).
-
-In GPU programming, `LeadingZeroCount` is frequently used for:
-- **Fast Base-2 Logarithms**: Finding `floor(log2(x))` instantly without using floating-point math units (`31 - LeadingZeroCount(x)`).
-- **Radix Trees / Prefix Sums**: Quickly finding the most significant differing bit between two hash values or Morton codes.
-- **Memory Allocators**: Finding the appropriately sized bucket/bin for a given dynamic allocation size.
-
-Maps natively to `__gsharp_lzc_32()` for 32-bit, and `__gsharp_lzc_64()` for 64-bit in CUDA C++ (which wrap the `__clz` / `__clzll` intrinsics). These map directly to the hardware `clz` PTX instructions.
-
 ## See also
 
 

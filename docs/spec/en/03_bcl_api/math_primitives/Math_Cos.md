@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Cos(1.0f);
-// Double precision (Math)
-double d = Math.Cos(1.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Cos operates on single-precision floating point
+float f = MathF.Cos(MathF.PI);
+Console.WriteLine($"MathF.Cos(PI) = {f:F1}");
+
+// Math.Cos operates on double-precision floating point
+double d = Math.Cos(Math.PI / 2);
+Console.WriteLine($"Math.Cos(PI/2) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `cosf()` for float, and `cos()` for double in CUDA C++.
-
 ## See also
 
 

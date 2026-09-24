@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Log(1.0f);
-// Double precision (Math)
-double d = Math.Log(1.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Log operates on single-precision floating point
+float f = MathF.Log(MathF.E);
+Console.WriteLine($"MathF.Log(E) = {f:F1}");
+
+// Math.Log operates on double-precision floating point
+double d = Math.Log(100.0, 10.0); // Log base 10
+Console.WriteLine($"Math.Log(100, 10) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `logf()` for float, and `log()` for double in CUDA C++.
-
 ## See also
 
 

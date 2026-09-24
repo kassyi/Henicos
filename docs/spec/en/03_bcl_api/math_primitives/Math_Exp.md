@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Exp operates on single-precision floating point
 float f = MathF.Exp(1.0f);
-// Double precision (Math)
-double d = Math.Exp(1.0);
+Console.WriteLine($"MathF.Exp(1.0f) = {f:F3}");
+
+// Math.Exp operates on double-precision floating point
+double d = Math.Exp(2.0);
+Console.WriteLine($"Math.Exp(2.0) = {d:F3}");
 ```
-
-## Remarks
-
-Maps natively to `expf()` for float, and `exp()` for double in CUDA C++.
-
 ## See also
 
 

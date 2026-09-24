@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Sqrt(1.0f);
-// Double precision (Math)
-double d = Math.Sqrt(1.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Sqrt operates on single-precision floating point
+float f = MathF.Sqrt(16.0f);
+Console.WriteLine($"MathF.Sqrt(16.0f) = {f:F1}");
+
+// Math.Sqrt operates on double-precision floating point
+double d = Math.Sqrt(25.0);
+Console.WriteLine($"Math.Sqrt(25.0) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `sqrtf()` for float, and `sqrt()` for double in CUDA C++.
-
 ## See also
 
 

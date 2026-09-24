@@ -73,41 +73,19 @@ Given a 32-bit unsigned integer `value`, it counts consecutive `0` bits starting
 
 ## Examples
 
-### Finding the First Set Bit (Index)
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static void FindFirstActiveTask()
-{
-    // Example: A bitmask representing active tasks
-    uint taskMask = 0b_0000_0000_0000_0000_0000_0000_0001_0000;
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+using System.Numerics;
 
-    if (taskMask != 0)
-    {
-        // Find the index of the first active task (which is 4)
-        int firstTaskIndex = BitOperations.TrailingZeroCount(taskMask);
-
-        if (ThreadIndex.X == firstTaskIndex)
-        {
-            // Only the thread matching the first active task index executes this block
-        }
-    }
-}
+// Count the number of trailing zero bits
+uint value = 0b1011000; // 88 in decimal
+int trailingZeros = BitOperations.TrailingZeroCount(value);
+Console.WriteLine($"TrailingZeroCount(0b1011000) = {trailingZeros}");
 ```
-
-## Remarks
-
-Counts the number of consecutive `0` bits starting from the Least Significant Bit (LSB) up to the Most Significant Bit (MSB). If the value is `0`, it returns `32` (for `uint`) or `64` (for `ulong`).
-
-In GPU programming, `TrailingZeroCount` is a critical primitive for:
-
-- **Warp Leader Election**: When combined with a ballot mask (`Gpu.WarpBallotSync`), it returns the exact warp lane ID (0-31) of the lowest-numbered thread that voted true.
-- **Bitmask Iteration**: Quickly jumping to the next set bit in a mask without checking every bit in a loop.
-- **Divisibility Checks**: Determining the largest power of 2 that divides a number.
-
-Maps natively to `__gsharp_tzc_32()` for 32-bit, and `__gsharp_tzc_64()` for 64-bit in CUDA C++ (which wrap the `__ffs` intrinsic).
-
 ## See also
 
 ### Language Specification

@@ -73,20 +73,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Min(1.0f, 2.0f);
-// Double precision (Math)
-double d = Math.Min(1.0, 2.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Min operates on single-precision floating point
+float f = MathF.Min(10.5f, 20.1f);
+Console.WriteLine($"MathF.Min(10.5f, 20.1f) = {f:F1}");
+
+// Math.Min operates on double-precision floating point
+double d = Math.Min(5.0, -5.0);
+Console.WriteLine($"Math.Min(5.0, -5.0) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `fminf()` for float, `fmin()` for double, and `min()` for int in CUDA C++.
-
 ## See also
 
 

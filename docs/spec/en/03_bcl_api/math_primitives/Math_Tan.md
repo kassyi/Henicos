@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Tan(1.0f);
-// Double precision (Math)
-double d = Math.Tan(1.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Tan operates on single-precision floating point
+float f = MathF.Tan(MathF.PI / 4);
+Console.WriteLine($"MathF.Tan(PI/4) = {f:F1}");
+
+// Math.Tan operates on double-precision floating point
+double d = Math.Tan(0);
+Console.WriteLine($"Math.Tan(0) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `tanf()` for float, and `tan()` for double in CUDA C++.
-
 ## See also
 
 

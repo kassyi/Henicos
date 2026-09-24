@@ -73,20 +73,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Max(1.0f, 2.0f);
-// Double precision (Math)
-double d = Math.Max(1.0, 2.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Max operates on single-precision floating point
+float f = MathF.Max(10.5f, 20.1f);
+Console.WriteLine($"MathF.Max(10.5f, 20.1f) = {f:F1}");
+
+// Math.Max operates on double-precision floating point
+double d = Math.Max(5.0, -5.0);
+Console.WriteLine($"Math.Max(5.0, -5.0) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `fmaxf()` for float, `fmax()` for double, and `max()` for int in CUDA C++.
-
 ## See also
 
 

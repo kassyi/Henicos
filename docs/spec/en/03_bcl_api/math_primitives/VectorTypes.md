@@ -16,13 +16,17 @@ description: "Information about G#'s native vector types (Float2, Int4, etc.) th
 G# introduces sequentially laid-out vector value types (e.g., `Float2`, `Float3`, `Float4`, `Int2`, `UInt4`, `Double2`) that match CUDA native vector memory layouts.
 
 ```csharp
-[StructLayout(LayoutKind.Sequential)]
-public struct Float4
-{
-    public float X; public float Y; public float Z; public float W;
-    public Float4(float x, float y, float z, float w);
-}
-// (Equivalent definitions exist for Int2/3/4, UInt2/3/4, Double2/3/4, Long2/3/4, ULong2/3/4)
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+using Kassyi.GSharp.Core;
+
+// Using Float3
+var v1 = new Float3(1.0f, 2.0f, 3.0f);
+var v2 = new Float3(2.0f, 0.0f, 1.5f);
+
+// Manual vector addition (as operators are mapped via transpiler intrinsically or implemented manually)
+var result = new Float3(v1.X + v2.X, v1.Y + v2.Y, v1.Z + v2.Z);
+Console.WriteLine($"({v1.X}, {v1.Y}, {v1.Z}) + ({v2.X}, {v2.Y}, {v2.Z}) = ({result.X}, {result.Y}, {result.Z})");
 ```
 
 ## Remarks
@@ -33,34 +37,22 @@ Since these types map directly to CUDA native built-in vector types (e.g., `floa
 
 ## Examples
 
-### Vectorized Memory Access
-
-> [!NOTE] Requires assemblies: Kassyi.GSharp.Core
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
 
 ```csharp
-
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
 using Kassyi.GSharp.Core;
 
-// Execution Context: Host (CPU)
-Example.Main();
+// Using Float3
+var v1 = new Float3(1.0f, 2.0f, 3.0f);
+var v2 = new Float3(2.0f, 0.0f, 1.5f);
 
-public class Example
-{
-    public static void Main() {}
-
-    // Execution Context: G# Kernel (GPU)
-    [GpuKernel]
-    public static unsafe void VectorCompute(Float4* vectors)
-    {
-        // Seamlessly compiled to CUDA's float4 and make_float4
-        // Uses a single 128-bit memory load (LD.E.128)
-        Float4 vec = vectors[ThreadIndex.X];
-        vec.Y += 10.0f;
-        vectors[ThreadIndex.X] = new Float4(vec.X, vec.Y, vec.Z, vec.W);
-    }
-}
+// Manual vector addition (as operators are mapped via transpiler intrinsically or implemented manually)
+var result = new Float3(v1.X + v2.X, v1.Y + v2.Y, v1.Z + v2.Z);
+Console.WriteLine($"({v1.X}, {v1.Y}, {v1.Z}) + ({v2.X}, {v2.Y}, {v2.Z}) = ({result.X}, {result.Y}, {result.Z})");
 ```
-
 ## See also
 
 

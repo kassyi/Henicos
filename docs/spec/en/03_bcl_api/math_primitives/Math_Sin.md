@@ -67,20 +67,21 @@ The computed value.
 
 ## Examples
 
-### Usage
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
-// Float precision (MathF)
-float f = MathF.Sin(1.0f);
-// Double precision (Math)
-double d = Math.Sin(1.0);
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+using System;
+
+// MathF.Sin operates on single-precision floating point
+float f = MathF.Sin(MathF.PI / 2);
+Console.WriteLine($"MathF.Sin(PI/2) = {f:F1}");
+
+// Math.Sin operates on double-precision floating point
+double d = Math.Sin(Math.PI);
+Console.WriteLine($"Math.Sin(PI) = {d:F1}");
 ```
-
-## Remarks
-
-Maps natively to `sinf()` for float, and `sin()` for double in CUDA C++.
-
 ## See also
 
 
