@@ -9,6 +9,10 @@ test *args="":
 test-all *args="":
     dotnet test -m:1 {{args}}
 
+# Watch and run tests with debounce delay (requires watchexec)
+watch delay="3s" *args="":
+    watchexec --debounce {{delay}} -w src -w tests -e cs,csproj --restart --clear -- just test {{args}}
+
 # Run syntax and code transpilation tests
 test-syntax *args="":
     dotnet test -m:1 --filter "Category=Syntax" {{args}}
