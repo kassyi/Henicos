@@ -251,6 +251,14 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor DirectGpuKernelInvocation = new(
+        id: "GSH0031",
+        title: "Direct invocation of [GpuKernel] is prohibited",
+        messageFormat: "Do not call [GpuKernel] method '{0}' directly. Use the generated 'Launch{0}' launcher method instead.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static bool ValidateKernelReturnType(IMethodSymbol methodSymbol, Action<Diagnostic>? reportDiagnostic)
     {
         if (methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
