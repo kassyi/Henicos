@@ -47,7 +47,10 @@ public static class NvrtcApi
             var cudaBaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
             if (Directory.Exists(cudaBaseDir))
             {
-                foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+                var cudaDirs = Directory.GetDirectories(cudaBaseDir);
+                Array.Sort(cudaDirs, StringComparer.Ordinal);
+                Array.Reverse(cudaDirs);
+                foreach (var dir in cudaDirs)
                 {
                     var binPath = Path.Combine(dir, "bin");
                     var binX64Path = Path.Combine(binPath, "x64");
@@ -127,7 +130,10 @@ public static class NvrtcApi
         }
 
         {
-            foreach (var dir in Directory.GetDirectories(cudaBaseDir).OrderByDescending(d => d))
+            var cudaDirs = Directory.GetDirectories(cudaBaseDir);
+            Array.Sort(cudaDirs, StringComparer.Ordinal);
+            Array.Reverse(cudaDirs);
+            foreach (var dir in cudaDirs)
             {
                 var binPath = Path.Combine(dir, "bin");
                 var binX64Path = Path.Combine(binPath, "x64");

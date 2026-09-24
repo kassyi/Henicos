@@ -67,7 +67,7 @@ internal readonly struct EquatableArray<T>(ImmutableArray<T> array) : IEquatable
     public static bool operator !=(EquatableArray<T> left, EquatableArray<T> right) => !left.Equals(right);
 
     public IEnumerator<T> GetEnumerator() => _array.IsDefault
-        ? Enumerable.Empty<T>().GetEnumerator()
+        ? ((IEnumerable<T>)Array.Empty<T>()).GetEnumerator()
         : ((IEnumerable<T>)_array).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

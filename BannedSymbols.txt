@@ -25,3 +25,7 @@ M:System.Type.GetProperty(System.String);Reflection is strictly prohibited in G#
 M:System.Type.GetField(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
 M:System.Activator.CreateInstance(System.Type);Dynamic instantiation is prohibited. Use direct AST/Symbol resolution.
 N:System.Linq;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+T:System.Linq.Enumerable;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+T:System.Linq.Queryable;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+T:System.Linq.ParallelEnumerable;PLINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+T:System.Linq.Expressions.Expression;Expression trees are prohibited in G# (YES Static Determinism)

@@ -266,9 +266,18 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        var enclosingCallable = node.Ancestors().FirstOrDefault(n =>
-            n is MethodDeclarationSyntax or LocalFunctionStatementSyntax or ParenthesizedLambdaExpressionSyntax
-                or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax);
+        SyntaxNode? enclosingCallable = null;
+        foreach (var n in node.Ancestors())
+        {
+            if (n is not (MethodDeclarationSyntax or LocalFunctionStatementSyntax or ParenthesizedLambdaExpressionSyntax
+                or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax))
+            {
+                continue;
+            }
+
+            enclosingCallable = n;
+            break;
+        }
 
         if (enclosingCallable is MethodDeclarationSyntax methodNode)
         {

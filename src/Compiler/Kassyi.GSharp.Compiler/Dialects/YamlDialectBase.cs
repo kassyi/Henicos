@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Compiler.Dialects;
 
 public abstract class YamlDialectBase : ITranspilerDialect
 {
-    public virtual IEnumerable<string> RequiredHeaders => Enumerable.Empty<string>();
+    public virtual IEnumerable<string> RequiredHeaders => Array.Empty<string>();
     public virtual string StructPrefix => string.Empty;
     public virtual string MethodPrefix => string.Empty;
     public virtual bool IsCuda => GetType().Name.Contains("Cuda");
@@ -50,20 +50,22 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         context.Writer.AppendFullyQualifiedCppName(typeSymbol);
 
-        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType)
+        if (typeSymbol is not INamedTypeSymbol { IsGenericType: true } namedType)
         {
-            context.Writer.Append("<");
-            for (var i = 0; i < namedType.TypeArguments.Length; i++)
-            {
-                AppendType(ref context, namedType.TypeArguments[i]);
-                if (i < namedType.TypeArguments.Length - 1)
-                {
-                    context.Writer.Append(", ");
-                }
-            }
-
-            context.Writer.Append(">");
+            return;
         }
+
+        context.Writer.Append("<");
+        for (var i = 0; i < namedType.TypeArguments.Length; i++)
+        {
+            AppendType(ref context, namedType.TypeArguments[i]);
+            if (i < namedType.TypeArguments.Length - 1)
+            {
+                context.Writer.Append(", ");
+            }
+        }
+
+        context.Writer.Append(">");
     }
 
     public virtual bool TryMapType(string fullyQualifiedName, out string mappedType)
@@ -132,7 +134,8 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual CSharpSyntaxRewriter? GetAstPreProcessor(SemanticModel semanticModel) => null;
 
-    public virtual CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context) => new DefaultInterceptorVisitor();
+    public virtual CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context) =>
+        new DefaultInterceptorVisitor();
 
     private class DefaultInterceptorVisitor : CSharpSyntaxVisitor<bool>
     {

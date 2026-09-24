@@ -10,6 +10,8 @@
     <GSharpTargetDialect>Cuda</GSharpTargetDialect>
     <DefineConstants>GSHARP_CUDA</DefineConstants>
     <RootNamespace>Kassyi.GSharp.Tests</RootNamespace>
+    <!-- Suppress register spill warnings (GS0001) caused by mutual recursion test kernels, etc. -->
+    <NoWarn>$(NoWarn);GS0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

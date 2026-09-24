@@ -2,24 +2,31 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Watch Tests (dotnet watch)",
-      "type": "process",
-      "command": "dotnet",
+      "label": "Watch Tests (watchexec)",
+      "type": "shell",
+      "command": "watchexec",
       "args": [
-        "watch",
-        "--project",
-        "tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj",
-        "test",
-        "--verbosity",
-        "minimal"
+        "--debounce",
+        "3s",
+        "-w",
+        "src",
+        "-w",
+        "tests",
+        "-e",
+        "cs,csproj",
+        "--restart",
+        "--clear",
+        "--",
+        "just",
+        "test"
       ],
       "isBackground": true,
       "problemMatcher": {
         "base": "$msCompile",
         "background": {
           "activeOnStart": true,
-          "beginsPattern": "^\\s*(?:dotnet watch|Building|File changed|Hot reload).*$",
-          "endsPattern": "^\\s*(?:Waiting for a file change|dotnet watch|Passed!|Failed!).*$"
+          "beginsPattern": "^\\s*(?:Microsoft \\(R\\) Build Engine|Determining projects to restore|Building|Restored|watchexec).*$",
+          "endsPattern": "^\\s*(?:Passed!|Failed!).*$"
         }
       },
       "runOptions": {

@@ -36,17 +36,33 @@ public static class CudaEnvironment
             var subDirs = Directory.GetDirectories(BaseDir, "v*");
             if (subDirs.Length > 0)
             {
-                return subDirs
-                    .Select(d => new
+                string? bestPath = null;
+                Version? bestVersion = null;
+
+                foreach (var d in subDirs)
+                {
+                    var folderName = Path.GetFileName(d);
+                    var versionStr = folderName.StartsWith("v", StringComparison.OrdinalIgnoreCase)
+                        ? folderName.Substring(1)
+                        : folderName;
+
+                    if (Version.TryParse(versionStr, out var v))
                     {
-                        Path = d,
-                        Version = Version.TryParse(Path.GetFileName(d).TrimStart('v'), out var v)
-                            ? v
-                            : new Version(0, 0)
-                    })
-                    .OrderByDescending(x => x.Version)
-                    .Select(x => x.Path)
-                    .FirstOrDefault();
+                        if (bestVersion != null && v <= bestVersion)
+                        {
+                            continue;
+                        }
+
+                        bestVersion = v;
+                        bestPath = d;
+                    }
+                    else if (bestPath == null)
+                    {
+                        bestPath = d;
+                    }
+                }
+
+                return bestPath;
             }
         }
         else if (OperatingSystem.IsLinux())

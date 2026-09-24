@@ -125,7 +125,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var args = BuildNvccArguments(sourcePath, outputFatbinPath, architectures);
         Log.LogMessage(MessageImportance.Normal, $"Compiling CUDA source: {sourcePath}");
 
-        if (!RunNvccProcess(args))
+        if (!RunNvccProcess(sourcePath, args))
         {
             return false;
         }
@@ -160,7 +160,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         return args.ToString();
     }
 
-    private bool RunNvccProcess(string arguments)
+    private bool RunNvccProcess(string sourcePath, string arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -216,7 +216,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
             if (NvccOutputParser.DetectRegisterSpill(output, error, out var errorMessage))
             {
-                Log.LogWarning(errorMessage);
+                Log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: sourcePath,
+                    lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: errorMessage);
             }
 
             if (process.ExitCode == 0)
@@ -257,28 +258,71 @@ internal static class NvccOutputParser
 
     public static bool DetectRegisterSpill(string output, string error, out string errorMessage)
     {
-        errorMessage = "";
-        var hasSpill = false;
+        var spillLines = new List<string>();
+        var functionContext = "";
 
-        // Check for actual warnings or non-zero spill bytes
-        if (error.IndexOf("warning", StringComparison.OrdinalIgnoreCase) >= 0 &&
-            error.IndexOf("spill", StringComparison.OrdinalIgnoreCase) >= 0)
+        using var reader = new StringReader(error);
+        string? line;
+        while ((line = reader.ReadLine()) != null)
         {
-            hasSpill = true;
-        }
-        else if (s_spillRegex.IsMatch(error) || s_spillRegex.IsMatch(output))
-        {
-            hasSpill = true;
+            if (line.IndexOf("Function properties for", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                functionContext = line.Trim();
+            }
+
+            if ((line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) < 0 ||
+                 line.IndexOf("spill", StringComparison.OrdinalIgnoreCase) < 0) &&
+                !s_spillRegex.IsMatch(line))
+            {
+                continue;
+            }
+
+            if (line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                spillLines.Add(line.Trim());
+            }
+            else if (!string.IsNullOrEmpty(functionContext))
+            {
+                spillLines.Add($"{functionContext} -> {line.Trim()}");
+            }
+            else
+            {
+                spillLines.Add(line.Trim());
+            }
         }
 
-        if (!hasSpill)
+        // Check output string just in case
+        using var outReader = new StringReader(output);
+        while ((line = outReader.ReadLine()) != null)
         {
+            if (s_spillRegex.IsMatch(line))
+            {
+                spillLines.Add(line.Trim());
+            }
+        }
+
+        if (spillLines.Count == 0)
+        {
+            errorMessage = "";
             return false;
         }
 
-        errorMessage =
-            "Register spill detected during PTX compilation. " +
-            "Please reduce register pressure (e.g. by avoiding excessive inlining or large stack allocations in GPU kernels).";
+        var sb = new StringBuilder();
+        sb.AppendLine("Register spill detected during PTX compilation.");
+        sb.AppendLine("Details:");
+        var distinctSpills = new HashSet<string>();
+        foreach (var spill in spillLines)
+        {
+            if (distinctSpills.Add(spill))
+            {
+                sb.AppendLine($"  - {spill}");
+            }
+        }
+
+        sb.Append(
+            "Please reduce register pressure (e.g. by avoiding excessive inlining or large stack allocations in GPU kernels).");
+
+        errorMessage = sb.ToString();
         return true;
     }
 }

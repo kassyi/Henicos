@@ -206,8 +206,15 @@ internal sealed class GpuMacroArgumentRule
 
     private void CheckDynamicControlFlow(StatementSyntax loopStmt, ref ValidationContext context)
     {
-        var hasDynamicControlFlow = loopStmt.DescendantNodes().Any(n =>
-            n is BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax);
+        var hasDynamicControlFlow = false;
+        foreach (var n in loopStmt.DescendantNodes())
+        {
+            if (n is BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax)
+            {
+                hasDynamicControlFlow = true;
+                break;
+            }
+        }
 
         if (!hasDynamicControlFlow)
         {

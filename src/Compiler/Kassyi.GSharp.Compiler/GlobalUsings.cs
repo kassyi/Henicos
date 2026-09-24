@@ -4,7 +4,6 @@ global using System.Collections.Generic;
 global using System.Collections.Immutable;
 global using System.Diagnostics.CodeAnalysis;
 global using System.IO;
-global using System.Linq;
 global using System.Net.Http;
 global using System.Runtime.CompilerServices;
 global using System.Text;
