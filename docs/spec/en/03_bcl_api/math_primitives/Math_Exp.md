@@ -46,6 +46,10 @@ A single-precision floating-point number.
 <i>float</i><br>
 The computed value.
 
+#### Exceptions
+
+None. Does not throw exceptions; returns `float.PositiveInfinity` if `x` is `PositiveInfinity`, or `0.0f` if `x` is `NegativeInfinity`.
+
 ## Exp(double)
 
 Returns e raised to the specified power.
@@ -64,6 +68,10 @@ A double-precision floating-point number.
 
 <i>double</i><br>
 The computed value.
+
+#### Exceptions
+
+None. Does not throw exceptions; returns `double.PositiveInfinity` if `x` is `PositiveInfinity`, or `0.0` if `x` is `NegativeInfinity`.
 
 ## Examples
 

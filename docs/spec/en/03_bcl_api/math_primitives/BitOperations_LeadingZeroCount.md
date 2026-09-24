@@ -46,6 +46,10 @@ The 32-bit unsigned integer.
 <i>int</i><br>
 The number of bits.
 
+#### Exceptions
+
+None. Returns `32` if `value` is `0`.
+
 ## LeadingZeroCount(ulong)
 
 Count the number of leading zero bits in an integer. (64-bit)
@@ -64,6 +68,10 @@ The 64-bit unsigned integer.
 
 <i>int</i><br>
 The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
 
 ## Conceptual Behavior
 

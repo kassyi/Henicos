@@ -45,6 +45,10 @@ The 32-bit unsigned integer.
 <i>int</i><br>
 The number of bits.
 
+#### Exceptions
+
+None. Returns `0` if `value` is `0`.
+
 ## PopCount(ulong)
 
 Returns the population count (number of bits set) of a mask. (64-bit)
@@ -63,6 +67,10 @@ The 64-bit unsigned integer.
 
 <i>int</i><br>
 The number of bits.
+
+#### Exceptions
+
+None. Returns `0` if `value` is `0`.
 
 ## Conceptual Behavior
 

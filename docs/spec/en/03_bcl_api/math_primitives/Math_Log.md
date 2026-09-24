@@ -46,6 +46,10 @@ A single-precision floating-point number.
 <i>float</i><br>
 The computed value.
 
+#### Exceptions
+
+None. Does not throw exceptions; returns `float.NaN` if `x` is negative, or `float.NegativeInfinity` if `x` is zero.
+
 ## Log(double)
 
 Returns the natural (base e) logarithm of a specified number.
@@ -64,6 +68,10 @@ A double-precision floating-point number.
 
 <i>double</i><br>
 The computed value.
+
+#### Exceptions
+
+None. Does not throw exceptions; returns `double.NaN` if `x` is negative, or `double.NegativeInfinity` if `x` is zero.
 
 ## Examples
 

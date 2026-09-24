@@ -39,6 +39,10 @@ public static string? GetCudaPath();
 _string?_
 The absolute path to the CUDA installation directory if located; otherwise, `null`.
 
+#### Exceptions
+
+None. Returns `null` if the installation directory could not be discovered or does not exist.
+
 ## GetCudaBinPath()
 
 Discovers and returns the path to the `bin` directory of the CUDA Toolkit containing binaries and dynamic libraries.
@@ -51,6 +55,10 @@ public static string? GetCudaBinPath();
 
 _string?_<br>
 The absolute path to the CUDA `bin` directory (or `bin/x64` on Windows if present); otherwise, `null`.
+
+#### Exceptions
+
+None. Returns `null` if the CUDA Toolkit or its `bin` directory could not be resolved.
 
 ## Examples
 

@@ -16,17 +16,8 @@ description: "Returns the absolute value of a specified number using hardware fa
 Returns the absolute value of a specified number using hardware fast-math.
 
 ```csharp
-// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
-using System;
-using Kassyi.GSharp.Core;
-
-try {
-    // Abs uses fast hardware intrinsics on GPU
-    float f = FastMath.Abs(-5.5f);
-    Console.WriteLine($"FastMath.Abs(-5.5f) = {f}");
-} catch (GpuOnlyException) {
-    Console.WriteLine("FastMath functions can only be executed on the GPU.");
-}
+[GpuKernel]
+public static float Abs(float x);
 ```
 
 #### Parameters
@@ -38,6 +29,11 @@ A single-precision floating-point number.
 
 <i>float</i><br>
 The computed fast-math absolute value.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 

@@ -15,20 +15,9 @@ description: "Returns the square root using hardware fast-math."
 
 Returns the square root using hardware fast-math.
 
-Returns the square root using hardware fast-math.
-
 ```csharp
-// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
-using System;
-using Kassyi.GSharp.Core;
-
-try {
-    // Sqrt uses fast hardware intrinsics on GPU
-    float f = FastMath.Sqrt(16.0f);
-    Console.WriteLine($"FastMath.Sqrt(16.0f) = {f}");
-} catch (GpuOnlyException) {
-    Console.WriteLine("FastMath functions can only be executed on the GPU.");
-}
+[GpuKernel]
+public static float Sqrt(float x);
 ```
 
 #### Parameters
@@ -40,6 +29,11 @@ A single-precision floating-point number.
 
 <i>float</i><br>
 The computed fast-math value.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 

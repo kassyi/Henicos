@@ -49,6 +49,10 @@ The second single-precision floating-point number.
 <i>float</i><br>
 The computed value.
 
+#### Exceptions
+
+None. Does not throw exceptions.
+
 ## Max(double, double)
 
 Returns the larger of two specified numbers.
@@ -70,6 +74,10 @@ The second double-precision floating-point number.
 
 <i>double</i><br>
 The computed value.
+
+#### Exceptions
+
+None. Does not throw exceptions.
 
 ## Examples
 

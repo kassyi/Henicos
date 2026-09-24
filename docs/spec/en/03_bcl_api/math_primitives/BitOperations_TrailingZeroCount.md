@@ -45,6 +45,10 @@ The 32-bit unsigned integer.
 <i>int</i><br>
 The number of bits.
 
+#### Exceptions
+
+None. Returns `32` if `value` is `0`.
+
 ## TrailingZeroCount(ulong)
 
 Count the number of trailing zero bits in an integer. (64-bit)
@@ -63,6 +67,10 @@ The 64-bit unsigned integer.
 
 <i>int</i><br>
 The number of bits.
+
+#### Exceptions
+
+None. Returns `64` if `value` is `0`.
 
 ## Conceptual Behavior
 
