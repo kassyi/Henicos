@@ -29,6 +29,7 @@ Standard math functions, fast math approximations, and hardware bit operations.
 - [FastMath_Exp](FastMath_Exp.md): Returns e raised to the specified power using hardware fast-math.
 - [FastMath_Log](FastMath_Log.md): Returns the natural logarithm using hardware fast-math.
 - [FastMath_Sqrt](FastMath_Sqrt.md): Returns the square root using hardware fast-math.
+- [FastMath_Abs](FastMath_Abs.md): Returns the absolute value using hardware fast-math.
 - [BitOperations_PopCount](BitOperations_PopCount.md): Returns the population count of a mask.
 - [BitOperations_LeadingZeroCount](BitOperations_LeadingZeroCount.md): Count the number of leading zero bits.
 - [BitOperations_TrailingZeroCount](BitOperations_TrailingZeroCount.md): Count the number of trailing zero bits.
