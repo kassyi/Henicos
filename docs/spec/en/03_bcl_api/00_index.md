@@ -61,6 +61,9 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 * **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
 * **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0029`, `RS0030`).
 
+### 7. Utilities
+* **[CudaEnvironment](CudaEnvironment.md)**: Discover and resolve local NVIDIA CUDA Toolkit installation directories.
+
 ---
 
 ## Group 2: Domain Specific Libraries (`Stdlib.Math` / BigNum)

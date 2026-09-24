@@ -47,6 +47,10 @@ public class ComputePipeline : IDisposable
 
 
 
+### BCL API > Attributes
+
+- [Attributes](00_index.md)
+
 ### Getting Started
 
 - [0. Getting Started with G# (GSharp)](../../00_getting_started/00_index.md)

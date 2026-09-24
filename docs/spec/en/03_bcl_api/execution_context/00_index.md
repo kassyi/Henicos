@@ -12,6 +12,8 @@ Structs and properties for determining grid and block dimensions and indices.
 
 ## In This Section
 
+- [Dim3](Dim3.md): Represents a 3-dimensional coordinate vector.
+
 - [GridDimension](GridDimension.md): Gets the dimensions of the grid.
 - [BlockDimension](BlockDimension.md): Gets the dimensions of the thread block.
 - [BlockIndex](BlockIndex.md): Gets the block index within the grid.
