@@ -1,3 +1,11 @@
+---
+title: "1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators."
+---
+
 # 1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)
 
 This document defines the internal architecture of the Ahead-Of-Time (AOT) transpilation layer implemented via Roslyn Source Generators.
@@ -30,6 +38,8 @@ The core translation logic resides in the `RoslynToCudaVisitor` class, inheritin
 ### 1.2.1 Struct Extraction and Generation
 
 During AST traversal, if the transpiler encounters a user-defined custom `struct` (whether passed by value, by pointer, or used as an array element), it tracks it in a `_usedStructs` set. Before generating the final C++ method, the transpiler dynamically emits the C++ equivalent of all collected `struct` definitions at the top of the source string to ensure type definitions are valid in CUDA.
+
+To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler strictly applies **Fully Qualified Name Mangling** (e.g., a C# struct `Math.Vector2` becomes `Math_Vector2` in C++).
 
 > [!NOTE]
 > To prevent Multiple Definition errors (e.g., `class has already been defined`) when multiple kernels utilizing the same struct are JIT-compiled together in a shared dynamic source string, the generator automatically wraps every emitted struct definition with a preprocessor header guard (e.g., `#ifndef __GSHARP_STRUCT_Name__`).
@@ -65,7 +75,7 @@ Instead of translating AST nodes directly into literal C++ function calls, the `
 
 > [!NOTE]
 > For a detailed explanation of the supported macros, their C# syntax, and the resulting CUDA C++ equivalent code, please refer to the API reference:
-> **[2.6 Transpiler Macros](../03_bcl_api/02_gpu_class.md#26-transpiler-macros)**.
+> **[Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md)**.
 
 ## 1.3 Output Buffer Contract & Auto-Allocation
 
@@ -88,19 +98,33 @@ For developer ergonomics, `[GpuKernel]` methods can return unmanaged value types
 
 ## 1.4 Stub Emission (`GpuKernelGenerator`)
 
-Once the CUDA C++ string is constructed, `GpuKernelGenerator` creates a C# partial class containing a launcher method (e.g., `Launch[MethodName]`).
+Once the CUDA C++ string is constructed, `GpuKernelGenerator` injects a launcher method into the user's codebase.
 
-### 1.4.1 Launcher Signature
+### 1.4.1 Generated Host API Specifications
 
-The generator appends seven implicit trailing parameters to every launcher method to control CUDA execution dimensions and dynamic shared memory. These default to 1 and 0 respectively:
+The transpiler strictly adheres to the following naming conventions and rules when emitting the host launcher:
+
+1. **Companion Wrapper Class**: The Source Generator emits a dedicated companion static class named `[ContainingType]Wrapper` (e.g., `MyKernelsWrapper` for `MyKernels`) in the same namespace.
+2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]_Device` is generated.
+3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
+4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
 
 ```csharp
-// Context: Host C# (CPU)
-public static void Launch[KernelName](
-    /* Original non-Constant parameters */,
-    uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
-    uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
-    uint sharedMemBytes = 0)
+// Original Kernel Signature
+// public static class MyKernels {
+//     [GpuKernel] public static T KernelName(int arg1) { ... }
+// }
+
+// Generated Launcher Signature (in MyKernelsWrapper class)
+public static partial class MyKernelsWrapper
+{
+    public static T[] LaunchKernelName(
+        int arg1, // Original non-Constant parameters
+        uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
+        uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
+        uint sharedMemBytes = 0,
+        ReadOnlySpan<KeyValuePair<string, string>> macros = default);
+}
 ```
 
 ### 1.4.2 Ahead-Of-Time (AOT) Fatbin Loading
@@ -131,25 +155,29 @@ When a struct parameter is detected, the `GpuKernelGenerator` recursively traver
 > However, deep marshaling applies **only to the standard `Launch*` (host-array) path**. When invoking the zero-allocation `Launch*_Device` overload (which expects pre-allocated device pointers), passing structs that contain managed arrays (`T[]`) is prohibited. The generator detects this and intentionally throws a `NotSupportedException` in the `_Device` launcher to prevent corrupted pointer mapping.
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 // Example: A struct containing a managed array field
 public struct AdvancedContext
 {
     public float[] Data;
 }
 
-[GpuKernel]
-public static void Process(AdvancedContext ctx) { /* ... */ }
+public static class MyKernels
+{
+    [GpuKernel]
+    public static void Process(AdvancedContext ctx) { /* ... */ }
+}
 
 // Host Invocation:
 var ctx = new AdvancedContext { Data = new float[100] };
 
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
-KernelWrapper.LaunchProcess(ctx);
+MyKernelsWrapper.LaunchProcess(ctx);
 
 // ❌ Prohibited: The _Device overload expects pre-allocated device pointers.
 // A struct containing a managed array (T[]) cannot be mapped safely here.
 // Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
-KernelWrapper.LaunchProcess_Device(ctx);
+MyKernelsWrapper.LaunchProcess_Device(ctx);
 ```
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
@@ -170,3 +198,34 @@ The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOpt
 - `GSharpTargetDialect`: Specifies the target transpilation dialect (e.g., `Cuda` or `Cpu`).
 - `GSharpEmitSource`: If `true`, the compiler emits the intermediate C++ source files to disk for debugging.
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
+
+## 1.6 Expression Lowering (IIFE)
+
+To support expressive C# syntax like `switch` expressions, tuple swaps `(a,b) = (b,a)`, and null-coalescing `??` without incurring managed heap allocations or breaking C++ structural constraints, the transpiler employs **Immediately Invoked Function Expressions (IIFE)**.
+
+When the transpiler encounters these nodes in the Roslyn AST, it lowers them into inline C++ lambda closures:
+
+```cpp
+// Execution Context: Generated C++ (GPU)
+// C# switch expression lowered to C++ IIFE
+output = [&]() {
+    switch(val) {
+        case 1: return 3.14f;
+        default: return -1.0f;
+    }
+}();
+```
+
+Because this lambda is executed immediately and captures scope by reference (`[&]`), the CUDA compiler (`nvcc`) aggressively inlines the closure during PTX generation. This guarantees that modern C# branching logic executes with strictly zero-allocation overhead on the device.
+
+## See also
+
+### Language Specification
+
+- [1. Language Specification](../01_language/00_index.md)
+- [1. Foundation and Domain](../01_language/01_introduction.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](00_index.md)
+- [8. Comprehensive Example](03_comprehensive_example.md)

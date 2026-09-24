@@ -1,3 +1,11 @@
+---
+title: "1. Foundation and Domain"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "G# bridges the Microsoft Roslyn compiler platform with the NVIDIA CUDA compilation toolchain (NVCC) to enable high-throughput GPU computing directl..."
+---
+
 # 1. Foundation and Domain
 
 ---
@@ -53,3 +61,18 @@ A defining strength of G# is its **Two-Tier Transpiler Architecture**. Rather th
 - **Backend Agnosticism**: By simply swapping the active Dialect, the identical Roslyn AST engine can target entirely different GPU backends (e.g., OpenCL C, Apple Metal Shading Language, or Vulkan GLSL) without rewriting the core compilation logic.
 
 > For deep internal architecture details of the transpiler and runtime execution, refer to **Part II: Implementation Overview** (`../02_architecture/01_aot_transpiler.md` and `../02_architecture/02_runtime_loader.md`).
+
+## See also
+
+
+
+### Getting Started
+
+- [0. Getting Started with G# (GSharp)](../00_getting_started/00_index.md)
+- [1. Prerequisites & Installation](../00_getting_started/01_prerequisites.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../02_architecture/01_aot_transpiler.md)
+

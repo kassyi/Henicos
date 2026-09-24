@@ -1,8 +1,19 @@
+---
+title: "2. Type System and Mapping"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "This document specifies the strict mapping rules between C# primitive types and CUDA C++ types, as well as the pointer and memory semantics enforce..."
+---
+
 # 2. Type System and Mapping
 
 This document specifies the strict mapping rules between C# primitive types and CUDA C++ types, as well as the pointer and memory semantics enforced by the G# framework.
 
 ## 2.1 Primitive Type Mappings
+
+> [!NOTE]
+> `nint` and `nuint` are unsupported due to the ambiguity of target pointer sizes between host and device architectures. Use explicit `long` or `ulong` for 64-bit address offsets.
 
 The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA C++ counterparts. Any type not explicitly defined in this mapping is currently unsupported and will result in a compilation error.
 
@@ -20,14 +31,11 @@ The G# AST transpiler maps .NET `SpecialType` definitions directly to their CUDA
 | `double` | `System_Double` | `double` | 8 |
 | `bool` | `System_Boolean` | `bool` | 1 |
 
-> [!NOTE]
-> `nint` and `nuint` are unsupported due to the ambiguity of target pointer sizes between host and device architectures. Use explicit `long` or `ulong` for 64-bit address offsets.
-
 ## 2.2 Custom Structs (User-Defined Types)
 
 G# supports custom user-defined C# `struct` types. When a kernel or device method references a custom `struct` (either as a parameter, local variable, or array element), the transpiler automatically extracts its definition and emits an equivalent C++ `struct` above the kernel. 
 
-To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler strictly applies **Fully Qualified Name Mangling** (e.g., a C# struct `Math.Vector2` becomes `Math_Vector2` in C++).
+To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler handles namespace collisions transparently under the hood. You do not need to worry about naming conflicts across different namespaces.
 
 ### 2.2.1 Struct Constraints
 * **Unmanaged Types & Arrays**: Structs should primarily contain primitive types or other structs. While standard reference types (`class`, `string`) are strictly prohibited, **C# managed arrays (`T[]`) are explicitly permitted** as struct fields. The generator transparently applies "Deep Struct Marshaling" to automatically transpose these host arrays into valid device pointers (`T*`) during execution.
@@ -45,7 +53,7 @@ While heap-allocated objects (`class`) remain strictly forbidden on the GPU, sta
 The AOT transpiler supports classic initialization (`new MyStruct()`), C# 9.0 **Target-typed `new` expressions** (`new()`), and C# 10 **`record struct` / Primary Constructors** (`new Point(0, 0)`).
 
 ```csharp
-// Context: G# Kernel (GPU)
+// Execution Context: G# Kernel (GPU)
 // All expressions are perfectly valid inside a [GpuKernel]
 Vector8 vec1 = new Vector8 { X = 1, Y = 2 };
 Vector8 vec2 = new() { X = 1, Y = 2 };
@@ -74,6 +82,7 @@ Nested vector types strictly respect CUDA ABI natural alignment requirements. Fo
 G# automatically resolves memory layout discrepancies between the .NET CLR and NVIDIA CUDA ABI by generating `LayoutKind.Explicit` native shadow structs. These explicitly specify field offsets and pad unaligned preceding fields, preventing field offset divergence and device-side memory corruption.
 
 ```csharp
+// Execution Context: G# Kernel (GPU)
 [GpuKernel]
 public static void VectorLoadStore(Float4* input, Float4* output)
 {
@@ -112,15 +121,6 @@ Unsafe pointer arithmetic is fully permitted and transpiles 1:1 to C++ (e.g., `i
 
 ## 2.4 Implicit Typing (`var`)
 
-G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
-
-```csharp
-// Context: G# Kernel (GPU)
-var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
-var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
-```
-This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the AOT phase.
-
 > [!WARNING]
 > **Literal Initialization Constraints**: To prevent subtle type-casting bugs in CUDA C++ (where `auto` might mistakenly infer a signed `int` for `0` when an `unsigned int` was expected), G# prohibits initializing `var` with untyped bare literals. You must use explicit literal suffixes.
 > 
@@ -129,6 +129,15 @@ This enables developers to write highly readable, modern C# code, while offloadi
 > * ✨ `var magnitude = 1.0f;` (Correct: explicitly typed as `float`)
 >
 > This safety constraint is intentionally designed to be "user-friendly" by strictly preventing silent precision loss or signedness errors on the GPU.
+
+G# fully supports implicitly typed local variables (`var`). The transpiler now maps C#'s `var` keyword directly to C++'s `auto` keyword, enabling native type inference at the C++ compiler level.
+
+```csharp
+// Execution Context: Host (CPU)
+var origin = new Point(0, 0); // Safely transpiled to `auto origin = Point{0, 0};`
+var distance = origin.X;      // Safely transpiled to `auto distance = origin.X;`
+```
+This enables developers to write highly readable, modern C# code, while offloading the type resolution directly to the NVCC compiler during the AOT phase.
 
 ## 2.3 Prohibited Allocations
 
@@ -153,3 +162,18 @@ G# fully supports the use of `const` fields and local variables. The AST transpi
 1. **`const` Fields:** When a kernel or device method references a class or struct `const` field (e.g., `public const uint MyConst = 42;`), the transpiler directly evaluates the Roslyn `ConstantValue` and substitutes the literal `42` into the generated C++ source.
 2. **Local `const`:** Local variable declarations using `const` (e.g., `const int offset = 5;`) are transpiled natively as `const int offset = 5;` in C++, permitting the NVCC compiler to apply standard constant folding and dead-code elimination.
 3. **`[GpuConst]` Attribute:** Struct fields annotated with the `[GpuConst]` attribute instruct the transpiler to emit a `const` qualifier on the field in the resulting C++ struct definition. This provides a strong immutability guarantee at the C++ compiler level for specific struct properties.
+
+## See also
+
+
+
+### BCL API > Attributes
+
+- [Attributes](../03_bcl_api/attributes/00_index.md)
+- [ConstantAttribute Class (G#)](../03_bcl_api/attributes/ConstantAttribute.md)
+
+### BCL API > Math Primitives
+
+- [Math and BitOperations](../03_bcl_api/math_primitives/00_index.md)
+- [Vector2, Vector3, Vector4 Structs (System.Numerics)](../03_bcl_api/math_primitives/VectorTypes.md)
+

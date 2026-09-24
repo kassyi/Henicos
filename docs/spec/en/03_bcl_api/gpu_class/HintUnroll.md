@@ -1,0 +1,75 @@
+---
+title: "Gpu.Hint.Unroll Method (G#)"
+site: "G# Documentation"
+published: "2026-09-22T00:00:00.000Z"
+language: "en"
+description: "Hints the compiler to unroll the immediately following loop."
+---
+
+## Gpu.Hint.Unroll Method
+
+## Definition
+
+**Namespace:** `Kassyi.GSharp.Core`  
+**Assembly:** `Kassyi.GSharp.Core.dll`
+
+Hints the compiler to unroll the immediately following loop.
+
+## Overloads
+
+| Name | Description |
+| --- | --- |
+| [Unroll(int)](#unroll-int) | Hints the compiler to unroll the immediately following loop by a specific factor (or completely if 0). |
+
+## Unroll(int)
+
+Hints the compiler to unroll the immediately following loop by a specific factor.
+
+```csharp
+[GpuKernel]
+public static void Unroll(int factor = 0);
+```
+
+#### Parameters
+
+`factor` <i>int</i><br>
+The unroll factor. If `0`, the loop is completely unrolled.
+
+#### Exceptions
+
+None. This method acts as a compile-time compiler hint marker and performs no operation on the CPU; it does not throw exceptions.
+
+## Examples
+
+### Loop Unrolling
+
+```csharp
+// Execution Context: G# Kernel (GPU)
+using System;
+using Kassyi.GSharp.Core;
+
+// Instructs NVCC to unroll the following loop (no-op when running CPU tests)
+Gpu.Hint.Unroll();
+for (int i = 0; i < 4; i++) {
+    Console.WriteLine($"Unrolled iteration {i}");
+}
+```
+
+## Remarks
+
+Maps to `#pragma unroll` or `#pragma unroll N`. Must be placed immediately before a `for` or `while` loop.
+
+## See also
+
+
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../../02_architecture/01_aot_transpiler.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
+- [5. Precision and Performance Guide](../../04_guides/05_precision_and_performance_guide.md)
+

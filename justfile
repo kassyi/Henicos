@@ -85,3 +85,8 @@ bench-pi-hex digits="100k" *args="":
 bench-pi-cpu digits="10k" *args="":
     dotnet run --project src/Apps/Henicos.Benchmarks -c Release -- {{digits}} {{args}}
 
+
+# Run a C# code snippet as a DocTest with explicitly defined dependencies
+doctest file_path assemblies="":
+    pwsh ./scripts/Test-DocSnippet.ps1 -FilePath {{file_path}} -Assemblies {{assemblies}}
+
