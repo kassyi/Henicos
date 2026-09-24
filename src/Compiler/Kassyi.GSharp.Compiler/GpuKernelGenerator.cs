@@ -77,11 +77,43 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
         }, isDevice: false, cppDialect);
 
+        bool suppressGs0001 = false;
+        var root = methodDeclaration.SyntaxTree.GetRoot();
+        var pragmas = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true)
+            .OfType<PragmaWarningDirectiveTriviaSyntax>();
+
+        foreach (var pragma in pragmas)
+        {
+            foreach (var errorCode in pragma.ErrorCodes)
+            {
+                if (errorCode is not IdentifierNameSyntax id || id.Identifier.ValueText != "GS0001")
+                {
+                    continue;
+                }
+
+                if (pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
+                {
+                    suppressGs0001 = true;
+                }
+                else if (pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.RestoreKeyword))
+                {
+                    suppressGs0001 = false;
+                }
+            }
+        }
+
+        if (suppressGs0001)
+        {
+            cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
+            cppSource = "// gsharp:suppress GS0001\n" + cppSource;
+        }
+
         var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(diagnostics.Count);
         foreach (var d in diagnostics)
         {
             builder.Add(d.AsEquatable());
         }
+
         var equatableDiagnostics = builder.MoveToImmutable().AsEquatableArray();
 
         return new TranspiledKernelResult(
@@ -103,6 +135,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     return;
                 }
             }
+
             diagnostics.Add(d);
         }
     }
@@ -139,6 +172,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             builder.Add(d.AsEquatable());
         }
+
         var equatableDiagnostics = builder.MoveToImmutable().AsEquatableArray();
 
         return new TranspiledDeviceMethodResult(
@@ -161,6 +195,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     return;
                 }
             }
+
             diagnostics.Add(d);
         }
     }
@@ -326,7 +361,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         context.AddSource(method.ClassName + "_" + method.MethodName + "_Wrapper.g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
-
 
 
     private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config,
