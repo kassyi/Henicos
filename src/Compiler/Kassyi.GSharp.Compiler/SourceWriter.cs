@@ -13,7 +13,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder { get; }
+    private StringBuilder Builder
+    {
+        get;
+    }
 
     public SourceWriter()
     {
@@ -263,7 +266,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
-    public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda() => new(this);
+    public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
 
     [UnscopedRef]
     public ref readonly SourceWriter AppendParentheses()
@@ -346,10 +349,17 @@ public readonly ref struct SourceWriterImmediatelyInvokedLambdaScope
 {
     private readonly SourceWriter _writer;
 
-    public SourceWriterImmediatelyInvokedLambdaScope(SourceWriter writer)
+    public SourceWriterImmediatelyInvokedLambdaScope(SourceWriter writer, string? returnType = null)
     {
         _writer = writer;
-        _writer.AppendLine("([&]() {");
+        if (returnType == null)
+        {
+            _writer.AppendLine("([&]() {");
+        }
+        else
+        {
+            _writer.AppendLine($"([&]() -> {returnType} {{");
+        }
     }
 
     public void Dispose() => _writer.Append("}())");

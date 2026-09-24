@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>
@@ -13,28 +15,7 @@ internal static class StatementTranspilers
         context.Visitor.Visit(node.ParameterList);
         context.Writer.AppendSpace();
 
-        context.CallableDepth++;
-        if (node.Body != null)
-        {
-            using (context.Writer.Scope())
-            {
-                foreach (var stmt in node.Body.Statements)
-                {
-                    context.Visitor.Visit(stmt);
-                    context.Writer.AppendLine();
-                }
-            }
-        }
-        else if (node.ExpressionBody != null)
-        {
-            using (context.Writer.Scope())
-            {
-                context.Writer.Append("return ");
-                context.Visitor.Visit(node.ExpressionBody.Expression);
-                context.Writer.AppendSemiColonLine();
-            }
-        }
-        context.CallableDepth--;
+        LambdaTranspilerHelper.TranspileLambdaBody(ref context, node.Body, node.ExpressionBody?.Expression);
 
         context.Writer.AppendSemiColonLine();
     }

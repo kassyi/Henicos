@@ -259,11 +259,10 @@ public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern "
 int tid = threadIdx.x;
 int idx = sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
-[&]() -> decltype(auto) {
+([&]() -> decltype(auto) {
 auto& __coalesce_target = targetArray[idx];
 return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coalesce_target.Value;
-}
-();
+}());
 }
 ";
 public static readonly string NullCoalescingAssignmentSideEffectKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NullCoalescingAssignmentSideEffectKernel_Source;
@@ -457,11 +456,10 @@ public static partial class SYN_01_09_ControlFlowKernelsWrapper
 public const string NullCoalescingKernel_Source = @"extern ""C"" __global__ void NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results){
 int tid = threadIdx.x;
 System_Nullable<int> input = nullableInputs[tid];
-results[tid]=[&]() {
+results[tid]=([&]() {
 auto __coalesce_tmp = input;
 return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
-}
-();
+}());
 }
 ";
 public static readonly string NullCoalescingKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NullCoalescingKernel_Source;

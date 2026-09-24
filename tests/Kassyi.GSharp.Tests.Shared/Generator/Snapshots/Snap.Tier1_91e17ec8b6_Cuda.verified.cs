@@ -90,27 +90,24 @@ return x+5-5;
 ;
 int a;
 int b;
-[&](){
+([&]() {
 auto _t0 = LocalInlineFunc(tid);
 auto _t1 = tid*2;
 a = _t0;
 b = _t1;
-}
-();
-[&](){
+}());
+([&]() {
 auto _t0 = b;
 auto _t1 = a;
 a = _t0;
 b = _t1;
-}
-();
-[&](){
+}());
+([&]() {
 auto _t0 = b;
 auto _t1 = a;
 a = _t0;
 b = _t1;
-}
-();
+}());
 int processed;
 bool ok = TryProcess(intInput[tid],&processed);
 int bitwise = (a<<1)|(b>>1)^0xFF;
@@ -200,11 +197,10 @@ fbs.Data[0]=bitwise;
 finalVal+=fbs.Data[0];
 }
 System_Nullable<int> maybeVal = {};
-int actualVal = [&]() {
+int actualVal = ([&]() {
 auto __coalesce_tmp = maybeVal;
 return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : 5;
-}
-();
+}());
 finalVal+=actualVal;
 int popCount = __popc((unsigned int)((unsigned int)bitwise));
 int leadingZeroes = __gsharp_lzc_32((unsigned int)bitwise);

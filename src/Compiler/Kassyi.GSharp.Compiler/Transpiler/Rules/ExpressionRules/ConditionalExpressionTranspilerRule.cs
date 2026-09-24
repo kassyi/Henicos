@@ -1,6 +1,6 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-/// <summary>
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;/// <summary>
 /// Transpiles C# ternary conditional expressions (<c>condition ? trueExpr : falseExpr</c>) into parenthesized C++ conditional expressions.
 /// </summary>
 /// <remarks>
@@ -29,7 +29,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
             // Handle 'ref' conditionals if present
             if (node.WhenTrue is RefExpressionSyntax refTrue)
             {
-                context.Visitor.Visit(refTrue.Expression);
+                RefSyntaxHelper.TranspileAsByRefArgument(ref context, refTrue.Expression);
             }
             else
             {
@@ -40,7 +40,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
 
             if (node.WhenFalse is RefExpressionSyntax refFalse)
             {
-                context.Visitor.Visit(refFalse.Expression);
+                RefSyntaxHelper.TranspileAsByRefArgument(ref context, refFalse.Expression);
             }
             else
             {

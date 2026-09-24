@@ -90,11 +90,10 @@ public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern "
 int tid = threadIdx.x;
 int idx = sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
-[&]() -> decltype(auto) {
+([&]() -> decltype(auto) {
 auto& __coalesce_target = targetArray[idx];
 return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coalesce_target.Value;
-}
-();
+}());
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NullCoalescingAssignmentSideEffectKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values)
 {
@@ -153,11 +152,10 @@ public static partial class SYN_01_09_ControlFlowKernelsWrapper
 public const string NullCoalescingKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results){
 int tid = threadIdx.x;
 System_Nullable<int> input = nullableInputs[tid];
-results[tid]=[&]() {
+results[tid]=([&]() {
 auto __coalesce_tmp = input;
 return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
-}
-();
+}());
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NullCoalescingKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results)
 {
