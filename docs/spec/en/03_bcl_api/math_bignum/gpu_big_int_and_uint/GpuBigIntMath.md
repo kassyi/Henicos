@@ -356,12 +356,12 @@ GpuBigIntMath.Add(valA, valB, valSum);
 
 // Execute subtraction
 GpuBigIntMath.Sub(valA, valB, valSum);
+Console.WriteLine($"Sub={valSum.ToBigInteger(false)}");
 
 // Execute multiplication (needs sum of words for buffer)
 using var valMul = new GpuUIntBigInteger(context, 8);
 GpuBigIntMath.Mul(valA, valB, valMul);
-
-Console.WriteLine("Math operations succeeded.");
+Console.WriteLine($"Mul={valMul.ToBigInteger(false)}");
 ```
 
 ## See also

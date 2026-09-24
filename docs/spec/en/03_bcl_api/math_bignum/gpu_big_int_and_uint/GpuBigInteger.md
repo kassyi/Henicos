@@ -166,7 +166,43 @@ A 32-bit signed integer that is the hash code for this instance.
 
 ## Examples
 
-### Creating and using GpuBigInteger
+### Lazy Evaluation (CPU)
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
+```csharp
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+
+// Execution Context: Host (CPU)
+try {
+    using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+    
+    using var uintA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(100), 4);
+    using var uintB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(50), 4);
+
+    // Wrap with a sign to represent signed integers
+    var valA = new GpuBigInteger(uintA, isNegative: false);
+    var valB = new GpuBigInteger(uintB, isNegative: false);
+
+    // Operator overloads on CPU return AST expressions (Lazy Evaluation)
+    var sumExpr = valA + valB;
+    
+    // Evaluate dynamically to a new buffer
+    using var sumResult = (GpuBigInteger)sumExpr.Node.Evaluate(context, null);
+    
+    Console.WriteLine($"Sum evaluated to={sumResult.Value.ToBigInteger(sumResult.IsNegative)}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Cannot run on CPU.");
+}
+```
+
+### Immediate Evaluation (GPU)
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
@@ -177,17 +213,29 @@ using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
-// Execution Context: Host (CPU) or G# Kernel (GPU)
+// Execution Context: Host (CPU)
+Example.ComputeBigIntMath();
 
-// 1. Create a GpuContext
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
-
-// 2. Allocate an underlying unsigned integer buffer (e.g. 4 limbs)
-using var uintVal = new GpuUIntBigInteger(context, 4);
-
-// 3. Wrap it with a sign to represent a signed integer
-var posBigInt = new GpuBigInteger(uintVal, isNegative: false);
-var negBigInt = new GpuBigInteger(uintVal, isNegative: true);
+public class Example
+{
+    // Execution Context: G# Kernel (GPU)
+    [GpuKernel]
+    public static void ComputeBigIntMath()
+    {
+        // On the GPU device, dynamic AST creation is prohibited.
+        // Instead, we use GpuBigIntMath for immediate zero-allocation evaluation.
+        
+        // Setup initial values (using generic fixed-size for simplicity)
+        GpuUInt128 sigA = [150];
+        GpuUInt128 sigB = [50];
+        GpuUInt128 resultSig = [0];
+        
+        // Execute addition immediately
+        GpuBigIntMath.Add(sigA, sigB, resultSig);
+        
+        Console.WriteLine($"Result={resultSig.Limbs[0]}");
+    }
+}
 ```
 
 ## See also

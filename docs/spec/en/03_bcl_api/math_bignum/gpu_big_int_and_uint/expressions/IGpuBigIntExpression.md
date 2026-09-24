@@ -66,44 +66,52 @@ The evaluated result with its sign.
 
 ## Examples
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+
 ```csharp
 #nullable enable
+// Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
-// 1. Setup GPU Context and inputs
 using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
-using var uintVal = new GpuUIntBigInteger(context, new uint[] { 42 });
-var signedVal = new GpuBigInteger(uintVal, isNegative: true);
+using var aUint = new GpuUIntBigInteger(context, new uint[] { 10 });
+using var bUint = new GpuUIntBigInteger(context, new uint[] { 25 });
 
-// 2. Create the custom expression node
-IGpuBigIntExpression expression = new CustomSignedNode(signedVal);
+var a = new GpuBigInteger(aUint, isNegative: false);
+var b = new GpuBigInteger(bUint, isNegative: false);
 
-// 3. Evaluate the expression
+IGpuBigIntExpression expression = new CustomSumNode(a, b);
 var result = expression.Evaluate(context);
 
-Console.WriteLine($"Evaluated Magnitude Words: {result.Value.NumWords}");
-Console.WriteLine($"Is Negative: {result.IsNegative}");
+var resultWords = new uint[1];
+context.Provider.CopyDeviceToHost(resultWords, result.Value.DevicePointer, 1);
 
-// Example of a custom AST node for Signed GPU BigInteger evaluation
-public class CustomSignedNode : IGpuBigIntExpression
+Console.WriteLine($"Result: {(result.IsNegative ? "-" : "")}{resultWords[0]}");
+
+public class CustomSumNode : IGpuBigIntExpression
 {
-    private readonly GpuBigInteger _value;
+    private readonly GpuBigInteger _left;
+    private readonly GpuBigInteger _right;
 
-    public CustomSignedNode(GpuBigInteger value)
+    public CustomSumNode(GpuBigInteger left, GpuBigInteger right)
     {
-        _value = value;
+        _left = left;
+        _right = right;
     }
 
-    public int NumWords => _value.Value.NumWords;
+    public int NumWords => System.Math.Max(_left.Value.NumWords, _right.Value.NumWords) + 1;
 
     public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
     {
-        // For demonstration, simply return the predefined value.
-        // A real AST node would evaluate an operation here.
-        return _value;
+        var resultBuf = targetResult ?? new GpuUIntBigInteger(context, NumWords);
+        using var leftPad = _left.Value.PadTo(NumWords);
+        using var rightPad = _right.Value.PadTo(NumWords);
+        GpuBigIntMath.Add(leftPad, rightPad, resultBuf);
+        return new GpuBigInteger(resultBuf, isNegative: true);
     }
 }
 ```

@@ -110,6 +110,10 @@ GpuUInt256 fromLimbs = [ 0x00000001, 0, 0, 0, 0, 0, 0, 0 ];
 
 // 4. Retrieve the underlying GpuUIntBigInteger<LimbBuffer8> implicitly
 GpuUIntBigInteger<LimbBuffer8> underlyingBuffer = fromLimbs;
+
+Console.WriteLine($"fromScalar.Value.Limbs[0] = {fromScalar.Value.Limbs[0]}");
+Console.WriteLine($"implicitConversion.Value.Limbs[0] = {implicitConversion.Value.Limbs[0]}");
+Console.WriteLine($"fromLimbs.Value.Limbs[0] = {fromLimbs.Value.Limbs[0]}");
 ```
 
 ## See also

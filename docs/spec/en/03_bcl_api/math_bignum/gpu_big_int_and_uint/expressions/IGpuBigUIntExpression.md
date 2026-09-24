@@ -66,41 +66,47 @@ The evaluated `GpuUIntBigInteger` result buffer.
 
 ## Examples
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+
 ```csharp
 #nullable enable
+// Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
-// 1. Setup GPU Context and inputs
 using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
-using var uintVal = new GpuUIntBigInteger(context, new uint[] { 42 });
+using var left = new GpuUIntBigInteger(context, new uint[] { 500 });
+using var right = new GpuUIntBigInteger(context, new uint[] { 700 });
 
-// 2. Create the custom expression node
-IGpuBigUIntExpression expression = new CustomUnsignedNode(uintVal);
+IGpuBigUIntExpression expression = new CustomAddNode(left, right);
+using var result = expression.Evaluate(context);
 
-// 3. Evaluate the expression
-var result = expression.Evaluate(context);
+var resultData = new uint[1];
+context.Provider.CopyDeviceToHost(resultData, result.DevicePointer, 1);
 
-Console.WriteLine($"Evaluated Words: {result.NumWords}");
+Console.WriteLine($"500 + 700 = {resultData[0]}");
 
-// Create a mock AST node for Unsigned GPU BigInteger evaluation
-public class CustomUnsignedNode : IGpuBigUIntExpression
+public class CustomAddNode : IGpuBigUIntExpression
 {
-    private readonly GpuUIntBigInteger _value;
+    private readonly GpuUIntBigInteger _left;
+    private readonly GpuUIntBigInteger _right;
 
-    public CustomUnsignedNode(GpuUIntBigInteger value)
+    public CustomAddNode(GpuUIntBigInteger left, GpuUIntBigInteger right)
     {
-        _value = value;
+        _left = left;
+        _right = right;
     }
 
-    public int NumWords => _value.NumWords;
+    public int NumWords => System.Math.Max(_left.NumWords, _right.NumWords) + 1;
 
     public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
     {
-        // For demonstration, simply return the predefined value.
-        return _value;
+        var resultBuf = targetResult ?? new GpuUIntBigInteger(context, NumWords);
+        context.Provider.Add(context, _left, _right, resultBuf);
+        return resultBuf;
     }
 }
 ```

@@ -148,6 +148,10 @@ using var stateRight = new GpuHypergeometricPqt(pRight, qRight, tRight);
 // Q = Ql * Qr
 // T = Tl * Qr + Pl * Tr
 using var merged = GpuHypergeometricPqt.Merge(context, stateLeft, stateRight);
+
+Console.WriteLine($"Merged P = {merged.P.Value.ToBigInteger(merged.P.IsNegative)}");
+Console.WriteLine($"Merged Q = {merged.Q.ToBigInteger(false)}");
+Console.WriteLine($"Merged T = {merged.T.Value.ToBigInteger(merged.T.IsNegative)}");
 ```
 
 ## Remarks

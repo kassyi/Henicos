@@ -545,24 +545,28 @@ A signed integer that indicates the relative values of the operands.
 
 ## Examples
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+
 ```csharp
+// Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
-// Initialize the GPU context with the AOT provider
 using var context = new GpuContext(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
+IGpuExecutionProvider provider = context.Provider;
 
-// Access the underlying IGpuExecutionProvider
-var provider = context.Provider;
+using var a = new GpuUIntBigInteger(context, new uint[] { 100 });
+using var b = new GpuUIntBigInteger(context, new uint[] { 50 });
+using var result = new GpuUIntBigInteger(context, 1);
 
-// Manually allocate and copy memory to device via the provider
-uint[] hostData = new uint[] { 0x01, 0x02 };
-IntPtr devicePtr = provider.AllocateMemory(hostData.Length);
-provider.CopyHostToDevice(devicePtr, hostData, hostData.Length);
+provider.BitwiseOr(context, a, b, result);
 
-Console.WriteLine("Successfully allocated and copied memory using GSharpAotProvider.");
+uint[] hostResult = new uint[1];
+provider.CopyDeviceToHost(hostResult, result.DevicePointer, 1);
 
-// Free memory
-provider.FreeMemory(devicePtr);
+// 100 = 0x64, 50 = 0x32, 100 | 50 = 118 (0x76)
+Console.WriteLine($"100 | 50 = {hostResult[0]}");
 ```

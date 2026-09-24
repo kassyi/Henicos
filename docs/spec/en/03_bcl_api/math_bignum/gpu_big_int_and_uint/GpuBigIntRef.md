@@ -48,7 +48,32 @@ public readonly ref struct GpuBigIntRef
 
 ## Examples
 
-### Pointer Arithmetics in a GPU Kernel
+### CPU Simulation (Host)
+
+> [!NOTE]
+> `GpuBigIntRef` cannot be executed directly on the CPU. This example demonstrates the equivalent host-side simulation using `GpuBigIntMath`.
+
+```csharp
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+
+// Execution Context: Host (CPU)
+using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var uintA = GpuUIntBigInteger.FromBigInteger(context, new System.Numerics.BigInteger(150), 4);
+using var uintB = GpuUIntBigInteger.FromBigInteger(context, new System.Numerics.BigInteger(50), 4);
+
+// GpuBigIntRef operators throw on CPU. We use AST expression evaluation to simulate the result.
+var sumExpr = uintA + uintB;
+using var sumResult = (GpuUIntBigInteger)sumExpr.Node.Evaluate(context, null);
+
+Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInteger()}");
+```
+
+### Immediate Evaluation (GPU)
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
@@ -58,17 +83,14 @@ using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
-// Execution Context: Host (CPU)
-Example.KernelEntry();
-
 public class Example
 {
     // Execution Context: G# Kernel (GPU)
     [GpuKernel]
     public static void KernelEntry()
     {
-        uint[] bufA = new uint[4];
-        uint[] bufB = new uint[4];
+        uint[] bufA = new uint[4] { 150, 0, 0, 0 };
+        uint[] bufB = new uint[4] { 50, 0, 0, 0 };
 
         // Cast to GpuBigIntRef
         GpuBigIntRef a = bufA;

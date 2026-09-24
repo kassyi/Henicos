@@ -72,6 +72,7 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 GpuUIntBigInteger<LimbBuffer4> fromLimbs = GpuUIntBuilder.Create<LimbBuffer4>([1, 2, 3, 4]);
 
+Console.WriteLine($"fromLimbs.Limbs[0] = {fromLimbs.Limbs[0]}");
 ```
 
 ## See also

@@ -258,7 +258,8 @@ using var outA = new GpuUIntBigInteger(context, 4);
 using var outB = new GpuUIntBigInteger(context, 4);
 
 matResult.Apply(a, b, outA, outB);
-Console.WriteLine("Matrix application succeeded.");
+Console.WriteLine($"outA = {outA.ToBigInteger(false)}");
+Console.WriteLine($"outB = {outB.ToBigInteger(false)}");
 ```
 
 ## See also

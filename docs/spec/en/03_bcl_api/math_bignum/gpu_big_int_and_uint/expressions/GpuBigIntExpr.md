@@ -123,6 +123,8 @@ var prodExpr = sumExpr * exprA;
 // Evaluate AST back to a magnitude buffer
 using var dest = new GpuUIntBigInteger(context, 8);
 var finalResult = prodExpr.Evaluate(dest);
+
+Console.WriteLine($"Result={finalResult.Value.ToBigInteger(finalResult.IsNegative)}");
 ```
 
 ## See also

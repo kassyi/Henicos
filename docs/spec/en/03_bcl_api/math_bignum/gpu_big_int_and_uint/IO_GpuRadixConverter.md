@@ -76,18 +76,19 @@ using Kassyi.GSharp.Stdlib.Math.IO;
 using var context = new GpuContext(2048, GpuExecutionEngine.GSharpAot);
 
 // Assume we just finished calculating a massive factorial or Pi
-GpuUIntBigInteger resultGpu = new GpuUIntBigInteger(context, 100);
+GpuUIntBigInteger resultGpu = GpuUIntBigInteger.FromBigInteger(context, System.Numerics.BigInteger.Parse("12345678901234567890"), minWords: 2);
 
-Console.WriteLine("Starting base-10 conversion (this might take a few seconds)...");
+Console.WriteLine("Starting base-10 conversion...");
 
 // The converter orchestrates thousands of recursive division kernels on the GPU
 // and streams the result directly to a file without allocating a massive string.
 using (var writer = new StreamWriter("result.txt"))
 {
-    GpuRadixConverter.ConvertAndWrite(context, resultGpu, targetDigits: 10_000, writer);
+    GpuRadixConverter.ConvertAndWrite(context, resultGpu, targetDigits: 20, writer);
 }
 
-Console.WriteLine("Conversion complete. Output written to result.txt.");
+string output = File.ReadAllText("result.txt");
+Console.WriteLine($"Conversion complete. Output: {output}");
 ```
 
 ## Remarks

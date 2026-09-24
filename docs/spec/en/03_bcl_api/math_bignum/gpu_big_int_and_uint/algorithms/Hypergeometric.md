@@ -39,19 +39,27 @@ Because binary splitting is inherently a massive reduction tree, it is an ideal 
 
 This example demonstrates the core recursive step (combining left and right branches of the tree) in a binary splitting algorithm orchestrated on the GPU.
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
 ```csharp
+using System;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(maxWords: 524288); // Huge memory pool for Pi digits
+using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
-// Assume we have computed the P, Q, T terms for the left and right halves of a recursive tree
-var pLeft = new GpuBigInteger(...);
-var qLeft = new GpuBigInteger(...);
-var tLeft = new GpuBigInteger(...);
+// Initialize some placeholder values
+var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var qLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
 
-var pRight = new GpuBigInteger(...);
-var qRight = new GpuBigInteger(...);
-var tRight = new GpuBigInteger(...);
+var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var qRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
 
 // The binary splitting combination formula:
 // P_new = P_left * P_right
@@ -64,12 +72,18 @@ var qNewExpr = qLeft * qRight;
 var tNewExpr = (tLeft * qRight) + (pLeft * tRight);
 
 // 2. Evaluate concurrently using the Context pool
-// The GPU will fuse these operations and reuse memory automatically
-using var pNew = pNewExpr.Node.Evaluate(context, null);
-using var qNew = qNewExpr.Node.Evaluate(context, null);
-using var tNew = tNewExpr.Node.Evaluate(context, null);
+using var pNewDest = new GpuUIntBigInteger(context, 8);
+var pNew = pNewExpr.Evaluate(pNewDest);
 
-// Continue recursively until the root is reached...
+using var qNewDest = new GpuUIntBigInteger(context, 8);
+var qNew = qNewExpr.Evaluate(qNewDest);
+
+using var tNewDest = new GpuUIntBigInteger(context, 8);
+var tNew = tNewExpr.Evaluate(tNewDest);
+
+Console.WriteLine($"pNew = {pNew.Value.ToBigInteger(pNew.IsNegative)}");
+Console.WriteLine($"qNew = {qNew.Value.ToBigInteger(qNew.IsNegative)}");
+Console.WriteLine($"tNew = {tNew.Value.ToBigInteger(tNew.IsNegative)}");
 ```
 
 ## Remarks

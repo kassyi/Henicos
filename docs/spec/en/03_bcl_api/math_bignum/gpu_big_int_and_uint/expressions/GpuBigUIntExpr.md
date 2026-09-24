@@ -81,7 +81,10 @@ This struct serves as the frontend for operator overloading on GPU Unsigned BigI
 > Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
 
 ```csharp
+using System;
 using System.Numerics;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
@@ -94,12 +97,9 @@ using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 using var uintA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(100), minWords: 4);
 using var uintB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(200), minWords: 4);
 
-var a = new GpuBigInteger(uintA, isNegative: false);
-var b = new GpuBigInteger(uintB, isNegative: true);
-
 // Build AST node lazy expression wrapper
-GpuBigIntExpr exprA = a;
-GpuBigIntExpr exprB = b;
+GpuBigUIntExpr exprA = uintA;
+GpuBigUIntExpr exprB = uintB;
 
 // Construct AST tree without executing computation
 var sumExpr = exprA + exprB;
@@ -107,7 +107,9 @@ var prodExpr = sumExpr * exprA;
 
 // Evaluate AST back to a magnitude buffer
 using var dest = new GpuUIntBigInteger(context, 8);
-var finalResult = prodExpr.Evaluate(dest);
+var finalResult = prodExpr.Node.Evaluate(context, dest);
+
+Console.WriteLine($"Result={finalResult.ToBigInteger(false)}");
 ```
 
 ## See also

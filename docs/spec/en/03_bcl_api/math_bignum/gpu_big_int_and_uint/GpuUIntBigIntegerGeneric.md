@@ -335,15 +335,21 @@ The difference of the two values.
 > Requires assemblies: Kassyi.GSharp.Stdlib.Math
 
 ```csharp
-// Execution Context: GPU Kernel
+// Execution Context: Host (CPU) or G# Kernel
 using System;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 var a = GpuUIntBigInteger<LimbBuffer4>.One;
-var b = new GpuUIntBigInteger<LimbBuffer4>(new LimbBuffer4 { V0 = 42 });
+
+var buffer = new LimbBuffer4();
+buffer[0] = 42;
+var b = new GpuUIntBigInteger<LimbBuffer4>(buffer);
 
 var sum = a + b;
 var isZero = sum.IsZero();
+
+Console.WriteLine($"sum.Limbs[0] = {sum.Limbs[0]}");
+Console.WriteLine($"isZero = {isZero}");
 ```
 
 ## See also

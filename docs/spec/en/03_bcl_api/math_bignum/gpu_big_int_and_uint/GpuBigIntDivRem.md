@@ -157,7 +157,7 @@ The buffer to store the square root.
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
 
 ```csharp
 using System;
@@ -176,12 +176,16 @@ using var r = new GpuUIntBigInteger(context, 4);
 
 // Execute Division and Remainder (using Newton-Raphson approximation under the hood)
 GpuBigIntDivRem.DivRem(valA, valB, q, r);
+Console.WriteLine($"Quotient={q.ToBigInteger(false)}");
+Console.WriteLine($"Remainder={r.ToBigInteger(false)}");
 
 // Execute Integer Square Root
 GpuBigIntDivRem.Sqrt(valA, r);
+Console.WriteLine($"Sqrt={r.ToBigInteger(false)}");
 
 // Execute Modular Exponentiation
 GpuBigIntDivRem.ModPow(valA, valB, valB, r);
+Console.WriteLine($"ModPow={r.ToBigInteger(false)}");
 ```
 
 ## See also
