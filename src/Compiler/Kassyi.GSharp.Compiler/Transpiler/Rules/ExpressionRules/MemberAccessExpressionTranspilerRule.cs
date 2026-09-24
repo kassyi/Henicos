@@ -24,11 +24,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
-        if (symbol != null && TryEnsureNotProhibitedApi(symbol, node, ref context))
-        {
-            return;
-        }
-
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
             context.Writer.AppendConstantField(field);
@@ -61,28 +56,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
         {
             context.Writer.Append(mappedName);
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryEnsureNotProhibitedApi(ISymbol symbol, MemberAccessExpressionSyntax node,
-        ref TranspileContext context)
-    {
-        if (symbol is
-            {
-                ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
-                or TypeConstants.InterlockedType or TypeConstants.BitOperationsType
-            } &&
-            (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() ||
-             symbol.ContainingNamespace.IsSystemOrNumerics()))
-        {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                node.GetLocation(),
-                $"{symbol.ContainingType.Name}.{symbol.Name}"));
-            context.Writer.Append($"__gsharp_unsupported_{symbol.Name}");
             return true;
         }
 
@@ -154,20 +127,22 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return false;
             }
 
-            if (ArraySyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
+            if (!ArraySyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
                     out _))
             {
-                if (count.HasValue)
-                {
-                    context.Writer.Append(count.Value);
-                    return true;
-                }
+                return false;
+            }
 
-                if (sizeExpr != null)
-                {
-                    context.Visitor.Visit(sizeExpr);
-                    return true;
-                }
+            if (count.HasValue)
+            {
+                context.Writer.Append(count.Value);
+                return true;
+            }
+
+            if (sizeExpr != null)
+            {
+                context.Visitor.Visit(sizeExpr);
+                return true;
             }
         }
 

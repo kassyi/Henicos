@@ -66,5 +66,11 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         LinqNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitInvocationExpression(node);
     }
+
+    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+    {
+        ProhibitedApiRule.Instance.Analyze(node, ref _context);
+        base.VisitMemberAccessExpression(node);
+    }
 }
 
