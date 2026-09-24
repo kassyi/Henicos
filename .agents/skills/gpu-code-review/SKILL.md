@@ -98,21 +98,21 @@ description: 自律検証型コードレビューガイドライン (GSharp / GP
 # 出力フォーマット（厳格なJSONスキーマ）
 
 あなたはMarkdownを一切出力してはなりません。代わりに、以下のJSONスキーマに完全に準拠した **1つの完全なJSONオブジェクト** のみを出力してください。
-コードブロック（```json ... ```）で囲んでも構いませんが、JSONの前後に挨拶や説明のテキストを付加することは厳禁です。
+コードブロック（`json ... `）で囲んでも構いませんが、JSONの前後に挨拶や説明のテキストを付加することは厳禁です。
 
 ### JSONスキーマの構造
 
 ```json
 {
   "phase_title": "【Phase 1-01】[GPU / Kernel - RadixConvert] のようなコンポーネント名・機能名",
-  "target_files": [
-    "src/Kernels/RadixConvert.cu.cs"
-  ],
+  "target_files": ["src/Kernels/RadixConvert.cu.cs"],
   "architectural_summary": "現状のコードが抱える最大のボトルネックと、リファクタリングによって得られるROIについての総括。（ボーナス加点がある場合は賞賛も記載）",
   "verification_summary": "エージェントが実行したテスト・ビルド・静的解析等の結果概要。",
   "defects": {
     "robustness": {
-      "fatal": ["関数XXXでIEnumeratorアロケーションを伴うforeachループを使用している"],
+      "fatal": [
+        "関数XXXでIEnumeratorアロケーションを伴うforeachループを使用している"
+      ],
       "major": []
     },
     "responsibility": {
@@ -121,7 +121,9 @@ description: 自律検証型コードレビューガイドライン (GSharp / GP
       "minor": []
     },
     "cognitive": {
-      "major": ["関数YでWarp内の分岐発散(Warp Divergence)が避けられないif文がある"],
+      "major": [
+        "関数YでWarp内の分岐発散(Warp Divergence)が避けられないif文がある"
+      ],
       "minor": ["関数Wで不要なelseブロックを使用している"]
     },
     "risk": {
@@ -134,7 +136,9 @@ description: 自律検証型コードレビューガイドライン (GSharp / GP
     "bonus": {
       "patterns": true,
       "edge_cases": false,
-      "details": ["機能Aにおいてビット演算を用いて分岐を排除しておりGPU性能が極めて高い"]
+      "details": [
+        "機能Aにおいてビット演算を用いて分岐を排除しておりGPU性能が極めて高い"
+      ]
     }
   },
   "refactoring_proposals": [
