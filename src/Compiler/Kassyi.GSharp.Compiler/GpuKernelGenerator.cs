@@ -1,4 +1,3 @@
-
 using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Models;
 using Microsoft.CodeAnalysis.Text;
@@ -10,6 +9,69 @@ namespace Kassyi.GSharp.Compiler;
 [Generator]
 public class GpuKernelGenerator : IIncrementalGenerator
 {
+    private sealed class DiagnosticCollector
+    {
+        private readonly List<Diagnostic> _diagnostics = [];
+
+        public EquatableArray<EquatableDiagnostic> GetDiagnostics()
+        {
+            var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(_diagnostics.Count);
+            foreach (var d in _diagnostics)
+            {
+                builder.Add(d.AsEquatable());
+            }
+
+            return builder.MoveToImmutable().AsEquatableArray();
+        }
+
+        public void Report(Diagnostic d)
+        {
+            foreach (var existing in _diagnostics)
+            {
+                if (existing.Id == d.Id && existing.Location == d.Location)
+                {
+                    return;
+                }
+            }
+
+            _diagnostics.Add(d);
+        }
+    }
+
+    private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
+    {
+        bool suppressGs0001 = false;
+        var root = methodDeclaration.SyntaxTree.GetRoot();
+        var nodes = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true);
+
+        foreach (var node in nodes)
+        {
+            if (node is not PragmaWarningDirectiveTriviaSyntax pragma)
+            {
+                continue;
+            }
+
+            foreach (var errorCode in pragma.ErrorCodes)
+            {
+                if (errorCode is not IdentifierNameSyntax id || id.Identifier.ValueText != "GS0001")
+                {
+                    continue;
+                }
+
+                if (pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
+                {
+                    suppressGs0001 = true;
+                }
+                else if (pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.RestoreKeyword))
+                {
+                    suppressGs0001 = false;
+                }
+            }
+        }
+
+        return suppressGs0001;
+    }
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var configProvider = context.AnalyzerConfigOptionsProvider
@@ -66,58 +128,31 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return null;
         }
 
-        var diagnostics = new List<Diagnostic>();
-
+        var collector = new DiagnosticCollector();
         var cudaDialect = new GSharpCudaDialect();
         var cppDialect = new StandardCppDialect();
 
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, reportDiagnostic,
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, collector.Report,
             isDevice: false, cudaDialect);
         var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
         {
         }, isDevice: false, cppDialect);
 
-        bool suppressGs0001 = false;
-        var root = methodDeclaration.SyntaxTree.GetRoot();
-        var nodes = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true);
-
-        foreach (var node in nodes)
+        if (!CheckSuppressGs0001(methodDeclaration))
         {
-            if (node is not PragmaWarningDirectiveTriviaSyntax pragma)
-            {
-                continue;
-            }
-            foreach (var errorCode in pragma.ErrorCodes)
-            {
-                if (errorCode is not IdentifierNameSyntax id || id.Identifier.ValueText != "GS0001")
-                {
-                    continue;
-                }
-
-                if (pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.DisableKeyword))
-                {
-                    suppressGs0001 = true;
-                }
-                else if (pragma.DisableOrRestoreKeyword.IsKind(SyntaxKind.RestoreKeyword))
-                {
-                    suppressGs0001 = false;
-                }
-            }
+            return new TranspiledKernelResult(
+                methodSymbol,
+                methodSymbol.Name,
+                methodSymbol.ContainingType.Name,
+                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                cudaSource,
+                cppSource,
+                collector.GetDiagnostics()
+            );
         }
 
-        if (suppressGs0001)
-        {
-            cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
-            cppSource = "// gsharp:suppress GS0001\n" + cppSource;
-        }
-
-        var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(diagnostics.Count);
-        foreach (var d in diagnostics)
-        {
-            builder.Add(d.AsEquatable());
-        }
-
-        var equatableDiagnostics = builder.MoveToImmutable().AsEquatableArray();
+        cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
+        cppSource = "// gsharp:suppress GS0001\n" + cppSource;
 
         return new TranspiledKernelResult(
             methodSymbol,
@@ -126,21 +161,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
             cudaSource,
             cppSource,
-            equatableDiagnostics
+            collector.GetDiagnostics()
         );
-
-        void reportDiagnostic(Diagnostic d)
-        {
-            foreach (var existing in diagnostics)
-            {
-                if (existing.Id == d.Id && existing.Location == d.Location)
-                {
-                    return;
-                }
-            }
-
-            diagnostics.Add(d);
-        }
     }
 
     private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorSyntaxContext context,
@@ -153,30 +175,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return null;
         }
 
-        var diagnostics = new List<Diagnostic>();
-
+        var collector = new DiagnosticCollector();
         var cudaDialect = new GSharpCudaDialect();
         var cppDialect = new StandardCppDialect();
 
         var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
-            reportDiagnostic, isDevice: true, cudaDialect);
+            collector.Report, isDevice: true, cudaDialect);
         var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel, _ =>
         {
         }, isDevice: true, cppDialect);
 
-        var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, reportDiagnostic,
+        var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, collector.Report,
             isDevice: true, cudaDialect);
         var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
         {
         }, isDevice: true, cppDialect);
-
-        var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(diagnostics.Count);
-        foreach (var d in diagnostics)
-        {
-            builder.Add(d.AsEquatable());
-        }
-
-        var equatableDiagnostics = builder.MoveToImmutable().AsEquatableArray();
 
         return new TranspiledDeviceMethodResult(
             methodSymbol,
@@ -187,20 +200,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cudaBody,
             cppSignature,
             cppBody,
-            equatableDiagnostics);
-
-        void reportDiagnostic(Diagnostic d)
-        {
-            foreach (var existing in diagnostics)
-            {
-                if (existing.Id == d.Id && existing.Location == d.Location)
-                {
-                    return;
-                }
-            }
-
-            diagnostics.Add(d);
-        }
+            collector.GetDiagnostics());
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
@@ -296,18 +296,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (preludeWriter.Scope())
             {
                 preludeWriter.Append("public const string Source = @\"");
-                foreach (var c in preludeSource)
-                {
-                    if (c == '"')
-                    {
-                        preludeWriter.Append("\"\"");
-                    }
-                    else
-                    {
-                        preludeWriter.Append(c);
-                    }
-                }
-
+                preludeWriter.Append(preludeSource.Replace("\"", "\"\""));
                 preludeWriter.AppendLine("\";");
             }
         }
@@ -324,18 +313,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (deviceWriter.Scope())
             {
                 deviceWriter.Append("public const string Source = @\"");
-                foreach (var c in commonDeviceSource)
-                {
-                    if (c == '"')
-                    {
-                        deviceWriter.Append("\"\"");
-                    }
-                    else
-                    {
-                        deviceWriter.Append(c);
-                    }
-                }
-
+                deviceWriter.Append(commonDeviceSource.Replace("\"", "\"\""));
                 deviceWriter.AppendLine("\";");
             }
         }
@@ -357,7 +335,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
         {
-            WriteAotArtifacts(method, config, preludeSource, commonDeviceSource, source, dialect);
+            WriteAotArtifacts(method, config, preludeSource, commonDeviceSource, source, dialect, context);
         }
 
         var wrapperSource = WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config);
@@ -367,7 +345,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
 
     private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config,
-        string preludeSource, string commonDeviceSource, string kernelSource, ITranspilerDialect dialect)
+        string preludeSource, string commonDeviceSource, string kernelSource, ITranspilerDialect dialect,
+        SourceProductionContext context)
     {
         var fullCudaSource = preludeSource + commonDeviceSource + kernelSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
@@ -390,9 +369,23 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             File.WriteAllText(filePath, fullCudaSource);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore I/O errors during generator phase
+            // Ignore IO errors on best-effort basis, but report them as an info diagnostic
+            var diagnosticDescriptor = new DiagnosticDescriptor(
+                "GSH0000",
+                "AOT Artifact Error",
+                "Failed to write AOT artifact to '{0}': {1}",
+                "Build",
+                DiagnosticSeverity.Info,
+                isEnabledByDefault: true);
+
+            var diagnostic = Diagnostic.Create(
+                diagnosticDescriptor,
+                Location.None,
+                filePath,
+                ex.Message);
+            context.ReportDiagnostic(diagnostic);
         }
 #pragma warning restore RS1035
     }
