@@ -18,9 +18,9 @@ internal sealed class GpuMacroArgumentRule
         }
 
         var containingType = invocationSymbol.ContainingType;
-        if (containingType is { Name: "Hint", ContainingType.Name: "Gpu" })
+        if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuMacros.Gpu })
         {
-            if (invocationSymbol.Name == "Unroll")
+            if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
             {
                 CheckUnrollHint(invocation, ref context);
             }
@@ -28,36 +28,37 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        if (containingType?.Name != "Gpu")
+        if (containingType?.Name != TypeConstants.GpuMacros.Gpu)
         {
             return;
         }
 
         switch (invocationSymbol.Name)
         {
-            case "ForUnroll":
+            case TypeConstants.GpuMacros.ForUnroll:
+            {
+                var hasContext = invocationSymbol.Parameters.Length == 4;
+                var offset = hasContext ? 1 : 0;
+                var args = invocation.ArgumentList.Arguments;
+                if (args.Count >= offset + 2)
                 {
-                    var hasContext = invocationSymbol.Parameters.Length == 4;
-                    var offset = hasContext ? 1 : 0;
-                    var args = invocation.ArgumentList.Arguments;
-                    if (args.Count >= offset + 2)
-                    {
-                        CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
-                        CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
-                    }
-
-                    break;
+                    CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
+                    CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
                 }
-            case "InlinePtx":
+
+                break;
+            }
+
+            case TypeConstants.GpuMacros.InlinePtx:
+            {
+                var args = invocation.ArgumentList.Arguments;
+                if (args.Count >= 1)
                 {
-                    var args = invocation.ArgumentList.Arguments;
-                    if (args.Count >= 1)
-                    {
-                        CheckStringLiteral(args[0].Expression, ref context);
-                    }
-
-                    break;
+                    CheckStringLiteral(args[0].Expression, ref context);
                 }
+
+                break;
+            }
         }
     }
 
@@ -144,25 +145,25 @@ internal sealed class GpuMacroArgumentRule
                 ReportGsh0032(loopStmt, ref context);
                 return;
             case BinaryExpressionSyntax binaryExpr:
+            {
+                var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
+                var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
+                if (!leftIsConst && !rightIsConst)
                 {
-                    var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
-                    var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
-                    if (!leftIsConst && !rightIsConst)
-                    {
-                        ReportGsh0032(loopStmt, ref context);
-                    }
-
-                    break;
+                    ReportGsh0032(loopStmt, ref context);
                 }
+
+                break;
+            }
             default:
+            {
+                if (!IsStaticallyDeterministic(condition, ref context))
                 {
-                    if (!IsStaticallyDeterministic(condition, ref context))
-                    {
-                        ReportGsh0032(loopStmt, ref context);
-                    }
-
-                    break;
+                    ReportGsh0032(loopStmt, ref context);
                 }
+
+                break;
+            }
         }
     }
 
@@ -177,15 +178,15 @@ internal sealed class GpuMacroArgumentRule
         switch (expr)
         {
             case IdentifierNameSyntax idName:
+            {
+                var symbol = context.SemanticModel.GetSymbolInfo(idName).Symbol;
+                if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
                 {
-                    var symbol = context.SemanticModel.GetSymbolInfo(idName).Symbol;
-                    if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
-                    {
-                        return true;
-                    }
-
-                    break;
+                    return true;
                 }
+
+                break;
+            }
             case BinaryExpressionSyntax binaryExpr:
                 return IsStaticallyDeterministic(binaryExpr.Left, ref context) &&
                        IsStaticallyDeterministic(binaryExpr.Right, ref context);
@@ -209,11 +210,13 @@ internal sealed class GpuMacroArgumentRule
         var hasDynamicControlFlow = false;
         foreach (var n in loopStmt.DescendantNodes())
         {
-            if (n is BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax)
+            if (n is not (BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax))
             {
-                hasDynamicControlFlow = true;
-                break;
+                continue;
             }
+
+            hasDynamicControlFlow = true;
+            break;
         }
 
         if (!hasDynamicControlFlow)
