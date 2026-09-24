@@ -19,6 +19,10 @@ public class GSH_00_03_GpuKernelAnalyzerTests
 
     [Theory]
     [Trait("Category", "SadPath")]
+    // Note: GSH-02b uses .cu.txt instead of .cu.cs to prevent SnapshotTestCaseGenerator from picking it up.
+    // If it were .cu.cs, the G# transpiler would attempt to compile the LINQ method syntax (which is invalid in C++),
+    // causing a fatal MSVC/nvcc compiler error during the E2E backend tests (Tests.Cpu / Tests.Cuda).
+    [InlineData("GSH-02b", "Analyzers/GpuKernel/GSH-02b_LinqMethod_InGpuKernel.cu.txt", new[] { "GSH0008", "GSH0008", "GSH0008" })]
     [InlineData("GEN-36", "Analyzers/GEN-36_MacroArgumentSadPath.cs", new[] { "GSH0012", "GSH0006" })]
     [InlineData("GSH-16", "Analyzers/GSH-16_17_UnrollHintSadPath.cs", new[] { "GSH0016", "GSH0017" })]
     public async Task Test_GpuKernelAnalyzer_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expectedErrorIds)

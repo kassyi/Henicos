@@ -1,0 +1,15 @@
+// ReSharper disable All
+using Kassyi.GSharp.Core;
+using System.Linq;
+
+#if !GSHARP_CPU && !GSHARP_CUDA
+public class TestClass
+{
+    [GpuKernel]
+    [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
+    public void MyKernel(int[] data)
+    {
+        var query = data.Where(x => x > 0).Select(x => x * 2).ToArray();
+    }
+}
+#endif
