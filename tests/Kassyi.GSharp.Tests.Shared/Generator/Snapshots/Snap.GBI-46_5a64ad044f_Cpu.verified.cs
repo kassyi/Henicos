@@ -63,9 +63,9 @@ var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchit
 var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath);
-fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_ioVal = &ioVal)
 fixed (global::System.Single* p_outVal = &outVal)
+fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_ioVal, p_outVal, p_arrayVal);
 }
