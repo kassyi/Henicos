@@ -34,15 +34,30 @@ public struct Dim3
 > [!NOTE] Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU)
+using System;
+using System.Reflection;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
 public class Example
 {
     [GpuDeviceFunction]
     public static void ProcessCoordinate(Dim3 coord)
     {
-        int x = coord.X;
-        int y = coord.Y;
-        int z = coord.Z;
+        // On CPU, coord.X throws GpuOnlyException
+    }
+
+    public static void Run()
+    {
+        var method = typeof(Example).GetMethod(nameof(ProcessCoordinate));
+        var isGpuFunc = method.GetCustomAttribute<GpuDeviceFunctionAttribute>() != null;
+        var paramType = method.GetParameters()[0].ParameterType;
+
+        Console.WriteLine($"Is GPU Function: {isGpuFunc}");
+        Console.WriteLine($"Parameter Type: {paramType.Name}");
     }
 }
 ```

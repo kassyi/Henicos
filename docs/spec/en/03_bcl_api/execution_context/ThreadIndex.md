@@ -75,9 +75,10 @@ The Z coordinate/index.
 
 ```csharp
 using System;
+using System.Reflection;
 using Kassyi.GSharp.Core;
 
-// Execution Context: G# Kernel (GPU)
+// Execution Context: Host (CPU) Transpiler Inspection
 
 KernelExample.Run();
 
@@ -85,17 +86,15 @@ public class KernelExample
 {
     public static void Run()
     {
-        try
+        // On CPU, accessing ThreadIndex.X throws GpuOnlyException.
+        // The G# Transpiler maps this class by inspecting its [CudaIntrinsicPattern] attribute.
+        var type = typeof(ThreadIndex);
+        var attr = type.GetCustomAttribute<CudaIntrinsicPatternAttribute>();
+        
+        if (attr != null)
         {
-            // Accessing these properties is valid during GPU kernel execution.
-            // When executing on the CPU (e.g. during a unit test), it throws GpuOnlyException.
-            int idxX = ThreadIndex.X;
-            int idxY = ThreadIndex.Y;
-            int idxZ = ThreadIndex.Z;
-        }
-        catch (GpuOnlyException)
-        {
-            Console.WriteLine("Successfully intercepted GpuOnlyException on CPU.");
+            // Will output: threadIdx.{0}
+            Console.WriteLine($"ThreadIndex maps to CUDA intrinsic: {attr.Pattern}");
         }
     }
 }
