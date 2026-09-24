@@ -63,6 +63,7 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
     {
         ManualEnumeratorRule.Instance.Analyze(node, ref _context);
         GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
+        LinqNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitInvocationExpression(node);
     }
 }
