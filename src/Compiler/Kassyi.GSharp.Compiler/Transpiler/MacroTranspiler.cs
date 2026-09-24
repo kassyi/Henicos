@@ -1,11 +1,12 @@
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Microsoft.CodeAnalysis.Operations;
-
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-namespace Kassyi.GSharp.Compiler.Transpiler;/// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
+namespace Kassyi.GSharp.Compiler.Transpiler;
+
 // ReSharper disable once UnusedType.Global -- Used implicitly by Roslyn compiler infra
 // ReSharper disable once UnusedMember.Global -- Used implicitly by Roslyn compiler infra
+/// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
 internal static class MacroTranspiler
 {
     /// <summary>
@@ -112,37 +113,20 @@ internal static class MacroTranspiler
             return false;
         }
 
-        var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
-        if (string.IsNullOrEmpty(paramName))
+        if (!TryBeginMacroScope(invocation, lambdaExpr, hasContext, args, ref context, "ForUnroll", out var macroScope))
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.MacroLambdaRequiresParameter,
-                invocation.GetLocation(),
-                "ForUnroll"));
             return false;
         }
 
-        string? contextParamName = null;
-        if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
-        {
-            contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
-            var contextArgExpr = args[0].Expression;
-            context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
-        }
+        using var scopeDisposer = macroScope;
 
         context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
         for (var i = start; i < start + count; i++)
         {
-            context.LocalVariableOverrides[paramName] = new OverrideValue(i.ToString());
+            context.LocalVariableOverrides[macroScope.ParamName] = new OverrideValue(i.ToString());
             EmitUnrolledBody(ref context, lambdaExpr.Body);
-        }
-
-        context.LocalVariableOverrides.Remove(paramName);
-        if (hasContext && contextParamName != null)
-        {
-            context.LocalVariableOverrides.Remove(contextParamName);
         }
 
         return true;
@@ -160,41 +144,88 @@ internal static class MacroTranspiler
             return false;
         }
 
+        if (!TryBeginMacroScope(invocation, lambdaExpr, hasContext, args, ref context, "GridStrideLoop",
+                out var macroScope))
+        {
+            return false;
+        }
+
+        using var scopeDisposer = macroScope;
+
+        // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
+        context.Writer.AppendKeyword("for");
+        using (context.Writer.Parentheses())
+        {
+            context.Writer.Append(
+                $"int {macroScope.ParamName} = blockIdx.x * blockDim.x + threadIdx.x; {macroScope.ParamName} < ");
+            context.Visitor.Visit(args[offset].Expression);
+            context.Writer.Append($"; {macroScope.ParamName} += gridDim.x * blockDim.x");
+        }
+
+        context.Writer.AppendLine();
+        EmitUnrolledBody(ref context, lambdaExpr.Body);
+
+        return true;
+    }
+
+    private readonly ref struct MacroScope
+    {
+        private readonly Dictionary<string, OverrideValue> _overrides;
+        public readonly string ParamName;
+        private readonly string? _contextParamName;
+
+        public MacroScope(Dictionary<string, OverrideValue> overrides, string paramName, string? contextParamName,
+            ExpressionSyntax? contextArgExpr)
+        {
+            _overrides = overrides;
+            ParamName = paramName;
+            _contextParamName = contextParamName;
+
+            if (_contextParamName != null && contextArgExpr != null)
+            {
+                _overrides[_contextParamName] = new OverrideValue(contextArgExpr);
+            }
+        }
+
+        public void Dispose()
+        {
+            _overrides.Remove(ParamName);
+            if (_contextParamName != null)
+            {
+                _overrides.Remove(_contextParamName);
+            }
+        }
+    }
+
+    private static bool TryBeginMacroScope(
+        InvocationExpressionSyntax invocation,
+        LambdaExpressionSyntax lambdaExpr,
+        bool hasContext,
+        SeparatedSyntaxList<ArgumentSyntax> args,
+        ref TranspileContext context,
+        string macroName,
+        out MacroScope scope)
+    {
+        scope = default;
         var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
         if (string.IsNullOrEmpty(paramName))
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(
                 GSharpDiagnostics.MacroLambdaRequiresParameter,
                 invocation.GetLocation(),
-                "GridStrideLoop"));
+                macroName));
             return false;
         }
 
         string? contextParamName = null;
+        ExpressionSyntax? contextArgExpr = null;
         if (hasContext && lambdaExpr is ParenthesizedLambdaExpressionSyntax parenLambda)
         {
             contextParamName = parenLambda.ParameterList.Parameters[0].Identifier.Text;
-            var contextArgExpr = args[0].Expression;
-            context.LocalVariableOverrides[contextParamName] = new OverrideValue(contextArgExpr);
+            contextArgExpr = args[0].Expression;
         }
 
-        // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
-        context.Writer.AppendKeyword("for");
-        using (context.Writer.Parentheses())
-        {
-            context.Writer.Append($"int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < ");
-            context.Visitor.Visit(args[offset].Expression);
-            context.Writer.Append($"; {paramName} += gridDim.x * blockDim.x");
-        }
-
-        context.Writer.AppendLine();
-        EmitUnrolledBody(ref context, lambdaExpr.Body);
-
-        if (hasContext && contextParamName != null)
-        {
-            context.LocalVariableOverrides.Remove(contextParamName);
-        }
-
+        scope = new MacroScope(context.LocalVariableOverrides, paramName, contextParamName, contextArgExpr);
         return true;
     }
 
@@ -380,7 +411,8 @@ internal static class MacroTranspiler
         return null;
     }
 
-    private static (ExpressionSyntax? Left, ExpressionSyntax? Right, ExpressionSyntax? Extra) ExtractOperands(ExpressionSyntax rightNode)
+    private static (ExpressionSyntax? Left, ExpressionSyntax? Right, ExpressionSyntax? Extra) ExtractOperands(
+        ExpressionSyntax rightNode)
     {
         if (rightNode is BinaryExpressionSyntax binaryExpr)
         {
