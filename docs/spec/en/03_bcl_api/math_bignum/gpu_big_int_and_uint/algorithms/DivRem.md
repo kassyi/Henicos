@@ -13,14 +13,14 @@ description: "Reference for calculating Quotient and Remainder simultaneously on
 **Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-When performing division (`/`) or modulo (`%`) on massive multi-precision integers, the computational cost is extremely high. Often, an algorithm requires both the quotient and the remainder simultaneously (e.g., base conversion, Euclidean algorithms). 
+When performing division (`/`) or modulo (`%`) on massive multi-precision integers, the computational cost is extremely high. Often, an algorithm requires both the quotient and the remainder simultaneously (e.g., base conversion, Euclidean algorithms).
 
 `GpuBigIntDivRem` provides an optimized way to calculate and return both values in a single GPU dispatch, cutting execution time in half compared to calling `/` and `%` separately.
 
 ## Overloads
 
-| Name | Description |
-| --- | --- |
+| Name                                                                        | Description                                         |
+| --------------------------------------------------------------------------- | --------------------------------------------------- |
 | [DivRem(GpuBigInteger, GpuBigInteger)](#divrem-gpubiginteger-gpubiginteger) | Computes the quotient and remainder of two numbers. |
 
 ## DivRem(GpuBigInteger, GpuBigInteger)
@@ -69,10 +69,7 @@ Console.WriteLine($"Q: {quotient.ToBigInteger()}, R: {remainder.ToBigInteger()}"
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
-

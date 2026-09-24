@@ -23,7 +23,7 @@ The NTT multiplication is an **internal algorithm**. There is no public `NttMult
 
 ```csharp
 // Internally dispatched when evaluating:
-var expr = gpuA * gpuB; 
+var expr = gpuA * gpuB;
 ```
 
 ## Examples
@@ -32,29 +32,36 @@ var expr = gpuA * gpuB;
 
 When searching for massive prime numbers or calculating millions of digits of $\pi$, you are often required to multiply two numbers that are megabytes in size.
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+
 ```csharp
 // Execution Context: Host (CPU)
+
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 // Allocate a context capable of handling 2-Megabyte numbers
 using var context = new GpuContext(maxWords: 524288); // ~16.7 million bits!
 
 // Assume these are massive arrays loaded from disk or previous stages
-byte[] massiveDataA = LoadMegabyteArray();
-byte[] massiveDataB = LoadMegabyteArray();
+byte[] massiveDataA = new byte[1024]; // dummy implementation for test
+byte[] massiveDataB = new byte[1024]; // dummy implementation for test
 
-using var gpuDataA = GpuUIntBigInteger.FromByteArray(context, massiveDataA);
-using var gpuDataB = GpuUIntBigInteger.FromByteArray(context, massiveDataB);
+using var gpuDataA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(massiveDataA));
+using var gpuDataB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(massiveDataB));
 
-var a = new GpuBigInteger(gpuDataA);
-var b = new GpuBigInteger(gpuDataB);
+var a = new GpuBigInteger(gpuDataA, false);
+var b = new GpuBigInteger(gpuDataB, false);
 
-// Build the NTT AST Node
-// 1. Forward Transform (A -> A')
-// 2. Forward Transform (B -> B')
-// 3. Pointwise Multiplication (A' * B' = C')
-// 4. Inverse Transform (C' -> C)
-using var result = new GpuUIntBigInteger(context, a.Value.NumWords + b.Value.NumWords);
-GpuBigIntMath.Mul(a.Value, b.Value, result);
+// Using the standard * operator builds an AST Node
+var expr = a * b;
+
+// Evaluate the AST node to perform the multiplication natively on the GPU
+// (Internally routes to the NTT implementation for massive numbers)
+using var result = expr.Node.Evaluate(context, null);
 
 Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 ```
@@ -63,9 +70,33 @@ Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 
 The standard `*` operator automatically falls back to NTT if the operand sizes cross a specific heuristic threshold (e.g., > 10,000 words). However, you can use `NttMultiply` to force the NTT code path explicitly.
 
+## NttCpuReference Class
+
+**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms`
+
+A pure CPU reference implementation combining the 3-Prime NTT (Number Theoretic Transform) and Garner's CRT algorithm for large integer multiplication. It is used for host-side validation against the GPU results.
+
+```csharp
+public static class NttCpuReference
+{
+    public const uint P1 = 2130706433;
+    public const uint P2 = 1224736769;
+    public const uint P3 = 754974721;
+    public const uint G1 = 3;
+    public const uint G2 = 3;
+    public const uint G3 = 11;
+
+    public static uint ModPow(uint baseValue, uint exponent, uint modulus);
+    public static uint ModInverse(uint value, uint modulus);
+    public static uint ModAdd(uint operandA, uint operandB, uint modulus);
+    public static uint ModSub(uint operandA, uint operandB, uint modulus);
+    public static uint ModMul(uint operandA, uint operandB, uint modulus);
+    public static void Ntt(uint[] values, uint modulus, uint primitiveRoot, bool isInverse);
+    public static uint[] Multiply(uint[] operandA, uint[] operandB);
+}
+```
+
 ## See also
-
-
 
 ### Language Specification
 
@@ -76,4 +107,3 @@ The standard `*` operator automatically falls back to NTT if the operand sizes c
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
-

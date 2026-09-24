@@ -15,8 +15,8 @@ Provides highly optimized algorithms for executing Probable Prime (PRP) tests ba
 
 ## Constructors
 
-| Name | Description |
-| --- | --- |
+| Name                                   | Description                                                                                     |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | [FermatRunner(int)](#fermatrunner-int) | Initializes a new instance of the FermatRunner targeting a specific Fermat number exponent `e`. |
 
 ## FermatRunner(int)
@@ -34,8 +34,8 @@ The exponent defining the size and iteration bounds of the target number to test
 
 ## Methods
 
-| Name | Description |
-| --- | --- |
+| Name                            | Description                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------- |
 | [RunFermatPrp()](#runfermatprp) | Executes the Probable Prime test natively on the GPU and returns the result. |
 
 ## RunFermatPrp()
@@ -63,7 +63,7 @@ This example demonstrates how to orchestrate a Fermat test across the GPU. The r
 // Initialize the runner for a specific exponent (e.g., e = 1000)
 var runner = new FermatRunner(1000);
 
-// Dispatch the GPU kernels. 
+// Dispatch the GPU kernels.
 // This will block the CPU until the GPU finishes all millions of loop iterations.
 bool isPrime = runner.RunFermatPrp();
 

@@ -17,7 +17,8 @@ The `GpuHypergeometricPqt` class provides specialized primitives for evaluating 
 
 ## Binary Splitting
 
-The algorithm relies on a technique called **Binary Splitting**, which recursively computes three terms: $P$, $Q$, and $T$. 
+The algorithm relies on a technique called **Binary Splitting**, which recursively computes three terms: $P$, $Q$, and $T$.
+
 - $P$: Product of numerators.
 - $Q$: Product of denominators.
 - $T$: Partial sum.
@@ -26,11 +27,11 @@ Because binary splitting is inherently a massive reduction tree, it is an ideal 
 
 ## Properties
 
-| Name | Description |
-| --- | --- |
-| `P` | Gets the P term (Numerator product). |
-| `Q` | Gets the Q term (Denominator product). |
-| `T` | Gets the T term (Partial sum). |
+| Name | Description                            |
+| ---- | -------------------------------------- |
+| `P`  | Gets the P term (Numerator product).   |
+| `Q`  | Gets the Q term (Denominator product). |
+| `T`  | Gets the T term (Partial sum).         |
 
 ## Examples
 
@@ -77,10 +78,7 @@ The `GpuHypergeometricPqt` structure is designed to hold the three values requir
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [Arbitrary-Precision Floats (GpuBigFloat)](../../gpu_big_float/00_index.md)
-

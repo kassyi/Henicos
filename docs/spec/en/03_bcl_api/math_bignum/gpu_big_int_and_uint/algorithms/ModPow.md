@@ -17,8 +17,8 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. T
 
 ## Overloads
 
-| Name | Description |
-| --- | --- |
+| Name                                                                                          | Description                                      |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | [ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#modpow) | Computes the modular exponentiation of a number. |
 
 ## GpuBigIntDivRem.ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
@@ -85,10 +85,7 @@ This orchestration leverages Montgomery reduction to prevent massive allocation 
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [FermatRunner Class (G#)](Fermat.md)
-

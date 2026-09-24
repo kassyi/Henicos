@@ -6,7 +6,7 @@ language: "en"
 description: "Reference for calculating the Greatest Common Divisor (GCD) using Lehmer's algorithm on the GPU."
 ---
 
-## GpuBigInteger.Gcd Method
+## GpuBigIntMath.Gcd Method
 
 ## Definition
 
@@ -17,13 +17,13 @@ Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers
 
 ## Overloads
 
-| Name | Description |
-| --- | --- |
-| [Gcd(GpuBigInteger, GpuBigInteger)](#gcd-gpubiginteger-gpubiginteger) | Computes the greatest common divisor of two values. |
+| Name                                                                                                                       | Description                                                  |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Gcd(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
 
-## Gcd(GpuBigInteger, GpuBigInteger)
+## Gcd(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
-Builds a lazy-evaluated expression tree node for calculating the Greatest Common Divisor.
+Executes Lehmer's GCD algorithm natively on the GPU buffer.
 
 ```csharp
 public static void Gcd(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
@@ -31,51 +31,72 @@ public static void Gcd(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOpe
 
 #### Parameters
 
-`left` _GpuBigInteger_<br>
-The first value.
+`leftOperand` _GpuUIntBigInteger_<br>
+The first absolute value.
 
-`right` _GpuBigInteger_<br>
-The second value.
+`rightOperand` _GpuUIntBigInteger_<br>
+The second absolute value.
+
+`resultBuffer` _GpuUIntBigInteger_<br>
+The pre-allocated buffer where the resulting greatest common divisor will be written.
 
 #### Returns
 
-_GpuBigIntExpr_<br>
-An expression tree node that, when evaluated, produces the greatest common divisor of the two inputs.
+This method does not return a value. The output is stored directly in the `resultBuffer`.
 
 ## Examples
 
 ### Calculating GCD of massive numbers
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+
 ```csharp
 // Execution Context: Host (CPU)
 
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+
 using var context = new GpuContext(1024);
 
-var aVal = GpuUIntBigInteger.FromBigInteger(context, BigInteger.Parse("..."));
-var bVal = GpuUIntBigInteger.FromBigInteger(context, BigInteger.Parse("..."));
+var aVal = GpuUIntBigInteger.FromBigInteger(context, BigInteger.Parse("123456789"));
+var bVal = GpuUIntBigInteger.FromBigInteger(context, BigInteger.Parse("987654321"));
 
-var gpuA = new GpuBigInteger(aVal);
-var gpuB = new GpuBigInteger(bVal);
+var gpuA = new GpuBigInteger(aVal, false);
+var gpuB = new GpuBigInteger(bVal, false);
 
-// Build the lazy GCD expression
-var gcdExpr = GpuBigInteger.Gcd(gpuA, gpuB);
+using var result = new GpuUIntBigInteger(context, aVal.NumWords);
 
-// Evaluate it using the context's memory pool
-using var result = gcdExpr.Node.Evaluate(context, null);
+// Calculate GCD on the GPU
+GpuBigIntMath.Gcd(gpuA.Value, gpuB.Value, result);
 
-Console.WriteLine($"GCD Result: {result.ToBigInteger()}");
+Console.WriteLine($"GCD Result Size: {result.NumWords} words.");
 ```
 
 ## Remarks
 
 This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi-word arithmetic on the GPU. Because this operation requires substantial temporary memory for intermediate divisions, it uses the `GpuContext` memory pool instead of `cudaMalloc`.
 
+## HalfGcdCpuReference Class
+
+**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms`
+
+A CPU reference implementation of Lehmer's / Half-GCD algorithm is provided for host-side validation or testing prior to GPU execution.
+
+```csharp
+public static class HalfGcdCpuReference
+{
+    public static BigInteger Gcd(BigInteger a, BigInteger b);
+}
+```
+
 ## See also
-
-
 
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
 
+W

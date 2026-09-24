@@ -13,7 +13,7 @@ description: "Reference for 2x2 Matrix operations for multi-precision integers."
 **Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-Provides specialized orchestration for a $2 \times 2$ matrix of `GpuBigInteger` values. 
+Provides specialized orchestration for a $2 \times 2$ matrix of `GpuBigInteger` values.
 
 The primary use case for this structure is computing linear recurrence relations in $O(\log N)$ time using **Matrix Exponentiation**. For example, calculating the $N$-th Fibonacci number for a massive $N$ (e.g., $N = 10,000,000$) can be done exponentially faster on the GPU by computing:
 
@@ -23,8 +23,8 @@ $$
 
 ## Constructors
 
-| Name | Description |
-| --- | --- |
+| Name                                                                                                                                                          | Description                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | [GpuBigIntMatrix2x2(GpuBigInteger, GpuBigInteger, GpuBigInteger, GpuBigInteger)](#gpubigintmatrix2x2-gpubiginteger-gpubiginteger-gpubiginteger-gpubiginteger) | Initializes a new matrix with the specified elements. |
 
 ## GpuBigIntMatrix2x2(GpuBigInteger, GpuBigInteger, GpuBigInteger, GpuBigInteger)
@@ -36,6 +36,7 @@ public GpuBigIntMatrix2x2(GpuContext context, int wordCount, bool oddStep);
 ```
 
 #### Parameters
+
 `m00` _GpuBigInteger_<br>
 Row 0, Column 0 element.
 
@@ -50,8 +51,8 @@ Row 1, Column 1 element.
 
 ## Methods
 
-| Name | Description |
-| --- | --- |
+| Name                                                                                                | Description              |
+| --------------------------------------------------------------------------------------------------- | ------------------------ |
 | [Multiply(GpuBigIntMatrix2x2, GpuBigIntMatrix2x2)](#multiply-gpubigintmatrix2x2-gpubigintmatrix2x2) | Multiplies two matrices. |
 
 ## Multiply(GpuBigIntMatrix2x2, GpuBigIntMatrix2x2)
@@ -104,10 +105,7 @@ Console.WriteLine($"Fibonacci({N}): {fibN.ToBigInteger()}");
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
-
