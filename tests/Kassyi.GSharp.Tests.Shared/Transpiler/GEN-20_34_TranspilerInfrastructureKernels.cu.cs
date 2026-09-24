@@ -41,12 +41,14 @@ public static class GEN_20_34_TranspilerInfrastructureKernels
 
     // GEN-20 Kernel: Mutual Call Test
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
+#pragma warning disable GS0001
     [GpuKernel]
     public static void MutualCallKernel(int[] countArray, int[] valArray, int[] resultArray)
     {
         int tid = ThreadIndex.X;
         resultArray[tid] = MutualFuncA(countArray[tid], valArray[tid]);
     }
+#pragma warning restore GS0001
 
     // GEN-20 Kernel: Overload Test
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]
