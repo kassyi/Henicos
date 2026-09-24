@@ -1,5 +1,4 @@
 using System.Numerics;
-using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.IO;
 
@@ -63,25 +62,19 @@ public static class GpuChudnovskyPi
 
             var currentDigits = (int)Math.Min(TotalDigits, currentB * DigitsPerTerm);
 
-            var barSize = 30;
-            var filled = (int)(progress * barSize);
-            var bar = new string('█', filled) + new string('-', barSize - filled);
+            const int BarSize = 30;
+            var filled = (int)(progress * BarSize);
+            var bar = new string('█', filled) + new string('-', BarSize - filled);
 
             Console.Write(
                 $"\r[GPU-Pi] [{bar}] {progress:P2} (Digits: {currentDigits:N0}/{TotalDigits:N0}) | Speed: {digitsPerSec:N0} digits/s | ETA: {TimeSpan.FromSeconds(etaSec):hh\\:mm\\:ss}   ");
         }
     }
 
-    /// <summary>
-    /// Computes high-precision digits of Pi using the hybrid CPU/GPU Chudnovsky algorithm,
-    /// executing the final division on GPU and streaming output directly to a file via D&amp;C Radix Conversion.
-    /// </summary>
-    /// <param name="digits">Target number of decimal digits.</param>
-    /// <param name="outputPath">Optional file path to write digits to.</param>
-    /// <param name="thresholdTerms">Maximum number of terms evaluated on CPU before transitioning to GPU NTT merges.</param>
     public static void ComputePi(int digits, TextWriter outputWriter, int thresholdTerms = 8192,
         bool asHex = false)
     {
+        ArgumentNullException.ThrowIfNull(outputWriter);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(digits);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thresholdTerms);
 
@@ -111,9 +104,9 @@ public static class GpuChudnovskyPi
             $"Digits: {digits}, Terms: {totalTerms}, CPU/GPU Leaf Threshold: {thresholdTerms} terms");
         Logger.Info("GPU-Pi", $"Initializing CUDA Device & G# GPU Context (MaxWords: {maxContextWords:N0})...");
 
-        using var cudaScope = new Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+        using var cudaScope = new GpuKernelLoader.CudaContextScope();
 
-        using var context = new GpuContext(maxContextWords, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuContext(maxContextWords);
         var totalStopwatch = Stopwatch.StartNew();
 
         // 1. Compute Binary Splitting tree using Hybrid CPU/GPU execution
@@ -255,7 +248,7 @@ public static class GpuChudnovskyPi
 
         if (asHex)
         {
-            WriteHexPiOutput(gpuPiExt, digits, outputWriter);
+            WriteHexPiOutput(gpuPiExt, outputWriter);
         }
         else
         {
@@ -266,12 +259,11 @@ public static class GpuChudnovskyPi
         Logger.Info("GPU-Pi", $"Base Conversion & Output: {radixStopwatch.ElapsedMilliseconds} ms");
     }
 
-    private static void WriteHexPiOutput(GpuUIntBigInteger gpuPiExt, int digits, TextWriter hexWriter)
+    private static void WriteHexPiOutput(GpuUIntBigInteger gpuPiExt, TextWriter hexWriter)
     {
         // Exact bits that are guaranteed to be correct (word-aligned)
-        var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
-        var extraBits = 1024; // Safe margin for series truncation error
-        var marginBits = 256; // Division noise margin
+        const int ExtraBits = 1024; // Safe margin for series truncation error
+        const int MarginBits = 256; // Division noise margin
 
         var hostData = gpuPiExt.ToHostArray();
 
@@ -287,16 +279,16 @@ public static class GpuChudnovskyPi
             actualTopIndex = 0;
         }
 
-        var dropWords = (marginBits + extraBits) / 32;
-        var truncationSafetyWords = 8;
+        const int DropWords = (MarginBits + ExtraBits) / 32;
+        const int TruncationSafetyWords = 8;
 
-        var checkIndex = dropWords + truncationSafetyWords;
+        const int CheckIndex = DropWords + TruncationSafetyWords;
 
-        if (checkIndex + 1 <= actualTopIndex)
+        if (CheckIndex + 1 <= actualTopIndex)
         {
             var computedHexTail =
-                hostData[checkIndex + 1].ToString("X8") + hostData[checkIndex].ToString("X8");
-            var offset = (actualTopIndex - checkIndex - 2) * 8;
+                hostData[CheckIndex + 1].ToString("X8") + hostData[CheckIndex].ToString("X8");
+            var offset = (actualTopIndex - CheckIndex - 2) * 8;
 
             PiVerification.VerifyWithBbp(computedHexTail, offset);
         }
@@ -308,7 +300,7 @@ public static class GpuChudnovskyPi
         // Output integer part and fraction separated by a radix point
         hexWriter.Write(hostData[actualTopIndex].ToString("X"));
         hexWriter.Write('.');
-        for (var i = actualTopIndex - 1; i >= dropWords; i--)
+        for (var i = actualTopIndex - 1; i >= DropWords; i--)
         {
             hexWriter.Write(hostData[i].ToString("X8"));
         }
