@@ -18,12 +18,10 @@ if (-not (Test-Path $FilePath)) {
     exit 1
 }
 
-# 1. Clean the project (remove all ItemGroups containing ProjectReference)
-Write-Host "Resetting DocTest project dependencies..."
+# 1. Clean the project
 $xml = [xml](Get-Content $DocTestProj)
 $itemGroups = $xml.Project.ItemGroup | Where-Object { $_.ProjectReference }
 if ($itemGroups) {
-    # Need to cast to array to avoid modifying collection while iterating
     $groupsArray = @($itemGroups)
     foreach ($group in $groupsArray) {
         $xml.Project.RemoveChild($group) | Out-Null
@@ -34,15 +32,10 @@ if ($itemGroups) {
 # 2. Add References
 if (-not [string]::IsNullOrWhiteSpace($Assemblies)) {
     $asmList = $Assemblies.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
-    
     foreach ($asm in $asmList) {
-        Write-Host "Searching for project: $asm"
-        # Search for csproj files in src/ that match the assembly name
         $projPath = fd -p "$asm.csproj$" "src"
-        
         if (-not [string]::IsNullOrWhiteSpace($projPath)) {
             $firstProj = ($projPath -split "`n" | Select-Object -First 1).Trim()
-            Write-Host "Adding reference: $firstProj"
             dotnet add $DocTestProj reference $firstProj | Out-Null
         } else {
             Write-Error "Could not find project for assembly: $asm"
@@ -51,19 +44,48 @@ if (-not [string]::IsNullOrWhiteSpace($Assemblies)) {
     }
 }
 
-# 3. Copy Code
-Write-Host "Injecting snippet into Program.cs..."
-Copy-Item -Path $FilePath -Destination $ProgramCs -Force
+# 3. Copy or Extract Code
+if ($FilePath.EndsWith(".md")) {
+    $lines = Get-Content $FilePath
+    $inExamples = $false
+    $inCodeBlock = $false
+    $codeLines = @()
+    foreach ($line in $lines) {
+        if ($line.Trim() -match '^## Examples') {
+            $inExamples = $true
+            continue
+        }
+        if ($inExamples) {
+            if ($line.Trim() -match '^```csharp') {
+                $inCodeBlock = $true
+                continue
+            }
+            if ($inCodeBlock) {
+                if ($line.Trim() -match '^```$') {
+                    break
+                }
+                $codeLines += $line
+            }
+        }
+    }
+    
+    if ($codeLines.Count -eq 0) {
+        Write-Host "DEBUG: Total lines read = $($lines.Count)"
+        Write-Host "DEBUG: Did it find Examples? $inExamples"
+        Write-Host "DEBUG: Did it find code block? $inCodeBlock"
+        Write-Error "No csharp code block found under '## Examples' in the markdown file."
+        exit 1
+    }
+    Set-Content -Path $ProgramCs -Value $codeLines -Encoding UTF8
+} else {
+    Copy-Item -Path $FilePath -Destination $ProgramCs -Force
+}
 
 # 4. Build & Run
-Write-Host "Compiling and running snippet..."
-Write-Host "------------------------------------------------------------"
 dotnet run --project $DocTestProj
 $exitCode = $LASTEXITCODE
-Write-Host "------------------------------------------------------------"
 
 if ($exitCode -ne 0) {
-    Write-Host "DocTest FAILED." -ForegroundColor Red
     exit $exitCode
 } else {
     Write-Host "DocTest SUCCESS. The assembly dependencies are proven." -ForegroundColor Green
