@@ -76,6 +76,9 @@ public static class MethodTranspiler
             {
                 context.SkipLocalsInit = true;
             }
+
+            context.IsGpuKernelEntry = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
+            context.IsVoidReturn = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void;
         }
 
         WriteMethodSignature(methodDecl, isDevice, ref context);
@@ -151,6 +154,12 @@ public static class MethodTranspiler
         ref var context = ref visitor.Context;
 
         context.Writer = sigWriter;
+        if (methodSymbol != null)
+        {
+            context.IsGpuKernelEntry = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
+            context.IsVoidReturn = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void;
+        }
+
         WriteMethodSignature(methodDecl, isDevice, ref context);
         context.Writer.AppendSemiColonLine();
 

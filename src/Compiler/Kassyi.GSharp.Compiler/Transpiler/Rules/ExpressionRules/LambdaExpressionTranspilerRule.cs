@@ -68,6 +68,7 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
         context.Writer.AppendSpace();
 
+        context.CallableDepth++;
         if (block != null)
         {
             using (context.Writer.Scope())
@@ -88,5 +89,6 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                 context.Writer.AppendSemiColonLine();
             }
         }
+        context.CallableDepth--;
     }
 }

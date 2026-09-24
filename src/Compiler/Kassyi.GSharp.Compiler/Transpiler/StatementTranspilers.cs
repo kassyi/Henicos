@@ -13,6 +13,7 @@ internal static class StatementTranspilers
         context.Visitor.Visit(node.ParameterList);
         context.Writer.AppendSpace();
 
+        context.CallableDepth++;
         if (node.Body != null)
         {
             using (context.Writer.Scope())
@@ -33,6 +34,7 @@ internal static class StatementTranspilers
                 context.Writer.AppendSemiColonLine();
             }
         }
+        context.CallableDepth--;
 
         context.Writer.AppendSemiColonLine();
     }
@@ -266,34 +268,14 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        SyntaxNode? enclosingCallable = null;
-        foreach (var n in node.Ancestors())
+        if (context is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 } && node.Expression != null)
         {
-            if (n is not (MethodDeclarationSyntax or LocalFunctionStatementSyntax or ParenthesizedLambdaExpressionSyntax
-                or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax))
-            {
-                continue;
-            }
-
-            enclosingCallable = n;
-            break;
-        }
-
-        if (enclosingCallable is MethodDeclarationSyntax methodNode)
-        {
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodNode);
-            if (methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
-            {
-                if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void && node.Expression != null)
-                {
-                    DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-                    context.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
-                    context.Visitor.Visit(node.Expression);
-                    context.Writer.AppendSemiColonLine();
-                    context.Writer.AppendKeyword("return").AppendSemiColon();
-                    return;
-                }
-            }
+            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+            context.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
+            context.Visitor.Visit(node.Expression);
+            context.Writer.AppendSemiColonLine();
+            context.Writer.AppendKeyword("return").AppendSemiColon();
+            return;
         }
 
         if (node.Expression != null)
