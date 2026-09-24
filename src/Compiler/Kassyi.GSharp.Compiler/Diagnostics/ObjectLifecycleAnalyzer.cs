@@ -21,7 +21,7 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        
+
         context.RegisterSymbolAction(AnalyzeNamedType, SymbolKind.NamedType);
         context.RegisterSyntaxNodeAction(AnalyzeProperty, SyntaxKind.PropertyDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeConversionOperator, SyntaxKind.ConversionOperatorDeclaration);
@@ -32,95 +32,286 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
     }
 
+    private static bool IsSystemIDisposable(ITypeSymbol? type)
+    {
+        if (type == null)
+        {
+            return false;
+        }
+
+        if (type.SpecialType == SpecialType.System_IDisposable ||
+            type.OriginalDefinition.SpecialType == SpecialType.System_IDisposable)
+        {
+            return true;
+        }
+
+        return type is
+        {
+            Name: "IDisposable", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+        };
+    }
+
     private static bool IsDisposable(ITypeSymbol? type)
     {
-        if (type == null) return false;
-        return type.AllInterfaces.Any(i => i.Name == "IDisposable");
+        if (type == null)
+        {
+            return false;
+        }
+
+        if (IsSystemIDisposable(type))
+        {
+            return true;
+        }
+
+        foreach (var i in type.AllInterfaces)
+        {
+            if (IsSystemIDisposable(i))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AnalyzeNamedType(SymbolAnalysisContext context)
     {
         var namedType = (INamedTypeSymbol)context.Symbol;
-        
         if (namedType.TypeKind != TypeKind.Class && namedType.TypeKind != TypeKind.Struct)
+        {
             return;
+        }
 
-        bool implementsIDisposable = IsDisposable(namedType);
-        
-        var disposableMembers = namedType.GetMembers()
-            .Where(m => (m is IFieldSymbol f && !f.IsStatic && !f.IsImplicitlyDeclared && IsDisposable(f.Type)) ||
-                        (m is IPropertySymbol p && !p.IsStatic && IsDisposable(p.Type)))
-            .ToList();
+        var disposableMembers = CollectDisposableInstanceMembers(namedType);
+        if (disposableMembers == null || disposableMembers.Count == 0)
+        {
+            return;
+        }
 
-        if (!disposableMembers.Any()) return;
+        var implementsIDisposable = IsDisposable(namedType);
+        var borrowedParamNames = CollectBorrowedParameterNames(namedType);
+        var borrowedFields = CollectBorrowedFieldNames(namedType, borrowedParamNames);
 
-        // Track borrowed parameters (injected without [TakesOwnership])
-        var borrowedParamNames = namedType.Constructors.SelectMany(c => c.Parameters)
-            .Where(p => IsDisposable(p.Type) && !p.GetAttributes().Any(a => a.AttributeClass?.Name == "TakesOwnershipAttribute"))
-            .Select(p => p.Name).ToList();
+        ValidateMissingIDisposable(context, namedType, disposableMembers, borrowedFields, implementsIDisposable);
 
-        var borrowedFields = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (implementsIDisposable)
+        {
+            ValidateDisposeImplementation(context, namedType, disposableMembers, borrowedFields);
+        }
+    }
+
+    private static List<ISymbol>? CollectDisposableInstanceMembers(INamedTypeSymbol namedType)
+    {
+        List<ISymbol>? disposableMembers = null;
+        foreach (var m in namedType.GetMembers())
+        {
+            if ((m is IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f && IsDisposable(f.Type)) ||
+                (m is IPropertySymbol { IsStatic: false } p && IsDisposable(p.Type)))
+            {
+                disposableMembers ??= [];
+                disposableMembers.Add(m);
+            }
+        }
+
+        return disposableMembers;
+    }
+
+    private static HashSet<string>? CollectBorrowedParameterNames(INamedTypeSymbol namedType)
+    {
+        HashSet<string>? borrowedParamNames = null;
+        foreach (var ctor in namedType.Constructors)
+        {
+            foreach (var p in ctor.Parameters)
+            {
+                if (IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
+                {
+                    borrowedParamNames ??= new HashSet<string>(StringComparer.Ordinal);
+                    borrowedParamNames.Add(p.Name);
+                }
+            }
+        }
+
+        return borrowedParamNames;
+    }
+
+    private static bool HasTakesOwnershipAttribute(IParameterSymbol param)
+    {
+        foreach (var a in param.GetAttributes())
+        {
+            if (a.AttributeClass?.Name == "TakesOwnershipAttribute")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static HashSet<string> CollectBorrowedFieldNames(
+        INamedTypeSymbol namedType,
+        HashSet<string>? borrowedParamNames)
+    {
+        var borrowedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (borrowedParamNames == null || borrowedParamNames.Count == 0)
+        {
+            return borrowedFields;
+        }
+
         foreach (var p in borrowedParamNames)
         {
             borrowedFields.Add(p);
             borrowedFields.Add("_" + p);
         }
 
-        // Add explicitly assigned fields in constructors
-        foreach (var ctor in namedType.DeclaringSyntaxReferences.Select(r => r.GetSyntax()).OfType<TypeDeclarationSyntax>().SelectMany(c => c.Members.OfType<ConstructorDeclarationSyntax>()))
+        foreach (var r in namedType.DeclaringSyntaxReferences)
         {
-            if (ctor.Body == null) continue;
-            var assignments = ctor.Body.DescendantNodes().OfType<AssignmentExpressionSyntax>();
-            foreach (var assign in assignments)
+            if (r.GetSyntax() is not TypeDeclarationSyntax typeDecl)
             {
-                if (assign.Right is IdentifierNameSyntax id && borrowedParamNames.Contains(id.Identifier.Text))
+                continue;
+            }
+
+            foreach (var member in typeDecl.Members)
+            {
+                if (member is not ConstructorDeclarationSyntax { Body: not null } ctorDecl)
                 {
-                    string leftName = "";
-                    if (assign.Left is IdentifierNameSyntax idLeft) leftName = idLeft.Identifier.Text;
-                    else if (assign.Left is MemberAccessExpressionSyntax maLeft && maLeft.Expression is ThisExpressionSyntax) leftName = maLeft.Name.Identifier.Text;
-                    
-                    if (!string.IsNullOrEmpty(leftName)) borrowedFields.Add(leftName);
+                    continue;
+                }
+
+                foreach (var node in ctorDecl.Body.DescendantNodes())
+                {
+                    if (node is not AssignmentExpressionSyntax assign ||
+                        assign.Right is not IdentifierNameSyntax id ||
+                        !borrowedParamNames.Contains(id.Identifier.Text))
+                    {
+                        continue;
+                    }
+
+                    var leftName = assign.Left switch
+                    {
+                        IdentifierNameSyntax idLeft => idLeft.Identifier.Text,
+                        MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } maLeft => maLeft.Name
+                            .Identifier.Text,
+                        _ => ""
+                    };
+
+                    if (!string.IsNullOrEmpty(leftName))
+                    {
+                        borrowedFields.Add(leftName);
+                    }
                 }
             }
         }
 
-        bool hasOwnedDisposableField = disposableMembers.Any(m => !borrowedFields.Contains(m.Name));
+        return borrowedFields;
+    }
 
-        if (hasOwnedDisposableField && !implementsIDisposable)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.MissingIDisposable, namedType.Locations.FirstOrDefault()));
-        }
-
+    private static void ValidateMissingIDisposable(
+        SymbolAnalysisContext context,
+        INamedTypeSymbol namedType,
+        List<ISymbol> disposableMembers,
+        HashSet<string> borrowedFields,
+        bool implementsIDisposable)
+    {
         if (implementsIDisposable)
         {
-            // Gather all methods named Dispose (handles Dispose() and Dispose(bool))
-            var typeDecls = namedType.DeclaringSyntaxReferences.Select(r => r.GetSyntax()).OfType<TypeDeclarationSyntax>();
-            var disposeMethods = typeDecls.SelectMany(t => t.Members.OfType<MethodDeclarationSyntax>())
-                                          .Where(m => m.Identifier.Text == "Dispose").ToList();
+            return;
+        }
 
-            var parameterlessDispose = disposeMethods.FirstOrDefault(m => m.ParameterList.Parameters.Count == 0);
-            
-            var disposeInvocations = disposeMethods.SelectMany(m => m.DescendantNodes().OfType<InvocationExpressionSyntax>())
-                .Select(inv => inv.Expression as MemberAccessExpressionSyntax)
-                .Where(ma => ma != null && ma.Name.Identifier.Text == "Dispose")
-                .ToList();
-
-            foreach (var member in disposableMembers)
+        var hasOwnedDisposableField = false;
+        foreach (var member in disposableMembers)
+        {
+            if (!borrowedFields.Contains(member.Name))
             {
-                bool isBorrowed = borrowedFields.Contains(member.Name);
-                bool isDisposed = disposeInvocations.Any(ma => 
-                    (ma!.Expression is IdentifierNameSyntax id && id.Identifier.Text == member.Name) ||
-                    (ma.Expression is MemberAccessExpressionSyntax memberMa && memberMa.Expression is ThisExpressionSyntax && memberMa.Name.Identifier.Text == member.Name));
+                hasOwnedDisposableField = true;
+                break;
+            }
+        }
 
-                var location = parameterlessDispose?.Identifier.GetLocation() ?? namedType.Locations.FirstOrDefault();
+        if (hasOwnedDisposableField)
+        {
+            var location = namedType.Locations.Length > 0 ? namedType.Locations[0] : null;
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.MissingIDisposable, location));
+        }
+    }
 
-                if (isBorrowed && isDisposed)
+    private static void ValidateDisposeImplementation(
+        SymbolAnalysisContext context,
+        INamedTypeSymbol namedType,
+        List<ISymbol> disposableMembers,
+        HashSet<string> borrowedFields)
+    {
+        InspectDisposeMethod(namedType, out var parameterlessDispose, out var disposedMemberNames);
+
+        var locationForDispose = parameterlessDispose?.Identifier.GetLocation() ??
+                                 (namedType.Locations.Length > 0 ? namedType.Locations[0] : null);
+
+        foreach (var member in disposableMembers)
+        {
+            var isBorrowed = borrowedFields.Contains(member.Name);
+            var isDisposed = disposedMemberNames != null && disposedMemberNames.Contains(member.Name);
+
+            if (isBorrowed && isDisposed)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposingBorrowedResource,
+                    locationForDispose));
+            }
+            else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UndisposedField, locationForDispose));
+            }
+        }
+    }
+
+    private static void InspectDisposeMethod(
+        INamedTypeSymbol namedType,
+        out MethodDeclarationSyntax? parameterlessDispose,
+        out HashSet<string>? disposedMemberNames)
+    {
+        parameterlessDispose = null;
+        disposedMemberNames = null;
+
+        foreach (var r in namedType.DeclaringSyntaxReferences)
+        {
+            if (r.GetSyntax() is not TypeDeclarationSyntax typeDecl)
+            {
+                continue;
+            }
+
+            foreach (var member in typeDecl.Members)
+            {
+                if (member is not MethodDeclarationSyntax { Identifier.Text: "Dispose" } m)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposingBorrowedResource, location));
+                    continue;
                 }
-                else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
+
+                if (parameterlessDispose == null && m.ParameterList.Parameters.Count == 0)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UndisposedField, location));
+                    parameterlessDispose = m;
+                }
+
+                foreach (var node in m.DescendantNodes())
+                {
+                    if (node is not InvocationExpressionSyntax
+                        {
+                            Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } ma
+                        })
+                    {
+                        continue;
+                    }
+
+                    var targetName = ma.Expression switch
+                    {
+                        IdentifierNameSyntax id => id.Identifier.Text,
+                        MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } memberMa => memberMa.Name
+                            .Identifier.Text,
+                        _ => null
+                    };
+
+                    if (targetName != null)
+                    {
+                        disposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
+                        disposedMemberNames.Add(targetName);
+                    }
                 }
             }
         }
@@ -131,21 +322,36 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
         var property = (PropertyDeclarationSyntax)context.Node;
         if (property.ExpressionBody != null)
         {
-            CheckForAllocationInExpression(context, property.ExpressionBody.Expression, GSharpDiagnostics.PropertyGetterSideEffect);
+            CheckForAllocationInExpression(context, property.ExpressionBody.Expression,
+                GSharpDiagnostics.PropertyGetterSideEffect);
         }
         else if (property.AccessorList != null)
         {
-            var getter = property.AccessorList.Accessors.FirstOrDefault(a => a.Kind() == SyntaxKind.GetAccessorDeclaration);
-            if (getter != null)
+            AccessorDeclarationSyntax? getter = null;
+            foreach (var a in property.AccessorList.Accessors)
             {
-                if (getter.ExpressionBody != null)
+                if (a.Kind() != SyntaxKind.GetAccessorDeclaration)
                 {
-                    CheckForAllocationInExpression(context, getter.ExpressionBody.Expression, GSharpDiagnostics.PropertyGetterSideEffect);
+                    continue;
                 }
-                else if (getter.Body != null)
-                {
-                    CheckForAllocationInBlock(context, getter.Body, GSharpDiagnostics.PropertyGetterSideEffect);
-                }
+
+                getter = a;
+                break;
+            }
+
+            if (getter == null)
+            {
+                return;
+            }
+
+            if (getter.ExpressionBody != null)
+            {
+                CheckForAllocationInExpression(context, getter.ExpressionBody.Expression,
+                    GSharpDiagnostics.PropertyGetterSideEffect);
+            }
+            else if (getter.Body != null)
+            {
+                CheckForAllocationInBlock(context, getter.Body, GSharpDiagnostics.PropertyGetterSideEffect);
             }
         }
     }
@@ -155,7 +361,8 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
         var operatorDecl = (ConversionOperatorDeclarationSyntax)context.Node;
         if (operatorDecl.ExpressionBody != null)
         {
-            CheckForAllocationInExpression(context, operatorDecl.ExpressionBody.Expression, GSharpDiagnostics.CastOperatorSideEffect);
+            CheckForAllocationInExpression(context, operatorDecl.ExpressionBody.Expression,
+                GSharpDiagnostics.CastOperatorSideEffect);
         }
         else if (operatorDecl.Body != null)
         {
@@ -166,32 +373,59 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeField(SymbolAnalysisContext context)
     {
         var field = (IFieldSymbol)context.Symbol;
-        if (field.IsStatic && IsDisposable(field.Type))
+        if (!field.IsStatic || !IsDisposable(field.Type))
         {
-            var syntax = field.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() as VariableDeclaratorSyntax;
-            if (syntax?.Initializer?.Value is ObjectCreationExpressionSyntax)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.StaticDisposableAllocation, syntax.GetLocation()));
-            }
+            return;
+        }
+
+        var syntax = field.DeclaringSyntaxReferences.Length > 0
+            ? field.DeclaringSyntaxReferences[0].GetSyntax() as VariableDeclaratorSyntax
+            : null;
+        if (syntax?.Initializer?.Value is ObjectCreationExpressionSyntax)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.StaticDisposableAllocation,
+                syntax.GetLocation()));
         }
     }
 
     private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context)
     {
         var ctor = (ConstructorDeclarationSyntax)context.Node;
-        if (ctor.Body == null) return;
-
-        var allocations = ctor.Body.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
-            .Where(oce => IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
-            .ToList();
-
-        if (allocations.Count >= 2)
+        if (ctor.Body == null)
         {
-            var tryStatements = ctor.Body.DescendantNodes().OfType<TryStatementSyntax>().ToList();
-            if (!tryStatements.Any())
+            return;
+        }
+
+        var allocationCount = 0;
+        var hasTry = false;
+
+        // Single-pass scan for both allocations and try statements with early-exit
+        foreach (var node in ctor.Body.DescendantNodes())
+        {
+            if (!hasTry && node is TryStatementSyntax)
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnguardedMultiAllocation, ctor.Identifier.GetLocation()));
+                hasTry = true;
+                if (allocationCount >= 2)
+                {
+                    break;
+                }
             }
+            else if (allocationCount < 2 &&
+                     node is ObjectCreationExpressionSyntax oce &&
+                     IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
+            {
+                allocationCount++;
+                if (allocationCount >= 2 && hasTry)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (allocationCount >= 2 && !hasTry)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnguardedMultiAllocation,
+                ctor.Identifier.GetLocation()));
         }
     }
 
@@ -199,50 +433,107 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
     {
         var method = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
-        if (methodSymbol == null) return;
-
-        if (methodSymbol.ContainingType?.TypeKind == TypeKind.Interface && 
-            (method.Body != null || method.ExpressionBody != null))
+        if (methodSymbol == null)
         {
-            var disposes = method.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma && ma.Name.Identifier.Text == "Dispose");
-            if (disposes)
+            return;
+        }
+
+        if (methodSymbol.ContainingType?.TypeKind != TypeKind.Interface ||
+            (method.Body == null && method.ExpressionBody == null))
+        {
+            return;
+        }
+
+        var disposes = false;
+        var root = (SyntaxNode?)method.Body ?? method.ExpressionBody;
+        if (root != null)
+        {
+            foreach (var node in root.DescendantNodes())
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposableInDim, method.Identifier.GetLocation()));
+                if (node is not InvocationExpressionSyntax
+                    {
+                        Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" }
+                    })
+                {
+                    continue;
+                }
+
+                disposes = true;
+                break;
             }
         }
-    }
 
+        if (disposes)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposableInDim,
+                method.Identifier.GetLocation()));
+        }
+    }
 
     private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
-        if (assignment.Right is ObjectCreationExpressionSyntax oce)
+        if (assignment.Right is not ObjectCreationExpressionSyntax oce)
         {
-            var type = context.SemanticModel.GetTypeInfo(oce).Type;
-            if (IsDisposable(type))
+            return;
+        }
+
+        var type = context.SemanticModel.GetTypeInfo(oce).Type;
+        if (!IsDisposable(type))
+        {
+            return;
+        }
+
+        var leftSymbol = context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
+        if (leftSymbol is not IFieldSymbol fieldSymbol)
+        {
+            return;
+        }
+
+        MethodDeclarationSyntax? enclosingMethod = null;
+        for (var parent = assignment.Parent; parent != null; parent = parent.Parent)
+        {
+            if (parent is not MethodDeclarationSyntax m)
             {
-                var leftSymbol = context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
-                if (leftSymbol is IFieldSymbol fieldSymbol)
-                {
-                    var enclosingMethod = assignment.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault();
-                    if (enclosingMethod != null)
-                    {
-                        var priorDispose = enclosingMethod.DescendantNodes().OfType<InvocationExpressionSyntax>()
-                            .Where(inv => inv.SpanStart < assignment.SpanStart &&
-                                          inv.Expression is MemberAccessExpressionSyntax ma && 
-                                          ma.Name.Identifier.Text == "Dispose" &&
-                                          ((ma.Expression is IdentifierNameSyntax id && id.Identifier.Text == fieldSymbol.Name) ||
-                                           (ma.Expression is MemberAccessExpressionSyntax fieldMa && fieldMa.Expression is ThisExpressionSyntax && fieldMa.Name.Identifier.Text == fieldSymbol.Name)))
-                            .Any();
-                            
-                        if (!priorDispose)
-                        {
-                            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnsafeFieldOverwrite, assignment.GetLocation()));
-                        }
-                    }
-                }
+                continue;
             }
+
+            enclosingMethod = m;
+            break;
+        }
+
+        if (enclosingMethod == null)
+        {
+            return;
+        }
+
+        var priorDispose = false;
+        var assignmentSpanStart = assignment.SpanStart;
+        foreach (var node in enclosingMethod.DescendantNodes(n => n.SpanStart < assignmentSpanStart))
+        {
+            if (node is not InvocationExpressionSyntax
+                {
+                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } ma
+                } inv ||
+                inv.SpanStart >= assignmentSpanStart ||
+                ((ma.Expression is not IdentifierNameSyntax id || id.Identifier.Text != fieldSymbol.Name) &&
+                 (ma.Expression is not MemberAccessExpressionSyntax
+                  {
+                      Expression: ThisExpressionSyntax
+                  } fieldMa ||
+                  fieldMa.Name.Identifier.Text != fieldSymbol.Name)))
+            {
+                continue;
+            }
+
+            priorDispose = true;
+            break;
+        }
+
+        if (!priorDispose)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnsafeFieldOverwrite,
+                assignment.GetLocation()));
         }
     }
 
@@ -250,36 +541,41 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
-        if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
-        {
-            if (methodSymbol.Name == "Malloc" && methodSymbol.ContainingType?.Name == "Unsafe" && methodSymbol.ContainingType?.ContainingType?.Name == "Gpu")
+        if (symbolInfo.Symbol is IMethodSymbol
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.ManualUnmanagedAllocation, invocation.GetLocation()));
+                Name: "Malloc",
+                ContainingType: { Name: "Unsafe", ContainingType.Name: "Gpu" }
+            })
+        {
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.ManualUnmanagedAllocation,
+                invocation.GetLocation()));
+        }
+    }
+
+    private static void CheckForAllocationInExpression(SyntaxNodeAnalysisContext context,
+        ExpressionSyntax expression,
+        DiagnosticDescriptor descriptor)
+    {
+        foreach (var node in expression.DescendantNodesAndSelf())
+        {
+            if (node is ObjectCreationExpressionSyntax oce &&
+                IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, oce.GetLocation()));
             }
         }
     }
 
-    private static void CheckForAllocationInExpression(SyntaxNodeAnalysisContext context, ExpressionSyntax expression, DiagnosticDescriptor descriptor)
+    private static void CheckForAllocationInBlock(SyntaxNodeAnalysisContext context, BlockSyntax block,
+        DiagnosticDescriptor descriptor)
     {
-        var allocations = expression.DescendantNodesAndSelf().OfType<ObjectCreationExpressionSyntax>()
-            .Where(oce => IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
-            .ToList();
-        
-        foreach (var allocation in allocations)
+        foreach (var node in block.DescendantNodes())
         {
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, allocation.GetLocation()));
-        }
-    }
-
-    private static void CheckForAllocationInBlock(SyntaxNodeAnalysisContext context, BlockSyntax block, DiagnosticDescriptor descriptor)
-    {
-        var allocations = block.DescendantNodes().OfType<ObjectCreationExpressionSyntax>()
-            .Where(oce => IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
-            .ToList();
-
-        foreach (var allocation in allocations)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(descriptor, allocation.GetLocation()));
+            if (node is ObjectCreationExpressionSyntax oce &&
+                IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(descriptor, oce.GetLocation()));
+            }
         }
     }
 }

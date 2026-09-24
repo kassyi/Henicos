@@ -154,6 +154,24 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor UnrolledLoopMustBeStatic = new(
+        id: "GSH0032",
+        title: "Unrolled loop bounds must be statically deterministic",
+        messageFormat:
+        "The bounds of the loop marked with Gpu.Hint.Unroll cannot be statically determined. Loop conditions must rely on compile-time constants or [Constant] parameters.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrolledLoopMayBeIgnored = new(
+        id: "GSH0033",
+        title: "Unrolled loop may be silently ignored",
+        messageFormat:
+        "The loop marked with Gpu.Hint.Unroll contains dynamic control flow (break, return, goto) and may be silently ignored by the nvcc compiler",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor ManualEnumeratorNotSupported = new(
         id: "GSH0019",
         title: "Manual GetEnumerator calls are not supported",
@@ -230,7 +248,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor DisposingBorrowedResource = new(
         id: "GSH0027",
         title: "Disposing borrowed resource",
-        messageFormat: "Disposing a borrowed resource creates a double-dispose hazard. If taking ownership, use [TakesOwnership].",
+        messageFormat:
+        "Disposing a borrowed resource creates a double-dispose hazard. If taking ownership, use [TakesOwnership].",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -246,7 +265,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor ManualUnmanagedAllocation = new(
         id: "GSH0029",
         title: "Manual unmanaged allocation detected",
-        messageFormat: "Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.",
+        messageFormat:
+        "Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -254,7 +274,8 @@ public static class GSharpDiagnostics
     public static readonly DiagnosticDescriptor DirectGpuKernelInvocation = new(
         id: "GSH0031",
         title: "Direct invocation of [GpuKernel] is prohibited",
-        messageFormat: "Do not call [GpuKernel] method '{0}' directly. Use the generated 'Launch{0}' launcher method instead.",
+        messageFormat:
+        "Do not call [GpuKernel] method '{0}' directly. Use the generated 'Launch{0}' launcher method instead.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

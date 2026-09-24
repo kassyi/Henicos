@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 using Microsoft.CodeAnalysis.Operations;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Expands high-level GSharp GPU macros (such as unrolled loops and grid-stride iterations) into CUDA C++ primitives.</summary>
@@ -20,7 +21,8 @@ internal static class MacroTranspiler
         };
     }
 
-    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation, ExpressionStatementSyntax statement, ref TranspileContext context)
+    private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation,
+        ExpressionStatementSyntax statement, ref TranspileContext context)
     {
         if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
             !symbol.ContainingNamespace.IsCoreNamespace())
@@ -31,8 +33,7 @@ internal static class MacroTranspiler
         var typeName = symbol.ContainingType.Name;
         if (typeName == "Hint" && symbol.ContainingType.ContainingType?.Name == TypeConstants.GpuType)
         {
-            if (symbol.Name == "Unroll") return TranspileHintUnroll(invocation, statement, ref context);
-            return false;
+            return symbol.Name == "Unroll" && TranspileHintUnroll(invocation, statement, ref context);
         }
 
         if (typeName != TypeConstants.GpuType)
@@ -52,7 +53,7 @@ internal static class MacroTranspiler
     private static bool TranspileHintUnroll(InvocationExpressionSyntax invocation, ExpressionStatementSyntax statement,
         ref TranspileContext context)
     {
-        if (!GpuMacroArgumentRule.PrecedesSupportedLoop(statement))
+        if (GpuMacroArgumentRule.GetSupportedLoop(statement) == null)
         {
             context.ReportDiagnostic?.Invoke(Diagnostic.Create(
                 GSharpDiagnostics.UnrollHintMustPrecedeLoop,
@@ -61,7 +62,7 @@ internal static class MacroTranspiler
         }
 
         var args = invocation.ArgumentList.Arguments;
-        int factor = 0;
+        var factor = 0;
         if (args.Count > 0)
         {
             var factorExpr = args[0].Expression;
@@ -279,14 +280,16 @@ internal static class MacroTranspiler
         }
 
         var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "GpuOperatorMacroAttribute" && a.AttributeClass.ContainingNamespace.IsCoreNamespace());
+            .FirstOrDefault(a =>
+                a.AttributeClass?.Name == "GpuOperatorMacroAttribute" &&
+                a.AttributeClass.ContainingNamespace.IsCoreNamespace());
 
         if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {
             return false;
         }
 
-        return EmitMacroOperatorAssignment(assignment, rightNode, methodSymbol, macroAttr, ref context);
+        return EmitMacroOperatorAssignment(assignment, rightNode, macroAttr, ref context);
     }
 
     private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
@@ -308,121 +311,160 @@ internal static class MacroTranspiler
     private static bool EmitMacroOperatorAssignment(
         AssignmentExpressionSyntax assignment,
         ExpressionSyntax rightNode,
-        IMethodSymbol methodSymbol,
         AttributeData macroAttr,
         ref TranspileContext context)
     {
-        var targetType = macroAttr.ConstructorArguments[0].Value as INamedTypeSymbol;
-        var targetMethodName = macroAttr.ConstructorArguments[1].Value as string;
-
-        if (targetType == null || targetMethodName == null)
-        {
-            return false;
-        }
-
-        var expectedMethodParamsMin = rightNode is BinaryExpressionSyntax ? 3 : 2; // result + left + (right/extraArg)
-        var expectedMethodParamsMax = expectedMethodParamsMin + 1; // + context
-
-        var targetMethods = targetType.GetMembers(targetMethodName).OfType<IMethodSymbol>().ToList();
-        var targetMethod = targetMethods.FirstOrDefault(m =>
-            m.Parameters.Length == expectedMethodParamsMin ||
-            (m.Parameters.Length == expectedMethodParamsMax && m.Parameters[0].Type.IsValueType));
+        var targetMethod = ResolveTargetMethod(
+            macroAttr,
+            rightNode,
+            out var targetType,
+            out var targetMethodName,
+            out var expectedMethodParamsMax);
 
         if (targetMethod == null)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                assignment.GetLocation(),
-                $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible."));
+            if (targetType != null && targetMethodName != null)
+            {
+                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    assignment.GetLocation(),
+                    $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible."));
+            }
+
             return false;
         }
 
-        ExpressionSyntax? leftOp = null;
-        ExpressionSyntax? rightOp = null;
-        ExpressionSyntax? extraArg = null;
-
-        if (rightNode is BinaryExpressionSyntax binaryExpr)
-        {
-            leftOp = binaryExpr.Left;
-            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression))
-            {
-                rightOp = binaryExpr.Right;
-            }
-            else
-            {
-                extraArg = binaryExpr.Right;
-            }
-        }
-        else if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
-        {
-            leftOp = unaryExpr.Operand;
-        }
-
+        var (leftOp, rightOp, extraArg) = ExtractOperands(rightNode);
         var resultOp = assignment.Left;
+        var hasContext = targetMethod.Parameters.Length == expectedMethodParamsMax;
 
         context.Writer.Append(targetMethodName);
         using (context.Writer.Parentheses())
         {
-            var hasContext = targetMethod.Parameters.Length == expectedMethodParamsMax;
-            var isFirst = true;
-            var paramIndex = 0;
-
-            void AppendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
-            {
-                if (!isFirst)
-                {
-                    localContext.Writer.AppendComma();
-                }
-
-                isFirst = false;
-
-                var param = targetMethod.Parameters[paramIndex++];
-                var isPointer = param.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
-
-                if (isPointer && rawString != null)
-                {
-                    localContext.Writer.Append($"&{rawString}");
-                }
-                else if (rawString != null)
-                {
-                    localContext.Writer.Append(rawString);
-                }
-                else if (expr != null)
-                {
-                    var isExprPointer = localContext.SemanticModel.GetTypeInfo(expr).Type is IPointerTypeSymbol;
-                    if (isPointer && !isExprPointer)
-                    {
-                        localContext.Writer.Append("&");
-                    }
-
-                    localContext.Visitor.Visit(expr);
-                }
-            }
-
-            if (hasContext)
-            {
-                AppendArg(null, "ctx", ref context);
-            }
-
-            AppendArg(resultOp, null, ref context);
-
-            if (leftOp != null)
-            {
-                AppendArg(leftOp, null, ref context);
-            }
-
-            if (rightOp != null)
-            {
-                AppendArg(rightOp, null, ref context);
-            }
-
-            if (extraArg != null)
-            {
-                AppendArg(extraArg, null, ref context);
-            }
+            EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
         }
 
         context.Writer.AppendSemiColonLine();
         return true;
+    }
+
+    private static IMethodSymbol? ResolveTargetMethod(
+        AttributeData macroAttr,
+        ExpressionSyntax rightNode,
+        out INamedTypeSymbol? targetType,
+        out string? targetMethodName,
+        out int expectedMethodParamsMax)
+    {
+        targetType = macroAttr.ConstructorArguments[0].Value as INamedTypeSymbol;
+        targetMethodName = macroAttr.ConstructorArguments[1].Value as string;
+
+        if (targetType == null || targetMethodName == null)
+        {
+            expectedMethodParamsMax = 0;
+            return null;
+        }
+
+        var expectedMethodParamsMin = rightNode is BinaryExpressionSyntax ? 3 : 2; // result + left + (right/extraArg)
+        expectedMethodParamsMax = expectedMethodParamsMin + 1; // + context
+
+        foreach (var member in targetType.GetMembers(targetMethodName))
+        {
+            if (member is IMethodSymbol m &&
+                (m.Parameters.Length == expectedMethodParamsMin ||
+                 (m.Parameters.Length == expectedMethodParamsMax && m.Parameters[0].Type.IsValueType)))
+            {
+                return m;
+            }
+        }
+
+        return null;
+    }
+
+    private static (ExpressionSyntax? Left, ExpressionSyntax? Right, ExpressionSyntax? Extra) ExtractOperands(ExpressionSyntax rightNode)
+    {
+        if (rightNode is BinaryExpressionSyntax binaryExpr)
+        {
+            var left = binaryExpr.Left;
+            if (!binaryExpr.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression))
+            {
+                return (left, binaryExpr.Right, null);
+            }
+
+            return (left, null, binaryExpr.Right);
+        }
+
+        if (rightNode is PrefixUnaryExpressionSyntax unaryExpr)
+        {
+            return (unaryExpr.Operand, null, null);
+        }
+
+        return (null, null, null);
+    }
+
+    private static void EmitMacroArguments(
+        IMethodSymbol targetMethod,
+        ExpressionSyntax resultOp,
+        ExpressionSyntax? leftOp,
+        ExpressionSyntax? rightOp,
+        ExpressionSyntax? extraArg,
+        bool hasContext,
+        ref TranspileContext context)
+    {
+        var isFirst = true;
+        var paramIndex = 0;
+
+        if (hasContext)
+        {
+            appendArg(null, "ctx", ref context);
+        }
+
+        appendArg(resultOp, null, ref context);
+
+        if (leftOp != null)
+        {
+            appendArg(leftOp, null, ref context);
+        }
+
+        if (rightOp != null)
+        {
+            appendArg(rightOp, null, ref context);
+        }
+
+        if (extraArg != null)
+        {
+            appendArg(extraArg, null, ref context);
+        }
+
+        void appendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
+        {
+            if (!isFirst)
+            {
+                localContext.Writer.AppendComma();
+            }
+
+            isFirst = false;
+
+            var param = targetMethod.Parameters[paramIndex++];
+            var isPointer = param.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
+
+            if (isPointer && rawString != null)
+            {
+                localContext.Writer.Append($"&{rawString}");
+            }
+            else if (rawString != null)
+            {
+                localContext.Writer.Append(rawString);
+            }
+            else if (expr != null)
+            {
+                var isExprPointer = localContext.SemanticModel.GetTypeInfo(expr).Type is IPointerTypeSymbol;
+                if (isPointer && !isExprPointer)
+                {
+                    localContext.Writer.Append("&");
+                }
+
+                localContext.Visitor.Visit(expr);
+            }
+        }
     }
 }

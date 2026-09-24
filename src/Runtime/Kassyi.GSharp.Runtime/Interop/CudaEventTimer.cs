@@ -68,8 +68,12 @@ public sealed class CudaEventTimer : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(CudaEventTimer));
+        if (!_disposed)
+        {
+            return;
+        }
+
+        throw new ObjectDisposedException(nameof(CudaEventTimer));
     }
 
     public void Dispose()

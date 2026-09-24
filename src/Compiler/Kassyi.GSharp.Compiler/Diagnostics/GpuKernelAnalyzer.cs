@@ -15,6 +15,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.MacroArgumentMustBeConstant,
         GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
         GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+        GSharpDiagnostics.UnrolledLoopMustBeStatic,
+        GSharpDiagnostics.UnrolledLoopMayBeIgnored,
         GSharpDiagnostics.ManualEnumeratorNotSupported);
 
     public override void Initialize(AnalysisContext context)
