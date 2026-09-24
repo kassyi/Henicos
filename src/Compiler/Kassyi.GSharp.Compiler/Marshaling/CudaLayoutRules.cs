@@ -131,16 +131,28 @@ internal static class CudaLayoutRules
             return TryGetPredefinedLayout(namedEnum.EnumUnderlyingType, out layout);
         }
 
+        if (TryGetPrimitiveLayout(type, out layout))
+        {
+            return true;
+        }
+
+        if (TryGetVectorLayout(type, out layout))
+        {
+            return true;
+        }
+
+        layout = default;
+        return false;
+    }
+
+    private static bool TryGetPrimitiveLayout(ITypeSymbol type, out CudaLayoutInfo layout)
+    {
         var primitive = type.SpecialType switch
         {
-            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => new CudaLayoutInfo(1,
-                1),
-            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 =>
-                new CudaLayoutInfo(2, 2),
-            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => new CudaLayoutInfo(4,
-                4),
-            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => new CudaLayoutInfo(8,
-                8),
+            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => new CudaLayoutInfo(1, 1),
+            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 => new CudaLayoutInfo(2, 2),
+            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => new CudaLayoutInfo(4, 4),
+            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => new CudaLayoutInfo(8, 8),
             _ => default(CudaLayoutInfo?)
         };
 
@@ -150,24 +162,33 @@ internal static class CudaLayoutRules
             return true;
         }
 
-        if (type.IsSystemNumericsVector())
-        {
-            var vectorLayout = type.Name switch
-            {
-                "Float2" or "Int2" or "UInt2" or "Vector2" => new CudaLayoutInfo(8, 8),
-                "Float3" or "Int3" or "UInt3" or "Vector3" => new CudaLayoutInfo(12, 4),
-                "Float4" or "Int4" or "UInt4" or "Vector4" => new CudaLayoutInfo(16, 16),
-                "Double2" or "Long2" or "ULong2" => new CudaLayoutInfo(16, 16),
-                "Double3" or "Long3" or "ULong3" => new CudaLayoutInfo(24, 8),
-                "Double4" or "Long4" or "ULong4" => new CudaLayoutInfo(32, 16),
-                _ => default(CudaLayoutInfo?)
-            };
+        layout = default;
+        return false;
+    }
 
-            if (vectorLayout.HasValue)
-            {
-                layout = vectorLayout.Value;
-                return true;
-            }
+    private static bool TryGetVectorLayout(ITypeSymbol type, out CudaLayoutInfo layout)
+    {
+        if (!type.IsSystemNumericsVector())
+        {
+            layout = default;
+            return false;
+        }
+
+        var vectorLayout = type.Name switch
+        {
+            "Float2" or "Int2" or "UInt2" or "Vector2" => new CudaLayoutInfo(8, 8),
+            "Float3" or "Int3" or "UInt3" or "Vector3" => new CudaLayoutInfo(12, 4),
+            "Float4" or "Int4" or "UInt4" or "Vector4" => new CudaLayoutInfo(16, 16),
+            "Double2" or "Long2" or "ULong2" => new CudaLayoutInfo(16, 16),
+            "Double3" or "Long3" or "ULong3" => new CudaLayoutInfo(24, 8),
+            "Double4" or "Long4" or "ULong4" => new CudaLayoutInfo(32, 16),
+            _ => default(CudaLayoutInfo?)
+        };
+
+        if (vectorLayout.HasValue)
+        {
+            layout = vectorLayout.Value;
+            return true;
         }
 
         layout = default;
