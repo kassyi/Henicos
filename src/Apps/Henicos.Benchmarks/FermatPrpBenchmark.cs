@@ -1,6 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-
 namespace Henicos.Benchmarks;
 
 public class FermatPrpBenchmark
@@ -20,49 +17,16 @@ public class FermatPrpBenchmark
         using var scope = new GpuKernelLoader.CudaContextScope();
 
         var runner = new FermatRunner(E);
+        var repository = new Repositories.FileCheckpointRepository(CheckpointFile, TempCheckpointFile);
 
         var startIter = 0;
 
-        if (File.Exists(CheckpointFile))
+        if (repository.Exists())
         {
-            try
-            {
-                using var fs = File.OpenRead(CheckpointFile);
-                using var br = new BinaryReader(fs);
-                startIter = br.ReadInt32();
-
-                var state = new uint[runner.OutNumWords];
-                var bytes = MemoryMarshal.AsBytes(state.AsSpan());
-
-                if (fs.Read(bytes) != bytes.Length)
-                {
-                    throw new Exception("Checkpoint file is corrupted or truncated.");
-                }
-
-                var storedHash = br.ReadBytes(32);
-                if (storedHash.Length != 32)
-                {
-                    throw new Exception("Checkpoint file is missing SHA256 hash or truncated.");
-                }
-
-                using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-                hasher.AppendData(BitConverter.GetBytes(startIter));
-                hasher.AppendData(bytes);
-                var computedHash = hasher.GetHashAndReset();
-
-                if (!computedHash.SequenceEqual(storedHash))
-                {
-                    throw new Exception("Checkpoint file hash mismatch! Data is corrupted.");
-                }
-
-                runner.LoadState(state);
-                Logger<FermatPrpBenchmark>.Info($"Resuming from iteration {startIter} (Hash OK)...");
-            }
-            catch (Exception ex)
-            {
-                Logger<FermatPrpBenchmark>.Warning($"Warning: Failed to load checkpoint ({ex.Message}). Starting from scratch.");
-                startIter = 0;
-            }
+            var (loadedIter, state) = repository.Load(runner.OutNumWords);
+            startIter = loadedIter;
+            runner.LoadState(state);
+            Logger<FermatPrpBenchmark>.Info($"Resuming from iteration {startIter} (Hash OK)...");
         }
         else
         {
@@ -86,32 +50,11 @@ public class FermatPrpBenchmark
             }
 
             // Save state to disk
-            SaveCheckpoint(i, runner);
+            repository.Save(i, runner.GetState());
             Logger<FermatPrpBenchmark>.Info($"[Checkpoint] Saved state and hash at iteration {i}.");
         }
 
         sw.Stop();
         Logger<FermatPrpBenchmark>.Info($"Completed all requested iterations up to {iterations} in {sw.ElapsedMilliseconds} ms");
-    }
-
-    private static void SaveCheckpoint(int currentIteration, FermatRunner runner)
-    {
-        using (var fs = File.Create(TempCheckpointFile))
-        using (var bw = new BinaryWriter(fs))
-        {
-            bw.Write(currentIteration);
-            var state = runner.GetState();
-            var bytes = MemoryMarshal.AsBytes(state.AsSpan());
-            fs.Write(bytes);
-
-            using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-            hasher.AppendData(BitConverter.GetBytes(currentIteration));
-            hasher.AppendData(bytes);
-            var computedHash = hasher.GetHashAndReset();
-
-            fs.Write(computedHash);
-        }
-
-        File.Move(TempCheckpointFile, CheckpointFile, overwrite: true);
     }
 }
