@@ -18,4 +18,25 @@ internal sealed class LinqNotSupportedRule
 
         context.ReportDiagnostic(diagnostic);
     }
+
+    public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
+    {
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(node);
+        if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
+        {
+            var isLinqMethod = methodSymbol.ContainingNamespace?.ToString() == "System.Linq" ||
+                               methodSymbol.ContainingType?.ToString() == "System.Linq.Enumerable" ||
+                               methodSymbol.ContainingType?.ToString() == "System.Linq.Queryable";
+
+            if (isLinqMethod)
+            {
+                var diagnostic = Diagnostic.Create(
+                    GSharpDiagnostics.LinqNotSupported,
+                    node.GetLocation(),
+                    context.MethodSymbol.Name);
+
+                context.ReportDiagnostic(diagnostic);
+            }
+        }
+    }
 }
