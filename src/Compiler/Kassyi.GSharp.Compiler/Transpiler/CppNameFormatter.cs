@@ -10,15 +10,13 @@ internal static class CppNameFormatter
     /// </summary>
     public static ref readonly SourceWriter AppendFullyQualifiedCppName(this in SourceWriter writer, ISymbol symbol)
     {
-        if (symbol is ITypeParameterSymbol)
+        switch (symbol)
         {
-            writer.Append(symbol.Name);
-            return ref writer;
-        }
-
-        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            return ref writer;
+            case ITypeParameterSymbol:
+                writer.Append(symbol.Name);
+                return ref writer;
+            case INamespaceSymbol { IsGlobalNamespace: true }:
+                return ref writer;
         }
 
         var parent = symbol.ContainingSymbol;
@@ -41,15 +39,13 @@ internal static class CppNameFormatter
 
     private static void AppendSafeIdentifierRecursive(ISymbol symbol, StringBuilder sb)
     {
-        if (symbol is ITypeParameterSymbol)
+        switch (symbol)
         {
-            sb.Append(symbol.Name);
-            return;
-        }
-
-        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            return;
+            case ITypeParameterSymbol:
+                sb.Append(symbol.Name);
+                return;
+            case INamespaceSymbol { IsGlobalNamespace: true }:
+                return;
         }
 
         if (symbol.ContainingSymbol is { } parent and not INamespaceSymbol { IsGlobalNamespace: true })
@@ -60,13 +56,15 @@ internal static class CppNameFormatter
 
         sb.Append(symbol.Name);
 
-        if (symbol is INamedTypeSymbol { IsGenericType: true } namedType)
+        if (symbol is not INamedTypeSymbol { IsGenericType: true } namedType)
         {
-            foreach (var typeArg in namedType.TypeArguments)
-            {
-                sb.Append('_');
-                AppendSafeIdentifierRecursive(typeArg, sb);
-            }
+            return;
+        }
+
+        foreach (var typeArg in namedType.TypeArguments)
+        {
+            sb.Append('_');
+            AppendSafeIdentifierRecursive(typeArg, sb);
         }
     }
 }
