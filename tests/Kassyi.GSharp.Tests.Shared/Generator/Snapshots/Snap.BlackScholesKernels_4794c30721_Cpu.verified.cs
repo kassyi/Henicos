@@ -16,16 +16,11 @@ public static partial class BlackScholesKernelsWrapper
 public const string BlackScholesKernel_Source = @"extern ""C"" __declspec(dllexport) void BlackScholesKernel(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n){
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < n; tid += gridDim.x * blockDim.x)
 {
-float s_val = s[tid];
-float x_val = x[tid];
-float t_val = t[tid];
-float d1 = (logf(s_val/x_val)+(r+v*v/2.0f)*t_val)/(v*sqrtf(t_val));
-float d2 = d1-v*sqrtf(t_val);
-float cndD1 = CndGsharp(d1);
-float cndD2 = CndGsharp(d2);
-float expRT = expf(-r*t_val);
-callResult[tid]=s_val*cndD1-x_val*expRT*cndD2;
-putResult[tid]=x_val*expRT*(1.0f-cndD2)-s_val*(1.0f-cndD1);
+float c;
+float p;
+CalculateOptionPrice(s[tid],x[tid],t[tid],r,v,&c,&p);
+callResult[tid]=c;
+putResult[tid]=p;
 }
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_BlackScholesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n)
@@ -75,9 +70,21 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"inline float CndGsharp(float d);
+public const string Source = @"inline void CalculateOptionPrice(float s, float x, float t, float r, float v, float* __restrict__  callResult, float* __restrict__  putResult);
 
-inline float CndGsharp(float d){
+inline float Cnd(float d);
+
+inline void CalculateOptionPrice(float s, float x, float t, float r, float v, float* __restrict__  callResult, float* __restrict__  putResult){
+float d1 = (logf(s/x)+(r+v*v/2.0f)*t)/(v*sqrtf(t));
+float d2 = d1-v*sqrtf(t);
+float cndD1 = Cnd(d1);
+float cndD2 = Cnd(d2);
+float expRT = expf(-r*t);
+(*callResult)=s*cndD1-x*expRT*cndD2;
+(*putResult)=x*expRT*(1.0f-cndD2)-s*(1.0f-cndD1);
+}
+
+inline float Cnd(float d){
 float K = 1.0f/(1.0f+0.2316419f*fabsf(d));
 float cnd = 0.3989422804f*expf(-0.5f*d*d)*(K*(0.31938153f+K*(-0.356563782f+K*(1.781477937f+K*(-1.821255978f+K*1.330274429f)))));
 if(d>0)

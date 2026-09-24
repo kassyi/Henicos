@@ -1,14 +1,14 @@
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static unsafe class NativeKernelInvoker
 {
-    private static IntPtr s_hfuncSgemm;
-    private static IntPtr s_hfuncSha256;
-    private static IntPtr s_hfuncBlackScholes;
-    private static IntPtr s_hfuncReduction;
-
-    private static readonly Lock s_lock = new();
+    private static readonly Lazy<IntPtr> s_hfuncSgemm = new(() => LoadKernel("sgemm_kernel.fatbin", "SgemmKernel_Native"));
+    private static readonly Lazy<IntPtr> s_hfuncSha256 = new(() => LoadKernel("sha256_kernel.fatbin", "Sha256Kernel_Native"));
+    private static readonly Lazy<IntPtr> s_hfuncBlackScholes = new(() => LoadKernel("blackscholes_kernel.fatbin", "BlackScholesKernel_Native"));
+    private static readonly Lazy<IntPtr> s_hfuncReduction = new(() => LoadKernel("reduction_kernel.fatbin", "ReductionKernel_Native"));
 
     public static void LaunchSgemm(
         float[] a, float[] b, float[] c, int n,
@@ -20,57 +20,32 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        EnsureLoaded(ref s_hfuncSgemm, "sgemm_kernel.fatbin", "SgemmKernel_Native");
+        IntPtr kernel = s_hfuncSgemm.Value;
 
-        IntPtr d_a = IntPtr.Zero, d_b = IntPtr.Zero, d_c = IntPtr.Zero;
-        try
-        {
-            int aSize = a.Length * sizeof(float);
-            int bSize = b.Length * sizeof(float);
-            int cSize = c.Length * sizeof(float);
+        using var d_a = new GpuBuffer<float>(a.Length);
+        d_a.CopyToDevice(a);
+        using var d_b = new GpuBuffer<float>(b.Length);
+        d_b.CopyToDevice(b);
+        using var d_c = new GpuBuffer<float>(c.Length);
 
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_a, aSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_b, bSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_c, cSize));
+        IntPtr pa = d_a.DevicePointer;
+        IntPtr pb = d_b.DevicePointer;
+        IntPtr pc = d_c.DevicePointer;
 
-            fixed (float* pa = a, pb = b, pc = c)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_a, (IntPtr)pa, aSize));
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_b, (IntPtr)pb, bSize));
+        void** kernelParams = stackalloc void*[4];
+        kernelParams[0] = &pa;
+        kernelParams[1] = &pb;
+        kernelParams[2] = &pc;
+        kernelParams[3] = &n;
 
-                void** kernelParams = stackalloc void*[4];
-                kernelParams[0] = &d_a;
-                kernelParams[1] = &d_b;
-                kernelParams[2] = &d_c;
-                kernelParams[3] = &n;
+        CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+            kernel,
+            gridDimX, gridDimY, 1,
+            blockDimX, blockDimY, 1,
+            0, IntPtr.Zero, kernelParams, IntPtr.Zero));
 
-                CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-                    s_hfuncSgemm,
-                    gridDimX, gridDimY, 1,
-                    blockDimX, blockDimY, 1,
-                    0, IntPtr.Zero, kernelParams, IntPtr.Zero));
-
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pc, d_c, cSize));
-            }
-        }
-        finally
-        {
-            if (d_a != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_a);
-            }
-
-            if (d_b != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_b);
-            }
-
-            if (d_c != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_c);
-            }
-        }
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        d_c.CopyToHost(c);
     }
 
     public static void LaunchSha256(
@@ -83,49 +58,28 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        EnsureLoaded(ref s_hfuncSha256, "sha256_kernel.fatbin", "Sha256Kernel_Native");
+        IntPtr kernel = s_hfuncSha256.Value;
 
-        IntPtr d_in = IntPtr.Zero, d_out = IntPtr.Zero;
-        try
-        {
-            int inSize = input.Length * sizeof(byte);
-            int outSize = output.Length * sizeof(uint);
+        using var d_in = new GpuBuffer<byte>(input.Length);
+        d_in.CopyToDevice(input);
+        using var d_out = new GpuBuffer<uint>(output.Length);
 
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_in, inSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_out, outSize));
+        IntPtr pin = d_in.DevicePointer;
+        IntPtr pout = d_out.DevicePointer;
 
-            fixed (byte* pin = input)
-            fixed (uint* pout = output)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_in, (IntPtr)pin, inSize));
+        void** kernelParams = stackalloc void*[3];
+        kernelParams[0] = &pin;
+        kernelParams[1] = &pout;
+        kernelParams[2] = &numMessages;
 
-                void** kernelParams = stackalloc void*[3];
-                kernelParams[0] = &d_in;
-                kernelParams[1] = &d_out;
-                kernelParams[2] = &numMessages;
+        CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+            kernel,
+            gridDimX, 1, 1,
+            blockDimX, 1, 1,
+            0, IntPtr.Zero, kernelParams, IntPtr.Zero));
 
-                CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-                    s_hfuncSha256,
-                    gridDimX, 1, 1,
-                    blockDimX, 1, 1,
-                    0, IntPtr.Zero, kernelParams, IntPtr.Zero));
-
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pout, d_out, outSize));
-            }
-        }
-        finally
-        {
-            if (d_in != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_in);
-            }
-
-            if (d_out != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_out);
-            }
-        }
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        d_out.CopyToHost(output);
     }
 
     public static void LaunchBlackScholes(
@@ -139,73 +93,42 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        EnsureLoaded(ref s_hfuncBlackScholes, "blackscholes_kernel.fatbin", "BlackScholesKernel_Native");
+        IntPtr kernel = s_hfuncBlackScholes.Value;
 
-        IntPtr d_s = IntPtr.Zero, d_x = IntPtr.Zero, d_t = IntPtr.Zero, d_call = IntPtr.Zero, d_put = IntPtr.Zero;
-        try
-        {
-            int floatSize = n * sizeof(float);
+        using var d_s = new GpuBuffer<float>(s.Length);
+        d_s.CopyToDevice(s);
+        using var d_x = new GpuBuffer<float>(x.Length);
+        d_x.CopyToDevice(x);
+        using var d_t = new GpuBuffer<float>(t.Length);
+        d_t.CopyToDevice(t);
+        using var d_call = new GpuBuffer<float>(callResult.Length);
+        using var d_put = new GpuBuffer<float>(putResult.Length);
 
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_s, floatSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_x, floatSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_t, floatSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_call, floatSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_put, floatSize));
+        IntPtr ps = d_s.DevicePointer;
+        IntPtr px = d_x.DevicePointer;
+        IntPtr pt = d_t.DevicePointer;
+        IntPtr pcall = d_call.DevicePointer;
+        IntPtr pput = d_put.DevicePointer;
 
-            fixed (float* ps = s, px = x, pt = t, pcall = callResult, pput = putResult)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_s, (IntPtr)ps, floatSize));
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_x, (IntPtr)px, floatSize));
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_t, (IntPtr)pt, floatSize));
+        void** kernelParams = stackalloc void*[8];
+        kernelParams[0] = &ps;
+        kernelParams[1] = &px;
+        kernelParams[2] = &pt;
+        kernelParams[3] = &r;
+        kernelParams[4] = &v;
+        kernelParams[5] = &pcall;
+        kernelParams[6] = &pput;
+        kernelParams[7] = &n;
 
-                void** kernelParams = stackalloc void*[8];
-                kernelParams[0] = &d_s;
-                kernelParams[1] = &d_x;
-                kernelParams[2] = &d_t;
-                kernelParams[3] = &r;
-                kernelParams[4] = &v;
-                kernelParams[5] = &d_call;
-                kernelParams[6] = &d_put;
-                kernelParams[7] = &n;
+        CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+            kernel,
+            gridDimX, 1, 1,
+            blockDimX, 1, 1,
+            0, IntPtr.Zero, kernelParams, IntPtr.Zero));
 
-                CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-                    s_hfuncBlackScholes,
-                    gridDimX, 1, 1,
-                    blockDimX, 1, 1,
-                    0, IntPtr.Zero, kernelParams, IntPtr.Zero));
-
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pcall, d_call, floatSize));
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pput, d_put, floatSize));
-            }
-        }
-        finally
-        {
-            if (d_s != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_s);
-            }
-
-            if (d_x != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_x);
-            }
-
-            if (d_t != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_t);
-            }
-
-            if (d_call != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_call);
-            }
-
-            if (d_put != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_put);
-            }
-        }
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        d_call.CopyToHost(callResult);
+        d_put.CopyToHost(putResult);
     }
 
     public static void LaunchReduction(
@@ -218,73 +141,38 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        EnsureLoaded(ref s_hfuncReduction, "reduction_kernel.fatbin", "ReductionKernel_Native");
+        IntPtr kernel = s_hfuncReduction.Value;
 
-        IntPtr d_in = IntPtr.Zero, d_out = IntPtr.Zero;
-        try
-        {
-            int inSize = input.Length * sizeof(Float4);
-            int outSize = output.Length * sizeof(float);
+        using var d_in = new GpuBuffer<Float4>(input.Length);
+        d_in.CopyToDevice(input);
+        using var d_out = new GpuBuffer<float>(output.Length);
 
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_in, inSize));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_out, outSize));
+        IntPtr pin = d_in.DevicePointer;
+        IntPtr pout = d_out.DevicePointer;
 
-            fixed (Float4* pin = input)
-            fixed (float* pout = output)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_in, (IntPtr)pin, inSize));
+        void** kernelParams = stackalloc void*[3];
+        kernelParams[0] = &pin;
+        kernelParams[1] = &pout;
+        kernelParams[2] = &n;
 
-                void** kernelParams = stackalloc void*[3];
-                kernelParams[0] = &d_in;
-                kernelParams[1] = &d_out;
-                kernelParams[2] = &n;
+        CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+            kernel,
+            gridDimX, 1, 1,
+            blockDimX, 1, 1,
+            0, IntPtr.Zero, kernelParams, IntPtr.Zero));
 
-                CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-                    s_hfuncReduction,
-                    gridDimX, 1, 1,
-                    blockDimX, 1, 1,
-                    0, IntPtr.Zero, kernelParams, IntPtr.Zero));
-
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
-                CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pout, d_out, outSize));
-            }
-        }
-        finally
-        {
-            if (d_in != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_in);
-            }
-
-            if (d_out != IntPtr.Zero)
-            {
-                CudaDriverApi.cuMemFree_v2(d_out);
-            }
-        }
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
+        d_out.CopyToHost(output);
     }
 
-    private static void EnsureLoaded(ref IntPtr hfunc, string fatbinFileName, string kernelName)
+    private static IntPtr LoadKernel(string fatbinFileName, string kernelName)
     {
-        if (hfunc != IntPtr.Zero)
+        var path = Path.Combine(AppContext.BaseDirectory, fatbinFileName);
+        if (!File.Exists(path))
         {
-            return;
+            throw new FileNotFoundException($"Native fatbin '{fatbinFileName}' not found at '{path}'.");
         }
-
-        lock (s_lock)
-        {
-            if (hfunc != IntPtr.Zero)
-            {
-                return;
-            }
-
-            var path = Path.Combine(AppContext.BaseDirectory, fatbinFileName);
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException($"Native fatbin '{fatbinFileName}' not found at '{path}'.");
-            }
-
-            var fatbinBytes = File.ReadAllBytes(path);
-            hfunc = GpuKernelLoader.LoadAotKernel(fatbinBytes, kernelName);
-        }
+        var fatbinBytes = File.ReadAllBytes(path);
+        return GpuKernelLoader.LoadAotKernel(fatbinBytes, kernelName);
     }
 }

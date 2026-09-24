@@ -11,14 +11,14 @@ namespace Kassyi.GSharp.Tests.FastMathTests;
 public class COR_01_FastMathBoundaryTests
 {
     [Fact]
-    [Trait("Category", "SadPath")]
-    public void Test_COR01_HostSide_FastMath_ThrowsGpuOnlyException_SadPath()
+    [Trait("Category", "HappyPath")]
+    public void Test_COR01_HostSide_FastMath_FallsBackToMathF()
     {
-        // Assert that invoking FastMath API directly on CPU throws GpuOnlyException
-        Assert.Throws<GpuOnlyException>(() => FastMath.Exp(1.0f));
-        Assert.Throws<GpuOnlyException>(() => FastMath.Log(1.0f));
-        Assert.Throws<GpuOnlyException>(() => FastMath.Sqrt(1.0f));
-        Assert.Throws<GpuOnlyException>(() => FastMath.Abs(-1.0f));
+        // Assert that invoking FastMath API directly on CPU falls back to MathF
+        Assert.Equal(MathF.Exp(1.0f), FastMath.Exp(1.0f));
+        Assert.Equal(MathF.Log(1.0f), FastMath.Log(1.0f));
+        Assert.Equal(MathF.Sqrt(1.0f), FastMath.Sqrt(1.0f));
+        Assert.Equal(MathF.Abs(-1.0f), FastMath.Abs(-1.0f));
     }
 
     public static TheoryData<float> GetBoundaryValues() =>

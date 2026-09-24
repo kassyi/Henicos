@@ -1,5 +1,6 @@
 using System.Globalization;
 using Henicos.Benchmarks.ComputeBenchmarks;
+using Kassyi.GSharp.Stdlib.Math.IO;
 
 namespace Henicos.Benchmarks;
 
@@ -51,7 +52,7 @@ internal class Program
 
     private static int PrintUsage()
     {
-        const string usage = """
+        const string Usage = """
             Henicos.Benchmarks - High-Performance GPU & CPU Number Theory Suite
 
             Usage: dotnet run -c Release -- <command> [options]
@@ -73,7 +74,7 @@ internal class Program
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
             """;
-        Logger<Program>.Info(usage);
+        Logger<Program>.Info(Usage);
         return 0;
     }
 
@@ -101,8 +102,31 @@ internal class Program
             }
         }
 
-        var success = ComputeBenchmarkRunner.RunSuite(suite, jsonOutput: json);
-        return success ? 0 : 1;
+        var logOut = json ? Console.Error : Console.Out;
+        var results = ComputeBenchmarkRunner.RunSuite(suite, iterations: 10, logOut);
+
+        if (results.Count == 0) return 1;
+
+        if (json)
+        {
+            ComputeBenchmarkReporter.ReportJson(results, Console.Out);
+        }
+        else
+        {
+            ComputeBenchmarkReporter.ReportTable(results, logOut);
+        }
+
+        var allSuccess = true;
+        foreach (var r in results)
+        {
+            if (!r.Success)
+            {
+                allSuccess = false;
+                break;
+            }
+        }
+
+        return allSuccess ? 0 : 1;
     }
 
     private static int RunGpuPi(string[] args)
@@ -138,11 +162,33 @@ internal class Program
             }
             else if (!arg.StartsWith('-') && i == 0)
             {
-                targetDigits = ParseDigits(arg, 10000);
+                targetDigits = ParseDigits(arg);
             }
         }
 
-        GpuChudnovskyPi.ComputePiAndWriteToFile(targetDigits, outPath, thresholdTerms, asHex);
+        using TextWriter writer = outPath != null
+            ? new StreamWriter(outPath, append: false)
+            : new HeadTailTrackerWriter();
+
+        GpuChudnovskyPi.ComputePi(targetDigits, writer, thresholdTerms, asHex);
+
+        if (outPath == null && writer is HeadTailTrackerWriter ht)
+        {
+            if (asHex)
+            {
+                Logger<Program>.Info($"Result (Hex): {ht.GetPreview()}");
+                Logger<Program>.Info($"Hex output tracked. Length: {ht.TotalCharactersWritten} chars.");
+            }
+            else
+            {
+                Logger<Program>.Info($"Result: {ht.GetPreview()}");
+            }
+        }
+        else if (outPath != null)
+        {
+            Logger<Program>.Info(asHex ? "Hex output dumped to file." : "Decimal output dumped to file.");
+        }
+
         return 0;
     }
 

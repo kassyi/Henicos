@@ -1,6 +1,5 @@
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
 namespace Henicos.Benchmarks;
 
@@ -17,14 +16,12 @@ public class TrialFactoringBenchmark
 
         using var scope = new GpuKernelLoader.CudaContextScope();
 
-        using var gpuContext = new GpuContext(1024);
-
         var maxResults = 1024;
-        using var resultsBuffer = new ScopedGpuMemory(gpuContext.Provider, maxResults * sizeof(uint));
-        using var resultCountBuffer = new ScopedGpuMemory(gpuContext.Provider, sizeof(uint));
+        using var resultsBuffer = new GpuBuffer<uint>(maxResults);
+        using var resultCountBuffer = new GpuBuffer<uint>(1);
 
         var zeroCount = new uint[] { 0 };
-        gpuContext.Provider.CopyHostToDevice(resultCountBuffer.Pointer, zeroCount, 1);
+        resultCountBuffer.CopyToDevice(zeroCount);
 
         const uint BatchSize = 100_000_000;
         const uint BlockSize = 256;
@@ -42,8 +39,8 @@ public class TrialFactoringBenchmark
             FermatTrialFactoringKernelsWrapper.LaunchKernel_SearchFactors32_Device(
                 startOdd,
                 (uint)e,
-                resultsBuffer.Pointer,
-                resultCountBuffer.Pointer,
+                resultsBuffer.DevicePointer,
+                resultCountBuffer.DevicePointer,
                 maxResults,
                 gridDimX: gridX,
                 blockDimX: BlockSize
@@ -51,13 +48,13 @@ public class TrialFactoringBenchmark
 
             GpuKernelLoader.SynchronizeDevice();
 
-            gpuContext.Provider.CopyDeviceToHost(zeroCount, resultCountBuffer.Pointer, 1);
+            resultCountBuffer.CopyToHost(zeroCount);
             var count = zeroCount[0];
             if (count > 0)
             {
                 Logger<TrialFactoringBenchmark>.Info($"[FOUND] GPU reported {count} potential matches in range!");
                 var resultsHost = new uint[count];
-                gpuContext.Provider.CopyDeviceToHost(resultsHost, resultsBuffer.Pointer, (int)count);
+                resultsBuffer.CopyToHost(resultsHost);
 
                 foreach (var k in resultsHost)
                 {
@@ -67,15 +64,13 @@ public class TrialFactoringBenchmark
                         Logger<TrialFactoringBenchmark>.Info("=> N is COMPOSITE!");
                         return;
                     }
-                    else
-                    {
-                        Logger<TrialFactoringBenchmark>.Info($"=> (False positive: {k} is composite, ignoring)");
-                    }
+
+                    Logger<TrialFactoringBenchmark>.Info($"=> (False positive: {k} is composite, ignoring)");
                 }
 
                 // Reset count
                 zeroCount[0] = 0;
-                gpuContext.Provider.CopyHostToDevice(resultCountBuffer.Pointer, zeroCount, 1);
+                resultCountBuffer.CopyToDevice(zeroCount);
             }
 
             if (startOdd % (BatchSize * 10) == 3 && startOdd > 3)
