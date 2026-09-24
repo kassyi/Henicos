@@ -18,9 +18,9 @@ internal sealed class GpuMacroArgumentRule
         }
 
         var containingType = invocationSymbol.ContainingType;
-        if (containingType is { Name: "Hint", ContainingType.Name: "Gpu" })
+        if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuMacros.Gpu })
         {
-            if (invocationSymbol.Name == "Unroll")
+            if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
             {
                 CheckUnrollHint(invocation, ref context);
             }
@@ -28,27 +28,28 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        if (containingType?.Name != "Gpu")
+        if (containingType?.Name != TypeConstants.GpuMacros.Gpu)
         {
             return;
         }
 
         switch (invocationSymbol.Name)
         {
-            case "ForUnroll":
+            case TypeConstants.GpuMacros.ForUnroll:
             {
                 var hasContext = invocationSymbol.Parameters.Length == 4;
                 var offset = hasContext ? 1 : 0;
                 var args = invocation.ArgumentList.Arguments;
                 if (args.Count >= offset + 2)
                 {
-                    CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
-                    CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
+                    CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
+                    CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
                 }
 
                 break;
             }
-            case "InlinePtx":
+
+            case TypeConstants.GpuMacros.InlinePtx:
             {
                 var args = invocation.ArgumentList.Arguments;
                 if (args.Count >= 1)
@@ -209,11 +210,13 @@ internal sealed class GpuMacroArgumentRule
         var hasDynamicControlFlow = false;
         foreach (var n in loopStmt.DescendantNodes())
         {
-            if (n is BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax)
+            if (n is not (BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax))
             {
-                hasDynamicControlFlow = true;
-                break;
+                continue;
             }
+
+            hasDynamicControlFlow = true;
+            break;
         }
 
         if (!hasDynamicControlFlow)

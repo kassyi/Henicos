@@ -16,7 +16,10 @@ public class FermatRunner : IDisposable
     ///   <item><description><see cref="E"/>: <c>F_n = 2^(2^E) + 1</c></description></item>
     /// </list>
     /// </remarks>
-    public int E { get; }
+    public int E
+    {
+        get;
+    }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
     public int OutNumWords => _outNumWords;

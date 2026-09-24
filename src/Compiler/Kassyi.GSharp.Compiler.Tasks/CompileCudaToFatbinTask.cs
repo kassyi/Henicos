@@ -8,7 +8,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
-    public string TargetArchitectures { get; set; } =
+    public string TargetArchitectures
+    {
+        get; set;
+    } =
         "compute_86,sm_86";
 
     public string NvccPath { get; set; } = "nvcc";

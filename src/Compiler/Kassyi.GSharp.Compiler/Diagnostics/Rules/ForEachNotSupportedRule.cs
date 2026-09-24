@@ -30,7 +30,7 @@ internal sealed class ForEachNotSupportedRule
             // Allowed: Array, InlineArray, Span/ReadOnlySpan, List
             if (type is IArrayTypeSymbol ||
                 type.HasAttribute(KnownAttributes.InlineArray) ||
-                type.Name is "Span" or "ReadOnlySpan" or "List")
+                type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or TypeConstants.ListType)
             {
                 return;
             }

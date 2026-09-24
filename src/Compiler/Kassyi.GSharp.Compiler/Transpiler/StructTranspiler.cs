@@ -21,12 +21,9 @@ internal static class StructTranspiler
             return;
         }
 
-        foreach (var member in namedStruct.GetMembers())
+        foreach (var dep in GetStructDependencies(namedStruct))
         {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                RegisterUsedStructIfApplicable(field.Type, ref context);
-            }
+            RegisterUsedStructIfApplicable(dep, ref context);
         }
     }
 
@@ -60,29 +57,35 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var member in s.GetMembers())
+            foreach (var dep in GetStructDependencies(s))
             {
-                if (member is not IFieldSymbol { IsStatic: false } field)
+                if (usedStructs.Contains(dep))
                 {
-                    continue;
-                }
-
-                var fieldType = field.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : field.Type;
-                if (fieldType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
-                    namedStruct.ContainingNamespace.IsSystemOrNumerics())
-                {
-                    continue;
-                }
-
-                if (usedStructs.Contains(namedStruct))
-                {
-                    visit(namedStruct);
+                    visit(dep);
                 }
             }
 
             visiting.Remove(s);
             visited.Add(s);
             result.Add(s);
+        }
+    }
+
+    private static IEnumerable<INamedTypeSymbol> GetStructDependencies(INamedTypeSymbol structSymbol)
+    {
+        foreach (var member in structSymbol.GetMembers())
+        {
+            if (member is not IFieldSymbol { IsStatic: false } field)
+            {
+                continue;
+            }
+
+            var fieldType = field.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : field.Type;
+            if (fieldType is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct &&
+                !namedStruct.ContainingNamespace.IsSystemOrNumerics())
+            {
+                yield return namedStruct;
+            }
         }
     }
 

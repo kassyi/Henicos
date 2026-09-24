@@ -111,6 +111,16 @@ public interface ITranspilerDialect
     bool TryMapIntrinsic(ISymbol symbol, out string mappedExpression);
 
     /// <summary>
+    /// Attempts to map a member access expression (e.g. property or field) for a specific type into a target representation.
+    /// </summary>
+    /// <param name="typeSymbol">The type of the expression being accessed.</param>
+    /// <param name="memberName">The name of the member being accessed.</param>
+    /// <param name="mappedName">When this method returns true, contains the target member name or method invocation string.</param>
+    /// <param name="isMethodCall">When this method returns true, indicates whether the mapped access should be appended as a method call (e.g. size()) rather than a field access.</param>
+    /// <returns><see langword="true"/> if a valid mapping exists; otherwise, <see langword="false"/>.</returns>
+    bool TryMapMemberAccess(ITypeSymbol typeSymbol, string memberName, out string? mappedName, out bool isMethodCall);
+
+    /// <summary>
     /// Retrieves an AST rewriter to perform dialect-specific syntax lowering (e.g., desugaring <c>foreach</c> loops into <c>for</c> loops) prior to emission.
     /// </summary>
     /// <param name="semanticModel">The semantic model corresponding to the syntax tree being transformed.</param>

@@ -91,9 +91,9 @@ var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchit
 var dllName = $"WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", dllPath);
-fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::System.Int32* p_scalarRef = &scalarRef)
 fixed (global::System.Single* p_scalarOut = &scalarOut)
+fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* p_structRef = &structRef)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_scalarRef, p_scalarOut, p_arrayVal, p_structRef);

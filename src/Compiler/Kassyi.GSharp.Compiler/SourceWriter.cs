@@ -13,7 +13,10 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     private readonly int _myDepth;
 
-    private StringBuilder Builder { get; }
+    private StringBuilder Builder
+    {
+        get;
+    }
 
     public SourceWriter()
     {
@@ -115,37 +118,6 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         return ref this;
     }
 
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendConstantField(IFieldSymbol field)
-    {
-        if (field.ConstantValue is null)
-        {
-            Append("nullptr");
-            return ref this;
-        }
-
-        if (field.Type.SpecialType == SpecialType.System_Boolean)
-        {
-            Append(((bool)field.ConstantValue) ? "true" : "false");
-            return ref this;
-        }
-
-        Append(field.ConstantValue.ToString());
-        switch (field.Type.SpecialType)
-        {
-            case SpecialType.System_UInt64:
-                Append("ULL");
-                break;
-            case SpecialType.System_UInt32:
-                Append("U");
-                break;
-            case SpecialType.System_Int64:
-                Append("LL");
-                break;
-        }
-
-        return ref this;
-    }
 
 #pragma warning disable CA1822 // Mark members as static
     [UnscopedRef]
@@ -294,7 +266,7 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
-    public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda() => new(this);
+    public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
 
     [UnscopedRef]
     public ref readonly SourceWriter AppendParentheses()
@@ -317,104 +289,6 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         return ref this;
     }
 
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendFullyQualifiedCsharpName(ITypeSymbol symbol)
-    {
-        if (symbol is IArrayTypeSymbol arrayType)
-        {
-            AppendFullyQualifiedCsharpName(arrayType.ElementType);
-            Append("[]");
-            return ref this;
-        }
-
-        if (symbol is IPointerTypeSymbol pointerType)
-        {
-            AppendFullyQualifiedCsharpName(pointerType.PointedAtType);
-            Append('*');
-            return ref this;
-        }
-
-        if (symbol is INamedTypeSymbol { TypeArguments.Length: > 0 } namedType)
-        {
-            Append("global::");
-            AppendContainingNamespaceOrType(namedType.ContainingSymbol);
-            Append(namedType.Name);
-            Append('<');
-            for (var i = 0; i < namedType.TypeArguments.Length; i++)
-            {
-                if (i > 0)
-                {
-                    Append(", ");
-                }
-
-                AppendFullyQualifiedCsharpName(namedType.TypeArguments[i]);
-            }
-
-            Append('>');
-            return ref this;
-        }
-
-        if (symbol.DeclaringSyntaxReferences.Length > 0 &&
-            symbol.DeclaringSyntaxReferences[0].GetSyntax() is BaseTypeDeclarationSyntax typeDecl)
-        {
-            Append("global::");
-            AppendParentNamespaceOrTypeFromAst(typeDecl.Parent);
-            Append(typeDecl.Identifier.ValueText);
-            return ref this;
-        }
-
-        Append("global::");
-        AppendContainingNamespaceOrType(symbol.ContainingSymbol);
-        Append(symbol.Name);
-        return ref this;
-    }
-
-    private void AppendParentNamespaceOrTypeFromAst(SyntaxNode? parent)
-    {
-        if (parent is null)
-        {
-            return;
-        }
-
-        if (parent is BaseNamespaceDeclarationSyntax ns)
-        {
-            AppendParentNamespaceOrTypeFromAst(ns.Parent);
-            AppendNameSyntax(ns.Name);
-            Append('.');
-        }
-        else if (parent is BaseTypeDeclarationSyntax parentType)
-        {
-            AppendParentNamespaceOrTypeFromAst(parentType.Parent);
-            Append(parentType.Identifier.ValueText);
-            Append('.');
-        }
-    }
-
-    private void AppendNameSyntax(NameSyntax name)
-    {
-        if (name is QualifiedNameSyntax q)
-        {
-            AppendNameSyntax(q.Left);
-            Append('.');
-            Append(q.Right.Identifier.ValueText);
-        }
-        else if (name is SimpleNameSyntax s)
-        {
-            Append(s.Identifier.ValueText);
-        }
-    }
-
-    private void AppendContainingNamespaceOrType(ISymbol? parent)
-    {
-        if (parent is null || parent is INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            return;
-        }
-
-        AppendContainingNamespaceOrType(parent.ContainingSymbol);
-        Append(parent.Name);
-        Append('.');
-    }
 
     public static bool operator ==(SourceWriter left, SourceWriter right) => left.Equals(right);
 
@@ -475,10 +349,17 @@ public readonly ref struct SourceWriterImmediatelyInvokedLambdaScope
 {
     private readonly SourceWriter _writer;
 
-    public SourceWriterImmediatelyInvokedLambdaScope(SourceWriter writer)
+    public SourceWriterImmediatelyInvokedLambdaScope(SourceWriter writer, string? returnType = null)
     {
         _writer = writer;
-        _writer.AppendLine("([&]() {");
+        if (returnType == null)
+        {
+            _writer.AppendLine("([&]() {");
+        }
+        else
+        {
+            _writer.AppendLine($"([&]() -> {returnType} {{");
+        }
     }
 
     public void Dispose() => _writer.Append("}())");

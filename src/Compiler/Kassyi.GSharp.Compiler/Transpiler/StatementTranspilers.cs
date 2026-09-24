@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>
@@ -13,26 +15,7 @@ internal static class StatementTranspilers
         context.Visitor.Visit(node.ParameterList);
         context.Writer.AppendSpace();
 
-        if (node.Body != null)
-        {
-            using (context.Writer.Scope())
-            {
-                foreach (var stmt in node.Body.Statements)
-                {
-                    context.Visitor.Visit(stmt);
-                    context.Writer.AppendLine();
-                }
-            }
-        }
-        else if (node.ExpressionBody != null)
-        {
-            using (context.Writer.Scope())
-            {
-                context.Writer.Append("return ");
-                context.Visitor.Visit(node.ExpressionBody.Expression);
-                context.Writer.AppendSemiColonLine();
-            }
-        }
+        LambdaTranspilerHelper.TranspileLambdaBody(ref context, node.Body, node.ExpressionBody?.Expression);
 
         context.Writer.AppendSemiColonLine();
     }
@@ -114,34 +97,9 @@ internal static class StatementTranspilers
         if (node.Declaration != null)
         {
             var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-            if (node.Declaration.Type.IsVar)
-            {
-                context.Writer.Append("auto ");
-            }
-            else
-            {
-                context.AppendType(typeSymbol);
-                context.Writer.AppendSpace();
-            }
-
-            for (var i = 0; i < node.Declaration.Variables.Count; i++)
-            {
-                var v = node.Declaration.Variables[i];
-                if (v.Initializer != null)
-                {
-                    context.Writer.Append($"{v.Identifier.Text} = ");
-                    context.Visitor.Visit(v.Initializer.Value);
-                }
-                else
-                {
-                    context.Writer.Append(v.Identifier.Text);
-                }
-
-                if (i < node.Declaration.Variables.Count - 1)
-                {
-                    context.Writer.AppendComma();
-                }
-            }
+            var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
+            DeclarationTranspilerHelper.TranspileCombinedDeclarations(
+                node.Declaration.Variables, typeSymbol, node.Declaration.Type.IsVar, isPointer, ref context);
         }
         else
         {
@@ -266,34 +224,14 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        SyntaxNode? enclosingCallable = null;
-        foreach (var n in node.Ancestors())
+        if (context is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 } && node.Expression != null)
         {
-            if (n is not (MethodDeclarationSyntax or LocalFunctionStatementSyntax or ParenthesizedLambdaExpressionSyntax
-                or SimpleLambdaExpressionSyntax or AnonymousMethodExpressionSyntax))
-            {
-                continue;
-            }
-
-            enclosingCallable = n;
-            break;
-        }
-
-        if (enclosingCallable is MethodDeclarationSyntax methodNode)
-        {
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodNode);
-            if (methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
-            {
-                if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void && node.Expression != null)
-                {
-                    DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-                    context.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
-                    context.Visitor.Visit(node.Expression);
-                    context.Writer.AppendSemiColonLine();
-                    context.Writer.AppendKeyword("return").AppendSemiColon();
-                    return;
-                }
-            }
+            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+            context.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
+            context.Visitor.Visit(node.Expression);
+            context.Writer.AppendSemiColonLine();
+            context.Writer.AppendKeyword("return").AppendSemiColon();
+            return;
         }
 
         if (node.Expression != null)

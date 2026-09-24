@@ -10,25 +10,11 @@ internal static class CppNameFormatter
     /// </summary>
     public static ref readonly SourceWriter AppendFullyQualifiedCppName(this in SourceWriter writer, ISymbol symbol)
     {
-        if (symbol is ITypeParameterSymbol)
-        {
-            writer.Append(symbol.Name);
-            return ref writer;
-        }
-
-        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            return ref writer;
-        }
-
-        var parent = symbol.ContainingSymbol;
-        if (parent is not null and not INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            writer.AppendFullyQualifiedCppName(parent);
-            writer.Append('_');
-        }
-
-        writer.Append(symbol.Name);
+        AppendSymbolPath(symbol,
+            appendName: static (ref SourceWriter w, string name) => w.Append(name),
+            appendSeparator: static (ref SourceWriter w) => w.Append('_'),
+            appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendFullyQualifiedCppName(parent),
+            ref Unsafe.AsRef(in writer));
         return ref writer;
     }
 
@@ -41,32 +27,50 @@ internal static class CppNameFormatter
 
     private static void AppendSafeIdentifierRecursive(ISymbol symbol, StringBuilder sb)
     {
-        if (symbol is ITypeParameterSymbol)
+        AppendSymbolPath(symbol,
+            appendName: static (ref StringBuilder b, string name) => b.Append(name),
+            appendSeparator: static (ref StringBuilder b) => b.Append('_'),
+            appendParent: static (ref StringBuilder b, ISymbol parent) => AppendSafeIdentifierRecursive(parent, b),
+            ref sb);
+
+        if (symbol is not INamedTypeSymbol { IsGenericType: true } namedType)
         {
-            sb.Append(symbol.Name);
             return;
         }
 
-        if (symbol is INamespaceSymbol { IsGlobalNamespace: true })
+        foreach (var typeArg in namedType.TypeArguments)
         {
-            return;
+            sb.Append('_');
+            AppendSafeIdentifierRecursive(typeArg, sb);
+        }
+    }
+
+    private delegate void AppendNameDelegate<TState>(ref TState state, string name);
+    private delegate void AppendSeparatorDelegate<TState>(ref TState state);
+    private delegate void AppendParentDelegate<TState>(ref TState state, ISymbol parent);
+
+    private static void AppendSymbolPath<TState>(
+        ISymbol symbol,
+        AppendNameDelegate<TState> appendName,
+        AppendSeparatorDelegate<TState> appendSeparator,
+        AppendParentDelegate<TState> appendParent,
+        ref TState state)
+    {
+        switch (symbol)
+        {
+            case ITypeParameterSymbol:
+                appendName(ref state, symbol.Name);
+                return;
+            case INamespaceSymbol { IsGlobalNamespace: true }:
+                return;
         }
 
         if (symbol.ContainingSymbol is { } parent and not INamespaceSymbol { IsGlobalNamespace: true })
         {
-            AppendSafeIdentifierRecursive(parent, sb);
-            sb.Append('_');
+            appendParent(ref state, parent);
+            appendSeparator(ref state);
         }
 
-        sb.Append(symbol.Name);
-
-        if (symbol is INamedTypeSymbol { IsGenericType: true } namedType)
-        {
-            foreach (var typeArg in namedType.TypeArguments)
-            {
-                sb.Append('_');
-                AppendSafeIdentifierRecursive(typeArg, sb);
-            }
-        }
+        appendName(ref state, symbol.Name);
     }
 }

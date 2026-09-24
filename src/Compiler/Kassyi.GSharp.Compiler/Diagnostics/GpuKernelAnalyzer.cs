@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 /// <summary>Roslyn analyzer that validates C# syntax rules inside GPU kernel and device methods.</summary>
-/// <remarks><para>Implements: <b>GSH-00, GSH-01, GSH-02, GSH-03, GSH-04, GSH-05, GSH-06, GSH-07, GSH-08, GSH-09, GSH-0007, GSH-0008, GSH-0009, GSH-0012</b></para></remarks>
+// <remarks><para>Implements: <b>GSH-00, GSH-01, GSH-02, GSH-03, GSH-04, GSH-05, GSH-06, GSH-07, GSH-08, GSH-09, GSH-0007, GSH-0008, GSH-0009, GSH-0012</b></para></remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
@@ -17,7 +17,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.UnrollHintMustPrecedeLoop,
         GSharpDiagnostics.UnrolledLoopMustBeStatic,
         GSharpDiagnostics.UnrolledLoopMayBeIgnored,
-        GSharpDiagnostics.ManualEnumeratorNotSupported);
+        GSharpDiagnostics.ManualEnumeratorNotSupported,
+        GSharpDiagnostics.UnsupportedSyntax);
 
     public override void Initialize(AnalysisContext context)
     {

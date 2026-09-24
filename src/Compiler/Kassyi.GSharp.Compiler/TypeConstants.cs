@@ -21,6 +21,19 @@ internal static class TypeConstants
     public const string Vector3Type = "Vector3";
     public const string Vector4Type = "Vector4";
 
+    public const string SpanType = "Span";
+    public const string ReadOnlySpanType = "ReadOnlySpan";
+    public const string ListType = "List";
+
+    public static class GpuMacros
+    {
+        public const string Gpu = "Gpu";
+        public const string Hint = "Hint";
+        public const string ForUnroll = "ForUnroll";
+        public const string InlinePtx = "InlinePtx";
+        public const string Unroll = "Unroll";
+    }
+
     public static class CudaTypes
     {
         public const string Void = "void";

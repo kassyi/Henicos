@@ -7,7 +7,10 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
     [Required]
     public string OutputDirectory { get; set; } = string.Empty;
 
-    public bool MockCompilation { get; set; }
+    public bool MockCompilation
+    {
+        get; set;
+    }
 
     protected abstract ITaskItem[] GetSources();
     protected abstract ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem);

@@ -53,6 +53,21 @@ public struct TranspileContext(
     public bool SkipLocalsInit = false;
 
     /// <summary>
+    /// Indicates whether the current method being transpiled is a GpuKernel entry point.
+    /// </summary>
+    public bool IsGpuKernelEntry = false;
+
+    /// <summary>
+    /// Indicates whether the current method being transpiled has a void return type.
+    /// </summary>
+    public bool IsVoidReturn = false;
+
+    /// <summary>
+    /// Tracks the depth of nested callables (lambdas, local functions). 0 means the root kernel method.
+    /// </summary>
+    public int CallableDepth = 0;
+
+    /// <summary>
     /// Gets the Roslyn semantic model associated with the syntax tree being transpiled.
     /// </summary>
     public SemanticModel SemanticModel { get; } = semanticModel;

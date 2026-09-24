@@ -7,6 +7,58 @@ namespace Kassyi.GSharp.Compiler;
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
 {
+    private readonly struct InteropParameterInfo
+    {
+        public string Modifier { get; }
+        public ITypeSymbol? Type { get; }
+        public bool IsIntPtr { get; }
+
+        public InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr)
+        {
+            Modifier = modifier;
+            Type = type;
+            IsIntPtr = isIntPtr;
+        }
+        public void WriteTo(SourceWriter writer, string name)
+        {
+            if (IsIntPtr)
+            {
+                writer.Append("IntPtr ");
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(Modifier))
+                {
+                    writer.Append(Modifier);
+                    writer.AppendSpace();
+                }
+                if (Type != null)
+                {
+                    writer.AppendFullyQualifiedCsharpName(Type);
+                    writer.AppendSpace();
+                }
+            }
+            writer.Append(name);
+        }
+    }
+
+    private static InteropParameterInfo GetInteropParameterInfo(IParameterSymbol p, bool isDevicePtr)
+    {
+        if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
+        {
+            return new InteropParameterInfo(string.Empty, null, true);
+        }
+
+        var modifier = p.RefKind switch
+        {
+            RefKind.Ref => "ref",
+            RefKind.Out => "out",
+            _ => string.Empty
+        };
+
+        return new InteropParameterInfo(modifier, p.Type, false);
+    }
+
     public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config)
     {
         var className = method.ContainingType.Name + "Wrapper";
@@ -155,40 +207,22 @@ internal static class WrapperEmitter
 
         using (writer.Parentheses())
         {
-            var first = true;
+            var isFirst = true;
             foreach (var p in method.Parameters)
             {
-                if (!first)
+                if (!isFirst)
                 {
                     writer.AppendComma();
                     writer.AppendSpace();
                 }
 
-                if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
-                {
-                    writer.Append("IntPtr ");
-                }
-                else
-                {
-                    if (p.RefKind == RefKind.Ref)
-                    {
-                        writer.Append("ref ");
-                    }
-                    else if (p.RefKind == RefKind.Out)
-                    {
-                        writer.Append("out ");
-                    }
+                var info = GetInteropParameterInfo(p, isDevicePtr);
+                info.WriteTo(writer, p.Name);
 
-                    writer.AppendFullyQualifiedCsharpName(p.Type);
-                    writer.AppendSpace();
-                }
-
-                writer.Append(p.Name);
-
-                first = false;
+                isFirst = false;
             }
 
-            if (!first)
+            if (!isFirst)
             {
                 writer.AppendComma();
                 writer.AppendSpace();
@@ -369,53 +403,36 @@ internal static class WrapperEmitter
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
     {
-        var hasFixed = method.ReturnType.SpecialType != SpecialType.System_Void;
-        if (!hasFixed)
+        bool hasFixed = false;
+
+        foreach (var p in method.Parameters)
         {
-            foreach (var p in method.Parameters)
+            if (p.Type is IArrayTypeSymbol arrayType)
             {
-                if (p.Type is IArrayTypeSymbol ||
-                    (p.RefKind is RefKind.Ref or RefKind.Out && p.Type is not IArrayTypeSymbol))
-                {
-                    hasFixed = true;
-                    break;
-                }
+                writer.Append("fixed (");
+                writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
+                writer.AppendLine($"* p_{p.Name} = {p.Name})");
+                hasFixed = true;
             }
+            else if (p.RefKind is RefKind.Ref or RefKind.Out)
+            {
+                writer.Append("fixed (");
+                writer.AppendFullyQualifiedCsharpName(p.Type);
+                writer.AppendLine($"* p_{p.Name} = &{p.Name})");
+                hasFixed = true;
+            }
+        }
+
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.Append("fixed (");
+            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
+            writer.AppendLine("* p___gsharp_auto_result = __gsharp_auto_result)");
+            hasFixed = true;
         }
 
         if (hasFixed)
         {
-            foreach (var p in method.Parameters)
-            {
-                if (p.Type is not IArrayTypeSymbol arrayType)
-                {
-                    continue;
-                }
-
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
-                writer.AppendLine($"* p_{p.Name} = {p.Name})");
-            }
-
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
-            {
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine("* p___gsharp_auto_result = __gsharp_auto_result)");
-            }
-
-            foreach (var p in method.Parameters)
-            {
-                if (p.RefKind is not (RefKind.Ref or RefKind.Out) || p.Type is IArrayTypeSymbol)
-                {
-                    continue;
-                }
-
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(p.Type);
-                writer.AppendLine($"* p_{p.Name} = &{p.Name})");
-            }
-
             using (writer.Scope())
             {
                 WriteDelegateInvocation(writer, method);

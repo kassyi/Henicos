@@ -37,46 +37,17 @@ public static class MethodTranspiler
         Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
         ITranspilerDialect? dialect = null)
     {
-        if (methodDecl is null)
+        using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
+        if (session.HasError)
         {
-            throw new ArgumentNullException(nameof(methodDecl));
-        }
-
-        if (semanticModel is null)
-        {
-            throw new ArgumentNullException(nameof(semanticModel));
-        }
-
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
-        if (methodSymbol != null)
-        {
-            if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
-            {
-#pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
-                return
-                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
-#pragma warning restore RS0030
-            }
+            return session.ErrorMessage!;
         }
 
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
-        var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        dialect ??= new GSharpCudaDialect();
-        using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
-        ref var context = ref visitor.Context;
-
+        ref var context = ref session.Context;
         context.Writer = bodyWriter;
-        if (methodSymbol != null)
-        {
-            if (methodSymbol.HasAttribute(KnownAttributes.SkipLocalsInit) ||
-                methodSymbol.ContainingType?.HasAttribute(KnownAttributes.SkipLocalsInit) == true ||
-                methodSymbol.ContainingModule?.HasAttribute(KnownAttributes.SkipLocalsInit) == true)
-            {
-                context.SkipLocalsInit = true;
-            }
-        }
 
         WriteMethodSignature(methodDecl, isDevice, ref context);
         WriteMethodBody(methodDecl, ref context);
@@ -120,37 +91,18 @@ public static class MethodTranspiler
         Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
         ITranspilerDialect? dialect = null)
     {
-        if (methodDecl is null)
+        using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
+        if (session.HasError)
         {
-            throw new ArgumentNullException(nameof(methodDecl));
-        }
-
-        if (semanticModel is null)
-        {
-            throw new ArgumentNullException(nameof(semanticModel));
-        }
-
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
-        if (methodSymbol != null)
-        {
-            if (!GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
-            {
-#pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
-                return
-                    $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
-#pragma warning restore RS0030
-            }
+            return session.ErrorMessage!;
         }
 
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
-        var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        dialect ??= new GSharpCudaDialect();
-        using var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
-        ref var context = ref visitor.Context;
-
+        ref var context = ref session.Context;
         context.Writer = sigWriter;
+
         WriteMethodSignature(methodDecl, isDevice, ref context);
         context.Writer.AppendSemiColonLine();
 

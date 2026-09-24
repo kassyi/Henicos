@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 
 /// <summary>
@@ -76,18 +78,9 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     private static SharedMemoryAllocation? AnalyzeSharedMemoryAllocation(VariableDeclaratorSyntax declarator,
         SemanticModel semanticModel)
     {
-        ExpressionSyntax? sizeArg = null;
-
-        if (declarator.Initializer?.Value is ObjectCreationExpressionSyntax objCreation)
-        {
-            sizeArg = objCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
-        }
-        else if (declarator.Initializer?.Value is ImplicitObjectCreationExpressionSyntax implCreation)
-        {
-            sizeArg = implCreation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-        }
-
-        if (sizeArg == null)
+        if (declarator.Initializer?.Value == null ||
+            !InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(declarator.Initializer.Value, out var sizeArg) ||
+            sizeArg == null)
         {
             return null;
         }

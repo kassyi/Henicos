@@ -4,12 +4,14 @@ internal sealed class ManualEnumeratorRule
 {
     public static readonly ManualEnumeratorRule Instance = new();
 
-    private ManualEnumeratorRule() { }
+    private ManualEnumeratorRule()
+    {
+    }
 
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
-        
+
         if (symbol != null && symbol.Name == "GetEnumerator")
         {
             context.ReportDiagnostic(Diagnostic.Create(

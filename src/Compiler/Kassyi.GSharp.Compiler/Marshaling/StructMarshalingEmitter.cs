@@ -119,7 +119,7 @@ internal static class StructMarshalingEmitter
                         writer.Append($"var tempArray = new __Native_");
                         writer.AppendFullyQualifiedCppName(arrayType.ElementType);
                         writer.AppendLine($"[host.{member.Name}.Length];");
-                        
+
                         writer.AppendLine($"for (int i = 0; i < host.{member.Name}.Length; i++)");
                         using (writer.Scope())
                         {
@@ -127,7 +127,7 @@ internal static class StructMarshalingEmitter
                             writer.AppendFullyQualifiedCppName(arrayType.ElementType);
                             writer.AppendLine($"(ref host.{member.Name}[i], ref tempArray[i], false, allocatedPtrs);");
                         }
-                        
+
                         writer.AppendLine("var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
                         writer.AppendLine("try");
                         using (writer.Scope())
@@ -239,7 +239,7 @@ internal static class StructMarshalingEmitter
                     writer.Append($"var tempArray = new __Native_");
                     writer.AppendFullyQualifiedCppName(arrayType.ElementType);
                     writer.AppendLine($"[host.{member.Name}.Length];");
-                    
+
                     writer.AppendLine("var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
                     writer.AppendLine("try");
                     using (writer.Scope())
@@ -252,7 +252,7 @@ internal static class StructMarshalingEmitter
                     {
                         writer.AppendLine("handle.Free();");
                     }
-                    
+
                     writer.AppendLine($"for (int i = 0; i < host.{member.Name}.Length; i++)");
                     using (writer.Scope())
                     {

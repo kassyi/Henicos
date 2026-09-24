@@ -1,45 +1,21 @@
-using System.Collections.Concurrent;
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 /// <summary>Pooled syntax walker that performs zero-allocation validation of GPU kernel AST nodes.</summary>
-internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposable
+internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidationWalker>
 {
-    // [WHY] Reuses pooled walker instances to eliminate GC pressure during continuous background Roslyn analysis.
-    private static readonly ConcurrentBag<GpuKernelValidationWalker> s_pool = [];
-
     private ValidationContext _context;
     internal ValidationContext Context => _context;
-    private int _isRented;
-
-    private GpuKernelValidationWalker()
-    {
-    }
 
     public static GpuKernelValidationWalker Rent(ValidationContext context)
     {
-        if (!s_pool.TryTake(out var walker))
-        {
-            walker = new GpuKernelValidationWalker();
-        }
-
-        Volatile.Write(ref walker._isRented, 1);
-
+        var walker = RentCore();
         walker._context = context;
         return walker;
     }
 
-    public void Dispose()
-    {
-        if (Interlocked.Exchange(ref _isRented, 0) != 1)
-        {
-            return;
-        }
-
-        _context = default;
-        s_pool.Add(this);
-    }
+    protected override void OnReturn() => _context = default;
 
     public override void VisitForEachStatement(ForEachStatementSyntax node)
     {
@@ -65,6 +41,12 @@ internal sealed class GpuKernelValidationWalker : CSharpSyntaxWalker, IDisposabl
         GpuMacroArgumentRule.Instance.Analyze(node, ref _context);
         LinqNotSupportedRule.Instance.Analyze(node, ref _context);
         base.VisitInvocationExpression(node);
+    }
+
+    public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+    {
+        ProhibitedApiRule.Instance.Analyze(node, ref _context);
+        base.VisitMemberAccessExpression(node);
     }
 }
 

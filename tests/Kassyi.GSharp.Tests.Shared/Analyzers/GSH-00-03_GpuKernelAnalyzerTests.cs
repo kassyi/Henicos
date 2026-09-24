@@ -11,6 +11,9 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     [InlineData("GSH-02", "Analyzers/GpuKernel/GSH-02_LinqQuery_InGpuKernel.cu.cs", "GSH0008")]
     [InlineData("GSH-03", "Analyzers/GpuKernel/GSH-03_ImplicitVar_WithoutSuffix_InGpuKernel.cu.cs", "GSH0009")]
     [InlineData("GSH-19", "Analyzers/GSH-19_ManualEnumeratorSadPath.cs", "GSH0019")]
+    [InlineData("SYN-49", "Analyzers/SYN-49_UnsupportedInterlockedOverload.cs", "GSH0003")]
+    [InlineData("SYN-68", "Analyzers/SYN-68_UnsupportedMathMethod.cs", "GSH0003")]
+    [InlineData("SYN-155", "Analyzers/SYN-155_UnsupportedBitOperationsMethod.cs", "GSH0003")]
     public async Task Test_GpuKernelAnalyzer_ReportsExpectedError(string featureId, string testCasePath, string expectedErrorId)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
