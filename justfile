@@ -1,9 +1,9 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 export DiffEngine_Disabled := "true"
 
-# Run normal tests excluding heavy stress tests
+# Run normal tests excluding heavy stress and benchmark tests
 test *args="":
-    dotnet test -m:1 --filter "Category!=Stress" {{args}}
+    dotnet test -m:1 --filter "Category!=Stress&Category!=Benchmark" {{args}}
 
 # Run all tests (including stress tests)
 test-all *args="":
@@ -28,6 +28,10 @@ test-gpu *args="":
 # Run concurrency and high-load stress tests
 test-stress *args="":
     dotnet test -m:1 --filter "Category=Stress" {{args}}
+
+# Run compute benchmark integration and verification tests
+test-bench *args="":
+    dotnet test -m:1 --filter "Category=Benchmark" {{args}}
 
 # Run sad path and diagnostic error detection tests
 test-sadpath *args="":
