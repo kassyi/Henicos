@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-internal static class ArraySyntaxExtractor
+internal static class InitializationSyntaxExtractor
 {
     public static bool TryGetArrayElementType(ITypeSymbol? typeSymbol, out ITypeSymbol elemType, out bool isConst)
     {
@@ -104,5 +104,21 @@ internal static class ArraySyntaxExtractor
         count = initExpr.Expressions.Count;
         initNode = initExpr;
         return true;
+    }
+
+    public static bool TryGetObjectCreationFirstArgument(ExpressionSyntax initializerValue, out ExpressionSyntax? argument)
+    {
+        argument = null;
+        if (initializerValue is ObjectCreationExpressionSyntax objCreation)
+        {
+            argument = objCreation.ArgumentList?.Arguments.FirstOrDefault()?.Expression;
+            return true;
+        }
+        if (initializerValue is ImplicitObjectCreationExpressionSyntax implCreation)
+        {
+            argument = implCreation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
+            return true;
+        }
+        return false;
     }
 }

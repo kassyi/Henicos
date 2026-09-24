@@ -119,7 +119,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return false;
             }
 
-            if (!ArraySyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
+            if (!InitializationSyntaxExtractor.TryGetArrayInitialization(decl.Initializer.Value, out var count, out var sizeExpr,
                     out _))
             {
                 return false;

@@ -1,6 +1,8 @@
 using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;/// <summary>
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
+
+/// <summary>
 /// Transpiles C# variable declaration syntax nodes into target dialect variable definitions,
 /// supporting type inference (<c>auto</c>), pointer declarations, stack allocations, and multiple declarators.
 /// </summary>
@@ -45,7 +47,8 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         }
         else
         {
-            TranspileCombinedVariableDeclarations(node.Variables, mapping.TypeSymbol, mapping.IsVar, mapping.IsPointer, ref context);
+            TranspileCombinedVariableDeclarations(node.Variables, mapping.TypeSymbol, mapping.IsVar, mapping.IsPointer,
+                ref context);
         }
     }
 
@@ -83,6 +86,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
                 {
                     context.Writer.AppendSemiColonLine();
                 }
+
                 continue;
             }
 
@@ -95,7 +99,8 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
                 context.AppendType(typeSymbol);
                 context.Writer.Append($" {v.Identifier.Text}");
             }
-            WriteDeclaratorInitializer(v, ref context);
+
+            DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
 
             if (i >= variables.Count - 1)
             {
@@ -106,14 +111,17 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         }
     }
 
-    private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol, ref TranspileContext context)
+    private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol,
+        ref TranspileContext context)
     {
-        if (variable.Initializer == null || !ArraySyntaxExtractor.TryGetArrayElementType(typeSymbol, out var elemType, out var isConst))
+        if (variable.Initializer == null ||
+            !InitializationSyntaxExtractor.TryGetArrayElementType(typeSymbol, out var elemType, out var isConst))
         {
             return false;
         }
 
-        if (!ArraySyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count, out var sizeExpr, out var initializerNode))
+        if (!InitializationSyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count,
+                out var sizeExpr, out var initializerNode))
         {
             return false;
         }
@@ -127,7 +135,8 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         return TryWriteFixedSizeArray(variable, elemType, isConst, sizeExpr, "dynamic array size", ref context);
     }
 
-    private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, string identifier, bool isConst, ref TranspileContext context)
+    private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, string identifier, bool isConst,
+        ref TranspileContext context)
     {
         if (isConst)
         {
@@ -146,6 +155,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         {
             context.Writer.Append(count);
         }
+
         context.Writer.AppendOperator("=");
         context.Visitor.Visit(initializerNode);
     }
@@ -173,66 +183,11 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         {
             context.Visitor.Visit(sizeExpr);
         }
+
         return true;
     }
 
     private static void TranspileCombinedVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
-        ITypeSymbol? typeSymbol, bool isVar, bool isPointer, ref TranspileContext context)
-    {
-        if (isVar)
-        {
-            context.Writer.Append("auto");
-        }
-        else
-        {
-            if (isPointer && typeSymbol is IPointerTypeSymbol pointerType)
-            {
-                context.AppendType(pointerType.PointedAtType);
-            }
-            else
-            {
-                context.AppendType(typeSymbol);
-            }
-        }
-        context.Writer.Append(" ");
-
-        for (var i = 0; i < variables.Count; i++)
-        {
-            var v = variables[i];
-            if (isPointer)
-            {
-                context.Writer.Append($"*{v.Identifier.Text}");
-            }
-            else
-            {
-                context.Writer.Append(v.Identifier.Text);
-            }
-
-            WriteDeclaratorInitializer(v, ref context);
-
-            if (i < variables.Count - 1)
-            {
-                context.Writer.AppendComma();
-            }
-        }
-    }
-
-    private static void WriteDeclaratorInitializer(VariableDeclaratorSyntax variable, ref TranspileContext context)
-    {
-        if (variable.Initializer != null)
-        {
-            if (context.SkipLocalsInit)
-            {
-                var val = variable.Initializer.Value;
-                if (val is ImplicitObjectCreationExpressionSyntax or ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } or DefaultExpressionSyntax ||
-                    val is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.DefaultLiteralExpression))
-                {
-                    return; // Skip zero-initialization
-                }
-            }
-
-            context.Writer.Append(" = ");
-            context.Visitor.Visit(variable.Initializer.Value);
-        }
-    }
+        ITypeSymbol? typeSymbol, bool isVar, bool isPointer, ref TranspileContext context) =>
+        DeclarationTranspilerHelper.TranspileCombinedDeclarations(variables, typeSymbol, isVar, isPointer, ref context);
 }

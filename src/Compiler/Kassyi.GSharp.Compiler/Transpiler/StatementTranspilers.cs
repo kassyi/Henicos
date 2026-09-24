@@ -97,34 +97,9 @@ internal static class StatementTranspilers
         if (node.Declaration != null)
         {
             var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
-            if (node.Declaration.Type.IsVar)
-            {
-                context.Writer.Append("auto ");
-            }
-            else
-            {
-                context.AppendType(typeSymbol);
-                context.Writer.AppendSpace();
-            }
-
-            for (var i = 0; i < node.Declaration.Variables.Count; i++)
-            {
-                var v = node.Declaration.Variables[i];
-                if (v.Initializer != null)
-                {
-                    context.Writer.Append($"{v.Identifier.Text} = ");
-                    context.Visitor.Visit(v.Initializer.Value);
-                }
-                else
-                {
-                    context.Writer.Append(v.Identifier.Text);
-                }
-
-                if (i < node.Declaration.Variables.Count - 1)
-                {
-                    context.Writer.AppendComma();
-                }
-            }
+            var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
+            DeclarationTranspilerHelper.TranspileCombinedDeclarations(
+                node.Declaration.Variables, typeSymbol, node.Declaration.Type.IsVar, isPointer, ref context);
         }
         else
         {
