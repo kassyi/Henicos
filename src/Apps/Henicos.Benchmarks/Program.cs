@@ -88,7 +88,7 @@ internal class Program
     {
         var suite = "all";
         var json = false;
-        
+
         foreach (var arg in args)
         {
             if (arg.Equals("--json", StringComparison.OrdinalIgnoreCase))

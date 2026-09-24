@@ -9,11 +9,11 @@ internal static class SymbolExtensions
     public static bool IsSystemOrNumerics(this INamespaceSymbol? ns) =>
         ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             or
-            {
-                Name: TypeConstants.NumericsNamespace,
-                ContainingNamespace:
-                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-            };
+        {
+            Name: TypeConstants.NumericsNamespace,
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
 
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
@@ -42,7 +42,7 @@ internal static class SymbolExtensions
         if (typeSymbol.Name is TypeConstants.Vector2Type or TypeConstants.Vector3Type or TypeConstants.Vector4Type &&
             typeSymbol.ContainingNamespace.Name == TypeConstants.NumericsNamespace &&
             typeSymbol.ContainingNamespace.ContainingNamespace is
-                { Name: TypeConstants.SystemNamespace, IsGlobalNamespace: false } sysNs &&
+            { Name: TypeConstants.SystemNamespace, IsGlobalNamespace: false } sysNs &&
             sysNs.ContainingNamespace.IsGlobalNamespace)
         {
             return true;
@@ -189,17 +189,17 @@ internal static class SymbolExtensions
         switch (symbol)
         {
             case IArrayTypeSymbol arrayType:
-            {
-                BuildFullyQualifiedName(arrayType.ElementType, sb);
-                sb.Append('[');
-                for (var i = 0; i < arrayType.Rank - 1; i++)
                 {
-                    sb.Append(',');
-                }
+                    BuildFullyQualifiedName(arrayType.ElementType, sb);
+                    sb.Append('[');
+                    for (var i = 0; i < arrayType.Rank - 1; i++)
+                    {
+                        sb.Append(',');
+                    }
 
-                sb.Append(']');
-                return;
-            }
+                    sb.Append(']');
+                    return;
+                }
             case IPointerTypeSymbol pointerType:
                 BuildFullyQualifiedName(pointerType.PointedAtType, sb);
                 sb.Append('*');

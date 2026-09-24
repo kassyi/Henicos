@@ -8,7 +8,10 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
 
-    public bool GSharpMultiTarget { get; set; }
+    public bool GSharpMultiTarget
+    {
+        get; set;
+    }
 
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];

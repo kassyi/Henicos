@@ -36,28 +36,28 @@ internal sealed class GpuMacroArgumentRule
         switch (invocationSymbol.Name)
         {
             case "ForUnroll":
-            {
-                var hasContext = invocationSymbol.Parameters.Length == 4;
-                var offset = hasContext ? 1 : 0;
-                var args = invocation.ArgumentList.Arguments;
-                if (args.Count >= offset + 2)
                 {
-                    CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
-                    CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
-                }
+                    var hasContext = invocationSymbol.Parameters.Length == 4;
+                    var offset = hasContext ? 1 : 0;
+                    var args = invocation.ArgumentList.Arguments;
+                    if (args.Count >= offset + 2)
+                    {
+                        CheckConstant(args[offset].Expression, "start", "ForUnroll", ref context);
+                        CheckConstant(args[offset + 1].Expression, "count", "ForUnroll", ref context);
+                    }
 
-                break;
-            }
+                    break;
+                }
             case "InlinePtx":
-            {
-                var args = invocation.ArgumentList.Arguments;
-                if (args.Count >= 1)
                 {
-                    CheckStringLiteral(args[0].Expression, ref context);
-                }
+                    var args = invocation.ArgumentList.Arguments;
+                    if (args.Count >= 1)
+                    {
+                        CheckStringLiteral(args[0].Expression, ref context);
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
     }
 
@@ -144,25 +144,25 @@ internal sealed class GpuMacroArgumentRule
                 ReportGsh0032(loopStmt, ref context);
                 return;
             case BinaryExpressionSyntax binaryExpr:
-            {
-                var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
-                var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
-                if (!leftIsConst && !rightIsConst)
                 {
-                    ReportGsh0032(loopStmt, ref context);
-                }
+                    var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
+                    var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
+                    if (!leftIsConst && !rightIsConst)
+                    {
+                        ReportGsh0032(loopStmt, ref context);
+                    }
 
-                break;
-            }
+                    break;
+                }
             default:
-            {
-                if (!IsStaticallyDeterministic(condition, ref context))
                 {
-                    ReportGsh0032(loopStmt, ref context);
-                }
+                    if (!IsStaticallyDeterministic(condition, ref context))
+                    {
+                        ReportGsh0032(loopStmt, ref context);
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
     }
 
@@ -177,15 +177,15 @@ internal sealed class GpuMacroArgumentRule
         switch (expr)
         {
             case IdentifierNameSyntax idName:
-            {
-                var symbol = context.SemanticModel.GetSymbolInfo(idName).Symbol;
-                if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
                 {
-                    return true;
-                }
+                    var symbol = context.SemanticModel.GetSymbolInfo(idName).Symbol;
+                    if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
+                    {
+                        return true;
+                    }
 
-                break;
-            }
+                    break;
+                }
             case BinaryExpressionSyntax binaryExpr:
                 return IsStaticallyDeterministic(binaryExpr.Left, ref context) &&
                        IsStaticallyDeterministic(binaryExpr.Right, ref context);

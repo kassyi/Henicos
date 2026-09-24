@@ -518,9 +518,9 @@ public class ObjectLifecycleAnalyzer : DiagnosticAnalyzer
                 inv.SpanStart >= assignmentSpanStart ||
                 ((ma.Expression is not IdentifierNameSyntax id || id.Identifier.Text != fieldSymbol.Name) &&
                  (ma.Expression is not MemberAccessExpressionSyntax
-                  {
-                      Expression: ThisExpressionSyntax
-                  } fieldMa ||
+                 {
+                     Expression: ThisExpressionSyntax
+                 } fieldMa ||
                   fieldMa.Name.Identifier.Text != fieldSymbol.Name)))
             {
                 continue;

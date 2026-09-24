@@ -129,7 +129,9 @@ public static class Gpu
         /// <para><b>Comparison with <see cref="Gpu.ForUnroll(int, int, System.Action{int})"/>:</b></para>
         /// <para>Unlike <c>ForUnroll</c>, which literally duplicates loop bodies in the intermediate C++ code (useful for generating compile-time constants), <c>Hint.Unroll</c> does not bloat the source code and prevents compiler crashes on large iteration counts. Furthermore, because it is a simple marker method, it guarantees zero closure allocations when executing the kernel purely on the C# CPU host for testing.</para>
         /// </remarks>
-        public static void Unroll(int factor = 0) { }
+        public static void Unroll(int factor = 0)
+        {
+        }
     }
 
     /// <summary>

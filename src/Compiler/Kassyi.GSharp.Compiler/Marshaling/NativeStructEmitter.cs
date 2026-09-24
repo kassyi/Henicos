@@ -16,7 +16,7 @@ internal static class NativeStructEmitter
         writer.Append("public unsafe struct __Native_");
         writer.AppendFullyQualifiedCppName(s);
         writer.AppendLine();
-        
+
         using (writer.Scope())
         {
             var currentOffset = 0;
