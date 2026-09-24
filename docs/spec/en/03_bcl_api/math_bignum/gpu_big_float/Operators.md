@@ -13,21 +13,21 @@ description: "Reference for standard arithmetic operators on GpuBigFloat."
 **Namespace:** `Kassyi.GSharp.Stdlib.Math.BigFloat`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-`GpuBigFloat` provides standard C# operator overloads (`+`, `-`, `*`, `/`). 
+`GpuBigFloat` provides standard C# operator overloads (`+`, `-`, `*`, `/`).
 Just like `GpuBigInteger`, these operators rely on the **Lazy Evaluation** architecture. They return an Abstract Syntax Tree (AST) node (`GpuBigFloatExpr`) rather than executing immediately.
 
 > [!WARNING]
 > **Host-Side Allocations Occur Here**
-> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads *does* allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
+> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads _does_ allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
 
 ## Overloads
 
-| Operator | Description |
-| --- | --- |
-| [Addition (+)](#addition--) | Adds two numbers. |
-| [Subtraction (-)](#subtraction--) | Subtracts a number from another. |
-| [Multiplication (*)](#multiplication--) | Multiplies two numbers. |
-| [Division (/)](#division--) | Divides a number by another. |
+| Operator                                | Description                      |
+| --------------------------------------- | -------------------------------- |
+| [Addition (+)](#addition--)             | Adds two numbers.                |
+| [Subtraction (-)](#subtraction--)       | Subtracts a number from another. |
+| [Multiplication (*)](#multiplication--) | Multiplies two numbers.          |
+| [Division (/)](#division--)             | Divides a number by another.     |
 
 ## Addition (+)
 
@@ -38,6 +38,7 @@ public static GpuBigFloatExpr operator +(GpuBigFloat left, GpuBigFloat right);
 ```
 
 #### Parameters
+
 `left` _GpuBigFloat_<br>
 The first value.
 
@@ -45,6 +46,7 @@ The first value.
 The second value.
 
 #### Returns
+
 _GpuBigFloatExpr_<br>
 An expression tree node that computes the sum when evaluated.
 
@@ -57,6 +59,7 @@ public static GpuBigFloatExpr operator -(GpuBigFloat left, GpuBigFloat right);
 ```
 
 #### Parameters
+
 `left` _GpuBigFloat_<br>
 The number to subtract from.
 
@@ -64,6 +67,7 @@ The number to subtract from.
 The number to subtract.
 
 #### Returns
+
 _GpuBigFloatExpr_<br>
 An expression tree node that computes the difference when evaluated.
 
@@ -76,6 +80,7 @@ public static GpuBigFloatExpr operator *(GpuBigFloat left, GpuBigFloat right);
 ```
 
 #### Parameters
+
 `left` _GpuBigFloat_<br>
 The first value.
 
@@ -83,6 +88,7 @@ The first value.
 The second value.
 
 #### Returns
+
 _GpuBigFloatExpr_<br>
 An expression tree node that computes the product when evaluated.
 
@@ -95,6 +101,7 @@ public static GpuBigFloatExpr operator /(GpuBigFloat dividend, GpuBigFloat divis
 ```
 
 #### Parameters
+
 `dividend` _GpuBigFloat_<br>
 The number to be divided.
 
@@ -102,6 +109,7 @@ The number to be divided.
 The number to divide by.
 
 #### Returns
+
 _GpuBigFloatExpr_<br>
 An expression tree node that computes the quotient when evaluated.
 
@@ -134,10 +142,7 @@ Floating-point addition and subtraction require exponent alignment. The AST orch
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
 - [GpuBigFloat Struct (G#)](GpuBigFloat.md)
-

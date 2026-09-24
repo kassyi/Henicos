@@ -1,7 +1,7 @@
 ---
 title: "Arbitrary-Precision Floats (GpuBigFloat)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-09-23T00:00:00.000Z"
 language: "en"
 description: "Overview of the GpuBigFloat module for arbitrary-precision floating-point arithmetic."
 ---
@@ -10,16 +10,17 @@ description: "Overview of the GpuBigFloat module for arbitrary-precision floatin
 
 The `GpuBigFloat` module provides high-performance, arbitrary-precision floating-point arithmetic on the GPU. It is designed for applications requiring precision far beyond standard IEEE 754 `float` or `double` (e.g., fractal generation, precise physics simulations).
 
-> [!WARNING]
-> **Host-Side Only API**  
-> Just like `GpuBigInteger`, the classes and operator overloads in this module are designed exclusively for host-side orchestration. You cannot instantiate these types or call their operators inside a `[GpuKernel]`. Doing so will result in a transpiler compilation error (e.g., `GSH0001` or `RS0030`).
+Unlike earlier versions that required Host orchestration, the types in this module are purely unmanaged structs (`where TSize : unmanaged`) that execute entirely on the GPU within `[GpuKernel]` functions.
 
 ## Core Types
 
-| Type | Description |
-| :--- | :--- |
-| [`GpuBigFloat`](GpuBigFloat.md) | Represents an arbitrary-precision floating-point number. Acts as a host-side wrapper orchestrating an unsigned mantissa and a signed exponent. |
-| [`Operators (+, -, *, /)`](Operators.md) | Lazy-evaluated arithmetic operators for `GpuBigFloat`. They construct Abstract Syntax Trees (AST) for batch GPU execution. |
+| Type                                                              | Description                                                                                                                            |
+| :---------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| [`GpuBigFloat<TSize>`](GpuBigFloat.md)                            | Represents an arbitrary-precision signed floating-point number. Acts as a wrapper around an unsigned magnitude and a sign bit.         |
+| [`GpuBigUFloat<TSize>`](GpuBigUFloat.md)                          | Represents the unsigned magnitude of an arbitrary-precision floating-point number, eliminating branching overhead during calculations. |
+| [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md)           | Specifies the IEEE 754 compliant rounding mode.                                                                                        |
+| [`Fixed-Precision Wrappers (128/256/512)`](GpuFloatFixedTypes.md) | High-level `GpuFloat128` etc. wrappers for zero-allocation GPU execution without generic arguments.                                    |
+| [`Operators (+, -, *, /)`](Operators.md)                          | Operator overloads for `GpuBigFloat`.                                                                                                  |
 
 ## Advanced Algorithms
 
@@ -28,9 +29,6 @@ The `GpuBigFloat` module provides high-performance, arbitrary-precision floating
 
 ## See also
 
-
-
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
-
