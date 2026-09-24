@@ -46,6 +46,11 @@ The value to add to the address.
 <i>int</i><br>
 The old value observed at `address` before the addition occurred.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## AtomicAdd(ref uint, uint)
 
 Performs an atomic read-modify-write addition on a 32-bit unsigned integer.
@@ -66,6 +71,11 @@ The value to add to the address.
 
 <i>uint</i><br>
 The old value observed at `address` before the addition occurred.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## AtomicAdd(ref ulong, ulong)
 
@@ -88,6 +98,11 @@ The value to add to the address.
 <i>ulong</i><br>
 The old value observed at `address` before the addition occurred.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## AtomicAdd(ref float, float)
 
 Performs an atomic read-modify-write addition on a single-precision floating-point number.
@@ -109,6 +124,11 @@ The value to add to the address.
 
 <i>float</i><br>
 The old value observed at `address` before the addition occurred.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 

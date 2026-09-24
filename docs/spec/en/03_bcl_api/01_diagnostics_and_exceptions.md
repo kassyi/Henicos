@@ -57,6 +57,55 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0029**](diagnostics/GSH0029.md) | Warning  | **Manual unmanaged allocation detected.** You invoked manual unmanaged allocation (e.g., `Gpu.Unsafe.Malloc()`). Ensure corresponding `Free()` is called to prevent VRAM leaks.                   |
 | [**RS0030**](diagnostics/RS0030.md)   | Error    | **Banned API in GPU kernel.** Triggered when a banned .NET API is used in GPU kernels or GPU intrinsics are invoked from host CPU code.                                                           |
 
+---
+
+## 7.2 Runtime Exceptions
+
+While device-side execution on the GPU fundamentally enforces a zero-allocation guarantee and prohibits dynamic exceptions, host-side execution and orchestration may throw runtime exceptions when encountering invalid configurations, CPU-side intrinsic misuse, or native driver failures.
+
+### GpuOnlyException
+
+- **Namespace:** `Kassyi.GSharp.Core`
+- **Inherits from:** `System.InvalidOperationException`
+
+Thrown when a GPU-only intrinsic, macro, execution context coordinate property, or device syntax marker (e.g., `Gpu.SyncThreads()`, `ThreadIndex.X`, `FastMath.Exp()`, `SharedMemory<T>`) is evaluated directly on the host CPU.
+
+These members exist exclusively to provide C# type-safety, IntelliSense, and Roslyn syntax trees for AOT transpilation into CUDA C++. They possess no managed execution semantics on the CPU. Attempting to call them outside a transpiled kernel will trigger this exception immediately.
+
+```csharp
+try
+{
+    // Calling GPU intrinsics directly on CPU throws GpuOnlyException
+    Gpu.SyncThreads();
+}
+catch (GpuOnlyException ex)
+{
+    Console.WriteLine($"Host execution blocked: {ex.Message}");
+}
+```
+
+### CudaException
+
+- **Namespace:** `Kassyi.GSharp.Runtime.Interop`
+- **Inherits from:** `System.Exception`
+
+Thrown when a native CUDA Driver API invocation fails (returns a `CUresult` other than `CUDA_SUCCESS` / `0`).
+
+Common failure scenarios include:
+- `CUDA_ERROR_OUT_OF_MEMORY` (2): Insufficient device VRAM during buffer allocation (`cuMemAlloc_v2`).
+- `CUDA_ERROR_INVALID_VALUE` (1): Invalid grid or block launch dimensions, null pointers, or mismatched kernel parameter signatures.
+- `CUDA_ERROR_NO_DEVICE` (100): No CUDA-capable GPU detected on the host system.
+- `CUDA_ERROR_LAUNCH_FAILED` (719): An asynchronous device hardware exception occurred during kernel execution (e.g., out-of-bounds pointer dereference, misaligned memory access).
+
+### NvrtcException
+
+- **Namespace:** `Kassyi.GSharp.Runtime.Interop`
+- **Inherits from:** `System.Exception`
+
+Thrown when runtime JIT compilation via the NVIDIA Runtime Compilation (NVRTC) library fails. The exception message encapsulates the complete compilation log and error diagnostic output emitted by NVRTC.
+
+---
+
 ## See also
 
 

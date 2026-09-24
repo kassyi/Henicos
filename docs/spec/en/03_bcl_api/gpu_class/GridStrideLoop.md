@@ -38,6 +38,11 @@ The total number of elements to process.
 `body` <i>Action&lt;int&gt;</i><br>
 A delegate or lambda expressing the loop body. The integer parameter represents the global index.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Examples
 
 ### Grid Stride Loop

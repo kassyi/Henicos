@@ -30,6 +30,11 @@ Synchronizes all threads in a thread block.
 public static void SyncThreads();
 ```
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Examples
 
 ### Shared Memory Synchronization

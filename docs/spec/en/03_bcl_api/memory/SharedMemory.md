@@ -44,6 +44,29 @@ public SharedMemory(int length);
 `length` <i>int</i><br>
 The number of elements to allocate.
 
+## Item[int]
+
+Gets or sets the element at the specified zero-based index in shared memory.
+
+```csharp
+public T this[int index] { get; set; }
+```
+
+#### Parameters
+
+`index` <i>int</i><br>
+The zero-based element offset.
+
+#### Property Value
+
+`T`<br>
+The element at the specified index.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Examples
 
 ### Static Allocation

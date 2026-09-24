@@ -23,9 +23,63 @@ public struct Dim3
 
 | Name | Description                            |
 | ---- | -------------------------------------- |
-| `X`  | Gets the X component of the 3D vector. |
-| `Y`  | Gets the Y component of the 3D vector. |
-| `Z`  | Gets the Z component of the 3D vector. |
+| [X](#x)  | Gets the X component of the 3D vector. |
+| [Y](#y)  | Gets the Y component of the 3D vector. |
+| [Z](#z)  | Gets the Z component of the 3D vector. |
+
+## X
+
+Gets the X component of the 3D vector.
+
+```csharp
+public int X { get; }
+```
+
+#### Property Value
+
+`int`  
+The X component.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
+## Y
+
+Gets the Y component of the 3D vector.
+
+```csharp
+public int Y { get; }
+```
+
+#### Property Value
+
+`int`  
+The Y component.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
+## Z
+
+Gets the Z component of the 3D vector.
+
+```csharp
+public int Z { get; }
+```
+
+#### Property Value
+
+`int`  
+The Z component.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 

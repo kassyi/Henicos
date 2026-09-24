@@ -35,6 +35,11 @@ public static void InlinePtx(string ptxCode);
 `ptxCode` <i>string</i><br>
 The PTX instruction string to embed.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Examples
 
 ### Custom PTX Instructions

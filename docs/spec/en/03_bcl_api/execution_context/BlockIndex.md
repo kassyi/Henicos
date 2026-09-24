@@ -40,6 +40,11 @@ public static int X { get; }
 `int`  
 The X coordinate/index.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Y
 
 The Y coordinate/index.
@@ -53,6 +58,11 @@ public static int Y { get; }
 `int`  
 The Y coordinate/index.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Z
 
 The Z coordinate/index.
@@ -65,6 +75,11 @@ public static int Z { get; }
 
 `int`  
 The Z coordinate/index.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 

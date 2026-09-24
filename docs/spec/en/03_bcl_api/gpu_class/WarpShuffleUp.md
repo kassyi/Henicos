@@ -51,6 +51,11 @@ The logical warp width (default is 32).
 <i>int</i><br>
 The value exchanged from the source thread.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## ShuffleUpSync(uint, uint, uint, int)
 
 Exchanges a 32-bit unsigned integer by shifting data up by a specified delta.
@@ -77,6 +82,11 @@ The logical warp width (default is 32).
 
 <i>uint</i><br>
 The value exchanged from the source thread.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## ShuffleUpSync(uint, float, uint, int)
 
@@ -105,6 +115,11 @@ The logical warp width (default is 32).
 
 <i>float</i><br>
 The value exchanged from the source thread.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Conceptual Behavior
 

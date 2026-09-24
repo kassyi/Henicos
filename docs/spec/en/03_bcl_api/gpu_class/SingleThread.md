@@ -35,6 +35,11 @@ public static void SingleThread(Action body);
 `body` <i>Action</i><br>
 A delegate or lambda expressing the body to execute once.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Examples
 
 ### Execution Guard

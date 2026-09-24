@@ -35,6 +35,10 @@ public static void Unroll(int factor = 0);
 `factor` <i>int</i><br>
 The unroll factor. If `0`, the loop is completely unrolled.
 
+#### Exceptions
+
+None. This method acts as a compile-time compiler hint marker and performs no operation on the CPU; it does not throw exceptions.
+
 ## Examples
 
 ### Loop Unrolling
@@ -44,14 +48,10 @@ The unroll factor. If `0`, the loop is completely unrolled.
 using System;
 using Kassyi.GSharp.Core;
 
-try {
-    // Instructs NVCC to unroll the following loop
-    Gpu.Hint.Unroll();
-    for (int i = 0; i < 4; i++) {
-        Console.WriteLine($"Unrolled iteration {i}");
-    }
-} catch (GpuOnlyException) {
-    Console.WriteLine("Gpu.Hint.Unroll can only be executed on the GPU.");
+// Instructs NVCC to unroll the following loop (no-op when running CPU tests)
+Gpu.Hint.Unroll();
+for (int i = 0; i < 4; i++) {
+    Console.WriteLine($"Unrolled iteration {i}");
 }
 ```
 

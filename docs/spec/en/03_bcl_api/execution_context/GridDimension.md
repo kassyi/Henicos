@@ -40,6 +40,11 @@ public static int X { get; }
 `int`  
 The X dimension.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Y
 
 The Y dimension.
@@ -53,6 +58,11 @@ public static int Y { get; }
 `int`  
 The Y dimension.
 
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
 ## Z
 
 The Z dimension.
@@ -65,6 +75,11 @@ public static int Z { get; }
 
 `int`  
 The Z dimension.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 

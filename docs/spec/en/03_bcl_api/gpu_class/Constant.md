@@ -17,18 +17,23 @@ Directly injects a string literal as a raw C++ expression.
 
 ## Overloads
 
-| Name                                 | Description                                                |
-| ------------------------------------ | ---------------------------------------------------------- |
-| [Constant(string)](#constant-string) | Directly injects a string literal as a raw C++ expression. |
+| Name                                       | Description                                                |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| [Constant&lt;T&gt;(string)](#constanttstring) | Directly injects a string literal as a raw C++ expression. |
 
-## Constant(string)
+## Constant&lt;T&gt;(string)
 
 Directly injects a string literal as a raw C++ expression.
 
 ```csharp
 [GpuKernel]
-public static int Constant(string expression);
+public static T Constant<T>(string expression);
 ```
+
+#### Type Parameters
+
+`T`<br>
+The expected type of the constant placeholder (e.g., `int`, `float`).
 
 #### Parameters
 
@@ -37,8 +42,13 @@ The string literal containing the C++ macro or preprocessor `#define` name.
 
 #### Returns
 
-<i>int</i><br>
-Returns the specified type `int` (at compile-time, this forces the C# type checker to accept it, while the transpiler blindly pastes the string).
+<i>T</i><br>
+Returns the specified placeholder type `T` (at compile-time, this satisfies the C# type checker, while the transpiler blindly substitutes the identifier into the C++ AST).
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
 
 ## Examples
 
@@ -51,8 +61,9 @@ using Kassyi.GSharp.Core;
 
 try {
     // Replaced with literal macro value during GPU runtime compilation
-    int blockSize = Gpu.Constant("BLOCK_SIZE");
-    Console.WriteLine($"Constant evaluated to: {blockSize}");
+    int blockSize = Gpu.Constant<int>("BLOCK_SIZE");
+    float pi = Gpu.Constant<float>("PI_CONST");
+    Console.WriteLine($"Constant evaluated to: {blockSize}, {pi}");
 } catch (GpuOnlyException) {
     Console.WriteLine("Gpu.Constant can only be executed on the GPU.");
 }
