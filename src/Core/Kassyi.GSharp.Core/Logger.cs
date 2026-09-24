@@ -319,10 +319,24 @@ public abstract class Logger : ILogger
             return;
         }
 
+        var sb = new StringBuilder();
+        sb.Append(prefixMessage).Append(" [");
+        var first = true;
+        foreach (var kv in s_accumulatedTimes)
+        {
+            if (!first)
+            {
+                sb.Append(", ");
+            }
+            first = false;
+            sb.Append(kv.Key).Append(": ").Append(kv.Value).Append(" ms");
+        }
+        sb.Append(']');
+
         Log(
             level,
             tag,
-            $"{prefixMessage} [{string.Join(", ", s_accumulatedTimes.Select(kv => $"{kv.Key}: {kv.Value} ms"))}]"
+            sb.ToString()
         );
     }
 
