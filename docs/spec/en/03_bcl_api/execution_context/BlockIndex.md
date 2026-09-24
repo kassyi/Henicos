@@ -66,6 +66,41 @@ public static int Z { get; }
 `int`  
 The Z coordinate/index.
 
+## Examples
+
+### Reading Block Indices
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
+```csharp
+using System;
+using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
+
+KernelExample.Run();
+
+public class KernelExample
+{
+    public static void Run()
+    {
+        try
+        {
+            // Accessing these properties is valid during GPU kernel execution.
+            // When executing on the CPU (e.g. during a unit test), it throws GpuOnlyException.
+            int idxX = BlockIndex.X;
+            int idxY = BlockIndex.Y;
+            int idxZ = BlockIndex.Z;
+        }
+        catch (GpuOnlyException)
+        {
+            Console.WriteLine("Successfully intercepted GpuOnlyException on CPU.");
+        }
+    }
+}
+```
+
 ## Remarks
 
 Maps directly to the `blockIdx` built-in variable in CUDA PTX.

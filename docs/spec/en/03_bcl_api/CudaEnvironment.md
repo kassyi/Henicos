@@ -52,6 +52,31 @@ public static string? GetCudaBinPath();
 _string?_<br>
 The absolute path to the CUDA `bin` directory (or `bin/x64` on Windows if present); otherwise, `null`.
 
+## Examples
+
+### Resolving CUDA Paths
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
+```csharp
+#nullable enable
+using System;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU)
+string? cudaPath = CudaEnvironment.GetCudaPath();
+if (cudaPath != null)
+{
+    Console.WriteLine($"CUDA Toolkit is installed at: {cudaPath}");
+    Console.WriteLine($"CUDA Binaries are located at: {CudaEnvironment.GetCudaBinPath()}");
+}
+else
+{
+    Console.WriteLine("CUDA Toolkit not found on this system.");
+}
+```
+
 ## Remarks
 
 This utility queries system environment variables and default OS filesystem paths across Windows and Linux.
