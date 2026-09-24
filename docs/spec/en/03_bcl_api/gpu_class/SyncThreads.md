@@ -36,17 +36,15 @@ public static void SyncThreads();
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void SharedMemKernel(float* input, float* output)
-{
-    var cache = SharedMemory<float>.Allocate(256);
-    cache[ThreadIndex.X] = input[ThreadIndex.X];
-    
-    // Wait for all threads to finish writing to shared memory
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Synchronizes all threads in the current block barrier
     Gpu.SyncThreads();
-    
-    // Safe to read from other threads' indices now
-    output[ThreadIndex.X] = cache[255 - ThreadIndex.X];
+    Console.WriteLine("All threads in block synchronized.");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.SyncThreads can only be executed on the GPU.");
 }
 ```
 

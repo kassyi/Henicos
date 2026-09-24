@@ -148,20 +148,18 @@ In practice, choosing `mask` follows three common patterns:
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void ButterflyReduceKernel(int* data)
-{
-    int val = data[ThreadIndex.X];
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    uint mask = 0xFFFFFFFF;
+    int myValue = 30;
     
-    // Reduce values across the warp using a butterfly pattern (XOR swap)
-    // Both threads in the XOR pair exchange their values simultaneously.
-    for (int offset = 16; offset > 0; offset /= 2)
-    {
-        val += Warp.ShuffleXorSync(0xFFFFFFFF, val, offset, 32);
-    }
-    
-    // The final reduced sum is distributed to ALL threads in the warp
-    data[ThreadIndex.X] = val;
+    // Exchanges variable based on a bitwise XOR of the caller's lane ID (useful for butterfly reductions)
+    int swappedValue = Gpu.ShuffleXorSync(mask, myValue, 1);
+    Console.WriteLine($"Swapped value: {swappedValue}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.ShuffleXorSync can only be executed on the GPU.");
 }
 ```
 

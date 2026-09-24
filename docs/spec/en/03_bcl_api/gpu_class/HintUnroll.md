@@ -41,18 +41,17 @@ The unroll factor. If `0`, the loop is completely unrolled.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-// Completely unroll the loop (assuming fixed bounds)
-Gpu.Hint.Unroll();
-for (int i = 0; i < 4; i++)
-{
-    // ...
-}
+using System;
+using Kassyi.GSharp.Core;
 
-// Unroll by a factor of 2
-Gpu.Hint.Unroll(2);
-for (int i = 0; i < count; i++)
-{
-    // ...
+try {
+    // Instructs NVCC to unroll the following loop
+    Gpu.Hint.Unroll();
+    for (int i = 0; i < 4; i++) {
+        Console.WriteLine($"Unrolled iteration {i}");
+    }
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.Hint.Unroll can only be executed on the GPU.");
 }
 ```
 

@@ -143,27 +143,18 @@ In practice, choosing `mask` follows three common patterns:
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void WarpInclusiveScanKernel(int* data)
-{
-    int val = data[ThreadIndex.X];
-    int laneId = ThreadIndex.X % 32;
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    uint mask = 0xFFFFFFFF;
+    int myValue = 20;
     
-    // Perform an inclusive scan (prefix sum) across the warp.
-    // Each thread pulls data from the thread 'offset' lanes below it.
-    for (uint offset = 1; offset <= 16; offset *= 2)
-    {
-        int pulledVal = Warp.ShuffleUpSync(0xFFFFFFFF, val, offset, 32);
-        
-        // Only accumulate if the current lane is higher than the offset
-        if (laneId >= offset)
-        {
-            val += pulledVal;
-        }
-    }
-    
-    // Now 'val' contains the prefix sum up to the current lane
-    data[ThreadIndex.X] = val;
+    // Exchanges variable from a thread with a lower ID relative to the caller
+    int shiftedValue = Gpu.ShuffleUpSync(mask, myValue, 1);
+    Console.WriteLine($"Shifted value from previous lane: {shiftedValue}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.ShuffleUpSync can only be executed on the GPU.");
 }
 ```
 

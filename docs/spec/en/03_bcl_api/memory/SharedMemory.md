@@ -50,13 +50,18 @@ The number of elements to allocate.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static void SmoothKernel(float[] input)
-{
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Declares block-local shared memory cache
     var cache = new SharedMemory<float>(256);
-    cache[ThreadIndex.X] = input[ThreadIndex.X];
-    Gpu.SyncThreads();
-    // ...
+    
+    // Assigning elements evaluates index and throws on CPU
+    cache[0] = 3.14f;
+    Console.WriteLine($"Shared memory set. Value: {cache[0]}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("SharedMemory<T> allocations and accesses can only be executed on the GPU.");
 }
 ```
 

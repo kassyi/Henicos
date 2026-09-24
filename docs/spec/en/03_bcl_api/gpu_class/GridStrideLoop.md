@@ -44,13 +44,18 @@ A delegate or lambda expressing the loop body. The integer parameter represents 
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void VectorAdd(int count, float* a, float* b, float* c)
-{
-    Gpu.GridStrideLoop(count, i =>
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    int totalElements = 1024;
+    // Automates standard CUDA Grid-Stride Loop
+    Gpu.GridStrideLoop(totalElements, i => 
     {
-        c[i] = a[i] + b[i];
+        Console.WriteLine($"Processing element {i}");
     });
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.GridStrideLoop can only be executed on the GPU.");
 }
 ```
 

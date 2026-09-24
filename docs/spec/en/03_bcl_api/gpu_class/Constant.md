@@ -46,8 +46,16 @@ Returns the specified type `int` (at compile-time, this forces the C# type check
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-// Injects the C++ macro MAX_BUFFER_SIZE as an integer constant
-int maxBufferSize = Gpu.Constant("MAX_BUFFER_SIZE");
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Replaced with literal macro value during GPU runtime compilation
+    int blockSize = Gpu.Constant("BLOCK_SIZE");
+    Console.WriteLine($"Constant evaluated to: {blockSize}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.Constant can only be executed on the GPU.");
+}
 ```
 
 ## Remarks

@@ -41,8 +41,16 @@ The PTX instruction string to embed.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-// Wait for a memory operation using raw PTX
-Gpu.InlinePtx("membar.gl;");
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Injects raw PTX assembly directly into the transpiled C++ output
+    Gpu.InlinePtx("asm volatile(\"membar.gl;\");");
+    Console.WriteLine("Inline PTX injected.");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.InlinePtx can only be executed on the GPU.");
+}
 ```
 
 ## Remarks

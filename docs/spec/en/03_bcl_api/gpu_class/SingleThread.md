@@ -41,14 +41,17 @@ A delegate or lambda expressing the body to execute once.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void InitializeMemory()
-{
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    // Ensures the enclosed block only runs on thread 0 of block 0
     Gpu.SingleThread(() => 
     {
-        // Executes only on Thread 0, Block 0
-        Gpu.Print("Kernel Started\n");
+        Console.WriteLine("Executing exclusively on Thread 0, Block 0.");
     });
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.SingleThread can only be executed on the GPU.");
 }
 ```
 

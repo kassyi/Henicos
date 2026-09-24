@@ -116,12 +116,16 @@ The old value observed at `address` before the addition occurred.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void HistogramKernel(int* data, int* bins)
-{
-    int value = data[ThreadIndex.X];
-    // Atomically increment the bin counter to prevent data loss
-    Gpu.AtomicAdd(ref bins[value], 1);
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    int sharedCounter = 0;
+    // On GPU, this safely increments the counter across multiple threads
+    int oldValue = Gpu.AtomicAdd(ref sharedCounter, 1);
+    Console.WriteLine($"AtomicAdd returned old value: {oldValue}, new counter value: {sharedCounter}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.AtomicAdd can only be executed on the GPU.");
 }
 ```
 

@@ -143,23 +143,18 @@ In practice, choosing `mask` follows three common patterns:
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-[GpuKernel]
-public static unsafe void WarpReduceKernel(int* data)
-{
-    int val = data[ThreadIndex.X];
+using System;
+using Kassyi.GSharp.Core;
+
+try {
+    uint mask = 0xFFFFFFFF; // All lanes active
+    int myValue = 10;
     
-    // Reduce values across the warp. Each thread pulls data from the thread 'offset' lanes above it.
-    // Example: Thread 0 pulls from Thread 16, then Thread 8, then 4, 2, 1.
-    for (uint offset = 16; offset > 0; offset /= 2)
-    {
-        val += Warp.ShuffleDownSync(0xFFFFFFFF, val, offset, 32);
-    }
-    
-    // The final reduced sum is guaranteed to be in Lane 0 (ThreadIndex.X % 32 == 0)
-    if (ThreadIndex.X % 32 == 0)
-    {
-        data[ThreadIndex.X] = val; // Store result
-    }
+    // Exchanges variable from a thread with a higher ID relative to the caller
+    int shiftedValue = Gpu.ShuffleDownSync(mask, myValue, 1);
+    Console.WriteLine($"Shifted value from next lane: {shiftedValue}");
+} catch (GpuOnlyException) {
+    Console.WriteLine("Gpu.ShuffleDownSync can only be executed on the GPU.");
 }
 ```
 
