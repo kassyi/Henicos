@@ -62,3 +62,45 @@ The evaluated `GpuUIntBigInteger` result buffer.
 
 - [Standard Math Library (Stdlib.Math)](../../../00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInteger)](../00_index.md)
+
+
+## Examples
+
+```csharp
+#nullable enable
+using System;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+
+// 1. Setup GPU Context and inputs
+using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var uintVal = new GpuUIntBigInteger(context, new uint[] { 42 });
+
+// 2. Create the custom expression node
+IGpuBigUIntExpression expression = new CustomUnsignedNode(uintVal);
+
+// 3. Evaluate the expression
+var result = expression.Evaluate(context);
+
+Console.WriteLine($"Evaluated Words: {result.NumWords}");
+
+// Create a mock AST node for Unsigned GPU BigInteger evaluation
+public class CustomUnsignedNode : IGpuBigUIntExpression
+{
+    private readonly GpuUIntBigInteger _value;
+
+    public CustomUnsignedNode(GpuUIntBigInteger value)
+    {
+        _value = value;
+    }
+
+    public int NumWords => _value.NumWords;
+
+    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
+    {
+        // For demonstration, simply return the predefined value.
+        return _value;
+    }
+}
+```

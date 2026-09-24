@@ -55,4 +55,32 @@ Ensures deterministic deallocation of temporary GPU memory buffers upon exiting 
 
 ### BCL API > Math (BigNum)
 
-- [GPU Big Integer and Unsigned Integer](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../../../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../../../../02_architecture/01_aot_transpiler.md)
+
+
+## Examples
+
+```csharp
+using System;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
+
+// Initialize GPU context
+using var context = new GpuContext(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
+var provider = context.Provider;
+
+// Create a scoped GPU memory allocation
+using (var memory = new ScopedGpuMemory(provider, numWords: 256))
+{
+    Console.WriteLine($"Allocated 256 words at device pointer");
+} // memory is automatically freed here via Dispose()
+
+Console.WriteLine("ScopedGpuMemory successfully disposed.");
+```

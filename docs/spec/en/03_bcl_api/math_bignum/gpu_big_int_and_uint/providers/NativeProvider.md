@@ -537,4 +537,36 @@ No remarks available.
 
 ### BCL API > Math (BigNum)
 
-- [GPU Big Integer and Unsigned Integer](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+
+### Architecture
+
+- [2. Compiler and Runtime Architecture](../../../../02_architecture/00_index.md)
+- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../../../../02_architecture/01_aot_transpiler.md)
+
+
+## Examples
+
+```csharp
+using System;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
+
+// Initialize the GPU context with the Native provider
+using var context = new GpuContext(maxWords: 1024, engine: GpuExecutionEngine.LegacyNative);
+
+// Access the underlying IGpuExecutionProvider
+var provider = context.Provider;
+
+// Manually allocate and copy memory to device via the provider
+uint[] hostData = new uint[] { 0x01, 0x02 };
+IntPtr devicePtr = provider.AllocateMemory(hostData.Length);
+provider.CopyHostToDevice(devicePtr, hostData, hostData.Length);
+
+Console.WriteLine("Successfully allocated and copied memory using LegacyNative.");
+
+// Free memory
+provider.FreeMemory(devicePtr);
+```
