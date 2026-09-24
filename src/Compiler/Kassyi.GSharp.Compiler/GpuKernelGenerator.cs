@@ -79,11 +79,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         bool suppressGs0001 = false;
         var root = methodDeclaration.SyntaxTree.GetRoot();
-        var pragmas = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true)
-            .OfType<PragmaWarningDirectiveTriviaSyntax>();
+        var nodes = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true);
 
-        foreach (var pragma in pragmas)
+        foreach (var node in nodes)
         {
+            if (node is not PragmaWarningDirectiveTriviaSyntax pragma)
+            {
+                continue;
+            }
             foreach (var errorCode in pragma.ErrorCodes)
             {
                 if (errorCode is not IdentifierNameSyntax id || id.Identifier.ValueText != "GS0001")
