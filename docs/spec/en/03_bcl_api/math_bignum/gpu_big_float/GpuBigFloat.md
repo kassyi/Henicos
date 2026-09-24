@@ -87,6 +87,8 @@ public class Example
         {
             floatVal = new GpuBigFloat<LimbBuffer8>(floatVal.UFloat, isNegative: false);
         }
+        
+        Console.WriteLine($"Computed Float: Significand[0]={floatVal.UFloat.Significand.Limbs[0]}, Exponent={floatVal.UFloat.Exponent}, IsNegative={floatVal.IsNegative}");
     }
 }
 ```

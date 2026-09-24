@@ -98,6 +98,8 @@ public class Example
 
         // Perform addition
         var sum = floatA + floatB;
+        
+        Console.WriteLine($"Computed Float128 Sum: Significand[0]={sum.Value.UFloat.Significand.Limbs[0]}, Exponent={sum.Value.UFloat.Exponent}, IsNegative={sum.Value.IsNegative}");
     }
 }
 ```

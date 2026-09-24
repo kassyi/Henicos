@@ -86,6 +86,8 @@ public class Example
 
         // Unsigned addition (100 + 25 = 125)
         var sum = uFloatA.Add(uFloatB);
+        
+        Console.WriteLine($"Computed UFloat Sum: Significand[0]={sum.Significand.Limbs[0]}, Exponent={sum.Exponent}");
     }
 }
 ```

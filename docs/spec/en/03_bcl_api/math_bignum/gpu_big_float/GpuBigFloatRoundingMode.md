@@ -58,6 +58,8 @@ public class Example
             roundBit: false,
             stickyBit: true
         );
+        
+        Console.WriteLine($"Rounded Exponent: {rounded.Exponent}");
     }
 }
 ```
