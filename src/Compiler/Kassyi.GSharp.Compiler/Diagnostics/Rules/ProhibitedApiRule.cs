@@ -1,8 +1,3 @@
-using Kassyi.GSharp.Compiler.Extensions;
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>
