@@ -97,6 +97,10 @@ The GPU unsigned big integer.
 _int_<br>
 The minimum number of bits required to represent the value.
 
+#### Exceptions
+
+None. Returns `0` if all limb words are zero.
+
 ## Mod(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes arbitrary-precision modulo (`leftOperand % rightOperand`) on the GPU.
@@ -115,6 +119,14 @@ The divisor.
 
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the remainder.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when the operands and result buffer do not have the same number of words.
+
+`DivideByZeroException`<br>
+Thrown when the divisor (`rightOperand`) is zero.
 
 ## ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
@@ -138,6 +150,14 @@ The modulus value.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when operand and result buffer word counts do not match.
+
+`DivideByZeroException`<br>
+Thrown when the modulus (`mod`) is zero.
+
 ## Sqrt(GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes the integer square root (`floor(sqrt(leftOperand))`) on the GPU.
@@ -153,6 +173,11 @@ The operand to calculate the square root for.
 
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the square root.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
 
 ## Examples
 

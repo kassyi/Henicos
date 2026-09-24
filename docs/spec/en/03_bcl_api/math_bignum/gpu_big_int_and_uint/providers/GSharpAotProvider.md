@@ -65,6 +65,11 @@ The number of 32-bit words to allocate.
 _IntPtr_<br>
 A pointer to the allocated device memory.
 
+#### Exceptions
+
+`CudaException`<br>
+Thrown when CUDA driver device memory allocation (`cuMemAlloc_v2`) fails.
+
 ## FreeMemory(IntPtr)
 
 Frees the allocated unmanaged global device memory.

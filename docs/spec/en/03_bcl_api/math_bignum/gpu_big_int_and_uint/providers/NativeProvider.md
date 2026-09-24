@@ -97,6 +97,11 @@ The source data array on the host.
 `numWords` _Int32_<br>
 The number of 32-bit words to copy.
 
+#### Exceptions
+
+`InvalidOperationException`<br>
+Thrown when copying data from host managed memory to GPU device memory fails.
+
 ## CopyDeviceToHost(UInt32[], IntPtr, Int32)
 
 Copies limb data from GPU device memory to host managed memory.
@@ -116,6 +121,11 @@ The source pointer on the device.
 `numWords` _Int32_<br>
 The number of 32-bit words to copy.
 
+#### Exceptions
+
+`InvalidOperationException`<br>
+Thrown when copying data from GPU device memory to host managed memory fails.
+
 ## CopyDeviceToDevice(IntPtr, IntPtr, Int32)
 
 Copies limb data between two GPU device memory locations.
@@ -134,6 +144,11 @@ The source pointer on the device.
 
 `numWords` _Int32_<br>
 The number of 32-bit words to copy.
+
+#### Exceptions
+
+`InvalidOperationException`<br>
+Thrown when copying data between device memory locations fails.
 
 ## Add(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 

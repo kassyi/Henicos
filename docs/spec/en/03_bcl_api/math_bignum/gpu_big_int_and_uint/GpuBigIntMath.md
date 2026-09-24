@@ -58,6 +58,11 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+
 ## Add(GpuUIntBigInteger, uint, GpuUIntBigInteger)
 
 Adds a scalar 32-bit unsigned integer to `leftOperand` on the GPU.
@@ -96,6 +101,11 @@ The operand to subtract.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+
 ## Sub(GpuUIntBigInteger, uint, GpuUIntBigInteger)
 
 Subtracts a scalar 32-bit unsigned integer from `leftOperand` on the GPU.
@@ -133,6 +143,11 @@ The second operand.
 
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result. Must have a length equal to the sum of the number of words in both operands.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `resultBuffer.NumWords` is not equal to `leftOperand.NumWords + rightOperand.NumWords`.
 
 ## Mul(GpuUIntBigInteger, uint, GpuUIntBigInteger)
 
@@ -191,6 +206,11 @@ The number of bits to shift left.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the shifted result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
+
 ## ShiftRight(GpuUIntBigInteger, int, GpuUIntBigInteger)
 
 Shifts the big integer right by the specified bit count on the GPU.
@@ -209,6 +229,11 @@ The number of bits to shift right.
 
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the shifted result.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
 
 ## BitwiseAnd(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
@@ -229,6 +254,11 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+
 ## BitwiseOr(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Performs bitwise OR on the GPU.
@@ -247,6 +277,11 @@ The second operand.
 
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
 
 ## BitwiseXor(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
@@ -267,6 +302,11 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length (`NumWords`).
+
 ## BitwiseNot(GpuUIntBigInteger, GpuUIntBigInteger)
 
 Performs bitwise NOT on the GPU.
@@ -282,6 +322,11 @@ The operand to invert.
 
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
+
+#### Exceptions
+
+`ArgumentException`<br>
+Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`NumWords`).
 
 ## IsLessThan(GpuUIntBigInteger, GpuUIntBigInteger)
 

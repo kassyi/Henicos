@@ -69,6 +69,17 @@ The parent GPU execution context.
 `hostData` _uint[]_<br>
 The host data array containing 32-bit limbs in little-endian order.
 
+#### Exceptions
+
+`ArgumentNullException`<br>
+Thrown when `context` or `hostData` is `null`.
+
+`OutOfMemoryException`<br>
+Thrown when device memory allocation fails.
+
+`CudaException`<br>
+Thrown when CUDA driver memory allocation or host-to-device memory copy fails.
+
 ## Properties
 
 | Name                            | Description                                                                        |

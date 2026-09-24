@@ -19,6 +19,36 @@ A disposable stack-only ref struct representing a scoped allocation of GPU globa
 public ref struct ScopedGpuMemory(IGpuExecutionProvider provider, int numWords)
 ```
 
+## Constructors
+
+| Name | Description |
+| ---- | ----------- |
+| [ScopedGpuMemory(IGpuExecutionProvider, int)](#scopedgpumemoryigpuexecutionprovider-int) | Allocates a scoped GPU memory buffer of the specified word capacity. |
+
+## ScopedGpuMemory(IGpuExecutionProvider, int)
+
+Allocates a scoped GPU memory buffer of the specified word capacity.
+
+```csharp
+public ScopedGpuMemory(IGpuExecutionProvider provider, int numWords);
+```
+
+#### Parameters
+
+`provider` _IGpuExecutionProvider_<br>
+The arithmetic execution provider managing GPU allocations.
+
+`numWords` _int_<br>
+The number of 32-bit words (limbs) to allocate.
+
+#### Exceptions
+
+`CudaException`<br>
+Thrown when device memory allocation fails (`cuMemAlloc_v2` fails due to insufficient VRAM).
+
+`ArgumentNullException`<br>
+Thrown if `provider` is `null`.
+
 ## Properties
 
 | Name                | Description                                                  |
