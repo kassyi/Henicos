@@ -27,17 +27,29 @@ public sealed class GpuConstAttribute : Attribute
 > [!NOTE] Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: Host (CPU)
+using System;
+using System.Reflection;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
 public class Example
 {
     [GpuKernel]
     public static unsafe void ProcessData(float* data, [GpuConst] float scaleFactor)
     {
-        int tid = ThreadIndex.X;
+        // On CPU, ThreadIndex.X throws GpuOnlyException.
+    }
 
-        // The scaleFactor is emitted as `const float scaleFactor` in C++,
-        // encouraging the GPU to cache it in ultra-fast constant memory.
-        data[tid] *= scaleFactor;
+    public static void Run()
+    {
+        var method = typeof(Example).GetMethod(nameof(ProcessData));
+        var param = method.GetParameters()[1];
+        var isGpuConst = param.GetCustomAttribute<GpuConstAttribute>() != null;
+
+        Console.WriteLine($"Parameter '{param.Name}' has [GpuConst] attribute: {isGpuConst}");
     }
 }
 ```

@@ -90,6 +90,9 @@ public class KernelExample
     {
         int tx = CustomThreadIndex.X;
         int popc = NativeFunctions.PopCount(42);
+        
+        Console.WriteLine($"CustomThreadIndex.X = {tx}");
+        Console.WriteLine($"NativeFunctions.PopCount(42) = {popc}");
     }
 }
 ```

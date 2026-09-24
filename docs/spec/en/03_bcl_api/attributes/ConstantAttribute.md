@@ -27,19 +27,29 @@ public sealed class ConstantAttribute : Attribute
 > [!NOTE] Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: Host (CPU)
+using System;
+using System.Reflection;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
 public class Example
 {
     [GpuKernel]
     public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
     {
-        int tid = ThreadIndex.X;
+        // On CPU, ThreadIndex.X throws GpuOnlyException.
+    }
 
-        Gpu.Hint.Unroll();
-        for (int i = 0; i < iterations; i++)
-        {
-            data[tid] *= 2;
-        }
+    public static void Run()
+    {
+        var method = typeof(Example).GetMethod(nameof(MultiplyKernel));
+        var param = method.GetParameters()[1];
+        var isConstant = param.GetCustomAttribute<ConstantAttribute>() != null;
+
+        Console.WriteLine($"Parameter '{param.Name}' has [Constant] attribute: {isConstant}");
     }
 }
 ```

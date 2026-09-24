@@ -23,12 +23,33 @@ public sealed class GpuDeviceFunctionAttribute : Attribute
 
 ### Usage
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
-[GpuDeviceFunction]
-public static float ComputeDelta(float a, float b)
+using System;
+using System.Reflection;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
+public class Example
 {
-    return MathF.Abs(a - b);
+    [GpuDeviceFunction]
+    public static float ComputeDelta(float a, float b)
+    {
+        return MathF.Abs(a - b);
+    }
+
+    public static void Run()
+    {
+        var method = typeof(Example).GetMethod(nameof(ComputeDelta));
+        var hasAttr = method.GetCustomAttribute<GpuDeviceFunctionAttribute>() != null;
+
+        Console.WriteLine($"Method '{method.Name}' has [GpuDeviceFunction]: {hasAttr}");
+    }
 }
 ```
 

@@ -23,8 +23,19 @@ public ClassConstructor([TakesOwnership] GpuContext context)
 
 ### Explicit Resource Ownership
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
 ```csharp
-// Execution Context: Host (CPU)
+using System;
+using System.Reflection;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
 public class ComputePipeline : IDisposable
 {
     private readonly GpuContext _context;
@@ -39,6 +50,18 @@ public class ComputePipeline : IDisposable
     {
         // Enforced by the Zero-Leak Analyzer
         _context.Dispose();
+    }
+}
+
+public class Example
+{
+    public static void Run()
+    {
+        var constructor = typeof(ComputePipeline).GetConstructors()[0];
+        var param = constructor.GetParameters()[0];
+        var takesOwnership = param.GetCustomAttribute<TakesOwnershipAttribute>() != null;
+
+        Console.WriteLine($"Constructor parameter '{param.Name}' has [TakesOwnership]: {takesOwnership}");
     }
 }
 ```

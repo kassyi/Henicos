@@ -23,11 +23,33 @@ public sealed class GpuKernelAttribute : Attribute
 
 ### Usage
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-[GpuKernel]
-public static unsafe void VectorAdd(float* a, float* b, float* c)
+using System;
+using System.Reflection;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
+public class Example
 {
-    // ...
+    [GpuKernel]
+    public static unsafe void VectorAdd(float* a, float* b, float* c)
+    {
+        // ...
+    }
+
+    public static void Run()
+    {
+        var method = typeof(Example).GetMethod(nameof(VectorAdd));
+        var hasAttr = method.GetCustomAttribute<GpuKernelAttribute>() != null;
+
+        Console.WriteLine($"Method '{method.Name}' has [GpuKernel]: {hasAttr}");
+    }
 }
 ```
 

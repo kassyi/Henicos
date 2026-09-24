@@ -30,11 +30,37 @@ Using these attributes appropriately is highly recommended for performance-criti
 
 ### Hash Kernel Data Transfer Optimization
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-[GpuKernel]
-public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int numMessages)
+using System;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using Kassyi.GSharp.Core;
+
+// Execution Context: Host (CPU) Transpiler Inspection
+
+Example.Run();
+
+public class Example
 {
-    // The AOT wrapper will only copy 'input' to the GPU, and only copy 'output' back to the CPU.
+    [GpuKernel]
+    public static unsafe void HashKernel([In] byte[] input, [Out] uint[] output, int numMessages)
+    {
+        // The AOT wrapper will only copy 'input' to the GPU, and only copy 'output' back to the CPU.
+    }
+
+    public static void Run()
+    {
+        var method = typeof(Example).GetMethod(nameof(HashKernel));
+        
+        var inputParam = method.GetParameters()[0];
+        var outputParam = method.GetParameters()[1];
+
+        Console.WriteLine($"Parameter '{inputParam.Name}' has [In]: {inputParam.GetCustomAttribute<InAttribute>() != null}");
+        Console.WriteLine($"Parameter '{outputParam.Name}' has [Out]: {outputParam.GetCustomAttribute<OutAttribute>() != null}");
+    }
 }
 ```
 
