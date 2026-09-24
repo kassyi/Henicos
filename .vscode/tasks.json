@@ -7,7 +7,7 @@
       "command": "watchexec",
       "args": [
         "--debounce",
-        "3s",
+        "10s",
         "-w",
         "src",
         "-w",

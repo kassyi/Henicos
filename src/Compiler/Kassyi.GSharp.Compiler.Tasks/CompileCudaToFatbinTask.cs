@@ -216,8 +216,28 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
             if (NvccOutputParser.DetectRegisterSpill(output, error, out var errorMessage))
             {
-                Log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: sourcePath,
-                    lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: errorMessage);
+                var suppressGs0001 = false;
+                if (File.Exists(sourcePath))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(sourcePath);
+                        if (content.Contains("// gsharp:suppress GS0001"))
+                        {
+                            suppressGs0001 = true;
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore read errors
+                    }
+                }
+
+                if (!suppressGs0001)
+                {
+                    Log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: sourcePath,
+                        lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: errorMessage);
+                }
             }
 
             if (process.ExitCode == 0)
