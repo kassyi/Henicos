@@ -1,9 +1,9 @@
 ---
 title: "GpuContext Class (G#)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "Reference for managing GPU memory pools and execution context for massive numbers."
+description: "Represents a GPU execution context managing memory allocation pools, device workspaces, and backend providers for large integer computations."
 ---
 
 ## GpuContext Class
@@ -13,88 +13,104 @@ description: "Reference for managing GPU memory pools and execution context for 
 **Namespace:** `Kassyi.GSharp.Stdlib.Math`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-The `GpuContext` manages the lifecycle and memory pooling for arbitrary-precision integers on the GPU. 
+Represents a GPU execution context managing memory allocation pools, device workspaces, and backend providers for large integer computations.
 
-Because `cudaMalloc` operations are extremely slow and cause synchronization bottlenecks, GSharp enforces a **Zero-Allocation** paradigm within its math kernels. The `GpuContext` dynamically allocates memory pools on the GPU upon first use or pool misses. AST evaluators and algorithms "checkout" and "return" scratch buffers from this pool in nanoseconds.
+```csharp
+public class GpuContext : IDisposable
+```
+
+
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [GpuContext(int)](#gpucontext-int) | Initializes a new context with a specific word capacity. |
+| [GpuContext(int, GpuExecutionEngine)](#gpucontextint-gpuexecutionengine) | Initializes a new instance of the `GpuContext` class with the specified limb capacity and engine backend. |
 
-## GpuContext(int)
+## GpuContext(int, GpuExecutionEngine)
 
-Initializes a new context memory pool capable of handling `maxWords` per number.
+Initializes a new instance of the `GpuContext` class with the specified limb capacity and engine backend.
 
 ```csharp
-public GpuContext(int maxWords);
+public GpuContext(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot);
 ```
 
 #### Parameters
 
 `maxWords` _int_<br>
-The maximum size (in 32-bit words) of the numbers this context can process. For example, `maxWords: 1024` allows processing numbers up to $1024 \times 32 = 32,768$ bits.
+The maximum word count for BigInteger operations.
+
+`engine` _GpuExecutionEngine_<br>
+The GPU execution backend engine to utilize.
+
+#### Exceptions
+
+`InvalidOperationException`<br>
+Thrown when CUDA context or native workspace allocation fails.
 
 ## Properties
 
 | Name | Description |
 | --- | --- |
-| `MaxWords` | Gets the maximum number of words allowed per allocation. |
+| [Engine](#engine) | Gets the active GPU execution engine type. |
+| [MaxWords](#maxwords) | Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations. |
+| [Provider](#provider) | Gets the active GPU arithmetic execution provider implementation. |
+| [WorkspacePointer](#workspacepointer) | Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend). |
+
+## Engine
+
+Gets the active GPU execution engine type.
+
+```csharp
+public GpuExecutionEngine Engine { get; }
+```
+
+## MaxWords
+
+Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
+
+```csharp
+public int MaxWords { get; }
+```
+
+## Provider
+
+Gets the active GPU arithmetic execution provider implementation.
+
+```csharp
+public IGpuExecutionProvider Provider { get; }
+```
+
+## WorkspacePointer
+
+Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
+
+```csharp
+public IntPtr WorkspacePointer { get; }
+```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [Dispose()](#dispose) | Destroys the memory pool and frees GPU VRAM. |
+| [Dispose()](#dispose) | Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context. |
 
 ## Dispose()
 
-Frees the underlying CUDA memory block.
+Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context.
 
 ```csharp
 public void Dispose();
 ```
 
-## Examples
-
-### Batch Processing with Context Reuse
-
-```csharp
-// Execution Context: Host (CPU)
-
-// Pre-allocate a 4096-bit pool once
-using var context = new GpuContext(maxWords: 128); 
-
-for (int batch = 0; batch < 1000; batch++)
-{
-    // The GpuContext pool is reused automatically.
-    // Temporary variables are checked out from the pool and returned upon Dispose().
-    using var a = GpuUIntBigInteger.FromBigInteger(context, ...);
-    using var b = GpuUIntBigInteger.FromBigInteger(context, ...);
-    
-    var ast = new GpuBigInteger(a) + new GpuBigInteger(b);
-    using var result = ast.Node.Evaluate(context, null);
-    
-    Console.WriteLine($"Batch {batch} complete.");
-}
-```
-
 ## Remarks
 
-The `GpuContext` must be explicitly passed into all memory allocation calls (`FromBigInteger`, `FromByteArray`) and into AST evaluations (`Node.Evaluate()`). It implements `IDisposable` to guarantee clean shutdown of the CUDA context.
+Instantiating `GpuContext` allocates workspace memory on the active CUDA device. Ensure instances are properly disposed to prevent device memory exhaustion.
+
+**Thread Safety:** Instance members are thread-safe for allocation pooling.
 
 ## See also
 
+### BCL API > Math Bignum
 
-
-### BCL API > Attributes
-
-- [Attributes](../../attributes/00_index.md)
-- [Kassyi.GSharp.Core: TakesOwnershipAttribute class](../../attributes/TakesOwnershipAttribute.md)
-
-### Guides
-
-- [4. Practical Guides and Best Practices](../../../04_guides/00_index.md)
-- [11. Strict Memory Management and Ownership Patterns (Zero-Leak Analyzer)](../../../04_guides/02_memory_safety_patterns.md)
-
+- [Standard Math Library (Stdlib.Math)](../00_index.md)

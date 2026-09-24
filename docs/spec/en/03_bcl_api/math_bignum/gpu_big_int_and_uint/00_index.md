@@ -18,20 +18,23 @@ The `GpuBigInt` module provides high-performance multi-precision arithmetic on t
 
 To maximize GPU performance and avoid branching (Warp Divergence), the GSharp runtime separates the concepts of memory allocation and sign evaluation.
 
-1. **[GpuUIntBigInteger](GpuUIntBigInteger.md)**: 
+1. **[GpuUIntBigInteger](GpuUIntBigInteger.md)**:
    The unsigned base type. This class manages the actual `IntPtr` to the GPU device memory. It contains no concept of positive or negative. All low-level arithmetic kernels (ripple-carry addition, multiplication) operate strictly on unsigned memory buffers to ensure deterministic execution paths.
 
-2. **[GpuBigInteger](GpuBigInteger.md)**: 
+2. **[GpuBigInteger](GpuBigInteger.md)**:
    The signed wrapper struct. This lightweight struct simply pairs a `GpuUIntBigInteger` reference with an `IsNegative` boolean flag. When you perform signed arithmetic (e.g., adding a negative number), the host-side operator overloads evaluate the `IsNegative` flags and dispatch the appropriate underlying unsigned kernels (e.g., dispatching a subtraction kernel instead of an addition kernel).
 
 This separation ensures that GPU kernels remain purely mathematical and branchless, leaving the orchestration and sign logic to the Host CPU.
 
 ### Core API
+
 - **[GpuUIntBigInteger.md](GpuUIntBigInteger.md)**: The underlying unsigned memory buffer on the GPU.
 - **[GpuBigInteger.md](GpuBigInteger.md)**: The signed wrapper struct for host-side orchestration.
 - **[Operators.md](Operators.md)**: Overloads for `+`, `-`, `*`, `/`, and bitwise operators.
+- **[BigIntegerExtensions.md](BigIntegerExtensions.md)**: Host-side math extensions for `System.Numerics.BigInteger`.
 
 ### Advanced Algorithms & Transforms
+
 GSharp includes a vast suite of advanced algorithms designed to leverage the GPU for massive computations (e.g., Cryptography, Pi Calculation, Fractal rendering).
 
 - **[Gcd.md](algorithms/Gcd.md)**: Greatest Common Divisor (Lehmer's GCD).
@@ -43,14 +46,12 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - **[DivRem.md](algorithms/DivRem.md)**: Simultaneous extraction of Quotient and Remainder.
 
 ### Input / Output
+
 - **[IO_GpuRadixConverter.md](IO_GpuRadixConverter.md)**: Divide-and-Conquer Base-10 string conversion for printing millions of digits in $O(N \log^2 N)$ time.
 
 ## See also
-
-
 
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
 - [Arbitrary-Precision Floats (GpuBigFloat)](../gpu_big_float/00_index.md)
-

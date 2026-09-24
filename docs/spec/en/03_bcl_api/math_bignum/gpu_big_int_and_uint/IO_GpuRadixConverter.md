@@ -1,39 +1,36 @@
 ---
 title: "GpuRadixConverter Class (G#)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "Reference for converting massive integers to Base-10 strings efficiently."
+description: "Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision GpuUIntBigInteger to decimal text."
 ---
 
 ## GpuRadixConverter Class
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.Math.IO`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-Converting a multi-megabyte integer from binary (Base-2) into a decimal string (Base-10) is computationally brutal. Traditional $O(N^2)$ division algorithms take days or years to convert numbers with millions of digits.
+Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision `GpuUIntBigInteger` to decimal text.
 
-`GpuRadixConverter` implements a **Divide-and-Conquer Base Conversion** algorithm using the Fast Fourier Transform (NTT). By recursively dividing the massive number into upper and lower halves, it reduces the string conversion time complexity to $O(N \log^2 N)$, making it possible to print millions of digits in seconds.
+```csharp
+public static class GpuRadixConverter
+```
 
 ## Methods
 
-| Name                                                                                                                                       | Description                                                                |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| [ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)](#convertandwrite-gpucontext-gpuuintbiginteger-int-textwriter-bool) | Converts a massive GpuUIntBigInteger to Base-10 and writes it to a stream. |
+| Name | Description |
+| --- | --- |
+| [ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)](#convertandwritegpucontext-gpuuintbiginteger-int-textwriter-bool) | Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
 
 ## ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)
 
-Executes the divide-and-conquer base conversion algorithm across the GPU and streams the resulting text directly to the provided writer.
+Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`.
 
 ```csharp
-public static void ConvertAndWrite(
-    GpuContext context,
-    GpuUIntBigInteger value,
-    int targetDigits,
-    TextWriter writer,
-    bool isMostSignificant = false);
+public static void ConvertAndWrite(GpuContext context, GpuUIntBigInteger value, int targetDigits, TextWriter writer, bool isMostSignificant = false);
 ```
 
 #### Parameters
@@ -42,7 +39,7 @@ public static void ConvertAndWrite(
 The GPU computation context.
 
 `value` _GpuUIntBigInteger_<br>
-The massive integer to convert.
+The integer to convert.
 
 `targetDigits` _int_<br>
 The number of digits to generate.
@@ -51,23 +48,35 @@ The number of digits to generate.
 The output stream writer.
 
 `isMostSignificant` _bool_<br>
-True if formatting the integer part with a decimal point (e.g., "3.1415...").
+True if formatting the integer part with a decimal point (e.g. "3.1415...").
 
-#### Returns
+#### Exceptions
 
-_void_
+`ArgumentNullException`<br>
+Thrown when `context`, `value`, or `writer` is `null`.
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `targetDigits` is negative or zero.
 
 ## Examples
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.Math
 
 ### Printing a 10-Million Digit Number
 
 ```csharp
 // Execution Context: Host (CPU)
+using System;
+using System.IO;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.IO;
 
-using var context = new GpuContext(maxWords: 524288);
+using var context = new GpuContext(2048, GpuExecutionEngine.GSharpAot);
 
 // Assume we just finished calculating a massive factorial or Pi
-GpuUIntBigInteger resultGpu = CalculateMassiveFactorial(context);
+GpuUIntBigInteger resultGpu = GpuUIntBigInteger.Zero(context, 100);
 
 Console.WriteLine("Starting base-10 conversion (this might take a few seconds)...");
 
@@ -90,4 +99,3 @@ Because the conversion involves hundreds of recursive Division and Remainder (`D
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
-- [GpuBigInteger Struct (G#)](GpuBigInteger.md)

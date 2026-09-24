@@ -1,9 +1,9 @@
 ---
 title: "GpuBigInteger Struct (G#)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "Reference for the Host-Side signed wrapper for massive arbitrary-precision integers."
+description: "A lightweight value type wrapping a GpuUIntBigInteger with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU."
 ---
 
 ## GpuBigInteger Struct
@@ -13,58 +13,70 @@ description: "Reference for the Host-Side signed wrapper for massive arbitrary-p
 **Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
 **Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
 
-Represents a signed, arbitrary-precision integer in the GSharp ecosystem. 
+A lightweight value type wrapping a `GpuUIntBigInteger` with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU.
 
-> [!IMPORTANT]
-> `GpuBigInteger` is a **Host-Side Only** wrapper. It cannot be used directly inside a `[GpuKernel]`. It is designed to evaluate sign operations on the CPU and orchestrate pure, unsigned math kernels on the GPU.
+```csharp
+public readonly struct GpuBigInteger : IDisposable, IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>
+```
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [GpuBigInteger(GpuUIntBigInteger, bool)](#gpubiginteger-gpuuintbiginteger-bool) | Creates a signed wrapper around an existing unsigned memory buffer. |
+| [GpuBigInteger(GpuUIntBigInteger, bool)](#gpubigintegergpuuintbiginteger-bool) | Initializes a new instance of the `GpuBigInteger` struct. |
 
 ## GpuBigInteger(GpuUIntBigInteger, bool)
 
-Creates a signed wrapper around an existing unsigned memory buffer.
+Initializes a new instance of the `GpuBigInteger` struct.
 
 ```csharp
-public GpuBigInteger(GpuUIntBigInteger value, bool isNegative = false);
+public GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, bool isNegative);
 ```
 
 #### Parameters
 
 `value` _GpuUIntBigInteger_<br>
-The underlying absolute value residing on the GPU. The wrapper takes ownership of this reference.
+The underlying unsigned integer value.
 
 `isNegative` _bool_<br>
-`true` if the number is strictly negative; otherwise, `false`.
+Indicates whether the value is strictly negative.
 
 ## Properties
 
 | Name | Description |
 | --- | --- |
-| `Value` | Gets the underlying absolute value buffer (`GpuUIntBigInteger`) on the GPU. |
-| `IsNegative` | Gets a value indicating whether the integer is strictly negative. |
+| [IsNegative](#isnegative) | Gets a value indicating whether the integer is strictly negative. |
+| [Value](#value) | Gets the underlying absolute value buffer on the GPU. |
+
+## IsNegative
+
+Gets a value indicating whether the integer is strictly negative.
+
+```csharp
+public bool IsNegative { get; }
+```
+
+## Value
+
+Gets the underlying absolute value buffer on the GPU.
+
+```csharp
+public GpuUIntBigInteger Value { get; }
+```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
+| [CompareTo(GpuBigInteger)](#comparetogpubiginteger) | Compares this instance with another `GpuBigInteger` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the specified parameter. |
 | [Dispose()](#dispose) | Disposes the underlying GPU buffer. |
-| [CompareTo(GpuBigInteger)](#compareto-gpubiginteger) | Compares the values of two instances. |
-
-## Dispose()
-
-Disposes the underlying GPU buffer (`Value`).
-
-```csharp
-public void Dispose();
-```
+| [Equals(GpuBigInteger)](#equalsgpubiginteger) | Indicates whether the current object is equal to another object of the same type. |
+| [Equals(object?)](#equalsobject) | Indicates whether this instance and a specified object are equal. |
+| [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
 
 ## CompareTo(GpuBigInteger)
 
-Compares the values of two `GpuBigInteger` instances on the host by dispatching a comparison kernel for the absolute values and evaluating the sign bits.
+Compares this instance with another `GpuBigInteger` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the specified parameter.
 
 ```csharp
 public int CompareTo(GpuBigInteger other);
@@ -73,44 +85,87 @@ public int CompareTo(GpuBigInteger other);
 #### Parameters
 
 `other` _GpuBigInteger_<br>
-The value to compare with this instance.
+An object to compare with this instance.
 
 #### Returns
+
 _int_<br>
-A signed integer that indicates the relative values of this instance and `other`.
+A value that indicates the relative order of the objects being compared.
 
-## Examples
+## Dispose()
 
-### Creating a Signed Wrapper
+Disposes the underlying GPU buffer.
 
 ```csharp
-// Execution Context: Host (CPU)
-
-using var context = new GpuContext(maxWords: 1024);
-
-// Create an unsigned buffer representing the absolute value "42"
-var unsignedBuffer = GpuUIntBigInteger.FromBigInteger(context, 42);
-
-// Wrap it as a negative number: -42
-var signedGpuNum = new GpuBigInteger(unsignedBuffer, isNegative: true);
-
-if (signedGpuNum.IsNegative) 
-{
-    Console.WriteLine("The number is negative.");
-}
+public void Dispose();
 ```
 
-## Remarks
+## Equals(GpuBigInteger)
 
-GSharp uses a **Sign-Magnitude** representation. To avoid Warp Divergence on the GPU, all GPU kernels operate strictly on the unsigned `Value`. For detailed architectural context on why this design was chosen over Two's Complement, see [The Architecture: Signed vs. Unsigned Separation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
+Indicates whether the current object is equal to another object of the same type.
+
+```csharp
+public bool Equals(GpuBigInteger other);
+```
+
+#### Parameters
+
+`other` _GpuBigInteger_<br>
+An object to compare with this object.
+
+#### Returns
+
+_bool_<br>
+`true` if the current object is equal to the `other` parameter; otherwise, `false`.
+
+## Equals(object?)
+
+Indicates whether this instance and a specified object are equal.
+
+```csharp
+public override bool Equals(object? obj);
+```
+
+#### Parameters
+
+`obj` _object?_<br>
+The object to compare with the current instance.
+
+#### Returns
+
+_bool_<br>
+`true` if `obj` and this instance are the same type and represent the same value; otherwise, `false`.
+
+## GetHashCode()
+
+Returns the hash code for this instance.
+
+```csharp
+public override int GetHashCode();
+```
+
+#### Returns
+
+_int_<br>
+A 32-bit signed integer that is the hash code for this instance.
+
+## Operators
+
+| Name | Description |
+| --- | --- |
+| `Addition(GpuBigInteger, GpuBigInteger)` | Adds two big integers. |
+| `Subtraction(GpuBigInteger, GpuBigInteger)` | Subtracts one big integer from another. |
+| `Multiply(GpuBigInteger, GpuBigInteger)` | Multiplies two big integers. |
+| `Division(GpuBigInteger, GpuBigInteger)` | Divides one big integer by another. |
+| `Equality(GpuBigInteger, GpuBigInteger)` | Indicates whether two `GpuBigInteger` values are equal. |
+| `Inequality(GpuBigInteger, GpuBigInteger)` | Indicates whether two `GpuBigInteger` values are not equal. |
+| `LessThan(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is less than another specified `GpuBigInteger`. |
+| `GreaterThan(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is greater than another specified `GpuBigInteger`. |
+| `LessThanOrEqual(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is less than or equal to another specified `GpuBigInteger`. |
+| `GreaterThanOrEqual(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is greater than or equal to another specified `GpuBigInteger`. |
 
 ## See also
-
-
 
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
-- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](Operators.md)
-- [GpuUIntBigInteger Struct (G#)](GpuUIntBigInteger.md)
-
