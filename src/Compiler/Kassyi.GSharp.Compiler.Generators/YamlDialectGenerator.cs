@@ -23,24 +23,34 @@ public static class YamlDialectGenerator
 
         Directory.CreateDirectory(outputDir);
 
-        var yamlFiles = Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories)
-            .Where(path => path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
-                           path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
-            .Select(File.ReadAllText);
+        var dialectDefinitions = new List<DialectDefinition>();
+        var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
 
-        var dialectDefinitions = yamlFiles.Select(text =>
+        foreach (var path in Directory.GetFiles(inputDir, "*.*", SearchOption.AllDirectories))
         {
+            if (!path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) &&
+                !path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var text = File.ReadAllText(path);
+            DialectDefinition? def = null;
             try
             {
-                return s_deserializer.Deserialize<DialectDefinition>(text);
+                def = s_deserializer.Deserialize<DialectDefinition>(text);
             }
             catch
             {
-                return null;
+                // Ignore deserialization failure
             }
-        }).Where(def => def != null && !string.IsNullOrEmpty(def.Name)).Cast<DialectDefinition>().ToList();
 
-        var defMap = dialectDefinitions.ToDictionary(d => d.Name, d => d);
+            if (def != null && !string.IsNullOrEmpty(def.Name))
+            {
+                dialectDefinitions.Add(def);
+                defMap[def.Name] = def;
+            }
+        }
 
         foreach (var def in dialectDefinitions)
         {

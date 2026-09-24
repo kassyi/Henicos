@@ -64,25 +64,29 @@ internal static class CudaLayoutRules
         var maxAlign = 1;
         var pack = 0;
 
-        AttributeData structLayoutAttr = null;
+        AttributeData? structLayoutAttr = null;
         foreach (var a in namedStruct.GetAttributes())
         {
-            if (a.AttributeClass?.Name is "StructLayoutAttribute" or "StructLayout")
+            if (a.AttributeClass?.Name is not ("StructLayoutAttribute" or "StructLayout"))
             {
-                structLayoutAttr = a;
-                break;
+                continue;
             }
+
+            structLayoutAttr = a;
+            break;
         }
 
         if (structLayoutAttr != null)
         {
             foreach (var arg in structLayoutAttr.NamedArguments)
             {
-                if (arg.Key == "Pack" && arg.Value.Value is int packValue)
+                if (arg.Key != "Pack" || arg.Value.Value is not int packValue)
                 {
-                    pack = packValue;
-                    break;
+                    continue;
                 }
+
+                pack = packValue;
+                break;
             }
         }
 
@@ -120,17 +124,23 @@ internal static class CudaLayoutRules
             layout = new CudaLayoutInfo(8, 8); // Device pointer size/alignment (64-bit CUDA)
             return true;
         }
-        if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol namedEnum && namedEnum.EnumUnderlyingType != null)
+
+        if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol namedEnum &&
+            namedEnum.EnumUnderlyingType != null)
         {
             return TryGetPredefinedLayout(namedEnum.EnumUnderlyingType, out layout);
         }
 
         var primitive = type.SpecialType switch
         {
-            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => new CudaLayoutInfo(1, 1),
-            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 => new CudaLayoutInfo(2, 2),
-            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => new CudaLayoutInfo(4, 4),
-            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => new CudaLayoutInfo(8, 8),
+            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => new CudaLayoutInfo(1,
+                1),
+            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 =>
+                new CudaLayoutInfo(2, 2),
+            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => new CudaLayoutInfo(4,
+                4),
+            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => new CudaLayoutInfo(8,
+                8),
             _ => default(CudaLayoutInfo?)
         };
 

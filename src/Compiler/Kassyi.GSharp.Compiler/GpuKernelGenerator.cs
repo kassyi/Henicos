@@ -77,7 +77,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
         }, isDevice: false, cppDialect);
 
-        var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
+        var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(diagnostics.Count);
+        foreach (var d in diagnostics)
+        {
+            builder.Add(d.AsEquatable());
+        }
+        var equatableDiagnostics = builder.MoveToImmutable().AsEquatableArray();
 
         return new TranspiledKernelResult(
             methodSymbol,
@@ -91,10 +96,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         void reportDiagnostic(Diagnostic d)
         {
-            if (!diagnostics.Any(existing => existing.Id == d.Id && existing.Location == d.Location))
+            foreach (var existing in diagnostics)
             {
-                diagnostics.Add(d);
+                if (existing.Id == d.Id && existing.Location == d.Location)
+                {
+                    return;
+                }
             }
+            diagnostics.Add(d);
         }
     }
 
@@ -125,7 +134,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
         }, isDevice: true, cppDialect);
 
-        var equatableDiagnostics = diagnostics.Select(d => d.AsEquatable()).ToImmutableArray().AsEquatableArray();
+        var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(diagnostics.Count);
+        foreach (var d in diagnostics)
+        {
+            builder.Add(d.AsEquatable());
+        }
+        var equatableDiagnostics = builder.MoveToImmutable().AsEquatableArray();
 
         return new TranspiledDeviceMethodResult(
             methodSymbol,
@@ -140,10 +154,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         void reportDiagnostic(Diagnostic d)
         {
-            if (!diagnostics.Any(existing => existing.Id == d.Id && existing.Location == d.Location))
+            foreach (var existing in diagnostics)
             {
-                diagnostics.Add(d);
+                if (existing.Id == d.Id && existing.Location == d.Location)
+                {
+                    return;
+                }
             }
+            diagnostics.Add(d);
         }
     }
 
@@ -190,7 +208,16 @@ public class GpuKernelGenerator : IIncrementalGenerator
         bool isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
         ITranspilerDialect dialect = isCuda ? new GSharpCudaDialect() : new StandardCppDialect();
 
-        var distinctDeviceMethods = deviceMethods.Distinct().ToList();
+        var distinctDeviceMethods = new List<TranspiledDeviceMethodResult>();
+        var seenDeviceMethods = new HashSet<TranspiledDeviceMethodResult>();
+        foreach (var m in deviceMethods)
+        {
+            if (seenDeviceMethods.Add(m))
+            {
+                distinctDeviceMethods.Add(m);
+            }
+        }
+
         var commonDeviceSource =
             GenerateCommonDeviceSource(distinctDeviceMethods, context, isCuda);
         var preludeSource = GetPreludeSource(context, dialect);
@@ -204,9 +231,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         // Use Distinct by fully qualified method name to avoid duplicates if partial classes define it twice (which is illegal in C# but AST parses it).
         // For IMethodSymbol, SymbolEqualityComparer.Default is fine here because they are from the SAME cached output if unchanged.
-        foreach (var method in kernelMethods.Distinct())
+        var seenKernelMethods = new HashSet<TranspiledKernelResult>();
+        foreach (var method in kernelMethods)
         {
-            ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda);
+            if (seenKernelMethods.Add(method))
+            {
+                ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda);
+            }
         }
     }
 
@@ -358,20 +389,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var resourceFileName = dialect.IsCuda ? "Prelude.cu" : "Prelude.cpp";
         var assembly = typeof(GpuKernelGenerator).Assembly;
-        var resources = assembly.GetManifestResourceNames().Where(n => n.EndsWith(resourceFileName)).ToList();
+        string? resourceName = null;
+        var resourceCount = 0;
+        foreach (var n in assembly.GetManifestResourceNames())
+        {
+            if (n.EndsWith(resourceFileName, StringComparison.Ordinal))
+            {
+                resourceName = n;
+                resourceCount++;
+            }
+        }
 
-        if (resources.Count != 1)
+        if (resourceCount != 1 || resourceName == null)
         {
             var diagnostic = Diagnostic.Create(
                 GSharpDiagnostics.PreludeMissing,
                 Location.None,
                 assembly.FullName,
-                resources.Count);
+                resourceCount);
             context.ReportDiagnostic(diagnostic);
             return null;
         }
 
-        var resourceName = resources.Single();
         using var stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null)
         {

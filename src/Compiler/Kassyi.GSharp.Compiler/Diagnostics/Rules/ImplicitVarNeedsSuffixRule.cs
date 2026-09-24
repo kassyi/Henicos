@@ -27,13 +27,13 @@ internal sealed class ImplicitVarNeedsSuffixRule
         }
 
         var text = literal.Token.Text;
-        if (text.Contains('.') || text.Contains('e') || text.Contains('E'))
+        if (text.IndexOf('.') >= 0 || text.IndexOf('e') >= 0 || text.IndexOf('E') >= 0)
         {
             return;
         }
 
         var upper = text.ToUpperInvariant();
-        if (upper.Contains("U") || upper.Contains("L"))
+        if (upper.IndexOf('U') >= 0 || upper.IndexOf('L') >= 0)
         {
             return;
         }
