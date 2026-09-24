@@ -90,3 +90,7 @@ dist-ssr/
 /.agents/workflows/write-csharp-xml-comment.en.prompt.md
 /.agents/workflows/write-csharp-xml-comment.ja.prompt.md
 # --- END Antigravity global AGENTS MANAGED FILES ---
+
+# DocTest runtime files
+/tests/Kassyi.GSharp.DocTest/Program.cs
+/tests/Kassyi.GSharp.DocTest/*.csproj.user
