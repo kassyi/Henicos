@@ -1,4 +1,3 @@
-using System.Numerics;
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public class ReductionBenchmark : IComputeBenchmark

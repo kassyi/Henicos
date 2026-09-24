@@ -22,16 +22,26 @@ public class LoggerFixture : IAsyncLifetime
         int timeoutMs = 3000)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
+        long lastPosition = 0;
+        var fullContent = new System.Text.StringBuilder();
+
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
             if (File.Exists(logPath))
             {
                 using var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(fs);
-                var content = await reader.ReadToEndAsync();
-                if (predicate(content))
+                if (fs.Length > lastPosition)
                 {
-                    return content;
+                    fs.Position = lastPosition;
+                    using var reader = new StreamReader(fs);
+                    var newContent = await reader.ReadToEndAsync();
+                    fullContent.Append(newContent);
+                    lastPosition = fs.Position;
+
+                    if (predicate(fullContent.ToString()))
+                    {
+                        return fullContent.ToString();
+                    }
                 }
             }
 

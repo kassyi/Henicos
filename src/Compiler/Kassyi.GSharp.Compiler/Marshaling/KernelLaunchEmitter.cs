@@ -1,7 +1,3 @@
-using System;
-using Microsoft.CodeAnalysis;
-using Kassyi.GSharp.Compiler.Extensions;
-
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>

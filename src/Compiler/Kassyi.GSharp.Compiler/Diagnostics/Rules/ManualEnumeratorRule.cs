@@ -1,7 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 internal sealed class ManualEnumeratorRule
