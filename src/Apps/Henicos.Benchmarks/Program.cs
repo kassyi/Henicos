@@ -92,9 +92,13 @@ internal class Program
         foreach (var arg in args)
         {
             if (arg.Equals("--json", StringComparison.OrdinalIgnoreCase))
+            {
                 json = true;
+            }
             else
+            {
                 suite = arg.ToLowerInvariant();
+            }
         }
 
         var success = ComputeBenchmarkRunner.RunSuite(suite, jsonOutput: json);

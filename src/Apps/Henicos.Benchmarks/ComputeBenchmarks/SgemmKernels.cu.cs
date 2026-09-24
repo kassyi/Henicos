@@ -23,14 +23,22 @@ public static class SgemmKernels
         for (int m = 0; m < (n + 15) / 16; m++)
         {
             if (row < n && m * 16 + tx < n)
+            {
                 As[ty * 16 + tx] = a[row * n + m * 16 + tx];
+            }
             else
+            {
                 As[ty * 16 + tx] = 0.0f;
+            }
 
             if (m * 16 + ty < n && col < n)
+            {
                 Bs[ty * 16 + tx] = b[(m * 16 + ty) * n + col];
+            }
             else
+            {
                 Bs[ty * 16 + tx] = 0.0f;
+            }
 
             Gpu.SyncThreads();
 
