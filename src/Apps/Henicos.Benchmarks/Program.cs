@@ -142,7 +142,28 @@ internal class Program
             }
         }
 
-        GpuChudnovskyPi.ComputePiAndWriteToFile(targetDigits, outPath, thresholdTerms, asHex);
+        using TextWriter writer = outPath != null
+            ? new StreamWriter(outPath, append: false)
+            : asHex ? new Kassyi.GSharp.Stdlib.Math.IO.HeadTailTrackerWriter(50, 50) : new Kassyi.GSharp.Stdlib.Math.IO.HeadTailTrackerWriter();
+
+        GpuChudnovskyPi.ComputePi(targetDigits, writer, thresholdTerms, asHex);
+
+        if (outPath == null && writer is Kassyi.GSharp.Stdlib.Math.IO.HeadTailTrackerWriter ht)
+        {
+            if (asHex)
+            {
+                Logger<Program>.Info($"Result (Hex): {ht.GetPreview()}");
+                Logger<Program>.Info($"Hex output tracked. Length: {ht.TotalCharactersWritten} chars.");
+            }
+            else
+            {
+                Logger<Program>.Info($"Result: {ht.GetPreview()}");
+            }
+        }
+        else if (outPath != null)
+        {
+            Logger<Program>.Info(asHex ? "Hex output dumped to file." : "Decimal output dumped to file.");
+        }
         return 0;
     }
 
