@@ -30,35 +30,79 @@ internal static class ArraySyntaxExtractor
         out ExpressionSyntax? sizeExpression,
         out SyntaxNode? initializerNode)
     {
-        (var success, elementCount, sizeExpression, initializerNode) = initializerValue switch
+        elementCount = null;
+        sizeExpression = null;
+        initializerNode = null;
+
+        return TryGetFromCollection(initializerValue, ref elementCount, ref initializerNode) ||
+               TryGetFromStackAlloc(initializerValue, ref elementCount, ref sizeExpression, ref initializerNode) ||
+               TryGetFromArrayCreation(initializerValue, ref elementCount, ref sizeExpression, ref initializerNode) ||
+               TryGetFromInitializer(initializerValue, ref elementCount, ref initializerNode);
+    }
+
+    private static bool TryGetFromCollection(ExpressionSyntax expr, ref int? count, ref SyntaxNode? initNode)
+    {
+        if (expr is not CollectionExpressionSyntax collExpr)
         {
-            CollectionExpressionSyntax collExpr
-                => (true, collExpr.Elements.Count, null, collExpr),
+            return false;
+        }
 
-            StackAllocArrayCreationExpressionSyntax { Initializer: { } init }
-                => (true, init.Expressions.Count, null, init),
+        count = collExpr.Elements.Count;
+        initNode = collExpr;
+        return true;
+    }
 
-            StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax { RankSpecifiers.Count: > 0 } ats }
-                => (true, null, ats.RankSpecifiers[0].Sizes.FirstOrDefault(), null),
+    private static bool TryGetFromStackAlloc(ExpressionSyntax expr, ref int? count, ref ExpressionSyntax? sizeExpr,
+        ref SyntaxNode? initNode)
+    {
+        switch (expr)
+        {
+            case StackAllocArrayCreationExpressionSyntax { Initializer: { } init }:
+                count = init.Expressions.Count;
+                initNode = init;
+                return true;
+            case StackAllocArrayCreationExpressionSyntax { Type: ArrayTypeSyntax { RankSpecifiers.Count: > 0 } ats }:
+                sizeExpr = ats.RankSpecifiers[0].Sizes.FirstOrDefault();
+                return true;
+            case ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc:
+                count = implStackAlloc.Initializer.Expressions.Count;
+                initNode = implStackAlloc.Initializer;
+                return true;
+        }
 
-            ImplicitStackAllocArrayCreationExpressionSyntax implStackAlloc
-                => (true, implStackAlloc.Initializer.Expressions.Count, null, implStackAlloc.Initializer),
+        return false;
+    }
 
-            ArrayCreationExpressionSyntax { Initializer: { } init }
-                => (true, init.Expressions.Count, null, init),
+    private static bool TryGetFromArrayCreation(ExpressionSyntax expr, ref int? count, ref ExpressionSyntax? sizeExpr,
+        ref SyntaxNode? initNode)
+    {
+        switch (expr)
+        {
+            case ArrayCreationExpressionSyntax { Initializer: { } init }:
+                count = init.Expressions.Count;
+                initNode = init;
+                return true;
+            case ArrayCreationExpressionSyntax { Type.RankSpecifiers.Count: > 0 } arrCreation:
+                sizeExpr = arrCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault();
+                return true;
+            case ImplicitArrayCreationExpressionSyntax implicitArray:
+                count = implicitArray.Initializer.Expressions.Count;
+                initNode = implicitArray.Initializer;
+                return true;
+        }
 
-            ArrayCreationExpressionSyntax { Type.RankSpecifiers.Count: > 0 } arrCreation
-                => (true, null, arrCreation.Type.RankSpecifiers[0].Sizes.FirstOrDefault(), null),
+        return false;
+    }
 
-            ImplicitArrayCreationExpressionSyntax implicitArray
-                => (true, implicitArray.Initializer.Expressions.Count, null, implicitArray.Initializer),
+    private static bool TryGetFromInitializer(ExpressionSyntax expr, ref int? count, ref SyntaxNode? initNode)
+    {
+        if (expr is not InitializerExpressionSyntax initExpr)
+        {
+            return false;
+        }
 
-            InitializerExpressionSyntax initExpr
-                => (true, initExpr.Expressions.Count, null, initExpr),
-
-            _ => (false, (int?)null, (ExpressionSyntax?)null, (SyntaxNode?)null)
-        };
-
-        return success;
+        count = initExpr.Expressions.Count;
+        initNode = initExpr;
+        return true;
     }
 }
