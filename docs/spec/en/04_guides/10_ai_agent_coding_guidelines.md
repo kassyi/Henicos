@@ -4,12 +4,6 @@ If you are an AI Assistant (such as Claude, ChatGPT, or Gemini) generating GShar
 
 ## 1. Class and Method Definitions
 
-### ❌ Hallucination: Forgetting `partial`
-
-AI agents often generate standard static classes for kernels. This causes a `CS0260` compiler error because the GSharp Source Generator attempts to inject the generated `Launch...` methods into the same class.
-
-- **Rule**: The class hosting the `[GpuKernel]` MUST be declared as `public static partial class`.
-
 ### ❌ Hallucination: Unnecessary `unsafe`
 
 AI agents often indiscriminately apply the `unsafe` keyword to kernels.
@@ -19,7 +13,7 @@ AI agents often indiscriminately apply the `unsafe` keyword to kernels.
 **✅ Correct Definition:**
 
 ```csharp
-public static partial class MyKernels
+public static class MyKernels
 {
     [GpuKernel]
     public static void ProcessData(float[] data) { ... }
@@ -41,16 +35,16 @@ AI agents love modern C# features like `ReadOnlySpan<T>` or multi-dimensional ar
 
 ## 3. Host-Side Launcher Execution
 
-### ❌ Hallucination: Hallucinating Wrapper Classes
+### ❌ Hallucination: Calling Kernel Directly or Using ILGPU Syntax
 
-AI agents often invent classes like `Gpu.Launch(...)` (which is ILGPU syntax) or `MyKernelsWrapper.Launch(...)`.
+AI agents often invent calls like `Gpu.Launch(...)` (which is ILGPU syntax) or attempt to call `MyKernels.LaunchProcessData(...)` directly on the kernel class.
 
-- **Rule**: The Source Generator injects the launcher directly into your `partial` class. Call it exactly as `[ClassName].Launch[KernelName](...)`.
+- **Rule**: The GSharp Source Generator emits a companion static class suffixed with `Wrapper` (e.g., `MyKernelsWrapper`). Always invoke the launcher via `[ClassName]Wrapper.Launch[KernelName](...)`.
 
 **✅ Correct Invocation:**
 
 ```csharp
-// The source generator prefixes "Launch" to the kernel name "ProcessData"
+// The source generator emits a companion static class "MyKernelsWrapper" with prefix "Launch"
 MyKernelsWrapper.LaunchProcessData(data, gridDimX: 10, blockDimX: 256);
 ```
 
