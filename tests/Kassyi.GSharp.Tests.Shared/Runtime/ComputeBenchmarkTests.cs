@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
+[Trait("Category", "Benchmark")]
 public class ComputeBenchmarkTests
 {
     [SkippableFact]
