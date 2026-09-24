@@ -115,6 +115,39 @@ public abstract class YamlDialectBase : ITranspilerDialect
         return false;
     }
 
+    public virtual bool TryMapMemberAccess(ITypeSymbol typeSymbol, string memberName, out string? mappedName, out bool isMethodCall)
+    {
+        mappedName = null;
+        isMethodCall = false;
+
+        if (typeSymbol.IsSystemNumericsVector())
+        {
+            mappedName = memberName.ToLowerInvariant();
+            return true;
+        }
+
+        if (memberName == "Length")
+        {
+            if (typeSymbol.HasAttribute(KnownAttributes.InlineArray))
+            {
+                mappedName = "size";
+                isMethodCall = true;
+                return true;
+            }
+
+            mappedName = "length";
+            return true;
+        }
+
+        if (memberName == "Count")
+        {
+            mappedName = "length";
+            return true;
+        }
+
+        return false;
+    }
+
     public virtual (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(
         ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {

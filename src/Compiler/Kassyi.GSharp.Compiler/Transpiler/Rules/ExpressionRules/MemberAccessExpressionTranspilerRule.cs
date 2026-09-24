@@ -82,29 +82,21 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
         var memberName = node.Name.Identifier.Text;
         var typeInfo = context.SemanticModel.GetTypeInfo(node.Expression);
-        if (typeInfo.Type != null)
+        if (typeInfo.Type != null && context.Dialect.TryMapMemberAccess(typeInfo.Type, memberName, out var mappedName, out var isMethodCall))
         {
-            if (typeInfo.Type.IsSystemNumericsVector())
+            if (isMethodCall)
             {
-                memberName = memberName.ToLowerInvariant();
+                context.Writer.Append(mappedName!).AppendParentheses();
             }
-            else if (memberName == "Length")
+            else
             {
-                if (typeInfo.Type.HasAttribute(KnownAttributes.InlineArray))
-                {
-                    context.Writer.Append("size()");
-                    return;
-                }
-
-                memberName = "length";
-            }
-            else if (memberName == "Count")
-            {
-                memberName = "length";
+                context.Writer.Append(mappedName!);
             }
         }
-
-        context.Writer.Append(memberName);
+        else
+        {
+            context.Writer.Append(memberName);
+        }
     }
 
     private static bool TryTranspileStackArrayLength(MemberAccessExpressionSyntax node, ref TranspileContext context)
