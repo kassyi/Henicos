@@ -5,9 +5,9 @@ namespace Henicos.Benchmarks;
 /// <summary>Computes high-precision Pi digits using the Chudnovsky binary splitting algorithm on CPU.</summary>
 public class ChudnovskyPi
 {
-    private struct ChudnovskyResult
+    public struct ChudnovskyPqt
     {
-        public BigInteger PolynomialP, PolynomialQ, PolynomialT;
+        public BigInteger P, Q, T;
     }
 
     public static string ComputePi(int digits)
@@ -16,12 +16,12 @@ public class ChudnovskyPi
         var n = digits / 14 + 1;
 
         var sw = Stopwatch.StartNew();
-        var pqt = Compute(0, n);
+        var pqt = ComputeSubtree(0, n);
 
         BigInteger chudnovskyConstant = 426880;
 
-        var factorQ = pqt.PolynomialQ;
-        var factorT = pqt.PolynomialT;
+        var factorQ = pqt.Q;
+        var factorT = pqt.T;
 
         // Add 20 extra digits for precision during division
         var extraDigits = 20;
@@ -39,40 +39,40 @@ public class ChudnovskyPi
         return pi.ToString();
     }
 
-    private static ChudnovskyResult Compute(int a, int b)
+    public static ChudnovskyPqt ComputeSubtree(int a, int b)
     {
         if (a + 1 == b)
         {
             if (a == 0)
             {
-                return new ChudnovskyResult
+                return new ChudnovskyPqt
                 {
-                    PolynomialP = 1,
-                    PolynomialQ = 1,
-                    PolynomialT = 13591409
+                    P = 1,
+                    Q = 1,
+                    T = 13591409
                 };
             }
 
             var numeratorP = -(BigInteger)(6L * a - 5) * (2L * a - 1) * (6L * a - 1);
             var denominatorQ = (BigInteger)10939058860032000L * a * a * a;
             var sumT = numeratorP * (13591409 + (BigInteger)545140134L * a);
-            return new ChudnovskyResult
+            return new ChudnovskyPqt
             {
-                PolynomialP = numeratorP,
-                PolynomialQ = denominatorQ,
-                PolynomialT = sumT
+                P = numeratorP,
+                Q = denominatorQ,
+                T = sumT
             };
         }
 
         var m = (a + b) / 2;
-        var l = Compute(a, m);
-        var r = Compute(m, b);
+        var l = ComputeSubtree(a, m);
+        var r = ComputeSubtree(m, b);
 
-        return new ChudnovskyResult
+        return new ChudnovskyPqt
         {
-            PolynomialP = l.PolynomialP * r.PolynomialP,
-            PolynomialQ = l.PolynomialQ * r.PolynomialQ,
-            PolynomialT = l.PolynomialT * r.PolynomialQ + l.PolynomialP * r.PolynomialT
+            P = l.P * r.P,
+            Q = l.Q * r.Q,
+            T = l.T * r.Q + l.P * r.T
         };
     }
 }
