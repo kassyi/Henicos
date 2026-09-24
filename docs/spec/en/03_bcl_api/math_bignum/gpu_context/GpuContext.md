@@ -123,8 +123,37 @@ Instantiating `GpuContext` allocates workspace memory on the active CUDA device.
 
 **Thread Safety:** Instance members are thread-safe for allocation pooling.
 
+## Examples
+
+### Allocating a Workspace and Native Compilation Engine
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
+```csharp
+using System;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+
+// 1. Create a GpuContext with a specific capacity
+using var context = new GpuContext(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
+
+// 2. Output properties to verify initialization
+// Outputs: MaxWords: 1024, Engine: GSharpAot
+Console.WriteLine($"MaxWords: {context.MaxWords}");
+Console.WriteLine($"Engine: {context.Engine}");
+```
+
 ## See also
 
-### BCL API > Math Bignum
+### BCL API > Math (BigNum)
 
-- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../../04_guides/00_index.md)
+- [7. Stdlib Math and Lazy Evaluation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+- [4. BigNum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
