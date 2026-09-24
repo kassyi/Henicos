@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Henicos.Benchmarks.Tests;
 
+[Trait("Category", "GpuExecution")]
 public class GpuChudnovskyPiTests
 {
     [Fact]
