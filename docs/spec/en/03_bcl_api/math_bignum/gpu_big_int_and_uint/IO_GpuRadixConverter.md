@@ -63,7 +63,7 @@ Thrown when `targetDigits` is negative or zero.
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.Math
 
-### Printing a 10-Million Digit Number
+### Printing a 10,000 Digit Number
 
 ```csharp
 // Execution Context: Host (CPU)
@@ -76,7 +76,7 @@ using Kassyi.GSharp.Stdlib.Math.IO;
 using var context = new GpuContext(2048, GpuExecutionEngine.GSharpAot);
 
 // Assume we just finished calculating a massive factorial or Pi
-GpuUIntBigInteger resultGpu = GpuUIntBigInteger.Zero(context, 100);
+GpuUIntBigInteger resultGpu = new GpuUIntBigInteger(context, 100);
 
 Console.WriteLine("Starting base-10 conversion (this might take a few seconds)...");
 
@@ -84,7 +84,7 @@ Console.WriteLine("Starting base-10 conversion (this might take a few seconds)..
 // and streams the result directly to a file without allocating a massive string.
 using (var writer = new StreamWriter("result.txt"))
 {
-    GpuRadixConverter.ConvertAndWrite(context, resultGpu, targetDigits: 10_000_000, writer);
+    GpuRadixConverter.ConvertAndWrite(context, resultGpu, targetDigits: 10_000, writer);
 }
 
 Console.WriteLine("Conversion complete. Output written to result.txt.");

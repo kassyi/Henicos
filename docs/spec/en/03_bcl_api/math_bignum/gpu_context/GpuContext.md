@@ -94,6 +94,7 @@ public IntPtr WorkspacePointer { get; }
 | Name | Description |
 | --- | --- |
 | [Dispose()](#dispose) | Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context. |
+| [Dispose(bool)](#disposebool) | Releases unmanaged and, optionally, managed resources. |
 
 ## Dispose()
 
@@ -102,6 +103,19 @@ Releases all device memory resources, temporary pooled buffers, and workspace ha
 ```csharp
 public void Dispose();
 ```
+
+## Dispose(bool)
+
+Releases unmanaged and, optionally, managed resources.
+
+```csharp
+protected virtual void Dispose(bool disposing);
+```
+
+#### Parameters
+
+`disposing` _bool_<br>
+`true` to release both managed and unmanaged resources; `false` to release only unmanaged resources.
 
 ## Remarks
 
