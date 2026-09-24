@@ -115,6 +115,41 @@ The right state to merge.
 _GpuHypergeometricPqt_<br>
 A newly merged `GpuHypergeometricPqt` containing the combined P, Q, and T components.
 
+## Examples
+
+### Binary Splitting State Merging
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
+```csharp
+using System;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+
+// Execution Context: Host (CPU) or G# Kernel (GPU)
+
+using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+
+// Initialize two adjacent states for binary splitting (P=1, Q=1, T=1)
+var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var qLeft = GpuUIntBigInteger.FromBigInteger(context, 1, 4);
+var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+using var stateLeft = new GpuHypergeometricPqt(pLeft, qLeft, tLeft);
+
+var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var qRight = GpuUIntBigInteger.FromBigInteger(context, 1, 4);
+var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+using var stateRight = new GpuHypergeometricPqt(pRight, qRight, tRight);
+
+// Merge the two states
+// P = Pl * Pr
+// Q = Ql * Qr
+// T = Tl * Qr + Pl * Tr
+using var merged = GpuHypergeometricPqt.Merge(context, stateLeft, stateRight);
+```
+
 ## Remarks
 
 Defined according to the Binary Splitting algorithm:
@@ -129,6 +164,14 @@ The merge operation is computed as:
 
 ## See also
 
-### BCL API > Math Bignum
+### BCL API > Math (BigNum)
 
-- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../../04_guides/00_index.md)
+- [7. Stdlib Math and Lazy Evaluation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+- [4. BigNum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)

@@ -137,8 +137,37 @@ Writes a string to the stream.
 public override void Write(string? value);
 ```
 
+## Examples
+
+### Tracking Output Stream Limits
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+
+```csharp
+using System;
+using Kassyi.GSharp.Stdlib.Math.IO;
+
+var tracker = new HeadTailTrackerWriter(headCapacity: 5, tailCapacity: 3);
+
+// Write exactly 10 characters: "0123456789"
+for (int i = 0; i < 10; i++)
+{
+    tracker.Write(i.ToString());
+}
+
+// 0123456789 (length 10)
+// Head (5): "01234"
+// Tail (3): "789"
+// Expected output: 01234...789
+Console.WriteLine(tracker.GetPreview());
+```
+
 ## See also
 
-### BCL API > Math Bignum
+### BCL API > Math (BigNum)
 
-- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuUIntBigInteger](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md)

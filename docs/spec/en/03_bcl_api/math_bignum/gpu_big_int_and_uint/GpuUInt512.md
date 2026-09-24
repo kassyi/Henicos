@@ -22,10 +22,10 @@ public struct GpuUInt512
 
 ## Constructors
 
-| Name | Description |
-| --- | --- |
+| Name                                                                                           | Description                                            |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
 | [GpuUInt512(GpuUIntBigInteger&lt;LimbBuffer16&gt;)](#gpuuint512gpuuintbiginteger-limbbuffer16) | Initializes a new instance of the `GpuUInt512` struct. |
-| [GpuUInt512(uint)](#gpuuint512uint) | Initializes a new instance of the `GpuUInt512` struct. |
+| [GpuUInt512(uint)](#gpuuint512uint)                                                            | Initializes a new instance of the `GpuUInt512` struct. |
 
 ## GpuUInt512(GpuUIntBigInteger&lt;LimbBuffer16&gt;)
 
@@ -55,8 +55,8 @@ The scalar value to initialize.
 
 ## Methods
 
-| Name | Description |
-| --- | --- |
+| Name                                                         | Description                                                             |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | [Create(ReadOnlySpan&lt;uint&gt;)](#createreadonlyspan-uint) | Creates a new instance of the `GpuUInt512` struct from a span of limbs. |
 
 ## Create(ReadOnlySpan&lt;uint&gt;)
@@ -79,14 +79,49 @@ A newly created `GpuUInt512` struct.
 
 ## Operators
 
-| Name | Description |
-| --- | --- |
+| Name                                                      | Description                                                                |
+| --------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `Implicit(GpuUInt512 to GpuUIntBigInteger<LimbBuffer16>)` | Implicitly converts a `GpuUInt512` to a `GpuUIntBigInteger<LimbBuffer16>`. |
 | `Implicit(GpuUIntBigInteger<LimbBuffer16> to GpuUInt512)` | Implicitly converts a `GpuUIntBigInteger<LimbBuffer16>` to a `GpuUInt512`. |
-| `Implicit(uint to GpuUInt512)` | Implicitly converts a `uint` to a `GpuUInt512`. |
+| `Implicit(uint to GpuUInt512)`                            | Implicitly converts a `uint` to a `GpuUInt512`.                            |
+
+## Examples
+
+### Creating GpuUInt512 Instances
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
+```csharp
+using System;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+
+// Execution Context: Host (CPU) or G# Kernel (GPU)
+
+// 1. Create a 512-bit unsigned integer from a 32-bit scalar value
+GpuUInt512 fromScalar = new GpuUInt512(42u);
+
+// 2. Implicit conversion from uint is supported
+GpuUInt512 implicitConversion = 100u;
+
+// 3. Create from an array of sixteen 32-bit limbs (CollectionBuilder syntax)
+GpuUInt512 fromLimbs = [ 0x00000001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+
+// 4. Retrieve the underlying GpuUIntBigInteger<LimbBuffer16> implicitly
+GpuUIntBigInteger<LimbBuffer16> underlyingBuffer = fromLimbs;
+```
 
 ## See also
 
-### BCL API > Math Bignum
+### BCL API > Math (BigNum)
 
-- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../../04_guides/00_index.md)
+- [7. Stdlib Math and Lazy Evaluation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+- [4. BigNum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)

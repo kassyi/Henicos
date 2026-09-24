@@ -164,8 +164,42 @@ A 32-bit signed integer that is the hash code for this instance.
 | `LessThanOrEqual(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is less than or equal to another specified `GpuBigInteger`. |
 | `GreaterThanOrEqual(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is greater than or equal to another specified `GpuBigInteger`. |
 
+## Examples
+
+### Creating and using GpuBigInteger
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+
+```csharp
+using System;
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.Math.BigInt;
+
+// Execution Context: Host (CPU) or G# Kernel (GPU)
+
+// 1. Create a GpuContext
+using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+
+// 2. Allocate an underlying unsigned integer buffer (e.g. 4 limbs)
+using var uintVal = new GpuUIntBigInteger(context, 4);
+
+// 3. Wrap it with a sign to represent a signed integer
+var posBigInt = new GpuBigInteger(uintVal, isNegative: false);
+var negBigInt = new GpuBigInteger(uintVal, isNegative: true);
+```
+
 ## See also
 
-### BCL API > Math Bignum
+### BCL API > Math (BigNum)
 
-- [Standard Math Library (Stdlib.Math)](../00_index.md)
+- [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
+- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+
+### Guides
+
+- [4. Practical Guides and Best Practices](../../../04_guides/00_index.md)
+- [7. Stdlib Math and Lazy Evaluation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)
+- [4. BigNum Expression Trees Guide](../../../04_guides/04_bignum_expression_trees_guide.md)
