@@ -56,7 +56,7 @@ public class GpuContext : IDisposable
         ? GSharpAotProvider.Instance
         : NativeProvider.Instance;
 
-    private bool _disposed;
+    private int _disposed;
 
     // Memory pooling for Lazy Evaluation
     private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuUIntBigInteger>>> _tempPool = new();
@@ -106,7 +106,7 @@ public class GpuContext : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {
             return;
         }
@@ -142,7 +142,6 @@ public class GpuContext : IDisposable
             }
         }
 
-        _disposed = true;
     }
 
     ~GpuContext()
@@ -152,6 +151,7 @@ public class GpuContext : IDisposable
 
     internal GpuUIntBigInteger RentTemp(int numWords)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var temp))
         {
             temp.Disposed = false;
@@ -174,8 +174,22 @@ public class GpuContext : IDisposable
             return;
         }
 
+        if (Volatile.Read(ref _disposed) == 1)
+        {
+            temp.DisposeCore();
+            return;
+        }
+
         var bag = _tempPool.GetOrAdd(temp.NumWords, _ => new Lazy<ConcurrentBag<GpuUIntBigInteger>>(() => [])).Value;
         bag.Add(temp);
+
+        if (Volatile.Read(ref _disposed) == 1)
+        {
+            if (bag.TryTake(out var t))
+            {
+                t.DisposeCore();
+            }
+        }
     }
 }
 
