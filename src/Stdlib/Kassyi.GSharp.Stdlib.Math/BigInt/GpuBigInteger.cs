@@ -26,31 +26,21 @@ public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, b
 
     public int CompareTo(GpuBigInteger other)
     {
-        var thisZero = Value.IsZero();
-        var otherZero = other.Value.IsZero();
+        bool thisZero = Value.IsZero();
+        bool otherZero = other.Value.IsZero();
 
-        if (thisZero && otherZero)
-        {
-            return 0;
-        }
+        int absCmp = Value.CompareTo(other.Value);
+        
+        int sameSignCmp = IsNegative ? -absCmp : absCmp;
+        int diffSignCmp = IsNegative ? -1 : 1;
+        int normalCmp = (IsNegative != other.IsNegative) ? diffSignCmp : sameSignCmp;
 
-        if (thisZero)
-        {
-            return other.IsNegative ? 1 : -1;
-        }
+        int thisZeroCmp = other.IsNegative ? 1 : -1;
+        int otherZeroCmp = IsNegative ? -1 : 1;
 
-        if (otherZero)
-        {
-            return IsNegative ? -1 : 1;
-        }
-
-        if (IsNegative != other.IsNegative)
-        {
-            return IsNegative ? -1 : 1;
-        }
-
-        var absCmp = Value.CompareTo(other.Value);
-        return IsNegative ? -absCmp : absCmp;
+        int zeroCmp = thisZero ? thisZeroCmp : (otherZero ? otherZeroCmp : normalCmp);
+        
+        return (thisZero && otherZero) ? 0 : zeroCmp;
     }
 
     public bool Equals(GpuBigInteger other) => CompareTo(other) == 0;
