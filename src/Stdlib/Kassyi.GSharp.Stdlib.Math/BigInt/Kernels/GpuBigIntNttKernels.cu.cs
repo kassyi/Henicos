@@ -348,39 +348,92 @@ public static class GpuBigIntNttKernels
             });
         }
 
-        Gpu.InlinePtx("extern __shared__ uint64_t s_scan[];");
-        Gpu.InlinePtx($"s_scan[{tIdx}] = {localSum};");
+        uint L = (uint)(localSum & 0xFFFFFFFFul);
+        uint H = (uint)(localSum >> 32);
+
+        uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
+
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
+
+        int laneId = tIdx % 32;
+        int warpId = tIdx / 32;
+        int bDim = BlockDimension.X;
+
+        if (laneId == 31)
+        {
+            sharedH[warpId] = H;
+        }
         Gpu.SyncThreads();
 
-        if (tIdx == 0)
+        if (laneId == 0)
         {
-            ulong carry = 0;
-            int end = chunkSize;
-            if (startIdx + end > maxWordCount)
+            if (warpId == 0)
             {
-                end = maxWordCount - startIdx;
+                prevH = 0u;
             }
-
-            for (int j = 0; j < end; j++)
+            else
             {
-                ulong val = 0;
-                Gpu.InlinePtx($"{val} = s_scan[{j}];");
-                val += carry;
-                Gpu.InlinePtx($"s_scan[{j}] = {val};");
-                carry = val >> 32;
+                prevH = sharedH[warpId - 1];
             }
+        }
 
-            blockCarries[bIdx] = (uint)carry;
+        ulong sum = (ulong)L + prevH;
+        uint g = (uint)(sum >> 32);
+        uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+
+        var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+        uint scanG = warpScan.Generate;
+        uint scanP = warpScan.Propagate;
+
+        if (laneId == 31)
+        {
+            sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
         }
 
         Gpu.SyncThreads();
+
+        if (warpId == 0)
+        {
+            int numWarps = bDim / 32;
+            var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
+            var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
+
+            if (laneId < numWarps)
+            {
+                sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+            }
+        }
+
+        Gpu.SyncThreads();
+
+        uint carryIn = 0u;
+
+        if (warpId > 0)
+        {
+            carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
+        }
+
+        uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+        uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+        if (laneId > 0)
+        {
+            carryIn = prevScanG | (prevScanP & carryIn);
+        }
 
         if (i < maxWordCount)
         {
-            ulong val = 0;
-            Gpu.InlinePtx($"{val} = s_scan[{tIdx}];");
-            outputBuffer[i] = (uint)val;
+            outputBuffer[i] = (uint)sum + carryIn;
         }
+
+        if (tIdx == 0)
+        {
+            uint lastH = sharedH[(bDim / 32) - 1];
+            uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[(bDim / 32) - 1]), 0u);
+            blockCarries[bIdx] = lastH + waveCarry;
+        }
+
+        Gpu.SyncThreads();
     }
 
     [GpuKernel]

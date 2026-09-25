@@ -49,33 +49,33 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public void Add(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
-        var dims = CalculateGridDim(leftOperand.NumWords);
+        var blockDim = System.Math.Min(1024, leftOperand.NumWords);
 
         GpuBigIntScalarKernelsWrapper.LaunchScalarAddKernel_Device(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
+            gridDimX: 1, blockDimX: (uint)blockDim);
     }
 
     /// <inheritdoc/>
     public void Sub(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
-        var dims = CalculateGridDim(leftOperand.NumWords);
+        var blockDim = System.Math.Min(1024, leftOperand.NumWords);
 
         GpuBigIntScalarKernelsWrapper.LaunchScalarSubKernel_Device(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
+            gridDimX: 1, blockDimX: (uint)blockDim);
     }
 
     /// <inheritdoc/>
     public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
-        var dims = CalculateGridDim(leftOperand.NumWords);
+        var blockDim = System.Math.Min(1024, leftOperand.NumWords);
 
         GpuBigIntScalarKernelsWrapper.LaunchScalarMulKernel_Device(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
+            gridDimX: 1, blockDimX: (uint)blockDim);
     }
 
     /// <inheritdoc/>
@@ -200,12 +200,15 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var wordsToRead = System.Math.Min(3, numWords - wordShift);
         uint* hostData = stackalloc uint[3];
-        hostData[0] = 0; hostData[1] = 0; hostData[2] = 0;
+        hostData[0] = 0;
+        hostData[1] = 0;
+        hostData[2] = 0;
 
         using (new GpuKernelLoader.CudaContextScope())
         {
             CudaException.ThrowIfError(
-                CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostData, IntPtr.Add(operand.DevicePointer, wordShift * 4), wordsToRead * 4));
+                CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostData, IntPtr.Add(operand.DevicePointer, wordShift * 4),
+                    wordsToRead * 4));
         }
 
         var val64 = hostData[0] | ((ulong)hostData[1] << 32);
@@ -711,7 +714,8 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public IntPtr InstantiateGraph(IntPtr graph)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var graphExec, graph, IntPtr.Zero, IntPtr.Zero, 0));
+        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var graphExec, graph, IntPtr.Zero, IntPtr.Zero,
+            0));
         return graphExec;
     }
 
@@ -730,6 +734,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         {
             CudaDriverApi.cuGraphExecDestroy(graphExec);
         }
+
         if (graph != IntPtr.Zero)
         {
             CudaDriverApi.cuGraphDestroy(graph);

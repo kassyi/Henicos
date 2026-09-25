@@ -8,12 +8,42 @@ using Contexts;
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntKernels
 {
+    /// <summary>
+    /// Represents the carry generation and propagation bits for prefix sum operations.
+    /// </summary>
+    public struct CarryState
+    {
+        public uint Generate;
+        public uint Propagate;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public CarryState(uint generate, uint propagate)
+        {
+            Generate = generate;
+            Propagate = propagate;
+        }
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint WarpScanGp(uint val, int laneId)
+    public static uint PackCarryState(CarryState state) => (state.Propagate << 1) | state.Generate;
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static CarryState UnpackCarryState(uint packed) => new(packed & 1u, (packed >> 1) & 1u);
+
+    /// <summary>
+    /// Computes the warp-wide prefix sum of carry generation (G) and propagation (P) bits using the Kogge-Stone algorithm.
+    /// </summary>
+    /// <param name="state">The carry state containing Generate and Propagate bits for the current thread.</param>
+    /// <param name="laneId">The thread's lane index within the warp (0 to 31).</param>
+    /// <returns>The warp-wide inclusive prefix sum result containing the accumulated Generate and Propagate bits.</returns>
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static CarryState WarpScanGp(CarryState state, int laneId)
     {
-        uint g = val & 1u;
-        uint p = (val >> 1) & 1u;
+        uint g = state.Generate;
+        uint p = state.Propagate;
 
         for (int i = 1; i < 32; i *= 2)
         {
@@ -29,16 +59,20 @@ public static class GpuBigIntKernels
             p = p & prevP;
         }
 
-        return (p << 1) | g;
+        return new CarryState(g, p);
     }
 
+    /// <summary>
+    /// Applies an incoming carry to the carry state.
+    /// </summary>
+    /// <param name="state">The carry state containing Generate and Propagate bits, typically produced by <see cref="WarpScanGp"/>.</param>
+    /// <param name="carryIn">The carry-in bit to propagate through the P bit.</param>
+    /// <returns>The final resolved carry bit (0 or 1) for the current segment.</returns>
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint ApplyCarry(uint gp, uint carryIn)
+    public static uint ApplyCarry(CarryState state, uint carryIn)
     {
-        uint g = gp & 1u;
-        uint p = (gp >> 1) & 1u;
-        return g | (p & carryIn);
+        return state.Generate | (state.Propagate & carryIn);
     }
 
     [GpuDeviceFunction]
@@ -77,13 +111,13 @@ public static class GpuBigIntKernels
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            uint warpScan = WarpScanGp((p << 1) | g, laneId);
-            uint scanG = warpScan & 1u;
-            uint scanP = (warpScan >> 1) & 1u;
+            var warpScan = WarpScanGp(new CarryState(g, p), laneId);
+            uint scanG = warpScan.Generate;
+            uint scanP = warpScan.Propagate;
 
             if (laneId == 31)
             {
-                sharedCarry[warpId] = warpScan;
+                sharedCarry[warpId] = PackCarryState(warpScan);
             }
 
             Gpu.SyncThreads();
@@ -91,12 +125,12 @@ public static class GpuBigIntKernels
             if (warpId == 0)
             {
                 int numWarps = bDim / 32;
-                uint val = laneId < numWarps ? sharedCarry[laneId] : 0u;
-                uint blockScan = WarpScanGp(val, laneId);
+                var valState = laneId < numWarps ? UnpackCarryState(sharedCarry[laneId]) : new CarryState(0, 0);
+                var blockScan = WarpScanGp(valState, laneId);
 
                 if (laneId < numWarps)
                 {
-                    sharedCarry[laneId] = blockScan;
+                    sharedCarry[laneId] = PackCarryState(blockScan);
                 }
             }
 
@@ -106,7 +140,7 @@ public static class GpuBigIntKernels
 
             if (warpId > 0)
             {
-                carryIn = ApplyCarry(sharedCarry[warpId - 1], carryIn);
+                carryIn = ApplyCarry(UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
             }
 
             uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
@@ -121,7 +155,7 @@ public static class GpuBigIntKernels
                 result[idx] = (uint)sum + carryIn;
             }
 
-            blockCarryIn = ApplyCarry(sharedCarry[(bDim / 32) - 1], blockCarryIn);
+            blockCarryIn = ApplyCarry(UnpackCarryState(sharedCarry[(bDim / 32) - 1]), blockCarryIn);
 
             Gpu.SyncThreads();
         }
