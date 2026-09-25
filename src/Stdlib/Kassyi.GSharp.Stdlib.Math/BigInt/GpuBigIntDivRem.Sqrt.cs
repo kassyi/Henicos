@@ -96,13 +96,13 @@ public static partial class GpuBigIntDivRem
         var hostDataSingle = ArrayPool<uint>.Shared.Rent(n);
         try
         {
-            leftOperand.Context.Provider.CopyDeviceToHost(hostDataSingle, leftOperand.DevicePointer, n);
+            leftOperand.Context.Provider.CopyDeviceToHost(hostDataSingle, leftOperand.DevicePointer, n, leftOperand.Context.Stream);
             var val = hostDataSingle[0];
             var sqrtVal = (uint)System.Math.Sqrt(val);
             resultBuffer.Clear();
             if (sqrtVal > 0)
             {
-                resultBuffer.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, [sqrtVal], 1);
+                resultBuffer.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, [sqrtVal], 1, resultBuffer.Context.Stream);
             }
             return true;
         }
@@ -147,7 +147,7 @@ public static partial class GpuBigIntDivRem
         
         if (GetActualBits(currentRoot) == 0)
         {
-            currentRoot.Context.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1);
+            currentRoot.Context.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Context.Stream);
         }
 
         return currentRoot;
@@ -182,7 +182,7 @@ public static partial class GpuBigIntDivRem
             }
 
             using var plusOne = new GpuUIntBigInteger(leftOperand.Context, n);
-            plusOne.Context.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1);
+            plusOne.Context.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1, plusOne.Context.Stream);
             using var prevPlusOne = new GpuUIntBigInteger(leftOperand.Context, n);
             GpuBigIntMath.Add(prevRoot, plusOne, prevPlusOne);
 
@@ -198,7 +198,7 @@ public static partial class GpuBigIntDivRem
         GpuBigIntMath.Mul(currentRoot, currentRoot, squaredRoot);
 
         var topHalf = new uint[n];
-        leftOperand.Context.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n);
+        leftOperand.Context.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n, leftOperand.Context.Stream);
         var isGreater = false;
         for (var i = 0; i < n; i++)
         {
@@ -220,7 +220,7 @@ public static partial class GpuBigIntDivRem
         if (isGreater)
         {
             using var one = new GpuUIntBigInteger(leftOperand.Context, n);
-            one.Context.Provider.CopyHostToDevice(one.DevicePointer, [1u], 1);
+            one.Context.Provider.CopyHostToDevice(one.DevicePointer, [1u], 1, one.Context.Stream);
             GpuBigIntMath.Sub(currentRoot, one, resultBuffer);
         }
         else

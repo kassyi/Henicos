@@ -77,7 +77,7 @@ public class FermatRunner : IDisposable
         // Init ValueT = 2
         var initArray = new uint[_outNumWords];
         initArray[0] = 2;
-        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, initArray, _outNumWords);
+        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, initArray, _outNumWords, _gpuContext.Stream);
 
         // Init MaskR
         var bit2E1 = 2 * E + 1;
@@ -94,14 +94,14 @@ public class FermatRunner : IDisposable
             maskArray[word2E1] = (1U << rem2E1) - 1;
         }
 
-        _gpuContext.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, _outNumWords);
+        _gpuContext.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, _outNumWords, _gpuContext.Stream);
     }
 
     /// <summary>Gets a copy of the current state buffer (ValueT).</summary>
     public uint[] GetState()
     {
         var copy = new uint[_outNumWords];
-        _gpuContext.Provider.CopyDeviceToHost(copy, _valueT.DevicePointer, _outNumWords);
+        _gpuContext.Provider.CopyDeviceToHost(copy, _valueT.DevicePointer, _outNumWords, _gpuContext.Stream);
         return copy;
     }
 
@@ -113,13 +113,13 @@ public class FermatRunner : IDisposable
             throw new ArgumentException($"Invalid state buffer size. Expected {_outNumWords}, got {valueT.Length}.");
         }
 
-        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, _outNumWords);
+        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, _outNumWords, _gpuContext.Stream);
     }
 
     private void MultiplySquareAndReduceHost()
     {
         // Copy the lower _numWords of _valueT into _valueTReduced
-        _gpuContext.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords);
+        _gpuContext.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords, _gpuContext.Stream);
 
         // Square it using host-side NTT multiplication orchestration
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
