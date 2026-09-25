@@ -790,18 +790,18 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.True(gpuOne.IsOne());
             Assert.False(gpuZero.IsOne());
 
-            Assert.True(gpuZero.IsEven);
-            Assert.False(gpuOne.IsEven);
-            Assert.True(gpuEven.IsEven);
+            Assert.True(gpuZero.GetIsEven());
+            Assert.False(gpuOne.GetIsEven());
+            Assert.True(gpuEven.GetIsEven());
 
-            Assert.True(gpuNegative.IsNegative);
-            Assert.False(gpuZero.IsNegative);
+            Assert.True(gpuNegative.GetIsNegative());
+            Assert.False(gpuZero.GetIsNegative());
 
             // Test setter
-            gpuZero.IsNegative = true;
-            Assert.True(gpuZero.IsNegative);
-            gpuZero.IsNegative = false;
-            Assert.False(gpuZero.IsNegative);
+            gpuZero.SetIsNegative(true);
+            Assert.True(gpuZero.GetIsNegative());
+            gpuZero.SetIsNegative(false);
+            Assert.False(gpuZero.GetIsNegative());
         }
 
         [Trait("RoadmapId", "GBI-25")]

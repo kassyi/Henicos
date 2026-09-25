@@ -32,6 +32,18 @@ public interface IGpuExecutionProvider
     /// <param name="numWords">The number of 32-bit words to copy.</param>
     void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords);
 
+    /// <summary>Reads a single 32-bit word directly from device memory.</summary>
+    /// <param name="devicePointer">The base device pointer.</param>
+    /// <param name="wordOffset">The offset in words.</param>
+    /// <returns>The 32-bit unsigned integer value.</returns>
+    uint ReadWord(IntPtr devicePointer, int wordOffset = 0);
+
+    /// <summary>Writes a single 32-bit word directly to device memory.</summary>
+    /// <param name="devicePointer">The base device pointer.</param>
+    /// <param name="wordOffset">The offset in words.</param>
+    /// <param name="value">The 32-bit unsigned integer value to write.</param>
+    void WriteWord(IntPtr devicePointer, int wordOffset, uint value);
+
     /// <summary>Computes addition on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>

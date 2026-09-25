@@ -45,14 +45,27 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
-    /// <inheritdoc/>
-
     public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords)
     {
         if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, devicePointer, numWords))
         {
             throw new InvalidOperationException(string.Format(ErrorCopyDeviceToHostFailed, devicePointer));
         }
+    }
+
+    /// <inheritdoc/>
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
+    {
+        var temp = new uint[1];
+        CopyDeviceToHost(temp, IntPtr.Add(devicePointer, wordOffset * 4), 1);
+        return temp[0];
+    }
+
+    /// <inheritdoc/>
+    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
+    {
+        var temp = new[] { value };
+        CopyHostToDevice(IntPtr.Add(devicePointer, wordOffset * 4), temp, 1);
     }
 
     /// <inheritdoc/>
