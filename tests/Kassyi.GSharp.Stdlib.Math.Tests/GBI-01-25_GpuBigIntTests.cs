@@ -414,14 +414,20 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-14")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpAot)]
-        [InlineData(GpuExecutionEngine.LegacyNative)]
-        public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine)
+        [InlineData(GpuExecutionEngine.GSharpAot, 143)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
+        [InlineData(GpuExecutionEngine.GSharpAot, 1024)] // Edge case: shift >= total bits (TestSizeWords * 32 = 256*32 = 8192)
+        [InlineData(GpuExecutionEngine.GSharpAot, 8192)] // Edge case: shift == total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
+        [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
+        [InlineData(GpuExecutionEngine.LegacyNative, 143)]
+        [InlineData(GpuExecutionEngine.LegacyNative, 0)]
+        public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine, int shiftBits)
         {
-        CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 5);
-            int shiftBits = 143; // Random shift
 
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA << shiftBits;
@@ -436,14 +442,20 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-14")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpAot)]
-        [InlineData(GpuExecutionEngine.LegacyNative)]
-        public void Test_ShiftRight_Correctness(GpuExecutionEngine engine)
+        [InlineData(GpuExecutionEngine.GSharpAot, 143)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
+        [InlineData(GpuExecutionEngine.GSharpAot, 1024)] // Edge case: shift >= total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 8192)] // Edge case: shift == total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
+        [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
+        [InlineData(GpuExecutionEngine.LegacyNative, 143)]
+        [InlineData(GpuExecutionEngine.LegacyNative, 0)]
+        public void Test_ShiftRight_Correctness(GpuExecutionEngine engine, int shiftBits)
         {
-        CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 6);
-            int shiftBits = 143; // Random shift
 
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA >> shiftBits;
@@ -491,6 +503,54 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.True(gpuA <= gpuB);
             Assert.True(gpuA >= gpuC);
             Assert.True(gpuC <= gpuA);
+        }
+
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-15")]
+        public void Test_ComparisonOperators_ReductionEdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+
+            // Edge Case: All zeros
+            var arrZero1 = new uint[TestSizeWords];
+            var arrZero2 = new uint[TestSizeWords];
+            
+            // Edge Case: Only LSB differs (requires scanning down to the very first bit)
+            var arrLsb1 = GenerateRandomArray(TestSizeWords, 99);
+            var arrLsb2 = arrLsb1.ToArray();
+            arrLsb1[0] |= 1u;
+            arrLsb2[0] &= ~1u; // Force arrLsb1 > arrLsb2 by 1 bit at the lowest position
+            
+            // Edge Case: Only MSB differs
+            var arrMsb1 = GenerateRandomArray(TestSizeWords, 100);
+            var arrMsb2 = arrMsb1.ToArray();
+            arrMsb1[TestSizeWords - 1] |= 0x80000000;
+            arrMsb2[TestSizeWords - 1] &= 0x7FFFFFFF;
+
+            using var gpuZero1 = new GpuUIntBigInteger(context, arrZero1);
+            using var gpuZero2 = new GpuUIntBigInteger(context, arrZero2);
+            
+            using var gpuLsb1 = new GpuUIntBigInteger(context, arrLsb1);
+            using var gpuLsb2 = new GpuUIntBigInteger(context, arrLsb2);
+            
+            using var gpuMsb1 = new GpuUIntBigInteger(context, arrMsb1);
+            using var gpuMsb2 = new GpuUIntBigInteger(context, arrMsb2);
+
+            // Zeros
+            Assert.True(gpuZero1 == gpuZero2);
+            Assert.False(gpuZero1 > gpuZero2);
+            Assert.False(gpuZero1 < gpuZero2);
+            
+            // LSB
+            Assert.True(gpuLsb1 > gpuLsb2);
+            Assert.True(gpuLsb2 < gpuLsb1);
+            Assert.False(gpuLsb1 == gpuLsb2);
+            
+            // MSB
+            Assert.True(gpuMsb1 > gpuMsb2);
+            Assert.True(gpuMsb2 < gpuMsb1);
         }
 
         [Fact(Skip = "未実装: GBI-16 (インクリメント/デクリメント演算子 ++, --)")]
