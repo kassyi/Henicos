@@ -198,4 +198,38 @@ public static partial class CudaDriverApi
         uint sharedMemBytes,
         IntPtr hStream,
         void** kernelParams);
+
+    // CUDA Stream APIs
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamCreate(out IntPtr phStream, uint flags);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamDestroy(IntPtr hStream);
+
+    // CUDA Graph APIs
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamBeginCapture(IntPtr hStream, int mode);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamEndCapture(IntPtr hStream, out IntPtr phGraph);
+
+    [LibraryImport(DllName, EntryPoint = "cuGraphInstantiate_v2")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphInstantiate(out IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, nuint bufferSize);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphExecDestroy(IntPtr hGraphExec);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphDestroy(IntPtr hGraph);
 }
