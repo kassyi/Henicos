@@ -49,10 +49,12 @@ public sealed class GpuKernelLoader
             }
             catch (DllNotFoundException)
             {
+                // Expected when CUDA is not installed; handled gracefully by the fallback logic.
                 return false;
             }
             catch (CudaException)
             {
+                // Expected when CUDA is installed but driver is faulty/unavailable.
                 return false;
             }
         }
@@ -87,35 +89,10 @@ public sealed class GpuKernelLoader
         public IntPtr Function { get; } = function;
     }
 
-    private readonly struct Hash256 : IEquatable<Hash256>
-    {
-        private readonly ulong _a;
-        private readonly ulong _b;
-        private readonly ulong _c;
-        private readonly ulong _d;
 
-        public Hash256(ReadOnlySpan<byte> span)
-        {
-            if (span.Length < 32)
-            {
-                throw new ArgumentException("Span too short for Hash256", nameof(span));
-            }
-
-            _a = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(0, 8));
-            _b = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(8, 8));
-            _c = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(16, 8));
-            _d = BinaryPrimitives.ReadUInt64LittleEndian(span.Slice(24, 8));
-        }
-
-        public bool Equals(Hash256 other) => _a == other._a && _b == other._b && _c == other._c && _d == other._d;
-
-        public override bool Equals(object? obj) => obj is Hash256 other && Equals(other);
-
-        public override int GetHashCode() => HashCode.Combine(_a, _b, _c, _d);
-    }
 
     // AOT Cache uses Hash256 and KernelName to prevent collisions and avoid allocations
-    private static readonly ConcurrentDictionary<(Hash256 Hash, string KernelName), Lazy<GpuModule>> s_functionCache =
+    private static readonly ConcurrentDictionary<(AotSignatureValidator.Hash256 Hash, string KernelName), Lazy<GpuModule>> s_functionCache =
         new();
 
 #pragma warning disable IDE0051 // Justification: Public API for library
@@ -153,32 +130,21 @@ public sealed class GpuKernelLoader
     {
         EnsureInitialized();
 
+        // 1. Fast path: Extract embedded hash struct (without calculating SHA256 yet) to check cache
         if (aotFatbin.Length < 32)
         {
             throw new InvalidOperationException("AOT kernel binary is too small to contain a valid hash.");
         }
-
-        var embeddedHashBytes = aotFatbin.Slice(aotFatbin.Length - 32);
-        var expectedHashStruct = new Hash256(embeddedHashBytes);
-        var cacheKey = (expectedHashStruct, kernelName);
+        var embeddedHashStruct = new AotSignatureValidator.Hash256(aotFatbin.Slice(aotFatbin.Length - 32));
+        var cacheKey = (embeddedHashStruct, kernelName);
 
         if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
         {
             return lazyHit.Value.Function;
         }
 
-        var expectedHashString = Convert.ToHexStringLower(embeddedHashBytes);
-        byte[] processed = [.. aotFatbin.Slice(0, aotFatbin.Length - 32)];
-
-        // 1. Check if it's a valid plain text binary first.
-        // This prevents a rare edge case where a plain text binary coincidentally starts with "GSHPENC1".
-        var plainHash = Convert.ToHexStringLower(SHA256.HashData(processed));
-        var isPlainText = string.Equals(plainHash, expectedHashString, StringComparison.OrdinalIgnoreCase);
-
-        if (!isPlainText)
-        {
-            throw new InvalidOperationException($"AOT Binary hash mismatch. Expected: {expectedHashString}");
-        }
+        // 2. Slow path: Validate hash and load module
+        var (processed, _) = AotSignatureValidator.ExtractAndVerify(aotFatbin);
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
         {

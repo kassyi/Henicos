@@ -33,7 +33,7 @@ public sealed class CpuKernelLoader
             }
             catch
             {
-                // Ignore unload errors during shutdown
+                // Best-effort cleanup during AppDomain shutdown; exceptions are intentionally ignored.
             }
         }
 
@@ -50,7 +50,7 @@ public sealed class CpuKernelLoader
             }
             catch
             {
-                // Ignore cleanup errors during shutdown
+                // Best-effort cleanup during AppDomain shutdown; exceptions are intentionally ignored.
             }
         }
 
@@ -101,23 +101,9 @@ public sealed class CpuKernelLoader
     private static IntPtr LoadKernelFunctionPtr(string dllPath, string kernelName)
     {
         var fileData = File.ReadAllBytes(dllPath);
-        if (fileData.Length < 32)
-        {
-            throw new InvalidOperationException("AOT native binary is too small to contain a valid hash.");
-        }
-
-        var embeddedHashBytes = new byte[32];
-        Array.Copy(fileData, fileData.Length - 32, embeddedHashBytes, 0, 32);
-        var expectedHash = Convert.ToHexStringLower(embeddedHashBytes);
-
-        var processed = new byte[fileData.Length - 32];
-        Array.Copy(fileData, 0, processed, 0, fileData.Length - 32);
-
-        var actualHash = Convert.ToHexStringLower(SHA256.HashData(processed));
-        if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException($"AOT native binary hash mismatch. Expected: {expectedHash}");
-        }
+        
+        // Validate embedded signature. Throws InvalidOperationException on mismatch.
+        var _ = AotSignatureValidator.ExtractAndVerify(fileData);
 
         var loadPath = dllPath;
 
