@@ -192,10 +192,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         {
             using (Context.Writer.Scope())
             {
-                foreach (var stmt in block.Statements)
+                var statements = Context.AutoSyncGridDepth > 0
+                    ? FlattenStatements(block.Statements, Context.SemanticModel)
+                    : block.Statements;
+                for (var i = 0; i < statements.Count; i++)
                 {
-                    Visit(stmt);
+                    Visit(statements[i]);
                     Context.Writer.AppendLine();
+                    if (ShouldInsertAutoSync(statements, i))
+                    {
+                        Context.Writer.AppendLine("cg::this_grid().sync();");
+                    }
                 }
             }
         }
@@ -218,11 +225,130 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        foreach (var statement in node.Statements)
+        var statements = Context.AutoSyncGridDepth > 0
+            ? FlattenStatements(node.Statements, Context.SemanticModel)
+            : node.Statements;
+        for (var i = 0; i < statements.Count; i++)
         {
-            Visit(statement);
+            Visit(statements[i]);
             Context.Writer.AppendLine();
+            if (ShouldInsertAutoSync(statements, i))
+            {
+                Context.Writer.AppendLine("cg::this_grid().sync();");
+            }
         }
+    }
+
+    internal bool ShouldInsertAutoSync(IReadOnlyList<StatementSyntax> statements, int currentIndex)
+    {
+        if (Context.AutoSyncGridDepth <= 0 || currentIndex >= statements.Count - 1)
+        {
+            return false;
+        }
+
+        var current = statements[currentIndex];
+        if (IsEmptyOrSyncGrid(current))
+        {
+            return false;
+        }
+
+        for (var nextIdx = currentIndex + 1; nextIdx < statements.Count; nextIdx++)
+        {
+            var next = statements[nextIdx];
+            if (next is EmptyStatementSyntax)
+            {
+                continue;
+            }
+
+            if (IsParameterlessSyncGrid(next))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    internal bool IsEmptyOrSyncGrid(StatementSyntax stmt)
+    {
+        return stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
+    }
+
+    internal bool IsParameterlessSyncGrid(StatementSyntax stmt)
+    {
+        if (stmt is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        {
+            if (Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol &&
+                symbol.Name == TypeConstants.GpuMacros.SyncGrid &&
+                symbol.ContainingType.Name == TypeConstants.GpuType &&
+                symbol.ContainingNamespace.IsCoreNamespace() &&
+                symbol.Parameters.Length == 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    internal static IReadOnlyList<StatementSyntax> FlattenStatements(
+        IReadOnlyList<StatementSyntax> statements,
+        SemanticModel semanticModel)
+    {
+        var result = new List<StatementSyntax>(statements.Count);
+        FlattenInto(statements, semanticModel, result);
+        return result;
+    }
+
+    private static void FlattenInto(
+        IEnumerable<StatementSyntax> statements,
+        SemanticModel semanticModel,
+        List<StatementSyntax> result)
+    {
+        foreach (var stmt in statements)
+        {
+            if (TryGetSyncGridLambdaBody(stmt, semanticModel, out var body))
+            {
+                if (body is BlockSyntax innerBlock)
+                {
+                    FlattenInto(innerBlock.Statements, semanticModel, result);
+                }
+                else if (body is ExpressionSyntax innerExpr)
+                {
+                    result.Add(SyntaxFactory.ExpressionStatement(innerExpr));
+                }
+            }
+            else
+            {
+                result.Add(stmt);
+            }
+        }
+    }
+
+    internal static bool TryGetSyncGridLambdaBody(
+        StatementSyntax stmt,
+        SemanticModel semanticModel,
+        out CSharpSyntaxNode? body)
+    {
+        body = null;
+        if (stmt is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        {
+            if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol &&
+                symbol.Name == TypeConstants.GpuMacros.SyncGrid &&
+                symbol.ContainingType.Name == TypeConstants.GpuType &&
+                symbol.ContainingNamespace.IsCoreNamespace() &&
+                symbol.Parameters.Length == 1 &&
+                invocation.ArgumentList.Arguments.Count == 1 &&
+                invocation.ArgumentList.Arguments[0].Expression is LambdaExpressionSyntax lambda)
+            {
+                body = lambda.Body;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)

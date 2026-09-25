@@ -59,6 +59,34 @@ internal sealed class GpuMacroArgumentRule
 
                 break;
             }
+
+            case TypeConstants.GpuMacros.SyncGrid:
+            {
+                if (invocationSymbol.Parameters.Length == 1)
+                {
+                    var args = invocation.ArgumentList.Arguments;
+                    if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
+                    {
+                        var diagnostic = Diagnostic.Create(
+                            GSharpDiagnostics.UnsupportedSyntax,
+                            args[0].GetLocation(),
+                            "Gpu.SyncGrid requires a lambda expression argument");
+                        context.ReportDiagnostic(diagnostic);
+                    }
+                }
+
+                if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+                    !IsCooperativeKernel(context.MethodSymbol))
+                {
+                    var diagnostic = Diagnostic.Create(
+                        GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
+                        invocation.GetLocation(),
+                        context.MethodSymbol.Name);
+                    context.ReportDiagnostic(diagnostic);
+                }
+
+                break;
+            }
         }
     }
 
@@ -257,5 +285,22 @@ internal sealed class GpuMacroArgumentRule
             paramName,
             macroName);
         context.ReportDiagnostic(diagnostic);
+    }
+
+    private static bool IsCooperativeKernel(IMethodSymbol methodSymbol)
+    {
+        var kernelAttr = methodSymbol.GetAttribute(KnownAttributes.GpuKernel);
+        if (kernelAttr != null)
+        {
+            foreach (var namedArg in kernelAttr.NamedArguments)
+            {
+                if (namedArg is { Key: "Cooperative", Value.Value: true })
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

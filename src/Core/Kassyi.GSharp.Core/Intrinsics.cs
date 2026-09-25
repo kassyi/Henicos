@@ -149,6 +149,12 @@ public static class Gpu
     public static void SyncGrid() => GpuOnlyException.Throw();
 
     /// <summary>
+    /// Executes the provided action, automatically inserting a grid synchronization (<c>cg::this_grid().sync()</c>)
+    /// between each statement in the action body.
+    /// </summary>
+    public static void SyncGrid(Action body) => GpuOnlyException.Throw();
+
+    /// <summary>
     /// Marker method for JIT Constant Folding. Replaced with the literal macro value during runtime compilation.
     /// </summary>
     /// <param name="macroName">The name of the JIT macro parameter.</param>
