@@ -2,6 +2,7 @@
 namespace Henicos.Cli;
 
 /// <summary>BenchmarkDotNet performance comparisons for Fermat PRP algorithms on CPU vs GPU.</summary>
+[MemoryDiagnoser]
 [MarkdownExporterAttribute.GitHub]
 public class FermatBenchmark
 {
@@ -17,6 +18,7 @@ public class FermatBenchmark
     private BigInteger _modulusN;
     private BigInteger _baseA;
     private BigInteger _exponentValue;
+    private nint _vramBefore;
 
     [GlobalSetup]
     public void Setup()
@@ -27,6 +29,23 @@ public class FermatBenchmark
         _exponentValue = _modulusN - 1;
 
         _runner = new FermatRunner(E);
+    }
+
+    [IterationSetup]
+    public void IterationSetup()
+    {
+        Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemGetInfo_v2(out _vramBefore, out _);
+    }
+
+    [IterationCleanup]
+    public void IterationCleanup()
+    {
+        Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemGetInfo_v2(out nint vramAfter, out _);
+        long leakedMb = (_vramBefore - vramAfter) / 1024 / 1024;
+        if (leakedMb > 0)
+        {
+            Console.WriteLine($"[VRAM LEAK] {leakedMb} MB leaked during iteration.");
+        }
     }
 
     [Benchmark(Baseline = true)]
