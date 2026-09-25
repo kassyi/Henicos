@@ -30,6 +30,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     [InlineData("GSH-16", "Analyzers/GSH-16_17_UnrollHintSadPath.cs", new[] { "GSH0016", "GSH0017" })]
     [InlineData("GSH-32-Sad", "Analyzers/GSH-32_33_UnrollStaticDeterminism_SadPath.cs", new[] { "GSH0032", "GSH0032", "GSH0032", "GSH0033", "GSH0033" })]
     [InlineData("GSH-30", "Analyzers/GSH-30_SyncGridCooperativeSadPath.cs", new[] { "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030", "GSH0030" })]
+    [InlineData("GSH-34-Sad", "Analyzers/GSH-34_ParamsProhibited_SadPath.cs", new[] { "GSH0034", "GSH0034" })]
     public async Task Test_GpuKernelAnalyzer_ReportsMultipleExpectedDiagnostics(string featureId, string testCasePath, string[] expectedDiagnosticIds)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
@@ -40,6 +41,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     [Trait("Category", "SadPath")]
     [InlineData("GSH-00", "Analyzers/GpuKernel/GSH-00_ValidSyntax_InGpuKernel.cu.cs")]
     [InlineData("GSH-32-Happy", "Analyzers/GSH-32_UnrollStaticDeterminism_HappyPath.cs")]
+    [InlineData("GSH-34-Happy", "Analyzers/GSH-34_ParamsProhibited_HappyPath.cs")]
     public async Task Test_GpuKernelAnalyzer_HasNoErrors(string featureId, string testCasePath)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
