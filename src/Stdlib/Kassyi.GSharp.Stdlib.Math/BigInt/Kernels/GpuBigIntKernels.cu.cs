@@ -11,17 +11,11 @@ public static class GpuBigIntKernels
     /// <summary>
     /// Represents the carry generation and propagation bits for prefix sum operations.
     /// </summary>
-    public struct CarryState
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public struct CarryState(uint generate, uint propagate)
     {
-        public uint Generate;
-        public uint Propagate;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public CarryState(uint generate, uint propagate)
-        {
-            Generate = generate;
-            Propagate = propagate;
-        }
+        public uint Generate = generate;
+        public uint Propagate = propagate;
     }
 
     [GpuDeviceFunction]
