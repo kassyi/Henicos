@@ -35,6 +35,7 @@ Provides access to CUDA's built-in execution context variables.
 ### 3. The `Gpu` Class Intrinsics
 Intrinsic static methods and macros providing direct access to GPU hardware features.
 * **[Gpu.SyncThreads](gpu_class/SyncThreads.md)**: Barrier synchronization for threads in a block.
+* **[Gpu.SyncGrid](gpu_class/SyncGrid.md)**: Barrier synchronization for threads across a cooperative grid.
 * **[Gpu.AtomicAdd](gpu_class/AtomicAdd.md)**: Atomic read-modify-write addition.
 * **[Gpu.InlinePtx](gpu_class/InlinePtx.md)**: Injects raw PTX or CUDA C++ strings.
 * **[Gpu.GridStrideLoop](gpu_class/GridStrideLoop.md)**: High-level CUDA grid-stride loop macro.
@@ -59,7 +60,7 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 ### 6. Standard BCL and Diagnostics
 * **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
 * **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
-* **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0029`, `RS0030`).
+* **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0031`, `RS0030`).
 
 ### 7. Utilities
 * **[CudaEnvironment](CudaEnvironment.md)**: Discover and resolve local NVIDIA CUDA Toolkit installation directories.

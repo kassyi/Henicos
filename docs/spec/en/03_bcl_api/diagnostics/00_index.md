@@ -43,6 +43,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0027](GSH0027.md) | Error | Disposing borrowed resource |
 | [GSH0028](GSH0028.md) | Error | Disposable resource in Default Interface Method |
 | [GSH0029](GSH0029.md) | Warning | Manual unmanaged allocation detected |
+| [GSH0030](GSH0030.md) | Error | SyncGrid requires a cooperative kernel |
+| [GSH0031](GSH0031.md) | Error | Direct invocation of [GpuKernel] is prohibited |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
 ## See Also

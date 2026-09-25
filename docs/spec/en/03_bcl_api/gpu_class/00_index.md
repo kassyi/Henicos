@@ -14,6 +14,7 @@ Core static methods for GPU hardware interaction, synchronization, and intrinsic
 
 - [AtomicAdd](AtomicAdd.md): Performs atomic read-modify-write additions.
 - [SyncThreads](SyncThreads.md): Synchronizes all threads in a thread block.
+- [SyncGrid](SyncGrid.md): Synchronizes all threads across a cooperative thread grid.
 - [WarpShuffleDown](WarpShuffleDown.md): Exchanges variables by shifting data down by a specified delta.
 - [WarpShuffleUp](WarpShuffleUp.md): Exchanges variables by shifting data up by a specified delta.
 - [WarpShuffleXor](WarpShuffleXor.md): Exchanges variables by applying an XOR operation to lane IDs.
