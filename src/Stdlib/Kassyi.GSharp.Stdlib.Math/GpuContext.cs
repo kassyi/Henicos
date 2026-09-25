@@ -79,13 +79,12 @@ public class GpuContext : IDisposable
     {
         MaxWords = maxWords;
         Engine = engine;
-        
-        using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
-        Runtime.Interop.CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
-        Stream = stream;
-
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
+            using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
+            Runtime.Interop.CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+            Stream = stream;
+
             // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
         }
         else
