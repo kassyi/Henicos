@@ -13,23 +13,21 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class AutoAllocateReturnTestWrapper
 {
-public const string ComputeInt_Source = @"extern ""C"" __global__ void ComputeInt(int* __restrict__ a, int b, int* __restrict__ __gsharp_auto_result){
+public const string ComputeInt_Source = @"extern ""C"" __global__ void AutoAllocateReturnTest_ComputeInt(int* __restrict__ a, int b, int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = a[0]+b;
 return;
 }
 ";
 public static readonly string ComputeInt_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ComputeInt_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_ComputeInt = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_ComputeInt;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerComputeInt()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "AutoAllocateReturnTest_ComputeInt.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'AutoAllocateReturnTest_ComputeInt.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_ComputeInt.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_ComputeInt = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "AutoAllocateReturnTest_ComputeInt");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe global::System.Int32[] LaunchComputeInt(global::System.Int32* a, global::System.Int32 b, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -38,7 +36,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ComputeInt.Value, "ComputeInt");
+WarmupFunctionPointerComputeInt();
+IntPtr hfunc = s_hfunc_ComputeInt!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -99,7 +98,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ComputeInt.Value, "ComputeInt");
+WarmupFunctionPointerComputeInt();
+IntPtr hfunc = s_hfunc_ComputeInt!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -171,7 +171,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public static partial class AutoAllocateReturnTestWrapper
 {
-public const string ComputeMag_Source = @"extern ""C"" __global__ void ComputeMag(float* __restrict__ a, float* __restrict__ __gsharp_auto_result){
+public const string ComputeMag_Source = @"extern ""C"" __global__ void AutoAllocateReturnTest_ComputeMag(float* __restrict__ a, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 int tid = threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = a[tid]*2.0f;
@@ -179,16 +179,14 @@ return;
 }
 ";
 public static readonly string ComputeMag_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + ComputeMag_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_ComputeMag = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_ComputeMag;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerComputeMag()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "AutoAllocateReturnTest_ComputeMag.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'AutoAllocateReturnTest_ComputeMag.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_ComputeMag.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_ComputeMag = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "AutoAllocateReturnTest_ComputeMag");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe global::System.Single[] LaunchComputeMag(global::System.Single* a, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -197,7 +195,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ComputeMag.Value, "ComputeMag");
+WarmupFunctionPointerComputeMag();
+IntPtr hfunc = s_hfunc_ComputeMag!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -256,7 +255,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ComputeMag.Value, "ComputeMag");
+WarmupFunctionPointerComputeMag();
+IntPtr hfunc = s_hfunc_ComputeMag!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -309,6 +309,54 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 }
 }
+
+
+// File: GSharpModuleContext_SnapshotTest.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+using System.Threading;
+
+namespace Kassyi.GSharp.Generated
+{
+public static class GSharpModuleContext_SnapshotTest
+{
+private static IntPtr? s_hModule;
+private static readonly object s_lock = new object();
+
+/// <summary>
+/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// </summary>
+public static IntPtr GetOrLoadModule()
+{
+if (s_hModule.HasValue) return s_hModule.Value;
+lock (s_lock)
+{
+if (s_hModule.HasValue) return s_hModule.Value;
+
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
+}
+
+byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
+s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+return s_hModule.Value;
+}
+}
+
+/// <summary>
+/// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
+/// </summary>
+public static void Warmup()
+{
+// Force load the module first
+GetOrLoadModule();
+global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTestWrapper.WarmupFunctionPointerComputeMag();
+global::Kassyi.GSharp.Tests.Shared.TestCases.AutoAllocateReturnTestWrapper.WarmupFunctionPointerComputeInt();
+}}}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs

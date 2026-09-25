@@ -20,9 +20,40 @@
     <CompilerVisibleProperty Include="GSharpMockCompilation" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <GetCopyToOutputDirectoryItemsDependsOn>
+      $(GetCopyToOutputDirectoryItemsDependsOn);
+      GSharpAddGeneratedItemsToOutputDirectory
+    </GetCopyToOutputDirectoryItemsDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GSharpAddGeneratedItemsToOutputDirectory" DependsOnTargets="GSharpCompileCuda;GSharpCompileCpu" BeforeTargets="CopyFilesToOutputDirectory">
+    <ItemGroup>
+      <!-- For transitive ProjectReference copy -->
+      <AllItemsFullPathWithTargetPath Include="@(_GSharpCompiledFatbins->'%(FullPath)')">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </AllItemsFullPathWithTargetPath>
+      <AllItemsFullPathWithTargetPath Include="@(_GSharpCompiledDlls->'%(FullPath)')">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </AllItemsFullPathWithTargetPath>
+      
+      <!-- For self project copy -->
+      <ContentWithTargetPath Include="@(_GSharpCompiledFatbins->'%(FullPath)')">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </ContentWithTargetPath>
+      <ContentWithTargetPath Include="@(_GSharpCompiledDlls->'%(FullPath)')">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </ContentWithTargetPath>
+    </ItemGroup>
+  </Target>
+
   <!-- Define the target to compile CUDA sources -->
-  <!-- It runs before GetCopyToOutputDirectoryItems so that the newly built fatbins are copied to the output directory -->
-  <Target Name="GSharpCompileCuda" BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+  <!-- It runs after CoreCompile (so source generators have emitted .cu files) -->
+  <Target Name="GSharpCompileCuda" AfterTargets="CoreCompile"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpFatbins\_always_run_.marker">
     
@@ -41,18 +72,13 @@
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
     </CompileCudaToFatbinTask>
 
-    <!-- Copy compiled fatbins to output directory as Content -->
+    <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
-      <Content Include="@(_GSharpCompiledFatbins)">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Link>%(Filename)%(Extension)</Link>
-      </Content>
-      <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
       <FileWrites Include="@(_GSharpCudaSources);@(_GSharpCompiledFatbins)" />
     </ItemGroup>
   </Target>
 
-  <Target Name="GSharpCompileCpu" BeforeTargets="GetCopyToOutputDirectoryItems;AssignTargetPaths"
+  <Target Name="GSharpCompileCpu" AfterTargets="CoreCompile"
           Inputs="$(MSBuildAllProjects);@(Compile)"
           Outputs="$(IntermediateOutputPath)GSharpNativeDlls\_always_run_.marker">
     
@@ -71,13 +97,8 @@
       <Output TaskParameter="OutputDlls" ItemName="_GSharpCompiledDlls" />
     </CompileCppToNativeTask>
 
-    <!-- Copy compiled DLLs to output directory as Content -->
+    <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
     <ItemGroup>
-      <Content Include="@(_GSharpCompiledDlls)">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <Link>%(Filename)%(Extension)</Link>
-      </Content>
-      <!-- Register all native inputs and outputs to FileWrites for MSBuild clean -->
       <FileWrites Include="@(_GSharpCppSources);@(_GSharpCompiledDlls)" />
     </ItemGroup>
   </Target>

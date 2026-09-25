@@ -13,12 +13,12 @@ namespace Kassyi.GSharp.Tests.Runtime
 {
 public static partial class GEN_08_AutoAllocateReturnArraysKernelsWrapper
 {
-public const string NormalReturnKernel_Source = @"extern ""C"" __declspec(dllexport) void NormalReturnKernel(int someValue, float* __restrict__ __gsharp_auto_result){
+public const string NormalReturnKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_08_AutoAllocateReturnArraysKernels_NormalReturnKernel(int someValue, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = someValue*2.0f;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_NormalReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int someValue, float* __restrict__ __gsharp_auto_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_08_AutoAllocateReturnArraysKernels_NormalReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int someValue, float* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -28,7 +28,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NormalReturnKernel(someValue, __gsharp_auto_result);
+GEN_08_AutoAllocateReturnArraysKernels_NormalReturnKernel(someValue, __gsharp_auto_result);
 }
 }
 ";
@@ -42,9 +42,9 @@ if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDi
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_08_AutoAllocateReturnArraysKernels_NormalReturnKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NormalReturnKernel_Delegate>("__gsharp_launch_NormalReturnKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NormalReturnKernel_Delegate>("__gsharp_launch_GEN_08_AutoAllocateReturnArraysKernels_NormalReturnKernel", dllPath);
 fixed (global::System.Single* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, someValue, p___gsharp_auto_result);
@@ -71,12 +71,12 @@ namespace Kassyi.GSharp.Tests.Runtime
 {
 public static partial class GEN_08_AutoAllocateReturnArraysKernelsWrapper
 {
-public const string OneThreadKernel_Source = @"extern ""C"" __declspec(dllexport) void OneThreadKernel(int* __restrict__ __gsharp_auto_result){
+public const string OneThreadKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_08_AutoAllocateReturnArraysKernels_OneThreadKernel(int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = 42;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_OneThreadKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ __gsharp_auto_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_08_AutoAllocateReturnArraysKernels_OneThreadKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -86,7 +86,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-OneThreadKernel(__gsharp_auto_result);
+GEN_08_AutoAllocateReturnArraysKernels_OneThreadKernel(__gsharp_auto_result);
 }
 }
 ";
@@ -100,9 +100,9 @@ if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDi
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_08_AutoAllocateReturnArraysKernels_OneThreadKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<OneThreadKernel_Delegate>("__gsharp_launch_OneThreadKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<OneThreadKernel_Delegate>("__gsharp_launch_GEN_08_AutoAllocateReturnArraysKernels_OneThreadKernel", dllPath);
 fixed (global::System.Int32* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);
@@ -138,7 +138,7 @@ float B;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void StructReturnKernel(Kassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result){
+extern ""C"" __declspec(dllexport) void GEN_08_AutoAllocateReturnArraysKernels_StructReturnKernel(Kassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 Kassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct s;
 s.A=threadIdx.x;
@@ -146,7 +146,7 @@ s.B=threadIdx.x*1.5f;
 __gsharp_auto_result[__gsharp_global_tid] = s;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StructReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_08_AutoAllocateReturnArraysKernels_StructReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Runtime_GEN_08_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -156,7 +156,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StructReturnKernel(__gsharp_auto_result);
+GEN_08_AutoAllocateReturnArraysKernels_StructReturnKernel(__gsharp_auto_result);
 }
 }
 ";
@@ -170,9 +170,9 @@ if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDi
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Runtime.GEN_08_AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_08_AutoAllocateReturnArraysKernels_StructReturnKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructReturnKernel_Delegate>("__gsharp_launch_StructReturnKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructReturnKernel_Delegate>("__gsharp_launch_GEN_08_AutoAllocateReturnArraysKernels_StructReturnKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Runtime.GEN_08_AutoAllocateReturnArraysKernels.TestStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

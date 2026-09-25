@@ -108,6 +108,19 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return [mockTaskItem];
         }
 
+        if (File.Exists(outputFatbinPath) && File.Exists(sourcePath))
+        {
+            var sourceInfo = new FileInfo(sourcePath);
+            var destInfo = new FileInfo(outputFatbinPath);
+            if (destInfo.LastWriteTimeUtc >= sourceInfo.LastWriteTimeUtc)
+            {
+                Log.LogMessage(MessageImportance.Low, $"Skipping compilation of '{sourcePath}' because '{outputFatbinPath}' is up-to-date.");
+                var cachedItem = new TaskItem(outputFatbinPath);
+                cachedItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
+                return [cachedItem];
+            }
+        }
+
         if (!CompileWithNvcc(sourcePath, outputFatbinPath, _architectures))
         {
             return null;

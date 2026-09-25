@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_70_72_LoopsAndJumpsKernelsWrapper
 {
-public const string ForeachCollectionExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void ForeachCollectionExpressionKernel(int* __restrict__ output){
+public const string ForeachCollectionExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(int* __restrict__ output){
 const int arr[4]={ 10, 20, 30, 40 };
 int total = 0;
 for(auto val : arr)
@@ -33,7 +33,7 @@ total+=val;
 }
 output[0]=total;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ForeachCollectionExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -43,7 +43,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ForeachCollectionExpressionKernel(output);
+SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(output);
 }
 }
 ";
@@ -57,9 +57,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ForeachCollectionExpressionKernel_Delegate>("__gsharp_launch_ForeachCollectionExpressionKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ForeachCollectionExpressionKernel_Delegate>("__gsharp_launch_SYN_70_72_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -105,7 +105,7 @@ __device__ inline int size() const { return 4; }
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ForeachInlineArrayKernel(int* __restrict__ output){
+extern ""C"" __declspec(dllexport) void SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel(int* __restrict__ output){
 Kassyi_GSharp_Tests_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Syntax_FixedArray4{};
 arr[0]=10;
 arr[1]=20;
@@ -118,7 +118,7 @@ total+=val;
 }
 output[0]=total;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ForeachInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -128,7 +128,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ForeachInlineArrayKernel(output);
+SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel(output);
 }
 }
 ";
@@ -142,9 +142,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ForeachInlineArrayKernel_Delegate>("__gsharp_launch_ForeachInlineArrayKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ForeachInlineArrayKernel_Delegate>("__gsharp_launch_SYN_70_72_LoopsAndJumpsKernels_ForeachInlineArrayKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -170,7 +170,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_70_72_LoopsAndJumpsKernelsWrapper
 {
-public const string ForeachStackAllocKernel_Source = @"extern ""C"" __declspec(dllexport) void ForeachStackAllocKernel(int* __restrict__ output){
+public const string ForeachStackAllocKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel(int* __restrict__ output){
 int arr[4]={ 10, 20, 30, 40 };
 int total = 0;
 for(auto val : arr)
@@ -179,7 +179,7 @@ total+=val;
 }
 output[0]=total;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ForeachStackAllocKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -189,7 +189,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ForeachStackAllocKernel(output);
+SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel(output);
 }
 }
 ";
@@ -203,9 +203,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ForeachStackAllocKernel_Delegate>("__gsharp_launch_ForeachStackAllocKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ForeachStackAllocKernel_Delegate>("__gsharp_launch_SYN_70_72_LoopsAndJumpsKernels_ForeachStackAllocKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

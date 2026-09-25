@@ -13,14 +13,14 @@ namespace Kassyi.GSharp.Tests.TestCases
 {
 public static partial class GEN_57_InOutArrayMarshalingWrapper
 {
-public const string InOutKernel_Source = @"extern ""C"" __declspec(dllexport) void InOutKernel(float* __restrict__ data, int n){
+public const string InOutKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_57_InOutArrayMarshaling_InOutKernel(float* __restrict__ data, int n){
 int idx = threadIdx.x+blockIdx.x*blockDim.x;
 if(idx<n)
 {
 data[idx]*=2.0f;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InOutKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_57_InOutArrayMarshaling_InOutKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -30,7 +30,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InOutKernel(data, n);
+GEN_57_InOutArrayMarshaling_InOutKernel(data, n);
 }
 }
 ";
@@ -44,9 +44,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_57_InOutArrayMarshaling_InOutKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InOutKernel_Delegate>("__gsharp_launch_InOutKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InOutKernel_Delegate>("__gsharp_launch_GEN_57_InOutArrayMarshaling_InOutKernel", dllPath);
 fixed (global::System.Single* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, n);

@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __declspec(dllexport) void LocalFunctionExpressionBodyKernel(int* __restrict__ data){
+public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __declspec(dllexport) void GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 auto Square = [&](int x) {
 return x*x;
@@ -21,7 +21,7 @@ return x*x;
 ;
 data[tid]=Square(data[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionExpressionBodyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -31,7 +31,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LocalFunctionExpressionBodyKernel(data);
+GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(data);
 }
 }
 ";
@@ -45,9 +45,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionExpressionBodyKernel_Delegate>("__gsharp_launch_LocalFunctionExpressionBodyKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionExpressionBodyKernel_Delegate>("__gsharp_launch_GSH_03_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -73,7 +73,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __declspec(dllexport) void LocalFunctionValueReturnKernel(int* __restrict__ data, int bonus){
+public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __declspec(dllexport) void GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(int* __restrict__ data, int bonus){
 int tid = threadIdx.x;
 auto ComputeTotal = [&](int val) {
 return val*3+bonus;
@@ -81,7 +81,7 @@ return val*3+bonus;
 ;
 data[tid]=ComputeTotal(data[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionValueReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int bonus)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int bonus)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -91,7 +91,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LocalFunctionValueReturnKernel(data, bonus);
+GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(data, bonus);
 }
 }
 ";
@@ -105,9 +105,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionValueReturnKernel_Delegate>("__gsharp_launch_LocalFunctionValueReturnKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionValueReturnKernel_Delegate>("__gsharp_launch_GSH_03_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, bonus);
@@ -133,7 +133,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __declspec(dllexport) void LocalFunctionVoidKernel(int* __restrict__ data){
+public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __declspec(dllexport) void GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 auto MultiplyByTwo = [&]() {
 data[tid]=data[tid]*2;
@@ -141,7 +141,7 @@ data[tid]=data[tid]*2;
 ;
 MultiplyByTwo();
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionVoidKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -151,7 +151,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LocalFunctionVoidKernel(data);
+GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel(data);
 }
 }
 ";
@@ -165,9 +165,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionVoidKernel_Delegate>("__gsharp_launch_LocalFunctionVoidKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionVoidKernel_Delegate>("__gsharp_launch_GSH_03_LocalFunctionLoweringKernels_LocalFunctionVoidKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -193,7 +193,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __declspec(dllexport) void MultiParamLocalFunctionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ result){
+public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __declspec(dllexport) void GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ result){
 int tid = threadIdx.x;
 auto ClampAdd = [&](int val1, int val2, int minVal, int maxVal) {
 int sum = val1+val2;
@@ -210,7 +210,7 @@ return sum;
 ;
 result[tid]=ClampAdd(a[tid],b[tid],0,100);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MultiParamLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -220,7 +220,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MultiParamLocalFunctionKernel(a, b, result);
+GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(a, b, result);
 }
 }
 ";
@@ -234,9 +234,9 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MultiParamLocalFunctionKernel_Delegate>("__gsharp_launch_MultiParamLocalFunctionKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MultiParamLocalFunctionKernel_Delegate>("__gsharp_launch_GSH_03_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel", dllPath);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_result = result)
@@ -264,7 +264,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GSH_03_LocalFunctionLoweringKernelsWrapper
 {
-public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __declspec(dllexport) void NestedLocalFunctionKernel(int* __restrict__ data){
+public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __declspec(dllexport) void GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 auto InnerAdd = [&](int a, int b) {
 return a+b;
@@ -277,7 +277,7 @@ return InnerAdd(doubled,10);
 ;
 data[tid]=OuterMultiplyAndAdd(data[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -287,7 +287,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NestedLocalFunctionKernel(data);
+GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel(data);
 }
 }
 ";
@@ -301,9 +301,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedLocalFunctionKernel_Delegate>("__gsharp_launch_NestedLocalFunctionKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedLocalFunctionKernel_Delegate>("__gsharp_launch_GSH_03_LocalFunctionLoweringKernels_NestedLocalFunctionKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

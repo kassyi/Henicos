@@ -22,7 +22,7 @@ int Value;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void RefOutTestKernel(int* __restrict__ data){
+extern ""C"" __declspec(dllexport) void GEN_17_RefOutDereferenceKernels_RefOutTestKernel(int* __restrict__ data){
 bool flag = true;
 ModifyRef(&flag);
 Kassyi_GSharp_Tests_Syntax_RefTestStruct s = ([&]() {
@@ -35,7 +35,7 @@ int val = 1;
 ChainedAssignmentRef(&val,&a,&b);
 data[0]=((flag?100:0))+s.Field+a+b+val;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_RefOutTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_17_RefOutDereferenceKernels_RefOutTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -45,7 +45,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-RefOutTestKernel(data);
+GEN_17_RefOutDereferenceKernels_RefOutTestKernel(data);
 }
 }
 ";
@@ -59,9 +59,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_17_RefOutDereferenceKernels_RefOutTestKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RefOutTestKernel_Delegate>("__gsharp_launch_RefOutTestKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RefOutTestKernel_Delegate>("__gsharp_launch_GEN_17_RefOutDereferenceKernels_RefOutTestKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

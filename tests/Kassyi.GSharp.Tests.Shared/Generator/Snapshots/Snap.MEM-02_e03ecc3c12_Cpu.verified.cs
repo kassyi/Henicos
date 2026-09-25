@@ -53,7 +53,7 @@ int Status;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void Kernel_FactoryInitialization(int* __restrict__ inputValues, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ outputStates, int length){
+extern ""C"" __declspec(dllexport) void MEM_02_ObjectLifecycleKernels_Kernel_FactoryInitialization(int* __restrict__ inputValues, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ outputStates, int length){
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<length)
 {
@@ -64,7 +64,7 @@ state.Status=(inputValues[tid]<0?-1:((inputValues[tid]==0?0:1)));
 outputStates[tid]=state;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_FactoryInitialization(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ inputValues, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ outputStates, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_MEM_02_ObjectLifecycleKernels_Kernel_FactoryInitialization(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ inputValues, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ outputStates, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -74,7 +74,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_FactoryInitialization(inputValues, outputStates, length);
+MEM_02_ObjectLifecycleKernels_Kernel_FactoryInitialization(inputValues, outputStates, length);
 }
 }
 ";
@@ -88,9 +88,9 @@ if (inputValues.Length == 0 || outputStates.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"MEM_02_ObjectLifecycleKernels_Kernel_FactoryInitialization{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_FactoryInitialization_Delegate>("__gsharp_launch_Kernel_FactoryInitialization", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_FactoryInitialization_Delegate>("__gsharp_launch_MEM_02_ObjectLifecycleKernels_Kernel_FactoryInitialization", dllPath);
 fixed (global::System.Int32* p_inputValues = inputValues)
 fixed (global::Kassyi.GSharp.Tests.Syntax.LifecycleObjectState* p_outputStates = outputStates)
 {
@@ -127,7 +127,7 @@ int Status;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void Kernel_LifecycleUpdate(Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier){
+extern ""C"" __declspec(dllexport) void MEM_02_ObjectLifecycleKernels_Kernel_LifecycleUpdate(Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier){
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<length)
 {
@@ -135,7 +135,7 @@ Kassyi_GSharp_Tests_Syntax_LifecycleObjectState s = states[tid];
 states[tid]=TransformState(s,multiplier);
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_LifecycleUpdate(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_MEM_02_ObjectLifecycleKernels_Kernel_LifecycleUpdate(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -145,7 +145,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_LifecycleUpdate(states, length, multiplier);
+MEM_02_ObjectLifecycleKernels_Kernel_LifecycleUpdate(states, length, multiplier);
 }
 }
 ";
@@ -159,9 +159,9 @@ if (states.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"MEM_02_ObjectLifecycleKernels_Kernel_LifecycleUpdate{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_LifecycleUpdate_Delegate>("__gsharp_launch_Kernel_LifecycleUpdate", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_LifecycleUpdate_Delegate>("__gsharp_launch_MEM_02_ObjectLifecycleKernels_Kernel_LifecycleUpdate", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Syntax.LifecycleObjectState* p_states = states)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_states, length, multiplier);

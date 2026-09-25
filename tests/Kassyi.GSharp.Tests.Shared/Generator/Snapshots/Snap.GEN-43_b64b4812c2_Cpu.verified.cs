@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Runtime
 {
 public static partial class GEN_43_HeavyGpuStressKernelsWrapper
 {
-public const string MatrixMultiplyStressKernel_Source = @"extern ""C"" __declspec(dllexport) void MatrixMultiplyStressKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
+public const string MatrixMultiplyStressKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
 int row = blockIdx.y*blockDim.y+threadIdx.y;
 int col = blockIdx.x*blockDim.x+threadIdx.x;
 if(row<n&&col<n)
@@ -26,7 +26,7 @@ sum+=a[row*n+k]*b[k*n+col];
 c[row*n+col]=sum;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MatrixMultiplyStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -36,7 +36,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MatrixMultiplyStressKernel(a, b, c, n);
+GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel(a, b, c, n);
 }
 }
 ";
@@ -50,9 +50,9 @@ if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MatrixMultiplyStressKernel_Delegate>("__gsharp_launch_MatrixMultiplyStressKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MatrixMultiplyStressKernel_Delegate>("__gsharp_launch_GEN_43_HeavyGpuStressKernels_MatrixMultiplyStressKernel", dllPath);
 fixed (global::System.Single* p_a = a)
 fixed (global::System.Single* p_b = b)
 fixed (global::System.Single* p_c = c)

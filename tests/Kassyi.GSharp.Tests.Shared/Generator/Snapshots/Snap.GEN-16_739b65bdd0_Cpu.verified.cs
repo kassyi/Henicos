@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Core
 {
 public static partial class GEN_16_WarpLevelConcurrencyKernelsWrapper
 {
-public const string WarpPrimitivesKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpPrimitivesKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output){
 int tid = threadIdx.x;
 unsigned int mask = __activemask();
 int val = input[tid];
@@ -25,7 +25,7 @@ val=__shfl_up_sync(mask,val,1);
 val=__shfl_xor_sync(mask,val,1);
 output[tid]=val;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpPrimitivesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -35,7 +35,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpPrimitivesKernel(input, output);
+GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output);
 }
 }
 ";
@@ -49,9 +49,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpPrimitivesKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
@@ -78,7 +78,7 @@ namespace Kassyi.GSharp.Tests.Core
 {
 public static partial class GEN_16_WarpLevelConcurrencyKernelsWrapper
 {
-public const string WarpReduceSumKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpReduceSumKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output){
 int tid = threadIdx.x;
 int lane = tid%32;
 int warpId = tid/32;
@@ -94,7 +94,7 @@ if(lane==0)
 output[warpId]=val;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpReduceSumKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -104,7 +104,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpReduceSumKernel(input, output);
+GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output);
 }
 }
 ";
@@ -118,9 +118,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpReduceSumKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

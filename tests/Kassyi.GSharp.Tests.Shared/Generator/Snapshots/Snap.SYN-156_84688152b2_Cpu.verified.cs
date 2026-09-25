@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_156_LoopUnrollKernelsWrapper
 {
-public const string LoopUnrollFactorKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopUnrollFactorKernel(int* __restrict__ data){
+public const string LoopUnrollFactorKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel(int* __restrict__ data){
 int sum = 0;
 #pragma unroll 4
 for(int i = 0;i<4;i++)
@@ -33,7 +33,7 @@ sum+=(i+1)*10;
 }
 data[0]=sum;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollFactorKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -43,7 +43,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopUnrollFactorKernel(data);
+SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel(data);
 }
 }
 ";
@@ -57,9 +57,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollFactorKernel_Delegate>("__gsharp_launch_LoopUnrollFactorKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollFactorKernel_Delegate>("__gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollFactorKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -85,7 +85,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_156_LoopUnrollKernelsWrapper
 {
-public const string LoopUnrollForKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopUnrollForKernel(int* __restrict__ data){
+public const string LoopUnrollForKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_156_LoopUnrollKernels_LoopUnrollForKernel(int* __restrict__ data){
 int sum = 0;
 #pragma unroll
 for(int i = 0;i<4;i++)
@@ -94,7 +94,7 @@ sum+=i+1;
 }
 data[0]=sum;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollForKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollForKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -104,7 +104,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopUnrollForKernel(data);
+SYN_156_LoopUnrollKernels_LoopUnrollForKernel(data);
 }
 }
 ";
@@ -118,9 +118,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollForKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollForKernel_Delegate>("__gsharp_launch_LoopUnrollForKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollForKernel_Delegate>("__gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollForKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -146,7 +146,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_156_LoopUnrollKernelsWrapper
 {
-public const string LoopUnrollNestedKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopUnrollNestedKernel(int* __restrict__ data){
+public const string LoopUnrollNestedKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel(int* __restrict__ data){
 int sum = 0;
 for(int i = 0;i<2;i++)
 {
@@ -158,7 +158,7 @@ sum+=(i+1)*(j+1);
 }
 data[0]=sum;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollNestedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -168,7 +168,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopUnrollNestedKernel(data);
+SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel(data);
 }
 }
 ";
@@ -182,9 +182,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollNestedKernel_Delegate>("__gsharp_launch_LoopUnrollNestedKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollNestedKernel_Delegate>("__gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollNestedKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -210,7 +210,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_156_LoopUnrollKernelsWrapper
 {
-public const string LoopUnrollSingleStatementKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopUnrollSingleStatementKernel(int* __restrict__ data){
+public const string LoopUnrollSingleStatementKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel(int* __restrict__ data){
 int sum = 0;
 #pragma unroll
 for(int i = 0;i<4;i++)
@@ -219,7 +219,7 @@ sum+=2;
 }
 data[0]=sum;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollSingleStatementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -229,7 +229,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopUnrollSingleStatementKernel(data);
+SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel(data);
 }
 }
 ";
@@ -243,9 +243,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollSingleStatementKernel_Delegate>("__gsharp_launch_LoopUnrollSingleStatementKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollSingleStatementKernel_Delegate>("__gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollSingleStatementKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -271,7 +271,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_156_LoopUnrollKernelsWrapper
 {
-public const string LoopUnrollWhileKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopUnrollWhileKernel(int* __restrict__ data){
+public const string LoopUnrollWhileKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel(int* __restrict__ data){
 int count = 0;
 int sum = 0;
 #pragma unroll
@@ -282,7 +282,7 @@ count++;
 }
 data[0]=sum;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollWhileKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -292,7 +292,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopUnrollWhileKernel(data);
+SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel(data);
 }
 }
 ";
@@ -306,9 +306,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollWhileKernel_Delegate>("__gsharp_launch_LoopUnrollWhileKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollWhileKernel_Delegate>("__gsharp_launch_SYN_156_LoopUnrollKernels_LoopUnrollWhileKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

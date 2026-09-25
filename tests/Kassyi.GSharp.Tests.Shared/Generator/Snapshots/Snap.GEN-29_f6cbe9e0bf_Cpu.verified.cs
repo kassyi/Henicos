@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Core
 {
 public static partial class GEN_29_SharedMemoryKernelsWrapper
 {
-public const string ReverseArrayWithSharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void ReverseArrayWithSharedMemoryKernel(int* __restrict__ input, int* __restrict__ output, int length){
+public const string ReverseArrayWithSharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_29_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(int* __restrict__ input, int* __restrict__ output, int length){
 int tid = threadIdx.x;
 __shared__ int shared[256];
 if(tid<length)
@@ -27,7 +27,7 @@ int reversedIndex = length-1-tid;
 output[tid]=shared[reversedIndex];
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ReverseArrayWithSharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_29_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -37,7 +37,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ReverseArrayWithSharedMemoryKernel(input, output, length);
+GEN_29_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(input, output, length);
 }
 }
 ";
@@ -51,9 +51,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_29_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReverseArrayWithSharedMemoryKernel_Delegate>("__gsharp_launch_ReverseArrayWithSharedMemoryKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReverseArrayWithSharedMemoryKernel_Delegate>("__gsharp_launch_GEN_29_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

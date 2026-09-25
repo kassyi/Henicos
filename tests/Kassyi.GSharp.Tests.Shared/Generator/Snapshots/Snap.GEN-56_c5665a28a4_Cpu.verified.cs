@@ -54,11 +54,11 @@ Kassyi_GSharp_Core_Double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void RoundtripKernel(Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct* __restrict__  data){
+extern ""C"" __declspec(dllexport) void GEN56_NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct* __restrict__  data){
 (*data).Field1_Byte=(unsigned char)((*data).Field1_Byte+1-1);
 (*data).Field4_Short=(short)((*data).Field4_Short+1-1);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_RoundtripKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct* __restrict__  data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN56_NestedVectorAlignmentKernels_RoundtripKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct* __restrict__  data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -68,7 +68,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-RoundtripKernel(data);
+GEN56_NestedVectorAlignmentKernels_RoundtripKernel(data);
 }
 }
 ";
@@ -134,9 +134,9 @@ private unsafe delegate void RoundtripKernel_Delegate(uint gridDimX, uint gridDi
 public static unsafe void LaunchRoundtripKernel(ref global::Kassyi.GSharp.Tests.Shared.Runtime.GEN56_AlignmentTestStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN56_NestedVectorAlignmentKernels_RoundtripKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripKernel_Delegate>("__gsharp_launch_RoundtripKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RoundtripKernel_Delegate>("__gsharp_launch_GEN56_NestedVectorAlignmentKernels_RoundtripKernel", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Runtime.GEN56_AlignmentTestStruct* p_data = &data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -203,7 +203,7 @@ Kassyi_GSharp_Core_Double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void WriteExpectedOffsetsKernel(int* __restrict__ offsets){
+extern ""C"" __declspec(dllexport) void GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(int* __restrict__ offsets){
 {
 Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct s = {};
 unsigned char* basePtr = (unsigned char*)&s;
@@ -215,7 +215,7 @@ offsets[4]=(int)((unsigned char*)&s.Field5_Double2-basePtr);
 offsets[5]=64;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_WriteExpectedOffsetsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ offsets)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ offsets)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -225,7 +225,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WriteExpectedOffsetsKernel(offsets);
+GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(offsets);
 }
 }
 ";
@@ -239,9 +239,9 @@ if (offsets.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WriteExpectedOffsetsKernel_Delegate>("__gsharp_launch_WriteExpectedOffsetsKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WriteExpectedOffsetsKernel_Delegate>("__gsharp_launch_GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel", dllPath);
 fixed (global::System.Int32* p_offsets = offsets)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_offsets);

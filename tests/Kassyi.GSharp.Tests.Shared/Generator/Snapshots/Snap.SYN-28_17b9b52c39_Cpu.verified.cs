@@ -36,12 +36,12 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_28_MethodAttributesKernelsWrapper
 {
-public const string MethodAttributesKernel_Source = @"extern ""C"" __declspec(dllexport) void MethodAttributesKernel(int* __restrict__ input, int* __restrict__ result){
+public const string MethodAttributesKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_28_MethodAttributesKernels_MethodAttributesKernel(int* __restrict__ input, int* __restrict__ result){
 int tid = threadIdx.x;
 int sum = InlinedAdd(input[tid],100);
 result[tid]=MultiAttributeMultiply(sum,2);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MethodAttributesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_28_MethodAttributesKernels_MethodAttributesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -51,7 +51,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MethodAttributesKernel(input, result);
+SYN_28_MethodAttributesKernels_MethodAttributesKernel(input, result);
 }
 }
 ";
@@ -65,9 +65,9 @@ if (input.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_28_MethodAttributesKernels_MethodAttributesKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_MethodAttributesKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MethodAttributesKernel_Delegate>("__gsharp_launch_SYN_28_MethodAttributesKernels_MethodAttributesKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_result = result)
 {

@@ -113,10 +113,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .Select(static (m, _) => m.GetValueOrDefault());
 
         var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());
-        var allData = kernelsAndDevices.Combine(configProvider);
+        var compilationAndAll = context.CompilationProvider.Combine(kernelsAndDevices.Combine(configProvider));
 
-        context.RegisterSourceOutput(allData,
-            static (spc, source) => Execute(source.Left.Left, source.Left.Right, source.Right, spc));
+        context.RegisterSourceOutput(compilationAndAll,
+            static (spc, source) => Execute(source.Left, source.Right.Left.Left, source.Right.Left.Right, source.Right.Right, spc));
     }
 
     private static TranspiledKernelResult? TranspileKernel(GeneratorSyntaxContext context, string attributeName)
@@ -234,7 +234,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         _ => null
     };
 
-    private static void Execute(ImmutableArray<TranspiledKernelResult> kernelMethods,
+    private static void Execute(Compilation compilation, ImmutableArray<TranspiledKernelResult> kernelMethods,
         ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config,
         SourceProductionContext context)
     {
@@ -267,15 +267,29 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         EmitSharedSources(context, config, preludeSource, commonDeviceSource);
 
-        // Use Distinct by fully qualified method name to avoid duplicates if partial classes define it twice (which is illegal in C# but AST parses it).
-        // For IMethodSymbol, SymbolEqualityComparer.Default is fine here because they are from the SAME cached output if unchanged.
+        var allKernelsSource = new StringBuilder();
         var seenKernelMethods = new HashSet<TranspiledKernelResult>();
+        var distinctKernelMethods = new List<TranspiledKernelResult>();
+
         foreach (var method in kernelMethods)
         {
             if (seenKernelMethods.Add(method))
             {
-                ProcessKernelMethod(method, config, context, dialect, preludeSource, commonDeviceSource, isCuda);
+                distinctKernelMethods.Add(method);
+                var kernelSource = ProcessKernelMethod(method, config, context, isCuda);
+                allKernelsSource.AppendLine(kernelSource);
             }
+        }
+
+        var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
+        var safeAssemblyName = assemblyName.Replace(".", "_");
+        WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource, allKernelsSource.ToString(), dialect, context);
+
+        if (isCuda)
+        {
+            var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
+            context.AddSource($"GSharpModuleContext_{safeAssemblyName}.g.cs",
+                SourceText.From(contextSource, Encoding.UTF8));
         }
     }
 
@@ -322,9 +336,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
-    private static void ProcessKernelMethod(TranspiledKernelResult method, GeneratorConfig config,
-        SourceProductionContext context, ITranspilerDialect dialect, string preludeSource, string commonDeviceSource,
-        bool isCuda)
+    private static string ProcessKernelMethod(TranspiledKernelResult method, GeneratorConfig config,
+        SourceProductionContext context, bool isCuda)
     {
         foreach (var diag in method.Diagnostics)
         {
@@ -333,24 +346,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         string source = isCuda ? method.CudaSource : method.CppSource;
 
-        if (!string.IsNullOrWhiteSpace(config.IntermediateOutputPath))
-        {
-            WriteAotArtifacts(method, config, preludeSource, commonDeviceSource, source, dialect, context);
-        }
-
         var wrapperSource = WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config);
         context.AddSource(method.ClassName + "_" + method.MethodName + "_Wrapper.g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
+
+        return source;
     }
 
 
-    private static void WriteAotArtifacts(TranspiledKernelResult method, GeneratorConfig config,
-        string preludeSource, string commonDeviceSource, string kernelSource, ITranspilerDialect dialect,
+    private static void WriteUnityAotArtifact(string safeAssemblyName, GeneratorConfig config,
+        string preludeSource, string commonDeviceSource, string allKernelsSource, ITranspilerDialect dialect,
         SourceProductionContext context)
     {
-        var fullCudaSource = preludeSource + commonDeviceSource + kernelSource;
+        var fullSource = preludeSource + commonDeviceSource + allKernelsSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"{method.ClassName}_{method.MethodName}{ext}";
+        var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
         var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
         if (string.IsNullOrEmpty(safeIntermediateOutputPath))
         {
@@ -367,7 +377,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 Directory.CreateDirectory(safeIntermediateOutputPath);
             }
 
-            File.WriteAllText(filePath, fullCudaSource);
+            File.WriteAllText(filePath, fullSource);
         }
         catch (Exception ex)
         {

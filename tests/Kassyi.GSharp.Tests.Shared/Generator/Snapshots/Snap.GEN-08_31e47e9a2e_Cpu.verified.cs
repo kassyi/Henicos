@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.Math
 {
 public static partial class GpuBigIntKernelsWrapper
 {
-public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void ChunkAddKernel(unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize){
+public const string ChunkAddKernel_Source = @"extern ""C"" __declspec(dllexport) void GpuBigIntKernels_ChunkAddKernel(unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize){
 int chunkIdx = blockIdx.x*blockDim.x+threadIdx.x;
 int start = chunkIdx*chunkSize;
 if(start>=numWords)
@@ -34,7 +34,7 @@ localCarry=current>>32;
 }
 carryBuffer[chunkIdx+1]=(long long)localCarry;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ChunkAddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuBigIntKernels_ChunkAddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, long long* __restrict__ carryBuffer, int numWords, int chunkSize)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -44,7 +44,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ChunkAddKernel(dA, dB, dResult, carryBuffer, numWords, chunkSize);
+GpuBigIntKernels_ChunkAddKernel(dA, dB, dResult, carryBuffer, numWords, chunkSize);
 }
 }
 ";
@@ -58,9 +58,9 @@ if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0 || carryBuffer.Lengt
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GpuBigIntKernels_ChunkAddKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ChunkAddKernel_Delegate>("__gsharp_launch_ChunkAddKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ChunkAddKernel_Delegate>("__gsharp_launch_GpuBigIntKernels_ChunkAddKernel", dllPath);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)

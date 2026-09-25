@@ -33,7 +33,7 @@ float B;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal){
+extern ""C"" __declspec(dllexport) void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal){
 (*scalarOut)=0;
 if((*scalarRef)>constantVal)
 {
@@ -41,7 +41,7 @@ if((*scalarRef)>constantVal)
 (*structRef).B=(*scalarOut);
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ComplexSignatureKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_WrapperOptimizationKernels_ComplexSignatureKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -51,7 +51,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ComplexSignatureKernel(scalarRef, scalarOut, arrayVal, structRef, constantVal);
+WrapperOptimizationKernels_ComplexSignatureKernel(scalarRef, scalarOut, arrayVal, structRef, constantVal);
 }
 }
 ";
@@ -88,9 +88,9 @@ if (arrayVal.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"WrapperOptimizationKernels_ComplexSignatureKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_ComplexSignatureKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ComplexSignatureKernel_Delegate>("__gsharp_launch_WrapperOptimizationKernels_ComplexSignatureKernel", dllPath);
 fixed (global::System.Int32* p_scalarRef = &scalarRef)
 fixed (global::System.Single* p_scalarOut = &scalarOut)
 fixed (global::System.Int32* p_arrayVal = arrayVal)

@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Core
 {
 public static partial class GEN_16_WarpLevelConcurrencyKernelsWrapper
 {
-public const string WarpPrimitivesKernel_Source = @"extern ""C"" __global__ void WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpPrimitivesKernel_Source = @"extern ""C"" __global__ void GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output){
 int tid = threadIdx.x;
 unsigned int mask = __activemask();
 int val = input[tid];
@@ -27,16 +27,14 @@ output[tid]=val;
 }
 ";
 public static readonly string WarpPrimitivesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WarpPrimitivesKernel_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_WarpPrimitivesKernel = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_WarpPrimitivesKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerWarpPrimitivesKernel()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_WarpPrimitivesKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_WarpPrimitivesKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWarpPrimitivesKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -45,7 +43,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpPrimitivesKernel.Value, "WarpPrimitivesKernel");
+WarmupFunctionPointerWarpPrimitivesKernel();
+IntPtr hfunc = s_hfunc_WarpPrimitivesKernel!.Value;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -136,7 +135,8 @@ public static unsafe void LaunchWarpPrimitivesKernel_Device(IntPtr input, IntPtr
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpPrimitivesKernel.Value, "WarpPrimitivesKernel");
+WarmupFunctionPointerWarpPrimitivesKernel();
+IntPtr hfunc = s_hfunc_WarpPrimitivesKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -179,7 +179,7 @@ namespace Kassyi.GSharp.Tests.Core
 {
 public static partial class GEN_16_WarpLevelConcurrencyKernelsWrapper
 {
-public const string WarpReduceSumKernel_Source = @"extern ""C"" __global__ void WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpReduceSumKernel_Source = @"extern ""C"" __global__ void GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output){
 int tid = threadIdx.x;
 int lane = tid%32;
 int warpId = tid/32;
@@ -197,16 +197,14 @@ output[warpId]=val;
 }
 ";
 public static readonly string WarpReduceSumKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WarpReduceSumKernel_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_WarpReduceSumKernel = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_WarpReduceSumKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerWarpReduceSumKernel()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_WarpReduceSumKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_WarpReduceSumKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN_16_WarpLevelConcurrencyKernels_WarpReduceSumKernel");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWarpReduceSumKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -215,7 +213,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReduceSumKernel.Value, "WarpReduceSumKernel");
+WarmupFunctionPointerWarpReduceSumKernel();
+IntPtr hfunc = s_hfunc_WarpReduceSumKernel!.Value;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -306,7 +305,8 @@ public static unsafe void LaunchWarpReduceSumKernel_Device(IntPtr input, IntPtr 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WarpReduceSumKernel.Value, "WarpReduceSumKernel");
+WarmupFunctionPointerWarpReduceSumKernel();
+IntPtr hfunc = s_hfunc_WarpReduceSumKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -332,6 +332,54 @@ finally
 #pragma warning restore CS8500
 }
 }
+
+
+// File: GSharpModuleContext_SnapshotTest.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+using System.Threading;
+
+namespace Kassyi.GSharp.Generated
+{
+public static class GSharpModuleContext_SnapshotTest
+{
+private static IntPtr? s_hModule;
+private static readonly object s_lock = new object();
+
+/// <summary>
+/// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+/// </summary>
+public static IntPtr GetOrLoadModule()
+{
+if (s_hModule.HasValue) return s_hModule.Value;
+lock (s_lock)
+{
+if (s_hModule.HasValue) return s_hModule.Value;
+
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
+var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
+if (!System.IO.File.Exists(fatbinPath))
+{
+throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
+}
+
+byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
+s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+return s_hModule.Value;
+}
+}
+
+/// <summary>
+/// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
+/// </summary>
+public static void Warmup()
+{
+// Force load the module first
+GetOrLoadModule();
+global::Kassyi.GSharp.Tests.Core.GEN_16_WarpLevelConcurrencyKernelsWrapper.WarmupFunctionPointerWarpReduceSumKernel();
+global::Kassyi.GSharp.Tests.Core.GEN_16_WarpLevelConcurrencyKernelsWrapper.WarmupFunctionPointerWarpPrimitivesKernel();
+}}}
 
 
 // File: GSharpSharedCudaDeviceCode.g.cs

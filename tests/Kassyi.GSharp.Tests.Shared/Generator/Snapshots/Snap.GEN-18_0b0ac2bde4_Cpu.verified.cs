@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GEN_18_VectorBuiltinKernelsWrapper
 {
-public const string Vector2AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length){
+public const string Vector2AddKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_18_VectorBuiltinKernels_Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length){
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -22,7 +22,7 @@ auto vb = b[tid];
 result[tid]=float2{(float)(va.x+vb.x), (float)(va.y+vb.y)};
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_18_VectorBuiltinKernels_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -32,7 +32,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Vector2AddKernel(a, b, result, length);
+GEN_18_VectorBuiltinKernels_Vector2AddKernel(a, b, result, length);
 }
 }
 ";
@@ -46,9 +46,9 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_18_VectorBuiltinKernels_Vector2AddKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_Vector2AddKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector2AddKernel_Delegate>("__gsharp_launch_GEN_18_VectorBuiltinKernels_Vector2AddKernel", dllPath);
 fixed (global::System.Numerics.Vector2* p_a = a)
 fixed (global::System.Numerics.Vector2* p_b = b)
 fixed (global::System.Numerics.Vector2* p_result = result)
@@ -76,7 +76,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GEN_18_VectorBuiltinKernelsWrapper
 {
-public const string Vector3AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector3AddKernel(float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length){
+public const string Vector3AddKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_18_VectorBuiltinKernels_Vector3AddKernel(float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length){
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -85,7 +85,7 @@ auto vb = b[tid];
 result[tid]=float3{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z)};
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Vector3AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_18_VectorBuiltinKernels_Vector3AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -95,7 +95,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Vector3AddKernel(a, b, result, length);
+GEN_18_VectorBuiltinKernels_Vector3AddKernel(a, b, result, length);
 }
 }
 ";
@@ -109,9 +109,9 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_18_VectorBuiltinKernels_Vector3AddKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_Vector3AddKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector3AddKernel_Delegate>("__gsharp_launch_GEN_18_VectorBuiltinKernels_Vector3AddKernel", dllPath);
 fixed (global::System.Numerics.Vector3* p_a = a)
 fixed (global::System.Numerics.Vector3* p_b = b)
 fixed (global::System.Numerics.Vector3* p_result = result)
@@ -139,7 +139,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class GEN_18_VectorBuiltinKernelsWrapper
 {
-public const string Vector4AddKernel_Source = @"extern ""C"" __declspec(dllexport) void Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length){
+public const string Vector4AddKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_18_VectorBuiltinKernels_Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length){
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -148,7 +148,7 @@ auto vb = b[tid];
 result[tid]=float4{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z), (float)(va.w+vb.w)};
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Vector4AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_18_VectorBuiltinKernels_Vector4AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -158,7 +158,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Vector4AddKernel(a, b, result, length);
+GEN_18_VectorBuiltinKernels_Vector4AddKernel(a, b, result, length);
 }
 }
 ";
@@ -172,9 +172,9 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GEN_18_VectorBuiltinKernels_Vector4AddKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_Vector4AddKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Vector4AddKernel_Delegate>("__gsharp_launch_GEN_18_VectorBuiltinKernels_Vector4AddKernel", dllPath);
 fixed (global::System.Numerics.Vector4* p_a = a)
 fixed (global::System.Numerics.Vector4* p_b = b)
 fixed (global::System.Numerics.Vector4* p_result = result)

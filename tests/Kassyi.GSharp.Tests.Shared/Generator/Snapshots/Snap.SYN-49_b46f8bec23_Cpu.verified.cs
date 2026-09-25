@@ -34,14 +34,14 @@ long long ValueL;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
+extern ""C"" __declspec(dllexport) void SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
 atomicExch(&structArray[tid].ValueU,42u);
 __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -51,7 +51,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InterlockedEdgeCasesKernel(array, structArray);
+SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(array, structArray);
 }
 }
 ";
@@ -65,9 +65,9 @@ if (array.Length == 0 || structArray.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InterlockedEdgeCasesKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel", dllPath);
 fixed (global::System.Int32* p_array = array)
 fixed (global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
@@ -94,7 +94,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
-public const string InterlockedKernel_Source = @"extern ""C"" __declspec(dllexport) void InterlockedKernel(int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf){
+public const string InterlockedKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel(int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf){
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&intBuf[0],1);
 __gsharp_atomicAdd((unsigned long long*)(&longBuf[0]),2L);
@@ -113,7 +113,7 @@ __gsharp_atomicCAS((unsigned long long*)(&longBuf[2]),700L,0L);
 __gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ul,0ul);
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InterlockedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -123,7 +123,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InterlockedKernel(intBuf, uintBuf, longBuf, ulongBuf);
+SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel(intBuf, uintBuf, longBuf, ulongBuf);
 }
 }
 ";
@@ -137,9 +137,9 @@ if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_InterlockedKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedKernel_Delegate>("__gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel", dllPath);
 fixed (global::System.Int32* p_intBuf = intBuf)
 fixed (global::System.UInt32* p_uintBuf = uintBuf)
 fixed (global::System.Int64* p_longBuf = longBuf)
@@ -168,7 +168,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
-public const string MathEdgeCasesKernel_Source = @"extern ""C"" __declspec(dllexport) void MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults){
+public const string MathEdgeCasesKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults){
 int tid = threadIdx.x;
 float f = floatSpecialInputs[tid];
 floatSpecialResults[0]=fabsf(f);
@@ -185,7 +185,7 @@ doubleSpecialResults[3]=exp(d);
 doubleSpecialResults[4]=sqrt(d);
 doubleSpecialResults[5]=log(d);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MathEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -195,7 +195,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MathEdgeCasesKernel(floatSpecialInputs, floatSpecialResults, doubleSpecialInputs, doubleSpecialResults);
+SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(floatSpecialInputs, floatSpecialResults, doubleSpecialInputs, doubleSpecialResults);
 }
 }
 ";
@@ -209,9 +209,9 @@ if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleS
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_MathEdgeCasesKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathEdgeCasesKernel_Delegate>("__gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel", dllPath);
 fixed (global::System.Single* p_floatSpecialInputs = floatSpecialInputs)
 fixed (global::System.Single* p_floatSpecialResults = floatSpecialResults)
 fixed (global::System.Double* p_doubleSpecialInputs = doubleSpecialInputs)
@@ -240,7 +240,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernelsWrapper
 {
-public const string MathKernel_Source = @"extern ""C"" __declspec(dllexport) void MathKernel(double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs){
+public const string MathKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel(double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs){
 int tid = threadIdx.x;
 double dVal = doubleInputs[tid];
 doubleOutputs[0]=sin(dVal);
@@ -263,7 +263,7 @@ floatOutputs[6]=expf(fVal);
 floatOutputs[7]=sqrtf(fabsf(fVal));
 floatOutputs[8]=logf(fabsf(fVal)+1.0f);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -273,7 +273,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MathKernel(doubleInputs, doubleOutputs, floatInputs, floatOutputs);
+SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel(doubleInputs, doubleOutputs, floatInputs, floatOutputs);
 }
 }
 ";
@@ -287,9 +287,9 @@ if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length 
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_MathKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MathKernel_Delegate>("__gsharp_launch_SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel", dllPath);
 fixed (global::System.Double* p_doubleInputs = doubleInputs)
 fixed (global::System.Double* p_doubleOutputs = doubleOutputs)
 fixed (global::System.Single* p_floatInputs = floatInputs)

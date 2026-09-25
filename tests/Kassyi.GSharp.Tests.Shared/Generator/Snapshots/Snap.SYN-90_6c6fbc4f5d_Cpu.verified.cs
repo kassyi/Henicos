@@ -33,13 +33,13 @@ int B;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void AggregateInitKernel(int* __restrict__ output){
+extern ""C"" __declspec(dllexport) void SYN_90_StructAggregateInitKernels_AggregateInitKernel(int* __restrict__ output){
 Kassyi_GSharp_Tests_Syntax_AggregateStruct s = ([&]() {
 Kassyi_GSharp_Tests_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
 ());
 output[0]=s.A+s.B;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AggregateInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_90_StructAggregateInitKernels_AggregateInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -49,7 +49,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AggregateInitKernel(output);
+SYN_90_StructAggregateInitKernels_AggregateInitKernel(output);
 }
 }
 ";
@@ -63,9 +63,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_StructAggregateInitKernels_AggregateInitKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_AggregateInitKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_SYN_90_StructAggregateInitKernels_AggregateInitKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -108,7 +108,7 @@ int Y;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void DeeplyNestedInitKernel(int* __restrict__ output){
+extern ""C"" __declspec(dllexport) void SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel(int* __restrict__ output){
 Kassyi_GSharp_Tests_Syntax_OuterStruct outer = ([&]() {
 Kassyi_GSharp_Tests_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
 Kassyi_GSharp_Tests_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
@@ -116,7 +116,7 @@ Kassyi_GSharp_Tests_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
 ());
 output[0]=outer.B.X+outer.Y;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_DeeplyNestedInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -126,7 +126,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-DeeplyNestedInitKernel(output);
+SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel(output);
 }
 }
 ";
@@ -140,9 +140,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_DeeplyNestedInitKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_SYN_90_StructAggregateInitKernels_DeeplyNestedInitKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

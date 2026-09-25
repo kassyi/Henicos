@@ -33,7 +33,7 @@ float Y;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput){
+extern ""C"" __declspec(dllexport) void SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput){
 __shared__ int intSmem[256];
 __shared__ float floatSmem[256];
 __shared__ Kassyi_GSharp_Tests_Syntax_CustomPoint pointSmem[64];
@@ -57,7 +57,7 @@ floatOutput[0]=floatSmem[10];
 pointOutput[0]=pointSmem[5];
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_SharedMemoryStaticKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -67,7 +67,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SharedMemoryStaticKernel(intOutput, floatOutput, pointOutput);
+SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(intOutput, floatOutput, pointOutput);
 }
 }
 ";
@@ -81,9 +81,9 @@ if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0)
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SharedMemoryStaticKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryStaticKernel_Delegate>("__gsharp_launch_SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel", dllPath);
 fixed (global::System.Int32* p_intOutput = intOutput)
 fixed (global::System.Single* p_floatOutput = floatOutput)
 fixed (global::Kassyi.GSharp.Tests.Syntax.CustomPoint* p_pointOutput = pointOutput)

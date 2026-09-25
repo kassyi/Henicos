@@ -180,4 +180,40 @@ public sealed class GpuKernelLoader
             NativeMemory.AlignedFree(pAlignedBinary);
         }
     }
+
+    /// <summary>
+    /// Loads a fatbin module directly into the CUDA driver and returns the module handle.
+    /// </summary>
+    public static unsafe IntPtr LoadModule(byte[] binaryData)
+    {
+        EnsureInitialized();
+
+        var (processed, _) = AotSignatureValidator.ExtractAndVerify(binaryData);
+        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)processed.Length, 8);
+        try
+        {
+            Marshal.Copy(processed, 0, (IntPtr)pAlignedBinary, processed.Length);
+
+            var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
+            if (loadResult != CUresult.CudaSuccess)
+            {
+                throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for fatbin module.");
+            }
+            return module;
+        }
+        finally
+        {
+            NativeMemory.AlignedFree(pAlignedBinary);
+        }
+    }
+
+    /// <summary>
+    /// Retrieves a function pointer from a loaded CUDA module.
+    /// </summary>
+    public static IntPtr GetFunction(IntPtr hModule, string kernelName)
+    {
+        EnsureInitialized();
+        CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, hModule, kernelName));
+        return hfunc;
+    }
 }
