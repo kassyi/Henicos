@@ -24,6 +24,7 @@ public static class GpuBigIntNttKernels
     public const ulong BarrettMagic2 = 6787108810UL; // for P2
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModAdd(uint operandA, uint operandB, uint primeModulus)
     {
         if (operandA >= primeModulus - operandB)
@@ -35,6 +36,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModSub(uint operandA, uint operandB, uint primeModulus)
     {
         var result = operandA - operandB;
@@ -49,6 +51,7 @@ public static class GpuBigIntNttKernels
     // ReSharper disable once ConditionIsAlwaysTrueOrFalse -- Variables are modified via inline PTX assembly which ReSharper cannot detect
     // ReSharper disable once UselessBinaryOperation -- Variables are modified via inline PTX assembly which ReSharper cannot detect
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModMulBarrett(uint operandA, uint operandB, uint primeModulus, ulong barrettMagic)
     {
         ulong product = 0;
@@ -71,10 +74,12 @@ public static class GpuBigIntNttKernels
     // ReSharper restore UselessBinaryOperation
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModMul1(uint operandA, uint operandB) =>
         ModMulBarrett(operandA, operandB, Prime1, BarrettMagic1);
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModMul2(uint operandA, uint operandB) =>
         ModMulBarrett(operandA, operandB, Prime2, BarrettMagic2);
 
@@ -152,7 +157,6 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ExecuteNttLoadAndTwiddleBefore(
         int rowIndex, int threadId, int currentLength, int maxLog2Length, int transformLength,
         bool applyTwiddleBefore, uint primeModulus, ulong barrettMagic,
@@ -185,7 +189,6 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ExecuteNttButterflyStep(
         int step, int threadId, int transformLength,
         uint primeModulus, ulong barrettMagic,
@@ -219,7 +222,6 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ExecuteNttTwiddleAfterAndStore(
         int rowIndex, int threadId, int currentLength, int transformLength,
         bool applyTwiddleAfter, uint primeModulus, ulong barrettMagic,
@@ -316,6 +318,109 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static ulong ComputeNttLocalSum(uint[] uncarriedLow, uint[] uncarriedHigh, int i, int maxWordCount, int transformLength)
+    {
+        ulong localSum = 0;
+        if (i < maxWordCount)
+        {
+            // Each NTT coefficient c_j (64-bit) has weight 2^(16*j).
+            // For word i (weight 2^(32*i)), relevant coefficients are j = 2*i + 1 down to 2*i - 3.
+            Gpu.ForUnroll(0, 5, step =>
+            {
+                int idx = 2 * i + 1 - step;
+                if (idx >= 0 && idx < transformLength)
+                {
+                    ulong c = uncarriedLow[idx] | ((ulong)uncarriedHigh[idx] << 32);
+                    if (step == 0)
+                    {
+                        localSum += (uint)(c << 16);
+                    }
+                    else
+                    {
+                        localSum += (uint)(c >> ((step - 1) * 16));
+                    }
+                }
+            });
+        }
+        return localSum;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint ResolveOverlapH(uint h, SharedMemory<uint> sharedH, int laneId, int warpId)
+    {
+        uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, h, 1);
+
+        if (laneId == 31)
+        {
+            sharedH[warpId] = h;
+        }
+        Gpu.SyncThreads();
+
+        if (laneId == 0)
+        {
+            if (warpId == 0)
+            {
+                prevH = 0u;
+            }
+            else
+            {
+                prevH = sharedH[warpId - 1];
+            }
+        }
+        return prevH;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ComputeBlockCarryScan(
+        uint g, uint p,
+        SharedMemory<uint> sharedCarry,
+        int laneId, int warpId, int bDim,
+        out uint scanG, out uint scanP, out uint carryIn)
+    {
+        var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+        scanG = warpScan.Generate;
+        scanP = warpScan.Propagate;
+
+        if (laneId == 31)
+        {
+            sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
+        }
+
+        Gpu.SyncThreads();
+
+        if (warpId == 0)
+        {
+            int numWarps = (bDim + 31) / 32;
+            var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
+            var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
+
+            if (laneId < numWarps)
+            {
+                sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+            }
+        }
+
+        Gpu.SyncThreads();
+
+        carryIn = 0u;
+
+        if (warpId > 0)
+        {
+            carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
+        }
+
+        uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+        uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+        if (laneId > 0)
+        {
+            carryIn = prevScanG | (prevScanP & carryIn);
+        }
+    }
+
+    [GpuDeviceFunction]
     public static void ExecuteResolveNttCarriesBlocked(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
     {
@@ -328,33 +433,10 @@ public static class GpuBigIntNttKernels
             int startIdx = bIdx * chunkSize;
             int i = startIdx + tIdx;
 
-            ulong localSum = 0;
-            if (i < maxWordCount)
-            {
-                // Each NTT coefficient c_j (64-bit) has weight 2^(16*j).
-                // For word i (weight 2^(32*i)), relevant coefficients are j = 2*i + 1 down to 2*i - 3.
-                Gpu.ForUnroll(0, 5, step =>
-                {
-                    int idx = 2 * i + 1 - step;
-                    if (idx >= 0 && idx < transformLength)
-                    {
-                        ulong c = uncarriedLow[idx] | ((ulong)uncarriedHigh[idx] << 32);
-                        if (step == 0)
-                        {
-                            localSum += (uint)(c << 16);
-                        }
-                        else
-                        {
-                            localSum += (uint)(c >> ((step - 1) * 16));
-                        }
-                    }
-                });
-            }
+            ulong localSum = ComputeNttLocalSum(uncarriedLow, uncarriedHigh, i, maxWordCount, transformLength);
 
             uint L = (uint)(localSum & 0xFFFFFFFFul);
             uint H = (uint)(localSum >> 32);
-
-            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
 
             SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
             SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
@@ -363,66 +445,13 @@ public static class GpuBigIntNttKernels
             int warpId = tIdx / 32;
             int bDim = BlockDimension.X;
 
-            if (laneId == 31)
-            {
-                sharedH[warpId] = H;
-            }
-            Gpu.SyncThreads();
-
-            if (laneId == 0)
-            {
-                if (warpId == 0)
-                {
-                    prevH = 0u;
-                }
-                else
-                {
-                    prevH = sharedH[warpId - 1];
-                }
-            }
+            uint prevH = ResolveOverlapH(H, sharedH, laneId, warpId);
 
             ulong sum = (ulong)L + prevH;
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
-            uint scanG = warpScan.Generate;
-            uint scanP = warpScan.Propagate;
-
-            if (laneId == 31)
-            {
-                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
-            }
-
-            Gpu.SyncThreads();
-
-            if (warpId == 0)
-            {
-                int numWarps = (bDim + 31) / 32;
-                var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
-                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
-
-                if (laneId < numWarps)
-                {
-                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
-                }
-            }
-
-            Gpu.SyncThreads();
-
-            uint carryIn = 0u;
-
-            if (warpId > 0)
-            {
-                carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
-            }
-
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
-            if (laneId > 0)
-            {
-                carryIn = prevScanG | (prevScanP & carryIn);
-            }
+            ComputeBlockCarryScan(g, p, sharedCarry, laneId, warpId, bDim, out _, out _, out uint carryIn);
 
             if (i < maxWordCount)
             {
@@ -473,6 +502,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
     {
         var carry = valueToAdd;
