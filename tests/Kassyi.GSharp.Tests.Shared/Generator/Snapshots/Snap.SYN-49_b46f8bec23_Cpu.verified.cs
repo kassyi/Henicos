@@ -55,11 +55,11 @@ SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(array, s
 }
 }
 ";
-public static readonly string InterlockedEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + InterlockedEdgeCasesKernel_Source;
+public static readonly string InterlockedEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InterlockedEdgeCasesKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void InterlockedEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* structArray);
 #pragma warning disable CS8500
-public static unsafe void LaunchInterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchInterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
@@ -127,11 +127,11 @@ SYN_49_SYN_68_InvocationAndIntrinsicsKernels_InterlockedKernel(intBuf, uintBuf, 
 }
 }
 ";
-public static readonly string InterlockedKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + InterlockedKernel_Source;
+public static readonly string InterlockedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InterlockedKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void InterlockedKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* intBuf, global::System.UInt32* uintBuf, global::System.Int64* longBuf, global::System.UInt64* ulongBuf);
 #pragma warning disable CS8500
-public static unsafe void LaunchInterlockedKernel(global::System.Int32[] intBuf, global::System.UInt32[] uintBuf, global::System.Int64[] longBuf, global::System.UInt64[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchInterlockedKernel(global::System.Int32[] intBuf, global::System.UInt32[] uintBuf, global::System.Int64[] longBuf, global::System.UInt64[] ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intBuf.Length == 0 || uintBuf.Length == 0 || longBuf.Length == 0 || ulongBuf.Length == 0){
 return;
@@ -199,11 +199,11 @@ SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(floatSpecialInp
 }
 }
 ";
-public static readonly string MathEdgeCasesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MathEdgeCasesKernel_Source;
+public static readonly string MathEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathEdgeCasesKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MathEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* floatSpecialInputs, global::System.Single* floatSpecialResults, global::System.Double* doubleSpecialInputs, global::System.Double* doubleSpecialResults);
 #pragma warning disable CS8500
-public static unsafe void LaunchMathEdgeCasesKernel(global::System.Single[] floatSpecialInputs, global::System.Single[] floatSpecialResults, global::System.Double[] doubleSpecialInputs, global::System.Double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMathEdgeCasesKernel(global::System.Single[] floatSpecialInputs, global::System.Single[] floatSpecialResults, global::System.Double[] doubleSpecialInputs, global::System.Double[] doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (floatSpecialInputs.Length == 0 || floatSpecialResults.Length == 0 || doubleSpecialInputs.Length == 0 || doubleSpecialResults.Length == 0){
 return;
@@ -277,11 +277,11 @@ SYN_49_SYN_68_InvocationAndIntrinsicsKernels_MathKernel(doubleInputs, doubleOutp
 }
 }
 ";
-public static readonly string MathKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MathKernel_Source;
+public static readonly string MathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MathKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Double* doubleInputs, global::System.Double* doubleOutputs, global::System.Single* floatInputs, global::System.Single* floatOutputs);
 #pragma warning disable CS8500
-public static unsafe void LaunchMathKernel(global::System.Double[] doubleInputs, global::System.Double[] doubleOutputs, global::System.Single[] floatInputs, global::System.Single[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMathKernel(global::System.Double[] doubleInputs, global::System.Double[] doubleOutputs, global::System.Single[] floatInputs, global::System.Single[] floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (doubleInputs.Length == 0 || doubleOutputs.Length == 0 || floatInputs.Length == 0 || floatOutputs.Length == 0){
 return;

@@ -55,11 +55,11 @@ SYN_95_WarpShuffleKernels_WarpDivergenceKernel(input, output);
 }
 }
 ";
-public static readonly string WarpDivergenceKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpDivergenceKernel_Source;
+public static readonly string WarpDivergenceKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpDivergenceKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpDivergenceKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
 #pragma warning disable CS8500
-public static unsafe void LaunchWarpDivergenceKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchWarpDivergenceKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
 return;
@@ -124,11 +124,11 @@ SYN_95_WarpShuffleKernels_WarpReductionKernel(input, output);
 }
 }
 ";
-public static readonly string WarpReductionKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpReductionKernel_Source;
+public static readonly string WarpReductionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpReductionKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
 #pragma warning disable CS8500
-public static unsafe void LaunchWarpReductionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchWarpReductionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
 return;
@@ -185,11 +185,11 @@ SYN_95_WarpShuffleKernels_WarpShuffleBoundaryKernel(input, outputBoundary0, outp
 }
 }
 ";
-public static readonly string WarpShuffleBoundaryKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpShuffleBoundaryKernel_Source;
+public static readonly string WarpShuffleBoundaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpShuffleBoundaryKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpShuffleBoundaryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* outputBoundary0, global::System.Int32* outputBoundary31, global::System.Int32* outputBoundary32);
 #pragma warning disable CS8500
-public static unsafe void LaunchWarpShuffleBoundaryKernel(global::System.Int32[] input, global::System.Int32[] outputBoundary0, global::System.Int32[] outputBoundary31, global::System.Int32[] outputBoundary32, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchWarpShuffleBoundaryKernel(global::System.Int32[] input, global::System.Int32[] outputBoundary0, global::System.Int32[] outputBoundary31, global::System.Int32[] outputBoundary32, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || outputBoundary0.Length == 0 || outputBoundary31.Length == 0 || outputBoundary32.Length == 0){
 return;
@@ -244,11 +244,11 @@ SYN_95_WarpShuffleKernels_WarpShuffleExtremaKernel(mask, input, delta, width, ou
 }
 }
 ";
-public static readonly string WarpShuffleExtremaKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + WarpShuffleExtremaKernel_Source;
+public static readonly string WarpShuffleExtremaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpShuffleExtremaKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpShuffleExtremaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32 mask, global::System.Int32* input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32* output);
 #pragma warning disable CS8500
-public static unsafe void LaunchWarpShuffleExtremaKernel(global::System.UInt32 mask, global::System.Int32[] input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchWarpShuffleExtremaKernel(global::System.UInt32 mask, global::System.Int32[] input, global::System.UInt32 delta, global::System.Int32 width, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (input.Length == 0 || output.Length == 0){
 return;

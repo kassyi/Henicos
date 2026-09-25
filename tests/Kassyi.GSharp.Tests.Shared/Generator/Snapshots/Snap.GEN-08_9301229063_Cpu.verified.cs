@@ -102,7 +102,7 @@ TestKernels_MacroKernel(ctx, dA, dB, dResult);
 }
 }
 ";
-public static readonly string MacroKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MacroKernel_Source;
+public static readonly string MacroKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MacroKernel_Source;
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
 public unsafe struct __Native_TestNamespace_DummyContext
@@ -123,7 +123,7 @@ host.State = native.State;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestNamespace.DummyContext ctx, global::System.UInt32* dA, global::System.UInt32* dB, global::System.UInt32* dResult);
 #pragma warning disable CS8500
-public static unsafe void LaunchMacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
 return;
