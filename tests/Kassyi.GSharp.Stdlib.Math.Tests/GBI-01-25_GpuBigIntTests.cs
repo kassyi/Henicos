@@ -161,6 +161,39 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableTheory]
         [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_Add_CarryPropagation_AllOnes(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 2 + 8, engine); // Extra capacity just in case
+            
+            // Create an array with all bits set to 1, except the highest bit of the highest word
+            // to ensure it is treated as a positive number by BigInteger.
+            var arrA = new uint[TestSizeWords];
+            for (int i = 0; i < TestSizeWords; i++)
+            {
+                arrA[i] = 0xFFFFFFFF;
+            }
+            arrA[TestSizeWords - 1] = 0x7FFFFFFF;
+
+            var arrB = new uint[TestSizeWords];
+            arrB[0] = 1; // Ripple carry generator
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+            
+            gpuResult.Value = gpuA + gpuB;
+
+            AssertGpuResultEqualsCpu(bigA + bigB, gpuResult, TestSizeWords);
+        }
+
+        [Trait("RoadmapId", "GBI-10")]
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
