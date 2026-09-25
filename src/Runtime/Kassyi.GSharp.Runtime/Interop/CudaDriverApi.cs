@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
+[assembly:
+    SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
+        Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -80,6 +82,10 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemGetInfo_v2(out nint free, out nint total);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuDeviceGet(out int device, int ordinal);
 
     [LibraryImport(DllName)]
@@ -90,12 +96,10 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxDestroy_v2(IntPtr ctx);
 
-    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPushCurrent_v2(IntPtr ctx);
 
-    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPopCurrent_v2(out IntPtr pctx);
