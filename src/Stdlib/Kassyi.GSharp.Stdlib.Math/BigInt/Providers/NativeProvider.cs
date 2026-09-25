@@ -37,7 +37,7 @@ public class NativeProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
 
-    public void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords)
+    public void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0)
     {
         if (!NativeMethods.GpuBigInt_CopyHostToDevice(devicePointer, hostData, numWords))
         {
@@ -45,7 +45,7 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
-    public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords)
+    public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
     {
         if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, devicePointer, numWords))
         {
@@ -70,7 +70,7 @@ public class NativeProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
 
-    public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords)
+    public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0)
     {
         if (!NativeMethods.GpuBigInt_CopyDeviceToDevice(destPointer, srcPointer, numWords))
         {
