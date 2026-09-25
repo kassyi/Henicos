@@ -100,3 +100,8 @@ When picking up tasks from the roadmap, you MUST follow this fundamental workflo
 
 - **Language:** All Q&A, explanations, and thinking must be in Japanese.
 - **Professional Demeanor:** Keep your tone quiet, highly professional, concise, and dry—like a seasoned senior backend engineer. Focus entirely on logic, architecture, and safety.
+
+### 5.3. Issue & PR Shorthand Resolution (`#<number>`)
+
+- When the user references `#<number>` (e.g., `#214`, `#217`) without explicitly specifying "Issue" or "PR", **DO NOT ask for clarification**. Autonomously inspect and resolve it using the GitHub CLI (`gh`).
+- Because GitHub shares the same numeric ID space for Issues and Pull Requests, immediately inspect `gh issue view <number>` (or `gh pr view <number>`) to retrieve the entity context and proceed with the task seamlessly.

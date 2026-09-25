@@ -44,18 +44,7 @@ public class GEN56_NestedVectorAlignmentTests
         var offset5 = Marshal.OffsetOf(type, "Field5_Double2").ToInt32();
         var totalSize = Marshal.SizeOf(type);
 
-        _output.WriteLine($"Field1_Byte: {offset1}");
-        _output.WriteLine($"Field2_Float2: {offset2}");
-        _output.WriteLine($"Field3_Float4: {offset3}");
-        _output.WriteLine($"Field4_Short: {offset4}");
-        _output.WriteLine($"Field5_Double2: {offset5}");
-        _output.WriteLine($"Struct Size: {totalSize}");
-
         var debugField2 = type.GetField("DebugName_Field2_Float2", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-        if (debugField2 != null)
-        {
-            _output.WriteLine($"DebugName_Field2_Float2: {debugField2.GetValue(null)}");
-        }
 
         Assert.Equal(0, offset1);
         Assert.Equal(8, offset2);
@@ -82,12 +71,6 @@ public class GEN56_NestedVectorAlignmentTests
 
         var offsets = new int[6];
         GEN56_NestedVectorAlignmentKernelsWrapper.LaunchWriteExpectedOffsetsKernel(offsets);
-        _output.WriteLine($"C++ Field1_Byte: {offsets[0]}");
-        _output.WriteLine($"C++ Field2_Float2: {offsets[1]}");
-        _output.WriteLine($"C++ Field3_Float4: {offsets[2]}");
-        _output.WriteLine($"C++ Field4_Short: {offsets[3]}");
-        _output.WriteLine($"C++ Field5_Double2: {offsets[4]}");
-        _output.WriteLine($"C++ Struct Size: {offsets[5]}");
 
         GEN56_NestedVectorAlignmentKernelsWrapper.LaunchRoundtripKernel(ref data);
 
