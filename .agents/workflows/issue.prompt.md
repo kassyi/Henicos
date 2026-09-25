@@ -12,7 +12,7 @@ Your mission is to understand the user's issue topic (bug report, feature reques
 
 ## Safety & Execution Guardrails
 
-1. **No Blind Creation**: Always propose the Issue title, labels, and complete body preview for user review before running `gh issue create`. Only execute when the user replies affirmatively (e.g. `yes`, `y`, `proceed`).
+1. **No Blind Creation**: Always propose the Issue title, labels, and complete body for user review before running `gh issue create` or `gh issue edit`. **Never wrap the issue body in a Markdown code block (` ```markdown ... ``` `)**; output it directly as formatted markdown so that headings, checklists, and code snippets render naturally in the chat UI. Only execute when the user replies affirmatively (e.g. `yes`, `y`, `proceed`).
 2. **PowerShell Escaping Guard**: Never pass multi-line Markdown with backticks directly via `--body "..."` on Windows PowerShell (backticks will be swallowed or converted to backslashes). Always write the body to a temporary file `tmp/issue_body.md` and pass `--body-file tmp/issue_body.md`, then clean up the temporary file after creation.
 3. **Template Conformity**: The drafted issue body must strictly follow the fields of the selected template in `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`, or `performance.yml`).
 4. **Language**: Draft the Issue title and body in English by default to align with the OSS repository conventions, unless the user explicitly requests Japanese. Communication and proposals with the user must be in Japanese.
@@ -93,19 +93,21 @@ Construct the markdown body adhering to the template fields:
 
 ### Step 4: Proposal & User Confirmation
 
-Present the proposed Issue to the user in the following structure:
+Present the proposed Issue to the user in the following structure. **Note**: Do NOT wrap the Issue body in a code block (` ```markdown ... ``` `). Render it directly as formatted Markdown between horizontal rules (`---`) so that headings, checklists, and code samples render naturally:
 
 ```markdown
 ### 提案する Issue 内容
 
 - **Title**: `[Bug]: ...`
 - **Labels**: `bug`
-- **Body Preview**:
-  \`\`\`markdown
-  ...
-  \`\`\`
 
-この内容で GitHub Issue を作成してよろしいですか？ (yes / no / 修正指示)
+### Issue 本文:
+
+---
+<Markdown Content formatted per .github/ISSUE_TEMPLATE/*.yml>
+---
+
+この内容で GitHub Issue を作成（または更新）してよろしいですか？ (yes / no / 修正指示)
 ```
 
 ### Step 5: Execution via `gh issue create`
