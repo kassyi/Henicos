@@ -45,7 +45,7 @@ public static class GpuBigIntMulKernels
     [GpuKernel]
     public static void Kernel_MultiplyNtt_Transpose(uint[] input, uint[] output, int width, int height)
     {
-        GpuBigIntFermatKernels.DeviceTranspose32x32(input, output, width, height);
+        GpuBigIntFermatKernels.DeviceTranspose32X32(input, output, width, height);
     }
 
     [GpuKernel]

@@ -1,5 +1,3 @@
-// ReSharper disable All
-
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
@@ -9,6 +7,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 public static class GpuBigIntFermatKernels
 {
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
     {
         Gpu.GridStrideLoop(n, i =>
@@ -34,7 +33,8 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuDeviceFunction]
-    public static void DeviceTranspose32x32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceTranspose32X32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_mem[];");
 
@@ -70,22 +70,25 @@ public static class GpuBigIntFermatKernels
 
         Gpu.SyncThreads();
 
-        xIndex = by * 32 + tx;
-        yIndex = bx * 32 + ty;
+        var outXIndex = by * 32 + tx;
+        var outYIndex = bx * 32 + ty;
 
         Gpu.ForUnroll(0, 4, iter =>
         {
             var i = iter * 8;
-            if (xIndex < height && yIndex + i < width)
+            if (outXIndex >= height || outYIndex + i >= width)
             {
-                uint val = 0;
-                Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
-                odata[(yIndex + i) * height + xIndex] = val;
+                return;
             }
+
+            uint val = 0;
+            Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
+            odata[(outYIndex + i) * height + outXIndex] = val;
         });
     }
 
     [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceShiftLeftParallel([GpuReadOnly] uint[] src, uint[] dst, int shiftBits, int numWords)
     {
         var wordShift = shiftBits / 32;
@@ -112,18 +115,134 @@ public static class GpuBigIntFermatKernels
         });
     }
 
+
     [GpuDeviceFunction]
-    public static void DeviceAddSubSingleThread([GpuReadOnly] uint[] a, [GpuReadOnly] uint[] b, uint[] result,
-        int numWords,
-        long sign)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint WarpScanGp(uint val, int laneId)
     {
-        long carry = 0;
-        for (int i = 0; i < numWords; i++)
+        uint g = val & 1u;
+        uint p = (val >> 1) & 1u;
+
+        for (int i = 1; i < 32; i *= 2)
         {
-            long sum = (long)a[i] + sign * b[i] + carry;
-            result[i] = (uint)sum;
-            carry = sum >> 32;
+            uint prevG = Warp.ShuffleUpSync(0xFFFFFFFFu, g, (uint)i);
+            uint prevP = Warp.ShuffleUpSync(0xFFFFFFFFu, p, (uint)i);
+
+            if (laneId < i)
+            {
+                continue;
+            }
+
+            g = g | (p & prevG);
+            p = p & prevP;
         }
+
+        return (p << 1) | g;
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint ApplyCarry(uint gp, uint carryIn)
+    {
+        uint g = gp & 1u;
+        uint p = (gp >> 1) & 1u;
+        return g | (p & carryIn);
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceAddSubParallel(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] b,
+        uint[] result,
+        int numWords,
+        int sign)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        int laneId = tid % 32;
+        int warpId = tid / 32;
+
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32); // Max 1024 threads / 32 = 32 warps
+
+        uint blockCarryIn = sign == 1 ? 0u : 1u;
+
+        for (int offset = 0; offset < numWords; offset += bDim)
+        {
+            int idx = offset + tid;
+            bool valid = idx < numWords;
+
+            uint valA = valid ? a[idx] : 0u;
+            uint valB = valid ? b[idx] : 0u;
+
+            if (sign == -1)
+            {
+                valB = ~valB;
+            }
+
+            ulong sum = (ulong)valA + valB;
+            uint g = (uint)(sum >> 32);
+            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+
+            uint warpScan = WarpScanGp((p << 1) | g, laneId);
+            uint scanG = warpScan & 1u;
+            uint scanP = (warpScan >> 1) & 1u;
+
+            if (laneId == 31)
+            {
+                sharedCarry[warpId] = warpScan;
+            }
+
+            Gpu.SyncThreads();
+
+            if (warpId == 0)
+            {
+                int numWarps = bDim / 32;
+                uint val = laneId < numWarps ? sharedCarry[laneId] : 0u;
+                uint blockScan = WarpScanGp(val, laneId);
+
+                if (laneId < numWarps)
+                {
+                    sharedCarry[laneId] = blockScan;
+                }
+            }
+
+            Gpu.SyncThreads();
+
+            uint carryIn = blockCarryIn;
+
+            if (warpId > 0)
+            {
+                carryIn = ApplyCarry(sharedCarry[warpId - 1], carryIn);
+            }
+
+            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+            if (laneId > 0)
+            {
+                carryIn = prevScanG | (prevScanP & carryIn);
+            }
+
+            if (valid)
+            {
+                result[idx] = (uint)sum + carryIn;
+            }
+
+            blockCarryIn = ApplyCarry(sharedCarry[(bDim / 32) - 1], blockCarryIn);
+
+            Gpu.SyncThreads();
+        }
+    }
+
+    [GpuKernel]
+    public static void KernelTestBlockAddSubParallel(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] b,
+        uint[] result,
+        int numWords,
+        int sign)
+    {
+        DeviceAddSubParallel(a, b, result, numWords, sign);
     }
 
     [GpuKernel]
@@ -170,34 +289,22 @@ public static class GpuBigIntFermatKernels
         DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords);
         Gpu.SyncThreads();
 
-        Gpu.SingleThread(() =>
-        {
-            DeviceAddSubSingleThread(remainder, temp, remainder, outNumWords, 1);
-        });
+        DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1);
         Gpu.SyncThreads();
 
         DeviceShiftLeftParallel(quotient, temp, 1, outNumWords);
         Gpu.SyncThreads();
 
-        Gpu.SingleThread(() =>
-        {
-            DeviceAddSubSingleThread(remainder, temp, remainder, outNumWords, -1);
-        });
+        DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
         Gpu.SyncThreads();
 
-        Gpu.SingleThread(() =>
-        {
-            DeviceAddSubSingleThread(remainder, quotient, remainder, outNumWords, -1);
-        });
+        DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1);
         Gpu.SyncThreads();
 
         DeviceShiftLeftParallel(quotient, temp, 3, outNumWords);
         Gpu.SyncThreads();
 
-        Gpu.SingleThread(() =>
-        {
-            DeviceAddSubSingleThread(remainder, temp, remainder, outNumWords, -1);
-        });
+        DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
     }
 }
 
