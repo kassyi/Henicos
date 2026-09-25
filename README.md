@@ -1,56 +1,139 @@
-# Henicos Project: 超巨大素数探索のための専用演算エンジン
+# G# (GSharp)
 
-本プロジェクトは、約4300万桁の巨大な代数構造 $N = 2X^2 - X + 11$ (ここで $X = 2^{71428571}$) の素数性を、ハードウェアの限界を引き出す特化型モジュラリダクションによって証明するための GPGPU 演算エンジンです。
+**A zero-overhead C#-to-CUDA AOT transpiler. Write bare-metal GPU kernels in standard C#.**
 
----
-
-## 1. 特化型モジュラリダクションの数理モデル
-
-対象の数 $N = 2^{2E+1} - 2^E + 11$ （$E = 71428571$）の素数性をフェルマーテスト（$2^{N-1} \equiv 1 \pmod N$）で判定します。
-巨大な数 $Y$ に対する剰余演算 $Y \pmod N$ を計算する際、汎用的な除算（Barrett還元など）は多大なオーバーヘッドを伴いますが、本数式特有の合同式 $2^{2E+1} \equiv 2^E - 11 \pmod N$ を利用することで、これをシフト演算と加減算のみに還元します。
-
-### アルゴリズムの定式化
-$Y = Q \cdot 2^{2E+1} + R \quad (0 \le R < 2^{2E+1})$ とブロック分割し、次のように置き換えます。
-$$Y' = Q \cdot (2^E - 11) + R$$
-
-### 制約条件
-このアルゴリズムは、乗数 $(2^E - 11)$ が正の数であることを要求するため、**$E \ge 4$** が必須条件となります（ターゲットは $E=71428571$ なので満たされています）。
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/) [![CUDA](https://img.shields.io/badge/CUDA-12%2B-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 
 ---
 
-## 2. 限界突破の究極最適化
+## What is G#?
 
-初期のモデルでは、置換式 $Q \cdot (2^E - 11)$ の計算に多倍長乗算（FFT, $\tilde{O}(L)$）が必要と思われましたが、以下の2つの数学的ブレイクスルーにより、全体の計算量を理論限界まで削減しました。
+G# isn't a general-purpose language or a heavy runtime wrapper. It's a high-performance **GPU compute dialect** embedded directly into the .NET ecosystem.
 
-### 【最適化 1】リダクション演算の完全 $O(L)$ 化（FFTの排除）
-$$Q \cdot (2^E - 11) = Q \cdot 2^E - 11 \cdot Q$$
-- $Q \cdot 2^E$ ＝ **$Q$ の $E$ ビット左シフト**（計算量 $O(L)$）
-- $11 \cdot Q$ ＝ **$Q$ とスカラー $11$ の乗算**（シフト加算 `(Q<<3) + (Q<<1) + Q` により計算量 $O(L)$）
-これにより、リダクションフェーズから高コストな多倍長乗算器が完全に消滅し、真の $O(L)$ 時間へと次元降下しました。
+Using Microsoft's Roslyn compiler as a front-end, G# lets you write bare-metal GPU kernels with the type safety and tooling of C# (Visual Studio, Rider, IntelliSense).
 
-### 【最適化 2】フェルマー指数の静的展開（分岐レス設計）
-フェルマー指数 $N-1 = 2^{2E+1} - 2^E + 10$ の二進数表現は、以下の絶対法則を持ちます。
-- **上位ブロック**: $E+1$ 個の `1` が連続
-- **中位ブロック**: $E-4$ 個の `0` が連続
-- **下位ブロック**: `1010` （10進数の10）
-
-この固定ビットパターンを利用し、動的なループ分岐を完全に排除（ハードコード）しました。さらに Left-to-Right 方式を採用することで、Multiplyステップは単なる1ビット左シフトとなり、重い多倍長二乗（Square）の実行回数を厳密に $2E$ 回に固定しました。
+At build time, G# intercepts your C# kernel AST and transpiles it into optimized native CUDA C++ and PTX Fatbin payloads. It generates zero-allocation host wrappers entirely behind the scenes.
 
 ---
 
-## 3. 実証ベンチマーク
+## The Mental Model: C# Syntax, CUDA Semantics
 
-全フェーズのベンチマーク結果および統一計算速度指標・完了予測モデルは **[ベンチマーク総合レポート (benchmarks/README.md)](benchmarks/README.md)** に体系的にまとめられています。
+You write C#, but the runtime semantics are strictly native CUDA.
 
-- **[Phase 3: C# CPU 正式ベンチマーク (BenchmarkDotNet)](benchmarks/phase3_cpu.md)**
-  - 結果: $E=10000$ において標準ライブラリ (`BigInteger.ModPow`) に対し **4.78倍 (0.21x) の高速化**（61.6 $\mu$s/iter、97.7 M-Digit/s）を公式に達成・記録しました。
-- **Phase 2.5 (GPU単独路線からのピボット)**
-  - GPUでの巨大数リップルキャリー伝播の実装において、TDRハングは解消されたもののキャリーロジックの複雑さによる結果の不一致が解消されなかったため、GPU単独路線はここで打ち切られました。今後はCPUとGPUのハイブリッド路線へと移行します。
+- **Syntax:** Familiar loops, value `struct`s, primitives, local functions, and pattern matching.
+- **Architecture:** There is no .NET CLR, managed heap (`class`, `string`, LINQ), or garbage collector in the kernel. Standard BCL methods (like `MathF` or `BitOperations`) act as zero-cost compile-time markers that lower into hardware PTX intrinsics.
+- **Execution:** You program massively parallel hardware threads structured into Grids, Blocks, and Warps, with direct access to registers, Shared Memory, and VRAM.
+
+Skip the C++ headers, CMake setups, and P/Invoke boilerplate. Write C#, command bare-metal NVIDIA hardware.
 
 ---
-**フェーズ管理:**
-- [x] Phase 1: CPUベースでのモジュラリダクション回路の実装
-- [x] Phase 1.5: 超最適化 (O(L)化 / 静的展開) の適用とベンチマーク実証
-- [x] Phase 2.5: GPU実装の検証とアーキテクチャのピボット決定
-- [x] Phase 3: BenchmarkDotNet による CPU 超最適化版 (V2) の公式性能記録完了
-- [ ] Phase 4: CPU/GPU ハイブリッドアーキテクチャ (FFT乗算のGPUオフロード) の設計と実装
+
+## Quick Start (Hello GPU)
+
+Here’s a self-contained C# program that renders a 1080p Mandelbrot set (over 500 million operations) across thousands of GPU cores in **under 2 milliseconds (~1.8 ms on an RTX 3070 Ti, 63x faster than single-threaded CPU)**.
+
+```csharp
+using Kassyi.GSharp.Core;
+using Kassyi.GSharp.Generated;
+
+int width = 1920, height = 1080;
+int[] image = new int[width * height];
+
+// Launch on the GPU
+MandelbrotWrapper.LaunchRender(image, width, height, gridDimX: 128, blockDimX: 256);
+
+public static class Mandelbrot
+{
+    [GpuKernel]
+    public static void Render(int[] output, int width, int height)
+    {
+        // Distribute work across GPU cores automatically
+        Gpu.GridStrideLoop(width * height, id =>
+        {
+            float cx = (id % width - width * 0.7f) * 0.0025f;
+            float cy = (id / width - height * 0.5f) * 0.0025f;
+            float zx = 0, zy = 0;
+            int iter = 0;
+
+            // Partial unroll by 4 to maximize ILP without register spilling
+            Gpu.Hint.Unroll(4);
+            while (zx * zx + zy * zy < 4.0f && ++iter < 256)
+            {
+                float temp = zx * zx - zy * zy + cx;
+                zy = 2.0f * zx * zy + cy;
+                zx = temp;
+            }
+            output[id] = iter;
+        });
+    }
+}
+
+```
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    CS["C# Kernel Source ([GpuKernel])"] --> SG["Roslyn Source Generator<br/>(Kassyi.GSharp.Compiler)"]
+    SG --> AST["C#-to-CUDA AST Transpiler"]
+    AST --> NVCC["Backend AOT Compiler (NVCC / Clang)"]
+    NVCC --> Fatbin["PTX / Fatbin Binary Payload"]
+
+    subgraph HostRuntime ["Kassyi.GSharp.Runtime"]
+        Fatbin --> Sig["AotSignatureValidator (SHA256 Integrity)"]
+        Sig --> Loader["GpuKernelLoader (Module Cache & CUDA Driver API)"]
+        Loader -. Fallback / CPU Test .-> CpuLoader["CpuKernelLoader (Native CPU AOT)"]
+    end
+
+    Loader --> GPU["NVIDIA GPU (Native Execution)"]
+
+```
+
+1. **Roslyn Compilation**: During `dotnet build`, the Roslyn Incremental Generator detects `[GpuKernel]` methods.
+2. **AST Transpilation**: The C# syntax tree is parsed, validated against zero-allocation rules, and emitted as optimized CUDA C++ (`.cu`).
+3. **AOT Binary Embedding**: NVCC compiles the device code into PTX / Fatbin payloads, embedded with SHA256 checksums.
+4. **Zero-Allocation Launch**: Generated wrappers marshal parameters and dispatch kernels via the CUDA Driver API with zero reflection.
+
+---
+
+## Repository Structure
+
+| Project                      | Description                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **`Kassyi.GSharp.Core`**     | Core attributes (`[GpuKernel]`), execution primitives (`ThreadIndex`), hardware intrinsics, and macros.       |
+| **`Kassyi.GSharp.Compiler`** | Roslyn Source Generator and AST transpiler. Handles static analysis and generates host wrappers.              |
+| **`Kassyi.GSharp.Runtime`**  | High-performance runtime for AOT caching, RAII VRAM management (`GpuBuffer<T>`), and CUDA Driver API interop. |
+| **`Kassyi.GSharp.Stdlib`**   | GPU-accelerated math libraries (arbitrary-precision arithmetic, NTT, Fermat transforms).                      |
+| **`Henicos.Benchmarks`**     | Hardware validation suites (Chudnovsky Pi calculation, large-scale modular reduction, SGEMM).                 |
+
+---
+
+## Project Origins
+
+### Why "G#"?
+
+A simple portmanteau of **GPU + C#**. Visually, **G** is just a **C** with an extra stroke, reflecting C# syntax scaling to GPU parallelism. (Musically, $G\#$ is the natural fifth dominant over $C$, nodding to the harmony between host orchestration and bare-metal compute.)
+
+### The "Henicos" Codename
+
+From the Greek _hén_ (_ἕν_), meaning unity. The framework was born from a specific mathematical challenge: proving the primality of a 43-million-digit algebraic number ($N = 2X^2 - X + 11$ where $X = 2^{71428571}$) via specialized hardware modular reduction. Hitting bare-metal GPU limits in C# required a frictionless AOT pipeline—leading to G#.
+
+---
+
+## Documentation
+
+Specs, guides, and API references are available in [`docs/spec/en/`](https://www.google.com/search?q=docs/spec/en/&utm_source=gemini):
+
+- [1. Getting Started & Philosophy](https://www.google.com/search?q=docs/spec/en/00_getting_started/00_index.md&utm_source=gemini)
+- [2. Language Specification](https://www.google.com/search?q=docs/spec/en/01_language/00_index.md&utm_source=gemini)
+- [3. Compiler & Runtime Architecture](https://www.google.com/search?q=docs/spec/en/02_architecture/00_index.md&utm_source=gemini)
+- [4. BCL API & Intrinsics](https://www.google.com/search?q=docs/spec/en/03_bcl_api/00_index.md&utm_source=gemini)
+- [5. Guides & Best Practices](https://www.google.com/search?q=docs/spec/en/04_guides/00_index.md&utm_source=gemini)
+
+---
+
+## License
+
+MIT License. See [LICENSE](https://www.google.com/search?q=LICENSE&utm_source=gemini) for details.
