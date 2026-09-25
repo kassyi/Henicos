@@ -395,7 +395,7 @@ public static class GpuBigIntNttKernels
 
         if (warpId == 0)
         {
-            int numWarps = bDim / 32;
+            int numWarps = (bDim + 31) / 32;
             var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
             var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
 
@@ -428,8 +428,8 @@ public static class GpuBigIntNttKernels
 
         if (tIdx == 0)
         {
-            uint lastH = sharedH[(bDim / 32) - 1];
-            uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[(bDim / 32) - 1]), 0u);
+            uint lastH = sharedH[((bDim + 31) / 32) - 1];
+            uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), 0u);
             blockCarries[bIdx] = lastH + waveCarry;
         }
 
