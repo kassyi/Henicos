@@ -631,6 +631,79 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [SkippableTheory]
         [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-17")]
+        public void Test_DivRem_EdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 3, engine);
+
+            var arrA = new uint[TestSizeWords];
+            var arrB = new uint[TestSizeWords];
+            arrA[0] = 5;
+            arrB[0] = 10;
+            
+            // Case 1: a < b
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(0, gpuQ);
+                AssertGpuResultEqualsCpu(5, gpuR);
+            }
+
+            // Case 2: a == b
+            arrA[0] = 10;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(1, gpuQ);
+                AssertGpuResultEqualsCpu(0, gpuR);
+            }
+
+            // Case 3: b is a power of 2
+            arrA[0] = 100;
+            arrB[0] = 16;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(6, gpuQ);
+                AssertGpuResultEqualsCpu(4, gpuR);
+            }
+
+            // Case 4: a = 0
+            arrA[0] = 0;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(0, gpuQ);
+                AssertGpuResultEqualsCpu(0, gpuR);
+            }
+
+            // Case 5: Divide by zero (throws)
+            // CUDA Sticky error prevention: intentionally crashing kernel causes CudaErrorLaunchFailed for other tests
+            arrB[0] = 0;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR));
+            }
+        }
+
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-19")]
         public void Test_Square_Correctness(GpuExecutionEngine engine)
         {
@@ -924,6 +997,43 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Equal(expectedSqrt, actualBig);
         }
 
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-17")]
+        public void Test_Sqrt_EdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 4, engine);
+            var arrA = new uint[TestSizeWords];
+
+            // Case 1: a = 0
+            arrA[0] = 0;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            {
+                using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+                gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
+                AssertGpuResultEqualsCpu(0, gpuResult);
+            }
+
+            // Case 2: a = 1
+            arrA[0] = 1;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            {
+                using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+                gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
+                AssertGpuResultEqualsCpu(1, gpuResult);
+            }
+
+            // Case 3: a = 16 (Power of 2)
+            arrA[0] = 16;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            {
+                using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+                gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
+                AssertGpuResultEqualsCpu(4, gpuResult);
+            }
+        }
+
 
         [Theory(Skip =
             "Extremely slow due to cuMemAlloc overhead without memory pooling. Enable when memory pool is implemented.")]
@@ -956,6 +1066,68 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var actual = ToBigInteger(gpuResult.ToHostArray());
 
             Assert.Equal(expected, actual);
+        }
+
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-17")]
+        public void Test_ModPow_EdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 13, engine);
+            var arrBase = new uint[TestSizeWords];
+            var arrExp = new uint[TestSizeWords];
+            var arrMod = new uint[TestSizeWords];
+
+            // Case 1: Mod = 1
+            arrBase[0] = 5;
+            arrExp[0] = 3;
+            arrMod[0] = 1;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+                AssertGpuResultEqualsCpu(0, gpuResult);
+            }
+
+            // Case 2: Base = 0, Exp > 0
+            arrBase[0] = 0;
+            arrExp[0] = 5;
+            arrMod[0] = 7;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+                AssertGpuResultEqualsCpu(0, gpuResult);
+            }
+
+            // Case 3: Exp = 0
+            arrBase[0] = 5;
+            arrExp[0] = 0;
+            arrMod[0] = 7;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+                AssertGpuResultEqualsCpu(1, gpuResult);
+            }
+
+            // Case 4: Divide by zero (Mod = 0)
+            // CUDA Sticky error prevention: intentionally crashing kernel causes CudaErrorLaunchFailed for other tests
+            arrMod[0] = 0;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult));
+            }
         }
 
 
