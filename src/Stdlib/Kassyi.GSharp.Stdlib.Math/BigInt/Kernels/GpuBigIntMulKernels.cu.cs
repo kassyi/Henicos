@@ -13,8 +13,8 @@ public static class GpuBigIntMulKernels
         uint[] opA, uint[] opB, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B,
         int transformLength, int numWordsA, int numWordsB)
     {
-        GpuBigIntFermatKernels.Device_Unpack16(opA, nttBuf1A, nttBuf2A, transformLength, numWordsA);
-        GpuBigIntFermatKernels.Device_Unpack16(opB, nttBuf1B, nttBuf2B, transformLength, numWordsB);
+        GpuBigIntFermatKernels.DeviceUnpack16(opA, nttBuf1A, nttBuf2A, transformLength, numWordsA);
+        GpuBigIntFermatKernels.DeviceUnpack16(opB, nttBuf1B, nttBuf2B, transformLength, numWordsB);
     }
 
     [GpuKernel]
@@ -45,7 +45,7 @@ public static class GpuBigIntMulKernels
     [GpuKernel]
     public static void Kernel_MultiplyNtt_Transpose(uint[] input, uint[] output, int width, int height)
     {
-        GpuBigIntFermatKernels.Device_Transpose_32x32(input, output, width, height);
+        GpuBigIntFermatKernels.DeviceTranspose32x32(input, output, width, height);
     }
 
     [GpuKernel]

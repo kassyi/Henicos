@@ -19,12 +19,12 @@ public struct NttContext
 
     public struct TwiddleFactorsContext
     {
-        [GpuConst] public uint[] Forward1;
-        [GpuConst] public uint[] Forward2;
-        [GpuConst] public uint[] Forward3;
-        [GpuConst] public uint[] Inverse1;
-        [GpuConst] public uint[] Inverse2;
-        [GpuConst] public uint[] Inverse3;
+        [GpuReadOnly] public uint[] Forward1;
+        [GpuReadOnly] public uint[] Forward2;
+        [GpuReadOnly] public uint[] Forward3;
+        [GpuReadOnly] public uint[] Inverse1;
+        [GpuReadOnly] public uint[] Inverse2;
+        [GpuReadOnly] public uint[] Inverse3;
     }
 }
 
@@ -66,8 +66,8 @@ public struct BigIntKernelContext
 
     public struct OperandsContext
     {
-        [GpuConst] public uint[] LeftOperand;
-        [GpuConst] public uint[] RightOperand;
+        [GpuReadOnly] public uint[] LeftOperand;
+        [GpuReadOnly] public uint[] RightOperand;
         public uint[] ResultBuffer;
         public long[] CarryBuffer;
     }
@@ -81,7 +81,7 @@ public struct NumberTheoreticTransformKernelArgs
     public uint[] Buffer;
     public uint[] TemporaryBuffer;
 
-    [GpuConst]
+    [GpuReadOnly]
     public uint[] Twiddle;
 
     public int M;

@@ -58,12 +58,12 @@ public class Example
 
 The parameter is removed from the generated C++ function signature entirely. Instead, the AOT transpiler injects a `#define` macro.
 
-### Comparison with `[GpuConst]`
+### Comparison with `[GpuReadOnly]`
 
 While both attributes optimize constant values, their underlying mechanics differ fundamentally. **If you think of this in C# terms:**
 
 - **[Constant] is like a `const` literal:** The variable completely disappears at compile-time. The compiler takes the raw value (e.g., `10`) and hardcodes it directly into the instructions everywhere it was used.
-- **[[GpuConst]](GpuConstAttribute.md) is like an `in` parameter or `readonly` field:** The variable physically exists in memory and is passed as a real argument, but the compiler ensures it cannot be modified, allowing it to be placed in a fast, read-only memory cache.
+- **[[GpuReadOnly]](GpuReadOnlyAttribute.md) is like an `in` parameter or `readonly` field:** The variable physically exists in memory and is passed as a real argument, but the compiler ensures it cannot be modified, allowing it to be placed in a fast, read-only memory cache.
 
 #### `[Constant]`
 
@@ -82,14 +82,14 @@ public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
 __global__ void MultiplyKernel(int* data)
 ```
 
-#### [`[GpuConst]`](GpuConstAttribute.md)
+#### [`[GpuReadOnly]`](GpuReadOnlyAttribute.md)
 
 Emits the standard `const` keyword in C++. The variable remains in the C++ method signature and occupies fast, read-only constant memory caches on the GPU. It is ideal for protecting state and guiding general compiler optimizations.
 
 **C# Source:**
 
 ```csharp
-public static unsafe void ProcessData(float* data, [GpuConst] float scaleFactor)
+public static unsafe void ProcessData(float* data, [GpuReadOnly] float scaleFactor)
 ```
 
 **Emitted CUDA C++:**

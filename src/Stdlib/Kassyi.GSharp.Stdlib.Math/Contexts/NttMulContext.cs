@@ -12,8 +12,8 @@ public struct NttMulContext
 
     public struct OperandsBuffers
     {
-        [GpuConst] public uint[] A;
-        [GpuConst] public uint[] B;
+        [GpuReadOnly] public uint[] A;
+        [GpuReadOnly] public uint[] B;
         public uint[] Result;
     }
 
@@ -28,10 +28,10 @@ public struct NttMulContext
 
     public struct NttTwiddleFactors
     {
-        [GpuConst] public uint[] Forward1;
-        [GpuConst] public uint[] Forward2;
-        [GpuConst] public uint[] Inverse1;
-        [GpuConst] public uint[] Inverse2;
+        [GpuReadOnly] public uint[] Forward1;
+        [GpuReadOnly] public uint[] Forward2;
+        [GpuReadOnly] public uint[] Inverse1;
+        [GpuReadOnly] public uint[] Inverse2;
     }
 
     public struct NttMulDimensions

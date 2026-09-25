@@ -7,7 +7,7 @@ public static class KnownAttributes
 {
     public const string GpuKernel = nameof(GpuKernel);
     public const string GpuDeviceFunction = nameof(GpuDeviceFunction);
-    public const string GpuConst = nameof(GpuConst);
+    public const string GpuReadOnly = nameof(GpuReadOnly);
     public const string GpuInline = nameof(GpuInline);
     public const string GpuNoInline = nameof(GpuNoInline);
     public const string Constant = nameof(Constant);

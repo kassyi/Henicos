@@ -7,4 +7,4 @@ namespace Kassyi.GSharp.Core;
 /// Helps the NVIDIA CUDA compiler (<c>nvcc</c>/<c>NVRTC</c>) optimize register allocation and place constant values into read-only constant memory caches.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field | AttributeTargets.Property)]
-public sealed class GpuConstAttribute : Attribute;
+public sealed class GpuReadOnlyAttribute : Attribute;
