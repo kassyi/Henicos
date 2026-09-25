@@ -44,33 +44,6 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
-        id: "GSH0013",
-        title: "Excessive static shared memory usage",
-        messageFormat:
-        "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
-        id: "GSH0014",
-        title: "Large struct passed by value",
-        messageFormat:
-        "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
-        id: "GSH0015",
-        title: "Auto-allocated array in loop",
-        messageFormat:
-        "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public static readonly DiagnosticDescriptor GpuBigIntExprDirectAssignment = new(
         id: "GSH0005",
         title: "GpuBigIntExpr must be assigned via .Value",
@@ -138,6 +111,33 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor ExcessiveSharedMemoryWarning = new(
+        id: "GSH0013",
+        title: "Excessive static shared memory usage",
+        messageFormat:
+        "The kernel allocates {0} bytes of static shared memory, which exceeds the recommended limit of {1} bytes. This may cause kernel launch failure or reduce occupancy.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor LargeStructByValueWarning = new(
+        id: "GSH0014",
+        title: "Large struct passed by value",
+        messageFormat:
+        "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor AutoAllocateReturnInLoopWarning = new(
+        id: "GSH0015",
+        title: "Auto-allocated array in loop",
+        messageFormat:
+        "The method '{0}' returns an auto-allocated array and is called inside a loop. This will cause implicit heap allocations each iteration and may trigger GC spikes. Consider pre-allocating the array and passing it as an argument.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor UnrollFactorMustBeNonNegativeConstant = new(
         id: "GSH0016",
         title: "Unroll factor must be a non-negative compile-time constant",
@@ -154,22 +154,12 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor UnrolledLoopMustBeStatic = new(
-        id: "GSH0032",
-        title: "Unrolled loop bounds must be statically deterministic",
-        messageFormat:
-        "The bounds of the loop marked with Gpu.Hint.Unroll cannot be statically determined. Loop conditions must rely on compile-time constants or [Constant] parameters.",
+    public static readonly DiagnosticDescriptor HostIntrinsicCallError = new(
+        id: "GSH0018",
+        title: "GPU intrinsic called from host",
+        messageFormat: "The GPU intrinsic '{0}' cannot be called from a host method",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor UnrolledLoopMayBeIgnored = new(
-        id: "GSH0033",
-        title: "Unrolled loop may be silently ignored",
-        messageFormat:
-        "The loop marked with Gpu.Hint.Unroll contains dynamic control flow (break, return, goto) and may be silently ignored by the nvcc compiler",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor ManualEnumeratorNotSupported = new(
@@ -177,14 +167,6 @@ public static class GSharpDiagnostics
         title: "Manual GetEnumerator calls are not supported",
         messageFormat:
         "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead to ensure proper state machine dispose routing and memory safety.",
-        category: Category,
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
-    public static readonly DiagnosticDescriptor HostIntrinsicCallError = new(
-        id: "GSH0018",
-        title: "GPU intrinsic called from host",
-        messageFormat: "The GPU intrinsic '{0}' cannot be called from a host method",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -285,6 +267,33 @@ public static class GSharpDiagnostics
         title: "Direct invocation of [GpuKernel] is prohibited",
         messageFormat:
         "Do not call [GpuKernel] method '{0}' directly. Use the generated 'Launch{0}' launcher method instead.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrolledLoopMustBeStatic = new(
+        id: "GSH0032",
+        title: "Unrolled loop bounds must be statically deterministic",
+        messageFormat:
+        "The bounds of the loop marked with Gpu.Hint.Unroll cannot be statically determined. Loop conditions must rely on compile-time constants or [Constant] parameters.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnrolledLoopMayBeIgnored = new(
+        id: "GSH0033",
+        title: "Unrolled loop may be silently ignored",
+        messageFormat:
+        "The loop marked with Gpu.Hint.Unroll contains dynamic control flow (break, return, goto) and may be silently ignored by the nvcc compiler",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ParamsModifierNotSupported = new(
+        id: "GSH0034",
+        title: "The 'params' modifier is prohibited in GPU device code",
+        messageFormat:
+        "The parameter '{0}' in method '{1}' uses the 'params' modifier, which incurs heap allocation. Use parameter structs, fixed buffers, or explicit arguments instead.",
         category: Category,
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);

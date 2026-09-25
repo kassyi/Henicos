@@ -48,5 +48,11 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         ProhibitedApiRule.Instance.Analyze(node, ref _context);
         base.VisitMemberAccessExpression(node);
     }
+
+    public override void VisitParameter(ParameterSyntax node)
+    {
+        ParamsModifierNotSupportedRule.Instance.Analyze(node, ref _context);
+        base.VisitParameter(node);
+    }
 }
 

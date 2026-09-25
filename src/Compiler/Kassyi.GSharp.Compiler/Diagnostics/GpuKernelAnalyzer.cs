@@ -19,7 +19,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.UnrolledLoopMayBeIgnored,
         GSharpDiagnostics.ManualEnumeratorNotSupported,
         GSharpDiagnostics.UnsupportedSyntax,
-        GSharpDiagnostics.SyncGridRequiresCooperativeKernel);
+        GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
+        GSharpDiagnostics.ParamsModifierNotSupported);
 
     public override void Initialize(AnalysisContext context)
     {
