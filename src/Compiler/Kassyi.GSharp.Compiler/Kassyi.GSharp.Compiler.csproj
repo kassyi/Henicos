@@ -52,19 +52,29 @@
 
   <ItemGroup>
     <Compile Remove="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
+    <Compile Remove="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
   </ItemGroup>
 
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; dialects &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDialects.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects">
+  <Target Name="GenerateDiagnostics" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDiagnostics.stamp">
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics&quot;" />
+    <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics">
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
+      <Compile Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects.stamp" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" />
     </ItemGroup>
   </Target>
 

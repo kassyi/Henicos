@@ -10,19 +10,10 @@ public static class YamlDialectGenerator
         .IgnoreUnmatchedProperties()
         .Build();
 
-    public static void Main(string[] args)
+    public static void Run(string inputDir, string outputDir)
     {
-        if (args.Length < 2)
-        {
-            Console.WriteLine("Usage: YamlDialectGenerator <inputDir> <outputDir>");
-            return;
-        }
-
-        var inputDir = args[0];
-        var outputDir = args[1];
-
         Directory.CreateDirectory(outputDir);
-
+        
         var dialectDefinitions = new List<DialectDefinition>();
         var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
 
@@ -54,7 +45,7 @@ public static class YamlDialectGenerator
 
         foreach (var def in dialectDefinitions)
         {
-            string source = GenerateDialectClass(def, defMap);
+            var source = GenerateDialectClass(def, defMap);
             File.WriteAllText(Path.Combine(outputDir, $"{def.Name}Dialect.g.cs"), source, Encoding.UTF8);
         }
     }
@@ -73,7 +64,7 @@ public static class YamlDialectGenerator
         writer.Line("namespace Kassyi.GSharp.Compiler.Dialects;");
         writer.Line();
 
-        string baseClass = string.IsNullOrEmpty(def.Inherits) ? "YamlDialectBase" : $"{def.Inherits}Dialect";
+        var baseClass = string.IsNullOrEmpty(def.Inherits) ? "YamlDialectBase" : $"{def.Inherits}Dialect";
 
         writer.Line($"public class {def.Name}Dialect : {baseClass}");
         using (writer.Scope())
