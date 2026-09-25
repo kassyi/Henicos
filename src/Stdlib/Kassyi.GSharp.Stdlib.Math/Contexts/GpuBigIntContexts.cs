@@ -95,3 +95,93 @@ public struct NumberTheoreticTransformKernelArgs
     public int MaxBlocks;
     public int CurrentL;
 }
+
+/// <summary>
+/// Context parameters for the Newton-Raphson Sqrt MegaKernel.
+/// </summary>
+public struct SqrtNewtonRaphsonContext
+{
+    public OperandsContext Operands;
+    public DimensionsContext Dimensions;
+    public NttContext Ntt;
+    public WorkspaceContext Workspace;
+    public long[] CarryBuffer;
+
+    public struct OperandsContext
+    {
+        public uint[] TargetOperand;
+        public uint[] ResultBuffer;
+        public uint[] Constant3;
+    }
+
+    public struct DimensionsContext
+    {
+        public int NumberOfWords;
+        public int MarginWords;
+        public int ActualBits;
+        public int MarginBits;
+        public int Iterations;
+    }
+
+    public struct WorkspaceContext
+    {
+        public uint[] XSquared;
+        public uint[] AxSquared;
+        public uint[] Diff;
+        public uint[] NextXUnshifted;
+        public uint[] NextXShifted;
+        
+        public uint[] NttBuf1A;
+        public uint[] NttBuf2A;
+        public uint[] NttBuf1B;
+        public uint[] NttBuf2B;
+        public uint[] TmpBuf;
+        public uint[] UncarriedLow;
+        public uint[] UncarriedHigh;
+        public uint[] BlockCarries;
+    }
+}
+
+/// <summary>
+/// Context parameters for the Newton-Raphson Reciprocal (DivRem) MegaKernel.
+/// </summary>
+public struct ReciprocalNewtonRaphsonContext
+{
+    public OperandsContext Operands;
+    public DimensionsContext Dimensions;
+    public NttContext Ntt;
+    public WorkspaceContext Workspace;
+    public long[] CarryBuffer;
+
+    public struct OperandsContext
+    {
+        public uint[] TargetOperand;
+        public uint[] ResultBuffer;
+        public uint[] Constant;
+    }
+
+    public struct DimensionsContext
+    {
+        public int NumberOfWords;
+        public int MarginWords;
+        public int Iterations;
+        public int NumBits;
+        public int MarginBits;
+    }
+
+    public struct WorkspaceContext
+    {
+        public uint[] CurrentProduct;
+        public uint[] Diff;
+        public uint[] NextIter;
+        
+        public uint[] NttBuf1A;
+        public uint[] NttBuf2A;
+        public uint[] NttBuf1B;
+        public uint[] NttBuf2B;
+        public uint[] TmpBuf;
+        public uint[] UncarriedLow;
+        public uint[] UncarriedHigh;
+        public uint[] BlockCarries;
+    }
+}

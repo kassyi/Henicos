@@ -9,7 +9,7 @@ public static class GpuBigIntMulKernels
     // Global Non-Cooperative NTT approach for Multi-Million digit multiplications
 
     [GpuKernel]
-    public static void Kernel_MultiplyNtt_Unpack(
+    public static void MultiplyNttUnpackKernel(
         uint[] opA, uint[] opB, uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B,
         int transformLength, int numWordsA, int numWordsB)
     {
@@ -18,7 +18,7 @@ public static class GpuBigIntMulKernels
     }
 
     [GpuKernel]
-    public static void Kernel_MultiplyNtt_SharedRow(
+    public static void MultiplyNttSharedRowKernel(
         uint[] buffer, uint[] temporaryBuffer, uint[] twiddle,
         int m, int n1, int n2, uint p, ulong pm,
         bool applyTwiddleBefore, bool applyTwiddleAfter,
@@ -39,28 +39,28 @@ public static class GpuBigIntMulKernels
             MaxBlocks = maxBlocks,
             CurrentL = currentL
         };
-        GpuBigIntNttKernels.Device_NTT_Shared_Row(args);
+        GpuBigIntNttKernels.ExecuteNttSharedRow(args);
     }
 
     [GpuKernel]
-    public static void Kernel_MultiplyNtt_Transpose(uint[] input, uint[] output, int width, int height)
+    public static void MultiplyNttTransposeKernel(uint[] input, uint[] output, int width, int height)
     {
         GpuBigIntFermatKernels.DeviceTranspose32X32(input, output, width, height, true);
     }
 
     [GpuKernel]
-    public static void Kernel_MultiplyNtt_PointwiseMultiply(
+    public static void MultiplyNttPointwiseMultiplyKernel(
         uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, int transformLength)
     {
-        GpuBigIntNttKernels.Device_NTT_PointwiseMultiply(
+        GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(
             nttBuf1A, nttBuf2A, nttBuf1B, nttBuf2B, transformLength);
     }
 
     [GpuKernel]
-    public static void Kernel_MultiplyNtt_ComputeCRT(
+    public static void MultiplyNttComputeCrtKernel(
         uint[] deviceResult1, uint[] deviceResult2, uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength)
     {
-        GpuBigIntNttKernels.Device_CRT_ComputeCoefficients(
+        GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(
             deviceResult1, deviceResult2, uncarriedLow, uncarriedHigh, transformLength);
     }
 }

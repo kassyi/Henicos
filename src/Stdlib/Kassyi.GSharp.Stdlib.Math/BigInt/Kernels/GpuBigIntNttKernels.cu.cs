@@ -99,7 +99,7 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void Device_NTT_Shared_Row(NumberTheoreticTransformKernelArgs args)
+    public static void ExecuteNttSharedRow(NumberTheoreticTransformKernelArgs args)
     {
         var deviceData = args.Buffer;
         var deviceTwiddle = args.Twiddle;
@@ -124,7 +124,7 @@ public static class GpuBigIntNttKernels
         {
             for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
             {
-                Device_NTT_LoadAndTwiddleBefore(rowIndex, threadId, currentLength, maxLog2Length, transformLength,
+                ExecuteNttLoadAndTwiddleBefore(rowIndex, threadId, currentLength, maxLog2Length, transformLength,
                     applyTwiddleBefore, primeModulus, barrettMagic, deviceData, deviceTwiddle);
             }
 
@@ -134,7 +134,7 @@ public static class GpuBigIntNttKernels
             {
                 for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
                 {
-                    Device_NTT_ButterflyStep(step, threadId, transformLength, primeModulus, barrettMagic,
+                    ExecuteNttButterflyStep(step, threadId, transformLength, primeModulus, barrettMagic,
                         deviceTwiddle);
                 }
 
@@ -143,7 +143,7 @@ public static class GpuBigIntNttKernels
 
             for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
             {
-                Device_NTT_TwiddleAfterAndStore(rowIndex, threadId, currentLength, transformLength, applyTwiddleAfter,
+                ExecuteNttTwiddleAfterAndStore(rowIndex, threadId, currentLength, transformLength, applyTwiddleAfter,
                     primeModulus, barrettMagic, deviceData, deviceTwiddle);
             }
 
@@ -153,7 +153,7 @@ public static class GpuBigIntNttKernels
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Device_NTT_LoadAndTwiddleBefore(
+    private static void ExecuteNttLoadAndTwiddleBefore(
         int rowIndex, int threadId, int currentLength, int maxLog2Length, int transformLength,
         bool applyTwiddleBefore, uint primeModulus, ulong barrettMagic,
         [GpuReadOnly] uint[] deviceData, [GpuReadOnly] uint[] deviceTwiddle)
@@ -186,7 +186,7 @@ public static class GpuBigIntNttKernels
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Device_NTT_ButterflyStep(
+    private static void ExecuteNttButterflyStep(
         int step, int threadId, int transformLength,
         uint primeModulus, ulong barrettMagic,
         [GpuReadOnly] uint[] deviceTwiddle)
@@ -220,7 +220,7 @@ public static class GpuBigIntNttKernels
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Device_NTT_TwiddleAfterAndStore(
+    private static void ExecuteNttTwiddleAfterAndStore(
         int rowIndex, int threadId, int currentLength, int transformLength,
         bool applyTwiddleAfter, uint primeModulus, ulong barrettMagic,
         uint[] deviceData, [GpuReadOnly] uint[] deviceTwiddle)
@@ -258,7 +258,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_NTT_PointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
+    public static void ExecuteNttPointwiseSquare(uint[] deviceData1, uint[] deviceData2, int transformLength)
     {
         Gpu.GridStrideLoop(transformLength, index =>
         {
@@ -268,7 +268,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_NTT_PointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B,
+    public static void ExecuteNttPointwiseMultiply(uint[] deviceData1A, uint[] deviceData2A, uint[] deviceData1B,
         uint[] deviceData2B, int transformLength)
     {
         Gpu.GridStrideLoop(transformLength, index =>
@@ -279,7 +279,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_CRT_ComputeCoefficients([GpuReadOnly] uint[] deviceResult1,
+    public static void ExecuteCrtComputeCoefficients([GpuReadOnly] uint[] deviceResult1,
         [GpuReadOnly] uint[] deviceResult2,
         uint[] uncarriedLow, uint[] uncarriedHigh,
         int transformLength)
@@ -315,129 +315,140 @@ public static class GpuBigIntNttKernels
         });
     }
 
-    [GpuKernel]
-    public static void Kernel_ResolveNttCarries_Blocked(uint[] uncarriedLow, uint[] uncarriedHigh,
+    [GpuDeviceFunction]
+    public static void ExecuteResolveNttCarriesBlocked(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
     {
         var bIdx = BlockIndex.X;
         var tIdx = ThreadIndex.X;
 
-        int startIdx = bIdx * chunkSize;
-        int i = startIdx + tIdx;
-
-        ulong localSum = 0;
-        if (i < maxWordCount)
+        var numBlocks = (maxWordCount + chunkSize - 1) / chunkSize;
+        if (bIdx < numBlocks)
         {
-            // Each NTT coefficient c_j (64-bit) has weight 2^(16*j).
-            // For word i (weight 2^(32*i)), relevant coefficients are j = 2*i + 1 down to 2*i - 3.
-            Gpu.ForUnroll(0, 5, step =>
+            int startIdx = bIdx * chunkSize;
+            int i = startIdx + tIdx;
+
+            ulong localSum = 0;
+            if (i < maxWordCount)
             {
-                int idx = 2 * i + 1 - step;
-                if (idx >= 0 && idx < transformLength)
+                // Each NTT coefficient c_j (64-bit) has weight 2^(16*j).
+                // For word i (weight 2^(32*i)), relevant coefficients are j = 2*i + 1 down to 2*i - 3.
+                Gpu.ForUnroll(0, 5, step =>
                 {
-                    ulong c = uncarriedLow[idx] | ((ulong)uncarriedHigh[idx] << 32);
-                    if (step == 0)
+                    int idx = 2 * i + 1 - step;
+                    if (idx >= 0 && idx < transformLength)
                     {
-                        localSum += (uint)(c << 16);
+                        ulong c = uncarriedLow[idx] | ((ulong)uncarriedHigh[idx] << 32);
+                        if (step == 0)
+                        {
+                            localSum += (uint)(c << 16);
+                        }
+                        else
+                        {
+                            localSum += (uint)(c >> ((step - 1) * 16));
+                        }
                     }
-                    else
-                    {
-                        localSum += (uint)(c >> ((step - 1) * 16));
-                    }
+                });
+            }
+
+            uint L = (uint)(localSum & 0xFFFFFFFFul);
+            uint H = (uint)(localSum >> 32);
+
+            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
+
+            SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+            SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
+
+            int laneId = tIdx % 32;
+            int warpId = tIdx / 32;
+            int bDim = BlockDimension.X;
+
+            if (laneId == 31)
+            {
+                sharedH[warpId] = H;
+            }
+            Gpu.SyncThreads();
+
+            if (laneId == 0)
+            {
+                if (warpId == 0)
+                {
+                    prevH = 0u;
                 }
-            });
-        }
+                else
+                {
+                    prevH = sharedH[warpId - 1];
+                }
+            }
 
-        uint L = (uint)(localSum & 0xFFFFFFFFul);
-        uint H = (uint)(localSum >> 32);
+            ulong sum = (ulong)L + prevH;
+            uint g = (uint)(sum >> 32);
+            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-        uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
+            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+            uint scanG = warpScan.Generate;
+            uint scanP = warpScan.Propagate;
 
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
-        SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
+            if (laneId == 31)
+            {
+                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
+            }
 
-        int laneId = tIdx % 32;
-        int warpId = tIdx / 32;
-        int bDim = BlockDimension.X;
+            Gpu.SyncThreads();
 
-        if (laneId == 31)
-        {
-            sharedH[warpId] = H;
-        }
-        Gpu.SyncThreads();
-
-        if (laneId == 0)
-        {
             if (warpId == 0)
             {
-                prevH = 0u;
+                int numWarps = (bDim + 31) / 32;
+                var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
+                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
+
+                if (laneId < numWarps)
+                {
+                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+                }
             }
-            else
+
+            Gpu.SyncThreads();
+
+            uint carryIn = 0u;
+
+            if (warpId > 0)
             {
-                prevH = sharedH[warpId - 1];
+                carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
             }
-        }
 
-        ulong sum = (ulong)L + prevH;
-        uint g = (uint)(sum >> 32);
-        uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
-
-        var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
-        uint scanG = warpScan.Generate;
-        uint scanP = warpScan.Propagate;
-
-        if (laneId == 31)
-        {
-            sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
-        }
-
-        Gpu.SyncThreads();
-
-        if (warpId == 0)
-        {
-            int numWarps = (bDim + 31) / 32;
-            var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
-            var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
-
-            if (laneId < numWarps)
+            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+            if (laneId > 0)
             {
-                sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+                carryIn = prevScanG | (prevScanP & carryIn);
             }
+
+            if (i < maxWordCount)
+            {
+                outputBuffer[i] = (uint)sum + carryIn;
+            }
+
+            if (tIdx == 0)
+            {
+                uint lastH = sharedH[((bDim + 31) / 32) - 1];
+                uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), 0u);
+                blockCarries[bIdx] = lastH + waveCarry;
+            }
+
+            Gpu.SyncThreads();
         }
-
-        Gpu.SyncThreads();
-
-        uint carryIn = 0u;
-
-        if (warpId > 0)
-        {
-            carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
-        }
-
-        uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-        uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
-        if (laneId > 0)
-        {
-            carryIn = prevScanG | (prevScanP & carryIn);
-        }
-
-        if (i < maxWordCount)
-        {
-            outputBuffer[i] = (uint)sum + carryIn;
-        }
-
-        if (tIdx == 0)
-        {
-            uint lastH = sharedH[((bDim + 31) / 32) - 1];
-            uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), 0u);
-            blockCarries[bIdx] = lastH + waveCarry;
-        }
-
-        Gpu.SyncThreads();
     }
 
     [GpuKernel]
-    public static void Kernel_ResolveNttCarries_Apply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount,
+    public static void ResolveNttCarriesBlockedKernel(uint[] uncarriedLow, uint[] uncarriedHigh,
+        uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
+    {
+        ExecuteResolveNttCarriesBlocked(uncarriedLow, uncarriedHigh, outputBuffer, blockCarries, transformLength, maxWordCount, chunkSize);
+    }
+
+    [GpuDeviceFunction]
+    public static void ExecuteResolveNttCarriesApply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount,
         int chunkSize, int numBlocks)
     {
         var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
@@ -452,6 +463,13 @@ public static class GpuBigIntNttKernels
             int startIdx = (globalBlockIdx + 1) * chunkSize;
             AtomicAddWithCarry(outputBuffer, startIdx, carry, maxWordCount);
         }
+    }
+
+    [GpuKernel]
+    public static void ResolveNttCarriesApplyKernel(uint[] outputBuffer, uint[] blockCarries, int maxWordCount,
+        int chunkSize, int numBlocks)
+    {
+        ExecuteResolveNttCarriesApply(outputBuffer, blockCarries, maxWordCount, chunkSize, numBlocks);
     }
 
     [GpuDeviceFunction]
@@ -476,7 +494,7 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void Device_ForwardNTT(NumberTheoreticTransformKernelArgs args)
+    public static void ExecuteForwardNtt(NumberTheoreticTransformKernelArgs args)
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
@@ -490,7 +508,7 @@ public static class GpuBigIntNttKernels
             args.ApplyTwiddleBefore = false;
             args.ApplyTwiddleAfter = false;
             args.MaxBlocks = 1;
-            Device_NTT_Shared_Row(args);
+            ExecuteNttSharedRow(args);
             Gpu.SyncGrid();
             return;
         }
@@ -503,7 +521,7 @@ public static class GpuBigIntNttKernels
         args.ApplyTwiddleBefore = false;
         args.ApplyTwiddleAfter = true;
         args.MaxBlocks = length2;
-        Device_NTT_Shared_Row(args);
+        ExecuteNttSharedRow(args);
         args.Buffer = buffer; // Restore buffer
         Gpu.SyncGrid();
 
@@ -514,12 +532,12 @@ public static class GpuBigIntNttKernels
         args.ApplyTwiddleBefore = false;
         args.ApplyTwiddleAfter = false;
         args.MaxBlocks = length1;
-        Device_NTT_Shared_Row(args);
+        ExecuteNttSharedRow(args);
         Gpu.SyncGrid();
     }
 
     [GpuDeviceFunction]
-    public static void Device_InverseNTT(NumberTheoreticTransformKernelArgs args)
+    public static void ExecuteInverseNtt(NumberTheoreticTransformKernelArgs args)
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
@@ -533,7 +551,7 @@ public static class GpuBigIntNttKernels
             args.ApplyTwiddleBefore = false;
             args.ApplyTwiddleAfter = false;
             args.MaxBlocks = 1;
-            Device_NTT_Shared_Row(args);
+            ExecuteNttSharedRow(args);
             Gpu.SyncGrid();
             return;
         }
@@ -542,7 +560,7 @@ public static class GpuBigIntNttKernels
         args.ApplyTwiddleBefore = false;
         args.ApplyTwiddleAfter = true;
         args.MaxBlocks = length1;
-        Device_NTT_Shared_Row(args);
+        ExecuteNttSharedRow(args);
         Gpu.SyncGrid();
 
         GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
@@ -553,7 +571,7 @@ public static class GpuBigIntNttKernels
         args.ApplyTwiddleBefore = false;
         args.ApplyTwiddleAfter = false;
         args.MaxBlocks = length2;
-        Device_NTT_Shared_Row(args);
+        ExecuteNttSharedRow(args);
         args.Buffer = buffer; // Restore buffer
         Gpu.SyncGrid();
 
@@ -563,13 +581,13 @@ public static class GpuBigIntNttKernels
 
     // ReSharper disable once UnusedMember.Global -- Exists solely to trigger snapshot transpilation
     [GpuKernel]
-    public static void _DiagnosticsWrapper_Device_NTT_Shared_Row(uint[] data)
+    public static void _DiagnosticsWrapper_ExecuteNttSharedRow(uint[] data)
     {
         // This is a dummy kernel wrapper that exists solely to force the compilation of
         // the [GpuDeviceFunction] methods in this file for snapshot testing.
         NumberTheoreticTransformKernelArgs args = default;
         args.Buffer = data;
-        Device_ForwardNTT(args);
+        ExecuteForwardNtt(args);
     }
 }
 

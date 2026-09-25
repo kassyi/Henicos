@@ -65,6 +65,12 @@ public interface IGpuExecutionProvider
     /// <param name="resultBuffer">The buffer to store the result.</param>
     void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
+    /// <summary>Computes inverse square root via Newton-Raphson on GPU.</summary>
+    void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations);
+
+    /// <summary>Computes reciprocal via Newton-Raphson on GPU.</summary>
+    void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations);
+
     /// <summary>Computes scalar addition on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>

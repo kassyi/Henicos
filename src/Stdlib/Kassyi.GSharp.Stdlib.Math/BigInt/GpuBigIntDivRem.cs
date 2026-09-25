@@ -43,66 +43,18 @@ public static partial class GpuBigIntDivRem
         var marginBits = marginWords * 32;
         ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: false, marginBits);
 
-        using var constant = GpuUIntBigInteger.CreatePowerOfTwo(targetOperand.Context, 3 * n + marginWords,
-            2 * numBits + marginBits + 1);
-        using var currentProduct = new GpuUIntBigInteger(targetOperand.Context, 3 * n + marginWords);
-        using var currentDifference = new GpuUIntBigInteger(targetOperand.Context, 3 * n + marginWords);
-        using var nextIterationValue = new GpuUIntBigInteger(targetOperand.Context, 5 * n + 2 * marginWords);
-
         var targetBits = 2 * numBits + marginBits;
         var currentBits = 63; // Initial guess has ~63 bits of precision
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        for (var i = 0; i < iterations; i++)
+        if (targetOperand.Context.Provider is { } provider)
         {
-            var xiWords = (GetActualBits(resultBuffer) + 31) / 32 + 4; // Add 4 guard words for truncation margin
-            if (xiWords > 2 * n + marginWords)
-            {
-                xiWords = 2 * n + marginWords;
-            }
-
-            if (xiWords == 0)
-            {
-                xiWords = 1;
-            }
-
-            using var xiTrunc = new GpuUIntBigInteger(targetOperand.Context, xiWords);
-            xiTrunc.CopyFrom(resultBuffer, numWords: xiWords);
-
-            var bTruncWords = System.Math.Min(n, xiWords);
-            using var bTrunc = new GpuUIntBigInteger(targetOperand.Context, bTruncWords);
-            bTrunc.CopyFrom(targetOperand, numWords: bTruncWords);
-
-            var pWords = xiWords + bTruncWords;
-            using var currentProductTrunc = new GpuUIntBigInteger(targetOperand.Context, pWords);
-            GpuBigIntMath.Mul(bTrunc, xiTrunc, currentProductTrunc);
-
-            // Compute currentDifference = constant - currentProduct
-            // But we only care about the lower part!
-            var constantWords = pWords;
-            using var constantTrunc =
-                GpuUIntBigInteger.CreatePowerOfTwo(targetOperand.Context, constantWords, 2 * numBits + marginBits + 1);
-            using var diffTrunc = new GpuUIntBigInteger(targetOperand.Context, constantWords);
-            GpuBigIntMath.Sub(constantTrunc, currentProductTrunc, diffTrunc);
-
-            var diffActualWords = (GetActualBits(diffTrunc) + 31) / 32;
-            if (diffActualWords == 0)
-            {
-                diffActualWords = 1;
-            }
-
-            using var diffActual = new GpuUIntBigInteger(targetOperand.Context, diffActualWords);
-            diffActual.CopyFrom(diffTrunc, numWords: diffActualWords);
-
-            var nextWords = xiWords + diffActualWords;
-            using var nextIter = new GpuUIntBigInteger(targetOperand.Context, nextWords);
-            GpuBigIntMath.Mul(xiTrunc, diffActual, nextIter);
-
-            // Shift right by 2*numBits + marginBits
-            resultBuffer.Clear();
-            var copyWords = System.Math.Min(2 * n + marginWords, nextWords - (2 * n + marginWords));
-            resultBuffer.CopyFrom(nextIter, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords,
-                numWords: copyWords);
+            provider.ReciprocalMega(targetOperand.Context, targetOperand, resultBuffer, marginWords, numBits,
+                marginBits, iterations);
+        }
+        else
+        {
+            throw new NotSupportedException("The current provider does not support ReciprocalMega.");
         }
     }
 

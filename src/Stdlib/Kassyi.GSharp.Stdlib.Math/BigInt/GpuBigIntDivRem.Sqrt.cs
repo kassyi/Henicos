@@ -18,46 +18,21 @@ public static partial class GpuBigIntDivRem
             throw new DivideByZeroException();
         }
 
-        var constant3Words = n + marginWords;
-        var marginBits = marginWords * 32;
-        using var constant3 = new GpuUIntBigInteger(targetOperand.Context, constant3Words);
-        constant3.Clear();
-        var hostConstant3 = ArrayPool<uint>.Shared.Rent(constant3Words);
-        try
-        {
-            Array.Clear(hostConstant3, 0, constant3Words);
-            var bit2B = 2 * actualBits + 2 * marginBits;
-            hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
-            hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
-            targetOperand.Context.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words);
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(hostConstant3);
-        }
-
-        using var xSquared = new GpuUIntBigInteger(targetOperand.Context, 2 * n + 2 * marginWords);
-        using var axSquared = new GpuUIntBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
-        using var diff = new GpuUIntBigInteger(targetOperand.Context, 3 * n + 2 * marginWords);
-        using var nextXUnshifted = new GpuUIntBigInteger(targetOperand.Context, 4 * n + 3 * marginWords);
-        using var nextXShifted = new GpuUIntBigInteger(targetOperand.Context, 4 * n + 3 * marginWords);
-
-        var targetBits = actualBits / 2 + marginBits;
+        var targetBits = actualBits / 2 + marginWords * 32;
         var currentBits = 31; // X_top has 31 bits
+
+        var marginBits = marginWords * 32;
+        ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: true, marginBits);
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        for (var i = 0; i < iterations; i++)
+        if (targetOperand.Context.Provider is { } provider)
         {
-            GpuBigIntMath.Mul(resultBuffer, resultBuffer, xSquared);
-            GpuBigIntMath.Mul(targetOperand, xSquared, axSquared);
-            GpuBigIntMath.Sub(constant3, axSquared, diff);
-            GpuBigIntMath.Mul(resultBuffer, diff, nextXUnshifted);
-
-            // Shift right by 2S + 1
-            nextXShifted.Clear();
-            GpuBigIntMath.ShiftRight(nextXUnshifted, 2 * actualBits + 2 * marginBits + 1, nextXShifted);
-            resultBuffer.CopyFrom(nextXShifted, destOffsetWords: 0, srcOffsetWords: 0, numWords: n + marginWords);
+            provider.InverseSqrtMega(targetOperand.Context, targetOperand, resultBuffer, marginWords, actualBits, iterations);
+        }
+        else
+        {
+            throw new NotSupportedException("The current provider does not support InverseSqrtMega.");
         }
     }
 

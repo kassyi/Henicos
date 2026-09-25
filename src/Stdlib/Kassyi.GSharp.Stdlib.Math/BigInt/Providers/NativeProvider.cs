@@ -100,6 +100,14 @@ public class NativeProvider : IGpuExecutionProvider
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
+    public void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations) =>
+        throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
+    public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations) =>
+        throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Add(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
