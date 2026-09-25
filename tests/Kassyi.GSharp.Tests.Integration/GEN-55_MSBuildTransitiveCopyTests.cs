@@ -113,13 +113,8 @@ public class MSBuildTransitiveCopyTests : IDisposable
 
         var stdout = await stdoutTask;
         var stderr = await stderrTask;
-        
-        _output.WriteLine("=== STDOUT ===");
-        _output.WriteLine(stdout);
-        _output.WriteLine("=== STDERR ===");
-        _output.WriteLine(stderr);
 
-        process.ExitCode.Should().Be(0, "Consumer project build should succeed");
+        process.ExitCode.Should().Be(0, $"Consumer project build should succeed. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
 
         // 4. Assert assets are copied to Consumer output
         var consumerOutputDir = Path.Combine(consumerDir, "bin", "Debug", "net10.0");
@@ -195,12 +190,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         var stdout = await stdoutTask;
         var stderr = await stderrTask;
 
-        _output.WriteLine("=== STDOUT ===");
-        _output.WriteLine(stdout);
-        _output.WriteLine("=== STDERR ===");
-        _output.WriteLine(stderr);
-
-        process.ExitCode.Should().NotBe(0, "Build should fail when task assembly is invalid or missing");
-        stdout.Should().Contain("MSB4062", "MSBuild should report missing task assembly error");
+        process.ExitCode.Should().NotBe(0, $"Build should fail when task assembly is invalid or missing. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
+        stdout.Should().Contain("MSB4062", $"MSBuild should report missing task assembly error. STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
     }
 }
