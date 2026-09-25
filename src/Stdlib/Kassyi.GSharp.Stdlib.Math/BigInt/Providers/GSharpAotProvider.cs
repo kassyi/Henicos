@@ -131,93 +131,34 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         using var r = new GpuUIntBigInteger(context, numWords);
         using var newA = new GpuUIntBigInteger(context, numWords);
         using var newB = new GpuUIntBigInteger(context, numWords);
+        using var statusBuf = new GpuUIntBigInteger(context, 1);
+        var statusArray = new uint[1];
 
         while (!b.IsZero())
         {
-            var bitsA = a.GetBitLength();
-            var bitsB = b.GetBitLength();
+            statusArray[0] = 0; // 0 = Running
+            context.Provider.CopyHostToDevice(statusBuf.DevicePointer, statusArray, 1);
 
-            if (bitsA - bitsB > 64 || bitsA <= 64)
+            // Execute Lehmer GCD loop entirely on GPU up to 1000 iterations per launch
+            GpuBigIntGcdKernelsWrapper.LaunchExecuteLehmerGcdMacroKernel_Device(
+                a.DevicePointer, b.DevicePointer, newA.DevicePointer, newB.DevicePointer, statusBuf.DevicePointer,
+                numWords, 1000,
+                gridDimX: 1, blockDimX: 1);
+
+            context.Provider.CopyDeviceToHost(statusArray, statusBuf.DevicePointer, 1);
+
+            if (statusArray[0] == 2)
             {
-                GpuBigIntDivRem.Mod(a, b, r);
-                context.Provider.CopyDeviceToDevice(a.DevicePointer, b.DevicePointer, numWords);
-                context.Provider.CopyDeviceToDevice(b.DevicePointer, r.DevicePointer, numWords);
-                continue;
+                break; // Finished (b == 0)
             }
 
-            var shift = bitsA - 64;
-            if (shift < 0)
-            {
-                shift = 0;
-            }
-
-            var x = Extract64Host(context, a, shift);
-            var y = Extract64Host(context, b, shift);
-
-            var progress = GpuBigIntGcdKernels.ComputeLehmerMatrix(
-                x, y, out var u0, out var v0, out var u1, out var v1);
-
-            if (!progress)
-            {
-                GpuBigIntDivRem.Mod(a, b, r);
-                context.Provider.CopyDeviceToDevice(a.DevicePointer, b.DevicePointer, numWords);
-                context.Provider.CopyDeviceToDevice(b.DevicePointer, r.DevicePointer, numWords);
-            }
-            else
-            {
-                GpuBigIntGcdKernelsWrapper.LaunchApplyMatrix2x2Kernel_Device(
-                    a.DevicePointer, b.DevicePointer, newA.DevicePointer, newB.DevicePointer, u0, v0, u1, v1, numWords,
-                    gridDimX: 1, blockDimX: 1);
-
-                if (newA.GetIsNegative() || newB.GetIsNegative() || newB.CompareTo(newA) > 0)
-                {
-                    GpuBigIntDivRem.Mod(a, b, r);
-                    context.Provider.CopyDeviceToDevice(a.DevicePointer, b.DevicePointer, numWords);
-                    context.Provider.CopyDeviceToDevice(b.DevicePointer, r.DevicePointer, numWords);
-                }
-                else
-                {
-                    context.Provider.CopyDeviceToDevice(a.DevicePointer, newA.DevicePointer, numWords);
-                    context.Provider.CopyDeviceToDevice(b.DevicePointer, newB.DevicePointer, numWords);
-                }
-            }
+            // Fallback: Need Mod due to overflow, size mismatch, or negative intermediate
+            GpuBigIntDivRem.Mod(a, b, r);
+            context.Provider.CopyDeviceToDevice(a.DevicePointer, b.DevicePointer, numWords);
+            context.Provider.CopyDeviceToDevice(b.DevicePointer, r.DevicePointer, numWords);
         }
 
         context.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, a.DevicePointer, numWords);
-    }
-
-    private unsafe ulong Extract64Host(GpuContext context, GpuUIntBigInteger operand, int shift)
-    {
-        _ = context;
-        var numWords = operand.NumWords;
-        var wordShift = shift / 32;
-        var bitShift = shift % 32;
-
-        if (wordShift >= numWords)
-        {
-            return 0;
-        }
-
-        var wordsToRead = System.Math.Min(3, numWords - wordShift);
-        uint* hostData = stackalloc uint[3];
-        hostData[0] = 0;
-        hostData[1] = 0;
-        hostData[2] = 0;
-
-        using (new GpuKernelLoader.CudaContextScope())
-        {
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostData, IntPtr.Add(operand.DevicePointer, wordShift * 4),
-                    wordsToRead * 4));
-        }
-
-        var val64 = hostData[0] | ((ulong)hostData[1] << 32);
-        if (bitShift > 0)
-        {
-            return (val64 >> bitShift) | ((ulong)hostData[2] << (64 - bitShift));
-        }
-
-        return val64;
     }
 
     /// <inheritdoc/>
@@ -424,7 +365,8 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations)
+    public void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
+        int marginWords, int actualBits, int iterations)
     {
         var n = targetOperand.NumWords;
         var marginBits = marginWords * 32;
@@ -474,7 +416,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         var chunkSize = 1024;
         var numBlocks = (maxOutWords + chunkSize - 1) / chunkSize;
         using var blockCarries = context.RentTemp(numBlocks);
-        
+
         using var carryBuffer = context.RentTemp(2); // long array for carry
 
         var blockDim = 1024u;
@@ -499,10 +441,11 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations)
+    public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
+        int marginWords, int numBits, int marginBits, int iterations)
     {
         var n = targetOperand.NumWords;
-        
+
         var constantWords = 3 * n + marginWords;
         using var constant = new GpuUIntBigInteger(context, constantWords);
         constant.Clear();
@@ -546,7 +489,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         var chunkSize = 1024;
         var numBlocks = (maxOutWords + chunkSize - 1) / chunkSize;
         using var blockCarries = context.RentTemp(numBlocks);
-        
+
         using var carryBuffer = context.RentTemp(2);
 
         var blockDim = 1024u;
