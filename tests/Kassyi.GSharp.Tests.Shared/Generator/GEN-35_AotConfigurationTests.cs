@@ -32,11 +32,12 @@ public class GEN_35_AotConfigurationTests
 
         var wrapperSource = generatedTrees.First(t => t.FilePath.Contains("MyKernel_Run_Wrapper.g.cs")).ToString();
 
-        // We unified naming, so it should expect MyKernel_Run.fatbin
-        Assert.Contains("MyKernel_Run.fatbin", wrapperSource);
+        // We unified naming, so it should expect GetFunction with mangled name
+        Assert.Contains("GetFunction", wrapperSource);
+        Assert.Contains("MyKernel_Run", wrapperSource);
 
-        // Check that it's using the file-based loading approach
-        Assert.Contains("System.IO.Path.Combine(System.AppContext.BaseDirectory", wrapperSource);
+        // Check that it's using the file-based loading approach via ModuleContext
+        Assert.Contains("GetOrLoadModule()", wrapperSource);
     }
 
     [Fact]
@@ -65,7 +66,7 @@ public class GEN_35_AotConfigurationTests
 
             var (_, _, _) = RoslynTestUtility.RunGenerator(sourceCode, "Cuda", additionalOptions);
 
-            var expectedArtifact = System.IO.Path.Combine(tempDir, "MyKernel_Run.g.cu");
+            var expectedArtifact = System.IO.Path.Combine(tempDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.g.cu");
             Assert.True(System.IO.File.Exists(expectedArtifact),
                 $"Expected plaintext artifact {expectedArtifact} was not generated.");
 
