@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Extensions;
 
 namespace Kassyi.GSharp.Compiler.Dialects;
 
@@ -115,7 +116,8 @@ public abstract class YamlDialectBase : ITranspilerDialect
         return false;
     }
 
-    public virtual bool TryMapMemberAccess(ITypeSymbol typeSymbol, string memberName, out string? mappedName, out bool isMethodCall)
+    public virtual bool TryMapMemberAccess(ITypeSymbol typeSymbol, string memberName, out string? mappedName,
+        out bool isMethodCall)
     {
         mappedName = null;
         isMethodCall = false;
@@ -152,9 +154,20 @@ public abstract class YamlDialectBase : ITranspilerDialect
         ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {
         var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) || p.Modifiers.Any(SyntaxKind.OutKeyword);
-        var isPointerType = typeSymbol is IPointerTypeSymbol || typeSymbol is IArrayTypeSymbol;
+        var isPointerType = typeSymbol is IPointerTypeSymbol or IArrayTypeSymbol;
 
-        AppendType(ref context, typeSymbol);
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true, Name: TypeConstants.SharedMemoryType } namedType &&
+            namedType.ContainingNamespace.IsCoreNamespace())
+        {
+            AppendType(ref context, namedType.TypeArguments[0]);
+            context.Writer.Append("*");
+            isPointerType = true;
+        }
+        else
+        {
+            AppendType(ref context, typeSymbol);
+        }
+
         if (isRefPointer)
         {
             context.Writer.Append("* __restrict__ ");

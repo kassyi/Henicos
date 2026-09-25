@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Extensions;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
@@ -12,6 +14,11 @@ internal static class StructTranspiler
         var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
         if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
             namedStruct.ContainingNamespace.IsSystemOrNumerics())
+        {
+            return;
+        }
+
+        if (namedStruct.Name == TypeConstants.SharedMemoryType && namedStruct.ContainingNamespace.IsCoreNamespace())
         {
             return;
         }
