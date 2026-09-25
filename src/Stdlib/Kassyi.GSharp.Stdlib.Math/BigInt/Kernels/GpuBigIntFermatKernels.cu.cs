@@ -261,50 +261,66 @@ public static class GpuBigIntFermatKernels
         var wordShift = totalShiftBits / 32;
         var bitShift = totalShiftBits % 32;
 
-        Gpu.GridStrideLoop(outNumWords, i =>
+        Gpu.ForUnroll(0, 3, iter =>
         {
-            var srcIdx0 = i + wordShift;
-            var srcIdx1 = srcIdx0 + 1;
+            Gpu.GridStrideLoop(outNumWords, i =>
+            {
+                var srcIdx0 = i + wordShift;
+                var srcIdx1 = srcIdx0 + 1;
 
-            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords * 2 ? numWords * 2 - 1 : srcIdx0);
-            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords * 2 ? numWords * 2 - 1 : srcIdx1);
+                var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords * 2 ? numWords * 2 - 1 : srcIdx0);
+                var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords * 2 ? numWords * 2 - 1 : srcIdx1);
 
-            uint w0 = mulResult[safeIdx0];
-            uint w1 = mulResult[safeIdx1];
+                uint w0 = mulResult[safeIdx0];
+                uint w1 = mulResult[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords * 2 ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords * 2 ? 0xFFFFFFFFu : 0u;
+                uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords * 2 ? 0xFFFFFFFFu : 0u;
+                uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords * 2 ? 0xFFFFFFFFu : 0u;
 
-            w0 &= mask0;
-            w1 &= mask1;
+                w0 &= mask0;
+                w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-            quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
+                uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+                quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
 
-            remainder[i] = mulResult[i] & remainderMask[i];
+                remainder[i] = mulResult[i] & remainderMask[i];
+            });
+
+            Gpu.SyncThreads();
+
+            DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords);
+            Gpu.SyncThreads();
+
+            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1);
+            Gpu.SyncThreads();
+
+            // Subtract Q * 8
+            DeviceShiftLeftParallel(quotient, temp, 3, outNumWords);
+            Gpu.SyncThreads();
+            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
+            Gpu.SyncThreads();
+
+            // Subtract Q * 2
+            DeviceShiftLeftParallel(quotient, temp, 1, outNumWords);
+            Gpu.SyncThreads();
+            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
+            Gpu.SyncThreads();
+
+            // Subtract Q * 1
+            DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1);
+            Gpu.SyncThreads();
+
+            if (iter >= 2)
+            {
+                return;
+            }
+
+            Gpu.GridStrideLoop(outNumWords, i =>
+            {
+                mulResult[i] = remainder[i];
+            });
+            Gpu.SyncThreads();
         });
-
-        Gpu.SyncThreads();
-
-        DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords);
-        Gpu.SyncThreads();
-
-        DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1);
-        Gpu.SyncThreads();
-
-        DeviceShiftLeftParallel(quotient, temp, 1, outNumWords);
-        Gpu.SyncThreads();
-
-        DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
-        Gpu.SyncThreads();
-
-        DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1);
-        Gpu.SyncThreads();
-
-        DeviceShiftLeftParallel(quotient, temp, 3, outNumWords);
-        Gpu.SyncThreads();
-
-        DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
     }
 }
 

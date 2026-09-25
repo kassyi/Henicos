@@ -22,11 +22,14 @@ public class GEN_51_FermatRunnerTests
         // Convert resultArray to BigInteger
         var actual = GetBigIntegerFromResult(resultArray, e);
 
-        // Golden Master Snapshot: 
-        // The current GPU Mega-Kernel pseudo-reduction is mathematically broken (truncates high bits).
-        // For E=10, the output is deterministically 2073021.
-        // We freeze this value to ensure our Phase 1 memory refactoring doesn't change the execution logic.
-        BigInteger expected = BigInteger.Parse("2073021");
+        // Compute correct expected value on CPU
+        var x = BigInteger.One << e;
+        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
+        BigInteger expected = 2;
+        for (int i = 0; i < e; i++)
+        {
+            expected = (expected * expected) % n;
+        }
 
         Assert.Equal(expected, actual);
     }
