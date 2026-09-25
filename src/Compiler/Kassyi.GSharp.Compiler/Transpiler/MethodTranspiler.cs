@@ -132,7 +132,13 @@ public static class MethodTranspiler
             WriteKernelMethodPrefix(ref context);
         }
 
-        context.Writer.Append($" {method.Identifier.Text}");
+        var methodName = method.Identifier.Text;
+        if (!isDevice && methodSymbol != null)
+        {
+            methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
+        }
+
+        context.Writer.Append($" {methodName}");
         using (context.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
@@ -327,7 +333,8 @@ public static class MethodTranspiler
 
         context.Writer.AppendLine();
         context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
-        context.Writer.Append($" __gsharp_launch_{method.Identifier.Text}(");
+        var methodName = $"{methodSymbol.ContainingType.Name}_{method.Identifier.Text}";
+        context.Writer.Append($" __gsharp_launch_{methodName}(");
 
         // Launch dimensions
         context.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
@@ -363,7 +370,7 @@ public static class MethodTranspiler
             {
                 context.Writer.AppendLine(
                     "__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
-                context.Writer.Append(method.Identifier.Text);
+                context.Writer.Append(methodName);
                 using (context.Writer.Parentheses())
                 {
                     var isFirst = true;
