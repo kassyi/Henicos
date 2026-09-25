@@ -497,42 +497,54 @@ public static class GpuBigIntDivRem
     public static void Sqrt(GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
-        var n = leftOperand.NumWords;
-        var highestBit = -1;
-        var hostData = ArrayPool<uint>.Shared.Rent(n);
-        try
-        {
-            leftOperand.Context.Provider.CopyDeviceToHost(hostData, leftOperand.DevicePointer, n);
-            for (var i = n - 1; i >= 0; i--)
-            {
-                if (hostData[i] == 0)
-                {
-                    continue;
-                }
 
-                var w = hostData[i];
-                var b = 31;
-                while ((w & (1u << b)) == 0)
-                {
-                    b--;
-                }
-
-                highestBit = i * 32 + b;
-                break;
-            }
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(hostData);
-        }
-
-        if (highestBit == -1)
+        var actualBits = GetActualBits(leftOperand);
+        if (actualBits == 0)
         {
             resultBuffer.Clear();
             return;
         }
 
-        var actualBits = highestBit + 1;
+        if (TryComputeSingleWordSqrt(leftOperand, resultBuffer, actualBits))
+        {
+            return;
+        }
+
+        using var currentRoot = ComputeInitialSqrtGuess(leftOperand, actualBits);
+        RefineSqrtWithHeronMethod(leftOperand, currentRoot, resultBuffer);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryComputeSingleWordSqrt(GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer, int actualBits)
+    {
+        if (actualBits > 32)
+        {
+            return false;
+        }
+
+        var n = leftOperand.NumWords;
+        var hostDataSingle = ArrayPool<uint>.Shared.Rent(n);
+        try
+        {
+            leftOperand.Context.Provider.CopyDeviceToHost(hostDataSingle, leftOperand.DevicePointer, n);
+            var val = hostDataSingle[0];
+            var sqrtVal = (uint)System.Math.Sqrt(val);
+            resultBuffer.Clear();
+            if (sqrtVal > 0)
+            {
+                resultBuffer.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, [sqrtVal], 1);
+            }
+            return true;
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(hostDataSingle);
+        }
+    }
+
+    private static GpuUIntBigInteger ComputeInitialSqrtGuess(GpuUIntBigInteger leftOperand, int actualBits)
+    {
+        var n = leftOperand.NumWords;
         var lz = n * 32 - actualBits;
         if (lz % 2 != 0)
         {
@@ -559,11 +571,20 @@ public static class GpuBigIntDivRem
         shiftedRNorm.Clear();
         GpuBigIntMath.ShiftRight(rNorm, totalShift, shiftedRNorm);
 
-        using var currentRoot = new GpuUIntBigInteger(leftOperand.Context, n);
+        var currentRoot = new GpuUIntBigInteger(leftOperand.Context, n);
         currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
+        
+        if (GetActualBits(currentRoot) == 0)
+        {
+            currentRoot.Context.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1);
+        }
 
-        // Final Babylonian (Heron's) method loop to ensure exact integer precision.
-        // InverseSqrt may stall at low precision if the input has many trailing zeros (e.g., 10005 * 2^9152).
+        return currentRoot;
+    }
+
+    private static void RefineSqrtWithHeronMethod(GpuUIntBigInteger leftOperand, GpuUIntBigInteger currentRoot, GpuUIntBigInteger resultBuffer)
+    {
+        var n = leftOperand.NumWords;
         using var divisionResult = new GpuUIntBigInteger(leftOperand.Context, n);
         using var sumWithDivision = new GpuUIntBigInteger(leftOperand.Context, n);
         using var prevRoot = new GpuUIntBigInteger(leftOperand.Context, n);
@@ -577,15 +598,18 @@ public static class GpuBigIntDivRem
             currentRoot.Clear();
             GpuBigIntMath.ShiftRight(sumWithDivision, 1, currentRoot);
 
-            // If current == prev or current == prev + 1 (oscillating), we have converged.
             using var diff = new GpuUIntBigInteger(leftOperand.Context, n);
             GpuBigIntMath.BitwiseXor(currentRoot, prevRoot, diff);
             if (GetActualBits(diff) == 0)
             {
                 break;
             }
+            
+            if (GetActualBits(currentRoot) == 0)
+            {
+                break;
+            }
 
-            // To prevent infinite oscillation between floor and ceil
             using var plusOne = new GpuUIntBigInteger(leftOperand.Context, n);
             plusOne.Context.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1);
             using var prevPlusOne = new GpuUIntBigInteger(leftOperand.Context, n);
@@ -594,7 +618,7 @@ public static class GpuBigIntDivRem
             GpuBigIntMath.BitwiseXor(currentRoot, prevPlusOne, diff);
             if (GetActualBits(diff) == 0)
             {
-                currentRoot.CopyFrom(prevRoot, numWords: n); // take the smaller one
+                currentRoot.CopyFrom(prevRoot, numWords: n);
                 break;
             }
         }
@@ -611,7 +635,6 @@ public static class GpuBigIntDivRem
             {
                 continue;
             }
-
             isGreater = true;
             break;
         }
