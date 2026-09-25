@@ -1,5 +1,6 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Text;
+using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -8,10 +9,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
 
-    public bool GSharpMultiTarget
-    {
-        get; set;
-    }
+    public bool GSharpMultiTarget { get; set; }
 
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];
@@ -58,14 +56,13 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     {
         var sourcePath = sourceItem.GetMetadata("FullPath");
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
-        var items = new List<ITaskItem>();
+        var items = new ConcurrentBag<ITaskItem>();
 
-        var hasErrors = 0;
-        var lockObj = new object();
+        var hasErrorsBox = new[] { 0 };
 
         Parallel.ForEach(_architectures, arch =>
         {
-            if (Volatile.Read(location: ref hasErrors) != 0)
+            if (Volatile.Read(ref hasErrorsBox[0]) != 0)
             {
                 return;
             }
@@ -80,48 +77,36 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
             var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
 
-            lock (lockObj)
-            {
-                if (!Directory.Exists(OutputDirectory))
-                {
-                    Directory.CreateDirectory(OutputDirectory);
-                }
-            }
+
 
             if (MockCompilation)
             {
                 File.WriteAllText(outputDllPath, "Mock Native DLL Content");
                 var mockTaskItem = new TaskItem(outputDllPath);
                 mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-                lock (lockObj)
-                {
-                    items.Add(mockTaskItem);
-                }
+                items.Add(mockTaskItem);
 
                 return;
             }
 
             if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
             {
-                Interlocked.Exchange(ref hasErrors, 1);
+                Interlocked.Exchange(ref hasErrorsBox[0], 1);
                 return;
             }
 
             if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
-                Interlocked.Exchange(ref hasErrors, 1);
+                Interlocked.Exchange(ref hasErrorsBox[0], 1);
                 return;
             }
 
             var taskItem = new TaskItem(outputDllPath);
             taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputDllPath)}");
-            lock (lockObj)
-            {
-                items.Add(taskItem);
-            }
+            items.Add(taskItem);
         });
 
-        return Volatile.Read(ref hasErrors) != 0 ? null : [.. items];
+        return Volatile.Read(ref hasErrorsBox[0]) != 0 ? null : [.. items];
     }
 
     private string[] GetTargetArchitectures()
@@ -157,11 +142,13 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 foreach (var path in pathEnv.Split(Path.PathSeparator))
                 {
                     var fullPath = Path.Combine(path, "cl.exe");
-                    if (File.Exists(fullPath))
+                    if (!File.Exists(fullPath))
                     {
-                        clExePath = fullPath;
-                        break;
+                        continue;
                     }
+
+                    clExePath = fullPath;
+                    break;
                 }
             }
         }
@@ -169,11 +156,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         var startInfo = new ProcessStartInfo
         {
             FileName = clExePath,
-            Arguments = clArgs,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
+            Arguments = clArgs
         };
 
         if (env != null)
@@ -184,58 +167,47 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             }
         }
 
-        using var process = Process.Start(startInfo);
-        if (process == null)
+        try
         {
-            Log.LogError("Failed to start cl.exe. Ensure MSVC is installed.");
+            var result = ProcessRunner.Default.Run(startInfo);
+
+            if (result.ExitCode == 0 && File.Exists(outputDllPath))
+            {
+                // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
+                var baseDir = Path.GetDirectoryName(outputDllPath)!;
+                var baseName = Path.GetFileNameWithoutExtension(outputDllPath);
+                var objPath = Path.Combine(baseDir, baseName + ".obj");
+                var libPath = Path.Combine(baseDir, baseName + ".lib");
+                var expPath = Path.Combine(baseDir, baseName + ".exp");
+
+                // Also the source .obj (if cl.exe drops it in the source folder, but typically it drops in cwd or output dir)
+                var srcObjPath = Path.Combine(Path.GetDirectoryName(sourcePath)!,
+                    Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
+                var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
+                    Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
+
+                SafeDeleteFiles(objPath, libPath, expPath, srcObjPath, cwdObjPath);
+
+                return true;
+            }
+
+            Log.LogError($"MSVC compilation failed with exit code {result.ExitCode}.");
+            if (!string.IsNullOrWhiteSpace(result.StandardOutput))
+            {
+                Log.LogMessage(MessageImportance.High, result.StandardOutput);
+            }
+
+            if (!string.IsNullOrWhiteSpace(result.StandardError))
+            {
+                Log.LogError(result.StandardError);
+            }
+
             return false;
         }
-
-        var errorBuilder = new StringBuilder();
-        process.ErrorDataReceived += (_, e) =>
+        catch (Exception ex)
         {
-            if (e.Data != null)
-            {
-                errorBuilder.AppendLine(e.Data);
-            }
-        };
-        process.BeginErrorReadLine();
-
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        var error = errorBuilder.ToString();
-
-        if (process.ExitCode == 0 && File.Exists(outputDllPath))
-        {
-            // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
-            var baseDir = Path.GetDirectoryName(outputDllPath)!;
-            var baseName = Path.GetFileNameWithoutExtension(outputDllPath);
-            var objPath = Path.Combine(baseDir, baseName + ".obj");
-            var libPath = Path.Combine(baseDir, baseName + ".lib");
-            var expPath = Path.Combine(baseDir, baseName + ".exp");
-
-            // Also the source .obj (if cl.exe drops it in the source folder, but typically it drops in cwd or output dir)
-            var srcObjPath = Path.Combine(Path.GetDirectoryName(sourcePath)!,
-                Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-            var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
-                Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-
-            SafeDeleteFiles(objPath, libPath, expPath, srcObjPath, cwdObjPath);
-
-            return true;
+            Log.LogError($"Failed to start cl.exe. Ensure MSVC is installed. Details: {ex.Message}");
+            return false;
         }
-
-        Log.LogError($"MSVC compilation failed with exit code {process.ExitCode}.");
-        if (!string.IsNullOrWhiteSpace(output))
-        {
-            Log.LogMessage(MessageImportance.High, output);
-        }
-
-        if (!string.IsNullOrWhiteSpace(error))
-        {
-            Log.LogError(error);
-        }
-
-        return false;
     }
 }

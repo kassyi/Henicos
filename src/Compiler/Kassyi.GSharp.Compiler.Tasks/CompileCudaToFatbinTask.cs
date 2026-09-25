@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -8,10 +9,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
-    public string TargetArchitectures
-    {
-        get; set;
-    } =
+    public string TargetArchitectures { get; set; } =
         "compute_86,sm_86";
 
     public string NvccPath { get; set; } = "nvcc";
@@ -51,14 +49,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         _architectures = TargetArchitectures.Split([';'], StringSplitOptions.RemoveEmptyEntries);
         _vcvarsEnv = GetVcvarsEnvironment("x64");
-        if (_vcvarsEnv == null)
+        if (_vcvarsEnv != null)
         {
-            Log.LogError(
-                "Could not locate vcvarsall.bat via vswhere.exe. Please ensure MSVC C++ Build Tools are installed.");
-            return false;
+            return true;
         }
 
-        return true;
+        Log.LogError(
+            "Could not locate vcvarsall.bat via vswhere.exe. Please ensure MSVC C++ Build Tools are installed.");
+        return false;
     }
 
     private bool IsNvccAvailable()
@@ -68,23 +66,14 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             var checkInfo = new ProcessStartInfo
             {
                 FileName = NvccPath,
-                Arguments = "--version",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
+                Arguments = "--version"
             };
-            using var p = Process.Start(checkInfo);
-            if (p == null)
-            {
-                return false;
-            }
-
-            p.WaitForExit();
-            return p.ExitCode == 0;
+            var result = ProcessRunner.Default.Run(checkInfo);
+            return result.ExitCode == 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Log.LogMessage(MessageImportance.Low, $"CUDA compiler check failed: {ex.Message}");
             return false;
         }
     }
@@ -114,7 +103,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             var destInfo = new FileInfo(outputFatbinPath);
             if (destInfo.LastWriteTimeUtc >= sourceInfo.LastWriteTimeUtc)
             {
-                Log.LogMessage(MessageImportance.Low, $"Skipping compilation of '{sourcePath}' because '{outputFatbinPath}' is up-to-date.");
+                Log.LogMessage(MessageImportance.Low,
+                    $"Skipping compilation of '{sourcePath}' because '{outputFatbinPath}' is up-to-date.");
                 var cachedItem = new TaskItem(outputFatbinPath);
                 cachedItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
                 return [cachedItem];
@@ -181,11 +171,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var startInfo = new ProcessStartInfo
         {
             FileName = NvccPath,
-            Arguments = arguments,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
+            Arguments = arguments
         };
 
         if (_vcvarsEnv != null)
@@ -196,39 +182,11 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             }
         }
 
-        Process? process;
         try
         {
-            process = Process.Start(startInfo);
-        }
-        catch (Exception ex)
-        {
-            Log.LogError($"Failed to start nvcc at '{NvccPath}': {ex.Message}");
-            return false;
-        }
-
-        if (process == null)
-        {
-            Log.LogError(
-                $"Failed to start nvcc at '{NvccPath}'. Please ensure CUDA Toolkit is installed and nvcc is in PATH.");
-            return false;
-        }
-
-        using (process)
-        {
-            var errorBuilder = new StringBuilder();
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (e.Data != null)
-                {
-                    errorBuilder.AppendLine(e.Data);
-                }
-            };
-            process.BeginErrorReadLine();
-
-            var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
-            var error = errorBuilder.ToString();
+            var result = ProcessRunner.Default.Run(startInfo);
+            var output = result.StandardOutput;
+            var error = result.StandardError;
 
             if (NvccOutputParser.DetectRegisterSpill(output, error, out var errorMessage))
             {
@@ -256,7 +214,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 }
             }
 
-            if (process.ExitCode == 0)
+            if (result.ExitCode == 0)
             {
                 if (!string.IsNullOrWhiteSpace(error) &&
                     error.IndexOf("ptxas info", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -267,9 +225,9 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 return true;
             }
 
-            if (process.ExitCode != 0)
+            if (result.ExitCode != 0)
             {
-                Log.LogError($"nvcc compilation failed with exit code {process.ExitCode}.");
+                Log.LogError($"nvcc compilation failed with exit code {result.ExitCode}.");
             }
 
             if (!string.IsNullOrWhiteSpace(output))
@@ -282,6 +240,11 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 Log.LogError(error);
             }
 
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Log.LogError($"Failed to start nvcc at '{NvccPath}': {ex.Message}");
             return false;
         }
     }

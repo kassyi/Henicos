@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -29,7 +30,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             Directory.CreateDirectory(OutputDirectory);
         }
 
-        var outputItems = new List<ITaskItem>();
+        var outputItems = new ConcurrentBag<ITaskItem>();
 
         if (!OnBeforeExecute())
         {
@@ -37,7 +38,6 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
         }
 
         var hasErrors = false;
-        var lockObj = new object();
 
         var options = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2) };
         Parallel.ForEach(sources, options, sourceItem =>
@@ -54,9 +54,9 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
                 return;
             }
 
-            lock (lockObj)
+            foreach (var item in taskItems)
             {
-                outputItems.AddRange(taskItems);
+                outputItems.Add(item);
             }
         });
 
@@ -104,14 +104,13 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        using var vswhereProcess = Process.Start(vswhereStartInfo);
-        if (vswhereProcess == null)
+        var vswhereResult = ProcessRunner.Default.Run(vswhereStartInfo);
+        if (vswhereResult.ExitCode != 0)
         {
             return null;
         }
 
-        var output = vswhereProcess.StandardOutput.ReadToEnd().Trim();
-        vswhereProcess.WaitForExit();
+        var output = vswhereResult.StandardOutput.Trim();
 
         if (string.IsNullOrEmpty(output))
         {
@@ -137,14 +136,13 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        using var envProcess = Process.Start(envStartInfo);
-        if (envProcess == null)
+        var envResult = ProcessRunner.Default.Run(envStartInfo);
+        if (envResult.ExitCode != 0)
         {
             return null;
         }
 
-        var envOutput = envProcess.StandardOutput.ReadToEnd();
-        envProcess.WaitForExit();
+        var envOutput = envResult.StandardOutput;
 
         var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var line in envOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
