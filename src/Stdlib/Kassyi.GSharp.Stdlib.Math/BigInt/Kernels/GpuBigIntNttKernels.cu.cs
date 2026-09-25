@@ -397,7 +397,27 @@ public static class GpuBigIntNttKernels
         if (carry > 0)
         {
             int startIdx = (globalBlockIdx + 1) * chunkSize;
-            GpuBigIntKernels.AtomicAddWithCarry(outputBuffer, startIdx, carry, maxWordCount);
+            AtomicAddWithCarry(outputBuffer, startIdx, carry, maxWordCount);
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
+    {
+        var carry = valueToAdd;
+        var index = wordIndex;
+        while (carry > 0 && index < maxWordCount)
+        {
+            var oldValue = Gpu.AtomicAdd(ref address[index], carry);
+            if (oldValue + carry < oldValue)
+            {
+                carry = 1;
+                index++;
+            }
+            else
+            {
+                break;
+            }
         }
     }
 

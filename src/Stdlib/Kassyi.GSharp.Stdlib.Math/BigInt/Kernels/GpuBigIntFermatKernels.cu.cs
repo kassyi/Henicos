@@ -134,132 +134,7 @@ public static class GpuBigIntFermatKernels
     }
 
 
-    [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint WarpScanGp(uint val, int laneId)
-    {
-        uint g = val & 1u;
-        uint p = (val >> 1) & 1u;
 
-        for (int i = 1; i < 32; i *= 2)
-        {
-            uint prevG = Warp.ShuffleUpSync(0xFFFFFFFFu, g, (uint)i);
-            uint prevP = Warp.ShuffleUpSync(0xFFFFFFFFu, p, (uint)i);
-
-            if (laneId < i)
-            {
-                continue;
-            }
-
-            g = g | (p & prevG);
-            p = p & prevP;
-        }
-
-        return (p << 1) | g;
-    }
-
-    [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint ApplyCarry(uint gp, uint carryIn)
-    {
-        uint g = gp & 1u;
-        uint p = (gp >> 1) & 1u;
-        return g | (p & carryIn);
-    }
-
-    [GpuDeviceFunction]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceAddSubParallel(
-        [GpuReadOnly] uint[] a,
-        [GpuReadOnly] uint[] b,
-        uint[] result,
-        int numWords,
-        int sign,
-        bool syncThreads = true)
-    {
-        int tid = ThreadIndex.X;
-        int bDim = BlockDimension.X;
-        int laneId = tid % 32;
-        int warpId = tid / 32;
-
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32); // Max 1024 threads / 32 = 32 warps
-
-        uint blockCarryIn = sign == 1 ? 0u : 1u;
-
-        for (int offset = 0; offset < numWords; offset += bDim)
-        {
-            int idx = offset + tid;
-            bool valid = idx < numWords;
-
-            uint valA = valid ? a[idx] : 0u;
-            uint valB = valid ? b[idx] : 0u;
-
-            if (sign == -1)
-            {
-                valB = ~valB;
-            }
-
-            ulong sum = (ulong)valA + valB;
-            uint g = (uint)(sum >> 32);
-            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
-
-            uint warpScan = WarpScanGp((p << 1) | g, laneId);
-            uint scanG = warpScan & 1u;
-            uint scanP = (warpScan >> 1) & 1u;
-
-            if (laneId == 31)
-            {
-                sharedCarry[warpId] = warpScan;
-            }
-
-            Gpu.SyncThreads();
-
-            if (warpId == 0)
-            {
-                int numWarps = bDim / 32;
-                uint val = laneId < numWarps ? sharedCarry[laneId] : 0u;
-                uint blockScan = WarpScanGp(val, laneId);
-
-                if (laneId < numWarps)
-                {
-                    sharedCarry[laneId] = blockScan;
-                }
-            }
-
-            Gpu.SyncThreads();
-
-            uint carryIn = blockCarryIn;
-
-            if (warpId > 0)
-            {
-                carryIn = ApplyCarry(sharedCarry[warpId - 1], carryIn);
-            }
-
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
-            if (laneId > 0)
-            {
-                carryIn = prevScanG | (prevScanP & carryIn);
-            }
-
-            if (valid)
-            {
-                result[idx] = (uint)sum + carryIn;
-            }
-
-            blockCarryIn = ApplyCarry(sharedCarry[(bDim / 32) - 1], blockCarryIn);
-
-            Gpu.SyncThreads();
-        }
-
-        // Loop internal already syncs threads at the end of each iteration,
-        // but if numWords == 0, threads wouldn't sync.
-        // Also it's safe to sync again to fulfill the syncThreads=true contract.
-        if (syncThreads)
-        {
-            Gpu.SyncThreads();
-        }
-    }
 
     [GpuKernel]
     public static void KernelTestBlockAddSubParallel(
@@ -269,7 +144,7 @@ public static class GpuBigIntFermatKernels
         int numWords,
         int sign)
     {
-        DeviceAddSubParallel(a, b, result, numWords, sign, true);
+        GpuBigIntKernels.DeviceAddSubParallel(a, b, result, numWords, sign, true);
     }
 
     [GpuKernel]
@@ -316,18 +191,18 @@ public static class GpuBigIntFermatKernels
             Gpu.SyncThreads();
 
             DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords, true);
-            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1, true);
+            GpuBigIntKernels.DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1, true);
 
             // Subtract Q * 8
             DeviceShiftLeftParallel(quotient, temp, 3, outNumWords, true);
-            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
+            GpuBigIntKernels.DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
 
             // Subtract Q * 2
             DeviceShiftLeftParallel(quotient, temp, 1, outNumWords, true);
-            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
+            GpuBigIntKernels.DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
 
             // Subtract Q * 1
-            DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1, true);
+            GpuBigIntKernels.DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1, true);
 
             if (iter >= 2)
             {

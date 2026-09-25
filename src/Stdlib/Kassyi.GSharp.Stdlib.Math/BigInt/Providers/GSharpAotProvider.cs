@@ -381,56 +381,32 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             CudaDriverApi.cuMemcpyDtoD_v2(destPointer, srcPointer, numWords * 4));
     }
 
-    /// <inheritdoc/>
     public void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
-        const int ChunkSize = 256;
-        var numChunks = (leftOperand.NumWords + ChunkSize - 1) / ChunkSize;
-        var dims = CalculateGridDim(numChunks);
+        // DeviceAddSubParallel requires single block execution for warp-scan carry propagation
+        var blockSize = (uint)System.Math.Min(System.Math.Max(leftOperand.NumWords, 32), 1024);
+        // Round up to nearest warp
+        blockSize = (blockSize + 31) / 32 * 32;
 
-        // A carry buffer needs (numChunks + 1) * 8 bytes. Since 1 word = 4 bytes, we need (numChunks + 1) * 2 words.
-        using var carryBuffer = context.RentTemp((numChunks + 1) * 2);
-
-        var carryBufferSize = (numChunks + 1) * 8;
-        using var scopeMemset5 = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer.DevicePointer, 0, carryBufferSize));
-
-        GpuBigIntKernelsWrapper.LaunchChunkAddKernel_Device(
+        GpuBigIntKernelsWrapper.LaunchParallelAddKernel_Device(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
-            carryBuffer.DevicePointer,
-            leftOperand.NumWords, ChunkSize,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
-
-        GpuBigIntKernelsWrapper.LaunchApplyAddCarryKernel_Device(
-            resultBuffer.DevicePointer, carryBuffer.DevicePointer, numChunks, leftOperand.NumWords, ChunkSize,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
+            leftOperand.NumWords,
+            gridDimX: 1, blockDimX: blockSize);
     }
 
-    /// <inheritdoc/>
     public void Sub(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
-        const int ChunkSize = 256;
-        var numChunks = (leftOperand.NumWords + ChunkSize - 1) / ChunkSize;
-        var dims = CalculateGridDim(numChunks);
+        // DeviceAddSubParallel requires single block execution for warp-scan carry propagation
+        var blockSize = (uint)System.Math.Min(System.Math.Max(leftOperand.NumWords, 32), 1024);
+        // Round up to nearest warp
+        blockSize = (blockSize + 31) / 32 * 32;
 
-        // A carry buffer needs (numChunks + 1) * 8 bytes. Since 1 word = 4 bytes, we need (numChunks + 1) * 2 words.
-        using var carryBuffer = context.RentTemp((numChunks + 1) * 2);
-
-        var carryBufferSize = (numChunks + 1) * 8;
-        using var scopeMemset6 = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(carryBuffer.DevicePointer, 0, carryBufferSize));
-
-        GpuBigIntKernelsWrapper.LaunchChunkSubKernel_Device(
+        GpuBigIntKernelsWrapper.LaunchParallelSubKernel_Device(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
-            carryBuffer.DevicePointer,
-            leftOperand.NumWords, ChunkSize,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
-
-        GpuBigIntKernelsWrapper.LaunchApplySubBorrowKernel_Device(
-            resultBuffer.DevicePointer, carryBuffer.DevicePointer, numChunks, leftOperand.NumWords, ChunkSize,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize);
+            leftOperand.NumWords,
+            gridDimX: 1, blockDimX: blockSize);
     }
 
     /// <inheritdoc/>

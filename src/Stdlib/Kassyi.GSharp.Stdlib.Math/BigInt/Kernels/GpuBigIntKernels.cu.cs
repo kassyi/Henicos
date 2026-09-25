@@ -8,124 +8,140 @@ using Contexts;
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntKernels
 {
-    [GpuKernel]
-    public static void ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords,
-        int chunkSize)
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint WarpScanGp(uint val, int laneId)
     {
-        var numChunks = (numWords + chunkSize - 1) / chunkSize;
+        uint g = val & 1u;
+        uint p = (val >> 1) & 1u;
 
-        Gpu.GridStrideLoop(numChunks, chunkIdx =>
+        for (int i = 1; i < 32; i *= 2)
         {
-            var start = chunkIdx * chunkSize;
-            var end = start + chunkSize;
-            if (end > numWords)
+            uint prevG = Warp.ShuffleUpSync(0xFFFFFFFFu, g, (uint)i);
+            uint prevP = Warp.ShuffleUpSync(0xFFFFFFFFu, p, (uint)i);
+
+            if (laneId < i)
             {
-                end = numWords;
+                continue;
             }
 
-            ulong localCarry = 0;
-            for (var i = start; i < end; i++)
-            {
-                dResult[i] = Gpu.AddWithCarry(dA[i], dB[i], ref localCarry);
-            }
+            g = g | (p & prevG);
+            p = p & prevP;
+        }
 
-            carryBuffer[chunkIdx + 1] = (long)localCarry;
-        });
-    }
-
-    [GpuKernel]
-    public static void ApplyAddCarryKernel(uint[] dResult, long[] carryBuffer, int numChunks, int numWords,
-        int chunkSize)
-    {
-        Gpu.GridStrideLoop(numChunks, i =>
-        {
-            var cIdx = i + 1;
-            var carry = carryBuffer[cIdx];
-            if (carry > 0)
-            {
-                AtomicAddWithCarry(dResult, cIdx * chunkSize, (uint)carry, numWords);
-            }
-        });
+        return (p << 1) | g;
     }
 
     [GpuDeviceFunction]
-    public static void AtomicAddWithCarry(uint[] address, int wordIndex, uint valueToAdd, int maxWordCount)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint ApplyCarry(uint gp, uint carryIn)
     {
-        var carry = valueToAdd;
-        var index = wordIndex;
-        while (carry > 0 && index < maxWordCount)
+        uint g = gp & 1u;
+        uint p = (gp >> 1) & 1u;
+        return g | (p & carryIn);
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceAddSubParallel(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] b,
+        uint[] result,
+        int numWords,
+        int sign,
+        bool syncThreads = true)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+        int laneId = tid % 32;
+        int warpId = tid / 32;
+
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32); // Max 1024 threads / 32 = 32 warps
+
+        uint blockCarryIn = sign == 1 ? 0u : 1u;
+
+        for (int offset = 0; offset < numWords; offset += bDim)
         {
-            var oldValue = Gpu.AtomicAdd(ref address[index], carry);
-            if (oldValue + carry < oldValue)
+            int idx = offset + tid;
+            bool valid = idx < numWords;
+
+            uint valA = valid ? a[idx] : 0u;
+            uint valB = valid ? b[idx] : 0u;
+
+            if (sign == -1)
             {
-                carry = 1;
-                index++;
+                valB = ~valB;
             }
-            else
+
+            ulong sum = (ulong)valA + valB;
+            uint g = (uint)(sum >> 32);
+            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+
+            uint warpScan = WarpScanGp((p << 1) | g, laneId);
+            uint scanG = warpScan & 1u;
+            uint scanP = (warpScan >> 1) & 1u;
+
+            if (laneId == 31)
             {
-                break;
+                sharedCarry[warpId] = warpScan;
             }
+
+            Gpu.SyncThreads();
+
+            if (warpId == 0)
+            {
+                int numWarps = bDim / 32;
+                uint val = laneId < numWarps ? sharedCarry[laneId] : 0u;
+                uint blockScan = WarpScanGp(val, laneId);
+
+                if (laneId < numWarps)
+                {
+                    sharedCarry[laneId] = blockScan;
+                }
+            }
+
+            Gpu.SyncThreads();
+
+            uint carryIn = blockCarryIn;
+
+            if (warpId > 0)
+            {
+                carryIn = ApplyCarry(sharedCarry[warpId - 1], carryIn);
+            }
+
+            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+            if (laneId > 0)
+            {
+                carryIn = prevScanG | (prevScanP & carryIn);
+            }
+
+            if (valid)
+            {
+                result[idx] = (uint)sum + carryIn;
+            }
+
+            blockCarryIn = ApplyCarry(sharedCarry[(bDim / 32) - 1], blockCarryIn);
+
+            Gpu.SyncThreads();
+        }
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
         }
     }
 
     [GpuKernel]
-    public static void ChunkSubKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords,
-        int chunkSize)
+    public static void ParallelAddKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords)
     {
-        var numChunks = (numWords + chunkSize - 1) / chunkSize;
-
-        Gpu.GridStrideLoop(numChunks, chunkIdx =>
-        {
-            var start = chunkIdx * chunkSize;
-            var end = start + chunkSize;
-            if (end > numWords)
-            {
-                end = numWords;
-            }
-
-            long localBorrow = 0;
-            for (var i = start; i < end; i++)
-            {
-                dResult[i] = Gpu.SubWithBorrow(dA[i], dB[i], ref localBorrow);
-            }
-
-            carryBuffer[chunkIdx + 1] = localBorrow;
-        });
+        DeviceAddSubParallel(dA, dB, dResult, numWords, 1, false);
     }
 
     [GpuKernel]
-    public static void ApplySubBorrowKernel(uint[] dResult, long[] carryBuffer, int numChunks, int numWords,
-        int chunkSize)
+    public static void ParallelSubKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords)
     {
-        Gpu.GridStrideLoop(numChunks, i =>
-        {
-            var cIdx = i + 1;
-            var borrow = carryBuffer[cIdx];
-            if (borrow > 0)
-            {
-                AtomicSubWithBorrow(dResult, cIdx * chunkSize, (uint)borrow, numWords);
-            }
-        });
-    }
-
-    [GpuDeviceFunction]
-    public static void AtomicSubWithBorrow(uint[] address, int wordIndex, uint valueToSubtract, int maxWordCount)
-    {
-        var borrow = valueToSubtract;
-        var index = wordIndex;
-        while (borrow > 0 && index < maxWordCount)
-        {
-            var oldValue = Gpu.AtomicSub(ref address[index], borrow);
-            if (oldValue < borrow)
-            {
-                borrow = 1;
-                index++;
-            }
-            else
-            {
-                break;
-            }
-        }
+        DeviceAddSubParallel(dA, dB, dResult, numWords, -1, false);
     }
 
     [GpuKernel]
