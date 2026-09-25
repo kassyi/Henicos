@@ -271,6 +271,15 @@ public static class GSharpDiagnostics
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor SyncGridRequiresCooperativeKernel = new(
+        id: "GSH0030",
+        title: "Gpu.SyncGrid requires [GpuKernel(Cooperative = true)]",
+        messageFormat:
+        "The method '{0}' calls Gpu.SyncGrid but is not marked with [GpuKernel(Cooperative = true)]. Grid synchronization requires a cooperative kernel launch.",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor DirectGpuKernelInvocation = new(
         id: "GSH0031",
         title: "Direct invocation of [GpuKernel] is prohibited",

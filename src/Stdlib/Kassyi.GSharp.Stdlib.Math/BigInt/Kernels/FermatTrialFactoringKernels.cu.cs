@@ -23,7 +23,7 @@ public static class FermatTrialFactoringKernels
     }
 
     [GpuKernel]
-    public static void Kernel_SearchFactors32(
+    public static void SearchFactors32Kernel(
         uint startOdd,
         uint exp,
         uint[] results,

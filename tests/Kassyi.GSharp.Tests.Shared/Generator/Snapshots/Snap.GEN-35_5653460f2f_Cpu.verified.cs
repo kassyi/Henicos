@@ -33,6 +33,102 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 sum+=100;
 }
+{
+sum+=1;
+}
+{
+sum+=2;
+}
+{
+if(sum>0)
+{
+sum+=10;
+}
+cg::this_grid().sync();
+sum+=20;
+}
+{
+sum+=1;
+cg::this_grid().sync();
+sum+=2;
+cg::this_grid().sync();
+for(int i = 0;i<10;i++)
+{
+sum+=i;
+cg::this_grid().sync();
+sum*=2;
+}
+cg::this_grid().sync();
+if(sum>50)
+{
+sum+=100;
+cg::this_grid().sync();
+sum+=200;
+}
+else
+{
+sum-=10;
+cg::this_grid().sync();
+sum-=20;
+}
+cg::this_grid().sync();
+sum+=3;
+cg::this_grid().sync();
+sum+=4;
+}
+{
+for(int i = 0;i<5;i++)
+{
+if(i%2==0)
+{
+for(int j = 0;j<3;j++)
+{
+sum+=i;
+cg::this_grid().sync();
+sum+=j;
+}
+cg::this_grid().sync();
+sum+=10;
+}
+cg::this_grid().sync();
+sum+=20;
+}
+}
+{
+sum+=1;
+cg::this_grid().sync();
+sum+=2;
+cg::this_grid().sync();
+sum+=3;
+cg::this_grid().sync();
+sum+=4;
+}
+{
+sum+=500;
+}
+{
+auto LocalStep = [&]() {
+sum+=11;
+cg::this_grid().sync();
+sum+=22;
+}
+;
+cg::this_grid().sync();
+LocalStep();
+cg::this_grid().sync();
+sum+=33;
+}
+{
+sum+=1;
+cg::this_grid().sync();
+if(threadIdx.x == 0 && blockIdx.x == 0)
+{
+sum+=2;
+sum+=3;
+}
+cg::this_grid().sync();
+sum+=4;
+}
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)
 {
@@ -48,11 +144,11 @@ GEN_35_MacroTranspiler_InGpuKernel_MyKernel();
 }
 }
 ";
-public static readonly string MyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + MyKernel_Source;
+public static readonly string MyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MyKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);
 #pragma warning disable CS8500
-public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";

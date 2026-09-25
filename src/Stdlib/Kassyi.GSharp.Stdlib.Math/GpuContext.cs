@@ -56,7 +56,15 @@ public class GpuContext : IDisposable
         ? GSharpAotProvider.Instance
         : NativeProvider.Instance;
 
-    private bool _disposed;
+    /// <summary>
+    /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
+    /// </summary>
+    public IntPtr Stream
+    {
+        get;
+    }
+
+    private int _disposed;
 
     // Memory pooling for Lazy Evaluation
     private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuUIntBigInteger>>> _tempPool = new();
@@ -73,6 +81,10 @@ public class GpuContext : IDisposable
         Engine = engine;
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
+            using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
+            Runtime.Interop.CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+            Stream = stream;
+
             // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
         }
         else
@@ -106,7 +118,7 @@ public class GpuContext : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (_disposed)
+        if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {
             return;
         }
@@ -132,7 +144,11 @@ public class GpuContext : IDisposable
 
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
-            // JIT-specific cleanup
+            if (Stream != IntPtr.Zero)
+            {
+                using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
+                Runtime.Interop.CudaDriverApi.cuStreamDestroy(Stream);
+            }
         }
         else
         {
@@ -142,7 +158,6 @@ public class GpuContext : IDisposable
             }
         }
 
-        _disposed = true;
     }
 
     ~GpuContext()
@@ -152,6 +167,7 @@ public class GpuContext : IDisposable
 
     internal GpuUIntBigInteger RentTemp(int numWords)
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var temp))
         {
             temp.Disposed = false;
@@ -174,8 +190,22 @@ public class GpuContext : IDisposable
             return;
         }
 
+        if (Volatile.Read(ref _disposed) == 1)
+        {
+            temp.DisposeCore();
+            return;
+        }
+
         var bag = _tempPool.GetOrAdd(temp.NumWords, _ => new Lazy<ConcurrentBag<GpuUIntBigInteger>>(() => [])).Value;
         bag.Add(temp);
+
+        if (Volatile.Read(ref _disposed) == 1)
+        {
+            if (bag.TryTake(out var t))
+            {
+                t.DisposeCore();
+            }
+        }
     }
 }
 

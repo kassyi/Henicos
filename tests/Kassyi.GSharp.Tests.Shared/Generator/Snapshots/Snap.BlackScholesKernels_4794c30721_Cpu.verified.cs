@@ -37,11 +37,11 @@ BlackScholesKernels_BlackScholesKernel(s, x, t, r, v, callResult, putResult, n);
 }
 }
 ";
-public static readonly string BlackScholesKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source + BlackScholesKernel_Source;
+public static readonly string BlackScholesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BlackScholesKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void BlackScholesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* s, global::System.Single* x, global::System.Single* t, global::System.Single r, global::System.Single v, global::System.Single* callResult, global::System.Single* putResult, global::System.Int32 n);
 #pragma warning disable CS8500
-public static unsafe void LaunchBlackScholesKernel(global::System.Single[] s, global::System.Single[] x, global::System.Single[] t, global::System.Single r, global::System.Single v, global::System.Single[] callResult, global::System.Single[] putResult, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBlackScholesKernel(global::System.Single[] s, global::System.Single[] x, global::System.Single[] t, global::System.Single r, global::System.Single v, global::System.Single[] callResult, global::System.Single[] putResult, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (s.Length == 0 || x.Length == 0 || t.Length == 0 || callResult.Length == 0 || putResult.Length == 0){
 return;

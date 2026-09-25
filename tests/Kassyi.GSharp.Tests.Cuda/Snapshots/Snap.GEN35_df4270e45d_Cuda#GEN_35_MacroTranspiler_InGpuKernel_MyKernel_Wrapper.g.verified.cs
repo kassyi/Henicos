@@ -33,9 +33,105 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 sum+=100;
 }
+{
+sum+=1;
+}
+{
+sum+=2;
+}
+{
+if(sum>0)
+{
+sum+=10;
+}
+cg::this_grid().sync();
+sum+=20;
+}
+{
+sum+=1;
+cg::this_grid().sync();
+sum+=2;
+cg::this_grid().sync();
+for(int i = 0;i<10;i++)
+{
+sum+=i;
+cg::this_grid().sync();
+sum*=2;
+}
+cg::this_grid().sync();
+if(sum>50)
+{
+sum+=100;
+cg::this_grid().sync();
+sum+=200;
+}
+else
+{
+sum-=10;
+cg::this_grid().sync();
+sum-=20;
+}
+cg::this_grid().sync();
+sum+=3;
+cg::this_grid().sync();
+sum+=4;
+}
+{
+for(int i = 0;i<5;i++)
+{
+if(i%2==0)
+{
+for(int j = 0;j<3;j++)
+{
+sum+=i;
+cg::this_grid().sync();
+sum+=j;
+}
+cg::this_grid().sync();
+sum+=10;
+}
+cg::this_grid().sync();
+sum+=20;
+}
+}
+{
+sum+=1;
+cg::this_grid().sync();
+sum+=2;
+cg::this_grid().sync();
+sum+=3;
+cg::this_grid().sync();
+sum+=4;
+}
+{
+sum+=500;
+}
+{
+auto LocalStep = [&]() {
+sum+=11;
+cg::this_grid().sync();
+sum+=22;
+}
+;
+cg::this_grid().sync();
+LocalStep();
+cg::this_grid().sync();
+sum+=33;
+}
+{
+sum+=1;
+cg::this_grid().sync();
+if(threadIdx.x == 0 && blockIdx.x == 0)
+{
+sum+=2;
+sum+=3;
+}
+cg::this_grid().sync();
+sum+=4;
+}
 }
 ";
-public static readonly string MyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MyKernel_Source;
+public static readonly string MyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MyKernel_Source;
 private static IntPtr? s_hfunc_MyKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerMyKernel()
@@ -45,7 +141,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCom
 s_hfunc_MyKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN_35_MacroTranspiler_InGpuKernel_MyKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -54,14 +150,13 @@ IntPtr hfunc = s_hfunc_MyKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[0];
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+hStream, // Stream
+kernelParams
 ));
 }
 finally
@@ -71,7 +166,7 @@ finally
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchMyKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchMyKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -80,14 +175,13 @@ IntPtr hfunc = s_hfunc_MyKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[0];
-CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchCooperativeKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
-kernelParams,
-IntPtr.Zero // Extra
+hStream, // Stream
+kernelParams
 ));
 }
 finally

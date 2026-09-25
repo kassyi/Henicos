@@ -309,7 +309,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine("gridDimX, gridDimY, gridDimZ, // Grid dim");
                 writer.AppendLine("blockDimX, blockDimY, blockDimZ, // Block dim");
                 writer.AppendLine("sharedMemBytes, // Shared mem");
-                writer.AppendLine("IntPtr.Zero, // Stream");
+                writer.AppendLine("hStream, // Stream");
                 if (isCooperative)
                 {
                     writer.Append("kernelParams");

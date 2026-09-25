@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
 public class GSH_32_33_UnrollStaticDeterminism
 {
     [GpuKernel]
-    public static unsafe void SadPath_GSH0032_DynamicBounds(int* data, int dynamicLength, [GpuConst] int gpuConstLength)
+    public static unsafe void SadPath_GSH0032_DynamicBounds(int* data, int dynamicLength, [GpuReadOnly] int gpuConstLength)
     {
         // Error GSH0032: Normal dynamic parameter
         Gpu.Hint.Unroll();
@@ -14,7 +14,7 @@ public class GSH_32_33_UnrollStaticDeterminism
             data[i] = 1;
         }
 
-        // Error GSH0032: [GpuConst] is an execution-time constant, not compile-time
+        // Error GSH0032: [GpuReadOnly] is an execution-time constant, not compile-time
         Gpu.Hint.Unroll();
         for (int j = 0; j < gpuConstLength; j++)
         {

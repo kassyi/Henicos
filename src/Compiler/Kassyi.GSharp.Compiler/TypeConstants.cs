@@ -4,34 +4,35 @@ namespace Kassyi.GSharp.Compiler;
 /// <seealso cref="KnownAttributes"/>
 internal static class TypeConstants
 {
-    public const string SystemNamespace = "System";
-    public const string NumericsNamespace = "Numerics";
-    public const string ThreadingNamespace = "Threading";
+    public const string SystemNamespace = nameof(System);
+    public const string NumericsNamespace = nameof(System.Numerics);
+    public const string ThreadingNamespace = nameof(System.Threading);
 
     public const string SharedMemoryType = "SharedMemory";
     public const string GpuType = "Gpu";
     public const string CoreNamespace = "Kassyi.GSharp.Core";
 
-    public const string MathType = "Math";
+    public const string MathType = nameof(Math);
     public const string MathFType = "MathF";
-    public const string InterlockedType = "Interlocked";
+    public const string InterlockedType = nameof(Interlocked);
     public const string BitOperationsType = "BitOperations";
 
-    public const string Vector2Type = "Vector2";
-    public const string Vector3Type = "Vector3";
-    public const string Vector4Type = "Vector4";
+    public const string Vector2Type = nameof(System.Numerics.Vector2);
+    public const string Vector3Type = nameof(System.Numerics.Vector3);
+    public const string Vector4Type = nameof(System.Numerics.Vector4);
 
-    public const string SpanType = "Span";
-    public const string ReadOnlySpanType = "ReadOnlySpan";
-    public const string ListType = "List";
+    public const string SpanType = nameof(Span<byte>);
+    public const string ReadOnlySpanType = nameof(ReadOnlySpan<byte>);
+    public const string ListType = nameof(List<object>);
 
     public static class GpuMacros
     {
-        public const string Gpu = "Gpu";
-        public const string Hint = "Hint";
-        public const string ForUnroll = "ForUnroll";
-        public const string InlinePtx = "InlinePtx";
-        public const string Unroll = "Unroll";
+        public const string Gpu = nameof(Gpu);
+        public const string Hint = nameof(Hint);
+        public const string ForUnroll = nameof(ForUnroll);
+        public const string InlinePtx = nameof(InlinePtx);
+        public const string SyncGrid = nameof(SyncGrid);
+        public const string Unroll = nameof(Unroll);
     }
 
     public static class CudaTypes

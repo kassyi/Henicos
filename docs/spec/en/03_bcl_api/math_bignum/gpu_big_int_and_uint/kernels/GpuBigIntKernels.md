@@ -34,6 +34,128 @@ public static class GpuBigIntKernels
 | [BitwiseOrKernel(uint[], uint[], uint[], int)](#bitwiseorkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise OR operation. |
 | [BitwiseXorKernel(uint[], uint[], uint[], int)](#bitwisexorkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise XOR operation. |
 | [BitwiseNotKernel(uint[], uint[], int)](#bitwisenotkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise NOT operation. |
+| [PackCarryState(CarryState)](#packcarrystatedcarrystated) | A GPU device function (`[GpuDeviceFunction]`) that packs a CarryState into a uint. |
+| [UnpackCarryState(uint)](#unpackcarrystateuint) | A GPU device function (`[GpuDeviceFunction]`) that unpacks a uint into a CarryState. |
+| [WarpScanGp(CarryState, int)](#warpscangpcarrystate-int) | A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide prefix sum of carry generation and propagation. |
+| [ApplyCarry(CarryState, uint)](#applycarrycarrystate-uint) | A GPU device function (`[GpuDeviceFunction]`) that applies an incoming carry to the carry state. |
+
+## CarryState Struct
+
+Represents the carry generation (G) and propagation (P) bits for prefix sum operations.
+
+```csharp
+public struct CarryState
+{
+    public uint Generate;
+    public uint Propagate;
+
+    public CarryState(uint generate, uint propagate);
+}
+```
+
+#### Fields
+
+`Generate` _uint_<br>
+The carry generation bit. Typically `1` if the current element generates a carry (e.g., sum > max), otherwise `0`.
+
+`Propagate` _uint_<br>
+The carry propagation bit. Typically `1` if the current element propagates an incoming carry (e.g., sum == max), otherwise `0`.
+
+#### Constructors
+
+##### CarryState(uint, uint)
+
+Initializes a new instance of the `CarryState` struct.
+
+```csharp
+public CarryState(uint generate, uint propagate);
+```
+
+###### Parameters
+
+`generate` _uint_<br>
+The initial generation bit value.
+
+`propagate` _uint_<br>
+The initial propagation bit value.
+
+## PackCarryState(CarryState)
+
+A GPU device function (`[GpuDeviceFunction]`) that packs a `CarryState` into a single `uint` for shared memory storage.
+
+```csharp
+[GpuDeviceFunction]
+public static uint PackCarryState(CarryState state);
+```
+
+#### Parameters
+
+`state` _CarryState_<br>
+The carry state to pack.
+
+#### Returns
+_uint_<br>
+The bit-packed representation of the carry state.
+
+## UnpackCarryState(uint)
+
+A GPU device function (`[GpuDeviceFunction]`) that unpacks a `uint` back into a `CarryState`.
+
+```csharp
+[GpuDeviceFunction]
+public static CarryState UnpackCarryState(uint packed);
+```
+
+#### Parameters
+
+`packed` _uint_<br>
+The bit-packed carry state previously created by `PackCarryState`.
+
+#### Returns
+_CarryState_<br>
+The unpacked `CarryState` struct.
+
+## WarpScanGp(CarryState, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide prefix sum of carry generation (G) and propagation (P) bits using the Kogge-Stone algorithm.
+
+```csharp
+[GpuDeviceFunction]
+public static CarryState WarpScanGp(CarryState state, int laneId);
+```
+
+#### Parameters
+
+`state` _CarryState_<br>
+The carry state containing Generate and Propagate bits for the current thread.
+
+`laneId` _int_<br>
+The thread's lane index within the warp (0 to 31).
+
+#### Returns
+_CarryState_<br>
+The warp-wide inclusive prefix sum result containing the accumulated Generate and Propagate bits.
+
+## ApplyCarry(CarryState, uint)
+
+A GPU device function (`[GpuDeviceFunction]`) that applies an incoming carry to the carry state.
+
+```csharp
+[GpuDeviceFunction]
+public static uint ApplyCarry(CarryState state, uint carryIn);
+```
+
+#### Parameters
+
+`state` _CarryState_<br>
+The carry state containing Generate and Propagate bits, typically produced by `WarpScanGp`.
+
+`carryIn` _uint_<br>
+The carry-in bit to propagate through the P bit.
+
+#### Returns
+_uint_<br>
+The final resolved carry bit (0 or 1) for the current segment.
 
 ## ChunkAddKernel(uint[], uint[], uint[], long[], int, int)
 

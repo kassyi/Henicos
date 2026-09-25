@@ -19,12 +19,12 @@ public struct NttContext
 
     public struct TwiddleFactorsContext
     {
-        [GpuConst] public uint[] Forward1;
-        [GpuConst] public uint[] Forward2;
-        [GpuConst] public uint[] Forward3;
-        [GpuConst] public uint[] Inverse1;
-        [GpuConst] public uint[] Inverse2;
-        [GpuConst] public uint[] Inverse3;
+        [GpuReadOnly] public uint[] Forward1;
+        [GpuReadOnly] public uint[] Forward2;
+        [GpuReadOnly] public uint[] Forward3;
+        [GpuReadOnly] public uint[] Inverse1;
+        [GpuReadOnly] public uint[] Inverse2;
+        [GpuReadOnly] public uint[] Inverse3;
     }
 }
 
@@ -66,8 +66,8 @@ public struct BigIntKernelContext
 
     public struct OperandsContext
     {
-        [GpuConst] public uint[] LeftOperand;
-        [GpuConst] public uint[] RightOperand;
+        [GpuReadOnly] public uint[] LeftOperand;
+        [GpuReadOnly] public uint[] RightOperand;
         public uint[] ResultBuffer;
         public long[] CarryBuffer;
     }
@@ -81,7 +81,7 @@ public struct NumberTheoreticTransformKernelArgs
     public uint[] Buffer;
     public uint[] TemporaryBuffer;
 
-    [GpuConst]
+    [GpuReadOnly]
     public uint[] Twiddle;
 
     public int M;
@@ -94,4 +94,94 @@ public struct NumberTheoreticTransformKernelArgs
     public bool ApplyTwiddleAfter;
     public int MaxBlocks;
     public int CurrentL;
+}
+
+/// <summary>
+/// Context parameters for the Newton-Raphson Sqrt MegaKernel.
+/// </summary>
+public struct SqrtNewtonRaphsonContext
+{
+    public OperandsContext Operands;
+    public DimensionsContext Dimensions;
+    public NttContext Ntt;
+    public WorkspaceContext Workspace;
+    public long[] CarryBuffer;
+
+    public struct OperandsContext
+    {
+        public uint[] TargetOperand;
+        public uint[] ResultBuffer;
+        public uint[] Constant3;
+    }
+
+    public struct DimensionsContext
+    {
+        public int NumberOfWords;
+        public int MarginWords;
+        public int ActualBits;
+        public int MarginBits;
+        public int Iterations;
+    }
+
+    public struct WorkspaceContext
+    {
+        public uint[] XSquared;
+        public uint[] AxSquared;
+        public uint[] Diff;
+        public uint[] NextXUnshifted;
+        public uint[] NextXShifted;
+        
+        public uint[] NttBuf1A;
+        public uint[] NttBuf2A;
+        public uint[] NttBuf1B;
+        public uint[] NttBuf2B;
+        public uint[] TmpBuf;
+        public uint[] UncarriedLow;
+        public uint[] UncarriedHigh;
+        public uint[] BlockCarries;
+    }
+}
+
+/// <summary>
+/// Context parameters for the Newton-Raphson Reciprocal (DivRem) MegaKernel.
+/// </summary>
+public struct ReciprocalNewtonRaphsonContext
+{
+    public OperandsContext Operands;
+    public DimensionsContext Dimensions;
+    public NttContext Ntt;
+    public WorkspaceContext Workspace;
+    public long[] CarryBuffer;
+
+    public struct OperandsContext
+    {
+        public uint[] TargetOperand;
+        public uint[] ResultBuffer;
+        public uint[] Constant;
+    }
+
+    public struct DimensionsContext
+    {
+        public int NumberOfWords;
+        public int MarginWords;
+        public int Iterations;
+        public int NumBits;
+        public int MarginBits;
+    }
+
+    public struct WorkspaceContext
+    {
+        public uint[] CurrentProduct;
+        public uint[] Diff;
+        public uint[] NextIter;
+        
+        public uint[] NttBuf1A;
+        public uint[] NttBuf2A;
+        public uint[] NttBuf1B;
+        public uint[] NttBuf2B;
+        public uint[] TmpBuf;
+        public uint[] UncarriedLow;
+        public uint[] UncarriedHigh;
+        public uint[] BlockCarries;
+    }
 }

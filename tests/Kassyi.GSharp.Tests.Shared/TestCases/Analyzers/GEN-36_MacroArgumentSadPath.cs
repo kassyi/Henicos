@@ -19,5 +19,8 @@ public class GEN_36_MacroArgumentSadPath
         string ptxStr = "mov.u32 %0, %1;";
         // Error GSH0006: arg must be string literal
         Gpu.InlinePtx(ptxStr);
+
+        // Error GSH0003: arg must be lambda expression
+        Gpu.SyncGrid(null!);
     }
 }

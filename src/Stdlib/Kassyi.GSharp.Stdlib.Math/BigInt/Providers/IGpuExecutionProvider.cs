@@ -32,6 +32,18 @@ public interface IGpuExecutionProvider
     /// <param name="numWords">The number of 32-bit words to copy.</param>
     void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords);
 
+    /// <summary>Reads a single 32-bit word directly from device memory.</summary>
+    /// <param name="devicePointer">The base device pointer.</param>
+    /// <param name="wordOffset">The offset in words.</param>
+    /// <returns>The 32-bit unsigned integer value.</returns>
+    uint ReadWord(IntPtr devicePointer, int wordOffset = 0);
+
+    /// <summary>Writes a single 32-bit word directly to device memory.</summary>
+    /// <param name="devicePointer">The base device pointer.</param>
+    /// <param name="wordOffset">The offset in words.</param>
+    /// <param name="value">The 32-bit unsigned integer value to write.</param>
+    void WriteWord(IntPtr devicePointer, int wordOffset, uint value);
+
     /// <summary>Computes addition on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
@@ -52,6 +64,12 @@ public interface IGpuExecutionProvider
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
     void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+
+    /// <summary>Computes inverse square root via Newton-Raphson on GPU.</summary>
+    void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations);
+
+    /// <summary>Computes reciprocal via Newton-Raphson on GPU.</summary>
+    void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations);
 
     /// <summary>Computes scalar addition on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
@@ -154,7 +172,26 @@ public interface IGpuExecutionProvider
     /// <returns>A signed integer that indicates the relative values of the operands.</returns>
     int CompareTo(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand);
 
-}
+    /// <summary>Begins capturing CUDA commands into a graph via the specified stream.</summary>
+    void BeginCapture(IntPtr stream);
 
+    /// <summary>Ends capturing CUDA commands and returns the captured graph.</summary>
+    /// <returns>A pointer to the captured CUDA graph.</returns>
+    IntPtr EndCapture(IntPtr stream);
+
+    /// <summary>Instantiates a CUDA graph into an executable graph.</summary>
+    /// <param name="graph">The CUDA graph pointer.</param>
+    /// <returns>A pointer to the executable graph.</returns>
+    IntPtr InstantiateGraph(IntPtr graph);
+
+    /// <summary>Launches an executable CUDA graph on the specified stream.</summary>
+    /// <param name="graphExec">The executable graph pointer.</param>
+    void LaunchGraph(IntPtr graphExec, IntPtr stream);
+
+    /// <summary>Destroys a CUDA graph and its executable counterpart.</summary>
+    /// <param name="graph">The CUDA graph pointer.</param>
+    /// <param name="graphExec">The executable graph pointer.</param>
+    void DestroyGraph(IntPtr graph, IntPtr graphExec);
+}
 
 

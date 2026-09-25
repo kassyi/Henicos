@@ -15,28 +15,28 @@ public readonly ref struct GpuBigIntRef(uint[] data)
     /// <summary>Gets the raw underlying uint limb array buffer.</summary>
     public readonly uint[] Data = data;
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Add))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteAdd))]
     public static GpuBigIntRef operator +(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_Sub))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteSub))]
     public static GpuBigIntRef operator -(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_ShiftLeft))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteShiftLeft))]
     public static GpuBigIntRef operator <<(GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_ShiftRight))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteShiftRight))]
     public static GpuBigIntRef operator >>(GpuBigIntRef a, int shiftBits) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseAnd))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteBitwiseAnd))]
     public static GpuBigIntRef operator &(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseOr))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteBitwiseOr))]
     public static GpuBigIntRef operator |(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseXor))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteBitwiseXor))]
     public static GpuBigIntRef operator ^(GpuBigIntRef a, GpuBigIntRef b) => throw new GpuOnlyException();
 
-    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.Device_BitwiseNot))]
+    [GpuOperatorMacro(typeof(GpuBigIntKernels), nameof(GpuBigIntKernels.ExecuteBitwiseNot))]
     public static GpuBigIntRef operator ~(GpuBigIntRef a) => throw new GpuOnlyException();
 
     // Implicit cast from uint[] so we can easily pass ctx.Buffers.X directly.

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using BenchmarkDotNet.Running;
 using Cocona;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime.Interop;
 
 namespace Henicos.Cli;
 
@@ -37,7 +38,8 @@ internal class Program
 
     [Command("profile", Description = "Profile the GSharp GPU execution and output M-Digit/s throughput")]
     public void Profile([Option('e', Description = "Fermat Exponent (E)")] int e = 10000,
-                        [Option('i', Description = "Number of warmup/profile iterations")] int iterations = 2)
+        [Option('i', Description = "Number of warmup/profile iterations")]
+        int iterations = 2)
     {
         Logger<Program>.Info($"Profiling GSharp FermatRunner for E={e} (Iterations: {iterations})...");
 
@@ -65,16 +67,21 @@ internal class Program
             sw.Stop();
 
             var throughput = mDigitsPerLoop * e / (sw.Elapsed.TotalSeconds);
-            Logger<Program>.Info($"Iter {i}: Elapsed {sw.ElapsedMilliseconds} ms, Throughput: {throughput:F2} M-Digit/s");
+            Logger<Program>.Info(
+                $"Iter {i}: Elapsed {sw.ElapsedMilliseconds} ms, Throughput: {throughput:F2} M-Digit/s");
         }
     }
 
-    [Command("profile-chunk", Description = "Profile the GSharp Chunk GPU execution to avoid TDR and get immediate M-Digit/s throughput")]
+    [Command("profile-chunk",
+        Description = "Profile the GSharp Chunk GPU execution to avoid TDR and get immediate M-Digit/s throughput")]
     public void ProfileChunk([Option('e', Description = "Fermat Exponent (E)")] int e = 10000,
-                             [Option('i', Description = "Number of warmup/profile iterations")] int iterations = 2,
-                             [Option('c', Description = "Chunk Size (Loop iterations in kernel)")] int chunkSize = 100)
+        [Option('i', Description = "Number of warmup/profile iterations")]
+        int iterations = 2,
+        [Option('c', Description = "Chunk Size (Loop iterations in kernel)")]
+        int chunkSize = 100)
     {
-        Logger<Program>.Info($"Profiling GSharp Chunk Benchmark for E={e}, ChunkSize={chunkSize} (Iterations: {iterations})...");
+        Logger<Program>.Info(
+            $"Profiling GSharp Chunk Benchmark for E={e}, ChunkSize={chunkSize} (Iterations: {iterations})...");
 
         // Output for AI schedule hints
         var estimatedSeconds = 15 + (iterations * 2); // JIT comp (15s) + fast chunks (2s per iter)
@@ -103,7 +110,8 @@ internal class Program
             sw.Stop();
 
             var throughput = mDigitsPerLoop * chunkSize / (sw.Elapsed.TotalSeconds);
-            Logger<Program>.Info($"Iter {i}: Elapsed {sw.Elapsed.TotalMilliseconds:F2} ms, Throughput: {throughput:F2} M-Digit/s");
+            Logger<Program>.Info(
+                $"Iter {i}: Elapsed {sw.Elapsed.TotalMilliseconds:F2} ms, Throughput: {throughput:F2} M-Digit/s");
         }
     }
 
@@ -138,15 +146,13 @@ internal class Program
 public class FermatBenchmarks
 {
     [Params(1000, 5000, 10000)]
-    public int E
-    {
-        get; set;
-    }
+    public int E { get; set; }
 
     private BigInteger _n;
     private BigInteger _a;
     private BigInteger _exponent;
     private FermatRunner _gsharpRunner = null!;
+    private nint _vramBefore;
 
     [GlobalSetup]
     public void Setup()
@@ -156,6 +162,20 @@ public class FermatBenchmarks
         _a = 2;
         _exponent = _n - 1;
         _gsharpRunner = new FermatRunner(E);
+    }
+
+    [IterationSetup]
+    public void IterationSetup() => CudaDriverApi.cuMemGetInfo_v2(out _vramBefore, out _);
+
+    [IterationCleanup]
+    public void IterationCleanup()
+    {
+        CudaDriverApi.cuMemGetInfo_v2(out nint vramAfter, out _);
+        long leakedMb = (_vramBefore - vramAfter) / 1024 / 1024;
+        if (leakedMb > 0)
+        {
+            Console.WriteLine($"[VRAM LEAK] {leakedMb} MB leaked during iteration.");
+        }
     }
 
     [Benchmark(Baseline = true)]

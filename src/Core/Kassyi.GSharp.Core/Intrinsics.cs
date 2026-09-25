@@ -149,6 +149,12 @@ public static class Gpu
     public static void SyncGrid() => GpuOnlyException.Throw();
 
     /// <summary>
+    /// Executes the provided action, automatically inserting a grid synchronization (<c>cg::this_grid().sync()</c>)
+    /// between each statement in the action body.
+    /// </summary>
+    public static void SyncGrid(Action body) => GpuOnlyException.Throw();
+
+    /// <summary>
     /// Marker method for JIT Constant Folding. Replaced with the literal macro value during runtime compilation.
     /// </summary>
     /// <param name="macroName">The name of the JIT macro parameter.</param>
@@ -298,6 +304,10 @@ public static class Gpu
     [CudaIntrinsic("__shfl_up_sync")]
     public static int ShuffleUpSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
 
+    /// <summary>Exchanges an unsigned integer variable from a thread with a lower ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_up_sync")]
+    public static uint ShuffleUpSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
+
     /// <summary>Exchanges an integer variable based on a bitwise XOR of the caller's lane ID.</summary>
     [CudaIntrinsic("__shfl_xor_sync")]
     public static int ShuffleXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
@@ -345,6 +355,10 @@ public static class Warp
     /// <summary>Exchanges a double-precision floating-point variable from a thread with a higher ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_down_sync")]
     public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32) => GpuOnlyException.Throw<double>();
+
+    /// <summary>Exchanges an unsigned integer variable from a thread with a lower ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_up_sync")]
+    public static uint ShuffleUpSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
 
     // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051

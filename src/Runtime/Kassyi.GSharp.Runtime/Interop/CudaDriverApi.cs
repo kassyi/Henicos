@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 
-[assembly: SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants", Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
+[assembly:
+    SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
+        Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]
 
 namespace Kassyi.GSharp.Runtime.Interop;
 
@@ -80,6 +82,10 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemGetInfo_v2(out nint free, out nint total);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuDeviceGet(out int device, int ordinal);
 
     [LibraryImport(DllName)]
@@ -90,12 +96,10 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxDestroy_v2(IntPtr ctx);
 
-    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPushCurrent_v2(IntPtr ctx);
 
-    // ReSharper disable once UnusedMember.Global -- Exposed for runtime context management
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuCtxPopCurrent_v2(out IntPtr pctx);
@@ -176,6 +180,10 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyDtoDAsync_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static unsafe partial CUresult cuLaunchKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
@@ -194,4 +202,38 @@ public static partial class CudaDriverApi
         uint sharedMemBytes,
         IntPtr hStream,
         void** kernelParams);
+
+    // CUDA Stream APIs
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamCreate(out IntPtr phStream, uint flags);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamDestroy(IntPtr hStream);
+
+    // CUDA Graph APIs
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamBeginCapture(IntPtr hStream, int mode);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamEndCapture(IntPtr hStream, out IntPtr phGraph);
+
+    [LibraryImport(DllName, EntryPoint = "cuGraphInstantiate_v2")]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphInstantiate(out IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, nuint bufferSize);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphExecDestroy(IntPtr hGraphExec);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuGraphDestroy(IntPtr hGraph);
 }

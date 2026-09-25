@@ -189,9 +189,9 @@ struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext_OperandsContext;
 struct Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext;
 inline __device__ void Device_CompareTo(Kassyi_GSharp_Stdlib_Math_Contexts_BigIntKernelContext ctx, unsigned long long* dResult);
 
-inline __device__ void Device_Unpack16(const unsigned int* dSrc, unsigned int* dDst1, unsigned int* dDst2, int n, int numWords);
+inline __device__ void DeviceUnpack16(const unsigned int* dSrc, unsigned int* dDst1, unsigned int* dDst2, int n, int numWords);
 
-inline __device__ void Device_Transpose_32x32(const unsigned int* idata, unsigned int* odata, int width, int height);
+inline __device__ void DeviceTranspose32x32(const unsigned int* idata, unsigned int* odata, int width, int height);
 
 inline __device__ int GetBitLength_Device(unsigned int* data, int numWords);
 
@@ -416,7 +416,7 @@ atomicMax(&dResult[0],val);
 }
 }
 
-inline __device__ void Device_Unpack16(const unsigned int* dSrc, unsigned int* dDst1, unsigned int* dDst2, int n, int numWords){
+inline __device__ void DeviceUnpack16(const unsigned int* dSrc, unsigned int* dDst1, unsigned int* dDst2, int n, int numWords){
 for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x)
 {
 unsigned int val=0;
@@ -438,7 +438,7 @@ dDst2[i]=val;
 }
 }
 
-inline __device__ void Device_Transpose_32x32(const unsigned int* idata, unsigned int* odata, int width, int height){
+inline __device__ void DeviceTranspose32x32(const unsigned int* idata, unsigned int* odata, int width, int height){
 extern __shared__ uint32_t s_mem[];
 ;
 auto gridX=(width+31)/32;
@@ -1287,7 +1287,7 @@ args.ApplyTwiddleAfter=true;
 args.MaxBlocks=length1;
 Device_NTT_Shared_Row(args);
 cg::this_grid().sync();
-Device_Transpose_32x32(buffer,temporaryBuffer,length2,length1);
+DeviceTranspose32x32(buffer,temporaryBuffer,length2,length1);
 cg::this_grid().sync();
 args.Buffer=temporaryBuffer;
 args.CurrentL=length1;
@@ -1297,12 +1297,12 @@ args.MaxBlocks=length2;
 Device_NTT_Shared_Row(args);
 args.Buffer=buffer;
 cg::this_grid().sync();
-Device_Transpose_32x32(temporaryBuffer,buffer,length1,length2);
+DeviceTranspose32x32(temporaryBuffer,buffer,length1,length2);
 cg::this_grid().sync();
 }
 else
 {
-Device_Transpose_32x32(buffer,temporaryBuffer,length2,length1);
+DeviceTranspose32x32(buffer,temporaryBuffer,length2,length1);
 cg::this_grid().sync();
 args.Buffer=temporaryBuffer;
 args.CurrentL=length1;
@@ -1312,7 +1312,7 @@ args.MaxBlocks=length2;
 Device_NTT_Shared_Row(args);
 args.Buffer=buffer;
 cg::this_grid().sync();
-Device_Transpose_32x32(temporaryBuffer,buffer,length1,length2);
+DeviceTranspose32x32(temporaryBuffer,buffer,length1,length2);
 cg::this_grid().sync();
 args.CurrentL=length2;
 args.ApplyTwiddleBefore=false;

@@ -45,18 +45,13 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
     /// Aligns the radix point between this instance and another <see cref="GpuBigFloat{TSize}"/>.
     /// </summary>
     /// <param name="other">The operand to align against.</param>
-    /// <param name="alignedThis">The resulting aligned this operand.</param>
-    /// <param name="alignedOther">The resulting aligned other operand.</param>
-    /// <param name="stickyThis">The sticky bit preserved from right-shifting this operand.</param>
-    /// <param name="stickyOther">The sticky bit preserved from right-shifting the other operand.</param>
-    /// <returns>The exponent difference $\Delta E$.</returns>
-    public readonly void AlignRadixPoint(GpuBigFloat<TSize> other, out GpuBigFloat<TSize> alignedThis,
-        out GpuBigFloat<TSize> alignedOther, out bool stickyThis, out bool stickyOther)
+    /// <returns>A tuple containing the aligned operands and preserved bits.</returns>
+    public readonly (GpuBigFloat<TSize> AlignedThis, GpuBigFloat<TSize> AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigFloat<TSize> other)
     {
-        UFloat.AlignRadixPoint(other.UFloat, out var alignedUThis, out var alignedUOther, out stickyThis,
-            out stickyOther);
-        alignedThis = new GpuBigFloat<TSize>(alignedUThis, IsNegative);
-        alignedOther = new GpuBigFloat<TSize>(alignedUOther, other.IsNegative);
+        var (alignedUThis, alignedUOther, guard, round, stickyThis, stickyOther) = UFloat.AlignRadixPoint(other.UFloat);
+        var alignedThis = new GpuBigFloat<TSize>(alignedUThis, IsNegative);
+        var alignedOther = new GpuBigFloat<TSize>(alignedUOther, other.IsNegative);
+        return (alignedThis, alignedOther, guard, round, stickyThis, stickyOther);
     }
 
     /// <summary>
@@ -77,20 +72,14 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
     /// <returns>The rounded <see cref="GpuBigFloat{TSize}"/>.</returns>
     public readonly GpuBigFloat<TSize> Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit)
     {
-        var effectiveMode = mode;
-        if (IsNegative)
-        {
-            if (mode == GpuBigFloatRoundingMode.RoundTowardPositiveInfinity)
-            {
-                effectiveMode = GpuBigFloatRoundingMode.RoundTowardNegativeInfinity;
-            }
-            else if (mode == GpuBigFloatRoundingMode.RoundTowardNegativeInfinity)
-            {
-                effectiveMode = GpuBigFloatRoundingMode.RoundTowardPositiveInfinity;
-            }
-        }
+        uint m = (uint)mode;
+        uint isNeg = IsNegative ? 1u : 0u;
+        uint isDirected = (m >= 2u) ? 1u : 0u;
+        
+        uint toggle = isNeg & isDirected;
+        uint effectiveM = m ^ toggle;
 
-        return new GpuBigFloat<TSize>(UFloat.Round(effectiveMode, guardBit, roundBit, stickyBit), IsNegative);
+        return new GpuBigFloat<TSize>(UFloat.Round((GpuBigFloatRoundingMode)effectiveM, guardBit, roundBit, stickyBit), IsNegative);
     }
 
     /// <summary>
@@ -110,43 +99,35 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
     /// </summary>
     public readonly GpuBigFloat<TSize> Add(GpuBigFloat<TSize> other)
     {
-        if (IsNegative == other.IsNegative)
-        {
-            return new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
-        }
-        else
-        {
-            return SubtractMagnitude(this, other);
-        }
+        bool isSameSign = IsNegative == other.IsNegative;
+        var addResult = new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
+        var subResult = SubtractMagnitude(this, other);
+        return isSameSign ? addResult : subResult;
     }
 
     public readonly GpuBigFloat<TSize> Subtract(GpuBigFloat<TSize> other)
     {
-        if (IsNegative != other.IsNegative)
-        {
-            return new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
-        }
-        else
-        {
-            return SubtractMagnitude(this, other);
-        }
+        bool isDiffSign = IsNegative != other.IsNegative;
+        var addResult = new GpuBigFloat<TSize>(UFloat.Add(other.UFloat), IsNegative);
+        var subResult = SubtractMagnitude(this, other);
+        return isDiffSign ? addResult : subResult;
     }
 
     private static GpuBigFloat<TSize> SubtractMagnitude(GpuBigFloat<TSize> a, GpuBigFloat<TSize> b)
     {
-        var cmp = a.UFloat.CompareTo(b.UFloat);
-        if (cmp > 0)
-        {
-            return new GpuBigFloat<TSize>(a.UFloat.Subtract(b.UFloat), a.IsNegative);
-        }
-        else if (cmp < 0)
-        {
-            return new GpuBigFloat<TSize>(b.UFloat.Subtract(a.UFloat), !a.IsNegative);
-        }
-        else
-        {
-            return new GpuBigFloat<TSize>(new GpuBigUFloat<TSize>(new GpuUIntBigInteger<TSize>(default), 0), false);
-        }
+        int cmp = a.UFloat.CompareTo(b.UFloat);
+        bool aIsBigger = cmp > 0;
+
+        var larger = aIsBigger ? a.UFloat : b.UFloat;
+        var smaller = aIsBigger ? b.UFloat : a.UFloat;
+        bool resultSign = aIsBigger ? a.IsNegative : !a.IsNegative;
+
+        var subResult = larger.Subtract(smaller);
+        
+        var zeroResult = new GpuBigFloat<TSize>(new GpuBigUFloat<TSize>(new GpuUIntBigInteger<TSize>(default), 0), false);
+        var diffResult = new GpuBigFloat<TSize>(subResult, resultSign);
+
+        return cmp == 0 ? zeroResult : diffResult;
     }
 
 

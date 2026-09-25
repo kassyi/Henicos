@@ -398,7 +398,7 @@ internal static class StructTranspiler
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,
         ref TranspileContext context)
     {
-        if (memberSymbol.HasAttribute(KnownAttributes.GpuConst))
+        if (memberSymbol.HasAttribute(KnownAttributes.GpuReadOnly))
         {
             context.Writer.Append("const ");
         }

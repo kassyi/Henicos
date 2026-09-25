@@ -68,6 +68,11 @@ public struct TranspileContext(
     public int CallableDepth = 0;
 
     /// <summary>
+    /// Tracks the depth of active Gpu.SyncGrid macro scopes to automatically inject grid synchronization barriers between statements.
+    /// </summary>
+    public int AutoSyncGridDepth = 0;
+
+    /// <summary>
     /// Gets the Roslyn semantic model associated with the syntax tree being transpiled.
     /// </summary>
     public SemanticModel SemanticModel { get; } = semanticModel;

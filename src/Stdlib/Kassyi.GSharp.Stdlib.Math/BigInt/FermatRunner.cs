@@ -16,10 +16,7 @@ public class FermatRunner : IDisposable
     ///   <item><description><see cref="E"/>: <c>F_n = 2^(2^E) + 1</c></description></item>
     /// </list>
     /// </remarks>
-    public int E
-    {
-        get;
-    }
+    public int E { get; }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
     public int OutNumWords => _outNumWords;
@@ -128,12 +125,16 @@ public class FermatRunner : IDisposable
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
 
         // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
-        GpuBigIntFermatKernelsWrapper.LaunchKernel_FermatReduce_Mega_Device(
+        // Executed in a single block (gridDimX = 1) with 256 threads to allow block-wide synchronization (__syncthreads).
+        GpuBigIntFermatKernelsWrapper.LaunchKernelFermatReduceMega_Device(
             _valueT.DevicePointer, _mulResult.DevicePointer, _quotient.DevicePointer, _remainder.DevicePointer,
             _temp.DevicePointer, _remainderMask.DevicePointer,
             _numWords, _outNumWords, 2 * E + 1, _exponent,
-            gridDimX: 1, blockDimX: 1
+            gridDimX: 1, blockDimX: 256
         );
+
+        // FIX: The Mega-Kernel writes the reduced output to _remainder, but it was never swapped back to _valueT.
+        (_valueT, _remainder) = (_remainder, _valueT);
     }
 
     /// <summary>Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.</summary>

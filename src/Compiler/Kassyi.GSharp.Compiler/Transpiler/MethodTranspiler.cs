@@ -302,7 +302,7 @@ public static class MethodTranspiler
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
             var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
-            if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuConst))
+            if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly))
             {
                 context.Writer.Append("const ");
             }

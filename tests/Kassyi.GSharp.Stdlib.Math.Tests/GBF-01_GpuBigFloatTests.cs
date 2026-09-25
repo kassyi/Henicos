@@ -109,11 +109,11 @@ public class GBF01_GpuBigFloatTests
         var floatA = new GpuBigFloat<LimbBuffer4>(dummySignificand, expA, isNegative: false);
         var floatB = new GpuBigFloat<LimbBuffer4>(dummySignificand, expB, isNegative: false);
 
-        floatA.AlignRadixPoint(floatB, out var alignedA, out var alignedB, out _, out _);
+        var (alignedA, alignedB, _, _, _, _) = floatA.AlignRadixPoint(floatB);
         Assert.Equal(System.Math.Max(expA, expB), alignedA.UFloat.Exponent);
         Assert.Equal(System.Math.Max(expA, expB), alignedB.UFloat.Exponent);
 
-        floatA.UFloat.AlignRadixPoint(floatB.UFloat, out var alignedUA, out var alignedUB, out _, out _);
+        var (alignedUA, alignedUB, _, _, _, _) = floatA.UFloat.AlignRadixPoint(floatB.UFloat);
         Assert.Equal(System.Math.Max(expA, expB), alignedUA.Exponent);
         Assert.Equal(System.Math.Max(expA, expB), alignedUB.Exponent);
     }
@@ -152,7 +152,7 @@ public class GBF01_GpuBigFloatTests
         var floatHighExp = new GpuBigFloat<LimbBuffer4>(significand, exponent: 100, isNegative: false);
         var floatLowExp = new GpuBigFloat<LimbBuffer4>(significand, exponent: 0, isNegative: false);
 
-        floatHighExp.AlignRadixPoint(floatLowExp, out var alignedHighExp, out var alignedLowExp, out _, out _);
+        var (alignedHighExp, alignedLowExp, _, _, _, _) = floatHighExp.AlignRadixPoint(floatLowExp);
 
         Assert.Equal(100, alignedHighExp.UFloat.Exponent);
         Assert.Equal(100, alignedLowExp.UFloat.Exponent);

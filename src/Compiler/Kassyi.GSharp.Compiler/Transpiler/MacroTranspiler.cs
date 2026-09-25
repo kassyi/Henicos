@@ -47,6 +47,7 @@ internal static class MacroTranspiler
             "ForUnroll" => TranspileForUnroll(invocation, ref context, symbol),
             "GridStrideLoop" => TranspileGridStrideLoop(invocation, ref context, symbol),
             "SingleThread" => TranspileSingleThread(invocation, ref context),
+            "SyncGrid" when symbol.Parameters.Length == 1 => TranspileSyncGrid(invocation, ref context),
             _ => false
         };
     }
@@ -244,9 +245,122 @@ internal static class MacroTranspiler
         }
 
         context.Writer.AppendLine();
-        EmitUnrolledBody(ref context, lambdaExpr.Body);
+
+        // Suppress AutoSyncGrid in SingleThread blocks to prevent GPU deadlock (grid sync requires all threads)
+        var prevDepth = context.AutoSyncGridDepth;
+        context.AutoSyncGridDepth = 0;
+        try
+        {
+            EmitUnrolledBody(ref context, lambdaExpr.Body);
+        }
+        finally
+        {
+            context.AutoSyncGridDepth = prevDepth;
+        }
 
         return true;
+    }
+
+    private static bool TranspileSyncGrid(InvocationExpressionSyntax invocation, ref TranspileContext context)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count != 1 || args[0].Expression is not LambdaExpressionSyntax lambdaExpr)
+        {
+            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                GSharpDiagnostics.UnsupportedSyntax,
+                invocation.GetLocation(),
+                "Gpu.SyncGrid requires a single lambda expression argument"));
+            return false;
+        }
+
+        if (lambdaExpr.Body is BlockSyntax block)
+        {
+            var flatStatements = RoslynToCudaVisitor.FlattenStatements(block.Statements, context.SemanticModel);
+            if (!HasExecutableStatements(flatStatements))
+            {
+                return true; // [WHY] Completely eliminate empty Gpu.SyncGrid(() => {}) as a No-op (zero CUDA C++ output).
+            }
+
+            var isNested = context.AutoSyncGridDepth > 0;
+            context.AutoSyncGridDepth++;
+            try
+            {
+                if (isNested)
+                {
+                    EmitFlattenedSyncGridBlock(flatStatements, ref context);
+                }
+                else
+                {
+                    using (context.Writer.Scope())
+                    {
+                        EmitFlattenedSyncGridBlock(flatStatements, ref context);
+                    }
+                }
+            }
+            finally
+            {
+                context.AutoSyncGridDepth--;
+            }
+
+            return true;
+        }
+
+        if (lambdaExpr.Body is ExpressionSyntax expr)
+        {
+            var isNested = context.AutoSyncGridDepth > 0;
+            context.AutoSyncGridDepth++;
+            try
+            {
+                if (isNested)
+                {
+                    context.Visitor.Visit(expr);
+                    context.Writer.AppendSemiColonLine();
+                }
+                else
+                {
+                    using (context.Writer.Scope())
+                    {
+                        context.Visitor.Visit(expr);
+                        context.Writer.AppendSemiColonLine();
+                    }
+                }
+            }
+            finally
+            {
+                context.AutoSyncGridDepth--;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasExecutableStatements(IReadOnlyList<StatementSyntax> statements)
+    {
+        for (var i = 0; i < statements.Count; i++)
+        {
+            if (statements[i] is not EmptyStatementSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void EmitFlattenedSyncGridBlock(IReadOnlyList<StatementSyntax> flatStatements, ref TranspileContext context)
+    {
+        for (var i = 0; i < flatStatements.Count; i++)
+        {
+            var stmt = flatStatements[i];
+            context.Visitor.Visit(stmt);
+            context.Writer.AppendLine();
+            if (context.Visitor.ShouldInsertAutoSync(flatStatements, i))
+            {
+                context.Writer.AppendLine("cg::this_grid().sync();");
+            }
+        }
     }
 
     private static void EmitUnrolledBody(ref TranspileContext context, SyntaxNode rewrittenBody)
@@ -256,10 +370,18 @@ internal static class MacroTranspiler
             switch (rewrittenBody)
             {
                 case BlockSyntax block:
-                    foreach (var stmt in block.Statements)
+                    var flatStatements = context.AutoSyncGridDepth > 0
+                        ? RoslynToCudaVisitor.FlattenStatements(block.Statements, context.SemanticModel)
+                        : block.Statements;
+                    for (var i = 0; i < flatStatements.Count; i++)
                     {
+                        var stmt = flatStatements[i];
                         context.Visitor.Visit(stmt);
                         context.Writer.AppendLine();
+                        if (context.Visitor.ShouldInsertAutoSync(flatStatements, i))
+                        {
+                            context.Writer.AppendLine("cg::this_grid().sync();");
+                        }
                     }
 
                     break;

@@ -43,13 +43,112 @@ The unmanaged struct type representing the significand storage size (e.g., `Vect
 
 ## Methods
 
-| Name                                                                                                      | Description                                                                     |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `AlignRadixPoint(GpuBigFloat<TSize>, out GpuBigFloat<TSize>, out GpuBigFloat<TSize>, out bool, out bool)` | Aligns the radix point between this instance and another floating point number. |
-| `Normalize(int, bool)`                                                                                    | Normalizes the floating-point significand and adjusts the exponent.             |
-| `Round(GpuBigFloatRoundingMode, bool, bool, bool)`                                                        | Applies IEEE 754 compliant rounding.                                            |
-| `Add(GpuBigFloat<TSize>)`                                                                                 | Adds two `GpuBigFloat<TSize>` values.                                           |
-| `Subtract(GpuBigFloat<TSize>)`                                                                            | Subtracts another `GpuBigFloat<TSize>` from this value.                         |
+| Name                                                                                             | Description                                                                                                                            |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [AlignRadixPoint(GpuBigFloat<TSize>)](#alignradixpointgpubigfloattsize)                          | Aligns the radix point between this instance and another floating point number, returning aligned values and rounding bits as a Tuple. |
+| [Normalize(int, bool)](#normalizeint-bool)                                                       | Normalizes the floating-point significand and adjusts the exponent.                                                                    |
+| [Round(GpuBigFloatRoundingMode, bool, bool, bool)](#roundgpubigfloatroundingmode-bool-bool-bool) | Applies IEEE 754 compliant rounding.                                                                                                   |
+| [Add(GpuBigFloat<TSize>)](#addgpubigfloattsize)                                                  | Adds two GpuBigFloat<TSize> values.                                                                                                    |
+| [Subtract(GpuBigFloat<TSize>)](#subtractgpubigfloattsize)                                        | Subtracts another GpuBigFloat<TSize> from this value.                                                                                  |
+
+## Methods Detail
+
+### AlignRadixPoint(GpuBigFloat\<TSize\>)
+
+Aligns the radix point between this instance and another floating point number, returning aligned values and rounding bits.
+
+```csharp
+public (GpuBigFloat<TSize> AlignedThis, GpuBigFloat<TSize> AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigFloat<TSize> other);
+```
+
+#### Parameters
+
+`other` _GpuBigFloat\<TSize\>_<br>
+The other floating point number to align against.
+
+#### Returns
+
+A tuple containing the aligned `this` operand, aligned `other` operand, and the preserved guard, round, and sticky bits.
+
+### Normalize(int, bool)
+
+Normalizes the floating-point significand and adjusts the exponent.
+
+```csharp
+public GpuBigFloat<TSize> Normalize(int leadingZeros = 0, bool carryOut = false);
+```
+
+#### Parameters
+
+`leadingZeros` _int_<br>
+The number of leading zeros in the significand.
+
+`carryOut` _bool_<br>
+A value indicating whether a carry-out occurred in the previous operation.
+
+#### Returns
+
+A normalized `GpuBigFloat<TSize>`.
+
+### Round(GpuBigFloatRoundingMode, bool, bool, bool)
+
+Applies IEEE 754 compliant rounding.
+
+```csharp
+public GpuBigFloat<TSize> Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit);
+```
+
+#### Parameters
+
+`mode` _GpuBigFloatRoundingMode_<br>
+The IEEE 754 rounding mode to apply.
+
+`guardBit` _bool_<br>
+The guard bit.
+
+`roundBit` _bool_<br>
+The round bit.
+
+`stickyBit` _bool_<br>
+The sticky bit.
+
+#### Returns
+
+The rounded `GpuBigFloat<TSize>`.
+
+### Add(GpuBigFloat\<TSize\>)
+
+Adds two `GpuBigFloat<TSize>` values.
+
+```csharp
+public GpuBigFloat<TSize> Add(GpuBigFloat<TSize> other);
+```
+
+#### Parameters
+
+`other` _GpuBigFloat\<TSize\>_<br>
+The value to add.
+
+#### Returns
+
+The sum as a new `GpuBigFloat<TSize>`.
+
+### Subtract(GpuBigFloat\<TSize\>)
+
+Subtracts another `GpuBigFloat<TSize>` value.
+
+```csharp
+public GpuBigFloat<TSize> Subtract(GpuBigFloat<TSize> other);
+```
+
+#### Parameters
+
+`other` _GpuBigFloat\<TSize\>_<br>
+The value to subtract.
+
+#### Returns
+
+The difference as a new `GpuBigFloat<TSize>`.
 
 ## Examples
 
@@ -87,7 +186,7 @@ public class Example
         {
             floatVal = new GpuBigFloat<LimbBuffer8>(floatVal.UFloat, isNegative: false);
         }
-        
+
         Console.WriteLine($"Computed Float: Significand[0]={floatVal.UFloat.Significand.Limbs[0]}, Exponent={floatVal.UFloat.Exponent}, IsNegative={floatVal.IsNegative}");
     }
 }

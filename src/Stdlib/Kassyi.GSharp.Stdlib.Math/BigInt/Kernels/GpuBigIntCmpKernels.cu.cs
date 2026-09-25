@@ -12,7 +12,13 @@ public static class GpuBigIntCmpKernels
     {
         Gpu.GridStrideLoop(numWords, i =>
         {
-            if (dA[i] != 0)
+            uint notZero = dA[i] != 0 ? 1u : 0u;
+            uint mask = Gpu.ActiveMask();
+            for (uint offset = 16; offset > 0; offset /= 2)
+            {
+                notZero |= Gpu.ShuffleDownSync(mask, notZero, offset);
+            }
+            if ((ThreadIndex.X & 31) == 0 && notZero != 0)
             {
                 Gpu.AtomicOr(ref dResult[0], 1);
             }
@@ -24,19 +30,25 @@ public static class GpuBigIntCmpKernels
     {
         Gpu.GridStrideLoop(numWords, i =>
         {
+            uint notOne = 0;
             if (i == 0)
             {
-                if (dA[0] != 1)
-                {
-                    Gpu.AtomicOr(ref dResult[0], 1);
-                }
+                notOne = dA[0] != 1 ? 1u : 0u;
             }
             else
             {
-                if (dA[i] != 0)
-                {
-                    Gpu.AtomicOr(ref dResult[0], 1);
-                }
+                notOne = dA[i] != 0 ? 1u : 0u;
+            }
+
+            uint mask = Gpu.ActiveMask();
+            for (uint offset = 16; offset > 0; offset /= 2)
+            {
+                notOne |= Gpu.ShuffleDownSync(mask, notOne, offset);
+            }
+
+            if ((ThreadIndex.X & 31) == 0 && notOne != 0)
+            {
+                Gpu.AtomicOr(ref dResult[0], 1);
             }
         });
     }
@@ -48,14 +60,30 @@ public static class GpuBigIntCmpKernels
         {
             var wa = dA[i];
             var wb = dB[i];
+            ulong val = 0;
             if (wa != wb)
             {
                 // Pack index into upper 32 bits, and comparison result (2 if >, 1 if <) into lower 32 bits
                 long diff = (long)wa - (long)wb;
                 var signMask = (ulong)(diff >> 63);
                 var resultBits = 2ul - (signMask & 1ul);
-                var val = ((ulong)i << 32) | resultBits;
+                val = ((ulong)i << 32) | resultBits;
+            }
 
+            uint mask = Gpu.ActiveMask();
+            for (uint offset = 16; offset > 0; offset /= 2)
+            {
+                uint high = Gpu.ShuffleDownSync(mask, (uint)(val >> 32), offset);
+                uint low = Gpu.ShuffleDownSync(mask, (uint)val, offset);
+                ulong otherVal = ((ulong)high << 32) | low;
+                if (otherVal > val)
+                {
+                    val = otherVal;
+                }
+            }
+
+            if ((ThreadIndex.X & 31) == 0 && val != 0)
+            {
                 // Emits C++ atomicMax
                 Gpu.AtomicMax(ref dResult[0], val);
             }
@@ -68,6 +96,7 @@ public static class GpuBigIntCmpKernels
         Gpu.GridStrideLoop(numWords, i =>
         {
             var w = dA[i];
+            uint totalBits = 0;
             if (w != 0)
             {
                 uint bitLen = 0;
@@ -76,7 +105,21 @@ public static class GpuBigIntCmpKernels
                     bitLen++;
                     w >>= 1;
                 }
-                uint totalBits = (uint)(i * 32) + bitLen;
+                totalBits = (uint)(i * 32) + bitLen;
+            }
+
+            uint mask = Gpu.ActiveMask();
+            for (uint offset = 16; offset > 0; offset /= 2)
+            {
+                uint otherVal = Gpu.ShuffleDownSync(mask, totalBits, offset);
+                if (otherVal > totalBits)
+                {
+                    totalBits = otherVal;
+                }
+            }
+
+            if ((ThreadIndex.X & 31) == 0 && totalBits != 0)
+            {
                 Gpu.AtomicMax(ref dResult[0], totalBits);
             }
         });

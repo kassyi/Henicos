@@ -450,62 +450,32 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     }
 
     /// <summary>Gets a value indicating whether this big integer is an even number.</summary>
-    public bool IsEven
+    public bool GetIsEven()
     {
-        get
-        {
-            var word = ArrayPool<uint>.Shared.Rent(1);
-            try
-            {
-                Context.Provider.CopyDeviceToHost(word, DevicePointer, 1);
-                return (word[0] & 1) == 0;
-            }
-            finally
-            {
-                ArrayPool<uint>.Shared.Return(word);
-            }
-        }
+        var word = Context.Provider.ReadWord(DevicePointer);
+        return (word & 1) == 0;
     }
 
-    /// <summary>Gets or sets the sign bit of this integer (stored in the MSB of the highest word).</summary>
-    public bool IsNegative
+    /// <summary>Gets the sign bit of this integer (stored in the MSB of the highest word).</summary>
+    public bool GetIsNegative()
     {
-        get
-        {
-            var word = ArrayPool<uint>.Shared.Rent(1);
-            try
-            {
-                Context.Provider.CopyDeviceToHost(word, IntPtr.Add(DevicePointer, (NumWords - 1) * 4), 1);
-                return (word[0] & 0x80000000) != 0;
-            }
-            finally
-            {
-                ArrayPool<uint>.Shared.Return(word);
-            }
-        }
-        set
-        {
-            var word = ArrayPool<uint>.Shared.Rent(1);
-            try
-            {
-                var ptr = IntPtr.Add(DevicePointer, (NumWords - 1) * 4);
-                Context.Provider.CopyDeviceToHost(word, ptr, 1);
-                if (value)
-                {
-                    word[0] |= 0x80000000;
-                }
-                else
-                {
-                    word[0] &= 0x7FFFFFFF;
-                }
+        var word = Context.Provider.ReadWord(DevicePointer, NumWords - 1);
+        return (word & 0x80000000) != 0;
+    }
 
-                Context.Provider.CopyHostToDevice(ptr, word, 1);
-            }
-            finally
-            {
-                ArrayPool<uint>.Shared.Return(word);
-            }
+    /// <summary>Sets the sign bit of this integer (stored in the MSB of the highest word).</summary>
+    public void SetIsNegative(bool value)
+    {
+        var word = Context.Provider.ReadWord(DevicePointer, NumWords - 1);
+        if (value)
+        {
+            word |= 0x80000000;
         }
+        else
+        {
+            word &= 0x7FFFFFFF;
+        }
+        Context.Provider.WriteWord(DevicePointer, NumWords - 1, word);
     }
 
     /// <summary>

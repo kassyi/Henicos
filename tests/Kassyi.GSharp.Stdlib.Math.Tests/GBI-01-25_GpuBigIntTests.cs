@@ -161,6 +161,39 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableTheory]
         [InlineData(GpuExecutionEngine.GSharpAot)]
         [InlineData(GpuExecutionEngine.LegacyNative)]
+        public void Test_Add_CarryPropagation_AllOnes(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 2 + 8, engine); // Extra capacity just in case
+            
+            // Create an array with all bits set to 1, except the highest bit of the highest word
+            // to ensure it is treated as a positive number by BigInteger.
+            var arrA = new uint[TestSizeWords];
+            for (int i = 0; i < TestSizeWords; i++)
+            {
+                arrA[i] = 0xFFFFFFFF;
+            }
+            arrA[TestSizeWords - 1] = 0x7FFFFFFF;
+
+            var arrB = new uint[TestSizeWords];
+            arrB[0] = 1; // Ripple carry generator
+
+            var bigA = ToBigInteger(arrA);
+            var bigB = ToBigInteger(arrB);
+
+            using var gpuA = new GpuUIntBigInteger(context, arrA);
+            using var gpuB = new GpuUIntBigInteger(context, arrB);
+            using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+            
+            gpuResult.Value = gpuA + gpuB;
+
+            AssertGpuResultEqualsCpu(bigA + bigB, gpuResult, TestSizeWords);
+        }
+
+        [Trait("RoadmapId", "GBI-10")]
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [InlineData(GpuExecutionEngine.LegacyNative)]
         public void Test_Sub_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
@@ -414,14 +447,20 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-14")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpAot)]
-        [InlineData(GpuExecutionEngine.LegacyNative)]
-        public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine)
+        [InlineData(GpuExecutionEngine.GSharpAot, 143)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
+        [InlineData(GpuExecutionEngine.GSharpAot, 1024)] // Edge case: shift >= total bits (TestSizeWords * 32 = 256*32 = 8192)
+        [InlineData(GpuExecutionEngine.GSharpAot, 8192)] // Edge case: shift == total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
+        [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
+        [InlineData(GpuExecutionEngine.LegacyNative, 143)]
+        [InlineData(GpuExecutionEngine.LegacyNative, 0)]
+        public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine, int shiftBits)
         {
-        CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 5);
-            int shiftBits = 143; // Random shift
 
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA << shiftBits;
@@ -436,14 +475,20 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
 
         [Trait("RoadmapId", "GBI-14")]
         [SkippableTheory]
-        [InlineData(GpuExecutionEngine.GSharpAot)]
-        [InlineData(GpuExecutionEngine.LegacyNative)]
-        public void Test_ShiftRight_Correctness(GpuExecutionEngine engine)
+        [InlineData(GpuExecutionEngine.GSharpAot, 143)]
+        [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
+        [InlineData(GpuExecutionEngine.GSharpAot, 1024)] // Edge case: shift >= total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 8192)] // Edge case: shift == total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
+        [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
+        [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
+        [InlineData(GpuExecutionEngine.LegacyNative, 143)]
+        [InlineData(GpuExecutionEngine.LegacyNative, 0)]
+        public void Test_ShiftRight_Correctness(GpuExecutionEngine engine, int shiftBits)
         {
-        CudaCapability.EnsureGpuAvailable();
+            CudaCapability.EnsureGpuAvailable();
             using var context = new GpuContext(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 6);
-            int shiftBits = 143; // Random shift
 
             var bigA = ToBigInteger(arrA);
             var expectedBig = bigA >> shiftBits;
@@ -493,6 +538,54 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.True(gpuC <= gpuA);
         }
 
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-15")]
+        public void Test_ComparisonOperators_ReductionEdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 2, engine);
+
+            // Edge Case: All zeros
+            var arrZero1 = new uint[TestSizeWords];
+            var arrZero2 = new uint[TestSizeWords];
+            
+            // Edge Case: Only LSB differs (requires scanning down to the very first bit)
+            var arrLsb1 = GenerateRandomArray(TestSizeWords, 99);
+            var arrLsb2 = arrLsb1.ToArray();
+            arrLsb1[0] |= 1u;
+            arrLsb2[0] &= ~1u; // Force arrLsb1 > arrLsb2 by 1 bit at the lowest position
+            
+            // Edge Case: Only MSB differs
+            var arrMsb1 = GenerateRandomArray(TestSizeWords, 100);
+            var arrMsb2 = arrMsb1.ToArray();
+            arrMsb1[TestSizeWords - 1] |= 0x80000000;
+            arrMsb2[TestSizeWords - 1] &= 0x7FFFFFFF;
+
+            using var gpuZero1 = new GpuUIntBigInteger(context, arrZero1);
+            using var gpuZero2 = new GpuUIntBigInteger(context, arrZero2);
+            
+            using var gpuLsb1 = new GpuUIntBigInteger(context, arrLsb1);
+            using var gpuLsb2 = new GpuUIntBigInteger(context, arrLsb2);
+            
+            using var gpuMsb1 = new GpuUIntBigInteger(context, arrMsb1);
+            using var gpuMsb2 = new GpuUIntBigInteger(context, arrMsb2);
+
+            // Zeros
+            Assert.True(gpuZero1 == gpuZero2);
+            Assert.False(gpuZero1 > gpuZero2);
+            Assert.False(gpuZero1 < gpuZero2);
+            
+            // LSB
+            Assert.True(gpuLsb1 > gpuLsb2);
+            Assert.True(gpuLsb2 < gpuLsb1);
+            Assert.False(gpuLsb1 == gpuLsb2);
+            
+            // MSB
+            Assert.True(gpuMsb1 > gpuMsb2);
+            Assert.True(gpuMsb2 < gpuMsb1);
+        }
+
         [Fact(Skip = "未実装: GBI-16 (インクリメント/デクリメント演算子 ++, --)")]
         [Trait("RoadmapId", "GBI-16")]
         [Trait("Category", "Operator")]
@@ -534,6 +627,79 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             using var gpuMod = new GpuUIntBigInteger(context, TestSizeWords);
             GpuBigIntDivRem.Mod(gpuA, gpuB, gpuMod);
             AssertGpuResultEqualsCpu(bigA % bigB, gpuMod);
+        }
+
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-17")]
+        public void Test_DivRem_EdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 3, engine);
+
+            var arrA = new uint[TestSizeWords];
+            var arrB = new uint[TestSizeWords];
+            arrA[0] = 5;
+            arrB[0] = 10;
+            
+            // Case 1: a < b
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(0, gpuQ);
+                AssertGpuResultEqualsCpu(5, gpuR);
+            }
+
+            // Case 2: a == b
+            arrA[0] = 10;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(1, gpuQ);
+                AssertGpuResultEqualsCpu(0, gpuR);
+            }
+
+            // Case 3: b is a power of 2
+            arrA[0] = 100;
+            arrB[0] = 16;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(6, gpuQ);
+                AssertGpuResultEqualsCpu(4, gpuR);
+            }
+
+            // Case 4: a = 0
+            arrA[0] = 0;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+                AssertGpuResultEqualsCpu(0, gpuQ);
+                AssertGpuResultEqualsCpu(0, gpuR);
+            }
+
+            // Case 5: Divide by zero (throws)
+            // CUDA Sticky error prevention: intentionally crashing kernel causes CudaErrorLaunchFailed for other tests
+            arrB[0] = 0;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            using (var gpuB = new GpuUIntBigInteger(context, arrB))
+            using (var gpuQ = new GpuUIntBigInteger(context, TestSizeWords))
+            using (var gpuR = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR));
+            }
         }
 
         [SkippableTheory]
@@ -790,18 +956,18 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.True(gpuOne.IsOne());
             Assert.False(gpuZero.IsOne());
 
-            Assert.True(gpuZero.IsEven);
-            Assert.False(gpuOne.IsEven);
-            Assert.True(gpuEven.IsEven);
+            Assert.True(gpuZero.GetIsEven());
+            Assert.False(gpuOne.GetIsEven());
+            Assert.True(gpuEven.GetIsEven());
 
-            Assert.True(gpuNegative.IsNegative);
-            Assert.False(gpuZero.IsNegative);
+            Assert.True(gpuNegative.GetIsNegative());
+            Assert.False(gpuZero.GetIsNegative());
 
             // Test setter
-            gpuZero.IsNegative = true;
-            Assert.True(gpuZero.IsNegative);
-            gpuZero.IsNegative = false;
-            Assert.False(gpuZero.IsNegative);
+            gpuZero.SetIsNegative(true);
+            Assert.True(gpuZero.GetIsNegative());
+            gpuZero.SetIsNegative(false);
+            Assert.False(gpuZero.GetIsNegative());
         }
 
         [Trait("RoadmapId", "GBI-25")]
@@ -829,6 +995,43 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var actualBig = ToBigInteger(resultArr);
 
             Assert.Equal(expectedSqrt, actualBig);
+        }
+
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-17")]
+        public void Test_Sqrt_EdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 4, engine);
+            var arrA = new uint[TestSizeWords];
+
+            // Case 1: a = 0
+            arrA[0] = 0;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            {
+                using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+                gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
+                AssertGpuResultEqualsCpu(0, gpuResult);
+            }
+
+            // Case 2: a = 1
+            arrA[0] = 1;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            {
+                using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+                gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
+                AssertGpuResultEqualsCpu(1, gpuResult);
+            }
+
+            // Case 3: a = 16 (Power of 2)
+            arrA[0] = 16;
+            using (var gpuA = new GpuUIntBigInteger(context, arrA))
+            {
+                using var gpuResult = new GpuUIntBigInteger(context, TestSizeWords);
+                gpuResult.Value = GpuBigUIntExpr.Sqrt(gpuA);
+                AssertGpuResultEqualsCpu(4, gpuResult);
+            }
         }
 
 
@@ -863,6 +1066,68 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var actual = ToBigInteger(gpuResult.ToHostArray());
 
             Assert.Equal(expected, actual);
+        }
+
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
+        [Trait("RoadmapId", "GBI-17")]
+        public void Test_ModPow_EdgeCases(GpuExecutionEngine engine)
+        {
+            CudaCapability.EnsureGpuAvailable();
+            using var context = new GpuContext(TestSizeWords * 13, engine);
+            var arrBase = new uint[TestSizeWords];
+            var arrExp = new uint[TestSizeWords];
+            var arrMod = new uint[TestSizeWords];
+
+            // Case 1: Mod = 1
+            arrBase[0] = 5;
+            arrExp[0] = 3;
+            arrMod[0] = 1;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+                AssertGpuResultEqualsCpu(0, gpuResult);
+            }
+
+            // Case 2: Base = 0, Exp > 0
+            arrBase[0] = 0;
+            arrExp[0] = 5;
+            arrMod[0] = 7;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+                AssertGpuResultEqualsCpu(0, gpuResult);
+            }
+
+            // Case 3: Exp = 0
+            arrBase[0] = 5;
+            arrExp[0] = 0;
+            arrMod[0] = 7;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult);
+                AssertGpuResultEqualsCpu(1, gpuResult);
+            }
+
+            // Case 4: Divide by zero (Mod = 0)
+            // CUDA Sticky error prevention: intentionally crashing kernel causes CudaErrorLaunchFailed for other tests
+            arrMod[0] = 0;
+            using (var gpuBase = new GpuUIntBigInteger(context, arrBase))
+            using (var gpuExp = new GpuUIntBigInteger(context, arrExp))
+            using (var gpuMod = new GpuUIntBigInteger(context, arrMod))
+            using (var gpuResult = new GpuUIntBigInteger(context, TestSizeWords))
+            {
+                Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.ModPow(gpuBase, gpuExp, gpuMod, gpuResult));
+            }
         }
 
 
@@ -939,9 +1204,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // Assert no exceptions thrown for 0 length buffers due to guard clause
             var exception = Record.Exception(() =>
             {
-                GpuBigIntNttKernelsWrapper.LaunchKernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 0,
+                GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesBlockedKernel(low, high, output, blockCarries, 0,
                     0, 256);
-                GpuBigIntNttKernelsWrapper.LaunchKernel_ResolveNttCarries_Apply(output, blockCarries, 0, 256, 0);
+                GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesApplyKernel(output, blockCarries, 0, 256, 0);
             });
             Assert.Null(exception);
         }
@@ -955,9 +1220,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             var output = new uint[1];
             var blockCarries = new uint[1];
 
-            GpuBigIntNttKernelsWrapper.LaunchKernel_ResolveNttCarries_Blocked(low, high, output, blockCarries, 2, 1,
+            GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesBlockedKernel(low, high, output, blockCarries, 2, 1,
                 256);
-            GpuBigIntNttKernelsWrapper.LaunchKernel_ResolveNttCarries_Apply(output, blockCarries, 1, 256, 1);
+            GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesApplyKernel(output, blockCarries, 1, 256, 1);
 
             // Calculation logic:
             // sum0 = 0x12345678 -> low16 = 0x5678, carry = 0x1234

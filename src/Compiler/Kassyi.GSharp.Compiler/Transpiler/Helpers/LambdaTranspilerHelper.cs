@@ -11,26 +11,37 @@ internal static class LambdaTranspilerHelper
         ExpressionSyntax? expressionBody)
     {
         context.CallableDepth++;
-        if (block != null)
+        try
         {
-            using (context.Writer.Scope())
+            if (block != null)
             {
-                foreach (var stmt in block.Statements)
+                using (context.Writer.Scope())
                 {
-                    context.Visitor.Visit(stmt);
-                    context.Writer.AppendLine();
+                    for (var i = 0; i < block.Statements.Count; i++)
+                    {
+                        var stmt = block.Statements[i];
+                        context.Visitor.Visit(stmt);
+                        context.Writer.AppendLine();
+                        if (context.Visitor.ShouldInsertAutoSync(block.Statements, i))
+                        {
+                            context.Writer.AppendLine("cg::this_grid().sync();");
+                        }
+                    }
+                }
+            }
+            else if (expressionBody != null)
+            {
+                using (context.Writer.Scope())
+                {
+                    context.Writer.Append("return ");
+                    context.Visitor.Visit(expressionBody);
+                    context.Writer.AppendSemiColonLine();
                 }
             }
         }
-        else if (expressionBody != null)
+        finally
         {
-            using (context.Writer.Scope())
-            {
-                context.Writer.Append("return ");
-                context.Visitor.Visit(expressionBody);
-                context.Writer.AppendSemiColonLine();
-            }
+            context.CallableDepth--;
         }
-        context.CallableDepth--;
     }
 }

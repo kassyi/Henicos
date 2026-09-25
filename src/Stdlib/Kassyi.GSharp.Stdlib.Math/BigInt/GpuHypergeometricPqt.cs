@@ -59,26 +59,7 @@ public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [T
         using var termB = rawTermB.PadTo(maxTWords);
         var resultT = new GpuUIntBigInteger(context, maxTWords);
 
-        bool tNegative;
-        if (signA == signB)
-        {
-            GpuBigIntMath.Add(termA, termB, resultT);
-            tNegative = signA;
-        }
-        else
-        {
-            var comparison = termA.CompareTo(termB);
-            if (comparison >= 0)
-            {
-                GpuBigIntMath.Sub(termA, termB, resultT);
-                tNegative = signA;
-            }
-            else
-            {
-                GpuBigIntMath.Sub(termB, termA, resultT);
-                tNegative = signB;
-            }
-        }
+        var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
 
         return new GpuHypergeometricPqt(
             new GpuBigInteger(resultP, pNegative),

@@ -45,14 +45,27 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
-    /// <inheritdoc/>
-
     public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords)
     {
         if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, devicePointer, numWords))
         {
             throw new InvalidOperationException(string.Format(ErrorCopyDeviceToHostFailed, devicePointer));
         }
+    }
+
+    /// <inheritdoc/>
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
+    {
+        var temp = new uint[1];
+        CopyDeviceToHost(temp, IntPtr.Add(devicePointer, wordOffset * 4), 1);
+        return temp[0];
+    }
+
+    /// <inheritdoc/>
+    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
+    {
+        var temp = new[] { value };
+        CopyHostToDevice(IntPtr.Add(devicePointer, wordOffset * 4), temp, 1);
     }
 
     /// <inheritdoc/>
@@ -84,6 +97,14 @@ public class NativeProvider : IGpuExecutionProvider
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
+        throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
+    public void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations) =>
+        throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
+    public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
@@ -171,6 +192,11 @@ public class NativeProvider : IGpuExecutionProvider
     public void Gcd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 
+    public void BeginCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+    public IntPtr EndCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+    public IntPtr InstantiateGraph(IntPtr graph) => throw new NotImplementedException(ErrorNotImplemented);
+    public void LaunchGraph(IntPtr graphExec, IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+    public void DestroyGraph(IntPtr graph, IntPtr graphExec) => throw new NotImplementedException(ErrorNotImplemented);
 }
 
 

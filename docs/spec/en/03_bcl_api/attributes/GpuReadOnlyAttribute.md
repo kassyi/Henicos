@@ -1,12 +1,12 @@
 ---
-title: "GpuConstAttribute Class (G#)"
+title: "GpuReadOnlyAttribute Class (G#)"
 site: "G# Documentation"
 published: "2026-09-23T00:00:00.000Z"
 language: "en"
 description: "Marks a kernel parameter, field, or property to be emitted with the const qualifier in the generated CUDA C++ source."
 ---
 
-## GpuConstAttribute Class
+## GpuReadOnlyAttribute Class
 
 ## Definition
 
@@ -17,7 +17,7 @@ Marks a kernel parameter, field, or property to be emitted with the `const` qual
 
 ```csharp
 [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Field | AttributeTargets.Property)]
-public sealed class GpuConstAttribute : Attribute
+public sealed class GpuReadOnlyAttribute : Attribute
 ```
 
 ## Examples
@@ -38,7 +38,7 @@ Example.Run();
 public class Example
 {
     [GpuKernel]
-    public static unsafe void ProcessData(float* data, [GpuConst] float scaleFactor)
+    public static unsafe void ProcessData(float* data, [GpuReadOnly] float scaleFactor)
     {
         // On CPU, ThreadIndex.X throws GpuOnlyException.
     }
@@ -47,9 +47,9 @@ public class Example
     {
         var method = typeof(Example).GetMethod(nameof(ProcessData));
         var param = method.GetParameters()[1];
-        var isGpuConst = param.GetCustomAttribute<GpuConstAttribute>() != null;
+        var isGpuReadOnly = param.GetCustomAttribute<GpuReadOnlyAttribute>() != null;
 
-        Console.WriteLine($"Parameter '{param.Name}' has [GpuConst] attribute: {isGpuConst}");
+        Console.WriteLine($"Parameter '{param.Name}' has [GpuReadOnly] attribute: {isGpuReadOnly}");
     }
 }
 ```
@@ -62,17 +62,17 @@ Helps the NVIDIA CUDA compiler (`nvcc`/`NVRTC`) optimize register allocation and
 
 While both attributes optimize constant values, their underlying mechanics differ fundamentally. **If you think of this in C# terms:**
 
-- **`[GpuConst]` is like an `in` parameter or `readonly` field:** The variable physically exists in memory and is passed as a real argument, but the compiler ensures it cannot be modified, allowing it to be placed in a fast, read-only memory cache.
+- **`[GpuReadOnly]` is like an `in` parameter or `readonly` field:** The variable physically exists in memory and is passed as a real argument, but the compiler ensures it cannot be modified, allowing it to be placed in a fast, read-only memory cache.
 - **[[Constant]](ConstantAttribute.md) is like a `const` literal:** The variable completely disappears at compile-time. The compiler takes the raw value (e.g., `10`) and hardcodes it directly into the instructions everywhere it was used.
 
-#### [GpuConst]
+#### [GpuReadOnly]
 
 Emits the standard `const` keyword in C++. The variable remains in the C++ method signature and occupies fast, read-only constant memory caches on the GPU. It is ideal for protecting state and guiding general compiler optimizations.
 
 **C# Source:**
 
 ```csharp
-public static unsafe void ProcessData(float* data, [GpuConst] float scaleFactor)
+public static unsafe void ProcessData(float* data, [GpuReadOnly] float scaleFactor)
 ```
 
 **Emitted CUDA C++:**

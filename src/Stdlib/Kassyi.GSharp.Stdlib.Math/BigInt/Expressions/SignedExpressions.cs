@@ -161,10 +161,10 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntE
     }
 }
 
-internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
+internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
 {
-    private IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
-    public int NumWords => Target.NumWords;
+    protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
+    public virtual int NumWords => Target.NumWords;
 
     public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
     {
@@ -174,7 +174,7 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : IGpuBig
         }
 
         GpuBigInteger targetEval = default;
-        GpuUIntBigInteger? finalBuffer = targetResult;
+        var finalBuffer = targetResult;
 
         try
         {
@@ -184,8 +184,7 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : IGpuBig
                 finalBuffer = context.RentTemp(NumWords);
             }
 
-            GpuBigIntMath.BitwiseNot(targetEval.Value, finalBuffer);
-            var result = new GpuBigInteger(finalBuffer, targetEval.IsNegative);
+            var result = Execute(targetEval, finalBuffer);
             finalBuffer = null;
             return result;
         }
@@ -201,5 +200,16 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : IGpuBig
                 context.ReturnTemp(finalBuffer);
             }
         }
+    }
+
+    protected abstract GpuBigInteger Execute(GpuBigInteger targetEval, GpuUIntBigInteger resultBuffer);
+}
+
+internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedUnaryExpression(target)
+{
+    protected override GpuBigInteger Execute(GpuBigInteger targetEval, GpuUIntBigInteger resultBuffer)
+    {
+        GpuBigIntMath.BitwiseNot(targetEval.Value, resultBuffer);
+        return new GpuBigInteger(resultBuffer, targetEval.IsNegative);
     }
 }

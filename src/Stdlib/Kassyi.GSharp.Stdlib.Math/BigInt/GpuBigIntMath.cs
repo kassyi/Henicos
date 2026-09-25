@@ -34,6 +34,29 @@ public static class GpuBigIntMath
     public static void Add(GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
         leftOperand.Context.Provider.Add(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
 
+    /// <summary>
+    /// Performs signed-magnitude addition of two values and returns the resulting sign.
+    /// </summary>
+    public static bool AddSignedMagnitude(GpuUIntBigInteger leftOperand, bool leftNegative,
+        GpuUIntBigInteger rightOperand, bool rightNegative, GpuUIntBigInteger resultBuffer)
+    {
+        if (leftNegative == rightNegative)
+        {
+            Add(leftOperand, rightOperand, resultBuffer);
+            return leftNegative;
+        }
+
+        var comparison = leftOperand.CompareTo(rightOperand);
+        if (comparison >= 0)
+        {
+            Sub(leftOperand, rightOperand, resultBuffer);
+            return leftNegative;
+        }
+
+        Sub(rightOperand, leftOperand, resultBuffer);
+        return rightNegative;
+    }
+
     /// <summary>Computes arbitrary-precision subtraction (<c>leftOperand - rightOperand</c>) on the GPU.</summary>
     public static void Sub(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer)
     {
