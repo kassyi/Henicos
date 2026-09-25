@@ -715,6 +715,51 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         return true;
     }
 
+    /// <inheritdoc/>
+    public void BeginCapture(IntPtr stream)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        // CU_STREAM_CAPTURE_MODE_GLOBAL = 0
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream, 0));
+    }
+
+    /// <inheritdoc/>
+    public IntPtr EndCapture(IntPtr stream)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamEndCapture(stream, out var graph));
+        return graph;
+    }
+
+    /// <inheritdoc/>
+    public IntPtr InstantiateGraph(IntPtr graph)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuGraphInstantiate(out var graphExec, graph, IntPtr.Zero, IntPtr.Zero, 0));
+        return graphExec;
+    }
+
+    /// <inheritdoc/>
+    public void LaunchGraph(IntPtr graphExec, IntPtr stream)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuGraphLaunch(graphExec, stream));
+    }
+
+    /// <inheritdoc/>
+    public void DestroyGraph(IntPtr graph, IntPtr graphExec)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        if (graphExec != IntPtr.Zero)
+        {
+            CudaDriverApi.cuGraphExecDestroy(graphExec);
+        }
+        if (graph != IntPtr.Zero)
+        {
+            CudaDriverApi.cuGraphDestroy(graph);
+        }
+    }
+
     private static (uint GridSize, uint BlockSize) CalculateGridDim(int elements, uint blockSize = 256)
     {
         var gridSize = (uint)((elements + blockSize - 1) / blockSize);

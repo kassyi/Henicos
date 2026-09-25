@@ -166,7 +166,26 @@ public interface IGpuExecutionProvider
     /// <returns>A signed integer that indicates the relative values of the operands.</returns>
     int CompareTo(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand);
 
-}
+    /// <summary>Begins capturing CUDA commands into a graph via the specified stream.</summary>
+    void BeginCapture(IntPtr stream);
 
+    /// <summary>Ends capturing CUDA commands and returns the captured graph.</summary>
+    /// <returns>A pointer to the captured CUDA graph.</returns>
+    IntPtr EndCapture(IntPtr stream);
+
+    /// <summary>Instantiates a CUDA graph into an executable graph.</summary>
+    /// <param name="graph">The CUDA graph pointer.</param>
+    /// <returns>A pointer to the executable graph.</returns>
+    IntPtr InstantiateGraph(IntPtr graph);
+
+    /// <summary>Launches an executable CUDA graph on the specified stream.</summary>
+    /// <param name="graphExec">The executable graph pointer.</param>
+    void LaunchGraph(IntPtr graphExec, IntPtr stream);
+
+    /// <summary>Destroys a CUDA graph and its executable counterpart.</summary>
+    /// <param name="graph">The CUDA graph pointer.</param>
+    /// <param name="graphExec">The executable graph pointer.</param>
+    void DestroyGraph(IntPtr graph, IntPtr graphExec);
+}
 
 

@@ -184,6 +184,11 @@ public class NativeProvider : IGpuExecutionProvider
     public void Gcd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 
+    public void BeginCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+    public IntPtr EndCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+    public IntPtr InstantiateGraph(IntPtr graph) => throw new NotImplementedException(ErrorNotImplemented);
+    public void LaunchGraph(IntPtr graphExec, IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+    public void DestroyGraph(IntPtr graph, IntPtr graphExec) => throw new NotImplementedException(ErrorNotImplemented);
 }
 
 
