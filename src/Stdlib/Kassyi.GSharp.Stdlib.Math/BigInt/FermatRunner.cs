@@ -134,6 +134,9 @@ public class FermatRunner : IDisposable
             _numWords, _outNumWords, 2 * E + 1, _exponent,
             gridDimX: 1, blockDimX: 1
         );
+
+        // FIX: The Mega-Kernel writes the reduced output to _remainder, but it was never swapped back to _valueT.
+        (_valueT, _remainder) = (_remainder, _valueT);
     }
 
     /// <summary>Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.</summary>
