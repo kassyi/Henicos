@@ -421,7 +421,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
-        if (gridDim > 108u) gridDim = 108u;
+        if (gridDim > 108u)
+        {
+            gridDim = 108u;
+        }
 
         int currentL = m <= 512 ? m : (m / 32);
         uint sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
@@ -495,7 +498,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
-        if (gridDim > 108u) gridDim = 108u;
+        if (gridDim > 108u)
+        {
+            gridDim = 108u;
+        }
 
         int currentL = m <= 512 ? m : (m / 32);
         uint sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
