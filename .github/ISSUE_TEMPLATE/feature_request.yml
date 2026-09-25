@@ -1,0 +1,62 @@
+name: "Feature / Syntax Request"
+description: "Suggest a new feature, C# syntax support, or GPU capability for G#"
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        G# aims to bring C#'s mental model directly into the GPU realm while enforcing zero-allocation and static determinism.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - "C# Syntax / AST Transpilation Support"
+        - "CUDA Native / Intrinsic Feature Support"
+        - "Runtime / Host-Device Memory Optimization"
+        - "Stdlib / Math Expansion"
+        - "Developer Experience (DX) / Tooling / Diagnostics"
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / Use Case
+      description: What problem are you trying to solve, or what scenario is currently difficult?
+      placeholder: "e.g., Currently, using pattern matching inside kernels causes transpilation failure..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-api
+    attributes:
+      label: Proposed Syntax / API Design
+      description: Show how the code would look in C# (Kernel or Host API).
+      placeholder: |
+        // Example C# kernel code
+        [GpuKernel]
+        public static void NewFeatureKernel(...)
+        {
+            ...
+        }
+      render: csharp
+    validations:
+      required: true
+
+  - type: textarea
+    id: cuda-mapping
+    attributes:
+      label: Expected CUDA / PTX Mapping (Optional)
+      description: If you have an idea of how this should transpile to CUDA C++ or PTX, please describe it.
+      render: cpp
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Design Constraints Verification
+      options:
+        - label: "Conforms to Zero-Allocation (no heap allocations, reference-type instantiations on device)"
+        - label: "Conforms to Static Determinism (no reflection, dynamic dispatch, or LINQ)"

@@ -1,0 +1,80 @@
+name: "Bug Report"
+description: "Report a bug or unexpected behavior in G# (Compiler, Runtime, or Stdlib)"
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please provide as much context as possible to help reproduce and diagnose the problem.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      description: Which part of the Henicos / G# ecosystem is affected?
+      options:
+        - "Compiler / Transpiler (Roslyn Source Generator, C# to CUDA)"
+        - "Runtime (GpuKernelLoader, BackendCompiler, NVRTC, Driver API)"
+        - "Stdlib / Math (BigInt, Complex, Matrix, etc.)"
+        - "CLI / Tooling / Tests"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "e.g., Compiling a kernel with nested loops produces invalid PTX syntax..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal Reproduction Code (C#)
+      description: |
+        Please provide a minimal, self-contained C# code snippet (Kernel / Host code) that reproduces the issue.
+      placeholder: |
+        [GpuKernel]
+        public static void SampleKernel(...)
+        {
+            // Minimal reproduction logic
+        }
+      render: csharp
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What did you expect to happen, and what actually happened?
+      placeholder: |
+        - Expected: Kernel executes successfully and outputs X.
+        - Actual: Throws CudaException (CUDA_ERROR_ILLEGAL_ADDRESS) / Source Generator emits diagnostic GSP0001.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Output / Logs
+      description: Paste relevant compiler diagnostics, stack traces, CUDA runtime errors, or generated CUDA/PTX snippets.
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: Please share your hardware and software setup.
+      value: |
+        - OS: [e.g. Windows 11 / Ubuntu 22.04]
+        - .NET SDK: [e.g. 9.0.100]
+        - CUDA Toolkit: [e.g. 12.6]
+        - GPU: [e.g. NVIDIA GeForce RTX 4090]
+        - NVIDIA Driver Version: [e.g. 560.xx]
+    validations:
+      required: true
