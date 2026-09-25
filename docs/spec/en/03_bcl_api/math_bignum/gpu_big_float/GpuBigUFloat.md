@@ -43,11 +43,110 @@ The unmanaged struct type representing the significand storage size (e.g., `Vect
 
 | Name                                                                                                         | Description                                                                         |
 | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `AlignRadixPoint(GpuBigUFloat<TSize>, out GpuBigUFloat<TSize>, out GpuBigUFloat<TSize>, out bool, out bool)` | Aligns the radix point between this instance and another unsigned float.            |
-| `Normalize(int, bool)`                                                                                       | Normalizes the floating-point significand and adjusts the exponent.                 |
-| `Round(GpuBigFloatRoundingMode, bool, bool, bool)`                                                           | Applies IEEE 754 compliant rounding logic.                                          |
-| `Add(GpuBigUFloat<TSize>)`                                                                                   | Adds two unsigned floating point values.                                            |
-| `Subtract(GpuBigUFloat<TSize>)`                                                                              | Subtracts another unsigned floating point value, clamping to 0 if underflow occurs. |
+| [AlignRadixPoint(GpuBigUFloat<TSize>)](#alignradixpointgpubigufloattsize) | Aligns the radix point between this instance and another unsigned float, returning aligned values and rounding bits as a Tuple. |
+| [Normalize(int, bool)](#normalizeint-bool)                                                                         | Normalizes the floating-point significand and adjusts the exponent.                 |
+| [Round(GpuBigFloatRoundingMode, bool, bool, bool)](#roundgpubigfloatroundingmode-bool-bool-bool)                                                 | Applies IEEE 754 compliant rounding logic.                                          |
+| [Add(GpuBigUFloat<TSize>)](#addgpubigufloattsize)                                                                            | Adds two unsigned floating point values.                                            |
+| [Subtract(GpuBigUFloat<TSize>)](#subtractgpubigufloattsize)                                                                  | Subtracts another unsigned floating point value, clamping to 0 if underflow occurs. |
+
+## Methods Detail
+
+### AlignRadixPoint(GpuBigUFloat\<TSize\>)
+
+Aligns the radix point between this instance and another unsigned float, returning aligned values and rounding bits.
+
+```csharp
+public (GpuBigUFloat<TSize> AlignedThis, GpuBigUFloat<TSize> AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigUFloat<TSize> other);
+```
+
+#### Parameters
+
+`other` _GpuBigUFloat\<TSize\>_<br>
+The other unsigned float to align against.
+
+#### Returns
+
+A tuple containing the aligned `this` operand, aligned `other` operand, and the preserved guard, round, and sticky bits.
+
+### Normalize(int, bool)
+
+Normalizes the floating-point significand and adjusts the exponent.
+
+```csharp
+public GpuBigUFloat<TSize> Normalize(int leadingZeros = 0, bool carryOut = false);
+```
+
+#### Parameters
+
+`leadingZeros` _int_<br>
+The number of leading zeros in the significand.
+
+`carryOut` _bool_<br>
+A value indicating whether a carry-out occurred in the previous operation.
+
+#### Returns
+
+A normalized `GpuBigUFloat<TSize>`.
+
+### Round(GpuBigFloatRoundingMode, bool, bool, bool)
+
+Applies IEEE 754 compliant rounding logic to the unsigned float.
+
+```csharp
+public GpuBigUFloat<TSize> Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit);
+```
+
+#### Parameters
+
+`mode` _GpuBigFloatRoundingMode_<br>
+The IEEE 754 rounding mode to apply.
+
+`guardBit` _bool_<br>
+The guard bit.
+
+`roundBit` _bool_<br>
+The round bit.
+
+`stickyBit` _bool_<br>
+The sticky bit.
+
+#### Returns
+
+The rounded `GpuBigUFloat<TSize>`.
+
+### Add(GpuBigUFloat\<TSize\>)
+
+Adds two unsigned floating point values.
+
+```csharp
+public GpuBigUFloat<TSize> Add(GpuBigUFloat<TSize> other);
+```
+
+#### Parameters
+
+`other` _GpuBigUFloat\<TSize\>_<br>
+The value to add.
+
+#### Returns
+
+The sum as a new `GpuBigUFloat<TSize>`.
+
+### Subtract(GpuBigUFloat\<TSize\>)
+
+Subtracts another unsigned floating point value, clamping to 0 if underflow occurs (assumes `this >= other`).
+
+```csharp
+public GpuBigUFloat<TSize> Subtract(GpuBigUFloat<TSize> other);
+```
+
+#### Parameters
+
+`other` _GpuBigUFloat\<TSize\>_<br>
+The value to subtract.
+
+#### Returns
+
+The difference as a new `GpuBigUFloat<TSize>`.
 
 ## Examples
 

@@ -23,10 +23,36 @@ public enum GpuBigFloatRoundingMode
 
 | Member Name                   | Value | Description                                                                                      |
 | ----------------------------- | ----- | ------------------------------------------------------------------------------------------------ |
-| `RoundToNearestEven`          | `0`   | Round to nearest, with ties rounding to the nearest even integer significand (IEEE 754 default). |
-| `RoundTowardZero`             | `1`   | Round toward zero (truncation).                                                                  |
-| `RoundTowardPositiveInfinity` | `2`   | Round toward positive infinity.                                                                  |
-| `RoundTowardNegativeInfinity` | `3`   | Round toward negative infinity.                                                                  |
+| [`RoundToNearestEven`](#roundtonearesteven)                   | `0`   | Round to nearest, with ties rounding to the nearest even integer significand (IEEE 754 default). |
+| [`RoundTowardZero`](#roundtowardzero)                      | `1`   | Round toward zero (truncation).                                                                  |
+| [`RoundTowardPositiveInfinity`](#roundtowardpositiveinfinity)  | `2`   | Round toward positive infinity.                                                                  |
+| [`RoundTowardNegativeInfinity`](#roundtowardnegativeinfinity)  | `3`   | Round toward negative infinity.                                                                  |
+
+## Members Detail
+
+### RoundToNearestEven
+
+`0`
+
+Round to nearest, with ties rounding to the nearest even integer significand (IEEE 754 default).
+
+### RoundTowardZero
+
+`1`
+
+Round toward zero (truncation).
+
+### RoundTowardPositiveInfinity
+
+`2`
+
+Round toward positive infinity.
+
+### RoundTowardNegativeInfinity
+
+`3`
+
+Round toward negative infinity.
 
 ## Examples
 
