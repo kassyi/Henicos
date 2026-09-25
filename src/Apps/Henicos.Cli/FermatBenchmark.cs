@@ -6,11 +6,8 @@ namespace Henicos.Cli;
 [MarkdownExporterAttribute.GitHub]
 public class FermatBenchmark
 {
-    [Params(1000, 5000, 10000)]
-    public int E
-    {
-        get; set;
-    }
+    [Params(1000)]
+    public int E { get; set; }
 
     private FermatRunner _runner = null!;
 
