@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 public static class GpuBigIntFermatKernels
 {
     [GpuDeviceFunction]
-    public static void Device_Unpack16([GpuConst] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
+    public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
     {
         Gpu.GridStrideLoop(n, i =>
         {
@@ -34,7 +34,7 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_Transpose_32x32([GpuConst] uint[] idata, uint[] odata, int width, int height)
+    public static void DeviceTranspose32x32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_mem[];");
 
@@ -86,28 +86,35 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_ShiftLeft_SingleThread([GpuConst] uint[] src, uint[] dst, int shiftBits, int numWords)
+    public static void DeviceShiftLeftParallel([GpuReadOnly] uint[] src, uint[] dst, int shiftBits, int numWords)
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
-        for (int i = 0; i < numWords; i++)
+        Gpu.GridStrideLoop(numWords, i =>
         {
-            uint val = 0;
-            if (i - wordShift >= 0)
-            {
-                val = src[i - wordShift] << bitShift;
-                if (bitShift > 0 && i - wordShift - 1 >= 0)
-                {
-                    val |= src[i - wordShift - 1] >> (32 - bitShift);
-                }
-            }
+            var srcIdx0 = i - wordShift;
+            var srcIdx1 = srcIdx0 - 1;
 
-            dst[i] = val;
-        }
+            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
+            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
+
+            uint w0 = src[safeIdx0];
+            uint w1 = src[safeIdx1];
+
+            uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
+            uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
+
+            w0 &= mask0;
+            w1 &= mask1;
+
+            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            dst[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
+        });
     }
 
     [GpuDeviceFunction]
-    public static void Device_AddSub_SingleThread([GpuConst] uint[] a, [GpuConst] uint[] b, uint[] result, int numWords,
+    public static void DeviceAddSubSingleThread([GpuReadOnly] uint[] a, [GpuReadOnly] uint[] b, uint[] result,
+        int numWords,
         long sign)
     {
         long carry = 0;
@@ -120,52 +127,76 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuKernel]
-    public static void Kernel_FermatReduce_Mega(
-        [GpuConst] uint[] valueT,
+    public static void KernelFermatReduceMega(
+        [GpuReadOnly] uint[] valueT,
         uint[] mulResult,
         uint[] quotient,
         uint[] remainder,
         uint[] temp,
-        [GpuConst] uint[] remainderMask,
+        [GpuReadOnly] uint[] remainderMask,
         int numWords,
         int outNumWords,
         int totalShiftBits,
         int exponent)
     {
+        var wordShift = totalShiftBits / 32;
+        var bitShift = totalShiftBits % 32;
+
+        Gpu.GridStrideLoop(outNumWords, i =>
+        {
+            var srcIdx0 = i + wordShift;
+            var srcIdx1 = srcIdx0 + 1;
+
+            var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords * 2 ? numWords * 2 - 1 : srcIdx0);
+            var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords * 2 ? numWords * 2 - 1 : srcIdx1);
+
+            uint w0 = mulResult[safeIdx0];
+            uint w1 = mulResult[safeIdx1];
+
+            uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords * 2 ? 0xFFFFFFFFu : 0u;
+            uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords * 2 ? 0xFFFFFFFFu : 0u;
+
+            w0 &= mask0;
+            w1 &= mask1;
+
+            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
+
+            remainder[i] = mulResult[i] & remainderMask[i];
+        });
+
+        Gpu.SyncThreads();
+
+        DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords);
+        Gpu.SyncThreads();
+
         Gpu.SingleThread(() =>
         {
-            var wordShift = totalShiftBits / 32;
-            var bitShift = totalShiftBits % 32;
+            DeviceAddSubSingleThread(remainder, temp, remainder, outNumWords, 1);
+        });
+        Gpu.SyncThreads();
 
-            for (int i = 0; i < outNumWords; i++)
-            {
-                uint val = 0;
-                if (i + wordShift < numWords * 2)
-                {
-                    val = mulResult[i + wordShift] >> bitShift;
-                    if (bitShift > 0 && i + wordShift + 1 < numWords * 2)
-                    {
-                        val |= mulResult[i + wordShift + 1] << (32 - bitShift);
-                    }
-                }
+        DeviceShiftLeftParallel(quotient, temp, 1, outNumWords);
+        Gpu.SyncThreads();
 
-                quotient[i] = val;
-            }
+        Gpu.SingleThread(() =>
+        {
+            DeviceAddSubSingleThread(remainder, temp, remainder, outNumWords, -1);
+        });
+        Gpu.SyncThreads();
 
-            for (int i = 0; i < outNumWords; i++)
-            {
-                remainder[i] = mulResult[i] & remainderMask[i];
-            }
+        Gpu.SingleThread(() =>
+        {
+            DeviceAddSubSingleThread(remainder, quotient, remainder, outNumWords, -1);
+        });
+        Gpu.SyncThreads();
 
-            Device_ShiftLeft_SingleThread(quotient, temp, exponent, outNumWords);
-            Device_AddSub_SingleThread(remainder, temp, remainder, outNumWords, 1);
+        DeviceShiftLeftParallel(quotient, temp, 3, outNumWords);
+        Gpu.SyncThreads();
 
-            Device_ShiftLeft_SingleThread(quotient, temp, 1, outNumWords);
-            Device_AddSub_SingleThread(remainder, temp, remainder, outNumWords, -1);
-            Device_AddSub_SingleThread(remainder, quotient, remainder, outNumWords, -1);
-
-            Device_ShiftLeft_SingleThread(quotient, temp, 3, outNumWords);
-            Device_AddSub_SingleThread(remainder, temp, remainder, outNumWords, -1);
+        Gpu.SingleThread(() =>
+        {
+            DeviceAddSubSingleThread(remainder, temp, remainder, outNumWords, -1);
         });
     }
 }

@@ -11,7 +11,7 @@ namespace cg = cooperative_groups;
 // Phase 9: Static Device-Side Operations
 // -------------------------------------------------------------------------
 
-__device__ void Device_Unpack16(const unsigned int* d_src, uint32_t* d_dst1, uint32_t* d_dst2, int N, int numWords) {
+__device__ void DeviceUnpack16(const unsigned int* d_src, uint32_t* d_dst1, uint32_t* d_dst2, int N, int numWords) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     for (int i = tid; i < N; i += gridDim.x * blockDim.x) {
         uint32_t val = 0;
@@ -26,7 +26,7 @@ __device__ void Device_Unpack16(const unsigned int* d_src, uint32_t* d_dst1, uin
     }
 }
 
-__device__ void Device_Transpose_32x32(const uint32_t* idata, uint32_t* odata, int width, int height) {
+__device__ void DeviceTranspose32x32(const uint32_t* idata, uint32_t* odata, int width, int height) {
     extern __shared__ uint32_t s_mem[]; // Size: at least 32 * 33 * 4 = 4224 bytes
     
     int gridX = (width + 31) / 32;
@@ -178,7 +178,7 @@ __device__ void Device_MultiplySquare(unsigned int* data, int numWords, cg::grid
     const uint32_t* twiddle1_fwd, const uint32_t* twiddle2_fwd,
     const uint32_t* twiddle1_inv, const uint32_t* twiddle2_inv) {
     
-    Device_Unpack16(data, ntt_buf1, ntt_buf2, M, numWords);
+    DeviceUnpack16(data, ntt_buf1, ntt_buf2, M, numWords);
     grid.sync();
     
     int N2 = 1;
@@ -190,11 +190,11 @@ __device__ void Device_MultiplySquare(unsigned int* data, int numWords, cg::grid
             Device_NTT_Shared_Row(buf, twiddle, M, M, p, m, false, false, 1);
             grid.sync();
         } else {
-            Device_Transpose_32x32(buf, ntt_tmp, N2, N1);
+            DeviceTranspose32x32(buf, ntt_tmp, N2, N1);
             grid.sync();
             Device_NTT_Shared_Row(ntt_tmp, twiddle, M, N1, p, m, false, true, N2);
             grid.sync();
-            Device_Transpose_32x32(ntt_tmp, buf, N1, N2);
+            DeviceTranspose32x32(ntt_tmp, buf, N1, N2);
             grid.sync();
             Device_NTT_Shared_Row(buf, twiddle, M, N2, p, m, false, false, N1);
             grid.sync();
@@ -214,11 +214,11 @@ __device__ void Device_MultiplySquare(unsigned int* data, int numWords, cg::grid
         } else {
             Device_NTT_Shared_Row(buf, twiddle, M, N2, p, m, false, true, N1);
             grid.sync();
-            Device_Transpose_32x32(buf, ntt_tmp, N2, N1);
+            DeviceTranspose32x32(buf, ntt_tmp, N2, N1);
             grid.sync();
             Device_NTT_Shared_Row(ntt_tmp, twiddle, M, N1, p, m, false, false, N2);
             grid.sync();
-            Device_Transpose_32x32(ntt_tmp, buf, N1, N2);
+            DeviceTranspose32x32(ntt_tmp, buf, N1, N2);
             grid.sync();
         }
     };

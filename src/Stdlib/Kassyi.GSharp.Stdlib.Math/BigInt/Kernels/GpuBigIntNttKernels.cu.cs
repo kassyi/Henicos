@@ -156,7 +156,7 @@ public static class GpuBigIntNttKernels
     private static void Device_NTT_LoadAndTwiddleBefore(
         int rowIndex, int threadId, int currentLength, int maxLog2Length, int transformLength,
         bool applyTwiddleBefore, uint primeModulus, ulong barrettMagic,
-        [GpuConst] uint[] deviceData, [GpuConst] uint[] deviceTwiddle)
+        [GpuReadOnly] uint[] deviceData, [GpuReadOnly] uint[] deviceTwiddle)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
         var blockOffset = rowIndex * currentLength;
@@ -189,7 +189,7 @@ public static class GpuBigIntNttKernels
     private static void Device_NTT_ButterflyStep(
         int step, int threadId, int transformLength,
         uint primeModulus, ulong barrettMagic,
-        [GpuConst] uint[] deviceTwiddle)
+        [GpuReadOnly] uint[] deviceTwiddle)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
         var length = 2 << step;
@@ -223,7 +223,7 @@ public static class GpuBigIntNttKernels
     private static void Device_NTT_TwiddleAfterAndStore(
         int rowIndex, int threadId, int currentLength, int transformLength,
         bool applyTwiddleAfter, uint primeModulus, ulong barrettMagic,
-        uint[] deviceData, [GpuConst] uint[] deviceTwiddle)
+        uint[] deviceData, [GpuReadOnly] uint[] deviceTwiddle)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
         var blockOffset = rowIndex * currentLength;
@@ -279,7 +279,8 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    public static void Device_CRT_ComputeCoefficients([GpuConst] uint[] deviceResult1, [GpuConst] uint[] deviceResult2,
+    public static void Device_CRT_ComputeCoefficients([GpuReadOnly] uint[] deviceResult1,
+        [GpuReadOnly] uint[] deviceResult2,
         uint[] uncarriedLow, uint[] uncarriedHigh,
         int transformLength)
     {
@@ -383,7 +384,8 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuKernel]
-    public static void Kernel_ResolveNttCarries_Apply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount, int chunkSize, int numBlocks)
+    public static void Kernel_ResolveNttCarries_Apply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount,
+        int chunkSize, int numBlocks)
     {
         var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
         if (globalBlockIdx >= numBlocks)
@@ -420,7 +422,7 @@ public static class GpuBigIntNttKernels
             return;
         }
 
-        GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
+        GpuBigIntFermatKernels.DeviceTranspose32x32(buffer, temporaryBuffer, length2, length1);
         Gpu.SyncGrid();
 
         args.Buffer = temporaryBuffer;
@@ -432,7 +434,7 @@ public static class GpuBigIntNttKernels
         args.Buffer = buffer; // Restore buffer
         Gpu.SyncGrid();
 
-        GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
+        GpuBigIntFermatKernels.DeviceTranspose32x32(temporaryBuffer, buffer, length1, length2);
         Gpu.SyncGrid();
 
         args.CurrentL = length2;
@@ -470,7 +472,7 @@ public static class GpuBigIntNttKernels
         Device_NTT_Shared_Row(args);
         Gpu.SyncGrid();
 
-        GpuBigIntFermatKernels.Device_Transpose_32x32(buffer, temporaryBuffer, length2, length1);
+        GpuBigIntFermatKernels.DeviceTranspose32x32(buffer, temporaryBuffer, length2, length1);
         Gpu.SyncGrid();
 
         args.Buffer = temporaryBuffer;
@@ -482,7 +484,7 @@ public static class GpuBigIntNttKernels
         args.Buffer = buffer; // Restore buffer
         Gpu.SyncGrid();
 
-        GpuBigIntFermatKernels.Device_Transpose_32x32(temporaryBuffer, buffer, length1, length2);
+        GpuBigIntFermatKernels.DeviceTranspose32x32(temporaryBuffer, buffer, length1, length2);
         Gpu.SyncGrid();
     }
 
