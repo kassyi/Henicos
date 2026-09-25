@@ -114,7 +114,7 @@ flowchart TD
 
 ### Why "G#"?
 
-A simple portmanteau of **GPU + C#**. Visually, **G** is just a **C** with an extra stroke, reflecting C# syntax scaling to GPU parallelism. (Musically, $G\#$ is the natural fifth dominant over $C$, nodding to the harmony between host orchestration and bare-metal compute.)
+A simple portmanteau of **GPU + C#**. Visually, **G** is just a **C** with an extra stroke, reflecting C# syntax scaling to GPU parallelism. (Musically, G# is the natural fifth dominant over C, nodding to the harmony between host orchestration and bare-metal compute.)
 
 ### The "Henicos" Codename
 
