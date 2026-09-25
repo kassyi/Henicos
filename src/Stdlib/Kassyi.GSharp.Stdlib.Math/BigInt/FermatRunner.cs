@@ -40,8 +40,6 @@ public class FermatRunner : IDisposable
     private int _bitOffset2E1;
     private int _exponent;
 
-    private IntPtr _hStream = IntPtr.Zero;
-
     /// <summary>Initializes a new instance of the <see cref="FermatRunner"/> class for exponent <paramref name="e"/>.</summary>
     public FermatRunner(int e)
     {
@@ -63,21 +61,9 @@ public class FermatRunner : IDisposable
             _remainder = new GpuUIntBigInteger(_gpuContext, _outNumWords);
             _remainderMask = new GpuUIntBigInteger(_gpuContext, _outNumWords);
             _temp = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-
-            if (_gpuContext.Engine == GpuExecutionEngine.GSharpAot)
-            {
-                using var scope = new GpuKernelLoader.CudaContextScope();
-                CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out _hStream, 1 /* CU_STREAM_NON_BLOCKING */));
-            }
         }
         catch
         {
-            if (_hStream != IntPtr.Zero)
-            {
-                using var scope = new GpuKernelLoader.CudaContextScope();
-                CudaDriverApi.cuStreamDestroy(_hStream);
-            }
-
             _gpuContext?.Dispose();
             _valueT?.Dispose();
             _valueTReduced?.Dispose();
@@ -145,8 +131,7 @@ public class FermatRunner : IDisposable
             _valueT.DevicePointer, _mulResult.DevicePointer, _quotient.DevicePointer, _remainder.DevicePointer,
             _temp.DevicePointer, _remainderMask.DevicePointer,
             _numWords, _outNumWords, 2 * E + 1, _exponent,
-            gridDimX: 1, blockDimX: 256,
-            hStream: _hStream
+            gridDimX: 1, blockDimX: 256
         );
 
         // FIX: The Mega-Kernel writes the reduced output to _remainder, but it was never swapped back to _valueT.
@@ -158,31 +143,12 @@ public class FermatRunner : IDisposable
     {
         var sw = Stopwatch.StartNew();
 
-        if (_gpuContext.Engine == GpuExecutionEngine.GSharpAot)
+        for (var i = 0; i < E; i++)
         {
-            _gpuContext.Provider.BeginCapture(_hStream);
             MultiplySquareAndReduceHost();
-            var graph = _gpuContext.Provider.EndCapture(_hStream);
-            var graphExec = _gpuContext.Provider.InstantiateGraph(graph);
-
-            for (var i = 0; i < E; i++)
-            {
-                _gpuContext.Provider.LaunchGraph(graphExec, _hStream);
-            }
-
-            GpuKernelLoader.SynchronizeDevice();
-            _gpuContext.Provider.DestroyGraph(graph, graphExec);
-        }
-        else
-        {
-            for (var i = 0; i < E; i++)
-            {
-                MultiplySquareAndReduceHost();
-            }
-
-            GpuKernelLoader.SynchronizeDevice();
         }
 
+        GpuKernelLoader.SynchronizeDevice();
         sw.Stop();
 
         return (GetState(), sw.ElapsedMilliseconds);
@@ -191,30 +157,12 @@ public class FermatRunner : IDisposable
     /// <summary>Executes a specified number of squaring iterations on the GPU for benchmarking purposes.</summary>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
-        if (_gpuContext.Engine == GpuExecutionEngine.GSharpAot)
+        for (var i = 0; i < chunkSize; i++)
         {
-            _gpuContext.Provider.BeginCapture(_hStream);
             MultiplySquareAndReduceHost();
-            var graph = _gpuContext.Provider.EndCapture(_hStream);
-            var graphExec = _gpuContext.Provider.InstantiateGraph(graph);
-
-            for (var i = 0; i < chunkSize; i++)
-            {
-                _gpuContext.Provider.LaunchGraph(graphExec, _hStream);
-            }
-
-            GpuKernelLoader.SynchronizeDevice();
-            _gpuContext.Provider.DestroyGraph(graph, graphExec);
         }
-        else
-        {
-            for (var i = 0; i < chunkSize; i++)
-            {
-                MultiplySquareAndReduceHost();
-            }
 
-            GpuKernelLoader.SynchronizeDevice();
-        }
+        GpuKernelLoader.SynchronizeDevice();
     }
 
     private bool _disposed;
@@ -236,13 +184,6 @@ public class FermatRunner : IDisposable
             _remainderMask.Dispose();
             _temp.Dispose();
             _gpuContext.Dispose();
-        }
-
-        if (_hStream != IntPtr.Zero)
-        {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaDriverApi.cuStreamDestroy(_hStream);
-            _hStream = IntPtr.Zero;
         }
 
         _disposed = true;
