@@ -298,6 +298,10 @@ public static class Gpu
     [CudaIntrinsic("__shfl_up_sync")]
     public static int ShuffleUpSync(uint mask, int var, uint delta, int width = 32) => GpuOnlyException.Throw<int>();
 
+    /// <summary>Exchanges an unsigned integer variable from a thread with a lower ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_up_sync")]
+    public static uint ShuffleUpSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
+
     /// <summary>Exchanges an integer variable based on a bitwise XOR of the caller's lane ID.</summary>
     [CudaIntrinsic("__shfl_xor_sync")]
     public static int ShuffleXorSync(uint mask, int var, int laneMask, int width = 32) => GpuOnlyException.Throw<int>();
@@ -345,6 +349,10 @@ public static class Warp
     /// <summary>Exchanges a double-precision floating-point variable from a thread with a higher ID relative to the caller.</summary>
     [CudaIntrinsic("__shfl_down_sync")]
     public static double ShuffleDownSync(uint mask, double var, uint delta, int width = 32) => GpuOnlyException.Throw<double>();
+
+    /// <summary>Exchanges an unsigned integer variable from a thread with a lower ID relative to the caller.</summary>
+    [CudaIntrinsic("__shfl_up_sync")]
+    public static uint ShuffleUpSync(uint mask, uint var, uint delta, int width = 32) => GpuOnlyException.Throw<uint>();
 
     // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051
