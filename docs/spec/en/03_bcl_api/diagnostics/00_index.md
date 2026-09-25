@@ -45,6 +45,9 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0029](GSH0029.md) | Warning | Manual unmanaged allocation detected |
 | [GSH0030](GSH0030.md) | Error | SyncGrid requires a cooperative kernel |
 | [GSH0031](GSH0031.md) | Error | Direct invocation of [GpuKernel] is prohibited |
+| [GSH0032](GSH0032.md) | Error | Unrolled loop bounds must be statically deterministic |
+| [GSH0033](GSH0033.md) | Warning | Unrolled loop may be silently ignored |
+| [GSH0034](GSH0034.md) | Error | The 'params' modifier is prohibited in GPU device code |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
 ## See Also

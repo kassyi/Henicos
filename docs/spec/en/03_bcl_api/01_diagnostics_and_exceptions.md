@@ -55,6 +55,11 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0027**](diagnostics/GSH0027.md) | Error    | **Disposing borrowed resource.** Disposing a borrowed resource creates a double-dispose hazard. If taking ownership, use `[TakesOwnership]`.                                                      |
 | [**GSH0028**](diagnostics/GSH0028.md) | Error    | **Disposable resource in Default Interface Method.** Default Interface Methods (DIM) cannot take ownership or dispose of resources.                                                               |
 | [**GSH0029**](diagnostics/GSH0029.md) | Warning  | **Manual unmanaged allocation detected.** You invoked manual unmanaged allocation (e.g., `Gpu.Unsafe.Malloc()`). Ensure corresponding `Free()` is called to prevent VRAM leaks.                   |
+| [**GSH0030**](diagnostics/GSH0030.md) | Error    | **SyncGrid requires a cooperative kernel.** Triggered when `Gpu.SyncGrid()` is called from a non-cooperative kernel.                                                                              |
+| [**GSH0031**](diagnostics/GSH0031.md) | Error    | **Direct invocation of [GpuKernel] is prohibited.** You attempted to call a `[GpuKernel]` method directly from host code instead of using `Gpu.Launch()`.                                         |
+| [**GSH0032**](diagnostics/GSH0032.md) | Error    | **Unrolled loop bounds must be statically deterministic.** The bounds of a loop marked with `Gpu.Hint.Unroll` cannot be determined at compile-time.                                               |
+| [**GSH0033**](diagnostics/GSH0033.md) | Warning  | **Unrolled loop may be silently ignored.** A loop marked with `Gpu.Hint.Unroll` contains dynamic control flow (e.g., `break`), causing `nvcc` to ignore the hint.                               |
+| [**GSH0034**](diagnostics/GSH0034.md) | Error    | **The 'params' modifier is prohibited in GPU device code.** You used the `params` keyword in a `[GpuKernel]` or `[GpuDevice]` method, which incurs hidden heap allocation.                      |
 | [**RS0030**](diagnostics/RS0030.md)   | Error    | **Banned API in GPU kernel.** Triggered when a banned .NET API is used in GPU kernels or GPU intrinsics are invoked from host CPU code.                                                           |
 
 ---
