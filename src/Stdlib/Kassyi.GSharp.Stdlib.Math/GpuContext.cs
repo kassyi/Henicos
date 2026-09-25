@@ -56,6 +56,14 @@ public class GpuContext : IDisposable
         ? GSharpAotProvider.Instance
         : NativeProvider.Instance;
 
+    /// <summary>
+    /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
+    /// </summary>
+    public IntPtr Stream
+    {
+        get;
+    }
+
     private int _disposed;
 
     // Memory pooling for Lazy Evaluation
@@ -71,6 +79,11 @@ public class GpuContext : IDisposable
     {
         MaxWords = maxWords;
         Engine = engine;
+        
+        using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
+        Runtime.Interop.CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+        Stream = stream;
+
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
             // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
@@ -132,7 +145,11 @@ public class GpuContext : IDisposable
 
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
-            // JIT-specific cleanup
+            if (Stream != IntPtr.Zero)
+            {
+                using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
+                Runtime.Interop.CudaDriverApi.cuStreamDestroy(Stream);
+            }
         }
         else
         {

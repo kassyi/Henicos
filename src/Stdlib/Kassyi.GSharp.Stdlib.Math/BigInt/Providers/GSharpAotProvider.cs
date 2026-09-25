@@ -322,7 +322,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(
-            CudaDriverApi.cuMemcpyDtoD_v2(destPointer, srcPointer, numWords * 4));
+            CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, numWords * 4, IntPtr.Zero));
     }
 
     public void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
@@ -421,6 +421,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
+        if (gridDim > 108u) gridDim = 108u;
 
         int currentL = m <= 512 ? m : (m / 32);
         uint sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
@@ -494,6 +495,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
+        if (gridDim > 108u) gridDim = 108u;
 
         int currentL = m <= 512 ? m : (m / 32);
         uint sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
@@ -787,8 +789,8 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public void BeginCapture(IntPtr stream)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        // CU_STREAM_CAPTURE_MODE_GLOBAL = 0
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream, 0));
+        // CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamBeginCapture(stream, 1));
     }
 
     /// <inheritdoc/>
