@@ -422,7 +422,7 @@ public static class GpuBigIntNttKernels
             return;
         }
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1);
+        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
         Gpu.SyncGrid();
 
         args.Buffer = temporaryBuffer;
@@ -434,7 +434,7 @@ public static class GpuBigIntNttKernels
         args.Buffer = buffer; // Restore buffer
         Gpu.SyncGrid();
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2);
+        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
         Gpu.SyncGrid();
 
         args.CurrentL = length2;
@@ -472,7 +472,7 @@ public static class GpuBigIntNttKernels
         Device_NTT_Shared_Row(args);
         Gpu.SyncGrid();
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1);
+        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
         Gpu.SyncGrid();
 
         args.Buffer = temporaryBuffer;
@@ -484,7 +484,7 @@ public static class GpuBigIntNttKernels
         args.Buffer = buffer; // Restore buffer
         Gpu.SyncGrid();
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2);
+        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
         Gpu.SyncGrid();
     }
 

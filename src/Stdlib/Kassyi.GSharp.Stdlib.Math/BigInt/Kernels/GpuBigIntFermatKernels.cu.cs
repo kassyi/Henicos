@@ -8,7 +8,8 @@ public static class GpuBigIntFermatKernels
 {
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords)
+    public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords,
+        bool syncThreads = true)
     {
         Gpu.GridStrideLoop(n, i =>
         {
@@ -30,11 +31,17 @@ public static class GpuBigIntFermatKernels
             dDst1[i] = val;
             dDst2[i] = val;
         });
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
     }
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceTranspose32X32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height)
+    public static void DeviceTranspose32X32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height,
+        bool syncThreads = true)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_mem[];");
 
@@ -85,11 +92,17 @@ public static class GpuBigIntFermatKernels
             Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
             odata[(outYIndex + i) * height + outXIndex] = val;
         });
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
     }
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceShiftLeftParallel([GpuReadOnly] uint[] src, uint[] dst, int shiftBits, int numWords)
+    public static void DeviceShiftLeftParallel([GpuReadOnly] uint[] src, uint[] dst, int shiftBits, int numWords,
+        bool syncThreads = true)
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
@@ -113,6 +126,11 @@ public static class GpuBigIntFermatKernels
             uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             dst[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
         });
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
     }
 
 
@@ -156,7 +174,8 @@ public static class GpuBigIntFermatKernels
         [GpuReadOnly] uint[] b,
         uint[] result,
         int numWords,
-        int sign)
+        int sign,
+        bool syncThreads = true)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -232,6 +251,14 @@ public static class GpuBigIntFermatKernels
 
             Gpu.SyncThreads();
         }
+
+        // Loop internal already syncs threads at the end of each iteration,
+        // but if numWords == 0, threads wouldn't sync.
+        // Also it's safe to sync again to fulfill the syncThreads=true contract.
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
     }
 
     [GpuKernel]
@@ -242,7 +269,7 @@ public static class GpuBigIntFermatKernels
         int numWords,
         int sign)
     {
-        DeviceAddSubParallel(a, b, result, numWords, sign);
+        DeviceAddSubParallel(a, b, result, numWords, sign, true);
     }
 
     [GpuKernel]
@@ -288,27 +315,19 @@ public static class GpuBigIntFermatKernels
 
             Gpu.SyncThreads();
 
-            DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords);
-            Gpu.SyncThreads();
-
-            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1);
-            Gpu.SyncThreads();
+            DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords, true);
+            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1, true);
 
             // Subtract Q * 8
-            DeviceShiftLeftParallel(quotient, temp, 3, outNumWords);
-            Gpu.SyncThreads();
-            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
-            Gpu.SyncThreads();
+            DeviceShiftLeftParallel(quotient, temp, 3, outNumWords, true);
+            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
 
             // Subtract Q * 2
-            DeviceShiftLeftParallel(quotient, temp, 1, outNumWords);
-            Gpu.SyncThreads();
-            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1);
-            Gpu.SyncThreads();
+            DeviceShiftLeftParallel(quotient, temp, 1, outNumWords, true);
+            DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
 
             // Subtract Q * 1
-            DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1);
-            Gpu.SyncThreads();
+            DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1, true);
 
             if (iter >= 2)
             {
