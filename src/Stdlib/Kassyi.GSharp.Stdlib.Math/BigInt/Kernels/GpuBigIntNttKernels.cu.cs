@@ -364,8 +364,6 @@ public static class GpuBigIntNttKernels
             uint L = (uint)(localSum & 0xFFFFFFFFul);
             uint H = (uint)(localSum >> 32);
 
-            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
-
             SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
             SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
 
@@ -373,66 +371,13 @@ public static class GpuBigIntNttKernels
             int warpId = tIdx / 32;
             int bDim = BlockDimension.X;
 
-            if (laneId == 31)
-            {
-                sharedH[warpId] = H;
-            }
-            Gpu.SyncThreads();
-
-            if (laneId == 0)
-            {
-                if (warpId == 0)
-                {
-                    prevH = 0u;
-                }
-                else
-                {
-                    prevH = sharedH[warpId - 1];
-                }
-            }
+            uint prevH = ResolveOverlapH(H, sharedH, laneId, warpId);
 
             ulong sum = (ulong)L + prevH;
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
-            uint scanG = warpScan.Generate;
-            uint scanP = warpScan.Propagate;
-
-            if (laneId == 31)
-            {
-                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
-            }
-
-            Gpu.SyncThreads();
-
-            if (warpId == 0)
-            {
-                int numWarps = (bDim + 31) / 32;
-                var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
-                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
-
-                if (laneId < numWarps)
-                {
-                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
-                }
-            }
-
-            Gpu.SyncThreads();
-
-            uint carryIn = 0u;
-
-            if (warpId > 0)
-            {
-                carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
-            }
-
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
-            if (laneId > 0)
-            {
-                carryIn = prevScanG | (prevScanP & carryIn);
-            }
+            ComputeBlockCarryScan(g, p, sharedCarry, laneId, warpId, bDim, out uint scanG, out uint scanP, out uint carryIn);
 
             if (i < maxWordCount)
             {
@@ -447,6 +392,75 @@ public static class GpuBigIntNttKernels
             }
 
             Gpu.SyncThreads();
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static uint ResolveOverlapH(uint h, SharedMemory<uint> sharedH, int laneId, int warpId)
+    {
+        uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, h, 1);
+
+        if (laneId == 31)
+        {
+            sharedH[warpId] = h;
+        }
+        Gpu.SyncThreads();
+
+        if (laneId == 0)
+        {
+            if (warpId == 0)
+            {
+                prevH = 0u;
+            }
+            else
+            {
+                prevH = sharedH[warpId - 1];
+            }
+        }
+
+        return prevH;
+    }
+
+    [GpuDeviceFunction]
+    private static void ComputeBlockCarryScan(uint g, uint p, SharedMemory<uint> sharedCarry, int laneId, int warpId, int bDim, out uint scanG, out uint scanP, out uint carryIn)
+    {
+        var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+        scanG = warpScan.Generate;
+        scanP = warpScan.Propagate;
+
+        if (laneId == 31)
+        {
+            sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
+        }
+
+        Gpu.SyncThreads();
+
+        if (warpId == 0)
+        {
+            int numWarps = (bDim + 31) / 32;
+            var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
+            var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
+
+            if (laneId < numWarps)
+            {
+                sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+            }
+        }
+
+        Gpu.SyncThreads();
+
+        carryIn = 0u;
+
+        if (warpId > 0)
+        {
+            carryIn = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
+        }
+
+        uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+        uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+        if (laneId > 0)
+        {
+            carryIn = prevScanG | (prevScanP & carryIn);
         }
     }
 
