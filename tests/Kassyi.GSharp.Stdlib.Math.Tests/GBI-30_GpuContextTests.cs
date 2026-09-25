@@ -57,25 +57,26 @@ public class GBI30_GpuContextTests
         // Arrange
         var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
         var provider = GSharpAotProvider.Instance;
-        var carryPoolField = typeof(GSharpAotProvider).GetField(
-            "_carryBufferPool",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        var carryPool =
-            (ConcurrentDictionary<int,
-                Lazy<ConcurrentBag<IntPtr>>>)carryPoolField!.GetValue(provider)!;
+        
+        // Populate cache by performing an NTT multiplication
+        var a = new GpuUIntBigInteger(context, new uint[] { 1, 2, 3 });
+        var b = new GpuUIntBigInteger(context, new uint[] { 4, 5, 6 });
+        var c = new GpuUIntBigInteger(context, new uint[6]);
+        provider.Mul(context, a, b, c);
 
-        // Add a test-specific unique key
-        const int testKey = -99999;
-        carryPool.TryAdd(testKey, new Lazy<ConcurrentBag<IntPtr>>(() => [new IntPtr(0x1234)]));
+        var twiddleCacheField = typeof(GSharpAotProvider).GetField(
+            "_twiddleCache",
+            BindingFlags.NonPublic | BindingFlags.Instance);
+        var twiddleCache = (System.Collections.IDictionary)twiddleCacheField!.GetValue(provider)!;
+
+        Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
+        int cachedCountBefore = twiddleCache.Count;
 
         // Act
         context.Dispose();
 
         // Assert - Shared provider caches must not be cleared on individual context disposal
-        Assert.True(carryPool.ContainsKey(testKey));
-
-        // Cleanup test key only
-        carryPool.TryRemove(testKey, out _);
+        Assert.Equal(cachedCountBefore, twiddleCache.Count);
     }
 
     [SkippableFact]
