@@ -452,7 +452,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <summary>Gets a value indicating whether this big integer is an even number.</summary>
     public bool GetIsEven()
     {
-        var word = Context.Provider.ReadWord(DevicePointer, 0);
+        var word = Context.Provider.ReadWord(DevicePointer);
         return (word & 1) == 0;
     }
 

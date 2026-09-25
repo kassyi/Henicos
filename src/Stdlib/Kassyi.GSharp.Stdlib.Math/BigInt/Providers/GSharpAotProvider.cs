@@ -15,21 +15,16 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
     private class TwiddleCache
     {
-        /// <inheritdoc/>
         public IntPtr Forward1;
 
-        /// <inheritdoc/>
         public IntPtr Forward2;
 
-        /// <inheritdoc/>
         public IntPtr Inverse1;
 
-        /// <inheritdoc/>
         public IntPtr Inverse2;
     }
 
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
-    private readonly object _cacheLock = new();
 
     static GSharpAotProvider()
     {
@@ -193,6 +188,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
     private unsafe ulong Extract64Host(GpuContext context, GpuUIntBigInteger operand, int shift)
     {
+        _ = context;
         var numWords = operand.NumWords;
         var wordShift = shift / 32;
         var bitShift = shift % 32;
@@ -479,7 +475,6 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var n1 = m / n2;
         var maxL = m <= 512 ? m : System.Math.Max(n1, n2);
-        var sharedMemWords = System.Math.Max(1055, maxL);
         var threadsNeeded = maxL / 2;
 
         var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
