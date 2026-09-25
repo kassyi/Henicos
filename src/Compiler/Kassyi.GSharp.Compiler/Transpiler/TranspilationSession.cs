@@ -25,8 +25,15 @@ internal readonly ref struct TranspilationSession
         Action<Diagnostic>? reportDiagnostic = null,
         ITranspilerDialect? dialect = null)
     {
-        if (methodDecl is null) throw new ArgumentNullException(nameof(methodDecl));
-        if (semanticModel is null) throw new ArgumentNullException(nameof(semanticModel));
+        if (methodDecl is null)
+        {
+            throw new ArgumentNullException(nameof(methodDecl));
+        }
+
+        if (semanticModel is null)
+        {
+            throw new ArgumentNullException(nameof(semanticModel));
+        }
 
         var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
         if (methodSymbol != null && !GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))

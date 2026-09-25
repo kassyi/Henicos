@@ -105,7 +105,10 @@ internal class Program
         var logOut = json ? Console.Error : Console.Out;
         var results = ComputeBenchmarkRunner.RunSuite(suite, iterations: 10, logOut);
 
-        if (results.Count == 0) return 1;
+        if (results.Count == 0)
+        {
+            return 1;
+        }
 
         if (json)
         {

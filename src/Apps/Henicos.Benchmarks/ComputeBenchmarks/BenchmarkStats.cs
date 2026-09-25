@@ -1,5 +1,3 @@
-using System;
-
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public readonly record struct BenchmarkStats(double Min, double Median, double Mean)
