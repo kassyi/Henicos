@@ -21,7 +21,7 @@ __gsharp_auto_result[__gsharp_global_tid] = 0;
 return;
 }
 ";
-public static readonly string BadKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + BadKernel_Source;
+public static readonly string BadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BadKernel_Source;
 private static IntPtr? s_hfunc_BadKernel;
 /// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
 public static void WarmupFunctionPointerBadKernel()
@@ -31,7 +31,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCom
 s_hfunc_BadKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "ErrorSpecKernel_BadKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::System.Int32[] LaunchBadKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Int32[] LaunchBadKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
@@ -56,7 +56,7 @@ hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
+hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
@@ -89,7 +89,7 @@ return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::System.Int32[] LaunchBadKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::System.Int32[] LaunchBadKernel_Device(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
@@ -114,7 +114,7 @@ hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
 blockDimX, blockDimY, blockDimZ, // Block dim
 sharedMemBytes, // Shared mem
-IntPtr.Zero, // Stream
+hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
