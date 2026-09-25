@@ -36,7 +36,7 @@ public class TrialFactoringBenchmark
             var currentBatchSize = Math.Min(BatchSize, (maxP - startOdd) / 2 + 1);
             var gridX = (currentBatchSize + BlockSize - 1) / BlockSize;
 
-            FermatTrialFactoringKernelsWrapper.LaunchKernel_SearchFactors32_Device(
+            FermatTrialFactoringKernelsWrapper.LaunchSearchFactors32Kernel_Device(
                 startOdd,
                 (uint)e,
                 resultsBuffer.DevicePointer,
