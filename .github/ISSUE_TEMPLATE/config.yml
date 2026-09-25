@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/kassyi/Henicos/discussions
+    about: Please ask general questions or discuss ideas here before opening an issue.

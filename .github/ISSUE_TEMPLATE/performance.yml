@@ -1,0 +1,33 @@
+name: "Performance / Optimization"
+description: "Report a performance bottleneck or suggest kernel/transpiler optimization"
+title: "[Perf]: "
+labels: ["performance"]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: Target Kernel / Component
+      description: Which kernel, algorithm, or runtime path is experiencing bottlenecks?
+      placeholder: "e.g., GpuBigIntDivRem.Sqrt / PiBenchmark Chudnovsky step"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-metrics
+    attributes:
+      label: Current Profiling / Benchmark Data
+      description: Execution times (`just bench-pi`, `just test`), throughput, register pressure, occupancy, or Nsight Compute metrics.
+      placeholder: |
+        - Command: just bench-pi 10M
+        - Execution Time: 63.1s
+        - Bottleneck: High register pressure causing spill to local memory
+    validations:
+      required: true
+
+  - type: textarea
+    id: optimization-idea
+    attributes:
+      label: Optimization Proposal / Direction
+      description: Concrete ideas for improvement (e.g., loop unrolling, shared memory usage, warp shuffle intrinsics, PTX inline assembly).
+    validations:
+      required: true
