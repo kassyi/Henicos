@@ -180,6 +180,10 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyDtoDAsync_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static unsafe partial CUresult cuLaunchKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
