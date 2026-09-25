@@ -24,12 +24,12 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_155_BitOperationsKernelsWrapper
 {
-public const string Rotate32Kernel_Source = @"extern ""C"" __declspec(dllexport) void Rotate32Kernel(unsigned int* __restrict__ val, int* __restrict__ shift, unsigned int* __restrict__ rotLeftRes, unsigned int* __restrict__ rotRightRes){
+public const string Rotate32Kernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_155_BitOperationsKernels_Rotate32Kernel(unsigned int* __restrict__ val, int* __restrict__ shift, unsigned int* __restrict__ rotLeftRes, unsigned int* __restrict__ rotRightRes){
 int tid = threadIdx.x;
 rotLeftRes[tid]=__gsharp_rotl32(val[tid],shift[tid]);
 rotRightRes[tid]=__gsharp_rotr32(val[tid],shift[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Rotate32Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ val, int* __restrict__ shift, unsigned int* __restrict__ rotLeftRes, unsigned int* __restrict__ rotRightRes)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_155_BitOperationsKernels_Rotate32Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ val, int* __restrict__ shift, unsigned int* __restrict__ rotLeftRes, unsigned int* __restrict__ rotRightRes)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -39,7 +39,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Rotate32Kernel(val, shift, rotLeftRes, rotRightRes);
+SYN_155_BitOperationsKernels_Rotate32Kernel(val, shift, rotLeftRes, rotRightRes);
 }
 }
 ";
@@ -53,9 +53,9 @@ if (val.Length == 0 || shift.Length == 0 || rotLeftRes.Length == 0 || rotRightRe
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_155_BitOperationsKernels_Rotate32Kernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate32Kernel_Delegate>("__gsharp_launch_Rotate32Kernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate32Kernel_Delegate>("__gsharp_launch_SYN_155_BitOperationsKernels_Rotate32Kernel", dllPath);
 fixed (global::System.UInt32* p_val = val)
 fixed (global::System.Int32* p_shift = shift)
 fixed (global::System.UInt32* p_rotLeftRes = rotLeftRes)
@@ -84,12 +84,12 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_155_BitOperationsKernelsWrapper
 {
-public const string Rotate64Kernel_Source = @"extern ""C"" __declspec(dllexport) void Rotate64Kernel(unsigned long long* __restrict__ val, int* __restrict__ shift, unsigned long long* __restrict__ rotLeftRes, unsigned long long* __restrict__ rotRightRes){
+public const string Rotate64Kernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_155_BitOperationsKernels_Rotate64Kernel(unsigned long long* __restrict__ val, int* __restrict__ shift, unsigned long long* __restrict__ rotLeftRes, unsigned long long* __restrict__ rotRightRes){
 int tid = threadIdx.x;
 rotLeftRes[tid]=__gsharp_rotl64(val[tid],shift[tid]);
 rotRightRes[tid]=__gsharp_rotr64(val[tid],shift[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Rotate64Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned long long* __restrict__ val, int* __restrict__ shift, unsigned long long* __restrict__ rotLeftRes, unsigned long long* __restrict__ rotRightRes)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_155_BitOperationsKernels_Rotate64Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned long long* __restrict__ val, int* __restrict__ shift, unsigned long long* __restrict__ rotLeftRes, unsigned long long* __restrict__ rotRightRes)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -99,7 +99,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Rotate64Kernel(val, shift, rotLeftRes, rotRightRes);
+SYN_155_BitOperationsKernels_Rotate64Kernel(val, shift, rotLeftRes, rotRightRes);
 }
 }
 ";
@@ -113,9 +113,9 @@ if (val.Length == 0 || shift.Length == 0 || rotLeftRes.Length == 0 || rotRightRe
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_155_BitOperationsKernels_Rotate64Kernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate64Kernel_Delegate>("__gsharp_launch_Rotate64Kernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Rotate64Kernel_Delegate>("__gsharp_launch_SYN_155_BitOperationsKernels_Rotate64Kernel", dllPath);
 fixed (global::System.UInt64* p_val = val)
 fixed (global::System.Int32* p_shift = shift)
 fixed (global::System.UInt64* p_rotLeftRes = rotLeftRes)

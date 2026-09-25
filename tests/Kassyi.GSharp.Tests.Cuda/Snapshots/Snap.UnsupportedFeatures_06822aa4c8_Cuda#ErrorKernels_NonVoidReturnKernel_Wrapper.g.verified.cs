@@ -13,23 +13,21 @@ namespace TestSpace
 {
 public static partial class ErrorKernelsWrapper
 {
-public const string NonVoidReturnKernel_Source = @"extern ""C"" __global__ void NonVoidReturnKernel(int* __restrict__ __gsharp_auto_result){
+public const string NonVoidReturnKernel_Source = @"extern ""C"" __global__ void ErrorKernels_NonVoidReturnKernel(int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = 1;
 return;
 }
 ";
 public static readonly string NonVoidReturnKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + NonVoidReturnKernel_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_NonVoidReturnKernel = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_NonVoidReturnKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerNonVoidReturnKernel()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ErrorKernels_NonVoidReturnKernel.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'ErrorKernels_NonVoidReturnKernel.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_NonVoidReturnKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+s_hfunc_NonVoidReturnKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "ErrorKernels_NonVoidReturnKernel");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe global::System.Int32[] LaunchNonVoidReturnKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -38,7 +36,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonVoidReturnKernel.Value, "NonVoidReturnKernel");
+WarmupFunctionPointerNonVoidReturnKernel();
+IntPtr hfunc = s_hfunc_NonVoidReturnKernel!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {
@@ -95,7 +94,8 @@ uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * grid
 var __gsharp_auto_result = new global::System.Int32[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_NonVoidReturnKernel.Value, "NonVoidReturnKernel");
+WarmupFunctionPointerNonVoidReturnKernel();
+IntPtr hfunc = s_hfunc_NonVoidReturnKernel!.Value;
 IntPtr d___gsharp_auto_result = IntPtr.Zero;
 try
 {

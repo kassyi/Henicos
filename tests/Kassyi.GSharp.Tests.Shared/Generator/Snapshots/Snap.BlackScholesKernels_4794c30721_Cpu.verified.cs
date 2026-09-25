@@ -13,7 +13,7 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class BlackScholesKernelsWrapper
 {
-public const string BlackScholesKernel_Source = @"extern ""C"" __declspec(dllexport) void BlackScholesKernel(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n){
+public const string BlackScholesKernel_Source = @"extern ""C"" __declspec(dllexport) void BlackScholesKernels_BlackScholesKernel(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n){
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < n; tid += gridDim.x * blockDim.x)
 {
 float c;
@@ -23,7 +23,7 @@ callResult[tid]=c;
 putResult[tid]=p;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_BlackScholesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_BlackScholesKernels_BlackScholesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -33,7 +33,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-BlackScholesKernel(s, x, t, r, v, callResult, putResult, n);
+BlackScholesKernels_BlackScholesKernel(s, x, t, r, v, callResult, putResult, n);
 }
 }
 ";
@@ -47,9 +47,9 @@ if (s.Length == 0 || x.Length == 0 || t.Length == 0 || callResult.Length == 0 ||
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"BlackScholesKernels_BlackScholesKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_BlackScholesKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_BlackScholesKernels_BlackScholesKernel", dllPath);
 fixed (global::System.Single* p_s = s)
 fixed (global::System.Single* p_x = x)
 fixed (global::System.Single* p_t = t)

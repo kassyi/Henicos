@@ -47,7 +47,7 @@ int Value;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void HappyPathKernel(int* __restrict__ output){
+extern ""C"" __declspec(dllexport) void SYN_17_TargetTypedNewKernels_HappyPathKernel(int* __restrict__ output){
 int tid = threadIdx.x;
 Kassyi_GSharp_Tests_Syntax_NestedChildStruct c1 = Kassyi_GSharp_Tests_Syntax_NestedChildStruct{};
 c1.Value=tid+100;
@@ -55,7 +55,7 @@ Kassyi_GSharp_Tests_Syntax_NestedChildStruct c2 = CreateChild(Kassyi_GSharp_Test
 c2.Value=tid+200;
 output[tid]=c1.Value+c2.Value;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_HappyPathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_17_TargetTypedNewKernels_HappyPathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -65,7 +65,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-HappyPathKernel(output);
+SYN_17_TargetTypedNewKernels_HappyPathKernel(output);
 }
 }
 ";
@@ -79,9 +79,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_17_TargetTypedNewKernels_HappyPathKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_HappyPathKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_SYN_17_TargetTypedNewKernels_HappyPathKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
@@ -124,7 +124,7 @@ Kassyi_GSharp_Tests_Syntax_NestedChildStruct Child;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void NestedInitializerKernel(int* __restrict__ output){
+extern ""C"" __declspec(dllexport) void SYN_17_TargetTypedNewKernels_NestedInitializerKernel(int* __restrict__ output){
 int tid = threadIdx.x;
 Kassyi_GSharp_Tests_Syntax_NestedParentStruct p = ([&]() {
 Kassyi_GSharp_Tests_Syntax_NestedParentStruct _tmp{}; _tmp.Id = tid; _tmp.Child = Kassyi_GSharp_Tests_Syntax_NestedChildStruct{}; return _tmp; }
@@ -132,7 +132,7 @@ Kassyi_GSharp_Tests_Syntax_NestedParentStruct _tmp{}; _tmp.Id = tid; _tmp.Child 
 p.Child.Value=tid*5;
 output[tid]=p.Id+p.Child.Value;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedInitializerKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_17_TargetTypedNewKernels_NestedInitializerKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -142,7 +142,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NestedInitializerKernel(output);
+SYN_17_TargetTypedNewKernels_NestedInitializerKernel(output);
 }
 }
 ";
@@ -156,9 +156,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_17_TargetTypedNewKernels_NestedInitializerKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_NestedInitializerKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_SYN_17_TargetTypedNewKernels_NestedInitializerKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);

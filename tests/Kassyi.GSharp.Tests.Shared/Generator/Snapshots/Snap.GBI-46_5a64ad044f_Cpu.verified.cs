@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class WrapperAllocationKernelsWrapper
 {
-public const string AllocationTestKernel_Source = @"extern ""C"" __declspec(dllexport) void AllocationTestKernel(int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal, unsigned int constantVal){
+public const string AllocationTestKernel_Source = @"extern ""C"" __declspec(dllexport) void WrapperAllocationKernels_AllocationTestKernel(int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal, unsigned int constantVal){
 if((*ioVal)>constantVal)
 {
 (*outVal)=arrayVal[0];
@@ -35,7 +35,7 @@ else
 (*outVal)=0;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AllocationTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal, unsigned int constantVal)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_WrapperAllocationKernels_AllocationTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  ioVal, float* __restrict__  outVal, int* __restrict__ arrayVal, unsigned int constantVal)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -45,7 +45,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AllocationTestKernel(ioVal, outVal, arrayVal, constantVal);
+WrapperAllocationKernels_AllocationTestKernel(ioVal, outVal, arrayVal, constantVal);
 }
 }
 ";
@@ -60,9 +60,9 @@ if (arrayVal.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"WrapperAllocationKernels_AllocationTestKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_AllocationTestKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllocationTestKernel_Delegate>("__gsharp_launch_WrapperAllocationKernels_AllocationTestKernel", dllPath);
 fixed (global::System.Int32* p_ioVal = &ioVal)
 fixed (global::System.Single* p_outVal = &outVal)
 fixed (global::System.Int32* p_arrayVal = arrayVal)

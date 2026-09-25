@@ -24,10 +24,10 @@ namespace TestNamespace
 {
 public static partial class TestKernelsWrapper
 {
-public const string AddKernel_Source = @"extern ""C"" __declspec(dllexport) void AddKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c){
+public const string AddKernel_Source = @"extern ""C"" __declspec(dllexport) void TestKernels_AddKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c){
 c[0]=a[0]+b[0];
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ c)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernels_AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ c)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -37,7 +37,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AddKernel(a, b, c);
+TestKernels_AddKernel(a, b, c);
 }
 }
 ";
@@ -51,9 +51,9 @@ if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"TestKernels_AddKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AddKernel_Delegate>("__gsharp_launch_AddKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AddKernel_Delegate>("__gsharp_launch_TestKernels_AddKernel", dllPath);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)

@@ -80,7 +80,7 @@ return this->Data;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult){
+extern ""C"" __declspec(dllexport) void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult){
 TestNamespace_DummyRef a = dA;
 TestNamespace_DummyRef b = dB;
 TestNamespace_DummyRef c = dResult;
@@ -88,7 +88,7 @@ DummyOp(&ctx,c,a,b);
 DummyUnaryOp(c,a);
 DummyShiftOp(ctx,c,a,5);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_MacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernels_MacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -98,7 +98,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MacroKernel(ctx, dA, dB, dResult);
+TestKernels_MacroKernel(ctx, dA, dB, dResult);
 }
 }
 ";
@@ -129,9 +129,9 @@ if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"TestKernels_MacroKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MacroKernel_Delegate>("__gsharp_launch_MacroKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MacroKernel_Delegate>("__gsharp_launch_TestKernels_MacroKernel", dllPath);
 fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)

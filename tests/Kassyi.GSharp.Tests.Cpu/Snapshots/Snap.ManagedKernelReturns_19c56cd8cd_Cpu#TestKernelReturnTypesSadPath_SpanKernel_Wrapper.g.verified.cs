@@ -24,9 +24,9 @@ if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDi
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.ReadOnlySpan<global::System.Single>[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"TestKernelReturnTypesSadPath_SpanKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SpanKernel_Delegate>("__gsharp_launch_SpanKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SpanKernel_Delegate>("__gsharp_launch_TestKernelReturnTypesSadPath_SpanKernel", dllPath);
 fixed (global::System.ReadOnlySpan<global::System.Single>* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

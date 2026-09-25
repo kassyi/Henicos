@@ -54,7 +54,7 @@ double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __global__ void RoundtripKernel(Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct* __restrict__  data){
+extern ""C"" __global__ void GEN56_NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct* __restrict__  data){
 (*data).Field1_Byte=(unsigned char)((*data).Field1_Byte+1-1);
 (*data).Field4_Short=(short)((*data).Field4_Short+1-1);
 }
@@ -115,22 +115,21 @@ host.Field5_Double2 = *((global::Kassyi.GSharp.Core.Double2*)pField);
 }
 }
 #pragma warning restore CS8500
-private static readonly System.Lazy<byte[]> s_binaryData_RoundtripKernel = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_RoundtripKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerRoundtripKernel()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN56_NestedVectorAlignmentKernels_RoundtripKernel.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN56_NestedVectorAlignmentKernels_RoundtripKernel.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_RoundtripKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_RoundtripKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN56_NestedVectorAlignmentKernels_RoundtripKernel");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchRoundtripKernel(ref global::Kassyi.GSharp.Tests.Shared.Runtime.GEN56_AlignmentTestStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RoundtripKernel.Value, "RoundtripKernel");
+WarmupFunctionPointerRoundtripKernel();
+IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
 System.Collections.Generic.List<IntPtr> data_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_data = IntPtr.Zero;
 try
@@ -170,7 +169,8 @@ public static unsafe void LaunchRoundtripKernel_Device(IntPtr data, uint gridDim
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_RoundtripKernel.Value, "RoundtripKernel");
+WarmupFunctionPointerRoundtripKernel();
+IntPtr hfunc = s_hfunc_RoundtripKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -252,7 +252,7 @@ double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __global__ void WriteExpectedOffsetsKernel(int* __restrict__ offsets){
+extern ""C"" __global__ void GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(int* __restrict__ offsets){
 {
 Kassyi_GSharp_Tests_Shared_Runtime_GEN56_AlignmentTestStruct s = {};
 unsigned char* basePtr = (unsigned char*)&s;
@@ -266,16 +266,14 @@ offsets[5]=64;
 }
 ";
 public static readonly string WriteExpectedOffsetsKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + WriteExpectedOffsetsKernel_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_WriteExpectedOffsetsKernel = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_WriteExpectedOffsetsKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerWriteExpectedOffsetsKernel()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_WriteExpectedOffsetsKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_WriteExpectedOffsetsKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN56_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchWriteExpectedOffsetsKernel(global::System.Int32[] offsets, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -284,7 +282,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WriteExpectedOffsetsKernel.Value, "WriteExpectedOffsetsKernel");
+WarmupFunctionPointerWriteExpectedOffsetsKernel();
+IntPtr hfunc = s_hfunc_WriteExpectedOffsetsKernel!.Value;
 IntPtr d_offsets = IntPtr.Zero;
 try
 {
@@ -342,7 +341,8 @@ public static unsafe void LaunchWriteExpectedOffsetsKernel_Device(IntPtr offsets
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_WriteExpectedOffsetsKernel.Value, "WriteExpectedOffsetsKernel");
+WarmupFunctionPointerWriteExpectedOffsetsKernel();
+IntPtr hfunc = s_hfunc_WriteExpectedOffsetsKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[1];
@@ -365,6 +365,56 @@ finally
 }
 #pragma warning restore CS8500
 }
+}
+
+
+// File: GSharpModuleContext_SnapshotTest.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+using System.Threading;
+
+namespace Kassyi.GSharp.Generated
+{
+    public static class GSharpModuleContext_SnapshotTest
+    {
+        private static IntPtr? s_hModule;
+        private static readonly object s_lock = new object();
+
+        /// <summary>
+        /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+        /// </summary>
+        public static IntPtr GetOrLoadModule()
+        {
+            if (s_hModule.HasValue) return s_hModule.Value;
+            lock (s_lock)
+            {
+                if (s_hModule.HasValue) return s_hModule.Value;
+
+                var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
+                var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
+                if (!System.IO.File.Exists(fatbinPath))
+                {
+                    throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
+                }
+
+                byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
+                s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+                return s_hModule.Value;
+            }
+        }
+
+        /// <summary>
+        /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
+        /// </summary>
+        public static void Warmup()
+        {
+            // Force load the module first
+            GetOrLoadModule();
+            global::Kassyi.GSharp.Tests.Shared.Runtime.GEN56_NestedVectorAlignmentKernelsWrapper.WarmupFunctionPointerWriteExpectedOffsetsKernel();
+            global::Kassyi.GSharp.Tests.Shared.Runtime.GEN56_NestedVectorAlignmentKernelsWrapper.WarmupFunctionPointerRoundtripKernel();
+        }
+    }
 }
 
 

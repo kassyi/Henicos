@@ -13,22 +13,20 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __global__ void Kernel_COR01_FastMath_Abs(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __global__ void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=fabsf(input[tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Abs_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Kernel_COR01_FastMath_Abs_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_Kernel_COR01_FastMath_Abs = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_Kernel_COR01_FastMath_Abs;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerKernel_COR01_FastMath_Abs()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_Kernel_COR01_FastMath_Abs.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_Kernel_COR01_FastMath_Abs = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchKernel_COR01_FastMath_Abs(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -37,7 +35,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Abs.Value, "Kernel_COR01_FastMath_Abs");
+WarmupFunctionPointerKernel_COR01_FastMath_Abs();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Abs!.Value;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -128,7 +127,8 @@ public static unsafe void LaunchKernel_COR01_FastMath_Abs_Device(IntPtr input, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Abs.Value, "Kernel_COR01_FastMath_Abs");
+WarmupFunctionPointerKernel_COR01_FastMath_Abs();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Abs!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -171,22 +171,20 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __global__ void Kernel_COR01_FastMath_Exp(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __global__ void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=__expf(input[tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Exp_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Kernel_COR01_FastMath_Exp_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_Kernel_COR01_FastMath_Exp = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_Kernel_COR01_FastMath_Exp;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerKernel_COR01_FastMath_Exp()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_Kernel_COR01_FastMath_Exp.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_Kernel_COR01_FastMath_Exp = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchKernel_COR01_FastMath_Exp(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -195,7 +193,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Exp.Value, "Kernel_COR01_FastMath_Exp");
+WarmupFunctionPointerKernel_COR01_FastMath_Exp();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Exp!.Value;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -286,7 +285,8 @@ public static unsafe void LaunchKernel_COR01_FastMath_Exp_Device(IntPtr input, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Exp.Value, "Kernel_COR01_FastMath_Exp");
+WarmupFunctionPointerKernel_COR01_FastMath_Exp();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Exp!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -329,22 +329,20 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __global__ void Kernel_COR01_FastMath_Log(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __global__ void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=__logf(input[tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Log_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Kernel_COR01_FastMath_Log_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_Kernel_COR01_FastMath_Log = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_Kernel_COR01_FastMath_Log;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerKernel_COR01_FastMath_Log()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_Kernel_COR01_FastMath_Log.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_Kernel_COR01_FastMath_Log = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchKernel_COR01_FastMath_Log(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -353,7 +351,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Log.Value, "Kernel_COR01_FastMath_Log");
+WarmupFunctionPointerKernel_COR01_FastMath_Log();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Log!.Value;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -444,7 +443,8 @@ public static unsafe void LaunchKernel_COR01_FastMath_Log_Device(IntPtr input, I
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Log.Value, "Kernel_COR01_FastMath_Log");
+WarmupFunctionPointerKernel_COR01_FastMath_Log();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Log!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -487,22 +487,20 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __global__ void Kernel_COR01_FastMath_Sqrt(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __global__ void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=__fsqrt_rn(input[tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Sqrt_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + Kernel_COR01_FastMath_Sqrt_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_Kernel_COR01_FastMath_Sqrt = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_Kernel_COR01_FastMath_Sqrt;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerKernel_COR01_FastMath_Sqrt()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_Kernel_COR01_FastMath_Sqrt.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_Kernel_COR01_FastMath_Sqrt = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchKernel_COR01_FastMath_Sqrt(global::System.Single[] input, global::System.Single[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -511,7 +509,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Sqrt.Value, "Kernel_COR01_FastMath_Sqrt");
+WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Sqrt!.Value;
 IntPtr d_input = IntPtr.Zero;
 IntPtr d_output = IntPtr.Zero;
 try
@@ -602,7 +601,8 @@ public static unsafe void LaunchKernel_COR01_FastMath_Sqrt_Device(IntPtr input, 
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_Kernel_COR01_FastMath_Sqrt.Value, "Kernel_COR01_FastMath_Sqrt");
+WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
+IntPtr hfunc = s_hfunc_Kernel_COR01_FastMath_Sqrt!.Value;
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -627,6 +627,58 @@ finally
 }
 #pragma warning restore CS8500
 }
+}
+
+
+// File: GSharpModuleContext_SnapshotTest.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+using System.Threading;
+
+namespace Kassyi.GSharp.Generated
+{
+    public static class GSharpModuleContext_SnapshotTest
+    {
+        private static IntPtr? s_hModule;
+        private static readonly object s_lock = new object();
+
+        /// <summary>
+        /// Loads the fatbin module for this assembly into the CUDA driver if it hasn't been loaded yet.
+        /// </summary>
+        public static IntPtr GetOrLoadModule()
+        {
+            if (s_hModule.HasValue) return s_hModule.Value;
+            lock (s_lock)
+            {
+                if (s_hModule.HasValue) return s_hModule.Value;
+
+                var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_SnapshotTest).Assembly.Location) ?? System.AppContext.BaseDirectory;
+                var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_SnapshotTest.fatbin");
+                if (!System.IO.File.Exists(fatbinPath))
+                {
+                    throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
+                }
+
+                byte[] binaryData = System.IO.File.ReadAllBytes(fatbinPath);
+                s_hModule = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadModule(binaryData);
+                return s_hModule.Value;
+            }
+        }
+
+        /// <summary>
+        /// Preloads the module and all function pointers for kernels in this assembly to eliminate lazy-loading latency.
+        /// </summary>
+        public static void Warmup()
+        {
+            // Force load the module first
+            GetOrLoadModule();
+            global::Kassyi.GSharp.Tests.FastMathTests.COR_01_FastMathBoundaryKernelsWrapper.WarmupFunctionPointerKernel_COR01_FastMath_Exp();
+            global::Kassyi.GSharp.Tests.FastMathTests.COR_01_FastMathBoundaryKernelsWrapper.WarmupFunctionPointerKernel_COR01_FastMath_Log();
+            global::Kassyi.GSharp.Tests.FastMathTests.COR_01_FastMathBoundaryKernelsWrapper.WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
+            global::Kassyi.GSharp.Tests.FastMathTests.COR_01_FastMathBoundaryKernelsWrapper.WarmupFunctionPointerKernel_COR01_FastMath_Abs();
+        }
+    }
 }
 
 

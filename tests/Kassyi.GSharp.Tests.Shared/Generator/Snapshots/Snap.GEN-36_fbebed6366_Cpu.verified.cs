@@ -13,13 +13,13 @@ namespace Kassyi.GSharp.Tests.Shared.Generator.Kernels
 {
 public static partial class ArraySyntaxTestKernelsWrapper
 {
-public const string ImplicitArrayFormsKernel_Source = @"extern ""C"" __declspec(dllexport) void ImplicitArrayFormsKernel(){
+public const string ImplicitArrayFormsKernel_Source = @"extern ""C"" __declspec(dllexport) void ArraySyntaxTestKernels_ImplicitArrayFormsKernel(){
 int implicitStackAlloc[3]={ 1, 2, 3 };
 int implicitArray[3]={ 4, 5, 6 };
 int collectionExpr[3]={ 7, 8, 9 };
 int singleStackAlloc[1]={ 42 };
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ImplicitArrayFormsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ArraySyntaxTestKernels_ImplicitArrayFormsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -29,7 +29,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ImplicitArrayFormsKernel();
+ArraySyntaxTestKernels_ImplicitArrayFormsKernel();
 }
 }
 ";
@@ -40,9 +40,9 @@ private unsafe delegate void ImplicitArrayFormsKernel_Delegate(uint gridDimX, ui
 public static unsafe void LaunchImplicitArrayFormsKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"ArraySyntaxTestKernels_ImplicitArrayFormsKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ImplicitArrayFormsKernel_Delegate>("__gsharp_launch_ImplicitArrayFormsKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ImplicitArrayFormsKernel_Delegate>("__gsharp_launch_ArraySyntaxTestKernels_ImplicitArrayFormsKernel", dllPath);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }
 #pragma warning restore CS8500

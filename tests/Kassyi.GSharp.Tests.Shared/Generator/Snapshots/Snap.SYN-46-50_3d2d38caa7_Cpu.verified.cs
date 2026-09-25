@@ -24,10 +24,10 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
-public const string AtomicAddStressKernel_Source = @"extern ""C"" __declspec(dllexport) void AtomicAddStressKernel(int* __restrict__ globalSum){
+public const string AtomicAddStressKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel(int* __restrict__ globalSum){
 atomicAdd(&globalSum[0],1);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AtomicAddStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ globalSum)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ globalSum)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -37,7 +37,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AtomicAddStressKernel(globalSum);
+SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel(globalSum);
 }
 }
 ";
@@ -51,9 +51,9 @@ if (globalSum.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicAddStressKernel_Delegate>("__gsharp_launch_AtomicAddStressKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicAddStressKernel_Delegate>("__gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_AtomicAddStressKernel", dllPath);
 fixed (global::System.Int32* p_globalSum = globalSum)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalSum);
@@ -79,7 +79,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
-public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __declspec(dllexport) void AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState){
+public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState){
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<31)
 {
@@ -87,7 +87,7 @@ atomicOr(&globalState[0],(unsigned int)(1<<tid));
 }
 atomicMax(&globalState[1],(unsigned int)tid);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AtomicOrMaxStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ globalState)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ globalState)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -97,7 +97,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AtomicOrMaxStressKernel(globalState);
+SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(globalState);
 }
 }
 ";
@@ -111,9 +111,9 @@ if (globalState.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicOrMaxStressKernel_Delegate>("__gsharp_launch_AtomicOrMaxStressKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AtomicOrMaxStressKernel_Delegate>("__gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel", dllPath);
 fixed (global::System.UInt32* p_globalState = globalState)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalState);
@@ -139,7 +139,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
-public const string IntrinsicsKernel_Source = @"extern ""C"" __declspec(dllexport) void IntrinsicsKernel(int* __restrict__ data){
+public const string IntrinsicsKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel(int* __restrict__ data){
 int tid = threadIdx.x;
 if(tid<10)
 {
@@ -151,7 +151,7 @@ if(tid==0)
 data[1]=max(data[0],100);
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_IntrinsicsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -161,7 +161,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-IntrinsicsKernel(data);
+SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel(data);
 }
 }
 ";
@@ -175,9 +175,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IntrinsicsKernel_Delegate>("__gsharp_launch_IntrinsicsKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IntrinsicsKernel_Delegate>("__gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_IntrinsicsKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -203,7 +203,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
-public const string SharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void SharedMemoryKernel(int* __restrict__ data, int dynSize){
+public const string SharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel(int* __restrict__ data, int dynSize){
 int tid = threadIdx.x;
 __shared__ int sStatic[256];
 extern __shared__ char __gsharp_dynamic_smem[];
@@ -220,7 +220,7 @@ sDyn2[tid]=3.14f;
 __syncthreads();
 data[tid]=sStatic[tid]+sDyn1[tid];
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_SharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int dynSize)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int dynSize)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -230,7 +230,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SharedMemoryKernel(data, dynSize);
+SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel(data, dynSize);
 }
 }
 ";
@@ -244,9 +244,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryKernel_Delegate>("__gsharp_launch_SharedMemoryKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryKernel_Delegate>("__gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, dynSize);
@@ -272,7 +272,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_46_50_ConcurrencyAndWarpKernelsWrapper
 {
-public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __declspec(dllexport) void SharedMemoryReverseKernel(int* __restrict__ data, int size){
+public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(int* __restrict__ data, int size){
 int tid = threadIdx.x;
 __shared__ int sMem[256];
 if(tid<size)
@@ -285,7 +285,7 @@ if(tid<size)
 data[tid]=sMem[size-1-tid];
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_SharedMemoryReverseKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int size)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int size)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -295,7 +295,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SharedMemoryReverseKernel(data, size);
+SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(data, size);
 }
 }
 ";
@@ -309,9 +309,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryReverseKernel_Delegate>("__gsharp_launch_SharedMemoryReverseKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SharedMemoryReverseKernel_Delegate>("__gsharp_launch_SYN_46_50_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, size);

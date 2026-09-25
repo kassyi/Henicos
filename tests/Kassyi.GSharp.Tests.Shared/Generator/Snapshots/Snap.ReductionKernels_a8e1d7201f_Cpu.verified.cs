@@ -35,7 +35,7 @@ float W;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ReductionKernel(Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n){
+extern ""C"" __declspec(dllexport) void ReductionKernels_ReductionKernel(Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n){
 __shared__ float sdata[8];
 int tid = threadIdx.x;
 int i = blockIdx.x*(blockDim.x*2)+tid;
@@ -74,7 +74,7 @@ output[blockIdx.x]=val;
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ReductionKernels_ReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -84,7 +84,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ReductionKernel(input, output, n);
+ReductionKernels_ReductionKernel(input, output, n);
 }
 }
 ";
@@ -98,9 +98,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"ReductionKernels_ReductionKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernels_ReductionKernel", dllPath);
 fixed (global::Kassyi.GSharp.Core.Float4* p_input = input)
 fixed (global::System.Single* p_output = output)
 {

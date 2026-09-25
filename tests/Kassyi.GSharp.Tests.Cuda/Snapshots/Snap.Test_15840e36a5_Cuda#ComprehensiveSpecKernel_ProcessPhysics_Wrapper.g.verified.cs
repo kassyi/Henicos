@@ -89,7 +89,7 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __global__ void ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
+extern ""C"" __global__ void ComprehensiveSpecKernel_ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
 (*successFlag)=false;
 float Gravity = 9.8f;
 int tx = threadIdx.x;
@@ -270,16 +270,14 @@ host.FloatValue = native.FloatValue;
 host.DoubleValue = native.DoubleValue;
 }
 #pragma warning restore CS8500
-private static readonly System.Lazy<byte[]> s_binaryData_ProcessPhysics = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_ProcessPhysics;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerProcessPhysics()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "ComprehensiveSpecKernel_ProcessPhysics.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'ComprehensiveSpecKernel_ProcessPhysics.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_ProcessPhysics.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+s_hfunc_ProcessPhysics = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "ComprehensiveSpecKernel_ProcessPhysics");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref global::System.Single totalMagnitude, out global::System.Boolean successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -289,7 +287,8 @@ return;
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics.Value, "ProcessPhysics");
+WarmupFunctionPointerProcessPhysics();
+IntPtr hfunc = s_hfunc_ProcessPhysics!.Value;
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
@@ -386,7 +385,8 @@ public static unsafe void LaunchProcessPhysics_Device(IntPtr particles, IntPtr t
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_ProcessPhysics.Value, "ProcessPhysics");
+WarmupFunctionPointerProcessPhysics();
+IntPtr hfunc = s_hfunc_ProcessPhysics!.Value;
 try
 {
 void** kernelParams = stackalloc void*[6];

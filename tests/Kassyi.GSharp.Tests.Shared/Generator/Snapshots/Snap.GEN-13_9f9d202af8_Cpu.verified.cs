@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels
 {
 public static partial class GpuMacroTestKernelsWrapper
 {
-public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __declspec(dllexport) void Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue){
+public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __declspec(dllexport) void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue){
 for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
 outputBuffer[i]=fillValue;
@@ -27,7 +27,7 @@ outputBuffer[0]=singleValue;
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_MacroTest_FillAndSingle(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -37,7 +37,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_MacroTest_FillAndSingle(outputBuffer, length, fillValue, singleValue);
+GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(outputBuffer, length, fillValue, singleValue);
 }
 }
 ";
@@ -51,9 +51,9 @@ if (outputBuffer.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_Kernel_MacroTest_FillAndSingle", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle", dllPath);
 fixed (global::System.UInt32* p_outputBuffer = outputBuffer)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_outputBuffer, length, fillValue, singleValue);

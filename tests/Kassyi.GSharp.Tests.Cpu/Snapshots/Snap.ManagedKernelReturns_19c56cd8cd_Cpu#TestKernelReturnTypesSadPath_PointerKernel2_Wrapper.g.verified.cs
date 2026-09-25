@@ -13,12 +13,12 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Generator
 {
 public static partial class TestKernelReturnTypesSadPathWrapper
 {
-public const string PointerKernel2_Source = @"extern ""C"" __declspec(dllexport) void PointerKernel2(float** __restrict__ __gsharp_auto_result){
+public const string PointerKernel2_Source = @"extern ""C"" __declspec(dllexport) void TestKernelReturnTypesSadPath_PointerKernel2(float** __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = nullptr;
 return;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_PointerKernel2(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float** __restrict__ __gsharp_auto_result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernelReturnTypesSadPath_PointerKernel2(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float** __restrict__ __gsharp_auto_result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -28,7 +28,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-PointerKernel2(__gsharp_auto_result);
+TestKernelReturnTypesSadPath_PointerKernel2(__gsharp_auto_result);
 }
 }
 ";
@@ -42,9 +42,9 @@ if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDi
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
 var __gsharp_auto_result = new global::System.Single*[__gsharp_total_threads];
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"TestKernelReturnTypesSadPath_PointerKernel2{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerKernel2_Delegate>("__gsharp_launch_PointerKernel2", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerKernel2_Delegate>("__gsharp_launch_TestKernelReturnTypesSadPath_PointerKernel2", dllPath);
 fixed (global::System.Single** p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);

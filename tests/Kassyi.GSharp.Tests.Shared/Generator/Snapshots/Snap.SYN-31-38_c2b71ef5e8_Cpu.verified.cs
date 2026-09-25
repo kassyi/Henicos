@@ -24,13 +24,13 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-public const string FixedBufferKernel_Source = @"extern ""C"" __declspec(dllexport) void FixedBufferKernel(unsigned int* __restrict__ data){
+public const string FixedBufferKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel(unsigned int* __restrict__ data){
 unsigned int* p = &data[0];
 {
 p[1]=p[0]+10;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_FixedBufferKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -40,7 +40,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-FixedBufferKernel(data);
+SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel(data);
 }
 }
 ";
@@ -54,9 +54,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<FixedBufferKernel_Delegate>("__gsharp_launch_FixedBufferKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<FixedBufferKernel_Delegate>("__gsharp_launch_SYN_31_38_AdvancedMemoryKernels_FixedBufferKernel", dllPath);
 fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
@@ -82,7 +82,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest){
+public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest){
 unsigned int* pIdx = &idx[0];
 unsigned int* pVal = &val[0];
 {
@@ -94,7 +94,7 @@ dest[*ptrI++]=*ptrV+++10u;
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_PointerComplexAssignmentKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -104,7 +104,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-PointerComplexAssignmentKernel(idx, val, dest);
+SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel(idx, val, dest);
 }
 }
 ";
@@ -118,9 +118,9 @@ if (idx.Length == 0 || val.Length == 0 || dest.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_PointerComplexAssignmentKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerComplexAssignmentKernel_Delegate>("__gsharp_launch_SYN_31_38_AdvancedMemoryKernels_PointerComplexAssignmentKernel", dllPath);
 fixed (global::System.UInt32* p_idx = idx)
 fixed (global::System.UInt32* p_val = val)
 fixed (global::System.UInt32* p_dest = dest)
@@ -148,7 +148,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-public const string PointerDecrementKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
+public const string PointerDecrementKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
 unsigned int* pSrc = &src[0];
 unsigned int* pDest = &dest[0];
 {
@@ -160,7 +160,7 @@ for(int i = 0;i<3;i++)
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_PointerDecrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -170,7 +170,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-PointerDecrementKernel(src, dest);
+SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel(src, dest);
 }
 }
 ";
@@ -184,9 +184,9 @@ if (src.Length == 0 || dest.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_PointerDecrementKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerDecrementKernel_Delegate>("__gsharp_launch_SYN_31_38_AdvancedMemoryKernels_PointerDecrementKernel", dllPath);
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {
@@ -213,7 +213,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_31_38_AdvancedMemoryKernelsWrapper
 {
-public const string PointerIncrementKernel_Source = @"extern ""C"" __declspec(dllexport) void PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
+public const string PointerIncrementKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
 unsigned int* pSrc = &src[0];
 unsigned int* pDest = &dest[0];
 {
@@ -225,7 +225,7 @@ for(int i = 0;i<3;i++)
 }
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_PointerIncrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -235,7 +235,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-PointerIncrementKernel(src, dest);
+SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel(src, dest);
 }
 }
 ";
@@ -249,9 +249,9 @@ if (src.Length == 0 || dest.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerIncrementKernel_Delegate>("__gsharp_launch_PointerIncrementKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PointerIncrementKernel_Delegate>("__gsharp_launch_SYN_31_38_AdvancedMemoryKernels_PointerIncrementKernel", dllPath);
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {

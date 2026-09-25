@@ -24,14 +24,14 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string NestedTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void NestedTernaryKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result){
+public const string NestedTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_01_09_ControlFlowKernels_NestedTernaryKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result){
 int tid = threadIdx.x;
 int x = a[tid];
 int y = b[tid];
 int z = c[tid];
 result[tid]=(x>y?((y>z?1:2)):((x>z?3:4)));
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedTernaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_01_09_ControlFlowKernels_NestedTernaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -41,7 +41,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NestedTernaryKernel(a, b, c, result);
+SYN_01_09_ControlFlowKernels_NestedTernaryKernel(a, b, c, result);
 }
 }
 ";
@@ -55,9 +55,9 @@ if (a.Length == 0 || b.Length == 0 || c.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_01_09_ControlFlowKernels_NestedTernaryKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_NestedTernaryKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedTernaryKernel_Delegate>("__gsharp_launch_SYN_01_09_ControlFlowKernels_NestedTernaryKernel", dllPath);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_c = c)
@@ -86,7 +86,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values){
+public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values){
 int tid = threadIdx.x;
 int idx = sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
@@ -95,7 +95,7 @@ auto& __coalesce_target = targetArray[idx];
 return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coalesce_target.Value;
 }());
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_NullCoalescingAssignmentSideEffectKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -105,7 +105,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NullCoalescingAssignmentSideEffectKernel(targetArray, sideEffectTracker, values);
+SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel(targetArray, sideEffectTracker, values);
 }
 }
 ";
@@ -119,9 +119,9 @@ if (targetArray.Length == 0 || sideEffectTracker.Length == 0 || values.Length ==
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_NullCoalescingAssignmentSideEffectKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NullCoalescingAssignmentSideEffectKernel_Delegate>("__gsharp_launch_SYN_01_09_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel", dllPath);
 fixed (global::System.Nullable<global::System.Int32>* p_targetArray = targetArray)
 fixed (global::System.Int32* p_sideEffectTracker = sideEffectTracker)
 fixed (global::System.Int32* p_values = values)
@@ -149,7 +149,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string NullCoalescingKernel_Source = @"extern ""C"" __declspec(dllexport) void NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results){
+public const string NullCoalescingKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_01_09_ControlFlowKernels_NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results){
 int tid = threadIdx.x;
 System_Nullable<int> input = nullableInputs[tid];
 results[tid]=([&]() {
@@ -157,7 +157,7 @@ auto __coalesce_tmp = input;
 return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
 }());
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_NullCoalescingKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_01_09_ControlFlowKernels_NullCoalescingKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -167,7 +167,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NullCoalescingKernel(nullableInputs, fallbackValues, results);
+SYN_01_09_ControlFlowKernels_NullCoalescingKernel(nullableInputs, fallbackValues, results);
 }
 }
 ";
@@ -181,9 +181,9 @@ if (nullableInputs.Length == 0 || fallbackValues.Length == 0 || results.Length =
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_01_09_ControlFlowKernels_NullCoalescingKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NullCoalescingKernel_Delegate>("__gsharp_launch_NullCoalescingKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NullCoalescingKernel_Delegate>("__gsharp_launch_SYN_01_09_ControlFlowKernels_NullCoalescingKernel", dllPath);
 fixed (global::System.Nullable<global::System.Int32>* p_nullableInputs = nullableInputs)
 fixed (global::System.Int32* p_fallbackValues = fallbackValues)
 fixed (global::System.Int32* p_results = results)
@@ -211,7 +211,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string RefSwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void RefSwitchExpressionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign){
+public const string RefSwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign){
 int tid = threadIdx.x;
 if(selectors[tid]==1)
 {
@@ -222,7 +222,7 @@ else
 b[tid]=valuesToAssign[tid];
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_RefSwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -232,7 +232,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-RefSwitchExpressionKernel(a, b, selectors, valuesToAssign);
+SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel(a, b, selectors, valuesToAssign);
 }
 }
 ";
@@ -246,9 +246,9 @@ if (a.Length == 0 || b.Length == 0 || selectors.Length == 0 || valuesToAssign.Le
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_RefSwitchExpressionKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RefSwitchExpressionKernel_Delegate>("__gsharp_launch_SYN_01_09_ControlFlowKernels_RefSwitchExpressionKernel", dllPath);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_selectors = selectors)
@@ -277,11 +277,11 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string SimpleTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void SimpleTernaryKernel(int* __restrict__ a, int* __restrict__ b, double* __restrict__ result){
+public const string SimpleTernaryKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_01_09_ControlFlowKernels_SimpleTernaryKernel(int* __restrict__ a, int* __restrict__ b, double* __restrict__ result){
 int tid = threadIdx.x;
 result[tid]=(a[tid]>b[tid]?a[tid]:b[tid]*1.5);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_SimpleTernaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, double* __restrict__ result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_01_09_ControlFlowKernels_SimpleTernaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, double* __restrict__ result)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -291,7 +291,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SimpleTernaryKernel(a, b, result);
+SYN_01_09_ControlFlowKernels_SimpleTernaryKernel(a, b, result);
 }
 }
 ";
@@ -305,9 +305,9 @@ if (a.Length == 0 || b.Length == 0 || result.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_01_09_ControlFlowKernels_SimpleTernaryKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SimpleTernaryKernel_Delegate>("__gsharp_launch_SimpleTernaryKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SimpleTernaryKernel_Delegate>("__gsharp_launch_SYN_01_09_ControlFlowKernels_SimpleTernaryKernel", dllPath);
 fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Double* p_result = result)
@@ -335,7 +335,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_01_09_ControlFlowKernelsWrapper
 {
-public const string SwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void SwitchExpressionKernel(int* __restrict__ input, int* __restrict__ output){
+public const string SwitchExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_01_09_ControlFlowKernels_SwitchExpressionKernel(int* __restrict__ input, int* __restrict__ output){
 int tid = threadIdx.x;
 int val = input[tid];
 output[tid]=([&]() {
@@ -348,7 +348,7 @@ default: return 99;
 }
 }());
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_01_09_ControlFlowKernels_SwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -358,7 +358,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SwitchExpressionKernel(input, output);
+SYN_01_09_ControlFlowKernels_SwitchExpressionKernel(input, output);
 }
 }
 ";
@@ -372,9 +372,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_01_09_ControlFlowKernels_SwitchExpressionKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SwitchExpressionKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SwitchExpressionKernel_Delegate>("__gsharp_launch_SYN_01_09_ControlFlowKernels_SwitchExpressionKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {

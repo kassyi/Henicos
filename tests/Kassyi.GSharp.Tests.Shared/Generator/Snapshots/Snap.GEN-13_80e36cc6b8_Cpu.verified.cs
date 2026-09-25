@@ -24,7 +24,7 @@ namespace TestSpace
 {
 public static partial class MacroExpansionKernelWrapper
 {
-public const string TestMacroKernel_Source = @"extern ""C"" __declspec(dllexport) void TestMacroKernel(int* __restrict__ data, int length){
+public const string TestMacroKernel_Source = @"extern ""C"" __declspec(dllexport) void MacroExpansionKernel_TestMacroKernel(int* __restrict__ data, int length){
 for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
 data[i]=i;
@@ -37,7 +37,7 @@ data[0]=999;
 /* inline ptx here */
 ;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_TestMacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_MacroExpansionKernel_TestMacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -47,7 +47,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-TestMacroKernel(data, length);
+MacroExpansionKernel_TestMacroKernel(data, length);
 }
 }
 ";
@@ -61,9 +61,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"MacroExpansionKernel_TestMacroKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<TestMacroKernel_Delegate>("__gsharp_launch_TestMacroKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<TestMacroKernel_Delegate>("__gsharp_launch_MacroExpansionKernel_TestMacroKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, length);

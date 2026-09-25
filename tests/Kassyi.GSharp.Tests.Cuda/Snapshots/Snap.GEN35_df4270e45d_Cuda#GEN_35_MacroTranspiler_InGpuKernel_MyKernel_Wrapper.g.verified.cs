@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Tests.TestCases.Transpiler
 {
 public static partial class GEN_35_MacroTranspiler_InGpuKernelWrapper
 {
-public const string MyKernel_Source = @"extern ""C"" __global__ void MyKernel(){
+public const string MyKernel_Source = @"extern ""C"" __global__ void GEN_35_MacroTranspiler_InGpuKernel_MyKernel(){
 int sum = 0;
 // [GpuUnroll] start=0, count=3
 {
@@ -36,22 +36,21 @@ sum+=100;
 }
 ";
 public static readonly string MyKernel_FullSource = global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source + global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source + MyKernel_Source;
-private static readonly System.Lazy<byte[]> s_binaryData_MyKernel = new System.Lazy<byte[]>(() =>
+private static IntPtr? s_hfunc_MyKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerMyKernel()
 {
-var fatbinPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, "GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin");
-if (!System.IO.File.Exists(fatbinPath))
-{
-throw new System.InvalidOperationException($"AOT kernel binary 'GEN_35_MacroTranspiler_InGpuKernel_MyKernel.fatbin' was not found at '{fatbinPath}'.");
+if (s_hfunc_MyKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_MegaTestCompilationBase.GetOrLoadModule();
+s_hfunc_MyKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "GEN_35_MacroTranspiler_InGpuKernel_MyKernel");
 }
-return System.IO.File.ReadAllBytes(fatbinPath);
-}
-, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
 public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1, uint sharedMemBytes = 0, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyKernel.Value, "MyKernel");
+WarmupFunctionPointerMyKernel();
+IntPtr hfunc = s_hfunc_MyKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[0];
@@ -76,7 +75,8 @@ public static unsafe void LaunchMyKernel_Device(uint gridDimX = 1, uint gridDimY
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
-IntPtr hfunc = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.LoadAotKernel(s_binaryData_MyKernel.Value, "MyKernel");
+WarmupFunctionPointerMyKernel();
+IntPtr hfunc = s_hfunc_MyKernel!.Value;
 try
 {
 void** kernelParams = stackalloc void*[0];

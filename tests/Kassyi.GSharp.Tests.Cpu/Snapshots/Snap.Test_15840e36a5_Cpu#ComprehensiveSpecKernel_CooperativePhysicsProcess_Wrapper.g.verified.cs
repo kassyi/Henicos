@@ -13,12 +13,12 @@ namespace DebugReduc
 {
 public static partial class ComprehensiveSpecKernelWrapper
 {
-public const string CooperativePhysicsProcess_Source = @"extern ""C"" __declspec(dllexport) void CooperativePhysicsProcess(int* __restrict__ data){
+public const string CooperativePhysicsProcess_Source = @"extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_CooperativePhysicsProcess(int* __restrict__ data){
 int tid = threadIdx.x;
 data[tid]=tid;
 cg::this_grid().sync();
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_CooperativePhysicsProcess(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ComprehensiveSpecKernel_CooperativePhysicsProcess(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -28,7 +28,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-CooperativePhysicsProcess(data);
+ComprehensiveSpecKernel_CooperativePhysicsProcess(data);
 }
 }
 ";
@@ -42,9 +42,9 @@ if (data.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"ComprehensiveSpecKernel_CooperativePhysicsProcess{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_CooperativePhysicsProcess", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_ComprehensiveSpecKernel_CooperativePhysicsProcess", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);

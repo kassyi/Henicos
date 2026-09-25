@@ -24,7 +24,7 @@ namespace Kassyi.GSharp.Tests.Syntax
 {
 public static partial class SYN_91_92_ParenthesesSuppressionKernelsWrapper
 {
-public const string ParenthesesKernel_Source = @"extern ""C"" __declspec(dllexport) void ParenthesesKernel(int* __restrict__ output, int a, int b, int c){
+public const string ParenthesesKernel_Source = @"extern ""C"" __declspec(dllexport) void SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel(int* __restrict__ output, int a, int b, int c){
 if(a<b)
 {
 output[0]=1;
@@ -39,7 +39,7 @@ output[1]=10;
 }
 output[2]=a*(b+c);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ParenthesesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output, int a, int b, int c)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output, int a, int b, int c)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -49,7 +49,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ParenthesesKernel(output, a, b, c);
+SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel(output, a, b, c);
 }
 }
 ";
@@ -63,9 +63,9 @@ if (output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_ParenthesesKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ParenthesesKernel_Delegate>("__gsharp_launch_SYN_91_92_ParenthesesSuppressionKernels_ParenthesesKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output, a, b, c);

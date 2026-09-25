@@ -24,7 +24,7 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class SgemmKernelsWrapper
 {
-public const string SgemmKernel_Source = @"extern ""C"" __declspec(dllexport) void SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
+public const string SgemmKernel_Source = @"extern ""C"" __declspec(dllexport) void SgemmKernels_SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
 __shared__ float As[256];
 __shared__ float Bs[256];
 int bx = blockIdx.x;
@@ -64,7 +64,7 @@ if(row<n&&col<n)
 c[row*n+col]=cValue;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_SgemmKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_SgemmKernels_SgemmKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -74,7 +74,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SgemmKernel(a, b, c, n);
+SgemmKernels_SgemmKernel(a, b, c, n);
 }
 }
 ";
@@ -88,9 +88,9 @@ if (a.Length == 0 || b.Length == 0 || c.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"SgemmKernels_SgemmKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SgemmKernel_Delegate>("__gsharp_launch_SgemmKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<SgemmKernel_Delegate>("__gsharp_launch_SgemmKernels_SgemmKernel", dllPath);
 fixed (global::System.Single* p_a = a)
 fixed (global::System.Single* p_b = b)
 fixed (global::System.Single* p_c = c)

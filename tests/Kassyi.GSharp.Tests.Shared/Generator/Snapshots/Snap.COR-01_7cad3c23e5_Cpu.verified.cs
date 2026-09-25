@@ -13,11 +13,11 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __declspec(dllexport) void Kernel_COR01_FastMath_Abs(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __declspec(dllexport) void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=fabsf(input[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_COR01_FastMath_Abs(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -27,7 +27,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_COR01_FastMath_Abs(input, output);
+COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(input, output);
 }
 }
 ";
@@ -41,9 +41,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Abs_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Abs", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Abs_Delegate>("__gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
 {
@@ -70,11 +70,11 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __declspec(dllexport) void Kernel_COR01_FastMath_Exp(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __declspec(dllexport) void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=expf(input[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_COR01_FastMath_Exp(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -84,7 +84,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_COR01_FastMath_Exp(input, output);
+COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(input, output);
 }
 }
 ";
@@ -98,9 +98,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Exp_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Exp", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Exp_Delegate>("__gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
 {
@@ -127,11 +127,11 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __declspec(dllexport) void Kernel_COR01_FastMath_Log(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __declspec(dllexport) void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=logf(input[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_COR01_FastMath_Log(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -141,7 +141,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_COR01_FastMath_Log(input, output);
+COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(input, output);
 }
 }
 ";
@@ -155,9 +155,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Log_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Log", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Log_Delegate>("__gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
 {
@@ -184,11 +184,11 @@ namespace Kassyi.GSharp.Tests.FastMathTests
 {
 public static partial class COR_01_FastMathBoundaryKernelsWrapper
 {
-public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __declspec(dllexport) void Kernel_COR01_FastMath_Sqrt(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __declspec(dllexport) void COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(float* __restrict__ input, float* __restrict__ output){
 int tid = threadIdx.x;
 output[tid]=sqrtf(input[tid]);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kernel_COR01_FastMath_Sqrt(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -198,7 +198,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Kernel_COR01_FastMath_Sqrt(input, output);
+COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(input, output);
 }
 }
 ";
@@ -212,9 +212,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Sqrt_Delegate>("__gsharp_launch_Kernel_COR01_FastMath_Sqrt", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_COR01_FastMath_Sqrt_Delegate>("__gsharp_launch_COR_01_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt", dllPath);
 fixed (global::System.Single* p_input = input)
 fixed (global::System.Single* p_output = output)
 {

@@ -111,13 +111,13 @@ namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public static partial class Sha256KernelsWrapper
 {
-public const string Sha256Kernel_Source = @"extern ""C"" __declspec(dllexport) void Sha256Kernel(unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages){
+public const string Sha256Kernel_Source = @"extern ""C"" __declspec(dllexport) void Sha256Kernels_Sha256Kernel(unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages){
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < numMessages; tid += gridDim.x * blockDim.x)
 {
 ComputeBlock(tid,input,output);
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Sha256Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Sha256Kernels_Sha256Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -127,7 +127,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Sha256Kernel(input, output, numMessages);
+Sha256Kernels_Sha256Kernel(input, output, numMessages);
 }
 }
 ";
@@ -141,9 +141,9 @@ if (input.Length == 0 || output.Length == 0){
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"Sha256Kernels_Sha256Kernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Sha256Kernel_Delegate>("__gsharp_launch_Sha256Kernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Sha256Kernel_Delegate>("__gsharp_launch_Sha256Kernels_Sha256Kernel", dllPath);
 fixed (global::System.Byte* p_input = input)
 fixed (global::System.UInt32* p_output = output)
 {

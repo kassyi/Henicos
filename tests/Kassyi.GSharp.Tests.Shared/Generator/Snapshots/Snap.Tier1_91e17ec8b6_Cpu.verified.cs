@@ -81,7 +81,7 @@ int Data[4];
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize){
+extern ""C"" __declspec(dllexport) void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize){
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < count; tid += gridDim.x * blockDim.x)
 {
 auto LocalInlineFunc = [&](int x) {
@@ -227,7 +227,7 @@ while(loopCounter<3);
 results[tid]=finalVal;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Tier1IntegrationKernels_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -237,7 +237,7 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize);
+Tier1IntegrationKernels_AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize);
 }
 }
 ";
@@ -278,9 +278,9 @@ if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || glo
 return;
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
-var dllName = $"Tier1IntegrationKernels_AllInOneKernel{archSuffix}.dll";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
-var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_AllInOneKernel", dllPath);
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_Tier1IntegrationKernels_AllInOneKernel", dllPath);
 fixed (global::System.Int32* p_intInput = intInput)
 fixed (global::System.Single* p_floatInput = floatInput)
 fixed (global::System.Single* p_results = results)
