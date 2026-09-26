@@ -13,8 +13,10 @@ public class ProcessRunner : IProcessRunner
         startInfo.RedirectStandardError = true;
         startInfo.CreateNoWindow = true;
 
-        var process = new Process();
-        process.StartInfo = startInfo;
+        var process = new Process
+        {
+            StartInfo = startInfo
+        };
 
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 

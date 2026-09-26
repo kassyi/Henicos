@@ -61,7 +61,7 @@ public static class Sha256Kernels
             w[i] = (uint)(input[offset + i * 4] << 24) |
                    (uint)(input[offset + i * 4 + 1] << 16) |
                    (uint)(input[offset + i * 4 + 2] << 8) |
-                   (uint)(input[offset + i * 4 + 3]);
+                   input[offset + i * 4 + 3];
         }
 
         for (int i = 16; i < 64; i++)

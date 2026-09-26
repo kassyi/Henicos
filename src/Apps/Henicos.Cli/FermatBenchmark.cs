@@ -7,7 +7,10 @@ namespace Henicos.Cli;
 public class FermatBenchmark
 {
     [Params(1000)]
-    public int E { get; set; }
+    public int E
+    {
+        get; set;
+    }
 
     private FermatRunner _runner = null!;
 

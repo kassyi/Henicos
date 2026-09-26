@@ -111,10 +111,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
         }
         catch
         {
-            M00?.Dispose();
-            M01?.Dispose();
-            M10?.Dispose();
-            M11?.Dispose();
+            M00.Dispose();
+            M01.Dispose();
+            M10.Dispose();
+            M11.Dispose();
             throw;
         }
     }
@@ -251,10 +251,6 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// </remarks>
     public void Apply(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger outA, GpuUIntBigInteger outB)
     {
-        ArgumentNullException.ThrowIfNull(a);
-        ArgumentNullException.ThrowIfNull(b);
-        ArgumentNullException.ThrowIfNull(outA);
-        ArgumentNullException.ThrowIfNull(outB);
 
         if (a.Context != Context || b.Context != Context || outA.Context != Context || outB.Context != Context)
         {

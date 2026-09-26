@@ -13,9 +13,7 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// <summary>
     /// Gets the singleton instance of the <see cref="LambdaExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly LambdaExpressionTranspilerRule Instance = new();
-
-    private LambdaExpressionTranspilerRule()
+    public LambdaExpressionTranspilerRule()
     {
     }
 

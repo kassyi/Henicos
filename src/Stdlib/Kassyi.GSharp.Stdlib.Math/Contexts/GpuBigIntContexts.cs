@@ -130,7 +130,7 @@ public struct SqrtNewtonRaphsonContext
         public uint[] Diff;
         public uint[] NextXUnshifted;
         public uint[] NextXShifted;
-        
+
         public uint[] NttBuf1A;
         public uint[] NttBuf2A;
         public uint[] NttBuf1B;
@@ -174,7 +174,7 @@ public struct ReciprocalNewtonRaphsonContext
         public uint[] CurrentProduct;
         public uint[] Diff;
         public uint[] NextIter;
-        
+
         public uint[] NttBuf1A;
         public uint[] NttBuf2A;
         public uint[] NttBuf1B;

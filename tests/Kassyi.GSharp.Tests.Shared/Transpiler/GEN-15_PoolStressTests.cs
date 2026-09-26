@@ -23,7 +23,7 @@ public class GEN_15_PoolStressTests
                 Assert.Empty(visitor.Context.LocalVariableOverrides);
 
                 // Mutate to test reset in future loops
-                visitor.Context.LocalVariableOverrides[$"var_{i}"] = new OverrideValue("test");
+                visitor.Context.PushOverrideScope($"var_{i}", new OverrideValue("test"));
             }
             catch (Exception ex)
             {

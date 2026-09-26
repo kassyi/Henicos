@@ -40,7 +40,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
             // all methods in the hot path are fully JIT compiled (Tier 1).
             for (int i = 0; i < 100; i++)
             {
-                WrapperAllocationKernelsWrapper.LaunchAllocationTestKernel_Device(d_ioVal, d_outVal, d_arrayVal, constantVal);
+                WrapperAllocationKernelsWrapper.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal);
             }
             
             // Measure allocations on hot path
@@ -48,7 +48,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
             
             for (int i = 0; i < 100; i++)
             {
-                WrapperAllocationKernelsWrapper.LaunchAllocationTestKernel_Device(d_ioVal, d_outVal, d_arrayVal, constantVal: 10, gridDimX: 1, blockDimX: 1);
+                WrapperAllocationKernelsWrapper.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal: 10, gridDimX: 1, blockDimX: 1);
             }
             
             long bytesAfter = GC.GetAllocatedBytesForCurrentThread();

@@ -40,7 +40,7 @@ public class GBI06_KernelFusionTests : IDisposable
         Assert.IsType<MulExpression>(expr.Node);
         var mulNode = (MulExpression)expr.Node;
         Assert.IsType<AddExpression>(mulNode.Left);
-        Assert.Same(c, mulNode.Right);
+        Assert.Equal(c, (GpuUIntBigInteger)mulNode.Right);
 
         result.Value = expr;
 

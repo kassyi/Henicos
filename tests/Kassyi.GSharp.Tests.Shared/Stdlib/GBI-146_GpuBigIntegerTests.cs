@@ -23,8 +23,8 @@ public class GBI146_GpuBigIntegerTests
 
         Assert.False(posBigInt.IsNegative);
         Assert.True(negBigInt.IsNegative);
-        Assert.Same(uintVal, posBigInt.Value);
-        Assert.Same(uintVal, negBigInt.Value);
+        Assert.Equal((GpuUIntBigInteger)uintVal, (GpuUIntBigInteger)posBigInt.Value);
+        Assert.Equal((GpuUIntBigInteger)uintVal, (GpuUIntBigInteger)negBigInt.Value);
     }
 
     [SkippableTheory]

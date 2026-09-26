@@ -7,187 +7,115 @@ namespace Kassyi.GSharp.Core;
 
 // --- Float ---
 [StructLayout(LayoutKind.Sequential)]
-public struct Float2
+public struct Float2(float x, float y)
 {
-    public float X; public float Y;
-    public Float2(float x, float y)
-    {
-        X = x; Y = y;
-    }
+    public float X = x; public float Y = y;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Float3
+public struct Float3(float x, float y, float z)
 {
-    public float X; public float Y; public float Z;
-    public Float3(float x, float y, float z)
-    {
-        X = x; Y = y; Z = z;
-    }
+    public float X = x; public float Y = y; public float Z = z;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Float4
+public struct Float4(float x, float y, float z, float w)
 {
-    public float X; public float Y; public float Z; public float W;
-    public Float4(float x, float y, float z, float w)
-    {
-        X = x; Y = y; Z = z; W = w;
-    }
+    public float X = x; public float Y = y; public float Z = z; public float W = w;
 }
 
 // --- Int ---
 [StructLayout(LayoutKind.Sequential)]
-public struct Int2
+public struct Int2(int x, int y)
 {
-    public int X; public int Y;
-    public Int2(int x, int y)
-    {
-        X = x; Y = y;
-    }
+    public int X = x; public int Y = y;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Int3
+public struct Int3(int x, int y, int z)
 {
-    public int X; public int Y; public int Z;
-    public Int3(int x, int y, int z)
-    {
-        X = x; Y = y; Z = z;
-    }
+    public int X = x; public int Y = y; public int Z = z;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Int4
+public struct Int4(int x, int y, int z, int w)
 {
-    public int X; public int Y; public int Z; public int W;
-    public Int4(int x, int y, int z, int w)
-    {
-        X = x; Y = y; Z = z; W = w;
-    }
+    public int X = x; public int Y = y; public int Z = z; public int W = w;
 }
 
 // --- UInt ---
 [StructLayout(LayoutKind.Sequential)]
-public struct UInt2
+public struct UInt2(uint x, uint y)
 {
-    public uint X; public uint Y;
-    public UInt2(uint x, uint y)
-    {
-        X = x; Y = y;
-    }
+    public uint X = x; public uint Y = y;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct UInt3
+public struct UInt3(uint x, uint y, uint z)
 {
-    public uint X; public uint Y; public uint Z;
-    public UInt3(uint x, uint y, uint z)
-    {
-        X = x; Y = y; Z = z;
-    }
+    public uint X = x; public uint Y = y; public uint Z = z;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct UInt4
+public struct UInt4(uint x, uint y, uint z, uint w)
 {
-    public uint X; public uint Y; public uint Z; public uint W;
-    public UInt4(uint x, uint y, uint z, uint w)
-    {
-        X = x; Y = y; Z = z; W = w;
-    }
+    public uint X = x; public uint Y = y; public uint Z = z; public uint W = w;
 }
 
 // --- Double ---
 [StructLayout(LayoutKind.Sequential)]
-public struct Double2
+public struct Double2(double x, double y)
 {
-    public double X; public double Y;
-    public Double2(double x, double y)
-    {
-        X = x; Y = y;
-    }
+    public double X = x; public double Y = y;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Double3
+public struct Double3(double x, double y, double z)
 {
-    public double X; public double Y; public double Z;
-    public Double3(double x, double y, double z)
-    {
-        X = x; Y = y; Z = z;
-    }
+    public double X = x; public double Y = y; public double Z = z;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Double4
+public struct Double4(double x, double y, double z, double w)
 {
-    public double X; public double Y; public double Z; public double W;
-    public Double4(double x, double y, double z, double w)
-    {
-        X = x; Y = y; Z = z; W = w;
-    }
+    public double X = x; public double Y = y; public double Z = z; public double W = w;
 }
 
 // --- Long ---
 [StructLayout(LayoutKind.Sequential)]
-public struct Long2
+public struct Long2(long x, long y)
 {
-    public long X; public long Y;
-    public Long2(long x, long y)
-    {
-        X = x; Y = y;
-    }
+    public long X = x; public long Y = y;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Long3
+public struct Long3(long x, long y, long z)
 {
-    public long X; public long Y; public long Z;
-    public Long3(long x, long y, long z)
-    {
-        X = x; Y = y; Z = z;
-    }
+    public long X = x; public long Y = y; public long Z = z;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Long4
+public struct Long4(long x, long y, long z, long w)
 {
-    public long X; public long Y; public long Z; public long W;
-    public Long4(long x, long y, long z, long w)
-    {
-        X = x; Y = y; Z = z; W = w;
-    }
+    public long X = x; public long Y = y; public long Z = z; public long W = w;
 }
 
 // --- ULong ---
 [StructLayout(LayoutKind.Sequential)]
-public struct ULong2
+public struct ULong2(ulong x, ulong y)
 {
-    public ulong X; public ulong Y;
-    public ULong2(ulong x, ulong y)
-    {
-        X = x; Y = y;
-    }
+    public ulong X = x; public ulong Y = y;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ULong3
+public struct ULong3(ulong x, ulong y, ulong z)
 {
-    public ulong X; public ulong Y; public ulong Z;
-    public ULong3(ulong x, ulong y, ulong z)
-    {
-        X = x; Y = y; Z = z;
-    }
+    public ulong X = x; public ulong Y = y; public ulong Z = z;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct ULong4
+public struct ULong4(ulong x, ulong y, ulong z, ulong w)
 {
-    public ulong X; public ulong Y; public ulong Z; public ulong W;
-    public ULong4(ulong x, ulong y, ulong z, ulong w)
-    {
-        X = x; Y = y; Z = z; W = w;
-    }
+    public ulong X = x; public ulong Y = y; public ulong Z = z; public ulong W = w;
 }
 

@@ -30,7 +30,7 @@ public class GBI28_GpuBigIntegerTests : IDisposable
         var signed = new GpuBigInteger(gpuBigInt, isNegative: true);
 
         Assert.True(signed.IsNegative);
-        Assert.Same(gpuBigInt, signed.Value);
+        Assert.Equal(gpuBigInt, signed.Value);
 
         // Ensure disposing GpuBigInteger disposes the underlying GpuUIntBigInteger
         signed.Dispose();

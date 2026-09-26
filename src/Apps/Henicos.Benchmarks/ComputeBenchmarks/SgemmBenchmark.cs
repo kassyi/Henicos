@@ -48,8 +48,8 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void RunGSharp()
     {
-        uint gridDimX = (uint)((N + TileSize - 1) / TileSize);
-        uint gridDimY = (uint)((N + TileSize - 1) / TileSize);
+        uint gridDimX = (N + TileSize - 1) / TileSize;
+        uint gridDimY = (N + TileSize - 1) / TileSize;
         uint blockDimX = TileSize;
         uint blockDimY = TileSize;
 
@@ -60,8 +60,8 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void RunNativeCuda()
     {
-        uint gridDimX = (uint)((N + TileSize - 1) / TileSize);
-        uint gridDimY = (uint)((N + TileSize - 1) / TileSize);
+        uint gridDimX = (N + TileSize - 1) / TileSize;
+        uint gridDimY = (N + TileSize - 1) / TileSize;
         uint blockDimX = TileSize;
         uint blockDimY = TileSize;
 

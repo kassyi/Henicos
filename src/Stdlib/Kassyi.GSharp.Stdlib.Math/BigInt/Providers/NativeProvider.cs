@@ -23,6 +23,26 @@ public class NativeProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
 
+        public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
+    {
+        if (devicePointer == IntPtr.Zero || numWords <= 0)
+        {
+            return;
+        }
+
+        var zeroArray = System.Buffers.ArrayPool<uint>.Shared.Rent(numWords);
+        try
+        {
+            Array.Clear(zeroArray, 0, numWords);
+            CopyHostToDevice(devicePointer, zeroArray, numWords, stream);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<uint>.Shared.Return(zeroArray);
+        }
+    }
+
+    /// <inheritdoc/>
     public IntPtr AllocateMemory(int numWords) => NativeMethods.GpuBigInt_Alloc(numWords);
 
     /// <inheritdoc/>
@@ -198,6 +218,8 @@ public class NativeProvider : IGpuExecutionProvider
     public void LaunchGraph(IntPtr graphExec, IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
     public void DestroyGraph(IntPtr graph, IntPtr graphExec) => throw new NotImplementedException(ErrorNotImplemented);
 }
+
+
 
 
 

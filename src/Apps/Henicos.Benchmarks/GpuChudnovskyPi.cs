@@ -22,20 +22,27 @@ public static class GpuChudnovskyPi
     private const double BitsPerDecimalDigit = 3.321928094887362;
 
 
-    private class ProgressState
+    private class ProgressState(int totalTerms, int totalDigits)
     {
-        public int TotalTerms { get; }
-        public int TotalDigits { get; }
-        public Stopwatch Stopwatch { get; }
-        public long LastReportTimeMs { get; set; }
-
-        public ProgressState(int totalTerms, int totalDigits)
+        public int TotalTerms
         {
-            TotalTerms = totalTerms;
-            TotalDigits = totalDigits;
-            Stopwatch = Stopwatch.StartNew();
-            LastReportTimeMs = 0;
-        }
+            get;
+        } = totalTerms;
+
+        public int TotalDigits
+        {
+            get;
+        } = totalDigits;
+
+        public Stopwatch Stopwatch
+        {
+            get;
+        } = Stopwatch.StartNew();
+
+        public long LastReportTimeMs
+        {
+            get; set;
+        } = 0;
 
         public void Report(int currentB)
         {

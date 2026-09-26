@@ -10,27 +10,18 @@ public interface ICheckpointRepository
     void Save(int iteration, uint[] state);
 }
 
-public class FileCheckpointRepository : ICheckpointRepository
+public class FileCheckpointRepository(string checkpointFile, string tempCheckpointFile) : ICheckpointRepository
 {
-    private readonly string _checkpointFile;
-    private readonly string _tempCheckpointFile;
-
-    public FileCheckpointRepository(string checkpointFile, string tempCheckpointFile)
-    {
-        _checkpointFile = checkpointFile;
-        _tempCheckpointFile = tempCheckpointFile;
-    }
-
-    public bool Exists() => File.Exists(_checkpointFile);
+    public bool Exists() => File.Exists(checkpointFile);
 
     public (int Iteration, uint[] State) Load(int outNumWords)
     {
         if (!Exists())
         {
-            throw new FileNotFoundException($"Checkpoint file not found: {_checkpointFile}");
+            throw new FileNotFoundException($"Checkpoint file not found: {checkpointFile}");
         }
 
-        using var fs = File.OpenRead(_checkpointFile);
+        using var fs = File.OpenRead(checkpointFile);
         using var br = new BinaryReader(fs);
 
         var startIter = br.ReadInt32();
@@ -61,7 +52,7 @@ public class FileCheckpointRepository : ICheckpointRepository
 
     public void Save(int iteration, uint[] state)
     {
-        using (var fs = File.Create(_tempCheckpointFile))
+        using (var fs = File.Create(tempCheckpointFile))
         using (var bw = new BinaryWriter(fs))
         {
             bw.Write(iteration);
@@ -76,6 +67,6 @@ public class FileCheckpointRepository : ICheckpointRepository
             fs.Write(computedHash);
         }
 
-        File.Move(_tempCheckpointFile, _checkpointFile, overwrite: true);
+        File.Move(tempCheckpointFile, checkpointFile, overwrite: true);
     }
 }

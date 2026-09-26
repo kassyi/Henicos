@@ -12,9 +12,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
     /// <summary>
     /// Gets the singleton instance of the <see cref="CastExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly CastExpressionTranspilerRule Instance = new();
-
-    private CastExpressionTranspilerRule()
+    public CastExpressionTranspilerRule()
     {
     }
 

@@ -126,8 +126,15 @@ internal static class MacroTranspiler
         // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
         for (var i = start; i < start + count; i++)
         {
-            context.LocalVariableOverrides[macroScope.ParamName] = new OverrideValue(i.ToString());
-            EmitUnrolledBody(ref context, lambdaExpr.Body);
+            var iterationCookie = context.PushOverrideScope(macroScope.ParamName, new OverrideValue(i.ToString()));
+            try
+            {
+                EmitUnrolledBody(ref context, lambdaExpr.Body);
+            }
+            finally
+            {
+                context.PopOverrideScope(iterationCookie);
+            }
         }
 
         return true;
@@ -171,29 +178,29 @@ internal static class MacroTranspiler
 
     private readonly ref struct MacroScope
     {
-        private readonly Dictionary<string, OverrideValue> _overrides;
+        private readonly List<(string Name, OverrideValue Value)> _overrides;
         public readonly string ParamName;
-        private readonly string? _contextParamName;
+        private readonly int _cookie;
 
-        public MacroScope(Dictionary<string, OverrideValue> overrides, string paramName, string? contextParamName,
+        public MacroScope(ref TranspileContext context, string paramName, string? contextParamName,
             ExpressionSyntax? contextArgExpr)
         {
-            _overrides = overrides;
+            _overrides = context.LocalVariableOverrides;
             ParamName = paramName;
-            _contextParamName = contextParamName;
+            _cookie = _overrides.Count;
 
-            if (_contextParamName != null && contextArgExpr != null)
+            if (contextParamName != null && contextArgExpr != null)
             {
-                _overrides[_contextParamName] = new OverrideValue(contextArgExpr);
+                context.PushOverrideScope(contextParamName, new OverrideValue(contextArgExpr));
             }
         }
 
         public void Dispose()
         {
-            _overrides.Remove(ParamName);
-            if (_contextParamName != null)
+            var removeCount = _overrides.Count - _cookie;
+            if (removeCount > 0)
             {
-                _overrides.Remove(_contextParamName);
+                _overrides.RemoveRange(_cookie, removeCount);
             }
         }
     }
@@ -226,7 +233,7 @@ internal static class MacroTranspiler
             contextArgExpr = args[0].Expression;
         }
 
-        scope = new MacroScope(context.LocalVariableOverrides, paramName, contextParamName, contextArgExpr);
+        scope = new MacroScope(ref context, paramName, contextParamName, contextArgExpr);
         return true;
     }
 

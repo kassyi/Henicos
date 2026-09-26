@@ -12,9 +12,7 @@ public sealed class ParenthesizedExpressionTranspilerRule : SyntaxNodeTranspiler
     /// <summary>
     /// Gets the singleton instance of the <see cref="ParenthesizedExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly ParenthesizedExpressionTranspilerRule Instance = new();
-
-    private ParenthesizedExpressionTranspilerRule()
+    public ParenthesizedExpressionTranspilerRule()
     {
     }
 

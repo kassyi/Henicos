@@ -12,9 +12,7 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
     /// <summary>
     /// Gets the singleton instance of the <see cref="ConditionalExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly ConditionalExpressionTranspilerRule Instance = new();
-
-    private ConditionalExpressionTranspilerRule()
+    public ConditionalExpressionTranspilerRule()
     {
     }
 

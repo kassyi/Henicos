@@ -9,12 +9,13 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         return new TranspileContext(
             default,
             usedStructs,
-            new Dictionary<string, OverrideValue>(),
+            new List<(string Name, OverrideValue Value)>(),
             null!,
             null,
             null!,
             ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
-            new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect());
+            new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect(),
+            Kassyi.GSharp.Compiler.Transpiler.Rules.TranspilerRuleRegistry.CreateDefault());
     }
 
 

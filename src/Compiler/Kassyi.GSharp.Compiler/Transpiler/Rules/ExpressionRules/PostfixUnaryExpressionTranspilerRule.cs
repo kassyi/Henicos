@@ -12,9 +12,7 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
     /// <summary>
     /// Gets the singleton instance of the <see cref="PostfixUnaryExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly PostfixUnaryExpressionTranspilerRule Instance = new();
-
-    private PostfixUnaryExpressionTranspilerRule()
+    public PostfixUnaryExpressionTranspilerRule()
     {
     }
 

@@ -12,9 +12,7 @@ public sealed class ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspile
     /// <summary>
     /// Gets the singleton instance of the <see cref="ObjectCreationExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly ObjectCreationExpressionTranspilerRule Instance = new();
-
-    private ObjectCreationExpressionTranspilerRule()
+    public ObjectCreationExpressionTranspilerRule()
     {
     }
 
@@ -39,9 +37,7 @@ public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeT
     /// <summary>
     /// Gets the singleton instance of the <see cref="ImplicitObjectCreationExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly ImplicitObjectCreationExpressionTranspilerRule Instance = new();
-
-    private ImplicitObjectCreationExpressionTranspilerRule()
+    public ImplicitObjectCreationExpressionTranspilerRule()
     {
     }
 

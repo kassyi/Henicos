@@ -15,9 +15,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     /// <summary>
     /// Gets the singleton instance of the <see cref="LocalDeclarationStatementTranspilerRule"/>.
     /// </summary>
-    public static readonly LocalDeclarationStatementTranspilerRule Instance = new();
-
-    private LocalDeclarationStatementTranspilerRule()
+    public LocalDeclarationStatementTranspilerRule()
     {
     }
 

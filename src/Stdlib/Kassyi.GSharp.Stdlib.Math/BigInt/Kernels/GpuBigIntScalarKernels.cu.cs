@@ -146,7 +146,7 @@ public static class GpuBigIntScalarKernels
             uint H = (uint)(prod >> 32);
 
             uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, H, 1);
-            
+
             if (laneId == 31)
             {
                 sharedH[warpId] = H;
@@ -215,7 +215,7 @@ public static class GpuBigIntScalarKernels
 
             uint lastH = sharedH[((bDim + 31) / 32) - 1];
             uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), 0u);
-            blockCarryIn = lastH + waveCarry; 
+            blockCarryIn = lastH + waveCarry;
 
             Gpu.SyncThreads();
         }

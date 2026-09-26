@@ -14,6 +14,8 @@ public interface IGpuExecutionProvider
     /// <param name="devicePointer">The pointer to the device memory to free.</param>
     void FreeMemory(IntPtr devicePointer);
 
+    void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream);
+
     /// <summary>Copies limb data from host managed memory to GPU device memory.</summary>
     /// <param name="devicePointer">The destination pointer on the device.</param>
     /// <param name="hostData">The source data array on the host.</param>
