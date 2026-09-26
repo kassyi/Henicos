@@ -95,17 +95,17 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var vLarger = ToBigInteger(largerWords, largerSig.NumWords);
         var vSmaller = ToBigInteger(smallerWords, smallerSig.NumWords);
 
-        var vSmallerShifted = expDiff >= 0 ? (vSmaller >> expDiff) : (vSmaller << -expDiff);
+        var vLargerShifted = vLarger << expDiff;
 
         BigInteger vResult;
         if (largerSign == smallerSign)
         {
-            vResult = vLarger + vSmallerShifted;
+            vResult = vLargerShifted + vSmaller;
             resultSign = largerSign;
         }
         else
         {
-            var diff = vLarger - vSmallerShifted;
+            var diff = vLargerShifted - vSmaller;
             if (diff < 0)
             {
                 vResult = -diff;
@@ -121,10 +121,24 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         if (vResult.IsZero)
         {
             resultSign = false;
+            resultExp = 0;
+            var zeros = new uint[resultSig.NumWords];
+            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), zeros, resultSig.NumWords, context.Stream);
+            return;
         }
 
+        int targetBitLength = resultSig.NumWords * 32;
+        int currentBitLength = (int)vResult.GetBitLength();
+        int shift = targetBitLength - currentBitLength;
+
+        BigInteger vNormalized = shift >= 0 ? (vResult << shift) : (vResult >> -shift);
+        
+        // vResult's baseline exponent is the smaller exponent
+        int baseExp = leftLarger ? rightExp : leftExp;
+        resultExp = baseExp - shift;
+
         var resultWords = new uint[resultSig.NumWords];
-        ToWords(vResult, resultWords, resultSig.NumWords);
+        ToWords(vNormalized, resultWords, resultSig.NumWords);
         context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
     }
 
@@ -143,11 +157,30 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var vRight = ToBigInteger(rightWords, rightSig.NumWords);
 
         var vProd = vLeft * vRight;
-        resultExp = leftExp + rightExp;
-        resultSign = !vProd.IsZero && (leftSign != rightSign);
+        int tempExp = leftExp + rightExp;
+        bool tempSign = !vProd.IsZero && (leftSign != rightSign);
+
+        // Normalize vProd into resultSig
+        if (vProd.IsZero)
+        {
+            resultExp = 0;
+            resultSign = false;
+            var zeros = new uint[resultSig.NumWords];
+            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), zeros, resultSig.NumWords, context.Stream);
+            return;
+        }
+
+        int targetBitLength = resultSig.NumWords * 32;
+        int currentBitLength = (int)vProd.GetBitLength();
+        int shift = targetBitLength - currentBitLength;
+
+        BigInteger vNormalized = shift >= 0 ? (vProd << shift) : (vProd >> -shift);
+
+        resultExp = tempExp - shift;
+        resultSign = tempSign;
 
         var resultWords = new uint[resultSig.NumWords];
-        ToWords(vProd, resultWords, resultSig.NumWords);
+        ToWords(vNormalized, resultWords, resultSig.NumWords);
         context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
     }
 
