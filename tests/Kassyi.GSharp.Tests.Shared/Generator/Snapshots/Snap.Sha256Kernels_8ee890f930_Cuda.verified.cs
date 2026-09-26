@@ -101,7 +101,7 @@ unsigned int w[64];
 int offset = tid*64;
 for(int i = 0;i<16;i++)
 {
-w[i]=(unsigned int)(input[offset+i*4]<<24)|(unsigned int)(input[offset+i*4+1]<<16)|(unsigned int)(input[offset+i*4+2]<<8)|(unsigned int)(input[offset+i*4+3]);
+w[i]=(unsigned int)(input[offset+i*4]<<24)|(unsigned int)(input[offset+i*4+1]<<16)|(unsigned int)(input[offset+i*4+2]<<8)|input[offset+i*4+3];
 }
 for(int i = 16;i<64;i++)
 {
@@ -250,7 +250,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_output);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchSha256Kernel_Device(IntPtr input, IntPtr output, global::System.Int32 numMessages, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchSha256KernelPtr(IntPtr input, IntPtr output, global::System.Int32 numMessages, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

@@ -105,7 +105,7 @@ if (d_outputBuffer != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_outputBuffer);
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchKernel_MacroTest_FillAndSingle_Device(IntPtr outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchKernel_MacroTest_FillAndSinglePtr(IntPtr outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

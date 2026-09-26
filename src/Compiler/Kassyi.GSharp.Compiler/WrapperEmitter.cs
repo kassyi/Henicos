@@ -7,27 +7,22 @@ namespace Kassyi.GSharp.Compiler;
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
 {
-    private readonly struct InteropParameterInfo
+    private readonly struct InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr)
     {
         public string Modifier
         {
             get;
-        }
+        } = modifier;
+
         public ITypeSymbol? Type
         {
             get;
-        }
+        } = type;
+
         public bool IsIntPtr
         {
             get;
-        }
-
-        public InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr)
-        {
-            Modifier = modifier;
-            Type = type;
-            IsIntPtr = isIntPtr;
-        }
+        } = isIntPtr;
 
         public void WriteTo(SourceWriter writer, string name)
         {
@@ -218,7 +213,7 @@ internal static class WrapperEmitter
         writer.Append(method.Name);
         if (isDevicePtr)
         {
-            writer.Append("_Device");
+            writer.Append("Ptr");
         }
 
         using (writer.Parentheses())

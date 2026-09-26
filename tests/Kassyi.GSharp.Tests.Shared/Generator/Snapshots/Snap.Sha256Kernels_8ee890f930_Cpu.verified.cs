@@ -54,7 +54,7 @@ unsigned int w[64];
 int offset = tid*64;
 for(int i = 0;i<16;i++)
 {
-w[i]=(unsigned int)(input[offset+i*4]<<24)|(unsigned int)(input[offset+i*4+1]<<16)|(unsigned int)(input[offset+i*4+2]<<8)|(unsigned int)(input[offset+i*4+3]);
+w[i]=(unsigned int)(input[offset+i*4]<<24)|(unsigned int)(input[offset+i*4+1]<<16)|(unsigned int)(input[offset+i*4+2]<<8)|input[offset+i*4+3];
 }
 for(int i = 16;i<64;i++)
 {
