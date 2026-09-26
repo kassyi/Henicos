@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Kassyi.GSharp.Compiler.Generators;
 
@@ -12,8 +11,14 @@ public sealed class DiagnosticDefinition
     public string MessageFormat { get; set; } = "";
     public string Category { get; set; } = "";
     public string DefaultSeverity { get; set; } = "";
-    public bool IsEnabledByDefault { get; set; }
-    public bool IsObsolete { get; set; }
+    public bool IsEnabledByDefault
+    {
+        get; set;
+    }
+    public bool IsObsolete
+    {
+        get; set;
+    }
 }
 
 public static partial class DiagnosticGenerator

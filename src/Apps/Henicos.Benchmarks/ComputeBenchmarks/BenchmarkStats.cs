@@ -16,7 +16,7 @@ public readonly record struct BenchmarkStats(double Min, double Median, double M
         double median = sorted.Length % 2 == 0
             ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2.0
             : sorted[sorted.Length / 2];
-        
+
         double sum = 0;
         foreach (var v in sorted)
         {

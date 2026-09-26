@@ -75,7 +75,7 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
         uint m = (uint)mode;
         uint isNeg = IsNegative ? 1u : 0u;
         uint isDirected = (m >= 2u) ? 1u : 0u;
-        
+
         uint toggle = isNeg & isDirected;
         uint effectiveM = m ^ toggle;
 
@@ -123,7 +123,7 @@ public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<G
         bool resultSign = aIsBigger ? a.IsNegative : !a.IsNegative;
 
         var subResult = larger.Subtract(smaller);
-        
+
         var zeroResult = new GpuBigFloat<TSize>(new GpuBigUFloat<TSize>(new GpuUIntBigInteger<TSize>(default), 0), false);
         var diffResult = new GpuBigFloat<TSize>(subResult, resultSign);
 

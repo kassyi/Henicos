@@ -9,9 +9,18 @@ internal static class WrapperEmitter
 {
     private readonly struct InteropParameterInfo
     {
-        public string Modifier { get; }
-        public ITypeSymbol? Type { get; }
-        public bool IsIntPtr { get; }
+        public string Modifier
+        {
+            get;
+        }
+        public ITypeSymbol? Type
+        {
+            get;
+        }
+        public bool IsIntPtr
+        {
+            get;
+        }
 
         public InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr)
         {

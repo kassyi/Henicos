@@ -86,10 +86,18 @@ public static class GpuBigIntGcdKernels
     {
         for (int i = numWords - 1; i >= 0; i--)
         {
-            if (data[i] == 0) continue;
+            if (data[i] == 0)
+            {
+                continue;
+            }
+
             uint w = data[i];
             int b = 31;
-            while ((w & (1u << b)) == 0) b--;
+            while ((w & (1u << b)) == 0)
+            {
+                b--;
+            }
+
             return i * 32 + b + 1;
         }
         return 0;
@@ -100,10 +108,13 @@ public static class GpuBigIntGcdKernels
     {
         int wordShift = shift / 32;
         int bitShift = shift % 32;
-        if (wordShift >= numWords) return 0;
+        if (wordShift >= numWords)
+        {
+            return 0;
+        }
 
         ulong result = 0;
-        
+
         uint w0 = data[wordShift];
         uint w1 = (wordShift + 1 < numWords) ? data[wordShift + 1] : 0u;
         uint w2 = (wordShift + 2 < numWords) ? data[wordShift + 2] : 0u;
@@ -126,8 +137,15 @@ public static class GpuBigIntGcdKernels
     {
         for (int i = numWords - 1; i >= 0; i--)
         {
-            if (a[i] > b[i]) return 1;
-            if (a[i] < b[i]) return -1;
+            if (a[i] > b[i])
+            {
+                return 1;
+            }
+
+            if (a[i] < b[i])
+            {
+                return -1;
+            }
         }
         return 0;
     }
@@ -148,7 +166,7 @@ public static class GpuBigIntGcdKernels
             {
                 int bitsA = DeviceGetBitLength(a, numWords);
                 int bitsB = DeviceGetBitLength(b, numWords);
-                
+
                 if (bitsB == 0)
                 {
                     status[0] = 2; // 2: Finished
@@ -162,7 +180,10 @@ public static class GpuBigIntGcdKernels
                 }
 
                 int shift = bitsA - 64;
-                if (shift < 0) shift = 0;
+                if (shift < 0)
+                {
+                    shift = 0;
+                }
 
                 ulong x = DeviceExtract64(a, shift, numWords);
                 ulong y = DeviceExtract64(b, shift, numWords);

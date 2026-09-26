@@ -30,7 +30,7 @@ public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, b
         bool otherZero = other.Value.IsZero();
 
         int absCmp = Value.CompareTo(other.Value);
-        
+
         int sameSignCmp = IsNegative ? -absCmp : absCmp;
         int diffSignCmp = IsNegative ? -1 : 1;
         int normalCmp = (IsNegative != other.IsNegative) ? diffSignCmp : sameSignCmp;
@@ -39,7 +39,7 @@ public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, b
         int otherZeroCmp = IsNegative ? -1 : 1;
 
         int zeroCmp = thisZero ? thisZeroCmp : (otherZero ? otherZeroCmp : normalCmp);
-        
+
         return (thisZero && otherZero) ? 0 : zeroCmp;
     }
 

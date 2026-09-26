@@ -10,7 +10,7 @@ public static class GpuBigIntDivRemKernels
 {
     [GpuDeviceFunction]
     private static void ExecuteNttMultiplyMacro(
-        ReciprocalNewtonRaphsonContext ctx, 
+        ReciprocalNewtonRaphsonContext ctx,
         uint[] opA, uint[] opB, uint[] resultDest,
         int numWordsA, int numWordsB, int numWordsResult)
     {
@@ -151,14 +151,14 @@ public static class GpuBigIntDivRemKernels
             int bitShift = shiftTotal % 32;
             int destWords = 2 * n + marginWords;
             int srcMaxWords = 5 * n + 2 * marginWords;
-            
+
             Gpu.GridStrideLoop(destWords, idx =>
             {
                 int srcIdx = idx + wordShift;
                 // Ensure we don't read out of bounds. The nextIter buffer size is 5n+2m
                 uint w0 = (srcIdx < srcMaxWords) ? ctx.Workspace.NextIter[srcIdx] : 0u;
                 uint w1 = (srcIdx + 1 < srcMaxWords) ? ctx.Workspace.NextIter[srcIdx + 1] : 0u;
-                
+
                 uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
                 ctx.Operands.ResultBuffer[idx] = shiftedValue;
             });

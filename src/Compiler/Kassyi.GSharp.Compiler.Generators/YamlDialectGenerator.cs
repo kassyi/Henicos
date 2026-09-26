@@ -13,7 +13,7 @@ public static class YamlDialectGenerator
     public static void Run(string inputDir, string outputDir)
     {
         Directory.CreateDirectory(outputDir);
-        
+
         var dialectDefinitions = new List<DialectDefinition>();
         var defMap = new Dictionary<string, DialectDefinition>(StringComparer.Ordinal);
 

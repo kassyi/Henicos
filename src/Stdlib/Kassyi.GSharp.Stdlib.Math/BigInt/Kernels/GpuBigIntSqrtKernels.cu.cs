@@ -10,7 +10,7 @@ public static class GpuBigIntSqrtKernels
 {
     [GpuDeviceFunction]
     private static void ExecuteNttMultiplyMacro(
-        SqrtNewtonRaphsonContext ctx, 
+        SqrtNewtonRaphsonContext ctx,
         uint[] opA, uint[] opB, uint[] resultDest,
         int numWordsA, int numWordsB, int numWordsResult)
     {
@@ -162,14 +162,14 @@ public static class GpuBigIntSqrtKernels
             int bitShift = shiftTotal % 32;
             int destWords = n + marginWords;
             int srcMaxWords = 4 * n + 3 * marginWords;
-            
+
             Gpu.GridStrideLoop(destWords, idx =>
             {
                 int srcIdx = idx + wordShift;
                 // Ensure we don't read out of bounds. The nextXUnshifted buffer size is 4n+3m
                 uint w0 = (srcIdx < srcMaxWords) ? ctx.Workspace.NextXUnshifted[srcIdx] : 0u;
                 uint w1 = (srcIdx + 1 < srcMaxWords) ? ctx.Workspace.NextXUnshifted[srcIdx + 1] : 0u;
-                
+
                 uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
                 ctx.Operands.ResultBuffer[idx] = shiftedValue;
             });

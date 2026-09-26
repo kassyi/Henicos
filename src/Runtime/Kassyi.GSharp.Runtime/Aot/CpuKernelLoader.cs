@@ -99,7 +99,7 @@ public sealed class CpuKernelLoader
     private static IntPtr LoadKernelFunctionPtr(string dllPath, string kernelName)
     {
         var fileData = File.ReadAllBytes(dllPath);
-        
+
         // Validate embedded signature. Throws InvalidOperationException on mismatch.
         var _ = AotSignatureValidator.ExtractAndVerify(fileData);
 
