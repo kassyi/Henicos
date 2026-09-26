@@ -78,7 +78,7 @@ public static class GpuBigIntDivRemKernels
         uint[] uncarriedLow, uint[] uncarriedHigh, uint[] blockCarries,
         long[] carryBuffer,
         uint[] twiddleF1, uint[] twiddleF2, uint[] twiddleI1, uint[] twiddleI2,
-        int numWords, int marginWords, int numBits, int marginBits, int iterations, int transformLength)
+        int numWords, int marginWords, int targetBits, int iterations, int transformLength)
     {
         var ctx = new ReciprocalNewtonRaphsonContext
         {
@@ -92,8 +92,8 @@ public static class GpuBigIntDivRemKernels
             {
                 NumberOfWords = numWords,
                 MarginWords = marginWords,
-                NumBits = numBits,
-                MarginBits = marginBits,
+                NumBits = numWords * 32,
+                MarginBits = marginWords * 32,
                 Iterations = iterations
             },
             Ntt = new NttContext
@@ -125,37 +125,37 @@ public static class GpuBigIntDivRemKernels
         };
 
         int n = numWords;
+        int resultWords = (targetBits + 31) / 32;
 
         for (int i = 0; i < iterations; i++)
         {
-            // 1. currentProduct = targetOperand * resultBuffer (n, 2n+m -> 3n+m)
-            ExecuteNttMultiplyMacro(ctx, ctx.Operands.TargetOperand, ctx.Operands.ResultBuffer, ctx.Workspace.CurrentProduct, n, 2 * n + marginWords, 3 * n + marginWords);
+            // 1. currentProduct = targetOperand * resultBuffer (n, resultWords -> n + resultWords)
+            ExecuteNttMultiplyMacro(ctx, ctx.Operands.TargetOperand, ctx.Operands.ResultBuffer, ctx.Workspace.CurrentProduct, n, resultWords, n + resultWords);
 
             // 2. diff = constant - currentProduct
-            Gpu.SyncGrid(() =>
+            Gpu.SyncGrid();
+            var subCtx = new BigIntKernelContext
             {
-                var subCtx = new BigIntKernelContext
-                {
-                    Operands = new BigIntKernelContext.OperandsContext { CarryBuffer = ctx.CarryBuffer },
-                    NumberOfWords = 3 * n + marginWords
-                };
-                GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant, ctx.Workspace.CurrentProduct);
-            });
+                Operands = new BigIntKernelContext.OperandsContext { CarryBuffer = ctx.CarryBuffer },
+                NumberOfWords = n + resultWords
+            };
+            GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant, ctx.Workspace.CurrentProduct);
+            Gpu.SyncGrid();
 
-            // 3. nextIter = resultBuffer * diff (2n+m, 3n+m -> 5n+2m)
-            ExecuteNttMultiplyMacro(ctx, ctx.Operands.ResultBuffer, ctx.Workspace.Diff, ctx.Workspace.NextIter, 2 * n + marginWords, 3 * n + marginWords, 5 * n + 2 * marginWords);
+            // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)
+            ExecuteNttMultiplyMacro(ctx, ctx.Operands.ResultBuffer, ctx.Workspace.Diff, ctx.Workspace.NextIter, resultWords, n + resultWords, n + 2 * resultWords);
 
             // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
-            int shiftTotal = 2 * ctx.Dimensions.NumBits + ctx.Dimensions.MarginBits;
+            int shiftTotal = targetBits;
             int wordShift = shiftTotal / 32;
             int bitShift = shiftTotal % 32;
-            int destWords = 2 * n + marginWords;
-            int srcMaxWords = 5 * n + 2 * marginWords;
+            int destWords = resultWords;
+            int srcMaxWords = n + 2 * resultWords;
 
             Gpu.GridStrideLoop(destWords, idx =>
             {
                 int srcIdx = idx + wordShift;
-                // Ensure we don't read out of bounds. The nextIter buffer size is 5n+2m
+                // Ensure we don't read out of bounds.
                 uint w0 = (srcIdx < srcMaxWords) ? ctx.Workspace.NextIter[srcIdx] : 0u;
                 uint w1 = (srcIdx + 1 < srcMaxWords) ? ctx.Workspace.NextIter[srcIdx + 1] : 0u;
 

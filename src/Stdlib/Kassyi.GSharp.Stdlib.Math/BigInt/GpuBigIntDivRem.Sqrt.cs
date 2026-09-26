@@ -18,11 +18,10 @@ public static partial class GpuBigIntDivRem
             throw new DivideByZeroException();
         }
 
-        var targetBits = actualBits / 2 + marginWords * 32;
+        var targetBits = actualBits + marginWords * 32;
         var currentBits = 31; // X_top has 31 bits
 
-        var marginBits = marginWords * 32;
-        ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: true, marginBits);
+        ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 

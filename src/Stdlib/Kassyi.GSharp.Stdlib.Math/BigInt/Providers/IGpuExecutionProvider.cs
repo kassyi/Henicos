@@ -74,7 +74,7 @@ public interface IGpuExecutionProvider
     void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations);
 
     /// <summary>Computes reciprocal via Newton-Raphson on GPU.</summary>
-    void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations);
+    void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits);
 
     /// <summary>Computes scalar addition on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>

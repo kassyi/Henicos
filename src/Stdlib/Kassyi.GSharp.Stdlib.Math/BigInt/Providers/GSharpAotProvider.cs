@@ -47,7 +47,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         if (devicePointer != IntPtr.Zero)
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8Async(devicePointer, 0, numWords * 4, stream));  
+            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8Async(devicePointer, 0, numWords * 4, stream));
         }
     }
 
@@ -188,7 +188,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: context.Stream);
 
-        uint* res = stackalloc uint[1];
+        var res = stackalloc uint[1];
         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 4));
         return res[0] == 0;
     }
@@ -205,7 +205,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: context.Stream);
 
-        uint* res = stackalloc uint[1];
+        var res = stackalloc uint[1];
         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 4));
         return res[0] == 0;
     }
@@ -242,7 +242,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
                 leftPtr, rightPtr, resultBuf.DevicePointer, numWords,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: context.Stream);
 
-            ulong* res = stackalloc ulong[1];
+            var res = stackalloc ulong[1];
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 8));
 
             var val = res[0];
@@ -274,7 +274,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: context.Stream);
 
-        uint* res = stackalloc uint[1];
+        var res = stackalloc uint[1];
         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 4));
         return (int)res[0];
     }
@@ -300,8 +300,8 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         fixed (uint* pHost = hostData)
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(devicePointer, (IntPtr)pHost, System.Math.Min(hostData.Length, numWords) * 4, stream));
-            
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(devicePointer, (IntPtr)pHost,
+                System.Math.Min(hostData.Length, numWords) * 4, stream));
         }
     }
 
@@ -316,14 +316,15 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         fixed (uint* pHost = hostData)
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, numWords * 4, stream)); 
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, numWords * 4, stream));
         }
     }
 
     /// <inheritdoc/>
     public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
     {
-        uint* pWord = stackalloc uint[1];
+        var pWord = stackalloc uint[1];
         using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(
             CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pWord, IntPtr.Add(devicePointer, wordOffset * 4), 4));
@@ -333,7 +334,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     /// <inheritdoc/>
     public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
     {
-        uint* pWord = stackalloc uint[1];
+        var pWord = stackalloc uint[1];
         *pWord = value;
         using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(
@@ -448,16 +449,16 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
-        uint maxResidentBlocks = (uint)context.DeviceSmCount;
+        var maxResidentBlocks = (uint)context.DeviceSmCount;
         if (gridDim > maxResidentBlocks)
         {
             gridDim = maxResidentBlocks;
         }
 
-        int currentL = m <= 512 ? m : (m / 32);
-        uint sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
+        var currentL = m <= 512 ? m : (m / 32);
+        var sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
-        uint sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
+        var sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
         GpuBigIntSqrtKernelsWrapper.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             targetOperand.DevicePointer, resultBuffer.DevicePointer, constant3.DevicePointer,
@@ -469,36 +470,39 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
             n, marginWords, actualBits, marginBits, iterations, m,
             gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes
-        , hStream: context.Stream);
+            , hStream: context.Stream);
     }
 
     /// <inheritdoc/>
     public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
-        int marginWords, int numBits, int marginBits, int iterations)
+        int marginWords, int numBits, int marginBits, int iterations, int targetBits)
     {
         var n = targetOperand.NumWords;
+        var resultWords = (targetBits + 31) / 32;
 
-        var constantWords = 3 * n + marginWords;
+        var constantWords = n + 2 * resultWords; // Prevent OOB access during ExecuteSub
         using var constant = new GpuUIntBigInteger(context, constantWords);
         constant.Clear();
         var hostConstant = System.Buffers.ArrayPool<uint>.Shared.Rent(constantWords);
         try
         {
             Array.Clear(hostConstant, 0, constantWords);
-            var bitTarget = 2 * numBits + marginBits + 1;
+            var bitTarget = targetBits + 1;
             hostConstant[bitTarget / 32] |= 1u << (bitTarget % 32);
             context.Provider.CopyHostToDevice(constant.DevicePointer, hostConstant, constantWords, context.Stream);
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuStreamSynchronize(context.Stream));
         }
         finally
         {
             System.Buffers.ArrayPool<uint>.Shared.Return(hostConstant);
         }
 
-        using var currentProduct = new GpuUIntBigInteger(context, 3 * n + marginWords);
-        using var diff = new GpuUIntBigInteger(context, 3 * n + marginWords);
-        using var nextIter = new GpuUIntBigInteger(context, 5 * n + 2 * marginWords);
+        using var currentProduct = new GpuUIntBigInteger(context, n + resultWords);
+        using var diff = new GpuUIntBigInteger(context, n + resultWords);
+        using var nextIter = new GpuUIntBigInteger(context, n + 2 * resultWords);
 
-        var maxOutWords = 5 * n + 2 * marginWords;
+        var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords * 2;
         var m = 1;
         while (m < requiredLen)
@@ -526,16 +530,16 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
-        uint maxResidentBlocks = (uint)context.DeviceSmCount;
+        var maxResidentBlocks = (uint)context.DeviceSmCount;
         if (gridDim > maxResidentBlocks)
         {
             gridDim = maxResidentBlocks;
         }
 
-        int currentL = m <= 512 ? m : (m / 32);
-        uint sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
+        var currentL = m <= 512 ? m : (m / 32);
+        var sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
-        uint sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
+        var sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
         GpuBigIntDivRemKernelsWrapper.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
             targetOperand.DevicePointer, resultBuffer.DevicePointer, constant.DevicePointer,
@@ -544,9 +548,9 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, blockCarries.DevicePointer,
             carryBuffer.DevicePointer,
             twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
-            n, marginWords, numBits, marginBits, iterations, m,
+            n, marginWords, targetBits, iterations, m,
             gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes
-        , hStream: context.Stream);
+            , hStream: context.Stream);
     }
 
     /// <inheritdoc/>
@@ -593,7 +597,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer,
             m, leftOperand.NumWords, rightOperand.NumWords,
             gridDimX: gridDim, blockDimX: blockDim
-        , hStream: context.Stream);
+            , hStream: context.Stream);
 
         // 2. Forward NTTs
         LaunchNttHost(context, buf1A.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
@@ -609,7 +613,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         GpuBigIntMulKernelsWrapper.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
             buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
-        , hStream: context.Stream);
+            , hStream: context.Stream);
 
         // 4. Inverse NTTs
         LaunchNttHost(context, buf1A.DevicePointer, tmpBuf.DevicePointer, twiddle.Inverse1, m, n1, n2,
@@ -621,30 +625,31 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         GpuBigIntMulKernelsWrapper.LaunchMultiplyNttComputeCrtKernelPtr(
             buf1A.DevicePointer, buf2A.DevicePointer, uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
-        , hStream: context.Stream);
+            , hStream: context.Stream);
 
         // 6. Resolve Carries (Cooperative Block)
-        var chunkSize = 1024;
-        var numBlocks = (outWords + chunkSize - 1) / chunkSize;
+        const int ChunkSize = 1024;
+        var numBlocks = (outWords + ChunkSize - 1) / ChunkSize;
         using var blockCarries = context.RentTemp(numBlocks);
 
         var writeWords = System.Math.Min(outWords, resultBuffer.NumWords);
         GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesBlockedKernelPtr(
             uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, resultBuffer.DevicePointer,
-            blockCarries.DevicePointer, m, writeWords, chunkSize,
-            gridDimX: (uint)numBlocks, blockDimX: (uint)chunkSize, sharedMemBytes: (uint)(chunkSize * 8)
-        , hStream: context.Stream);
+            blockCarries.DevicePointer, m, writeWords, ChunkSize,
+            gridDimX: (uint)numBlocks, blockDimX: ChunkSize, sharedMemBytes: ChunkSize * 8
+            , hStream: context.Stream);
 
         var applyBlockDim = (uint)System.Math.Min(1024, System.Math.Max(256, numBlocks));
         var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
 
         GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesApplyKernelPtr(
-            resultBuffer.DevicePointer, blockCarries.DevicePointer, writeWords, chunkSize, numBlocks,
+            resultBuffer.DevicePointer, blockCarries.DevicePointer, writeWords, ChunkSize, numBlocks,
             gridDimX: applyGridDim, blockDimX: applyBlockDim
-        , hStream: context.Stream);
+            , hStream: context.Stream);
     }
 
-    private void LaunchNttHost(GpuContext context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1, int n2, uint p,
+    private void LaunchNttHost(GpuContext context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1,
+        int n2, uint p,
         ulong pm, bool isInverse)
     {
         if (m <= 512)
@@ -653,7 +658,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             GpuBigIntMulKernelsWrapper.LaunchMultiplyNttSharedRowKernelPtr(
                 buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, 1, m,
                 gridDimX: 1, blockDimX: (uint)threads, sharedMemBytes: (uint)((m + (m >> 5)) * 4)
-            , hStream: context.Stream);
+                , hStream: context.Stream);
             return;
         }
 
@@ -684,7 +689,8 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         }
     }
 
-    private void LaunchSharedRow(GpuContext context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1, int n2, uint p,
+    private void LaunchSharedRow(GpuContext context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1,
+        int n2, uint p,
         ulong pm, bool applyTwiddleBefore, bool applyTwiddleAfter, int maxBlocks, int currentL)
     {
         var threadsNeeded = currentL / 2;
@@ -696,7 +702,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             currentL,
             gridDimX: gridDim, blockDimX: blockDim,
             sharedMemBytes: (uint)(System.Math.Max(1055, currentL + (currentL >> 5)) * 4)
-        , hStream: context.Stream);
+            , hStream: context.Stream);
     }
 
     private void LaunchTranspose(GpuContext context, IntPtr input, IntPtr output, int width, int height)
