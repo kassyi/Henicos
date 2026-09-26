@@ -1,5 +1,6 @@
 using System.Buffers;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
@@ -10,8 +11,6 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <para>All arithmetic and bitwise operations are executed on the GPU using SIMD/warp-level intrinsics.</para>
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to ensure deterministic GPU memory deallocation.</para>
 /// </remarks>
-/// <remarks><para>Implements: <b>GEN-46, GEN-48</b></para></remarks>
-/// <remarks><para>Implements: <b>GBI-01, GBI-02, GBI-03, GBI-04, GBI-05, GBI-06, GBI-10, GBI-11, GBI-12, GBI-13, GBI-14, GBI-15, GBI-16, GBI-17, GBI-18, GBI-19, GBI-20, GBI-21, GBI-22, GBI-23, GBI-24, GBI-25, GBI-26, GBI-27, GBI-28, GBI-30, GBI-31, GBI-32, GBI-33, GBI-34</b></para></remarks>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
@@ -19,31 +18,19 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <summary>
     /// Gets the native GPU global device memory pointer (<c>CUdeviceptr</c>) holding the integer limb data.
     /// </summary>
-    public IntPtr DevicePointer
-    {
-        get;
-    }
+    public IntPtr DevicePointer { get; }
 
     /// <summary>
     /// Gets the total number of 32-bit words (limbs) allocated for this big integer.
     /// </summary>
-    public int NumWords
-    {
-        get;
-    }
+    public int NumWords { get; }
 
     /// <summary>
     /// Gets the parent <see cref="GpuContext"/> associated with this instance.
     /// </summary>
-    public GpuContext Context
-    {
-        get;
-    }
+    public GpuContext Context { get; }
 
-    internal bool IsTemp
-    {
-        get; set;
-    }
+    internal bool IsTemp { get; set; }
 
     internal bool Disposed;
 
@@ -68,13 +55,16 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <summary>
     /// Initializes an instance with a pre-allocated raw device pointer (Internal Transition Phase).
     /// </summary>
-    internal GpuUIntBigInteger(GpuContext context, int numWords, IntPtr preAllocatedPointer)
+    internal GpuUIntBigInteger(GpuContext context, int numWords, IntPtr preAllocatedPointer, bool clearMemory = false)
     {
         Context = context ?? throw new ArgumentNullException(nameof(context));
         NumWords = numWords;
         DevicePointer = preAllocatedPointer;
-        // Assume memory manager or caller cleared the memory if needed, but we'll clear it just in case
-        InitializeMemory();
+
+        if (clearMemory)
+        {
+            InitializeMemory();
+        }
     }
 
     private void InitializeMemory()
@@ -106,23 +96,6 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     public GpuUIntBigInteger(GpuContext context, uint[] hostData) : this(context, hostData.Length)
     {
         Context.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords, Context.Stream);
-    }
-
-    /// <summary>
-    /// Evaluates the underlying GPU expression tree into the target buffer.
-    /// </summary>
-    /// <param name="context">The GPU execution context.</param>
-    /// <param name="targetResult">Optional destination buffer. If <see langword="null"/>, returns this instance.</param>
-    /// <returns>The evaluated <see cref="GpuUIntBigInteger"/> result buffer.</returns>
-    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
-    {
-        if (targetResult is null || ReferenceEquals(targetResult, this))
-        {
-            return this;
-        }
-
-        targetResult.CopyFrom(this);
-        return targetResult;
     }
 
     /// <summary>
@@ -187,7 +160,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <param name="leftOperand">The value to shift.</param>
     /// <param name="shiftBits">The number of bits to shift.</param>
     /// <returns>A deferred expression representing the right shift.</returns>
-    public static GpuBigUIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) =>
+    public static GpuBigUIntExpr operator >> (GpuUIntBigInteger leftOperand, int shiftBits) =>
         new(new ShiftRightExpression(leftOperand, shiftBits));
 
     /// <summary>Performs bitwise OR on two big integers using lazy expression evaluation.</summary>
@@ -299,7 +272,8 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         try
         {
             Array.Clear(zeroArray, 0, wordsToClear);
-            Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear, Context.Stream);
+            Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear,
+                Context.Stream);
         }
         finally
         {
@@ -498,6 +472,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         {
             word &= 0x7FFFFFFF;
         }
+
         Context.Provider.WriteWord(DevicePointer, NumWords - 1, word);
     }
 
@@ -582,6 +557,9 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             ArrayPool<uint>.Shared.Return(hostData);
         }
     }
+
+    public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) =>
+        visitor.VisitGpuUIntBigInteger(this);
 }
 
 

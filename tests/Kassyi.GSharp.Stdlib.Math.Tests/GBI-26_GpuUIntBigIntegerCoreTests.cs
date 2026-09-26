@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
