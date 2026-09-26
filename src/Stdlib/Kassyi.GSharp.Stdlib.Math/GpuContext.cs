@@ -1,6 +1,6 @@
-using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math;
@@ -76,8 +76,10 @@ public class GpuContext : IDisposable
 
     private int _disposed;
 
-    // Memory pooling for Lazy Evaluation
-    private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<GpuUIntBigInteger>>> _tempPool = new();
+    /// <summary>
+    /// Gets the memory manager for this context.
+    /// </summary>
+    public IGpuMemoryManager MemoryManager { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuContext"/> class with the specified limb capacity and engine backend.
@@ -89,6 +91,8 @@ public class GpuContext : IDisposable
     {
         MaxWords = maxWords;
         Engine = engine;
+        MemoryManager = new DefaultGpuMemoryManager(Provider);
+
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
             using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
@@ -99,8 +103,6 @@ public class GpuContext : IDisposable
             CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
                 device);
             DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails
-
-            // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
         }
         else
         {
@@ -138,24 +140,10 @@ public class GpuContext : IDisposable
             return;
         }
 
-        // Dispose all pooled temporary buffers and release unmanaged device pointers
-        foreach (var lazyBag in _tempPool.Values)
+        if (MemoryManager is IDisposable disposableManager)
         {
-            if (!lazyBag.IsValueCreated)
-            {
-                continue;
-            }
-
-            var bag = lazyBag.Value;
-            while (bag.TryTake(out var temp))
-            {
-                // Avoid circular calls since temp.Dispose() calls back into context or disposes native
-                // Normally GpuUIntBigInteger.Dispose calls NativeMethods.GpuBigInt_Free
-                temp.DisposeCore();
-            }
+            disposableManager.Dispose();
         }
-
-        _tempPool.Clear();
 
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
@@ -179,19 +167,15 @@ public class GpuContext : IDisposable
         Dispose(false);
     }
 
+    // Temporary shim to maintain compatibility during Phase 3 migration
+    // TODO: Phase out GpuUIntBigInteger entirely from internal AST nodes
     internal GpuUIntBigInteger RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
-            lazyBag.Value.TryTake(out var temp))
-        {
-            temp.Disposed = false;
-            temp.IsTemp = true; // ensure it's marked as temp again if needed
-            return temp;
-        }
-
-        // Allocate a new one if pool is empty
-        var newTemp = new GpuUIntBigInteger(this, numWords)
+        var tempMem = MemoryManager.AllocateTemp(numWords);
+        
+        // We create a wrapper around the handle pointer for backwards compatibility
+        var newTemp = new GpuUIntBigInteger(this, numWords, tempMem.Handle.Buffer.Pointer)
         {
             IsTemp = true
         };
@@ -207,20 +191,15 @@ public class GpuContext : IDisposable
 
         if (Volatile.Read(ref _disposed) == 1)
         {
-            temp.DisposeCore();
+            // During disposal, MemoryManager will clean everything up
             return;
         }
 
-        var bag = _tempPool.GetOrAdd(temp.NumWords, _ => new Lazy<ConcurrentBag<GpuUIntBigInteger>>(() => [])).Value;
-        bag.Add(temp);
-
-        if (Volatile.Read(ref _disposed) == 1)
-        {
-            if (bag.TryTake(out var t))
-            {
-                t.DisposeCore();
-            }
-        }
+        // With the new memory manager, GpuUIntBigInteger's temp memory isn't returned
+        // manually via this method anymore because ScopedBigIntMemory handles it on scope exit.
+        // However, for old nodes calling RentTemp, they expect ReturnTemp to free it.
+        // For compatibility during transition, we call Free on the manager.
+        MemoryManager.Free(new BigIntMemoryHandle(new BigIntDeviceBuffer(temp.DevicePointer, temp.NumWords), 0, temp.NumWords));
     }
 }
 

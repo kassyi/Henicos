@@ -62,18 +62,35 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
 
         DevicePointer = Context.Provider.AllocateMemory(numWords);
 
+        InitializeMemory();
+    }
+
+    /// <summary>
+    /// Initializes an instance with a pre-allocated raw device pointer (Internal Transition Phase).
+    /// </summary>
+    internal GpuUIntBigInteger(GpuContext context, int numWords, IntPtr preAllocatedPointer)
+    {
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        NumWords = numWords;
+        DevicePointer = preAllocatedPointer;
+        // Assume memory manager or caller cleared the memory if needed, but we'll clear it just in case
+        InitializeMemory();
+    }
+
+    private void InitializeMemory()
+    {
         if (DevicePointer == IntPtr.Zero)
         {
             throw new OutOfMemoryException(
-                $"Failed to allocate GPU memory for {numWords} words ({numWords * 4} bytes).");
+                $"Failed to allocate GPU memory for {NumWords} words ({NumWords * 4} bytes).");
         }
 
         // Zero-clear the newly allocated GPU memory to prevent uninitialized memory bugs
-        var zeroArray = ArrayPool<uint>.Shared.Rent(numWords);
+        var zeroArray = ArrayPool<uint>.Shared.Rent(NumWords);
         try
         {
-            Array.Clear(zeroArray, 0, numWords);
-            Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, numWords, Context.Stream);
+            Array.Clear(zeroArray, 0, NumWords);
+            Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, NumWords, Context.Stream);
         }
         finally
         {
@@ -408,7 +425,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
 
         Disposed = true;
 
-        if (DevicePointer != IntPtr.Zero)
+        if (DevicePointer != IntPtr.Zero && !IsTemp)
         {
             Context.Provider.FreeMemory(DevicePointer);
         }
@@ -421,10 +438,14 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// </summary>
     public void Dispose()
     {
+        if (Disposed)
+        {
+            return;
+        }
+
         if (IsTemp)
         {
             Context.ReturnTemp(this);
-            return;
         }
 
         DisposeCore();
