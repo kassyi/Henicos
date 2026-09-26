@@ -421,9 +421,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
-        if (gridDim > 108u)
+        uint maxResidentBlocks = (uint)context.DeviceSmCount;
+        if (gridDim > maxResidentBlocks)
         {
-            gridDim = 108u;
+            gridDim = maxResidentBlocks;
         }
 
         int currentL = m <= 512 ? m : (m / 32);
@@ -498,9 +499,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
         var blockDim = 1024u;
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
-        if (gridDim > 108u)
+        uint maxResidentBlocks = (uint)context.DeviceSmCount;
+        if (gridDim > maxResidentBlocks)
         {
-            gridDim = 108u;
+            gridDim = maxResidentBlocks;
         }
 
         int currentL = m <= 512 ? m : (m / 32);
