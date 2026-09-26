@@ -76,6 +76,7 @@ public static partial class CudaDriverApi
 
     public enum CuDeviceAttribute
     {
+        MultiprocessorCount = 16,
         ComputeCapabilityMajor = 75,
         ComputeCapabilityMinor = 76
     }
@@ -83,6 +84,10 @@ public static partial class CudaDriverApi
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuDeviceGetAttribute(out int pi, CuDeviceAttribute attrib, int dev);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuCtxGetDevice(out int device);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
@@ -28,26 +29,17 @@ public class GpuContext : IDisposable
     /// <summary>
     /// Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
     /// </summary>
-    public int MaxWords
-    {
-        get;
-    }
+    public int MaxWords { get; }
 
     /// <summary>
     /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
     /// </summary>
-    public IntPtr WorkspacePointer
-    {
-        get;
-    }
+    public IntPtr WorkspacePointer { get; }
 
     /// <summary>
     /// Gets the active GPU execution engine type.
     /// </summary>
-    public GpuExecutionEngine Engine
-    {
-        get;
-    }
+    public GpuExecutionEngine Engine { get; }
 
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
@@ -59,10 +51,13 @@ public class GpuContext : IDisposable
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
     /// </summary>
-    public IntPtr Stream
-    {
-        get;
-    }
+    public IntPtr Stream { get; }
+
+    /// <summary>
+    /// Gets the number of streaming multiprocessors (SMs) on the active CUDA device.
+    /// This value is used to clamp grid dimensions for cooperative kernel launches.
+    /// </summary>
+    public int DeviceSmCount { get; internal set; /*set this value only for tests*/ }
 
     private int _disposed;
 
@@ -82,8 +77,13 @@ public class GpuContext : IDisposable
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
             using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
-            Runtime.Interop.CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+            CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
             Stream = stream;
+
+            CudaDriverApi.cuCtxGetDevice(out var device);
+            CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
+                device);
+            DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails
 
             // CarryBuffer allocation logic removed for thread safety; now handled dynamically by IGpuExecutionProvider.
         }
@@ -147,7 +147,7 @@ public class GpuContext : IDisposable
             if (Stream != IntPtr.Zero)
             {
                 using var scope = new Runtime.Aot.GpuKernelLoader.CudaContextScope();
-                Runtime.Interop.CudaDriverApi.cuStreamDestroy(Stream);
+                CudaDriverApi.cuStreamDestroy(Stream);
             }
         }
         else
@@ -157,7 +157,6 @@ public class GpuContext : IDisposable
                 NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
             }
         }
-
     }
 
     ~GpuContext()
@@ -168,7 +167,8 @@ public class GpuContext : IDisposable
     internal GpuUIntBigInteger RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
-        if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated && lazyBag.Value.TryTake(out var temp))
+        if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
+            lazyBag.Value.TryTake(out var temp))
         {
             temp.Disposed = false;
             temp.IsTemp = true; // ensure it's marked as temp again if needed
