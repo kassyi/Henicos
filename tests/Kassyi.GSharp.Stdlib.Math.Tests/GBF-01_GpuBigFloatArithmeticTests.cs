@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigFloat.Providers;
@@ -671,8 +672,168 @@ public class GBF01_GpuBigFloatArithmeticTests
         return Verify(result);
     }
 
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_DivideByUInt32_Basic()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 1000 / 3
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 1000, 0, 0, 0 });
+        int valueExp = 0;
+        bool valueSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
+            valueSig.Handle, valueExp, valueSign,
+            3,
+            resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
+
+        var result = new
+        {
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign,
+            Remainder = remainder
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_DivideByUInt32_Basic()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 1000 / 3
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 1000, 0, 0, 0 });
+        int valueExp = 0;
+        bool valueSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.DivideByUInt32(ref execCtx,
+            valueSig.Handle, valueExp, valueSign,
+            3,
+            resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
+
+        var result = new
+        {
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign,
+            Remainder = remainder
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_DivideByUInt32_Boundary()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF / (2^32 - 1)
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF });
+        int valueExp = 5;
+        bool valueSign = true; // Negative
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
+            valueSig.Handle, valueExp, valueSign,
+            0xFFFFFFFF, // Max uint
+            resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
+
+        var result = new
+        {
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign,
+            Remainder = remainder
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_DivideByUInt32_Boundary()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF / (2^32 - 1)
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF });
+        int valueExp = 5;
+        bool valueSign = true;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.DivideByUInt32(ref execCtx,
+            valueSig.Handle, valueExp, valueSign,
+            0xFFFFFFFF, // Max uint
+            resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
+
+        var result = new
+        {
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign,
+            Remainder = remainder
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public void Test_GBF01_CpuReference_DivideByUInt32_Zero()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 1000, 0, 0, 0 });
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        Assert.Throws<DivideByZeroException>(() =>
+        {
+            var execCtx = CreateContext(ctx);
+            CSharpBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
+                valueSig.Handle, 0, false,
+                0, // Divide by zero
+                resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
+        });
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public void Test_GBF01_GpuReference_DivideByUInt32_Zero()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 1000, 0, 0, 0 });
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            var execCtx = CreateContext(ctx);
+            GSharpAotFloatProvider.Instance.DivideByUInt32(ref execCtx,
+                valueSig.Handle, 0, false,
+                0, // Divide by zero
+                resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
+        });
+    }
+
     protected SettingsTask Verify(object? target,
-        [System.Runtime.CompilerServices.CallerMemberName] string methodName = "")
+        [CallerMemberName] string methodName = "")
     {
         var prefixParts = methodName.Split('_');
         var prefix = prefixParts.Length > 1 ? prefixParts[1] : "Test";
