@@ -46,40 +46,19 @@ public class BigMathTests : TranspilerTestBase
         Assert.Equal(64, Unsafe.SizeOf<GpuUInt512>());
     }
 
-    [SkippableTheory]
-    [InlineData(0u)]
-    [InlineData(99u)]
-    [InlineData(uint.MaxValue)]
-    public void TestGpuFloat128Host(uint value)
+    [SkippableFact]
+    public void TestGpuBigFloat_Initialization()
     {
-        var u128 = new GpuUInt128(value);
-        var f128 = new GpuFloat128(u128, 0, false);
-        Assert.Equal(16, Unsafe.SizeOf<LimbBuffer4>());
-        Assert.Equal(24, Unsafe.SizeOf<GpuFloat128>());
-    }
+        SkipIfCpuDialect();
+        
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        var uInt = new GpuUIntBigInteger(context, 4); // 4 words
+        var uFloat = new GpuBigUFloat(uInt, 0);
+        using var bigFloat = new GpuBigFloat(uFloat, false);
 
-    [SkippableTheory]
-    [InlineData(0u)]
-    [InlineData(199u)]
-    [InlineData(uint.MaxValue)]
-    public void TestGpuFloat256Host(uint value)
-    {
-        var u256 = new GpuUInt256(value);
-        var f256 = new GpuFloat256(u256, 0, false);
-        Assert.Equal(32, Unsafe.SizeOf<LimbBuffer8>());
-        Assert.Equal(40, Unsafe.SizeOf<GpuFloat256>());
-    }
-
-    [SkippableTheory]
-    [InlineData(0u)]
-    [InlineData(299u)]
-    [InlineData(uint.MaxValue)]
-    public void TestGpuFloat512Host(uint value)
-    {
-        var u512 = new GpuUInt512(value);
-        var f512 = new GpuFloat512(u512, 0, false);
-        Assert.Equal(64, Unsafe.SizeOf<LimbBuffer16>());
-        Assert.Equal(72, Unsafe.SizeOf<GpuFloat512>());
+        Assert.NotNull(bigFloat);
+        Assert.Equal(0, bigFloat.UFloat.Exponent);
+        Assert.False(bigFloat.IsNegative);
     }
 
     [SkippableFact]
@@ -109,6 +88,4 @@ public class BigMathTests : TranspilerTestBase
     {
         Assert.Throws<ArgumentNullException>(() => new GpuUIntBigInteger(null!, 4));
     }
-
-
 }

@@ -125,7 +125,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         fixed (T* ptr = destination)
         {
             var copySize = checked((nint)destination.Length * sizeof(T));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, (IntPtr)copySize));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, copySize));
         }
     }
 

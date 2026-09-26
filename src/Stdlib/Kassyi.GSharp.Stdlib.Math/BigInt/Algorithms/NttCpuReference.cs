@@ -229,7 +229,7 @@ public static class NttCpuReference
             ulong p1 = P1;
             ulong p2 = P2;
 
-            var combinedValue = (UInt128)x1 + (UInt128)x2 * p1 + (UInt128)x3 * p1 * p2;
+            var combinedValue = x1 + (UInt128)x2 * p1 + (UInt128)x3 * p1 * p2;
             var sum = combinedValue + carry;
             finalResult[index] = (uint)(sum & 0xFFFFFFFF);
             carry = (ulong)(sum >> 32);

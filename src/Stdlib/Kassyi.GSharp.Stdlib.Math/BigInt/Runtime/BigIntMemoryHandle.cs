@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
-public readonly struct BigIntMemoryHandle
+public readonly record struct BigIntMemoryHandle
 {
     internal BigIntDeviceBuffer Buffer { get; }
     public int WordOffset { get; }

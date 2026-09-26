@@ -173,9 +173,7 @@ public class GpuContext : IDisposable
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
         var tempMem = MemoryManager.AllocateTemp(numWords);
-        
-        // We create a wrapper around the handle pointer for backwards compatibility
-        return new GpuUIntBigInteger(this, numWords, tempMem.Handle.Buffer.Pointer);
+        return new GpuUIntBigInteger(this, tempMem.Handle, isTemp: true);
     }
 
     internal void ReturnTemp(GpuUIntBigInteger temp)
@@ -187,16 +185,12 @@ public class GpuContext : IDisposable
 
         if (Volatile.Read(ref _disposed) == 1)
         {
-            // During disposal, MemoryManager will clean everything up
             return;
         }
 
-        // With the new memory manager, GpuUIntBigInteger's temp memory isn't returned
-        // manually via this method anymore because ScopedBigIntMemory handles it on scope exit.
-        // However, for old nodes calling RentTemp, they expect ReturnTemp to free it.
-        // For compatibility during transition, we call Free on the manager.
-        MemoryManager.Free(new BigIntMemoryHandle(new BigIntDeviceBuffer(temp.DevicePointer, temp.NumWords), 0, temp.NumWords));
+        MemoryManager.Free(temp.Handle);
     }
 }
+
 
 

@@ -1,5 +1,6 @@
-using System;
+using System.Buffers;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
@@ -8,129 +9,258 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// <summary>
 /// Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global device memory.
 /// </summary>
+[StructLayout(LayoutKind.Sequential)]
 public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, IEquatable<GpuUIntBigInteger>, IComparable<GpuUIntBigInteger>
 {
-    internal readonly GpuUIntBigIntegerBuffer Buffer;
+    public GpuContext Context { get; }
+    public BigIntMemoryHandle Handle { get; }
 
-    public IntPtr DevicePointer => Buffer.DevicePointer;
-    public int NumWords => Buffer.NumWords;
-    internal GpuUIntBigInteger(GpuContext context, int numWords, IntPtr preAllocatedPointer) => Buffer = new GpuUIntBigIntegerBuffer(context, numWords, preAllocatedPointer);
+    public IntPtr DevicePointer => Handle.IsDefault ? IntPtr.Zero : IntPtr.Add(Handle.Buffer.Pointer, Handle.WordOffset * 4);
+    public int NumWords => Handle.IsDefault ? 0 : Handle.NumWords;
+    public bool IsTemp { get; }
 
-    public bool IsTemp => Buffer.IsTemp;
-    internal void SetIsTemp(bool value) => Buffer.IsTemp = value;
-    public GpuContext Context => Buffer.Context;
+    internal GpuUIntBigInteger(GpuContext context, BigIntMemoryHandle handle, bool isTemp = false)
+    {
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        Handle = handle;
+        IsTemp = isTemp;
+    }
 
-    internal GpuUIntBigInteger(GpuUIntBigIntegerBuffer buffer) => Buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+    internal GpuUIntBigInteger(GpuContext context, int numWords, IntPtr preAllocatedPointer, bool isTemp = false)
+    {
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        var buffer = new BigIntDeviceBuffer(preAllocatedPointer, numWords);
+        Handle = new BigIntMemoryHandle(buffer, 0, numWords);
+        IsTemp = isTemp;
+    }
 
     public GpuUIntBigInteger(GpuContext context, int numWords)
     {
-        Buffer = new GpuUIntBigIntegerBuffer(context, numWords);
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        Handle = Context.MemoryManager.Allocate(numWords);
+        IsTemp = false;
     }
 
     public GpuUIntBigInteger(GpuContext context, uint[] hostData)
     {
-        Buffer = new GpuUIntBigIntegerBuffer(context, hostData);
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        Handle = Context.MemoryManager.Allocate(hostData.Length);
+        IsTemp = false;
+        Context.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords, Context.Stream);
     }
 
     public GpuBigUIntExpr Value
     {
         get => new(this);
-        set => value.Node.Evaluate(Buffer.Context, this);
+        set => value.Node.Evaluate(Context, this);
     }
 
-    public static GpuBigUIntExpr operator +(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new AddExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator +(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new AddExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator -(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new SubExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator *(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new MulExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator /(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new DivExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator %(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new ModExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator &(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new BitwiseAndExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator <<(GpuUIntBigInteger leftOperand, int shiftBits) => new(new ShiftLeftExpression(leftOperand, shiftBits));
+    public static GpuBigUIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) => new(new ShiftRightExpression(leftOperand, shiftBits));
+    public static GpuBigUIntExpr operator |(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new BitwiseOrExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator ^(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => new(new BitwiseXorExpression(leftOperand, rightOperand));
+    public static GpuBigUIntExpr operator ~(GpuUIntBigInteger leftOperand) => new(new BitwiseNotExpression(leftOperand));
+    public static bool operator ==(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => leftOperand.Equals(rightOperand);
+    public static bool operator !=(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => !(leftOperand == rightOperand);
+    public static bool operator <(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => leftOperand.CompareTo(rightOperand) < 0;
+    public static bool operator >(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => leftOperand.CompareTo(rightOperand) > 0;
+    public static bool operator <=(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => leftOperand.CompareTo(rightOperand) <= 0;
+    public static bool operator >=(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) => leftOperand.CompareTo(rightOperand) >= 0;
 
-    public static GpuBigUIntExpr operator -(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new SubExpression(leftOperand, rightOperand));
+    public uint[] ToHostArray()
+    {
+        var hostData = new uint[NumWords];
+        Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords, Context.Stream);
+        return hostData;
+    }
 
-    public static GpuBigUIntExpr operator *(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new MulExpression(leftOperand, rightOperand));
+    public void Clear(int offsetWords = 0, int? numWords = null)
+    {
+        var wordsToClear = numWords ?? (NumWords - offsetWords);
+        if (wordsToClear <= 0)
+        {
+            return;
+        }
 
-    public static GpuBigUIntExpr operator /(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new DivExpression(leftOperand, rightOperand));
+        var zeroArray = ArrayPool<uint>.Shared.Rent(wordsToClear);
+        try
+        {
+            Array.Clear(zeroArray, 0, wordsToClear);
+            Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear, Context.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(zeroArray);
+        }
+    }
 
-    public static GpuBigUIntExpr operator %(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new ModExpression(leftOperand, rightOperand));
+    public void CopyFrom(GpuUIntBigInteger source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null)
+    {
+        var wordsToCopy = numWords ?? System.Math.Min(NumWords - destOffsetWords, source.NumWords - srcOffsetWords);
+        if (wordsToCopy <= 0)
+        {
+            return;
+        }
 
-    public static GpuBigUIntExpr operator &(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new BitwiseAndExpression(leftOperand, rightOperand));
+        var destPtr = IntPtr.Add(DevicePointer, destOffsetWords * 4);
+        var srcPtr = IntPtr.Add(source.DevicePointer, srcOffsetWords * 4);
+        Context.Provider.CopyDeviceToDevice(destPtr, srcPtr, wordsToCopy, Context.Stream);
+    }
 
-    public static GpuBigUIntExpr operator <<(GpuUIntBigInteger leftOperand, int shiftBits) =>
-        new(new ShiftLeftExpression(leftOperand, shiftBits));
+    public uint[] GetTopWords(int wordCount)
+    {
+        if (wordCount > NumWords)
+        {
+            wordCount = NumWords;
+        }
 
-    public static GpuBigUIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) =>
-        new(new ShiftRightExpression(leftOperand, shiftBits));
+        var hostData = new uint[wordCount];
+        var srcPtr = IntPtr.Add(DevicePointer, (NumWords - wordCount) * 4);
+        Context.Provider.CopyDeviceToHost(hostData, srcPtr, wordCount, Context.Stream);
+        return hostData;
+    }
 
-    public static GpuBigUIntExpr operator |(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new BitwiseOrExpression(leftOperand, rightOperand));
-
-    public static GpuBigUIntExpr operator ^(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        new(new BitwiseXorExpression(leftOperand, rightOperand));
-
-    public static GpuBigUIntExpr operator ~(GpuUIntBigInteger leftOperand) =>
-        new(new BitwiseNotExpression(leftOperand));
-
-    public static bool operator ==(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        leftOperand.Equals(rightOperand);
-
-    public static bool operator !=(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        !(leftOperand == rightOperand);
-
-    public static bool operator <(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        leftOperand.CompareTo(rightOperand) < 0;
-
-    public static bool operator >(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        leftOperand.CompareTo(rightOperand) > 0;
-
-    public static bool operator <=(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        leftOperand.CompareTo(rightOperand) <= 0;
-
-    public static bool operator >=(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
-        leftOperand.CompareTo(rightOperand) >= 0;
-
-    public uint[] ToHostArray() => Buffer.ToHostArray();
-
-    public void Clear(int offsetWords = 0, int? numWords = null) => Buffer.Clear(offsetWords, numWords);
-
-    public void CopyFrom(GpuUIntBigInteger source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null) =>
-        Buffer.CopyFrom(source.Buffer, destOffsetWords, srcOffsetWords, numWords);
-
-    public uint[] GetTopWords(int wordCount) => Buffer.GetTopWords(wordCount);
-
-    public int CompareTo(GpuUIntBigInteger other) => Buffer.CompareTo(other.Buffer);
-
+    public int CompareTo(GpuUIntBigInteger other) => Context.Provider.CompareTo(Context, this, other);
     public override bool Equals(object? obj) => obj is GpuUIntBigInteger other && Equals(other);
+    public bool Equals(GpuUIntBigInteger other) => Handle.Equals(other.Handle) || (Context != null && CompareTo(other) == 0);
+    public override int GetHashCode() => Handle.GetHashCode();
+    public override string ToString() => "GpuUIntBigInteger(Words={NumWords}, DevicePointer=0x{DevicePointer:X})";
 
-    public bool Equals(GpuUIntBigInteger other) => ReferenceEquals(Buffer, other.Buffer) || (Buffer != null && other.Buffer != null && CompareTo(other) == 0);
+    public void ClearWord(int wordIndex)
+    {
+        var destPtr = IntPtr.Add(DevicePointer, wordIndex * 4);
+        Context.Provider.CopyHostToDevice(destPtr, [0], 1, Context.Stream);
+    }
 
-    public override int GetHashCode() => Buffer?.GetHashCode() ?? 0;
+    public static GpuUIntBigInteger CreatePowerOfTwo(GpuContext context, int numWords, int bitIndex)
+    {
+        var result = new GpuUIntBigInteger(context, numWords);
+        var wordIndex = bitIndex / 32;
+        var bitOffset = bitIndex % 32;
+        if (wordIndex >= numWords)
+        {
+            return result;
+        }
 
-    public override string ToString() => Buffer?.ToString() ?? "GpuUIntBigInteger(null)";
+        var word = ArrayPool<uint>.Shared.Rent(1);
+        try
+        {
+            word[0] = 1u << bitOffset;
+            context.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1, context.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(word);
+        }
+        return result;
+    }
 
-    public void ClearWord(int wordIndex) => Buffer.ClearWord(wordIndex);
+    public void Dispose()
+    {
+        if (Context != null && !Handle.IsDefault && !IsTemp)
+        {
+            Context.MemoryManager.Free(Handle);
+        }
+    }
 
-    public static GpuUIntBigInteger CreatePowerOfTwo(GpuContext context, int numWords, int bitIndex) =>
-        new(GpuUIntBigIntegerBuffer.CreatePowerOfTwo(context, numWords, bitIndex));
+    public bool IsZero() => Context.Provider.IsZero(Context, this);
+    public bool IsOne() => Context.Provider.IsOne(Context, this);
+    public int GetBitLength() => Context.Provider.GetBitLength(Context, this);
+    public int GetByteCount()
+    {
+        var bitLength = GetBitLength();
+        return bitLength == 0 ? 1 : (bitLength + 7) / 8;
+    }
+    public bool GetIsEven()
+    {
+        var word = Context.Provider.ReadWord(DevicePointer);
+        return (word & 1) == 0;
+    }
+    public bool GetIsNegative()
+    {
+        var word = Context.Provider.ReadWord(DevicePointer, NumWords - 1);
+        return (word & 0x80000000) != 0;
+    }
+    public void SetIsNegative(bool value)
+    {
+        var word = Context.Provider.ReadWord(DevicePointer, NumWords - 1);
+        if (value)
+        {
+            word |= 0x80000000;
+        }
+        else
+        {
+            word &= 0x7FFFFFFF;
+        }
 
-    public void Dispose() => Buffer?.Dispose();
+        Context.Provider.WriteWord(DevicePointer, NumWords - 1, word);
+    }
+    public bool Square(int logicalWords)
+    {
+        if (NumWords < logicalWords * 2)
+        {
+            throw new InvalidOperationException($"Square requires the destination buffer to have at least {logicalWords * 2} words, but only has {NumWords}.");
+        }
 
-    public bool IsZero() => Buffer.IsZero();
-    public bool IsOne() => Buffer.IsOne();
-    public int GetBitLength() => Buffer.GetBitLength();
-    public int GetByteCount() => Buffer.GetByteCount();
-    public bool GetIsEven() => Buffer.GetIsEven();
-    public bool GetIsNegative() => Buffer.GetIsNegative();
-    public void SetIsNegative(bool value) => Buffer.SetIsNegative(value);
-    public bool Square(int logicalWords) => Buffer.Square(logicalWords);
+        return Context.Provider.Square(Context, DevicePointer, logicalWords);
+    }
     
-    public GpuUIntBigInteger PadTo(int targetWords) => new(Buffer.PadTo(targetWords));
+    public GpuUIntBigInteger PadTo(int targetWords)
+    {
+        var result = new GpuUIntBigInteger(Context, targetWords);
+        var copyWords = System.Math.Min(NumWords, targetWords);
+        Context.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, copyWords, Context.Stream);
+        return result;
+    }
 
-    public static GpuUIntBigInteger FromBigInteger(GpuContext context, BigInteger val, int minWords = 0) =>
-        new(GpuUIntBigIntegerBuffer.FromBigInteger(context, val, minWords));
+    public static GpuUIntBigInteger FromBigInteger(GpuContext context, BigInteger val, int minWords = 0)
+    {
+        val = BigInteger.Abs(val);
+        if (val.IsZero)
+        {
+            return new GpuUIntBigInteger(context, System.Math.Max(1, minWords));
+        }
 
-    public BigInteger ToBigInteger(bool isNegative = false) => Buffer.ToBigInteger(isNegative);
+        var byteCount = val.GetByteCount(isUnsigned: true);
+        var words = (byteCount + 3) / 4;
+        var allocWords = System.Math.Max(words, minWords);
+        var hostData = ArrayPool<uint>.Shared.Rent(allocWords);
+        try
+        {
+            hostData.AsSpan(0, allocWords).Clear();
+            var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
+            val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
+            var result = new GpuUIntBigInteger(context, allocWords);
+            context.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords, context.Stream);
+            return result;
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(hostData);
+        }
+    }
 
-    public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) =>
-        visitor.VisitGpuUIntBigInteger(this);
+    public BigInteger ToBigInteger(bool isNegative = false)
+    {
+        var hostData = ArrayPool<uint>.Shared.Rent(NumWords);
+        try
+        {
+            Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords, Context.Stream);
+            var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords));
+            var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
+            return isNegative ? -big : big;
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(hostData);
+        }
+    }
+
+    public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitGpuUIntBigInteger(this);
 }

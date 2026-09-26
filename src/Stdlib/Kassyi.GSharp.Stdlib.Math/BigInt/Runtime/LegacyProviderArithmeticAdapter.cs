@@ -1,14 +1,10 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
-using Providers;
-
 internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
 {
     private static GpuUIntBigInteger Wrap(GpuContext ctx, BigIntMemoryHandle handle)
     {
-        var wrapper = new GpuUIntBigInteger(ctx, handle.NumWords, handle.Buffer.Pointer);
-        wrapper.SetIsTemp(true);
-        return wrapper;
+        return new GpuUIntBigInteger(ctx, handle, isTemp: true);
     }
 
     public void Add(ref BigIntExecutionContext context, BigIntMemoryHandle left, BigIntMemoryHandle right, BigIntMemoryHandle result) =>

@@ -195,7 +195,11 @@ public static class GpuBigIntMath
         }
         finally
         {
-            if (currentGpu.HasValue) currentGpu.Value.Dispose();
+            if (currentGpu.HasValue)
+            {
+                currentGpu.Value.Dispose();
+            }
+
             if (!success)
             {
                 resultGpu.Dispose();
