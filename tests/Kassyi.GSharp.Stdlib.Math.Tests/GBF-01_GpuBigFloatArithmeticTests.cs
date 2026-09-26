@@ -53,6 +53,138 @@ public class GBF01_GpuBigFloatArithmeticTests
     
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_Multiply()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 1.5 * 2^10 * 3.0 * 2^5
+        using var leftSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 }); // Represents 3.0 conceptually (unnormalized here)
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Multiply(ref execCtx, 
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Multiply()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 1.5 * 2^10 * 3.0 * 2^5
+        using var leftSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Multiply(ref execCtx, 
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_Add()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 3.0 * 2^10 + 3.0 * 2^5
+        using var leftSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Add(ref execCtx, 
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Add()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 3.0 * 2^10 + 3.0 * 2^5
+        using var leftSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Add(ref execCtx, 
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Reciprocal()
     {
         CudaCapability.EnsureGpuAvailable();
