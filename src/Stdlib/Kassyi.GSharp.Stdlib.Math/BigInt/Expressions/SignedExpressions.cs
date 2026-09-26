@@ -6,13 +6,13 @@ internal class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpressi
 
     public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
     {
-        if (targetResult == null)
+        if (!targetResult.HasValue)
         {
             return value; // Retain original if no explicit target provided
         }
 
-        targetResult.CopyFrom(value.Value);
-        return new GpuBigInteger(targetResult, value.IsNegative);
+        targetResult.Value.CopyFrom(value.Value);
+        return new GpuBigInteger(targetResult.Value, value.IsNegative);
     }
 }
 
@@ -37,7 +37,7 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
 
     public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
     {
-        if (targetResult != null && targetResult.NumWords != NumWords)
+        if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
         {
             throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
         }
@@ -50,30 +50,30 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         {
             leftResult = Left.Evaluate(context);
             rightResult = Right.Evaluate(context);
-            if (finalBuffer == null)
+            if (!finalBuffer.HasValue)
             {
                 finalBuffer = context.RentTemp(NumWords);
             }
 
-            var result = Execute(leftResult, rightResult, finalBuffer);
+            var result = Execute(leftResult, rightResult, finalBuffer.Value);
             finalBuffer = null; // Evaluated successfully, do not return the result buffer
             return result;
         }
         finally
         {
-            if (leftResult.Value != null && leftResult.Value.IsTemp)
+            if (true && leftResult.Value.IsTemp)
             {
                 context.ReturnTemp(leftResult.Value);
             }
 
-            if (rightResult.Value != null && rightResult.Value.IsTemp)
+            if (true && rightResult.Value.IsTemp)
             {
                 context.ReturnTemp(rightResult.Value);
             }
 
-            if (targetResult == null && finalBuffer != null)
+            if (!targetResult.HasValue && finalBuffer.HasValue)
             {
-                context.ReturnTemp(finalBuffer);
+                context.ReturnTemp(finalBuffer.Value);
             }
         }
     }
@@ -168,7 +168,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
 
     public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
     {
-        if (targetResult != null && targetResult.NumWords != NumWords)
+        if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
         {
             throw new ArgumentException($"Destination buffer must have {NumWords} words.", nameof(targetResult));
         }
@@ -179,25 +179,25 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
         try
         {
             targetEval = Target.Evaluate(context);
-            if (finalBuffer == null)
+            if (!finalBuffer.HasValue)
             {
                 finalBuffer = context.RentTemp(NumWords);
             }
 
-            var result = Execute(targetEval, finalBuffer);
+            var result = Execute(targetEval, finalBuffer.Value);
             finalBuffer = null;
             return result;
         }
         finally
         {
-            if (targetEval.Value != null && targetEval.Value.IsTemp)
+            if (targetEval.Value.IsTemp)
             {
                 context.ReturnTemp(targetEval.Value);
             }
 
-            if (targetResult == null && finalBuffer != null)
+            if (!targetResult.HasValue && finalBuffer.HasValue)
             {
-                context.ReturnTemp(finalBuffer);
+                context.ReturnTemp(finalBuffer.Value);
             }
         }
     }

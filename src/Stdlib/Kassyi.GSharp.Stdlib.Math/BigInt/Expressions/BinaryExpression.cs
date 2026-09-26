@@ -143,7 +143,7 @@ internal class BitwiseXorExpression(IGpuBigUIntExpression left, IGpuBigUIntExpre
 internal class BitwiseNotExpression(IGpuBigUIntExpression left) : IGpuBigUIntExpression
 {
     internal IGpuBigUIntExpression Target { get; } = left;
-    public int NumWords => left.NumWords;
+    public int NumWords => Target.NumWords;
         
     public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitBitwiseNot(this);
 }

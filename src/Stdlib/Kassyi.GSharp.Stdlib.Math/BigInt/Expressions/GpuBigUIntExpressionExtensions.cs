@@ -19,11 +19,10 @@ public static class GpuBigUIntExpressionExtensions
         
         if (targetResult != null)
         {
-            var dummyHandle = new BigIntMemoryHandle(
-                new BigIntDeviceBuffer(targetResult.DevicePointer, targetResult.NumWords), 
-                0, targetResult.NumWords);
+            var res = targetResult.Value;
+            var dummyHandle = new BigIntMemoryHandle(new BigIntDeviceBuffer(res.DevicePointer, res.NumWords), 0, res.NumWords);
             targetMem = new ScopedBigIntMemory(null, dummyHandle);
-            finalResult = targetResult;
+            finalResult = res;
         }
         else
         {
