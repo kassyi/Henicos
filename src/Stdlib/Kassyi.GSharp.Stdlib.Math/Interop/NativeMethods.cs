@@ -172,6 +172,18 @@ internal static partial class NativeMethods
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool GpuBigFloat_Reciprocal(IntPtr workspace, IntPtr deviceA, IntPtr deviceResult, int numWords, int marginWords, IntPtr stream = 0);
+
+    [LibraryImport(DllName, EntryPoint = nameof(GpuBigFloat_Multiply))]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool GpuBigFloat_Multiply(
+        IntPtr workspace,
+        IntPtr deviceA, int numWordsA,
+        IntPtr deviceB, int numWordsB,
+        IntPtr deviceResult, int numWordsResult,
+        int tempExp, int tempSign,
+        out int resultExp, out int resultSign,
+        IntPtr stream = 0);
 }
 
 

@@ -23,7 +23,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var dA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
         var dResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
 
-        if (context.GpuContext.Provider is Kassyi.GSharp.Stdlib.Math.BigInt.Providers.NativeProvider)
+        if (context.GpuContext.Provider is NativeProvider)
         {
             if (!NativeMethods.GpuBigFloat_Normalize(
                     context.GpuContext.WorkspacePointer,
@@ -57,7 +57,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var shiftWords = expDiff / 32 + 1;
         var maxSize = System.Math.Max(leftSig.NumWords, rightSig.NumWords) + shiftWords + 1;
 
-        if (context.GpuContext.Provider is Kassyi.GSharp.Stdlib.Math.BigInt.Providers.NativeProvider)
+        if (context.GpuContext.Provider is NativeProvider)
         {
             // Allocate workspace buffers
             using var shiftedBuffer = context.GpuContext.RentTemp(maxSize);
@@ -90,35 +90,30 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         BigIntMemoryHandle rightSig, int rightExp, bool rightSign,
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        var stream = context.Stream;
-        var tempWords = leftSig.NumWords + rightSig.NumWords;
-
-        using var leftOperand = new GpuUIntBigInteger(context.GpuContext, leftSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(leftOperand.DevicePointer,
-            IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, stream);
-
-        using var rightOperand = new GpuUIntBigInteger(context.GpuContext, rightSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(rightOperand.DevicePointer,
-            IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, stream);
-
-        using var tempResult = context.GpuContext.RentTemp(tempWords);
-        context.GpuContext.Provider.ClearMemoryAsync(tempResult.DevicePointer, tempWords, stream);
-
-        context.GpuContext.Provider.Mul(context.GpuContext, leftOperand, rightOperand, tempResult);
-
-        var tempHandle = new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempWords);
-
-        var tempSign = leftSign != rightSign;
-        var tempExp = leftExp + rightExp;
-
-        // Determine if product is zero
-        var isZero = context.GpuContext.Provider.IsZero(context.GpuContext, tempResult);
-        if (isZero)
+        if (context.GpuContext.Provider is NativeProvider)
         {
-            tempSign = false;
+            var stream = context.Stream;
+            int tempExp = leftExp + rightExp;
+            int tempSign = (leftSign != rightSign) ? 1 : 0;
+
+            if (!NativeMethods.GpuBigFloat_Multiply(
+                context.GpuContext.WorkspacePointer,
+                IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords,
+                IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords,
+                IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultSig.NumWords,
+                tempExp, tempSign,
+                out var outExp, out var outSign, stream))
+            {
+                throw new InvalidOperationException("Native GpuBigFloat_Multiply failed.");
+            }
+
+            resultExp = outExp;
+            resultSign = outSign != 0;
+            return;
         }
 
-        Normalize(ref context, tempHandle, tempExp, tempSign, resultSig, out resultExp, out resultSign);
+        // Fallback for CPU / Interpreter modes
+        CSharpBigFloatArithmetic.Instance.Multiply(ref context, leftSig, leftExp, leftSign, rightSig, rightExp, rightSign, resultSig, out resultExp, out resultSign);
     }
 
     public void Divide(ref BigIntExecutionContext context,
