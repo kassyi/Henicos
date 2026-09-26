@@ -4,8 +4,12 @@ using Providers;
 
 internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
 {
-    private static GpuUIntBigInteger Wrap(GpuContext ctx, BigIntMemoryHandle handle) =>
-        new GpuUIntBigInteger(ctx, handle.NumWords, handle.Buffer.Pointer) { IsTemp = true };
+    private static GpuUIntBigInteger Wrap(GpuContext ctx, BigIntMemoryHandle handle)
+    {
+        var wrapper = new GpuUIntBigInteger(ctx, handle.NumWords, handle.Buffer.Pointer);
+        wrapper.SetIsTemp(true);
+        return wrapper;
+    }
 
     public void Add(ref BigIntExecutionContext context, BigIntMemoryHandle left, BigIntMemoryHandle right, BigIntMemoryHandle result) =>
         context.GpuContext.Provider.Add(context.GpuContext, Wrap(context.GpuContext, left), Wrap(context.GpuContext, right), Wrap(context.GpuContext, result));
