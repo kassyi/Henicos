@@ -39,6 +39,38 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         Buffer.BlockCopy(bytes, 0, destination, 0, bytesToCopy);
     }
 
+    public void Normalize(ref BigIntExecutionContext context, 
+                   BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+                   BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        var valueWords = new uint[valueSig.NumWords];
+        context.GpuContext.Provider.CopyDeviceToHost(valueWords, IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
+
+        var vValue = ToBigInteger(valueWords, valueSig.NumWords);
+        
+        if (vValue.IsZero)
+        {
+            resultExp = 0;
+            resultSign = false;
+            var zeros = new uint[resultSig.NumWords];
+            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), zeros, resultSig.NumWords, context.Stream);
+            return;
+        }
+
+        int targetBitLength = resultSig.NumWords * 32;
+        int currentBitLength = (int)vValue.GetBitLength();
+        int shift = targetBitLength - currentBitLength;
+        
+        BigInteger vNormalized = shift >= 0 ? (vValue << shift) : (vValue >> -shift);
+
+        resultExp = valueExp - shift;
+        resultSign = valueSign;
+
+        var resultWords = new uint[resultSig.NumWords];
+        ToWords(vNormalized, resultWords, resultSig.NumWords);
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
+    }
+
     public void Add(ref BigIntExecutionContext context,
              BigIntMemoryHandle leftSig, int leftExp, bool leftSign,
              BigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -117,5 +149,103 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vProd, resultWords, resultSig.NumWords);
         context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
+    }
+
+    public void Divide(ref BigIntExecutionContext context, 
+                BigIntMemoryHandle leftSig, int leftExp, bool leftSign,
+                BigIntMemoryHandle rightSig, int rightExp, bool rightSign,
+                BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        var leftWords = new uint[leftSig.NumWords];
+        context.GpuContext.Provider.CopyDeviceToHost(leftWords, IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, context.Stream);
+
+        var rightWords = new uint[rightSig.NumWords];
+        context.GpuContext.Provider.CopyDeviceToHost(rightWords, IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, context.Stream);
+
+        var vLeft = ToBigInteger(leftWords, leftSig.NumWords);
+        var vRight = ToBigInteger(rightWords, rightSig.NumWords);
+
+        if (vRight.IsZero)
+        {
+            throw new DivideByZeroException("GPU BigFloat CPU Fallback: Division by zero.");
+        }
+
+        // To preserve precision, shift left by the desired result size before dividing.
+        // vLeft is roughly leftSig.NumWords long. We want the quotient to be resultSig.NumWords long.
+        int shiftBits = resultSig.NumWords * 32;
+        var vQuotient = (vLeft << shiftBits) / vRight;
+        
+        resultExp = leftExp - rightExp - shiftBits;
+        resultSign = !vQuotient.IsZero && (leftSign != rightSign);
+
+        var resultWords = new uint[resultSig.NumWords];
+        ToWords(vQuotient, resultWords, resultSig.NumWords);
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
+    }
+
+    public void Reciprocal(ref BigIntExecutionContext context, 
+                    BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+                    BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        var valueWords = new uint[valueSig.NumWords];
+        context.GpuContext.Provider.CopyDeviceToHost(valueWords, IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
+
+        var vValue = ToBigInteger(valueWords, valueSig.NumWords);
+
+        if (vValue.IsZero)
+        {
+            throw new DivideByZeroException("GPU BigFloat CPU Fallback: Reciprocal of zero.");
+        }
+
+        // To preserve precision for the reciprocal, we shift 1 left by a large amount.
+        // The dividend is 1. We shift it by (valueSig.NumWords + resultSig.NumWords) * 32
+        // so that after dividing by vValue (which is valueSig.NumWords long),
+        // the result is resultSig.NumWords long.
+        int shiftBits = (valueSig.NumWords + resultSig.NumWords) * 32;
+        var dividend = BigInteger.One << shiftBits;
+        var vQuotient = dividend / vValue;
+
+        resultExp = -valueExp - shiftBits;
+        resultSign = valueSign;
+
+        var resultWords = new uint[resultSig.NumWords];
+        ToWords(vQuotient, resultWords, resultSig.NumWords);
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
+    }
+
+    public void Sqrt(ref BigIntExecutionContext context, 
+              BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+              BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Rsqrt(ref BigIntExecutionContext context, 
+               BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+               BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Exp(ref BigIntExecutionContext context, 
+             BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+             BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Log(ref BigIntExecutionContext context, 
+             BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+             BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Pow(ref BigIntExecutionContext context, 
+             BigIntMemoryHandle baseSig, int baseExp, bool baseSign,
+             BigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
+             BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
+    {
+        throw new NotImplementedException();
     }
 }

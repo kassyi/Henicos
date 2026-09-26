@@ -128,4 +128,38 @@ public static class GpuBigFloatKernels
             Gpu.SyncThreads();
         }
     }
+
+    [GpuKernel]
+    public static void FloatNormalizeKernel(
+        [GpuReadOnly] uint[] valueSig, int valueWords,
+        uint[] resultSig, int resultWords,
+        int wordShift, int bitShift)
+    {
+        int tid = ThreadIndex.X;
+        int bDim = BlockDimension.X;
+
+        for (int offset = 0; offset < resultWords; offset += bDim)
+        {
+            int idx = offset + tid;
+            bool valid = idx < resultWords;
+
+            if (valid)
+            {
+                int srcIdxHi = idx - wordShift;
+                int srcIdxLo = srcIdxHi - 1;
+
+                uint hi = (srcIdxHi >= 0 && srcIdxHi < valueWords) ? valueSig[srcIdxHi] : 0u;
+                uint lo = (srcIdxLo >= 0 && srcIdxLo < valueWords) ? valueSig[srcIdxLo] : 0u;
+
+                if (bitShift == 0)
+                {
+                    resultSig[idx] = hi;
+                }
+                else
+                {
+                    resultSig[idx] = Gpu.FunnelShiftLeft(lo, hi, (uint)bitShift);
+                }
+            }
+        }
+    }
 }
