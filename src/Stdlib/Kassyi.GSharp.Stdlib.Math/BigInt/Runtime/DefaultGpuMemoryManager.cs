@@ -4,7 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using Providers;
 
-internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider) : IGpuMemoryManager, IDisposable
+internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream) : IGpuMemoryManager, IDisposable
 {
     private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<BigIntMemoryHandle>>> _tempPool = new();
     private int _disposed;
@@ -12,6 +12,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider) : 
     public BigIntMemoryHandle Allocate(int numWords)
     {
         var ptr = provider.AllocateMemory(numWords);
+        provider.ClearMemoryAsync(ptr, numWords, stream);
         var buffer = new BigIntDeviceBuffer(ptr, numWords);
         return new BigIntMemoryHandle(buffer, 0, numWords);
     }
@@ -47,6 +48,11 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider) : 
                 handle.Buffer.Dispose();
             }
             return;
+        }
+
+        if (handle.Buffer.Pointer != IntPtr.Zero)
+        {
+            provider.ClearMemoryAsync(handle.Buffer.Pointer, handle.Buffer.TotalWords, stream);
         }
 
         // Return to pool based on total size

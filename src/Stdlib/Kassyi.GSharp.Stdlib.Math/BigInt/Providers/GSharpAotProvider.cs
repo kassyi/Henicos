@@ -37,6 +37,17 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
+    public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
+    {
+        if (numWords <= 0) return;
+        if (devicePointer != IntPtr.Zero)
+        {
+            using var scope = new GpuKernelLoader.CudaContextScope();
+            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8Async(devicePointer, 0, (IntPtr)(numWords * 4), stream));  
+        }
+    }
+
+    /// <inheritdoc/>
     public IntPtr AllocateMemory(int numWords)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -277,23 +288,23 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     /// <inheritdoc/>
     public unsafe void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0)
     {
+        if (numWords <= 0) return;
         fixed (uint* pHost = hostData)
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuMemcpyHtoDAsync_v2(devicePointer, (IntPtr)pHost,
-                    System.Math.Min(hostData.Length, numWords) * 4, stream));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(devicePointer, (IntPtr)pHost, (IntPtr)(System.Math.Min(hostData.Length, numWords) * 4), stream));
+            
         }
     }
 
     /// <inheritdoc/>
     public unsafe void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
     {
+        if (numWords <= 0) return;
         fixed (uint* pHost = hostData)
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, numWords * 4, stream));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, (IntPtr)(numWords * 4), stream)); 
         }
     }
 
@@ -320,9 +331,11 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     /// <inheritdoc/>
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0)
     {
+        if (numWords <= 0 || destPointer == srcPointer)
+            return;
+
         using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(
-            CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, numWords * 4, stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, (IntPtr)(numWords * 4), stream));
     }
 
     public void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
@@ -601,9 +614,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         var numBlocks = (outWords + chunkSize - 1) / chunkSize;
         using var blockCarries = context.RentTemp(numBlocks);
 
+        var writeWords = System.Math.Min(outWords, resultBuffer.NumWords);
         GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesBlockedKernel_Device(
             uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, resultBuffer.DevicePointer,
-            blockCarries.DevicePointer, m, outWords, chunkSize,
+            blockCarries.DevicePointer, m, writeWords, chunkSize,
             gridDimX: (uint)numBlocks, blockDimX: (uint)chunkSize, sharedMemBytes: (uint)(chunkSize * 8)
         , hStream: context.Stream);
 
@@ -611,7 +625,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
 
         GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesApplyKernel_Device(
-            resultBuffer.DevicePointer, blockCarries.DevicePointer, outWords, chunkSize, numBlocks,
+            resultBuffer.DevicePointer, blockCarries.DevicePointer, writeWords, chunkSize, numBlocks,
             gridDimX: applyGridDim, blockDimX: applyBlockDim
         , hStream: context.Stream);
     }

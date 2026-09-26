@@ -23,6 +23,14 @@ public class NativeProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
 
+        public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
+    {
+        if (devicePointer == IntPtr.Zero || numWords <= 0) return;
+        using var scope = new Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+        Kassyi.GSharp.Runtime.Interop.CudaException.ThrowIfError(Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemsetD8Async(devicePointer, 0, (IntPtr)(numWords * 4), stream));
+    }
+
+    /// <inheritdoc/>
     public IntPtr AllocateMemory(int numWords) => NativeMethods.GpuBigInt_Alloc(numWords);
 
     /// <inheritdoc/>
@@ -198,6 +206,7 @@ public class NativeProvider : IGpuExecutionProvider
     public void LaunchGraph(IntPtr graphExec, IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
     public void DestroyGraph(IntPtr graph, IntPtr graphExec) => throw new NotImplementedException(ErrorNotImplemented);
 }
+
 
 
 

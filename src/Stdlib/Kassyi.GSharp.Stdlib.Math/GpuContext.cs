@@ -91,7 +91,6 @@ public class GpuContext : IDisposable
     {
         MaxWords = maxWords;
         Engine = engine;
-        MemoryManager = new DefaultGpuMemoryManager(Provider);
 
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
@@ -122,6 +121,7 @@ public class GpuContext : IDisposable
                     "and that the CUDA Toolkit bin directory is accessible via PATH.", ex);
             }
         }
+        MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
     }
 
     /// <summary>
@@ -175,11 +175,7 @@ public class GpuContext : IDisposable
         var tempMem = MemoryManager.AllocateTemp(numWords);
         
         // We create a wrapper around the handle pointer for backwards compatibility
-        var newTemp = new GpuUIntBigInteger(this, numWords, tempMem.Handle.Buffer.Pointer)
-        {
-            IsTemp = true
-        };
-        return newTemp;
+        return new GpuUIntBigInteger(this, numWords, tempMem.Handle.Buffer.Pointer);
     }
 
     internal void ReturnTemp(GpuUIntBigInteger temp)
