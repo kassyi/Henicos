@@ -200,4 +200,156 @@ inline bool LaunchNormalize(const unsigned int* d_a,
     return err == cudaSuccess;
 }
 
+// -------------------------------------------------------------------------
+// Phase 2: Reciprocal (Newton-Raphson)
+// -------------------------------------------------------------------------
+
+__device__ inline void DeviceBigIntMul(const unsigned int* a, int lenA,
+                                       const unsigned int* b, int lenB,
+                                       unsigned int* out, int lenOut)
+{
+    for (int i = 0; i < lenOut; i++) out[i] = 0;
+    
+    for (int i = 0; i < lenA; i++) {
+        if (a[i] == 0) continue;
+        unsigned long long carry = 0;
+        for (int j = 0; j < lenB; j++) {
+            int k = i + j;
+            if (k >= lenOut) break;
+            unsigned long long sum = (unsigned long long)a[i] * b[j] + out[k] + carry;
+            out[k] = (unsigned int)sum;
+            carry = sum >> 32;
+        }
+        for (int k = i + lenB; k < lenOut && carry > 0; k++) {
+            unsigned long long sum = (unsigned long long)out[k] + carry;
+            out[k] = (unsigned int)sum;
+            carry = sum >> 32;
+        }
+    }
+}
+
+/**
+ * @brief Computes reciprocal approximation (1 / A) of a normalized BigFloat significand via Newton-Raphson iterations.
+ */
+__global__ void ReciprocalKernel(const unsigned int* __restrict__ d_a,
+                                 unsigned int* __restrict__ d_result,
+                                 int numWords,
+                                 int marginWords)
+{
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
+        int actualBits = 0;
+        for (int i = numWords - 1; i >= 0; i--) {
+            if (d_a[i] != 0) {
+                actualBits = i * 32 + (32 - __clz(d_a[i]));
+                break;
+            }
+        }
+        if (actualBits == 0) return;
+
+        int destWords = 2 * numWords + marginWords;
+        for (int i = 0; i < destWords; i++) d_result[i] = 0;
+
+        int msWord = (actualBits - 1) / 32;
+        unsigned long long topBig = d_a[msWord];
+        if (msWord > 0) {
+            topBig = (topBig << 32) | d_a[msWord - 1];
+        }
+
+        int topBits = 64 - __clzll(topBig);
+        int shiftInTruncated = topBits - 62;
+        unsigned long long originalBigTop = (shiftInTruncated >= 0) ? (topBig >> shiftInTruncated) : (topBig << (-shiftInTruncated));
+
+        unsigned __int128 one124 = ((unsigned __int128)1) << 124;
+        unsigned __int128 approx128 = one124 / originalBigTop;
+
+        int numBits = numWords * 32;
+        int marginBits = marginWords * 32;
+        int finalShift = 2 * numBits + marginBits - actualBits - 62;
+
+        if (finalShift >= 0) {
+            int wordShift = finalShift / 32;
+            int bitShift = finalShift % 32;
+            unsigned int a0 = (unsigned int)approx128;
+            unsigned int a1 = (unsigned int)(approx128 >> 32);
+            unsigned int a2 = (unsigned int)(approx128 >> 64);
+
+            unsigned long long s0 = (unsigned long long)a0 << bitShift;
+            unsigned long long s1 = ((unsigned long long)a1 << bitShift) | (s0 >> 32);
+            unsigned long long s2 = ((unsigned long long)a2 << bitShift) | (s1 >> 32);
+
+            if (wordShift < destWords) d_result[wordShift] = (unsigned int)s0;
+            if (wordShift + 1 < destWords) d_result[wordShift + 1] = (unsigned int)s1;
+            if (wordShift + 2 < destWords) d_result[wordShift + 2] = (unsigned int)s2;
+            if (wordShift + 3 < destWords) d_result[wordShift + 3] = (unsigned int)(s2 >> 32);
+        }
+
+        int targetBits = 2 * numBits + marginBits;
+        int currentBits = 63;
+        int iterations = 0;
+        while (currentBits < targetBits) {
+            iterations++;
+            currentBits *= 2;
+        }
+
+        const int MAX_PROD = 256;
+        const int MAX_NEXT = 512;
+        unsigned int s_prod[MAX_PROD];
+        unsigned int s_diff[MAX_PROD];
+        unsigned int s_next[MAX_NEXT];
+
+        int n = numWords;
+        int m = marginWords;
+        int prodWords = 3 * n + m;
+        int nextWords = 5 * n + 2 * m;
+        int shiftTotal = 2 * numBits + marginBits;
+        int targetBit = 2 * numBits + marginBits + 1;
+
+        if (prodWords <= MAX_PROD && nextWords <= MAX_NEXT) {
+            for (int iter = 0; iter < iterations; iter++) {
+                // 1. currentProduct = d_a * d_result
+                DeviceBigIntMul(d_a, n, d_result, 2 * n + m, s_prod, prodWords);
+
+                // 2. diff = constant - currentProduct
+                unsigned long long borrow = 0;
+                for (int i = 0; i < prodWords; i++) {
+                    unsigned int c_word = 0;
+                    if (i == targetBit / 32) {
+                        c_word = (1U << (targetBit % 32));
+                    }
+                    unsigned long long sub = (unsigned long long)c_word - s_prod[i] - borrow;
+                    s_diff[i] = (unsigned int)sub;
+                    borrow = (sub >> 63) & 1;
+                }
+
+                // 3. nextIter = d_result * diff
+                DeviceBigIntMul(d_result, 2 * n + m, s_diff, prodWords, s_next, nextWords);
+
+                // 4. d_result = nextIter >> shiftTotal
+                int wordShift = shiftTotal / 32;
+                int bitShift = shiftTotal % 32;
+                for (int i = 0; i < 2 * n + m; i++) {
+                    int srcIdx = i + wordShift;
+                    unsigned int w0 = (srcIdx < nextWords) ? s_next[srcIdx] : 0;
+                    unsigned int w1 = (srcIdx + 1 < nextWords) ? s_next[srcIdx + 1] : 0;
+                    d_result[i] = (w0 >> bitShift) | (bitShift == 0 ? 0 : (w1 << (32 - bitShift)));
+                }
+            }
+        }
+    }
+}
+
+inline bool LaunchReciprocal(const unsigned int* d_a,
+                             unsigned int* d_result,
+                             int numWords,
+                             int marginWords,
+                             cudaStream_t stream)
+{
+    dim3 grid(1);
+    dim3 block(32);
+    ReciprocalKernel<<<grid, block, 0, stream>>>(d_a, d_result, numWords, marginWords);
+    cudaError_t err = cudaGetLastError();
+    return err == cudaSuccess;
+}
+
 #endif // GPUBIGFLOAT_KERNELS_CUH

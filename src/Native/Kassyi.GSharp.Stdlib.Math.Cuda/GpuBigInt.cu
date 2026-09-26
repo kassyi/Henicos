@@ -340,6 +340,7 @@ extern "C" {
 }
 
 
+
 // -------------------------------------------------------------------------
 // Helper Functions
 // -------------------------------------------------------------------------
@@ -659,6 +660,11 @@ extern "C" {
         int* d_zero = d_exp + 1;
         return LaunchNormalize(d_a, numWordsA, d_result, numWordsResult, valueExp, h_resultExp, h_isZero, d_exp, d_zero, stream);
     }
+    EXPORT_API bool GpuBigFloat_Reciprocal(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, int marginWords, cudaStream_t stream)
+    {
+        return LaunchReciprocal(d_a, d_result, numWords, marginWords, stream);
+    }
+
     
     EXPORT_API bool GpuBigFloat_AddSub(
         void* workspace,
