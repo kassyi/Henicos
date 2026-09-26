@@ -176,7 +176,7 @@ public static class GpuBigIntMath
             {
                 if ((exp & 1) == 1)
                 {
-                    var nextResult = MulAndTrim(resultGpu, currentGpu);
+                    var nextResult = MulAndTrim(resultGpu, currentGpu.Value);
                     resultGpu.Dispose();
                     resultGpu = nextResult;
                 }
@@ -184,8 +184,8 @@ public static class GpuBigIntMath
                 exp >>= 1;
                 if (exp > 0)
                 {
-                    var nextCurrent = MulAndTrim(currentGpu, currentGpu);
-                    currentGpu.Dispose();
+                    var nextCurrent = MulAndTrim(currentGpu.Value, currentGpu.Value);
+                    currentGpu.Value.Dispose();
                     currentGpu = nextCurrent;
                 }
             }
@@ -195,10 +195,10 @@ public static class GpuBigIntMath
         }
         finally
         {
-            currentGpu?.Dispose();
+            if (currentGpu.HasValue) currentGpu.Value.Dispose();
             if (!success)
             {
-                resultGpu?.Dispose();
+                resultGpu.Dispose();
             }
         }
     }
@@ -221,7 +221,7 @@ public static class GpuBigIntMath
 
             var result = trimmed;
             trimmed = null; // Ownership transferred to caller
-            return result;
+            return result.Value;
         }
         finally
         {

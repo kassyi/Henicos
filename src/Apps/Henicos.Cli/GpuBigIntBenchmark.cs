@@ -15,13 +15,13 @@ public class GpuBigIntBenchmark : IDisposable
     private GpuContext _contextJit = null!;
     private GpuContext _contextLegacy = null!;
 
-    private GpuUIntBigInteger _gpuAJit = null!;
-    private GpuUIntBigInteger _gpuBJit = null!;
-    private GpuUIntBigInteger _gpuResultJit = null!;
+    private GpuUIntBigInteger _gpuAJit;
+    private GpuUIntBigInteger _gpuBJit;
+    private GpuUIntBigInteger _gpuResultJit;
 
-    private GpuUIntBigInteger _gpuALegacy = null!;
-    private GpuUIntBigInteger _gpuBLegacy = null!;
-    private GpuUIntBigInteger _gpuResultLegacy = null!;
+    private GpuUIntBigInteger _gpuALegacy;
+    private GpuUIntBigInteger _gpuBLegacy;
+    private GpuUIntBigInteger _gpuResultLegacy;
 
     private GpuKernelLoader.CudaContextScope _scope;
 

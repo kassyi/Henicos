@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [TakesOwnership] GpuUIntBigInteger q, [TakesOwnership] GpuBigInteger t) : IDisposable
 {
     public GpuBigInteger P { get; } = p;
-    public GpuUIntBigInteger Q { get; } = q ?? throw new ArgumentNullException(nameof(q));
+    public GpuUIntBigInteger Q { get; } = q;
     public GpuBigInteger T { get; } = t;
 
     public void Dispose()

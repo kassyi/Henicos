@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using System;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
@@ -6,18 +7,23 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 /// A lightweight value type wrapping a <see cref="GpuUIntBigInteger"/> with a sign bit,
 /// used for tracking alternating series or arbitrary signed integers on the GPU.
 /// </summary>
-public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, bool isNegative)
-    : IDisposable, IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>
+public readonly struct GpuBigInteger : IDisposable, IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>
 {
+    public GpuBigInteger([Kassyi.GSharp.Core.TakesOwnership] GpuUIntBigInteger value, bool isNegative)
+    {
+        Value = value;
+        IsNegative = isNegative;
+    }
+
     /// <summary>
     /// Gets the underlying absolute value buffer on the GPU.
     /// </summary>
-    public GpuUIntBigInteger Value { get; } = value ?? throw new ArgumentNullException(nameof(value));
+    public GpuUIntBigInteger Value { get; }
 
     /// <summary>
     /// Gets a value indicating whether the integer is strictly negative.
     /// </summary>
-    public bool IsNegative { get; } = isNegative;
+    public bool IsNegative { get; }
 
     /// <summary>
     /// Disposes the underlying GPU buffer.

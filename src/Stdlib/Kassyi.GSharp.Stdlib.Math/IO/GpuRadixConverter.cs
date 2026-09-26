@@ -27,7 +27,6 @@ public static class GpuRadixConverter
         bool isMostSignificant = false)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits);
 

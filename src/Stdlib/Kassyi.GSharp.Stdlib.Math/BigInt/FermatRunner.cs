@@ -67,13 +67,13 @@ public class FermatRunner : IDisposable
         catch
         {
             _gpuContext?.Dispose();
-            _valueT?.Dispose();
-            _valueTReduced?.Dispose();
-            _mulResult?.Dispose();
-            _quotient?.Dispose();
-            _remainder?.Dispose();
-            _remainderMask?.Dispose();
-            _temp?.Dispose();
+            _valueT.Dispose();
+            _valueTReduced.Dispose();
+            _mulResult.Dispose();
+            _quotient.Dispose();
+            _remainder.Dispose();
+            _remainderMask.Dispose();
+            _temp.Dispose();
             throw;
         }
 
