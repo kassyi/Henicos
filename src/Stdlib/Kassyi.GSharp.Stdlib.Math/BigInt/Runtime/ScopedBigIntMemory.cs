@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
-public ref struct ScopedBigIntMemory(IGpuMemoryManager manager, BigIntMemoryHandle handle)
+public ref struct ScopedBigIntMemory(IGpuMemoryManager? manager, BigIntMemoryHandle handle)
 {
     public BigIntMemoryHandle Handle { get; } = handle;
 
