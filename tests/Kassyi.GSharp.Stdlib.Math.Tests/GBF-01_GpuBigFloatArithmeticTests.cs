@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
@@ -37,20 +38,20 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Divide(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Divide(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Divide()
@@ -70,20 +71,20 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Divide(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Divide(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Multiply()
@@ -93,7 +94,9 @@ public class GBF01_GpuBigFloatArithmeticTests
         var execCtx = CreateContext(ctx);
 
         // 1.5 * 2^10 * 3.0 * 2^5
-        using var leftSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 }); // Represents 3.0 conceptually (unnormalized here)
+        using var
+            leftSig = new GpuUIntBigInteger(ctx,
+                new uint[] { 3, 0, 0, 0 }); // Represents 3.0 conceptually (unnormalized here)
         int leftExp = 10;
         bool leftSign = false;
 
@@ -103,20 +106,20 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Multiply(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Multiply(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Multiply()
@@ -136,16 +139,16 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Multiply(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Multiply(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -169,20 +172,20 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Add(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Add(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Add()
@@ -202,16 +205,16 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Add(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Add(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -231,19 +234,19 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Reciprocal(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Reciprocal(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Reciprocal()
@@ -259,15 +262,15 @@ public class GBF01_GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Reciprocal(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Reciprocal(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -287,25 +290,25 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Sqrt(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Sqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Sqrt()
@@ -319,21 +322,21 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Sqrt(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Sqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -352,25 +355,25 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Rsqrt(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Rsqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Rsqrt()
@@ -384,21 +387,21 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Rsqrt(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Rsqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -419,15 +422,15 @@ public class GBF01_GpuBigFloatArithmeticTests
         // Target: 4 words (128 bits). 1 is at bit 0. It should be shifted to bit 127.
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -448,15 +451,15 @@ public class GBF01_GpuBigFloatArithmeticTests
         // Target: 4 words (128 bits). 1 is at bit 0. It should be shifted to bit 127.
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -475,25 +478,25 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Exp(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Exp(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Exp()
@@ -507,21 +510,21 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Exp(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Exp(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -540,25 +543,25 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Log(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Log(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Log()
@@ -572,21 +575,21 @@ public class GBF01_GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Log(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Log(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
@@ -604,30 +607,32 @@ public class GBF01_GpuBigFloatArithmeticTests
         int rawBaseExp = 0;
         bool rawBaseSign = false;
         using var baseSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign, baseSig.Handle, out int baseExp, out bool baseSign);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign,
+            baseSig.Handle, out int baseExp, out bool baseSign);
 
         using var rawExpSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
         int rawExpExp = 0;
         bool rawExpSign = false;
         using var expSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle, out int expExp, out bool expSign);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle,
+            out int expExp, out bool expSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Pow(ref execCtx, 
+        CSharpBigFloatArithmetic.Instance.Pow(ref execCtx,
             baseSig.Handle, baseExp, baseSign,
             expSig.Handle, expExp, expSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
-    
+
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Pow()
@@ -640,31 +645,34 @@ public class GBF01_GpuBigFloatArithmeticTests
         int rawBaseExp = 0;
         bool rawBaseSign = false;
         using var baseSig = new GpuUIntBigInteger(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign, baseSig.Handle, out int baseExp, out bool baseSign);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign,
+            baseSig.Handle, out int baseExp, out bool baseSign);
 
         using var rawExpSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
         int rawExpExp = 0;
         bool rawExpSign = false;
         using var expSig = new GpuUIntBigInteger(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle, out int expExp, out bool expSign);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle,
+            out int expExp, out bool expSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Pow(ref execCtx, 
+        GSharpAotFloatProvider.Instance.Pow(ref execCtx,
             baseSig.Handle, baseExp, baseSign,
             expSig.Handle, expExp, expSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
-        var result = new 
-        { 
+        var result = new
+        {
             ResultWords = resultSig.ToHostArray(),
             ResultExp = resultExp,
-            ResultSign = resultSign 
+            ResultSign = resultSign
         };
         return Verify(result);
     }
 
-    protected VerifyTests.SettingsTask Verify(object? target, [System.Runtime.CompilerServices.CallerMemberName] string methodName = "")
+    protected SettingsTask Verify(object? target,
+        [System.Runtime.CompilerServices.CallerMemberName] string methodName = "")
     {
         var prefixParts = methodName.Split('_');
         var prefix = prefixParts.Length > 1 ? prefixParts[1] : "Test";
