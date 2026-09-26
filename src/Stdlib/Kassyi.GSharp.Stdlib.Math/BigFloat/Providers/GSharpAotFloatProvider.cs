@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigFloat.Runtime;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigFloat.Providers;
@@ -174,6 +175,12 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
+        if (context.GpuContext.Provider is not GSharpAotProvider && context.GpuContext.Provider is not NativeProvider)
+        {
+            CSharpBigFloatArithmetic.Instance.Reciprocal(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp, out resultSign);
+            return;
+        }
+
         var stream = context.Stream;
 
         using var valueOperand = new GpuUIntBigInteger(context.GpuContext, valueSig.NumWords);
@@ -185,8 +192,16 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         using var reciprocalResult = context.GpuContext.RentTemp(reciprocalWords);
         context.GpuContext.Provider.ClearMemoryAsync(reciprocalResult.DevicePointer, reciprocalWords, stream);
 
-        // Compute Reciprocal using Newton-Raphson from GpuBigIntDivRem
-        GpuBigIntDivRem.Reciprocal(valueOperand, reciprocalResult, marginWords);
+        if (context.GpuContext.Provider is NativeProvider)
+        {
+            NativeMethods.GpuBigFloat_Reciprocal(context.GpuContext.WorkspacePointer, valueOperand.DevicePointer,
+                reciprocalResult.DevicePointer, valueSig.NumWords, marginWords, stream);
+        }
+        else
+        {
+            // Compute Reciprocal using Newton-Raphson from GpuBigIntDivRem
+            GpuBigIntDivRem.Reciprocal(valueOperand, reciprocalResult, marginWords);
+        }
 
         var tempHandle = new BigIntMemoryHandle(reciprocalResult.Handle.Buffer, reciprocalResult.Handle.WordOffset,
             reciprocalWords);
@@ -205,6 +220,12 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         if (valueSign)
         {
             throw new InvalidOperationException("Cannot compute square root of a negative number.");
+        }
+
+        if (context.GpuContext.Provider is not GSharpAotProvider && context.GpuContext.Provider is not NativeProvider)
+        {
+            CSharpBigFloatArithmetic.Instance.Sqrt(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp, out resultSign);
+            return;
         }
 
         var stream = context.Stream;

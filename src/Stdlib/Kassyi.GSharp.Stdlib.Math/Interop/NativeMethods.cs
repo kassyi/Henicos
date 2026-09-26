@@ -167,6 +167,11 @@ internal static partial class NativeMethods
         int numWordsResult,
         out int resultExp, out int resultSign, out int isZero,
         IntPtr stream = 0);
+
+    [LibraryImport(DllName, EntryPoint = nameof(GpuBigFloat_Reciprocal))]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool GpuBigFloat_Reciprocal(IntPtr workspace, IntPtr deviceA, IntPtr deviceResult, int numWords, int marginWords, IntPtr stream = 0);
 }
 
 
