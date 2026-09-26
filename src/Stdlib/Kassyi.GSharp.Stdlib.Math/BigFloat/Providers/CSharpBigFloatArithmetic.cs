@@ -205,15 +205,20 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         // To preserve precision, shift left by the desired result size before dividing.
         // vLeft is roughly leftSig.NumWords long. We want the quotient to be resultSig.NumWords long.
-        int shiftBits = resultSig.NumWords * 32;
+        int shiftBits = resultSig.NumWords * 32 * 2;
         var vQuotient = (vLeft << shiftBits) / vRight;
         
-        resultExp = leftExp - rightExp - shiftBits;
+        int tempExp = leftExp - rightExp - shiftBits;
         resultSign = !vQuotient.IsZero && (leftSign != rightSign);
 
-        var resultWords = new uint[resultSig.NumWords];
-        ToWords(vQuotient, resultWords, resultSig.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
+        using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords * 2);
+        var tempHandle = new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
+        
+        var tempWords = new uint[tempResult.NumWords];
+        ToWords(vQuotient, tempWords, tempResult.NumWords);
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4), tempWords, tempResult.NumWords, context.Stream);
+        
+        Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
     public void Reciprocal(ref BigIntExecutionContext context, 
@@ -238,26 +243,85 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var dividend = BigInteger.One << shiftBits;
         var vQuotient = dividend / vValue;
 
-        resultExp = -valueExp - shiftBits;
+        int tempExp = -valueExp - shiftBits;
         resultSign = valueSign;
 
-        var resultWords = new uint[resultSig.NumWords];
-        ToWords(vQuotient, resultWords, resultSig.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
+        using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords * 2);
+        var tempHandle = new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
+        
+        var tempWords = new uint[tempResult.NumWords];
+        ToWords(vQuotient, tempWords, tempResult.NumWords);
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4), tempWords, tempResult.NumWords, context.Stream);
+        
+        Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
     public void Sqrt(ref BigIntExecutionContext context, 
               BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
               BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        throw new NotImplementedException();
+        if (valueSign)
+        {
+            throw new InvalidOperationException("Cannot compute square root of a negative number.");
+        }
+
+        var valueWords = new uint[valueSig.NumWords];
+        context.GpuContext.Provider.CopyDeviceToHost(valueWords, IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
+
+        var vValue = ToBigInteger(valueWords, valueSig.NumWords);
+
+        if (vValue.IsZero)
+        {
+            resultExp = 0;
+            resultSign = false;
+            var zeros = new uint[resultSig.NumWords];
+            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), zeros, resultSig.NumWords, context.Stream);
+            return;
+        }
+
+        int e = valueExp;
+        if (e % 2 != 0)
+        {
+            vValue <<= 1;
+            e--;
+        }
+
+        int shiftBits = resultSig.NumWords * 32 * 2;
+        vValue <<= shiftBits;
+
+        var vSqrt = BigIntegerExtensions.Sqrt(vValue);
+
+        resultExp = e / 2 - (shiftBits / 2);
+        resultSign = false;
+
+        int targetBitLength = resultSig.NumWords * 32;
+        int currentBitLength = (int)vSqrt.GetBitLength();
+        int shift = targetBitLength - currentBitLength;
+
+        BigInteger vNormalized = shift >= 0 ? (vSqrt << shift) : (vSqrt >> -shift);
+        resultExp -= shift;
+
+        var resultWords = new uint[resultSig.NumWords];
+        ToWords(vNormalized, resultWords, resultSig.NumWords);
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultWords, resultSig.NumWords, context.Stream);
     }
 
     public void Rsqrt(ref BigIntExecutionContext context, 
                BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
                BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        throw new NotImplementedException();
+        if (valueSign)
+        {
+            throw new InvalidOperationException("Cannot compute inverse square root of a negative number.");
+        }
+
+        int tempWords = resultSig.NumWords;
+        using var sqrtResult = context.GpuContext.RentTemp(tempWords);
+        var sqrtHandle = new BigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, tempWords);
+        
+        Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out int sqrtExp, out bool sqrtSign);
+        
+        Reciprocal(ref context, sqrtHandle, sqrtExp, sqrtSign, resultSig, out resultExp, out resultSign);
     }
 
     public void Exp(ref BigIntExecutionContext context, 
