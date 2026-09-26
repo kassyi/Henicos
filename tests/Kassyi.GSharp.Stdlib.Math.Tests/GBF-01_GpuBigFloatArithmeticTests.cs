@@ -53,6 +53,39 @@ public class GBF01_GpuBigFloatArithmeticTests
     
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Divide()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 100 * 2^10 / 3 * 2^5
+        using var leftSig = new GpuUIntBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Divide(ref execCtx, 
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Multiply()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -210,6 +243,165 @@ public class GBF01_GpuBigFloatArithmeticTests
         };
         return Verify(result);
     }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Reciprocal()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // 1 / (3 * 2^0)
+        using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int valueExp = 0;
+        bool valueSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Reciprocal(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_Sqrt()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Sqrt(9.0 * 2^10) = 3.0 * 2^5
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 9, 0, 0, 0 });
+        int rawValueExp = 10;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Sqrt(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Sqrt()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 9, 0, 0, 0 });
+        int rawValueExp = 10;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Sqrt(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_Rsqrt()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Rsqrt(9.0 * 2^10) = 1 / (3.0 * 2^5)
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 9, 0, 0, 0 });
+        int rawValueExp = 10;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Rsqrt(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Rsqrt()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 9, 0, 0, 0 });
+        int rawValueExp = 10;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Rsqrt(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
 
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
@@ -266,15 +458,6 @@ public class GBF01_GpuBigFloatArithmeticTests
             ResultExp = resultExp,
             ResultSign = resultSign 
         };
-        return Verify(result);
-    }
-
-    [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
-    public Task Test_GBF01_CpuReference_Sqrt()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        var result = new { Status = "Not Implemented Yet" };
         return Verify(result);
     }
 

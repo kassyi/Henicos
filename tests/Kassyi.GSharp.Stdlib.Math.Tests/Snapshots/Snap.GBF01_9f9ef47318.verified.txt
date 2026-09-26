@@ -1,0 +1,9 @@
+﻿{
+  ResultWords: [
+    0,
+    0,
+    0,
+    0
+  ],
+  ResultSign: false
+}

@@ -1,3 +1,10 @@
 ﻿{
-  Status: Not Implemented Yet
+  ResultWords: [
+    0,
+    0,
+    0,
+    3221225472
+  ],
+  ResultExp: -121,
+  ResultSign: false
 }
