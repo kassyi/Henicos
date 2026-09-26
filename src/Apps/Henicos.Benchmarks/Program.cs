@@ -1,4 +1,5 @@
 using System.Globalization;
+using BenchmarkDotNet.Running;
 using Henicos.Benchmarks.ComputeBenchmarks;
 using Kassyi.GSharp.Stdlib.Math.IO;
 
@@ -45,6 +46,7 @@ internal class Program
             "prp" => RunFermatPrp(args[1..]),
             "bbp" => RunBbp(args[1..]),
             "compute-bench" => RunComputeBench(args[1..]),
+            "arithmetic" => RunArithmeticBench(),
             _ when LooksLikeDigits(args[0]) => RunCpuPi(args),
             _ => HandleUnknownCommand(command)
         };
@@ -70,6 +72,7 @@ internal class Program
               compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, all) (default: all)
                                          Options:
                                            --json              Output benchmark results in JSON format
+              arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
               help, -h, --help           Display this help message
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
@@ -130,6 +133,12 @@ internal class Program
         }
 
         return allSuccess ? 0 : 1;
+    }
+
+    private static int RunArithmeticBench()
+    {
+        BenchmarkRunner.Run<GpuBigFloatBenchmark>();
+        return 0;
     }
 
     private static int RunGpuPi(string[] args)
@@ -199,7 +208,7 @@ internal class Program
     {
         Logger<Program>.Info("Henicos.Benchmarks - Chudnovsky Binary Splitting (CPU Baseline)");
 
-        var digits = args.Length > 0 ? ParseDigits(args[0], 10000) : 10000;
+        var digits = args.Length > 0 ? ParseDigits(args[0]) : 10000;
 
         Logger<Program>.Info($"Calculating {digits:N0} digits of Pi...");
 
