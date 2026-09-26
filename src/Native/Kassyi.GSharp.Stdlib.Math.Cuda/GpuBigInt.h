@@ -28,6 +28,10 @@ extern "C" {
     EXPORT_API bool GpuBigInt_GraphFermatLoop(void* workspace, int E, unsigned int* out_data);
     
     // Basic arithmetic and bitwise operations
+    // Note on Multiplication (Out-of-Core Architecture):
+    // A monolithic full-multiplication mega-kernel is intentionally NOT provided in native CUDA.
+    // In order to process numbers exceeding physical GPU VRAM, multiplication is orchestrated by the
+    // host (C# AST / Out-of-Core streaming) using granular accelerated building blocks (Square, Add, Sub, NTT).
     EXPORT_API bool GpuBigInt_Square(void* workspace, unsigned int* data, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_Add(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_Sub(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);

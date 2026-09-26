@@ -114,6 +114,19 @@ public class NativeProvider : IGpuExecutionProvider
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
+    /*
+     * DESIGN RATIONALE (Out-of-Core Architecture & Arbitrary Precision Scaling):
+     * Even on high-end hardware, GPU VRAM (16GB-80GB) is comparable in scale to host RAM (32GB-128GB).
+     * Attempting to execute monolithic multi-million-limb multiplication entirely inside a single GPU kernel
+     * would inevitably hit hardware VRAM ceilings and fail for astronomical numbers.
+     *
+     * G# is architected to handle virtually infinite precision by leveraging the host CPU and disk storage
+     * as an unbounded "scratchpad" (Out-of-Core computation). The host orchestrates the high-level computation
+     * recipe (AST / expression visitor, NTT block transformations, chunking, and disk streaming), while the GPU
+     * acts as an ultra-high-speed acceleration assistant for fine-grained parallel primitives (Square, Add, Sub, etc.).
+     * Even if monolithic single-kernel dispatch incurs slightly less kernel-launch overhead, sacrificing that in favor
+     * of host-orchestrated chunked execution is an intentional, architectural decision to scale beyond physical VRAM limits.
+     */
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>

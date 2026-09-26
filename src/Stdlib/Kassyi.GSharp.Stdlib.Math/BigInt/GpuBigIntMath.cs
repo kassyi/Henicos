@@ -68,6 +68,13 @@ public static class GpuBigIntMath
     public static void Sub(GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
         leftOperand.Context.Provider.Sub(leftOperand.Context, leftOperand, rightOperand, resultBuffer);
 
+    /*
+     * Note (Out-of-Core Architecture):
+     * Monolithic single-kernel GPU multiplication is intentionally avoided to support astronomical, unbounded numbers.
+     * To compute numbers beyond physical GPU VRAM limits, multiplication is orchestrated by the host (C# AST and expression
+     * tree evaluation) utilizing host memory and disk storage as an external workspace, while leveraging fine-grained GPU
+     * kernels (Square, Add, Sub, NTT) as high-throughput building blocks.
+     */
     /// <summary>
     /// Computes full arbitrary-precision multiplication (<c>leftOperand * rightOperand</c>) on the GPU.
     /// </summary>
