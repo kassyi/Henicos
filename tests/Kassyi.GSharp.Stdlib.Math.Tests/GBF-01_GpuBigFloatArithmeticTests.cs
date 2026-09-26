@@ -466,7 +466,63 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Exp()
     {
         CudaCapability.EnsureGpuAvailable();
-        var result = new { Status = "Not Implemented Yet" };
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Exp(1.0 * 2^0) = e
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 1, 0, 0, 0 });
+        int rawValueExp = 0;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Exp(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Exp()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 1, 0, 0, 0 });
+        int rawValueExp = 0;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Exp(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
         return Verify(result);
     }
 
@@ -475,7 +531,136 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Log()
     {
         CudaCapability.EnsureGpuAvailable();
-        var result = new { Status = "Not Implemented Yet" };
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Log(2.0 * 2^0) = ln(2)
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 2, 0, 0, 0 });
+        int rawValueExp = 0;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Log(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Log()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 2, 0, 0, 0 });
+        int rawValueExp = 0;
+        bool rawValueSign = false;
+
+        using var valueSig = new GpuUIntBigInteger(ctx, 4);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, 
+            rawValueSig.Handle, rawValueExp, rawValueSign,
+            valueSig.Handle, out int valueExp, out bool valueSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Log(ref execCtx, 
+            valueSig.Handle, valueExp, valueSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_Pow()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Pow(2.0, 3.0) = 8.0
+        using var rawBaseSig = new GpuUIntBigInteger(ctx, new uint[] { 2, 0, 0, 0 });
+        int rawBaseExp = 0;
+        bool rawBaseSign = false;
+        using var baseSig = new GpuUIntBigInteger(ctx, 4);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign, baseSig.Handle, out int baseExp, out bool baseSign);
+
+        using var rawExpSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rawExpExp = 0;
+        bool rawExpSign = false;
+        using var expSig = new GpuUIntBigInteger(ctx, 4);
+        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle, out int expExp, out bool expSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        CSharpBigFloatArithmetic.Instance.Pow(ref execCtx, 
+            baseSig.Handle, baseExp, baseSign,
+            expSig.Handle, expExp, expSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
+        return Verify(result);
+    }
+    
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Pow()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        using var rawBaseSig = new GpuUIntBigInteger(ctx, new uint[] { 2, 0, 0, 0 });
+        int rawBaseExp = 0;
+        bool rawBaseSign = false;
+        using var baseSig = new GpuUIntBigInteger(ctx, 4);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign, baseSig.Handle, out int baseExp, out bool baseSign);
+
+        using var rawExpSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
+        int rawExpExp = 0;
+        bool rawExpSign = false;
+        using var expSig = new GpuUIntBigInteger(ctx, 4);
+        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle, out int expExp, out bool expSign);
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 4);
+
+        GSharpAotFloatProvider.Instance.Pow(ref execCtx, 
+            baseSig.Handle, baseExp, baseSign,
+            expSig.Handle, expExp, expSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new 
+        { 
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign 
+        };
         return Verify(result);
     }
 
