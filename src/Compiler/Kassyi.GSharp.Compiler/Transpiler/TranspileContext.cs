@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-using Kassyi.GSharp.Compiler.Transpiler.Rules;
+using Rules;
 
 /// <summary>
 /// Encapsulates code generation writers, symbol caches, semantic models, and diagnostic reporters during AST transpilation.

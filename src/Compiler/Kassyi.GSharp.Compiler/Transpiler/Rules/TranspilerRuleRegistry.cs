@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 
 using Microsoft.CodeAnalysis.CSharp;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+using DeclarationRules;
+using ExpressionRules;
 using System.Collections.Generic;
 
 /// <summary>
