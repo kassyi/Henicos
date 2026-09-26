@@ -43,6 +43,14 @@ public enum CUresult
     CudaErrorLaunchOutOfResources = 701,
     CudaErrorLaunchTimeout = 702,
     CudaErrorLaunchIncompatibleTexturing = 703,
+    CudaErrorStreamCaptureUnsupported = 900,
+    CudaErrorStreamCaptureInvalidated = 901,
+    CudaErrorStreamCaptureMerge = 902,
+    CudaErrorStreamCaptureUnmatched = 903,
+    CudaErrorStreamCaptureUnjoined = 904,
+    CudaErrorStreamCaptureIsolation = 905,
+    CudaErrorStreamCaptureImplicit = 906,
+    CudaErrorCapturedEvent = 907,
     CudaErrorUnknown = 999
 }
 
@@ -211,6 +219,22 @@ public static partial class CudaDriverApi
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuStreamDestroy(IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamSynchronize(IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemsetD8Async(IntPtr dptr, byte uc, IntPtr byteCount, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyHtoDAsync_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemcpyDtoHAsync_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount, IntPtr hStream);
 
     // CUDA Graph APIs
     [LibraryImport(DllName)]

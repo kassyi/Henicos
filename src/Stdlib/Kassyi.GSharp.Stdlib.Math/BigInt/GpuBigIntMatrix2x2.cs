@@ -138,10 +138,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
         var mat = new GpuBigIntMatrix2x2(context, numWords, false);
 
         mat.M00.Clear();
-        context.Provider.CopyHostToDevice(mat.M00.DevicePointer, [1u], 1);
+        context.Provider.CopyHostToDevice(mat.M00.DevicePointer, [1u], 1, context.Stream);
 
         mat.M11.Clear();
-        context.Provider.CopyHostToDevice(mat.M11.DevicePointer, [1u], 1);
+        context.Provider.CopyHostToDevice(mat.M11.DevicePointer, [1u], 1, context.Stream);
 
         // [WHY] Explicitly initialize off-diagonal elements to 0 on the GPU to ensure deterministic state regardless of driver-level allocation zeroing.
         mat.M01.Clear();

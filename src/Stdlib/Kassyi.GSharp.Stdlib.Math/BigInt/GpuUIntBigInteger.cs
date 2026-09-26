@@ -73,7 +73,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         try
         {
             Array.Clear(zeroArray, 0, numWords);
-            Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, numWords);
+            Context.Provider.CopyHostToDevice(DevicePointer, zeroArray, numWords, Context.Stream);
         }
         finally
         {
@@ -88,7 +88,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     /// <param name="hostData">The host data array containing 32-bit limbs in little-endian order.</param>
     public GpuUIntBigInteger(GpuContext context, uint[] hostData) : this(context, hostData.Length)
     {
-        Context.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords);
+        Context.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords, Context.Stream);
     }
 
     /// <summary>
@@ -260,7 +260,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     public uint[] ToHostArray()
     {
         var hostData = new uint[NumWords];
-        Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
+        Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords, Context.Stream);
 
         return hostData;
     }
@@ -282,7 +282,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         try
         {
             Array.Clear(zeroArray, 0, wordsToClear);
-            Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear);
+            Context.Provider.CopyHostToDevice(IntPtr.Add(DevicePointer, offsetWords * 4), zeroArray, wordsToClear, Context.Stream);
         }
         finally
         {
@@ -310,7 +310,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         var destPtr = IntPtr.Add(DevicePointer, destOffsetWords * 4);
         var srcPtr = IntPtr.Add(source.DevicePointer, srcOffsetWords * 4);
 
-        Context.Provider.CopyDeviceToDevice(destPtr, srcPtr, wordsToCopy);
+        Context.Provider.CopyDeviceToDevice(destPtr, srcPtr, wordsToCopy, Context.Stream);
     }
 
     /// <summary>
@@ -327,7 +327,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
 
         var hostData = new uint[wordCount];
         var srcPtr = IntPtr.Add(DevicePointer, (NumWords - wordCount) * 4);
-        Context.Provider.CopyDeviceToHost(hostData, srcPtr, wordCount);
+        Context.Provider.CopyDeviceToHost(hostData, srcPtr, wordCount, Context.Stream);
         return hostData;
     }
 
@@ -364,7 +364,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     public void ClearWord(int wordIndex)
     {
         var destPtr = IntPtr.Add(DevicePointer, wordIndex * 4);
-        Context.Provider.CopyHostToDevice(destPtr, [0], 1);
+        Context.Provider.CopyHostToDevice(destPtr, [0], 1, Context.Stream);
     }
 
     /// <summary>
@@ -379,18 +379,20 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         var result = new GpuUIntBigInteger(context, numWords);
         var wordIndex = bitIndex / 32;
         var bitOffset = bitIndex % 32;
-        if (wordIndex < numWords)
+        if (wordIndex >= numWords)
         {
-            var word = ArrayPool<uint>.Shared.Rent(1);
-            try
-            {
-                word[0] = 1u << bitOffset;
-                context.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1);
-            }
-            finally
-            {
-                ArrayPool<uint>.Shared.Return(word);
-            }
+            return result;
+        }
+
+        var word = ArrayPool<uint>.Shared.Rent(1);
+        try
+        {
+            word[0] = 1u << bitOffset;
+            context.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1, context.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(word);
         }
 
         return result;
@@ -504,7 +506,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
     {
         var result = new GpuUIntBigInteger(Context, targetWords);
         var copyWords = System.Math.Min(NumWords, targetWords);
-        Context.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, copyWords);
+        Context.Provider.CopyDeviceToDevice(result.DevicePointer, DevicePointer, copyWords, Context.Stream);
         return result;
     }
 
@@ -531,7 +533,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
             val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
 
             var result = new GpuUIntBigInteger(context, allocWords);
-            context.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords);
+            context.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords, context.Stream);
             return result;
         }
         finally
@@ -548,7 +550,7 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
         var hostData = ArrayPool<uint>.Shared.Rent(NumWords);
         try
         {
-            Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords);
+            Context.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords, Context.Stream);
 
             var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords));
             var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);

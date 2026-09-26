@@ -18,19 +18,22 @@ public interface IGpuExecutionProvider
     /// <param name="devicePointer">The destination pointer on the device.</param>
     /// <param name="hostData">The source data array on the host.</param>
     /// <param name="numWords">The number of 32-bit words to copy.</param>
-    void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords);
+    /// <param name="stream">The CUDA stream to use for asynchronous copying.</param>
+    void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0);
 
     /// <summary>Copies limb data from GPU device memory to host managed memory.</summary>
     /// <param name="hostData">The destination array on the host.</param>
     /// <param name="devicePointer">The source pointer on the device.</param>
     /// <param name="numWords">The number of 32-bit words to copy.</param>
-    void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords);
+    /// <param name="stream">The CUDA stream to use for asynchronous copying.</param>
+    void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0);
 
     /// <summary>Copies limb data between two GPU device memory locations.</summary>
     /// <param name="destPointer">The destination pointer on the device.</param>
     /// <param name="srcPointer">The source pointer on the device.</param>
     /// <param name="numWords">The number of 32-bit words to copy.</param>
-    void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords);
+    /// <param name="stream">The CUDA stream to use for asynchronous copying.</param>
+    void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0);
 
     /// <summary>Reads a single 32-bit word directly from device memory.</summary>
     /// <param name="devicePointer">The base device pointer.</param>
@@ -186,6 +189,7 @@ public interface IGpuExecutionProvider
 
     /// <summary>Launches an executable CUDA graph on the specified stream.</summary>
     /// <param name="graphExec">The executable graph pointer.</param>
+    /// <param name="stream">A pointer to the captured CUDA graph.</param>
     void LaunchGraph(IntPtr graphExec, IntPtr stream);
 
     /// <summary>Destroys a CUDA graph and its executable counterpart.</summary>

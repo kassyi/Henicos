@@ -228,7 +228,7 @@ public static partial class GpuBigIntDivRem
         var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
-            gpuBigInt.Context.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n);
+            gpuBigInt.Context.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Context.Stream);
             for (var i = n - 1; i >= 0; i--)
             {
                 if (hostData[i] == 0)
@@ -296,7 +296,7 @@ public static partial class GpuBigIntDivRem
         var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
-            operand.Context.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n);
+            operand.Context.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Context.Stream);
             var topIndex = (actualBits - 1) / 32;
 
             var wordsToExtract = System.Math.Min(4, topIndex + 1);
@@ -368,7 +368,7 @@ public static partial class GpuBigIntDivRem
             Array.Clear(xData, 0, numWords);
             var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
             Buffer.BlockCopy(xBytes, 0, xData, 0, System.Math.Min(xBytes.Length, numWords * 4));
-            targetOperand.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords);
+            targetOperand.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords, targetOperand.Context.Stream);
         }
         finally
         {

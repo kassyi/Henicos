@@ -16,7 +16,7 @@ public static partial class GpuBigIntDivRem
 
         using var tempResult = new GpuUIntBigInteger(baseVal.Context, 2 * n);
         tempResult.Clear();
-        tempResult.Context.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1);
+        tempResult.Context.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1, tempResult.Context.Stream);
 
         using var tempBase = new GpuUIntBigInteger(baseVal.Context, 2 * n);
         tempBase.CopyFrom(baseVal, numWords: n);
@@ -37,7 +37,7 @@ public static partial class GpuBigIntDivRem
         var hostExp = ArrayPool<uint>.Shared.Rent(expWords);
         try
         {
-            exp.Context.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords);
+            exp.Context.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords, exp.Context.Stream);
 
             for (var i = 0; i < expWords; i++)
             {

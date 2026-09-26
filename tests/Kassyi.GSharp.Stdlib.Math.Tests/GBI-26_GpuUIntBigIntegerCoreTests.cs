@@ -72,7 +72,7 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(3, padded.NumWords);
         
         var resultData = new uint[3];
-        _context.Provider.CopyDeviceToHost(resultData, padded.DevicePointer, 3);
+        _context.Provider.CopyDeviceToHost(resultData, padded.DevicePointer, 3, _context.Stream);
         
         Assert.Equal(3, resultData.Length);
         Assert.Equal(1u, resultData[0]);
