@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigFloat.Runtime;
-using Kassyi.GSharp.Stdlib.Math.BigFloat.Kernels;
+using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigFloat.Providers;
 
@@ -19,61 +19,23 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var stream = context.Stream;
         var maxWords = resultSig.NumWords;
 
-        var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
-            IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, stream);
+        var dA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
+        var dResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
 
-        var currentBitLength = 0;
-        for (var i = valueWords.Length - 1; i >= 0; i--)
+        if (!NativeMethods.GpuBigFloat_Normalize(
+                context.GpuContext.WorkspacePointer,
+                dA, valueSig.NumWords,
+                dResult, maxWords,
+                valueExp,
+                out var outExp,
+                out var isZero,
+                stream))
         {
-            if (valueWords[i] != 0)
-            {
-                var w = valueWords[i];
-                var msb = 0;
-                while (w > 0)
-                {
-                    msb++;
-                    w >>= 1;
-                }
-
-                currentBitLength = i * 32 + msb;
-                break;
-            }
+            throw new InvalidOperationException("Native GpuBigFloat_Normalize failed.");
         }
 
-        if (currentBitLength == 0)
-        {
-            resultExp = 0;
-            resultSign = false;
-            var zeros = new uint[maxWords];
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
-                zeros, maxWords, stream);
-            return;
-        }
-
-        var targetBitLength = maxWords * 32;
-        var shift = targetBitLength - currentBitLength;
-        var wordShift = shift / 32;
-        var bitShift = shift % 32;
-
-        if (bitShift < 0)
-        {
-            wordShift--;
-            bitShift += 32;
-        }
-
-        resultExp = valueExp - shift;
-        resultSign = valueSign;
-
-        var blockDimX = 256;
-        var gridDimX = (maxWords + blockDimX - 1) / blockDimX;
-
-        GpuBigFloatKernelsWrapper.LaunchFloatNormalizeKernelPtr(
-            IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords,
-            IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), maxWords,
-            wordShift, bitShift,
-            (uint)gridDimX, 1, 1, (uint)blockDimX, 1, 1,
-            0, stream);
+        resultExp = outExp;
+        resultSign = isZero == 0 && valueSign;
     }
 
     public void Add(ref BigIntExecutionContext context,
@@ -365,19 +327,20 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
     }
 
     public void DivideByUInt32(ref BigIntExecutionContext context,
-                        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-                        uint divisor,
-                        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
+        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+        uint divisor,
+        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
     {
         resultExp = valueExp;
         resultSign = valueSign;
-        
+
         var deviceA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
         var deviceResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
-        
-        var success = Interop.NativeMethods.GpuBigFloat_DivideByUInt32(
-            context.GpuContext.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder, context.Stream);
-            
+
+        var success = NativeMethods.GpuBigFloat_DivideByUInt32(
+            context.GpuContext.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder,
+            context.Stream);
+
         if (!success)
         {
             throw new InvalidOperationException("Native DivideByUInt32 failed (possibly division by zero).");

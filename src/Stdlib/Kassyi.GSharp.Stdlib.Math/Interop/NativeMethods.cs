@@ -147,6 +147,11 @@ internal static partial class NativeMethods
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool GpuBigFloat_DivideByUInt32(IntPtr workspace, IntPtr deviceA, IntPtr deviceResult, int numWords, uint divisor, out uint remainder, IntPtr stream = 0);
+
+    [LibraryImport(DllName, EntryPoint = nameof(GpuBigFloat_Normalize))]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool GpuBigFloat_Normalize(IntPtr workspace, IntPtr deviceA, int numWordsA, IntPtr deviceResult, int numWordsResult, int valueExp, out int resultExp, out int isZero, IntPtr stream = 0);
 }
 
 
