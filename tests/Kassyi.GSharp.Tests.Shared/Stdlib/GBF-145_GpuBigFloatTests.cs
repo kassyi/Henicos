@@ -1,21 +1,16 @@
+using System;
+using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigFloat;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Tests.Helpers;
+using Xunit;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
+[Trait("Category", "GpuExecution")]
 public class GBF145_GpuBigFloatTests
 {
-    private static LimbBuffer4 CreateLimb4(uint l0, uint l1, uint l2, uint l3)
-    {
-        var limbs = new LimbBuffer4();
-        limbs[0] = l0;
-        limbs[1] = l1;
-        limbs[2] = l2;
-        limbs[3] = l3;
-        return limbs;
-    }
-
     [SkippableTheory]
     [Trait("FeatureId", "GBF-145")]
     [Trait("Category", "HappyPath")]
@@ -23,14 +18,16 @@ public class GBF145_GpuBigFloatTests
     [InlineData(true, true, true)]    // (-10) + (-2) = -12
     public void Test_GBF145_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
     {
-        
-        var sigA = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(10, 0, 0, 0));
-        var sigB = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(2, 0, 0, 0));
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
-        var floatA = new GpuBigFloat<LimbBuffer4>(sigA, 5, isNegA);
-        var floatB = new GpuBigFloat<LimbBuffer4>(sigB, 5, isNegB);
+        using var sigA = new GpuUIntBigInteger(context, new uint[] { 10, 0, 0, 0 });
+        using var sigB = new GpuUIntBigInteger(context, new uint[] { 2, 0, 0, 0 });
 
-        var result = floatA + floatB;
+        var floatA = new GpuBigFloat(sigA, 5, isNegA);
+        var floatB = new GpuBigFloat(sigB, 5, isNegB);
+
+        GpuBigFloat result = floatA + floatB;
         Assert.Equal(expectedIsNeg, result.IsNegative);
     }
 
@@ -44,14 +41,15 @@ public class GBF145_GpuBigFloatTests
     [InlineData(-1)]
     public void Test_GBF145_ExponentArithmetic_BoundaryValues(int exp)
     {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
-        // Edge case exponents testing numeric extremes and representation (Fix 7)
-        var sig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000));
-        var floatVal = new GpuBigFloat<LimbBuffer4>(sig, exp, isNegative: false);
+        using var sig = new GpuUIntBigInteger(context, new uint[] { 0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000 });
+        var floatVal = new GpuBigFloat(sig, exp, isNegative: false);
         
         // Assert creation preserves exponent boundaries without corrupting significand
         Assert.Equal(exp, floatVal.UFloat.Exponent);
-        Assert.Equal(0xAAAAAAAA, floatVal.UFloat.Significand.Limbs[0]);
+        Assert.Equal(0xAAAAAAAA, floatVal.UFloat.Significand.ToHostArray()[0]);
     }
 
     [SkippableFact]
@@ -59,12 +57,14 @@ public class GBF145_GpuBigFloatTests
     [Trait("Category", "EdgeCase")]
     public void Test_GBF145_ZeroSignificandNormalization_FlushesToZeroExponent()
     {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
-        var zeroSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0, 0, 0, 0));
-        var valSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(42, 0, 0, 0));
+        using var zeroSig = new GpuUIntBigInteger(context, new uint[] { 0, 0, 0, 0 });
+        using var valSig = new GpuUIntBigInteger(context, new uint[] { 42, 0, 0, 0 });
 
-        var floatZero = new GpuBigFloat<LimbBuffer4>(zeroSig, 100, isNegative: true);
-        var floatVal = new GpuBigFloat<LimbBuffer4>(valSig, 50, isNegative: false);
+        var floatZero = new GpuBigFloat(zeroSig, 100, isNegative: true);
+        var floatVal = new GpuBigFloat(valSig, 50, isNegative: false);
 
         var normZero = floatZero.Normalize();
         Assert.True(normZero.UFloat.Significand.IsZero());
@@ -79,9 +79,11 @@ public class GBF145_GpuBigFloatTests
     [Trait("Category", "SadPath")]
     public void Test_GBF145_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
     {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
 
-        var zeroSig = new GpuUIntBigInteger<LimbBuffer4>(CreateLimb4(0, 0, 0, 0));
-        var floatZero = new GpuBigFloat<LimbBuffer4>(zeroSig, 0, isNegative: false);
+        using var zeroSig = new GpuUIntBigInteger(context, new uint[] { 0, 0, 0, 0 });
+        var floatZero = new GpuBigFloat(zeroSig, 0, isNegative: false);
 
         Assert.True(floatZero.UFloat.Significand.IsZero());
 
