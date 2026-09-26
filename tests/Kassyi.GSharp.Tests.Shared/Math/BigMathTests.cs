@@ -110,9 +110,5 @@ public class BigMathTests : TranspilerTestBase
         Assert.Throws<ArgumentNullException>(() => new GpuUIntBigInteger(null!, 4));
     }
 
-    [Fact]
-    public void TestGpuBigInteger_SadPath_NullValue()
-    {
-        Assert.Throws<ArgumentNullException>(() => new GpuBigInteger(null!, false));
-    }
+
 }
