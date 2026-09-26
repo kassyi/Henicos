@@ -4,12 +4,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>
 {
-    public static readonly MemberAccessExpressionTranspilerRule Instance = new();
-
-    private MemberAccessExpressionTranspilerRule()
-    {
-    }
-
     public override void Transpile(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
         var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;

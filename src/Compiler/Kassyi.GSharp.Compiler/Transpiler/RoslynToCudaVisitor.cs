@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
-using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -17,10 +15,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
     // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
     private static readonly ConcurrentBag<RoslynToCudaVisitor> s_pool = [];
+    private static readonly Lazy<Rules.ITranspilerRuleRegistry> s_defaultRegistry = new(() => Rules.TranspilerRuleRegistry.CreateDefault());
 
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
-    private readonly Dictionary<string, OverrideValue> _localVariableOverrides = new();
+    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = new();
 
     internal TranspileContext Context;
     private int _isRented;
@@ -44,7 +43,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public static RoslynToCudaVisitor Rent(
         ITranspilerDialect dialect,
         SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
-        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null,
+        Rules.ITranspilerRuleRegistry? ruleRegistry = null)
     {
         if (dialect is null)
         {
@@ -74,7 +74,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             reportDiagnostic,
             visitor,
             bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
-            dialect);
+            dialect,
+            ruleRegistry ?? s_defaultRegistry.Value);
 
         return visitor;
     }
@@ -401,10 +402,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => StatementTranspilers.TranspileReturnStatement(node, ref Context);
 
     public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
-        => LocalDeclarationStatementTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
-        => VariableDeclarationTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
         => StatementTranspilers.TranspileLocalFunctionStatement(node, ref Context);
@@ -424,20 +425,20 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
-        => AssignmentExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitBinaryExpression(BinaryExpressionSyntax node)
-        => BinaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitSwitchExpression(SwitchExpressionSyntax node)
-        => SwitchExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
-        => ConditionalExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitIdentifierName(IdentifierNameSyntax node)
     {
-        if (Context.LocalVariableOverrides.TryGetValue(node.Identifier.Text, out var overrideValue))
+        if (Context.TryGetOverride(node.Identifier.Text, out var overrideValue))
         {
             overrideValue.WriteTo(this);
             return;
@@ -483,34 +484,34 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) => Context.Writer.AppendEmptyScope();
 
     public override void VisitElementAccessExpression(ElementAccessExpressionSyntax node)
-        => ElementAccessExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
-        => PrefixUnaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitCastExpression(CastExpressionSyntax node)
-        => CastExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitParenthesizedExpression(ParenthesizedExpressionSyntax node)
-        => ParenthesizedExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
-        => PostfixUnaryExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
-        => MemberAccessExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitInvocationExpression(InvocationExpressionSyntax node)
-        => InvocationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitArgument(ArgumentSyntax node)
-        => ArgumentTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-        => ObjectCreationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
-        => ImplicitObjectCreationExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitDeclarationExpression(DeclarationExpressionSyntax node)
         => Visit(node.Designation);
@@ -519,13 +520,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => Context.Writer.Append(node.Identifier.Text);
 
     public override void VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
-        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
-        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
-        => LambdaExpressionTranspilerRule.Instance.Transpile(node, ref Context);
+        => Context.RuleRegistry.GetRule(node.Kind())?.Transpile(node, ref Context);
 
     public override void VisitCollectionExpression(CollectionExpressionSyntax node)
     {

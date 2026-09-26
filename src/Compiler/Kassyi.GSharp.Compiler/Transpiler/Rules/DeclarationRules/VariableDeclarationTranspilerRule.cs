@@ -15,9 +15,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     /// <summary>
     /// Gets the singleton instance of the <see cref="VariableDeclarationTranspilerRule"/>.
     /// </summary>
-    public static readonly VariableDeclarationTranspilerRule Instance = new();
-
-    private VariableDeclarationTranspilerRule()
+    public VariableDeclarationTranspilerRule()
     {
     }
 

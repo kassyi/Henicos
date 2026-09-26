@@ -12,9 +12,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// <summary>
     /// Gets the singleton instance of the <see cref="SwitchExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly SwitchExpressionTranspilerRule Instance = new();
-
-    private SwitchExpressionTranspilerRule()
+    public SwitchExpressionTranspilerRule()
     {
     }
 

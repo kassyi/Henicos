@@ -13,9 +13,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <summary>
     /// Gets the singleton instance of the <see cref="AssignmentExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly AssignmentExpressionTranspilerRule Instance = new();
-
-    private AssignmentExpressionTranspilerRule()
+    public AssignmentExpressionTranspilerRule()
     {
     }
 

@@ -15,9 +15,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// <summary>
     /// Gets the singleton instance of the <see cref="BinaryExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly BinaryExpressionTranspilerRule Instance = new();
-
-    private BinaryExpressionTranspilerRule()
+    public BinaryExpressionTranspilerRule()
     {
     }
 

@@ -13,9 +13,7 @@ public sealed class ArgumentTranspilerRule : SyntaxNodeTranspilerRuleBase<Argume
     /// <summary>
     /// Gets the singleton instance of the <see cref="ArgumentTranspilerRule"/>.
     /// </summary>
-    public static readonly ArgumentTranspilerRule Instance = new();
-
-    private ArgumentTranspilerRule()
+    public ArgumentTranspilerRule()
     {
     }
 

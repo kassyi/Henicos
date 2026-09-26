@@ -13,17 +13,12 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <summary>
     /// Gets the singleton instance of the <see cref="InvocationExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly InvocationExpressionTranspilerRule Instance = new();
 
     private static readonly ImmutableArray<IInvocationTranspilerRule> s_invocationRules =
         ImmutableArray.Create<IInvocationTranspilerRule>(
-            BclIntrinsicTranspilerRule.Instance,
-            GpuMacroTranspilerRule.Instance
+            new BclIntrinsicTranspilerRule(),
+            new GpuMacroTranspilerRule()
         );
-
-    private InvocationExpressionTranspilerRule()
-    {
-    }
 
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)

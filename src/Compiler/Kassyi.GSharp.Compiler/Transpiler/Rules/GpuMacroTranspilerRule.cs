@@ -3,12 +3,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 /// <summary>Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions.</summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
-    public static readonly GpuMacroTranspilerRule Instance = new();
-
-    private GpuMacroTranspilerRule()
-    {
-    }
-
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
         if (symbol.ContainingType.Name != "Gpu")

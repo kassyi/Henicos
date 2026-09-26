@@ -12,9 +12,7 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
     /// <summary>
     /// Gets the singleton instance of the <see cref="ElementAccessExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly ElementAccessExpressionTranspilerRule Instance = new();
-
-    private ElementAccessExpressionTranspilerRule()
+    public ElementAccessExpressionTranspilerRule()
     {
     }
 

@@ -1,5 +1,6 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
+
+using Kassyi.GSharp.Compiler.Transpiler.Rules;
 
 /// <summary>
 /// Encapsulates code generation writers, symbol caches, semantic models, and diagnostic reporters during AST transpilation.
@@ -20,12 +21,13 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 public struct TranspileContext(
     SourceWriter writer,
     HashSet<INamedTypeSymbol> usedStructs,
-    Dictionary<string, OverrideValue> localVariableOverrides,
+    List<(string Name, OverrideValue Value)> localVariableOverrides,
     SemanticModel semanticModel,
     Action<Diagnostic>? reportDiagnostic,
     RoslynToCudaVisitor visitor,
     ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> bclIntrinsicMap,
-    ITranspilerDialect dialect)
+    ITranspilerDialect dialect,
+    ITranspilerRuleRegistry ruleRegistry)
 {
     /// <summary>
     /// The active source writer receiving emitted target code.
@@ -38,9 +40,50 @@ public struct TranspileContext(
     public HashSet<INamedTypeSymbol> UsedStructs = usedStructs;
 
     /// <summary>
-    /// The map of identifier substitutions applied during macro and intrinsic expansion.
+    /// The stack of identifier substitutions applied during macro and intrinsic expansion.
+    /// Searched in reverse order so inner scopes shadow outer scopes.
     /// </summary>
-    public Dictionary<string, OverrideValue> LocalVariableOverrides = localVariableOverrides;
+    public List<(string Name, OverrideValue Value)> LocalVariableOverrides = localVariableOverrides;
+
+    /// <summary>
+    /// Pushes an override value into the active scope and returns a state token for later restoration.
+    /// </summary>
+    public int PushOverrideScope(string name, OverrideValue value)
+    {
+        int cookie = LocalVariableOverrides.Count;
+        LocalVariableOverrides.Add((name, value));
+        return cookie;
+    }
+
+    /// <summary>
+    /// Restores the override scope to the specified state token.
+    /// </summary>
+    public void PopOverrideScope(int cookie)
+    {
+        int removeCount = LocalVariableOverrides.Count - cookie;
+        if (removeCount > 0)
+        {
+            LocalVariableOverrides.RemoveRange(cookie, removeCount);
+        }
+    }
+
+    /// <summary>
+    /// Attempts to resolve a local variable override by name, searching from the innermost scope outwards.
+    /// </summary>
+    public bool TryGetOverride(string name, out OverrideValue value)
+    {
+        for (int i = LocalVariableOverrides.Count - 1; i >= 0; i--)
+        {
+            if (LocalVariableOverrides[i].Name == name)
+            {
+                value = LocalVariableOverrides[i].Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
 
     /// <summary>
     /// Indicates whether the dynamic shared memory base declaration (<c>extern __shared__</c>) has already been emitted in the current kernel.
@@ -96,6 +139,11 @@ public struct TranspileContext(
     /// Gets the parent syntax walker executing AST visitation.
     /// </summary>
     public RoslynToCudaVisitor Visitor { get; } = visitor;
+
+    /// <summary>
+    /// Gets the registry used to resolve syntax node transpiler rules.
+    /// </summary>
+    public ITranspilerRuleRegistry RuleRegistry { get; } = ruleRegistry;
 
     /// <summary>
     /// Appends the C++ type corresponding to the specified C# type symbol directly into the active source writer.

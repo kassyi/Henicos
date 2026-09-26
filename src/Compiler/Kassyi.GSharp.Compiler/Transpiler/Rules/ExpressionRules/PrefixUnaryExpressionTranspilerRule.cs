@@ -12,9 +12,7 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
     /// <summary>
     /// Gets the singleton instance of the <see cref="PrefixUnaryExpressionTranspilerRule"/>.
     /// </summary>
-    public static readonly PrefixUnaryExpressionTranspilerRule Instance = new();
-
-    private PrefixUnaryExpressionTranspilerRule()
+    public PrefixUnaryExpressionTranspilerRule()
     {
     }
 
