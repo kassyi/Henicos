@@ -88,6 +88,96 @@ public class GBF01_GpuBigFloatArithmeticTests
 
     [SkippableFact]
     [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_CpuReference_Divide_Mega()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Generate 2048 words (mega division test > 1024 fast path threshold)
+        var random = new Random(42);
+        var leftArray = new uint[2048];
+        var rightArray = new uint[2048];
+        for (int i = 0; i < 2048; i++)
+        {
+            leftArray[i] = unchecked((uint)random.Next());
+            rightArray[i] = unchecked((uint)random.Next());
+        }
+
+        leftArray[^1] |= 0x80000000;
+        rightArray[^1] |= 0x80000000;
+
+        using var leftSig = new GpuUIntBigInteger(ctx, leftArray);
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, rightArray);
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 2048);
+
+        CSharpBigFloatArithmetic.Instance.Divide(ref execCtx,
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new
+        {
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
+    public Task Test_GBF01_GpuReference_Divide_Mega()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        var execCtx = CreateContext(ctx);
+
+        // Generate 2048 words (mega division test > 1024 fast path threshold)
+        var random = new Random(42);
+        var leftArray = new uint[2048];
+        var rightArray = new uint[2048];
+        for (int i = 0; i < 2048; i++)
+        {
+            leftArray[i] = unchecked((uint)random.Next());
+            rightArray[i] = unchecked((uint)random.Next());
+        }
+
+        leftArray[^1] |= 0x80000000;
+        rightArray[^1] |= 0x80000000;
+
+        using var leftSig = new GpuUIntBigInteger(ctx, leftArray);
+        int leftExp = 10;
+        bool leftSign = false;
+
+        using var rightSig = new GpuUIntBigInteger(ctx, rightArray);
+        int rightExp = 5;
+        bool rightSign = false;
+
+        using var resultSig = new GpuUIntBigInteger(ctx, 2048);
+
+        GSharpAotFloatProvider.Instance.Divide(ref execCtx,
+            leftSig.Handle, leftExp, leftSign,
+            rightSig.Handle, rightExp, rightSign,
+            resultSig.Handle, out int resultExp, out bool resultSign);
+
+        var result = new
+        {
+            ResultWords = resultSig.ToHostArray(),
+            ResultExp = resultExp,
+            ResultSign = resultSign
+        };
+        return Verify(result);
+    }
+
+    [SkippableFact]
+    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Multiply()
     {
         CudaCapability.EnsureGpuAvailable();
