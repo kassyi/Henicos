@@ -47,4 +47,9 @@ public interface IGpuBigFloatArithmetic
              BigIntMemoryHandle baseSig, int baseExp, bool baseSign,
              BigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
              BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+
+    void DivideByUInt32(ref BigIntExecutionContext context,
+                        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+                        uint divisor,
+                        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder);
 }

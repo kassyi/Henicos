@@ -142,5 +142,11 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool GpuBigInt_CopyDeviceToHost(uint[] hostDestination, IntPtr deviceSource, int numWords,
         IntPtr stream = 0);
+
+    [LibraryImport(DllName, EntryPoint = nameof(GpuBigFloat_DivideByUInt32))]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool GpuBigFloat_DivideByUInt32(IntPtr workspace, IntPtr deviceA, IntPtr deviceResult, int numWords, uint divisor, out uint remainder, IntPtr stream = 0);
 }
+
 

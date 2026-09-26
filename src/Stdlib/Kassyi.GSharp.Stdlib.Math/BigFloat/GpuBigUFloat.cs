@@ -1,5 +1,8 @@
+using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigFloat.Expressions;
+using Kassyi.GSharp.Stdlib.Math.BigFloat.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigFloat;
 
@@ -35,11 +38,16 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
         Significand.Dispose();
     }
 
-    public static GpuBigUFloatAddExpr operator +(GpuBigUFloat left, GpuBigUFloat right) => new GpuBigUFloatAddExpr(left, right);
-    public static GpuBigUFloatSubExpr operator -(GpuBigUFloat left, GpuBigUFloat right) => new GpuBigUFloatSubExpr(left, right);
+    public static GpuBigUFloatAddExpr operator +(GpuBigUFloat left, GpuBigUFloat right) =>
+        new GpuBigUFloatAddExpr(left, right);
 
-    public (GpuBigUFloat AlignedThis, GpuBigUFloat AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigUFloat other) => throw new NotImplementedException();
-        public GpuBigUFloat Normalize(int leadingZeros = 0, bool carryOut = false)
+    public static GpuBigUFloatSubExpr operator -(GpuBigUFloat left, GpuBigUFloat right) =>
+        new GpuBigUFloatSubExpr(left, right);
+
+    public (GpuBigUFloat AlignedThis, GpuBigUFloat AlignedOther, bool Guard, bool Round, bool StickyThis, bool
+        StickyOther) AlignRadixPoint(GpuBigUFloat other) => throw new NotImplementedException();
+
+    public GpuBigUFloat Normalize(int leadingZeros = 0, bool carryOut = false)
     {
         if (Significand.IsZero() && !carryOut)
         {
@@ -53,18 +61,49 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
         {
             var expr = normSig >> 1;
             normSig = expr.Node.Evaluate(normSig.Context);
-            checked { normExp = Exponent + 1; }
+            checked
+            {
+                normExp = Exponent + 1;
+            }
         }
         else if (leadingZeros > 0)
         {
             var expr = normSig << leadingZeros;
             normSig = expr.Node.Evaluate(normSig.Context);
-            checked { normExp = Exponent - leadingZeros; }
+            checked
+            {
+                normExp = Exponent - leadingZeros;
+            }
         }
 
         return new GpuBigUFloat(normSig, normExp);
     }
-    public GpuBigUFloat Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit) => throw new NotImplementedException();
+
+    public (GpuBigUFloat Quotient, uint Remainder) DivideByUInt32(uint divisor)
+    {
+        var resultSig = new GpuUIntBigInteger(Significand.Context, Significand.NumWords);
+        var execContext = new BigIntExecutionContext(
+            Significand.Context,
+            Significand.Context.MemoryManager,
+            new LegacyProviderArithmeticAdapter(),
+            Significand.Context.Stream);
+
+        IGpuBigFloatArithmetic arithmetic = Significand.Context.Engine == GpuExecutionEngine.GSharpAot
+            ? Providers.GSharpAotFloatProvider.Instance
+            : Providers.CSharpBigFloatArithmetic.Instance;
+
+        arithmetic.DivideByUInt32(ref execContext,
+            new BigIntMemoryHandle(new BigIntDeviceBuffer(Significand.DevicePointer, Significand.NumWords), 0,
+                Significand.NumWords), Exponent, false,
+            divisor,
+            new BigIntMemoryHandle(new BigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
+                resultSig.NumWords), out var resultExp, out var _, out var remainder);
+
+        return (new GpuBigUFloat(resultSig, resultExp), remainder);
+    }
+
+    public GpuBigUFloat Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit) =>
+        throw new NotImplementedException();
 
     public GpuBigUFloat Add(GpuBigUFloat other) => throw new NotImplementedException();
     public GpuBigUFloat Subtract(GpuBigUFloat other) => throw new NotImplementedException();
@@ -78,8 +117,19 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     public static bool operator !=(GpuBigUFloat left, GpuBigUFloat right) => !left.Equals(right);
     public static bool operator <(GpuBigUFloat left, GpuBigUFloat right) => left.CompareTo(right) < 0;
     public static bool operator >(GpuBigUFloat left, GpuBigUFloat right) => left.CompareTo(right) > 0;
-        public static implicit operator GpuBigUFloat(GpuBigUFloatAddExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Context); return expr.Accept(ref visitor); }
-    public static implicit operator GpuBigUFloat(GpuBigUFloatSubExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Context); return expr.Accept(ref visitor); }
+
+    public static implicit operator GpuBigUFloat(GpuBigUFloatAddExpr expr)
+    {
+        var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Context);
+        return expr.Accept(ref visitor);
+    }
+
+    public static implicit operator GpuBigUFloat(GpuBigUFloatSubExpr expr)
+    {
+        var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Context);
+        return expr.Accept(ref visitor);
+    }
+
     public static bool operator <=(GpuBigUFloat left, GpuBigUFloat right) => left.CompareTo(right) <= 0;
     public static bool operator >=(GpuBigUFloat left, GpuBigUFloat right) => left.CompareTo(right) >= 0;
 }

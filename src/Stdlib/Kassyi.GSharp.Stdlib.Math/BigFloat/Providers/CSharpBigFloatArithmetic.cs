@@ -517,4 +517,34 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         Exp(ref context, mulHandle, mulExp, mulSign, resultSig, out resultExp, out resultSign);
     }
+
+    public void DivideByUInt32(ref BigIntExecutionContext context,
+                        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+                        uint divisor,
+                        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
+    {
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
+        resultExp = valueExp;
+        resultSign = valueSign;
+
+        var valueWords = new uint[valueSig.NumWords];
+        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+            IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
+
+        var vValue = ToBigInteger(valueWords, valueSig.NumWords);
+        var vDivisor = new BigInteger(divisor);
+        
+        var vQuotient = BigInteger.DivRem(vValue, vDivisor, out var vRemainder);
+        remainder = (uint)vRemainder;
+
+        var resultWords = new uint[resultSig.NumWords];
+        ToWords(vQuotient, resultWords, resultSig.NumWords);
+        
+        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            resultWords, resultSig.NumWords, context.Stream);
+    }
 }

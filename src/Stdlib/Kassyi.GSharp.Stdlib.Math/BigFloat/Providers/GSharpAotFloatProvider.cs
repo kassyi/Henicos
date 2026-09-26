@@ -363,4 +363,24 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         CSharpBigFloatArithmetic.Instance.Pow(ref context, baseSig, baseExp, baseSign, expSig, exponentExp,
             exponentSign, resultSig, out resultExp, out resultSign);
     }
+
+    public void DivideByUInt32(ref BigIntExecutionContext context,
+                        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+                        uint divisor,
+                        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
+    {
+        resultExp = valueExp;
+        resultSign = valueSign;
+        
+        var deviceA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
+        var deviceResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
+        
+        var success = Interop.NativeMethods.GpuBigFloat_DivideByUInt32(
+            context.GpuContext.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder, context.Stream);
+            
+        if (!success)
+        {
+            throw new InvalidOperationException("Native DivideByUInt32 failed (possibly division by zero).");
+        }
+    }
 }
