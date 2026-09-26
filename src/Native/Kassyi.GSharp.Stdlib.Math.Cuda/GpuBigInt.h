@@ -47,6 +47,14 @@ extern "C" {
     EXPORT_API bool GpuBigFloat_DivideByUInt32(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, unsigned int divisor, unsigned int* d_remainder, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigFloat_Normalize(void* workspace, const unsigned int* d_a, int numWordsA, unsigned int* d_result, int numWordsResult, int valueExp, int* h_resultExp, int* h_isZero, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigFloat_Reciprocal(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, int marginWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigFloat_Multiply(
+        void* workspace, 
+        const unsigned int* d_a, int numWordsA,
+        const unsigned int* d_b, int numWordsB,
+        unsigned int* d_result, int numWordsResult,
+        int tempExp, int tempSign,
+        int* h_resultExp, int* h_resultSign,
+        cudaStream_t stream = 0);
 }
 
 #endif

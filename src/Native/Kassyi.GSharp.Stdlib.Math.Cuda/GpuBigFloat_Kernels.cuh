@@ -229,6 +229,103 @@ __device__ inline void DeviceBigIntMul(const unsigned int* a, int lenA,
 }
 
 /**
+ * @brief Multiplies two BigFloat significands and normalizes the result.
+ */
+__global__ void MultiplyKernel(const unsigned int* __restrict__ d_a, int numWordsA,
+                               const unsigned int* __restrict__ d_b, int numWordsB,
+                               unsigned int* __restrict__ d_result, int numWordsResult,
+                               int tempExp, int tempSign,
+                               int* __restrict__ d_resultExp, int* __restrict__ d_resultSign)
+{
+    extern __shared__ unsigned int s_prod[];
+
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
+        int prodWords = numWordsA + numWordsB;
+        DeviceBigIntMul(d_a, numWordsA, d_b, numWordsB, s_prod, prodWords);
+
+        // Find bit length
+        int actualBits = 0;
+        for (int i = prodWords - 1; i >= 0; i--) {
+            if (s_prod[i] != 0) {
+                actualBits = i * 32 + (32 - __clz(s_prod[i]));
+                break;
+            }
+        }
+
+        if (actualBits == 0) {
+            for (int i = 0; i < numWordsResult; i++) d_result[i] = 0;
+            if (d_resultExp) *d_resultExp = 0;
+            if (d_resultSign) *d_resultSign = 0;
+            return;
+        }
+
+        int targetBitLength = numWordsResult * 32;
+        int shift = targetBitLength - actualBits;
+
+        for (int i = 0; i < numWordsResult; i++) {
+            unsigned int val = 0;
+            if (shift >= 0) {
+                int wordShift = shift / 32;
+                int bitShift = shift % 32;
+                int srcIdx = i - wordShift;
+
+                if (srcIdx >= 0 && srcIdx < prodWords) {
+                    val = s_prod[srcIdx] << bitShift;
+                }
+                if (bitShift > 0 && srcIdx - 1 >= 0 && srcIdx - 1 < prodWords) {
+                    val |= (s_prod[srcIdx - 1] >> (32 - bitShift));
+                }
+            } else {
+                int absShift = -shift;
+                int wordShift = absShift / 32;
+                int bitShift = absShift % 32;
+                int srcIdx = i + wordShift;
+
+                if (srcIdx >= 0 && srcIdx < prodWords) {
+                    val = s_prod[srcIdx] >> bitShift;
+                }
+                if (bitShift > 0 && srcIdx + 1 >= 0 && srcIdx + 1 < prodWords) {
+                    val |= (s_prod[srcIdx + 1] << (32 - bitShift));
+                }
+            }
+            d_result[i] = val;
+        }
+
+        if (d_resultExp) *d_resultExp = tempExp - shift;
+        if (d_resultSign) *d_resultSign = tempSign;
+    }
+}
+
+inline bool LaunchMultiply(const unsigned int* d_a, int numWordsA,
+                           const unsigned int* d_b, int numWordsB,
+                           unsigned int* d_result, int numWordsResult,
+                           int tempExp, int tempSign,
+                           int* h_resultExp, int* h_resultSign,
+                           int* d_resultExp, int* d_resultSign,
+                           cudaStream_t stream)
+{
+    dim3 grid(1);
+    dim3 block(32);
+    size_t sharedMemSize = (numWordsA + numWordsB) * sizeof(unsigned int);
+
+    MultiplyKernel<<<grid, block, sharedMemSize, stream>>>(
+        d_a, numWordsA, d_b, numWordsB, d_result, numWordsResult,
+        tempExp, tempSign, d_resultExp, d_resultSign);
+
+    if (h_resultExp != nullptr && d_resultExp != nullptr)
+        cudaMemcpyAsync(h_resultExp, d_resultExp, sizeof(int), cudaMemcpyDeviceToHost, stream);
+    
+    if (h_resultSign != nullptr && d_resultSign != nullptr)
+        cudaMemcpyAsync(h_resultSign, d_resultSign, sizeof(int), cudaMemcpyDeviceToHost, stream);
+    
+    cudaStreamSynchronize(stream);
+
+    cudaError_t err = cudaGetLastError();
+    return err == cudaSuccess;
+}
+
+/**
  * @brief Computes reciprocal approximation (1 / A) of a normalized BigFloat significand via Newton-Raphson iterations.
  */
 __global__ void ReciprocalKernel(const unsigned int* __restrict__ d_a,

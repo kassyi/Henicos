@@ -665,6 +665,22 @@ extern "C" {
         return LaunchReciprocal(d_a, d_result, numWords, marginWords, stream);
     }
 
+    EXPORT_API bool GpuBigFloat_Multiply(
+        void* workspace, 
+        const unsigned int* d_a, int numWordsA,
+        const unsigned int* d_b, int numWordsB,
+        unsigned int* d_result, int numWordsResult,
+        int tempExp, int tempSign,
+        int* h_resultExp, int* h_resultSign,
+        cudaStream_t stream)
+    {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+        int* d_resultExp = (int*)ws->d_genericCarryBuffer;
+        int* d_resultSign = d_resultExp + 1;
+        return LaunchMultiply(d_a, numWordsA, d_b, numWordsB, d_result, numWordsResult, tempExp, tempSign, h_resultExp, h_resultSign, d_resultExp, d_resultSign, stream);
+    }
+
     
     EXPORT_API bool GpuBigFloat_AddSub(
         void* workspace,
