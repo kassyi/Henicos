@@ -31,7 +31,7 @@ public static partial class GpuBigIntDivRem
     /// <summary>
     /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
     /// </summary>
-    private static void Reciprocal(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords = 0)
+    internal static void Reciprocal(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != 2 * n + marginWords)

@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 public static partial class GpuBigIntDivRem
 {
-    private static void InverseSqrt(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords = 0)
+    internal static void InverseSqrt(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != n + marginWords)
