@@ -36,6 +36,11 @@ extern "C" {
     EXPORT_API bool GpuBigInt_BitwiseAnd(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
     // Phase C: Intermediate Language / CUDA Graph execution
     EXPORT_API bool GpuBigInt_ExecuteIL(void* workspace, int E, const char* ilScript, unsigned int* out_data);
+
+    // ---------------------------------------------
+    // GpuBigFloat / GpuUBigFloat Operations
+    // ---------------------------------------------
+    EXPORT_API bool GpuBigFloat_DivideByUInt32(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, unsigned int divisor, unsigned int* d_remainder, cudaStream_t stream = 0);
 }
 
 #endif

@@ -11,6 +11,7 @@
 #include "GpuBigInt_Kernels.cuh"
 #include "GpuBigInt_Math.cuh"
 #include "GpuBigInt_StaticLoop.cuh"
+#include "GpuBigFloat_Kernels.cuh"
 
 // -------------------------------------------------------------------------
 // Phase 9: Static Device-Side Launcher
@@ -639,5 +640,14 @@ extern "C" {
         cudaStreamDestroy(stream);
 
         return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 10: GpuBigFloat / GpuUBigFloat Operations
+    // -------------------------------------------------------------------------
+    
+    EXPORT_API bool GpuBigFloat_DivideByUInt32(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, unsigned int divisor, unsigned int* d_remainder, cudaStream_t stream)
+    {
+        return LaunchDivideByUInt32(d_a, d_result, numWords, divisor, d_remainder, stream);
     }
 }
