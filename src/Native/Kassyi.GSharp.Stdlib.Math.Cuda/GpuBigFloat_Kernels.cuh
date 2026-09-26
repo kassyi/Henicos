@@ -79,4 +79,115 @@ inline bool LaunchDivideByUInt32(const unsigned int* d_a,
     return err == cudaSuccess;
 }
 
+// -------------------------------------------------------------------------
+// Phase 2: Basic Arithmetic (Normalize, Add, Sub, Mul)
+// -------------------------------------------------------------------------
+
+/**
+ * @brief Normalizes a BigFloat significand to align its most significant bit to the highest bit of the target array.
+ */
+__global__ void NormalizeKernel(const unsigned int* __restrict__ d_a,
+                                int numWordsA,
+                                unsigned int* __restrict__ d_result,
+                                int numWordsResult,
+                                int valueExp,
+                                int* __restrict__ d_resultExp,
+                                int* __restrict__ d_isZero)
+{
+    __shared__ int shared_currentBitLength;
+    __shared__ int shared_shift;
+
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
+        int bitLen = 0;
+        for (int i = numWordsA - 1; i >= 0; i--)
+        {
+            unsigned int w = d_a[i];
+            if (w != 0)
+            {
+                int clz = __clz(w); // 0 to 31
+                bitLen = i * 32 + (32 - clz);
+                break;
+            }
+        }
+        shared_currentBitLength = bitLen;
+        
+        if (bitLen == 0) {
+            shared_shift = 0;
+            if (d_resultExp != nullptr) *d_resultExp = 0;
+            if (d_isZero != nullptr) *d_isZero = 1;
+        } else {
+            int targetBitLength = numWordsResult * 32;
+            int shift = targetBitLength - bitLen;
+            shared_shift = shift;
+            if (d_resultExp != nullptr) *d_resultExp = valueExp - shift;
+            if (d_isZero != nullptr) *d_isZero = 0;
+        }
+    }
+
+    __syncthreads();
+
+    int bitLen = shared_currentBitLength;
+    if (bitLen == 0) {
+        for (int i = threadIdx.x; i < numWordsResult; i += blockDim.x)
+        {
+            d_result[i] = 0;
+        }
+        return;
+    }
+
+    int shift = shared_shift;
+    int wordShift = shift / 32;
+    int bitShift = shift % 32;
+    if (bitShift < 0) {
+        wordShift--;
+        bitShift += 32;
+    }
+
+    for (int i = threadIdx.x; i < numWordsResult; i += blockDim.x)
+    {
+        int srcIdx = i - wordShift;
+        unsigned int val = 0;
+        if (srcIdx >= 0 && srcIdx < numWordsA)
+        {
+            val = d_a[srcIdx] << bitShift;
+        }
+        if (bitShift > 0 && srcIdx - 1 >= 0 && srcIdx - 1 < numWordsA)
+        {
+            val |= (d_a[srcIdx - 1] >> (32 - bitShift));
+        }
+        d_result[i] = val;
+    }
+}
+
+inline bool LaunchNormalize(const unsigned int* d_a,
+                            int numWordsA,
+                            unsigned int* d_result,
+                            int numWordsResult,
+                            int valueExp,
+                            int* h_resultExp,
+                            int* h_isZero,
+                            cudaStream_t stream)
+{
+    int* d_exp = nullptr;
+    int* d_zero = nullptr;
+    cudaMallocAsync(&d_exp, sizeof(int), stream);
+    cudaMallocAsync(&d_zero, sizeof(int), stream);
+
+    dim3 grid(1);
+    dim3 block(32);
+    NormalizeKernel<<<grid, block, 0, stream>>>(d_a, numWordsA, d_result, numWordsResult, valueExp, d_exp, d_zero);
+
+    if (h_resultExp != nullptr) cudaMemcpyAsync(h_resultExp, d_exp, sizeof(int), cudaMemcpyDeviceToHost, stream);
+    if (h_isZero != nullptr) cudaMemcpyAsync(h_isZero, d_zero, sizeof(int), cudaMemcpyDeviceToHost, stream);
+    
+    cudaStreamSynchronize(stream);
+    
+    cudaFreeAsync(d_exp, stream);
+    cudaFreeAsync(d_zero, stream);
+
+    cudaError_t err = cudaGetLastError();
+    return err == cudaSuccess;
+}
+
 #endif // GPUBIGFLOAT_KERNELS_CUH

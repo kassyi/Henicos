@@ -650,4 +650,9 @@ extern "C" {
     {
         return LaunchDivideByUInt32(d_a, d_result, numWords, divisor, d_remainder, stream);
     }
+    
+    EXPORT_API bool GpuBigFloat_Normalize(void* workspace, const unsigned int* d_a, int numWordsA, unsigned int* d_result, int numWordsResult, int valueExp, int* h_resultExp, int* h_isZero, cudaStream_t stream)
+    {
+        return LaunchNormalize(d_a, numWordsA, d_result, numWordsResult, valueExp, h_resultExp, h_isZero, stream);
+    }
 }
