@@ -61,11 +61,13 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             return;
         }
 
-        int targetBitLength = resultSig.NumWords * 32;
-        int currentBitLength = (int)vValue.GetBitLength();
-        int shift = targetBitLength - currentBitLength;
+        var targetBitLength = resultSig.NumWords * 32;
+        var currentBitLength = (int)vValue.GetBitLength();
+        var shift = targetBitLength - currentBitLength;
 
-        BigInteger vNormalized = shift >= 0 ? (vValue << shift) : (vValue >> -shift);
+        Console.WriteLine($"[DEBUG Normalize] resultSig.NumWords: {resultSig.NumWords}, targetBitLength: {targetBitLength}, currentBitLength: {currentBitLength}, shift: {shift}");
+
+        var vNormalized = shift >= 0 ? (vValue << shift) : (vValue >> -shift);
 
         resultExp = valueExp - shift;
         resultSign = valueSign;
@@ -135,13 +137,13 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             return;
         }
 
-        int targetBitLength = resultSig.NumWords * 32;
-        int currentBitLength = (int)vResult.GetBitLength();
-        int shift = targetBitLength - currentBitLength;
+        var targetBitLength = resultSig.NumWords * 32;
+        var currentBitLength = (int)vResult.GetBitLength();
+        var shift = targetBitLength - currentBitLength;
 
-        BigInteger vNormalized = shift >= 0 ? (vResult << shift) : (vResult >> -shift);
+        var vNormalized = shift >= 0 ? (vResult << shift) : (vResult >> -shift);
 
-        int baseExp = leftLarger ? rightExp : leftExp;
+        var baseExp = leftLarger ? rightExp : leftExp;
         resultExp = baseExp - shift;
 
         var resultWords = new uint[resultSig.NumWords];
@@ -167,8 +169,8 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var vRight = ToBigInteger(rightWords, rightSig.NumWords);
 
         var vProd = vLeft * vRight;
-        int tempExp = leftExp + rightExp;
-        bool tempSign = !vProd.IsZero && (leftSign != rightSign);
+        var tempExp = leftExp + rightExp;
+        var tempSign = !vProd.IsZero && (leftSign != rightSign);
 
         if (vProd.IsZero)
         {
@@ -180,11 +182,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             return;
         }
 
-        int targetBitLength = resultSig.NumWords * 32;
-        int currentBitLength = (int)vProd.GetBitLength();
-        int shift = targetBitLength - currentBitLength;
+        var targetBitLength = resultSig.NumWords * 32;
+        var currentBitLength = (int)vProd.GetBitLength();
+        var shift = targetBitLength - currentBitLength;
 
-        BigInteger vNormalized = shift >= 0 ? (vProd << shift) : (vProd >> -shift);
+        var vNormalized = shift >= 0 ? (vProd << shift) : (vProd >> -shift);
 
         resultExp = tempExp - shift;
         resultSign = tempSign;
@@ -216,13 +218,21 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new DivideByZeroException("GPU BigFloat CPU Fallback: Division by zero.");
         }
 
-        int shiftBits = resultSig.NumWords * 32 * 2;
+        var shiftBits = resultSig.NumWords * 32 * 2;
         var vQuotient = (vLeft << shiftBits) / vRight;
 
-        int tempExp = leftExp - rightExp - shiftBits;
+        var tempExp = leftExp - rightExp - shiftBits;
         resultSign = !vQuotient.IsZero && (leftSign != rightSign);
 
-        using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords * 2);
+        var quotientWords = (int)((vQuotient.GetBitLength() + 31) / 32);
+        if (quotientWords == 0)
+        {
+            quotientWords = 1;
+        }
+
+        Console.WriteLine($"[DEBUG CPU] vQuotient.IsZero: {vQuotient.IsZero}, BitLength: {vQuotient.GetBitLength()}, quotientWords: {quotientWords}, shiftBits: {shiftBits}, leftExp: {leftExp}, rightExp: {rightExp}");
+
+        using var tempResult = context.GpuContext.RentTemp(quotientWords);
         var tempHandle =
             new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
 
@@ -249,11 +259,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new DivideByZeroException("GPU BigFloat CPU Fallback: Reciprocal of zero.");
         }
 
-        int shiftBits = (valueSig.NumWords + resultSig.NumWords) * 32;
+        var shiftBits = (valueSig.NumWords + resultSig.NumWords) * 32;
         var dividend = BigInteger.One << shiftBits;
         var vQuotient = dividend / vValue;
 
-        int tempExp = -valueExp - shiftBits;
+        var tempExp = -valueExp - shiftBits;
         resultSign = valueSign;
 
         using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords * 2);
@@ -293,26 +303,26 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             return;
         }
 
-        int e = valueExp;
+        var e = valueExp;
         if (e % 2 != 0)
         {
             vValue <<= 1;
             e--;
         }
 
-        int shiftBits = resultSig.NumWords * 32 * 2;
+        var shiftBits = resultSig.NumWords * 32 * 2;
         vValue <<= shiftBits;
 
-        var vSqrt = BigIntegerExtensions.Sqrt(vValue);
+        var vSqrt = vValue.Sqrt();
 
         resultExp = e / 2 - (shiftBits / 2);
         resultSign = false;
 
-        int targetBitLength = resultSig.NumWords * 32;
-        int currentBitLength = (int)vSqrt.GetBitLength();
-        int shift = targetBitLength - currentBitLength;
+        var targetBitLength = resultSig.NumWords * 32;
+        var currentBitLength = (int)vSqrt.GetBitLength();
+        var shift = targetBitLength - currentBitLength;
 
-        BigInteger vNormalized = shift >= 0 ? (vSqrt << shift) : (vSqrt >> -shift);
+        var vNormalized = shift >= 0 ? (vSqrt << shift) : (vSqrt >> -shift);
         resultExp -= shift;
 
         var resultWords = new uint[resultSig.NumWords];
@@ -330,11 +340,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Cannot compute inverse square root of a negative number.");
         }
 
-        int tempWords = resultSig.NumWords;
+        var tempWords = resultSig.NumWords;
         using var sqrtResult = context.GpuContext.RentTemp(tempWords);
         var sqrtHandle = new BigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, tempWords);
 
-        Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out int sqrtExp, out bool sqrtSign);
+        Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out var sqrtExp, out var sqrtSign);
 
         Reciprocal(ref context, sqrtHandle, sqrtExp, sqrtSign, resultSig, out resultExp, out resultSign);
     }
@@ -360,10 +370,10 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             return;
         }
 
-        int shiftBits = resultSig.NumWords * 32 + 64;
+        var shiftBits = resultSig.NumWords * 32 + 64;
 
-        BigInteger xFixed = vValue;
-        int currentExp = valueExp;
+        var xFixed = vValue;
+        var currentExp = valueExp;
         if (currentExp < -shiftBits)
         {
             xFixed >>= (-shiftBits - currentExp);
@@ -378,10 +388,10 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             xFixed = -xFixed;
         }
 
-        BigInteger sum = BigInteger.One << shiftBits;
-        BigInteger term = xFixed;
+        var sum = BigInteger.One << shiftBits;
+        var term = xFixed;
         sum += term;
-        int k = 2;
+        var k = 2;
         while (!term.IsZero)
         {
             term = (term * xFixed) >> shiftBits;
@@ -400,7 +410,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             sum = -sum;
         }
 
-        int tempExpFixed = -shiftBits;
+        var tempExpFixed = -shiftBits;
 
         using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords + 2);
         var tempHandle =
@@ -432,10 +442,10 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Log of zero.");
         }
 
-        int shiftBits = resultSig.NumWords * 32 + 64;
+        var shiftBits = resultSig.NumWords * 32 + 64;
 
-        BigInteger xFixed = vValue;
-        int currentExp = valueExp;
+        var xFixed = vValue;
+        var currentExp = valueExp;
         if (currentExp < -shiftBits)
         {
             xFixed >>= (-shiftBits - currentExp);
@@ -445,21 +455,21 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             xFixed <<= (currentExp + shiftBits);
         }
 
-        BigInteger oneFixed = BigInteger.One << shiftBits;
+        var oneFixed = BigInteger.One << shiftBits;
 
         // y = (x - 1) / (x + 1)
-        BigInteger num = xFixed - oneFixed;
-        BigInteger den = xFixed + oneFixed;
-        BigInteger y = (num << shiftBits) / den;
+        var num = xFixed - oneFixed;
+        var den = xFixed + oneFixed;
+        var y = (num << shiftBits) / den;
 
-        BigInteger sum = y;
-        BigInteger term = y;
-        BigInteger y2 = (y * y) >> shiftBits;
-        int k = 3;
+        var sum = y;
+        var term = y;
+        var y2 = (y * y) >> shiftBits;
+        var k = 3;
         while (!term.IsZero)
         {
             term = (term * y2) >> shiftBits;
-            BigInteger add = term / k;
+            var add = term / k;
             if (add.IsZero)
             {
                 break;
@@ -481,7 +491,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             sum = -sum;
         }
 
-        int tempExpFixed = -shiftBits;
+        var tempExpFixed = -shiftBits;
 
         using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords + 2);
         var tempHandle =
@@ -504,16 +514,16 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Pow with negative base is not supported.");
         }
 
-        int tempWords = resultSig.NumWords;
+        var tempWords = resultSig.NumWords;
 
         using var logResult = context.GpuContext.RentTemp(tempWords);
         var logHandle = new BigIntMemoryHandle(logResult.Handle.Buffer, logResult.Handle.WordOffset, tempWords);
-        Log(ref context, baseSig, baseExp, baseSign, logHandle, out int logExp, out bool logSign);
+        Log(ref context, baseSig, baseExp, baseSign, logHandle, out var logExp, out var logSign);
 
         using var mulResult = context.GpuContext.RentTemp(tempWords);
         var mulHandle = new BigIntMemoryHandle(mulResult.Handle.Buffer, mulResult.Handle.WordOffset, tempWords);
-        Multiply(ref context, expSig, exponentExp, exponentSign, logHandle, logExp, logSign, mulHandle, out int mulExp,
-            out bool mulSign);
+        Multiply(ref context, expSig, exponentExp, exponentSign, logHandle, logExp, logSign, mulHandle, out var mulExp,
+            out var mulSign);
 
         Exp(ref context, mulHandle, mulExp, mulSign, resultSig, out resultExp, out resultSign);
     }
