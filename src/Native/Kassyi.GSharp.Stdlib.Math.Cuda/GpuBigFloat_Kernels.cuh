@@ -160,6 +160,22 @@ __global__ void NormalizeKernel(const unsigned int* __restrict__ d_a,
     }
 }
 
+__global__ void CompareToKernel(const unsigned int* __restrict__ d_a, const unsigned int* __restrict__ d_b, int* __restrict__ d_result, int numWords)
+{
+    if (threadIdx.x == 0 && blockIdx.x == 0)
+    {
+        int cmp = 0;
+        for (int i = numWords - 1; i >= 0; i--)
+        {
+            unsigned int a = d_a[i];
+            unsigned int b = d_b[i];
+            if (a > b) { cmp = 1; break; }
+            if (a < b) { cmp = -1; break; }
+        }
+        *d_result = cmp;
+    }
+}
+
 inline bool LaunchNormalize(const unsigned int* d_a,
                             int numWordsA,
                             unsigned int* d_result,
@@ -167,24 +183,18 @@ inline bool LaunchNormalize(const unsigned int* d_a,
                             int valueExp,
                             int* h_resultExp,
                             int* h_isZero,
+                            int* d_exp,
+                            int* d_zero,
                             cudaStream_t stream)
 {
-    int* d_exp = nullptr;
-    int* d_zero = nullptr;
-    cudaMallocAsync(&d_exp, sizeof(int), stream);
-    cudaMallocAsync(&d_zero, sizeof(int), stream);
-
     dim3 grid(1);
     dim3 block(32);
     NormalizeKernel<<<grid, block, 0, stream>>>(d_a, numWordsA, d_result, numWordsResult, valueExp, d_exp, d_zero);
 
-    if (h_resultExp != nullptr) cudaMemcpyAsync(h_resultExp, d_exp, sizeof(int), cudaMemcpyDeviceToHost, stream);
-    if (h_isZero != nullptr) cudaMemcpyAsync(h_isZero, d_zero, sizeof(int), cudaMemcpyDeviceToHost, stream);
+    if (h_resultExp != nullptr && d_exp != nullptr) cudaMemcpyAsync(h_resultExp, d_exp, sizeof(int), cudaMemcpyDeviceToHost, stream);
+    if (h_isZero != nullptr && d_zero != nullptr) cudaMemcpyAsync(h_isZero, d_zero, sizeof(int), cudaMemcpyDeviceToHost, stream);
     
     cudaStreamSynchronize(stream);
-    
-    cudaFreeAsync(d_exp, stream);
-    cudaFreeAsync(d_zero, stream);
 
     cudaError_t err = cudaGetLastError();
     return err == cudaSuccess;
