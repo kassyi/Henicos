@@ -53,9 +53,10 @@ These rules are absolute. Any violation will directly induce runtime failures, G
 
 ## 2. C# DEVELOPMENT & CODE STYLE CHARTER
 
-For all C# coding style conventions (Naming, Syntax, Zero-Allocation preferences, etc.), you **MUST** strictly follow the dedicated rules file. Do not duplicate those rules here.
+For all C# coding style conventions (Naming, Syntax, Zero-Allocation preferences, etc.), you **MUST** strictly follow the dedicated rules files. Do not duplicate those rules here.
 
-- **See:** [`.agents/rules/coding-style.md`](.agents/rules/coding-style.md)
+- **General C# Style:** [`.agents/rules/coding-style.md`](.agents/rules/coding-style.md)
+- **GPU / C# Boundary Naming Conventions:** [`.agents/rules/gsharp-naming-conventions.md`](.agents/rules/gsharp-naming-conventions.md)
 
 ---
 
