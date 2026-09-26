@@ -152,6 +152,21 @@ internal static partial class NativeMethods
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     [return: MarshalAs(UnmanagedType.I1)]
     public static partial bool GpuBigFloat_Normalize(IntPtr workspace, IntPtr deviceA, int numWordsA, IntPtr deviceResult, int numWordsResult, int valueExp, out int resultExp, out int isZero, IntPtr stream = 0);
+
+    [LibraryImport(DllName, EntryPoint = nameof(GpuBigFloat_AddSub))]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool GpuBigFloat_AddSub(
+        IntPtr workspace,
+        IntPtr leftSig, int leftNumWords, int leftExp, int leftSign,
+        IntPtr rightSig, int rightNumWords, int rightExp, int rightSign,
+        int isSubtract,
+        IntPtr shiftedBuffer,
+        IntPtr tempResult,
+        IntPtr resultSig,
+        int numWordsResult,
+        out int resultExp, out int resultSign, out int isZero,
+        IntPtr stream = 0);
 }
 
 

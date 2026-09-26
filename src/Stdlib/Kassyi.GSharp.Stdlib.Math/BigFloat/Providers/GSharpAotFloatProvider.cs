@@ -22,20 +22,27 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var dA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
         var dResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
 
-        if (!NativeMethods.GpuBigFloat_Normalize(
-                context.GpuContext.WorkspacePointer,
-                dA, valueSig.NumWords,
-                dResult, maxWords,
-                valueExp,
-                out var outExp,
-                out var isZero,
-                stream))
+        if (context.GpuContext.Provider is Kassyi.GSharp.Stdlib.Math.BigInt.Providers.NativeProvider)
         {
-            throw new InvalidOperationException("Native GpuBigFloat_Normalize failed.");
+            if (!NativeMethods.GpuBigFloat_Normalize(
+                    context.GpuContext.WorkspacePointer,
+                    dA, valueSig.NumWords,
+                    dResult, maxWords,
+                    valueExp,
+                    out var outExp,
+                    out var isZero,
+                    stream))
+            {
+                throw new InvalidOperationException("Native GpuBigFloat_Normalize failed.");
+            }
+
+            resultExp = outExp;
+            resultSign = isZero == 0 && valueSign;
+            return;
         }
 
-        resultExp = outExp;
-        resultSign = isZero == 0 && valueSign;
+        // Fallback for CPU / Interpreter modes
+        CSharpBigFloatArithmetic.Instance.Normalize(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp, out resultSign);
     }
 
     public void Add(ref BigIntExecutionContext context,
@@ -44,66 +51,37 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         var stream = context.Stream;
-
         var leftLarger = leftExp > rightExp || (leftExp == rightExp && leftSig.NumWords >= rightSig.NumWords);
-        var expDiff = leftLarger ? (leftExp - rightExp) : (rightExp - leftExp);
-
-        var largerSig = leftLarger ? leftSig : rightSig;
-        var smallerSig = leftLarger ? rightSig : leftSig;
-        var largerSign = leftLarger ? leftSign : rightSign;
-        var smallerSign = leftLarger ? rightSign : leftSign;
-
-        // Create GPU integers
-        using var largerOperand = new GpuUIntBigInteger(context.GpuContext, largerSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(largerOperand.DevicePointer,
-            IntPtr.Add(largerSig.Buffer.Pointer, largerSig.WordOffset * 4), largerSig.NumWords, stream);
-
-        using var smallerOperand = new GpuUIntBigInteger(context.GpuContext, smallerSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(smallerOperand.DevicePointer,
-            IntPtr.Add(smallerSig.Buffer.Pointer, smallerSig.WordOffset * 4), smallerSig.NumWords, stream);
-
+        var expDiff = System.Math.Abs(leftExp - rightExp);
         var shiftWords = expDiff / 32 + 1;
-        var shiftedWords = largerSig.NumWords + shiftWords;
+        var maxSize = System.Math.Max(leftSig.NumWords, rightSig.NumWords) + shiftWords + 1;
 
-        using var shiftedLarger = context.GpuContext.RentTemp(shiftedWords);
-        context.GpuContext.Provider.ClearMemoryAsync(shiftedLarger.DevicePointer, shiftedWords, stream);
-
-        context.GpuContext.Provider.ShiftLeft(context.GpuContext, largerOperand, expDiff, shiftedLarger);
-
-        var tempWords = System.Math.Max(shiftedWords, smallerSig.NumWords) + 1;
-        using var tempResult = context.GpuContext.RentTemp(tempWords);
-        context.GpuContext.Provider.ClearMemoryAsync(tempResult.DevicePointer, tempWords, stream);
-
-        if (largerSign == smallerSign)
+        if (context.GpuContext.Provider is Kassyi.GSharp.Stdlib.Math.BigInt.Providers.NativeProvider)
         {
-            context.GpuContext.Provider.Add(context.GpuContext, shiftedLarger, smallerOperand, tempResult);
-            resultSign = largerSign;
-        }
-        else
-        {
-            var cmp = context.GpuContext.Provider.CompareTo(context.GpuContext, shiftedLarger, smallerOperand);
-            if (cmp >= 0)
+            // Allocate workspace buffers
+            using var shiftedBuffer = context.GpuContext.RentTemp(maxSize);
+            using var tempResult = context.GpuContext.RentTemp(maxSize);
+
+            if (!NativeMethods.GpuBigFloat_AddSub(
+                    context.GpuContext.WorkspacePointer,
+                    IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, leftExp, leftSign ? 1 : 0,
+                    IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, rightExp, rightSign ? 1 : 0,
+                    0, // isSubtract is 0 since subtraction is handled via sign flip
+                    shiftedBuffer.DevicePointer,
+                    tempResult.DevicePointer,
+                    IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultSig.NumWords,
+                    out var outExp, out var outSign, out var isZero, stream))
             {
-                context.GpuContext.Provider.Sub(context.GpuContext, shiftedLarger, smallerOperand, tempResult);
-                resultSign = largerSign;
+                throw new InvalidOperationException("Native GpuBigFloat_AddSub failed.");
             }
-            else
-            {
-                context.GpuContext.Provider.Sub(context.GpuContext, smallerOperand, shiftedLarger, tempResult);
-                resultSign = smallerSign;
-            }
+
+            resultExp = outExp;
+            resultSign = isZero == 0 && outSign != 0;
+            return;
         }
 
-        var isZero = context.GpuContext.Provider.IsZero(context.GpuContext, tempResult);
-        if (isZero)
-        {
-            resultSign = false;
-        }
-
-        var tempHandle = new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempWords);
-        var baseExp = leftLarger ? rightExp : leftExp;
-
-        Normalize(ref context, tempHandle, baseExp, resultSign, resultSig, out resultExp, out resultSign);
+        // Fallback for CPU / Interpreter modes
+        CSharpBigFloatArithmetic.Instance.Add(ref context, leftSig, leftExp, leftSign, rightSig, rightExp, rightSign, resultSig, out resultExp, out resultSign);
     }
 
     public void Multiply(ref BigIntExecutionContext context,
