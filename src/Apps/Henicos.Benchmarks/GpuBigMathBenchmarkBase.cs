@@ -33,11 +33,11 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     protected IntPtr _stream;
 
     // 精度（ビット幅）のパラメータ
-    [Params(2048, 4096)]
-    public int NumWords { get; set; } // 65,536 bits / 131,072 bits
+    [Params(2048)]
+    public int NumWords { get; set; } // 65,536 bits
 
-    // バッチサイズのパラメータ（1: レイテンシ評価、1024: スループット評価）
-    [Params(1, 1024)]
+    // バッチサイズのパラメータ（現在は1要素ずつの直列処理になるため、レイテンシ評価の 1 のみ）
+    [Params(1)]
     public int BatchSize { get; set; }
 
     [GlobalSetup]
