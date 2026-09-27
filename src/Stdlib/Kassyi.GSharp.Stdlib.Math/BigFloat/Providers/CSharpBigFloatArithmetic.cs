@@ -65,8 +65,6 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var currentBitLength = (int)vValue.GetBitLength();
         var shift = targetBitLength - currentBitLength;
 
-        Console.WriteLine($"[DEBUG Normalize] resultSig.NumWords: {resultSig.NumWords}, targetBitLength: {targetBitLength}, currentBitLength: {currentBitLength}, shift: {shift}");
-
         var vNormalized = shift >= 0 ? (vValue << shift) : (vValue >> -shift);
 
         resultExp = valueExp - shift;
@@ -229,8 +227,6 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         {
             quotientWords = 1;
         }
-
-        Console.WriteLine($"[DEBUG CPU] vQuotient.IsZero: {vQuotient.IsZero}, BitLength: {vQuotient.GetBitLength()}, quotientWords: {quotientWords}, shiftBits: {shiftBits}, leftExp: {leftExp}, rightExp: {rightExp}");
 
         using var tempResult = context.GpuContext.RentTemp(quotientWords);
         var tempHandle =
@@ -529,9 +525,9 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
     }
 
     public void DivideByUInt32(ref BigIntExecutionContext context,
-                        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-                        uint divisor,
-                        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
+        BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
+        uint divisor,
+        BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
     {
         if (divisor == 0)
         {
@@ -547,13 +543,13 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
         var vDivisor = new BigInteger(divisor);
-        
+
         var vQuotient = BigInteger.DivRem(vValue, vDivisor, out var vRemainder);
         remainder = (uint)vRemainder;
 
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vQuotient, resultWords, resultSig.NumWords);
-        
+
         context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
             resultWords, resultSig.NumWords, context.Stream);
     }
