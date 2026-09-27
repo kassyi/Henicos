@@ -46,7 +46,7 @@ internal class Program
             "prp" => RunFermatPrp(args[1..]),
             "bbp" => RunBbp(args[1..]),
             "compute-bench" => RunComputeBench(args[1..]),
-            "arithmetic" => RunArithmeticBench(),
+            "arithmetic" => RunArithmeticBench(args[1..]),
             _ when LooksLikeDigits(args[0]) => RunCpuPi(args),
             _ => HandleUnknownCommand(command)
         };
@@ -135,9 +135,22 @@ internal class Program
         return allSuccess ? 0 : 1;
     }
 
-    private static int RunArithmeticBench()
+    private static int RunArithmeticBench(string[] args)
     {
-        BenchmarkRunner.Run<GpuBigFloatBenchmark>();
+        var target = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
+        
+        if (target is "all" or "gbf")
+        {
+            Logger<Program>.Info("Running GpuBigFloatBenchmark...");
+            BenchmarkRunner.Run<GpuBigFloatBenchmark>();
+        }
+        
+        if (target is "all" or "gbi")
+        {
+            Logger<Program>.Info("Running GpuBigIntBenchmark...");
+            BenchmarkRunner.Run<GpuBigIntBenchmark>();
+        }
+        
         return 0;
     }
 
@@ -324,3 +337,4 @@ internal class Program
         return false;
     }
 }
+
