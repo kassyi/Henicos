@@ -6,31 +6,18 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
 namespace Henicos.Benchmarks;
 
-[MemoryDiagnoser]
-[ShortRunJob]
-public class GpuBigFloatBenchmark : IDisposable
+public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
 {
-    private GpuKernelLoader.CudaContextScope _scope;
-    private GpuContext _ctx = null!;
-    
-    private GpuUIntBigInteger _leftSig;
-    private GpuUIntBigInteger _rightSig;
-    private GpuUIntBigInteger _resultSig;
+    private GpuUIntBigInteger[] _leftSigs = null!;
+    private GpuUIntBigInteger[] _rightSigs = null!;
+    private GpuUIntBigInteger[] _resultSigs = null!;
 
-    [Params(2048, 4096)]
-    public int NumWords { get; set; }
-
-    [GlobalSetup]
-    public void Setup()
+    protected override void OnSetup()
     {
 #pragma warning disable GSH0022
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _ctx = new GpuContext(16);
-
-        _leftSig = new GpuUIntBigInteger(_ctx, NumWords);
-        _rightSig = new GpuUIntBigInteger(_ctx, NumWords);
-        _resultSig = new GpuUIntBigInteger(_ctx, NumWords);
-#pragma warning restore GSH0022
+        _leftSigs = new GpuUIntBigInteger[BatchSize];
+        _rightSigs = new GpuUIntBigInteger[BatchSize];
+        _resultSigs = new GpuUIntBigInteger[BatchSize];
 
         var rnd = new Random(42);
         var leftData = new uint[NumWords];
@@ -44,45 +31,57 @@ public class GpuBigFloatBenchmark : IDisposable
         leftData[^1] |= 0x80000000;
         rightData[^1] |= 0x80000000;
 
-        _ctx.Provider.CopyHostToDevice(_leftSig.DevicePointer, leftData, NumWords, _ctx.Stream);
-        _ctx.Provider.CopyHostToDevice(_rightSig.DevicePointer, rightData, NumWords, _ctx.Stream);
+        for (int i = 0; i < BatchSize; i++)
+        {
+            _leftSigs[i] = new GpuUIntBigInteger(_ctx, NumWords);
+            _rightSigs[i] = new GpuUIntBigInteger(_ctx, NumWords);
+            _resultSigs[i] = new GpuUIntBigInteger(_ctx, NumWords);
+
+            _ctx.Provider.CopyHostToDevice(_leftSigs[i].DevicePointer, leftData, NumWords, _stream);
+            _ctx.Provider.CopyHostToDevice(_rightSigs[i].DevicePointer, rightData, NumWords, _stream);
+        }
+#pragma warning restore GSH0022
     }
 
-    [GlobalCleanup]
-    public void Cleanup() => Dispose();
-
-    public void Dispose()
+    protected override void OnCleanup()
     {
 #pragma warning disable GSH0021
-        _leftSig.Dispose();
-        _rightSig.Dispose();
-        _resultSig.Dispose();
-        _ctx.Dispose();
-        _scope.Dispose();
+        if (_leftSigs != null)
+        {
+            for (int i = 0; i < BatchSize; i++)
+            {
+                _leftSigs[i].Dispose();
+                _rightSigs[i].Dispose();
+                _resultSigs[i].Dispose();
+            }
+        }
 #pragma warning restore GSH0021
     }
 
-    [Benchmark]
-    public void Multiply()
+    protected override void ExecuteBatchMultiply()
     {
-        var execCtx = new BigIntExecutionContext(_ctx, _ctx.MemoryManager, _ctx.Stream);
-        CSharpBigFloatArithmetic.Instance.Multiply(ref execCtx, _leftSig.Handle, 1000, false, _rightSig.Handle, 1000, false, _resultSig.Handle, out _, out _);
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_ctx.Stream));
+        var execCtx = new BigIntExecutionContext(_ctx, _ctx.MemoryManager, _stream);
+        for (int i = 0; i < BatchSize; i++)
+        {
+            GSharpAotFloatProvider.Instance.Multiply(ref execCtx, _leftSigs[i].Handle, 1000, false, _rightSigs[i].Handle, 1000, false, _resultSigs[i].Handle, out _, out _);
+        }
     }
 
-    [Benchmark]
-    public void Divide()
+    protected override void ExecuteBatchDivide()
     {
-        var execCtx = new BigIntExecutionContext(_ctx, _ctx.MemoryManager, _ctx.Stream);
-        CSharpBigFloatArithmetic.Instance.Divide(ref execCtx, _leftSig.Handle, 1000, false, _rightSig.Handle, 1000, false, _resultSig.Handle, out _, out _);
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_ctx.Stream));
+        var execCtx = new BigIntExecutionContext(_ctx, _ctx.MemoryManager, _stream);
+        for (int i = 0; i < BatchSize; i++)
+        {
+            GSharpAotFloatProvider.Instance.Divide(ref execCtx, _leftSigs[i].Handle, 1000, false, _rightSigs[i].Handle, 1000, false, _resultSigs[i].Handle, out _, out _);
+        }
     }
 
-    [Benchmark]
-    public void Sqrt()
+    protected override void ExecuteBatchSqrt()
     {
-        var execCtx = new BigIntExecutionContext(_ctx, _ctx.MemoryManager, _ctx.Stream);
-        CSharpBigFloatArithmetic.Instance.Sqrt(ref execCtx, _leftSig.Handle, 1000, false, _resultSig.Handle, out _, out _);
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_ctx.Stream));
+        var execCtx = new BigIntExecutionContext(_ctx, _ctx.MemoryManager, _stream);
+        for (int i = 0; i < BatchSize; i++)
+        {
+            GSharpAotFloatProvider.Instance.Sqrt(ref execCtx, _leftSigs[i].Handle, 1000, false, _resultSigs[i].Handle, out _, out _);
+        }
     }
 }
