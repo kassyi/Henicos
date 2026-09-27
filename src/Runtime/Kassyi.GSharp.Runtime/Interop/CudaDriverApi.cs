@@ -54,6 +54,18 @@ public enum CUresult
     CudaErrorUnknown = 999
 }
 
+/// <summary>Represents function attributes that can be queried from a CUfunction handle.</summary>
+public enum CuFunctionAttribute
+{
+    MaxThreadsPerBlock = 0,
+    SharedSizeBytes = 1,
+    ConstSizeBytes = 2,
+    LocalSizeBytes = 3,
+    NumRegs = 4,
+    PtxVersion = 5,
+    BinaryVersion = 6
+}
+
 /// <summary>Exception thrown when a CUDA Driver API call returns a non-success status code.</summary>
 public class CudaException(CUresult result, string? message = null) : Exception(message ?? $"CUDA Error: {result}")
 {
@@ -265,4 +277,8 @@ public static partial class CudaDriverApi
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuGraphDestroy(IntPtr hGraph);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuFuncGetAttribute(out int pi, CuFunctionAttribute attrib, IntPtr hfunc);
 }
