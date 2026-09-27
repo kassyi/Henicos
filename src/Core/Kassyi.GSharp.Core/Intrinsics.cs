@@ -222,6 +222,14 @@ public static class Gpu
     [CudaIntrinsic("__umul64hi")]
     public static ulong MultiplyHigh(ulong a, ulong b) => GpuOnlyException.Throw<ulong>();
 
+    /// <summary>Concatenates hi and lo, shifts left by shift, and extracts the most significant 32 bits.</summary>
+    [CudaIntrinsic("__funnelshift_l")]
+    public static uint FunnelShiftLeft(uint lo, uint hi, uint shift) => GpuOnlyException.Throw<uint>();
+
+    /// <summary>Concatenates hi and lo, shifts right by shift, and extracts the least significant 32 bits.</summary>
+    [CudaIntrinsic("__funnelshift_r")]
+    public static uint FunnelShiftRight(uint lo, uint hi, uint shift) => GpuOnlyException.Throw<uint>();
+
     /// <summary>
     /// Injects raw inline PTX assembly or CUDA C++ instructions directly into the transpiled output.
     /// </summary>

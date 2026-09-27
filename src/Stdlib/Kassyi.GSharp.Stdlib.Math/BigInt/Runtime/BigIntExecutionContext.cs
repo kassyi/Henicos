@@ -12,4 +12,9 @@ public readonly ref struct BigIntExecutionContext(
     public IGpuMemoryManager MemoryManager { get; } = memoryManager;
     public IGpuBigIntArithmetic Arithmetic { get; } = arithmetic;
     public IntPtr Stream { get; } = stream;
+
+    public BigIntExecutionContext(GpuContext gpuContext, IGpuMemoryManager memoryManager, IntPtr stream)
+        : this(gpuContext, memoryManager, default(LegacyProviderArithmeticAdapter), stream)
+    {
+    }
 }

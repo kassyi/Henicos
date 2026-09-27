@@ -11,6 +11,7 @@
 #include "GpuBigInt_Kernels.cuh"
 #include "GpuBigInt_Math.cuh"
 #include "GpuBigInt_StaticLoop.cuh"
+#include "GpuBigFloat_Kernels.cuh"
 
 // -------------------------------------------------------------------------
 // Phase 9: Static Device-Side Launcher
@@ -339,6 +340,7 @@ extern "C" {
 }
 
 
+
 // -------------------------------------------------------------------------
 // Helper Functions
 // -------------------------------------------------------------------------
@@ -637,6 +639,135 @@ extern "C" {
         }
         delete[] h_mask;
         cudaStreamDestroy(stream);
+
+        return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 10: GpuBigFloat / GpuUBigFloat Operations
+    // -------------------------------------------------------------------------
+    
+    EXPORT_API bool GpuBigFloat_DivideByUInt32(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, unsigned int divisor, unsigned int* d_remainder, cudaStream_t stream)
+    {
+        return LaunchDivideByUInt32(d_a, d_result, numWords, divisor, d_remainder, stream);
+    }
+    
+    EXPORT_API bool GpuBigFloat_Normalize(void* workspace, const unsigned int* d_a, int numWordsA, unsigned int* d_result, int numWordsResult, int valueExp, int* h_resultExp, int* h_isZero, cudaStream_t stream)
+    {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+        int* d_exp = (int*)ws->d_genericCarryBuffer;
+        int* d_zero = d_exp + 1;
+        return LaunchNormalize(d_a, numWordsA, d_result, numWordsResult, valueExp, h_resultExp, h_isZero, d_exp, d_zero, stream);
+    }
+    EXPORT_API bool GpuBigFloat_Reciprocal(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, int marginWords, cudaStream_t stream)
+    {
+        return LaunchReciprocal(d_a, d_result, numWords, marginWords, stream);
+    }
+
+    EXPORT_API bool GpuBigFloat_Multiply(
+        void* workspace, 
+        const unsigned int* d_a, int numWordsA,
+        const unsigned int* d_b, int numWordsB,
+        unsigned int* d_result, int numWordsResult,
+        int tempExp, int tempSign,
+        int* h_resultExp, int* h_resultSign,
+        cudaStream_t stream)
+    {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+        int* d_resultExp = (int*)ws->d_genericCarryBuffer;
+        int* d_resultSign = d_resultExp + 1;
+        return LaunchMultiply(d_a, numWordsA, d_b, numWordsB, d_result, numWordsResult, tempExp, tempSign, h_resultExp, h_resultSign, d_resultExp, d_resultSign, stream);
+    }
+
+    
+    EXPORT_API bool GpuBigFloat_AddSub(
+        void* workspace,
+        const unsigned int* d_leftSig, int leftNumWords, int leftExp, int leftSign,
+        const unsigned int* d_rightSig, int rightNumWords, int rightExp, int rightSign,
+        int isSubtract,
+        unsigned int* d_shiftedBuffer, 
+        unsigned int* d_tempResult,    
+        unsigned int* d_resultSig,     
+        int numWordsResult,            
+        int* h_resultExp, int* h_resultSign, int* h_isZero,
+        cudaStream_t stream)
+    {
+        GpuWorkspace* ws = (GpuWorkspace*)workspace;
+        if (!ws) return false;
+
+        bool leftLarger = leftExp > rightExp || (leftExp == rightExp && leftNumWords >= rightNumWords);
+        int expDiff = leftLarger ? (leftExp - rightExp) : (rightExp - leftExp);
+
+        const unsigned int* d_largerSig = leftLarger ? d_leftSig : d_rightSig;
+        int largerNumWords = leftLarger ? leftNumWords : rightNumWords;
+        int largerSign = leftLarger ? leftSign : rightSign;
+
+        const unsigned int* d_smallerSig = leftLarger ? d_rightSig : d_leftSig;
+        int smallerNumWords = leftLarger ? rightNumWords : leftNumWords;
+        int smallerSign = leftLarger ? rightSign : leftSign;
+
+        if (isSubtract) {
+            smallerSign = smallerSign ? 0 : 1;
+        }
+
+        int shiftWords = expDiff / 32 + 1;
+        int shiftedWords = largerNumWords + shiftWords;
+
+        cudaMemsetAsync(d_shiftedBuffer, 0, shiftedWords * sizeof(unsigned int), stream);
+        
+        int blockSize = 256;
+        int gridShift = (shiftedWords + blockSize - 1) / blockSize;
+        if (gridShift == 0) gridShift = 1;
+        ShiftLeftKernel<<<gridShift, blockSize, 0, stream>>>(d_largerSig, expDiff / 32, expDiff % 32, d_shiftedBuffer, shiftedWords);
+
+        int tempWords = (shiftedWords > smallerNumWords ? shiftedWords : smallerNumWords) + 1;
+        cudaMemsetAsync(d_tempResult, 0, tempWords * sizeof(unsigned int), stream);
+
+        int chunkSize = 256;
+        int numChunks = (tempWords + chunkSize - 1) / chunkSize;
+        int gridChunks = (numChunks + blockSize - 1) / blockSize;
+        if (gridChunks == 0) gridChunks = 1;
+
+        int resultSign = 0;
+
+        if (largerSign == smallerSign) {
+            cudaMemsetAsync(ws->d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1), stream);
+            ChunkAddKernel<<<gridChunks, blockSize, 0, stream>>>(d_shiftedBuffer, d_smallerSig, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
+            ApplyAddCarryKernel<<<1, 1, 0, stream>>>(d_tempResult, ws->d_genericCarryBuffer, numChunks, tempWords, chunkSize);
+            resultSign = largerSign;
+        } else {
+            int h_cmp = 0;
+            int* d_cmp = (int*)ws->d_genericCarryBuffer; 
+            CompareToKernel<<<1, 1, 0, stream>>>(d_shiftedBuffer, d_smallerSig, d_cmp, tempWords);
+            cudaMemcpyAsync(&h_cmp, d_cmp, sizeof(int), cudaMemcpyDeviceToHost, stream);
+            cudaStreamSynchronize(stream);
+
+            cudaMemsetAsync(ws->d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1), stream);
+            if (h_cmp >= 0) {
+                ChunkSubKernel<<<gridChunks, blockSize, 0, stream>>>(d_shiftedBuffer, d_smallerSig, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
+                ApplySubBorrowKernel<<<1, 1, 0, stream>>>(d_tempResult, ws->d_genericCarryBuffer, numChunks, tempWords, chunkSize);
+                resultSign = largerSign;
+            } else {
+                ChunkSubKernel<<<gridChunks, blockSize, 0, stream>>>(d_smallerSig, d_shiftedBuffer, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
+                ApplySubBorrowKernel<<<1, 1, 0, stream>>>(d_tempResult, ws->d_genericCarryBuffer, numChunks, tempWords, chunkSize);
+                resultSign = smallerSign;
+            }
+        }
+
+        int valueExp = leftLarger ? rightExp : leftExp;
+        
+        int* d_exp = (int*)ws->d_genericCarryBuffer;
+        int* d_zero = d_exp + 1;
+        LaunchNormalize(d_tempResult, tempWords, d_resultSig, numWordsResult, valueExp, h_resultExp, h_isZero, d_exp, d_zero, stream);
+        
+        if (h_isZero != nullptr && *h_isZero == 1) {
+            resultSign = 0;
+        }
+        if (h_resultSign != nullptr) {
+            *h_resultSign = resultSign;
+        }
 
         return true;
     }

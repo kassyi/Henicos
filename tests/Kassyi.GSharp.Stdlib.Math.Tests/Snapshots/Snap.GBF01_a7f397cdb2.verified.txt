@@ -1,0 +1,10 @@
+﻿{
+  ResultWords: [
+    1,
+    1,
+    1,
+    1
+  ],
+  ResultExp: 5,
+  ResultSign: true
+}

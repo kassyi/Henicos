@@ -28,6 +28,10 @@ extern "C" {
     EXPORT_API bool GpuBigInt_GraphFermatLoop(void* workspace, int E, unsigned int* out_data);
     
     // Basic arithmetic and bitwise operations
+    // Note on Multiplication (Out-of-Core Architecture):
+    // A monolithic full-multiplication mega-kernel is intentionally NOT provided in native CUDA.
+    // In order to process numbers exceeding physical GPU VRAM, multiplication is orchestrated by the
+    // host (C# AST / Out-of-Core streaming) using granular accelerated building blocks (Square, Add, Sub, NTT).
     EXPORT_API bool GpuBigInt_Square(void* workspace, unsigned int* data, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_Add(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_Sub(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
@@ -36,6 +40,21 @@ extern "C" {
     EXPORT_API bool GpuBigInt_BitwiseAnd(void* workspace, const unsigned int* d_a, const unsigned int* d_b, unsigned int* d_result, int numWords, cudaStream_t stream = 0);
     // Phase C: Intermediate Language / CUDA Graph execution
     EXPORT_API bool GpuBigInt_ExecuteIL(void* workspace, int E, const char* ilScript, unsigned int* out_data);
+
+    // ---------------------------------------------
+    // GpuBigFloat / GpuUBigFloat Operations
+    // ---------------------------------------------
+    EXPORT_API bool GpuBigFloat_DivideByUInt32(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, unsigned int divisor, unsigned int* d_remainder, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigFloat_Normalize(void* workspace, const unsigned int* d_a, int numWordsA, unsigned int* d_result, int numWordsResult, int valueExp, int* h_resultExp, int* h_isZero, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigFloat_Reciprocal(void* workspace, const unsigned int* d_a, unsigned int* d_result, int numWords, int marginWords, cudaStream_t stream = 0);
+    EXPORT_API bool GpuBigFloat_Multiply(
+        void* workspace, 
+        const unsigned int* d_a, int numWordsA,
+        const unsigned int* d_b, int numWordsB,
+        unsigned int* d_result, int numWordsResult,
+        int tempExp, int tempSign,
+        int* h_resultExp, int* h_resultSign,
+        cudaStream_t stream = 0);
 }
 
 #endif

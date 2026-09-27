@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt;
 
 public static partial class GpuBigIntDivRem
 {
-    private static void InverseSqrt(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords = 0)
+    internal static void InverseSqrt(GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords = 0)
     {
         var n = targetOperand.NumWords;
         if (resultBuffer.NumWords != n + marginWords)
@@ -18,11 +18,10 @@ public static partial class GpuBigIntDivRem
             throw new DivideByZeroException();
         }
 
-        var targetBits = actualBits / 2 + marginWords * 32;
+        var targetBits = actualBits + marginWords * 32;
         var currentBits = 31; // X_top has 31 bits
 
-        var marginBits = marginWords * 32;
-        ComputeInitialGuess(targetOperand, resultBuffer, isSquareRoot: true, marginBits);
+        ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
@@ -160,7 +159,9 @@ public static partial class GpuBigIntDivRem
         using var sumWithDivision = new GpuUIntBigInteger(leftOperand.Context, n);
         using var prevRoot = new GpuUIntBigInteger(leftOperand.Context, n);
 
-        while (true)
+        var maxIterations = 30;
+        var iter = 0;
+        while (iter++ < maxIterations)
         {
             prevRoot.CopyFrom(currentRoot, numWords: n);
 

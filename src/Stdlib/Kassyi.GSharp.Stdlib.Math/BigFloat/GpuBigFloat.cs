@@ -52,6 +52,12 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     public (GpuBigFloat AlignedThis, GpuBigFloat AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigFloat other) => throw new NotImplementedException();
         public GpuBigFloat Normalize(int leadingZeros = 0, bool carryOut = false) =>
         new GpuBigFloat(UFloat.Normalize(leadingZeros, carryOut), IsNegative);
+
+    public (GpuBigFloat Quotient, uint Remainder) DivideByUInt32(uint divisor)
+    {
+        var (uQuotient, remainder) = UFloat.DivideByUInt32(divisor);
+        return (new GpuBigFloat(uQuotient, IsNegative), remainder);
+    }
     public GpuBigFloat Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit) => throw new NotImplementedException();
 
     public GpuBigFloat Add(GpuBigFloat other) => throw new NotImplementedException();

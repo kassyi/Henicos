@@ -24,6 +24,9 @@
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
     <_GSharpCudaSources Include="ComputeBenchmarks\Native\*.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+  </ItemGroup>
 
   <Import Project="..\..\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
 </Project>
