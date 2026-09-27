@@ -85,4 +85,8 @@ public class SgemmBenchmark : IComputeBenchmark
             }
         }
     }
+
+    public IntPtr GetNativeFunction() => NativeKernelInvoker.FunctionSgemm;
+    public string NativeKernelName => "SgemmKernel_Native";
+    public string GSharpKernelName => "SgemmKernels_SgemmKernel";
 }

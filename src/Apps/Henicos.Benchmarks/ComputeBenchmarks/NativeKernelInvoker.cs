@@ -10,6 +10,11 @@ public static unsafe class NativeKernelInvoker
     private static readonly Lazy<IntPtr> s_hfuncBlackScholes = new(() => LoadKernel("blackscholes_kernel.fatbin", "BlackScholesKernel_Native"));
     private static readonly Lazy<IntPtr> s_hfuncReduction = new(() => LoadKernel("reduction_kernel.fatbin", "ReductionKernel_Native"));
 
+    public static IntPtr FunctionSgemm => s_hfuncSgemm.Value;
+    public static IntPtr FunctionSha256 => s_hfuncSha256.Value;
+    public static IntPtr FunctionBlackScholes => s_hfuncBlackScholes.Value;
+    public static IntPtr FunctionReduction => s_hfuncReduction.Value;
+
     public static void LaunchSgemm(
         float[] a, float[] b, float[] c, int n,
         uint gridDimX, uint gridDimY, uint blockDimX, uint blockDimY)

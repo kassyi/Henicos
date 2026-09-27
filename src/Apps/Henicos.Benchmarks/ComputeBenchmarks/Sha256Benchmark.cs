@@ -66,4 +66,8 @@ public class Sha256Benchmark : IComputeBenchmark
             }
         }
     }
+
+    public IntPtr GetNativeFunction() => NativeKernelInvoker.FunctionSha256;
+    public string NativeKernelName => "Sha256Kernel_Native";
+    public string GSharpKernelName => "Sha256Kernels_Sha256Kernel";
 }
