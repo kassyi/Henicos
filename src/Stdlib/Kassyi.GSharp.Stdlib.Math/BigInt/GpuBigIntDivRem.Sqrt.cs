@@ -159,7 +159,9 @@ public static partial class GpuBigIntDivRem
         using var sumWithDivision = new GpuUIntBigInteger(leftOperand.Context, n);
         using var prevRoot = new GpuUIntBigInteger(leftOperand.Context, n);
 
-        while (true)
+        var maxIterations = 30;
+        var iter = 0;
+        while (iter++ < maxIterations)
         {
             prevRoot.CopyFrom(currentRoot, numWords: n);
 
