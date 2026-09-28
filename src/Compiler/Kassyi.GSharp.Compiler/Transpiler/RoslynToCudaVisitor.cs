@@ -345,7 +345,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             symbol.ContainingType.Name != TypeConstants.GpuType ||
             !symbol.ContainingNamespace.IsCoreNamespace() ||
             symbol.Parameters.Length != 1 ||
-            invocation.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax lambda }])
+            invocation.ArgumentList.Arguments.Count != 1 ||
+            invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
         {
             return false;
         }

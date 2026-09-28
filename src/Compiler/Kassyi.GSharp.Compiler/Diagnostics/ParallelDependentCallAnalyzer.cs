@@ -61,12 +61,12 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             bool isSingleThreadMacro = false;
 
             if (symbol != null && 
-                (symbol.Name == "SingleThread" || symbol.Name == "SyncGrid") && 
-                symbol.ContainingType?.Name == "Gpu" && 
-                symbol.ContainingType?.ContainingNamespace?.ToString() == "Kassyi.GSharp.Core")
+                (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) && 
+                symbol.ContainingType?.Name == TypeConstants.GpuType && 
+                symbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
             {
                 // For SyncGrid, it's only a single thread macro if it has arguments (a delegate)
-                if (symbol.Name == "SyncGrid" && node.ArgumentList.Arguments.Count == 0)
+                if (symbol.Name == TypeConstants.GpuMacros.SyncGrid && node.ArgumentList.Arguments.Count == 0)
                 {
                     isSingleThreadMacro = false;
                 }

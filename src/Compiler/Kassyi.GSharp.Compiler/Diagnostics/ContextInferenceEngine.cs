@@ -13,7 +13,7 @@ public static class ContextInferenceEngine
 
         // Fast path for external framework methods that we cannot traverse
         if (methodSymbol.ContainingAssembly?.Name != compilation.AssemblyName && 
-            methodSymbol.ContainingAssembly?.Name != "Kassyi.GSharp.Core" && 
+            methodSymbol.ContainingAssembly?.Name != TypeConstants.CoreNamespace && 
             methodSymbol.ContainingAssembly?.Name != "Kassyi.GSharp.Stdlib.Math")
         {
             return false;
@@ -36,10 +36,10 @@ public static class ContextInferenceEngine
         }
 
         // Direct check: Does the method symbol belong to Gpu.GridStrideLoop or Gpu.SyncGrid?
-        if (methodSymbol.ContainingType?.Name == "Gpu" && 
-            methodSymbol.ContainingType?.ContainingNamespace?.ToString() == "Kassyi.GSharp.Core")
+        if (methodSymbol.ContainingType?.Name == TypeConstants.GpuType && 
+            methodSymbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
         {
-            if (methodSymbol.Name == "GridStrideLoop" || methodSymbol.Name == "SyncGrid")
+            if (methodSymbol.Name == TypeConstants.GpuMacros.GridStrideLoop || methodSymbol.Name == TypeConstants.GpuMacros.SyncGrid)
             {
                 cache[methodSymbol] = true;
                 return true;
@@ -86,8 +86,8 @@ public static class ContextInferenceEngine
             var symbol = semanticModel.GetSymbolInfo(node).Symbol;
             
             // Check for thread intrinsics usage
-            if (symbol is { ContainingType.Name: "Gpu" } && 
-                symbol.ContainingType?.ContainingNamespace?.ToString() == "Kassyi.GSharp.Core")
+            if (symbol is { ContainingType.Name: TypeConstants.GpuType } && 
+                symbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
             {
                 if (symbol.Name == "ThreadIndex" || symbol.Name == "GlobalThreadIndex" || symbol.Name == "BlockIndex")
                 {

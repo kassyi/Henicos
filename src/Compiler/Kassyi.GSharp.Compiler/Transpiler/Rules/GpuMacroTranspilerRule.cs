@@ -5,7 +5,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol.ContainingType.Name != "Gpu")
+        if (symbol.ContainingType.Name != TypeConstants.GpuType)
         {
             return false;
         }

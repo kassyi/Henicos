@@ -33,6 +33,8 @@ internal static class TypeConstants
         public const string InlinePtx = nameof(InlinePtx);
         public const string SyncGrid = nameof(SyncGrid);
         public const string Unroll = nameof(Unroll);
+        public const string GridStrideLoop = nameof(GridStrideLoop);
+        public const string SingleThread = nameof(SingleThread);
     }
 
     public static class CudaTypes
