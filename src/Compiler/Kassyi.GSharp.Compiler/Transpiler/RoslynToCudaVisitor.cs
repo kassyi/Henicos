@@ -36,6 +36,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
     /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
+    /// <param name="ruleRegistry">An optional registry providing transpilation rules.</param>
     /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
     /// <remarks>
@@ -278,19 +279,18 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     internal bool IsParameterlessSyncGrid(StatementSyntax stmt)
     {
-        if (stmt is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        if (stmt is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
         {
-            if (Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol &&
-                symbol.Name == TypeConstants.GpuMacros.SyncGrid &&
-                symbol.ContainingType.Name == TypeConstants.GpuType &&
-                symbol.ContainingNamespace.IsCoreNamespace() &&
-                symbol.Parameters.Length == 0)
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        return Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol
+               {
+                   Name: TypeConstants.GpuMacros.SyncGrid,
+                   ContainingType.Name: TypeConstants.GpuType,
+                   Parameters.Length: 0
+               } symbol &&
+               symbol.ContainingNamespace.IsCoreNamespace();
     }
 
     internal static IReadOnlyList<StatementSyntax> FlattenStatements(
@@ -333,22 +333,26 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         out CSharpSyntaxNode? body)
     {
         body = null;
-        if (stmt is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        if (stmt is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
         {
-            if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol &&
-                symbol.Name == TypeConstants.GpuMacros.SyncGrid &&
-                symbol.ContainingType.Name == TypeConstants.GpuType &&
-                symbol.ContainingNamespace.IsCoreNamespace() &&
-                symbol.Parameters.Length == 1 &&
-                invocation.ArgumentList.Arguments.Count == 1 &&
-                invocation.ArgumentList.Arguments[0].Expression is LambdaExpressionSyntax lambda)
-            {
-                body = lambda.Body;
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol
+            {
+                Name: TypeConstants.GpuMacros.SyncGrid
+            } symbol ||
+            symbol.ContainingType.Name != TypeConstants.GpuType ||
+            !symbol.ContainingNamespace.IsCoreNamespace() ||
+            symbol.Parameters.Length != 1 ||
+            invocation.ArgumentList.Arguments is not [{ Expression: LambdaExpressionSyntax lambda }])
+        {
+            return false;
+        }
+
+        body = lambda.Body;
+        return true;
+
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)
