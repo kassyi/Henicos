@@ -10,9 +10,7 @@ internal sealed class ManualEnumeratorRule
 
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
     {
-        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
-
-        if (symbol != null && symbol.Name == "GetEnumerator")
+        if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { Name: "GetEnumerator" } symbol)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 GSharpDiagnostics.ManualEnumeratorNotSupported,

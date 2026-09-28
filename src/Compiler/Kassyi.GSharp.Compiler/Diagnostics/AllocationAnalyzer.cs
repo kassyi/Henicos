@@ -155,7 +155,7 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
         if (symbolInfo.Symbol is IMethodSymbol
             {
                 Name: "Malloc",
-                ContainingType: { Name: "Unsafe", ContainingType.Name: "Gpu" }
+                ContainingType: { Name: "Unsafe", ContainingType.Name: TypeConstants.GpuType }
             })
         {
             context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.ManualUnmanagedAllocation,

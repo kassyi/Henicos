@@ -20,7 +20,7 @@ public class BitsColumn : IColumn
     {
         foreach (var p in benchmarkCase.Parameters.Items)
         {
-            if (p.Name == "NumWords" && p.Value is int numWords)
+            if (p is { Name: "NumWords", Value: int numWords })
             {
                 return (numWords * 32).ToString();
             }
@@ -60,7 +60,7 @@ public class OpsPerSecColumn : IColumn
 
         foreach (var p in benchmarkCase.Parameters.Items)
         {
-            if (p.Name == "BatchSize" && p.Value is int batchSize)
+            if (p is { Name: "BatchSize", Value: int batchSize })
             {
                 var seconds = meanNs / 1_000_000_000.0;
                 var opsPerSec = batchSize / seconds;

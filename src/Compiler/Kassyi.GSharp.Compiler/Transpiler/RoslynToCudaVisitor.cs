@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Compiler.Transpiler.Rules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -15,11 +16,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
     // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
     private static readonly ConcurrentBag<RoslynToCudaVisitor> s_pool = [];
-    private static readonly Lazy<Rules.ITranspilerRuleRegistry> s_defaultRegistry = new(() => Rules.TranspilerRuleRegistry.CreateDefault());
+    private static readonly Lazy<ITranspilerRuleRegistry> s_defaultRegistry = new(TranspilerRuleRegistry.CreateDefault);
 
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
-    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = new();
+    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = [];
 
     internal TranspileContext Context;
     private int _isRented;
@@ -35,6 +36,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
     /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
+    /// <param name="ruleRegistry">An optional registry providing transpilation rules.</param>
     /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
     /// <remarks>
@@ -44,7 +46,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         ITranspilerDialect dialect,
         SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
         ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null,
-        Rules.ITranspilerRuleRegistry? ruleRegistry = null)
+        ITranspilerRuleRegistry? ruleRegistry = null)
     {
         if (dialect is null)
         {
@@ -272,26 +274,23 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         return false;
     }
 
-    internal bool IsEmptyOrSyncGrid(StatementSyntax stmt)
-    {
-        return stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
-    }
+    internal bool IsEmptyOrSyncGrid(StatementSyntax stmt) =>
+        stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
 
     internal bool IsParameterlessSyncGrid(StatementSyntax stmt)
     {
-        if (stmt is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        if (stmt is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
         {
-            if (Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol &&
-                symbol.Name == TypeConstants.GpuMacros.SyncGrid &&
-                symbol.ContainingType.Name == TypeConstants.GpuType &&
-                symbol.ContainingNamespace.IsCoreNamespace() &&
-                symbol.Parameters.Length == 0)
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        return Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol
+               {
+                   Name: TypeConstants.GpuMacros.SyncGrid,
+                   ContainingType.Name: TypeConstants.GpuType,
+                   Parameters.Length: 0
+               } symbol &&
+               symbol.ContainingNamespace.IsCoreNamespace();
     }
 
     internal static IReadOnlyList<StatementSyntax> FlattenStatements(
@@ -334,22 +333,27 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         out CSharpSyntaxNode? body)
     {
         body = null;
-        if (stmt is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        if (stmt is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
         {
-            if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol &&
-                symbol.Name == TypeConstants.GpuMacros.SyncGrid &&
-                symbol.ContainingType.Name == TypeConstants.GpuType &&
-                symbol.ContainingNamespace.IsCoreNamespace() &&
-                symbol.Parameters.Length == 1 &&
-                invocation.ArgumentList.Arguments.Count == 1 &&
-                invocation.ArgumentList.Arguments[0].Expression is LambdaExpressionSyntax lambda)
-            {
-                body = lambda.Body;
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol
+            {
+                Name: TypeConstants.GpuMacros.SyncGrid
+            } symbol ||
+            symbol.ContainingType.Name != TypeConstants.GpuType ||
+            !symbol.ContainingNamespace.IsCoreNamespace() ||
+            symbol.Parameters.Length != 1 ||
+            invocation.ArgumentList.Arguments.Count != 1 ||
+            invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
+        {
+            return false;
+        }
+
+        body = lambda.Body;
+        return true;
+
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)

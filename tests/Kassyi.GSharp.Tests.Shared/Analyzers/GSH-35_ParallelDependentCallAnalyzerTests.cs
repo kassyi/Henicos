@@ -1,0 +1,24 @@
+namespace Kassyi.GSharp.Tests.Analyzers;
+
+public class GSH_35_ParallelDependentCallAnalyzerTests : TranspilerTestBase
+{
+    private static readonly ParallelDependentCallAnalyzer s_analyzer = new();
+
+    [Theory]
+    [Trait("Category", "SadPath")]
+    [InlineData("GSH-35-Sad", "Analyzers/GSH-35_ParallelDependentCall_SadPath.cu.txt", new[] { "GSH0035", "GSH0035", "GSH0035", "GSH0035", "GSH0035", "GSH0035" })]
+    public async Task Test_ParallelDependentCallAnalyzer_ReportsMultipleExpectedDiagnostics(string featureId, string testCasePath, string[] expectedDiagnosticIds)
+    {
+        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+                               .ReportsDiagnosticsAsync(expectedDiagnosticIds);
+    }
+
+    [Theory]
+    [Trait("Category", "HappyPath")]
+    [InlineData("GSH-35-Happy", "Analyzers/GSH-35_ParallelDependentCall_HappyPath.cu.txt")]
+    public async Task Test_ParallelDependentCallAnalyzer_HasNoErrors(string featureId, string testCasePath)
+    {
+        await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
+                               .HasNoErrorsAsync();
+    }
+}
