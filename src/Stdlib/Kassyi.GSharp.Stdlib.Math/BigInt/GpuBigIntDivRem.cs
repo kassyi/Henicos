@@ -351,7 +351,7 @@ public static partial class GpuBigIntDivRem
 
         if (isSquareRoot)
         {
-            var root = IntegerSqrt(originalBigTop);
+            var root = IntegerSqrt(originalBigTop) + 1;
             initialApproximation = (BigInteger.One << 62) / root;
             finalShift = targetBits - actualBits / 2 - 31;
         }

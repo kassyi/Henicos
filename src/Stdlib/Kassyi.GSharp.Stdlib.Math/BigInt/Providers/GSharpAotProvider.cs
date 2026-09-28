@@ -406,10 +406,11 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         try
         {
             Array.Clear(hostConstant3, 0, constant3Words);
-            var bit2B = 2 * actualBits + 2 * marginBits;
+            var bit2B = 2 * n * 32 + 2 * marginBits;
             hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
             hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
             context.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words, context.Stream);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(context.Stream));
         }
         finally
         {
