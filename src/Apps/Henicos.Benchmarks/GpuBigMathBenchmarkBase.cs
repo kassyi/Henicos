@@ -2,7 +2,6 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
-using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math;
 

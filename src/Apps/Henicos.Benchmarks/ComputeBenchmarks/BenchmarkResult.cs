@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Runtime.Aot;
-
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public sealed record BenchmarkResult(
