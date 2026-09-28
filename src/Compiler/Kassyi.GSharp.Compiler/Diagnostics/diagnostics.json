@@ -304,5 +304,14 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "ParallelDependentCallFromSingleThreadContext",
+    "id": "GSH0035",
+    "title": "Cannot call parallel-dependent processing from a single-thread context",
+    "messageFormat": "The method or operator '{0}' depends on parallel execution (e.g., GridStrideLoop or SyncGrid) and cannot be called from within a single-thread context",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]

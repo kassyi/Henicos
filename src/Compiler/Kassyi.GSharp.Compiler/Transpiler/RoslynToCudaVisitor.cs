@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Compiler.Transpiler.Rules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -15,11 +16,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
     // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
     private static readonly ConcurrentBag<RoslynToCudaVisitor> s_pool = [];
-    private static readonly Lazy<Rules.ITranspilerRuleRegistry> s_defaultRegistry = new(() => Rules.TranspilerRuleRegistry.CreateDefault());
+    private static readonly Lazy<ITranspilerRuleRegistry> s_defaultRegistry = new(TranspilerRuleRegistry.CreateDefault);
 
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
-    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = new();
+    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = [];
 
     internal TranspileContext Context;
     private int _isRented;
@@ -44,7 +45,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         ITranspilerDialect dialect,
         SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
         ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null,
-        Rules.ITranspilerRuleRegistry? ruleRegistry = null)
+        ITranspilerRuleRegistry? ruleRegistry = null)
     {
         if (dialect is null)
         {
@@ -272,10 +273,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         return false;
     }
 
-    internal bool IsEmptyOrSyncGrid(StatementSyntax stmt)
-    {
-        return stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
-    }
+    internal bool IsEmptyOrSyncGrid(StatementSyntax stmt) =>
+        stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
 
     internal bool IsParameterlessSyncGrid(StatementSyntax stmt)
     {

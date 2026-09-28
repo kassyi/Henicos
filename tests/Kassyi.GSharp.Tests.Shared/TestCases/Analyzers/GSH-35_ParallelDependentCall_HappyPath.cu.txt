@@ -1,0 +1,38 @@
+using Kassyi.GSharp.Core;
+
+namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
+
+public static class GSH35_ParallelDependentCall_HappyPath
+{
+    [GpuDeviceFunction]
+    private static void ParallelMethod()
+    {
+        Gpu.GridStrideLoop(100, i => { });
+    }
+
+    [GpuDeviceFunction]
+    private static void SequentialMethod()
+    {
+        for (int i = 0; i < 100; i++) { }
+    }
+
+    [GpuKernel]
+    public static void HappyKernel()
+    {
+        // Calling parallel-dependent method from parallel context is fine
+        ParallelMethod();
+        
+
+        // Calling sequential method inside SingleThread is fine
+        Gpu.SingleThread(() => 
+        {
+            SequentialMethod();
+        });
+
+        if (Gpu.ThreadIndex.X == 0)
+        {
+            // Calling sequential method inside manual divergent branch is fine
+            SequentialMethod();
+        }
+    }
+}

@@ -65,7 +65,7 @@ if ($CheckDocs) {
     }
     
     if ($missingDocs.Count -gt 0) {
-        Write-Error "The following diagnostics are missing documentation in $DocsDir:"
+        Write-Error "The following diagnostics are missing documentation in ${DocsDir}:"
         foreach ($id in $missingDocs) {
             Write-Error " - $id"
         }

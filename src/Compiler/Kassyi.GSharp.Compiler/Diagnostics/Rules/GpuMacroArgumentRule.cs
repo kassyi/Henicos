@@ -20,73 +20,86 @@ internal sealed class GpuMacroArgumentRule
         var containingType = invocationSymbol.ContainingType;
         if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuMacros.Gpu })
         {
-            if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
-            {
-                CheckUnrollHint(invocation, ref context);
-            }
-
+            AnalyzeHintMacro(invocation, invocationSymbol, ref context);
             return;
         }
 
-        if (containingType?.Name != TypeConstants.GpuMacros.Gpu)
+        if (containingType?.Name == TypeConstants.GpuMacros.Gpu)
         {
-            return;
+            AnalyzeGpuMacro(invocation, invocationSymbol, ref context);
         }
+    }
 
+    private void AnalyzeHintMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    {
+        if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
+        {
+            CheckUnrollHint(invocation, ref context);
+        }
+    }
+
+    private void AnalyzeGpuMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    {
         switch (invocationSymbol.Name)
         {
             case TypeConstants.GpuMacros.ForUnroll:
-                {
-                    var hasContext = invocationSymbol.Parameters.Length == 4;
-                    var offset = hasContext ? 1 : 0;
-                    var args = invocation.ArgumentList.Arguments;
-                    if (args.Count >= offset + 2)
-                    {
-                        CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
-                        CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
-                    }
-
-                    break;
-                }
+                CheckForUnroll(invocation, invocationSymbol, ref context);
+                break;
 
             case TypeConstants.GpuMacros.InlinePtx:
-                {
-                    var args = invocation.ArgumentList.Arguments;
-                    if (args.Count >= 1)
-                    {
-                        CheckStringLiteral(args[0].Expression, ref context);
-                    }
-
-                    break;
-                }
+                CheckInlinePtx(invocation, ref context);
+                break;
 
             case TypeConstants.GpuMacros.SyncGrid:
-                {
-                    if (invocationSymbol.Parameters.Length == 1)
-                    {
-                        var args = invocation.ArgumentList.Arguments;
-                        if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
-                        {
-                            var diagnostic = Diagnostic.Create(
-                                GSharpDiagnostics.UnsupportedSyntax,
-                                args[0].GetLocation(),
-                                "Gpu.SyncGrid requires a lambda expression argument");
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
+                CheckSyncGrid(invocation, invocationSymbol, ref context);
+                break;
+        }
+    }
 
-                    if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
-                        !IsCooperativeKernel(context.MethodSymbol))
-                    {
-                        var diagnostic = Diagnostic.Create(
-                            GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
-                            invocation.GetLocation(),
-                            context.MethodSymbol.Name);
-                        context.ReportDiagnostic(diagnostic);
-                    }
+    private void CheckForUnroll(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    {
+        var hasContext = invocationSymbol.Parameters.Length == 4;
+        var offset = hasContext ? 1 : 0;
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count >= offset + 2)
+        {
+            CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
+            CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
+        }
+    }
 
-                    break;
-                }
+    private void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count >= 1)
+        {
+            CheckStringLiteral(args[0].Expression, ref context);
+        }
+    }
+
+    private void CheckSyncGrid(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    {
+        if (invocationSymbol.Parameters.Length == 1)
+        {
+            var args = invocation.ArgumentList.Arguments;
+            if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
+            {
+                var diagnostic = Diagnostic.Create(
+                    GSharpDiagnostics.UnsupportedSyntax,
+                    args[0].GetLocation(),
+                    "Gpu.SyncGrid requires a lambda expression argument");
+                context.ReportDiagnostic(diagnostic);
+            }
+        }
+
+        if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+            !IsCooperativeKernel(context.MethodSymbol))
+        {
+            var diagnostic = Diagnostic.Create(
+                GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
+                invocation.GetLocation(),
+                context.MethodSymbol.Name);
+            context.ReportDiagnostic(diagnostic);
         }
     }
 
