@@ -126,4 +126,8 @@ public class ReductionBenchmark : IComputeBenchmark
                 $"Mismatch in final Native reduction sum: CPU={_finalResultCpu}, Native={_finalResultNative}, Diff={diffNative}");
         }
     }
+
+    public IntPtr GetNativeFunction() => NativeKernelInvoker.FunctionReduction;
+    public string NativeKernelName => "ReductionKernel_Native";
+    public string GSharpKernelName => "ReductionKernels_ReductionKernel";
 }

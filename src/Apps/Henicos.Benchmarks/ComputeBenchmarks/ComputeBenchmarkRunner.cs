@@ -116,13 +116,35 @@ public static class ComputeBenchmarkRunner
         var verified = VerifyResults(benchmark, nativeSuccess, gsharpSuccess, logOut, ref errorMessage);
         var isSuccess = nativeSuccess && gsharpSuccess && verified && string.IsNullOrEmpty(errorMessage);
 
+        var nativeFunc = benchmark.GetNativeFunction();
+        var gsharpFunc = benchmark.GetGSharpFunction();
+
+        var nativeAttrs = KernelResourceInspector.TryGetAttributes(nativeFunc);
+        var gsharpAttrs = KernelResourceInspector.TryGetAttributes(gsharpFunc);
+
+        var nativeInstCount = KernelResourceInspector.GetInstructionCount(benchmark.NativeKernelName);
+        var gsharpInstCount = KernelResourceInspector.GetInstructionCount(benchmark.GSharpKernelName);
+
+        if (nativeAttrs.HasValue)
+        {
+            logOut.WriteLine($"  Native Kernel Resources: Regs={nativeAttrs.Value.NumRegs}, Spill={nativeAttrs.Value.LocalSizeBytes} B, SASS Insts={nativeInstCount}");
+        }
+        if (gsharpAttrs.HasValue)
+        {
+            logOut.WriteLine($"  G# CUDA Resources:       Regs={gsharpAttrs.Value.NumRegs}, Spill={gsharpAttrs.Value.LocalSizeBytes} B, SASS Insts={gsharpInstCount}");
+        }
+
         return new BenchmarkResult(
             benchmark.Name,
             cpuTime,
             nativeStats,
             gsharpStats,
             isSuccess,
-            errorMessage);
+            errorMessage,
+            nativeAttrs,
+            gsharpAttrs,
+            nativeInstCount,
+            gsharpInstCount);
     }
 
     private static void PrintSuiteHeader(TextWriter logOut, int benchmarkCount, int iterations)

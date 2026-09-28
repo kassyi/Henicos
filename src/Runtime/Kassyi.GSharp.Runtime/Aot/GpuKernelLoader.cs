@@ -214,4 +214,31 @@ public sealed class GpuKernelLoader
         CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, hModule, kernelName));
         return hfunc;
     }
+
+    /// <summary>
+    /// Represents hardware and register resources consumed by a compiled kernel function.
+    /// </summary>
+    public readonly record struct KernelResourceAttributes(
+        int NumRegs,
+        int LocalSizeBytes,
+        int SharedSizeBytes,
+        int ConstSizeBytes);
+
+    /// <summary>
+    /// Queries the hardware resource attributes of a compiled kernel function from the CUDA driver.
+    /// </summary>
+    public static KernelResourceAttributes GetKernelAttributes(IntPtr hfunc)
+    {
+        if (hfunc == IntPtr.Zero)
+        {
+            throw new ArgumentException("Kernel function handle cannot be zero.", nameof(hfunc));
+        }
+
+        EnsureInitialized();
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var numRegs, CuFunctionAttribute.NumRegs, hfunc));
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var localBytes, CuFunctionAttribute.LocalSizeBytes, hfunc));
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var sharedBytes, CuFunctionAttribute.SharedSizeBytes, hfunc));
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var constBytes, CuFunctionAttribute.ConstSizeBytes, hfunc));
+        return new KernelResourceAttributes(numRegs, localBytes, sharedBytes, constBytes);
+    }
 }

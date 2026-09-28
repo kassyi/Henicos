@@ -93,4 +93,8 @@ public class BlackScholesBenchmark : IComputeBenchmark
             }
         }
     }
+
+    public IntPtr GetNativeFunction() => NativeKernelInvoker.FunctionBlackScholes;
+    public string NativeKernelName => "BlackScholesKernel_Native";
+    public string GSharpKernelName => "BlackScholesKernels_BlackScholesKernel";
 }

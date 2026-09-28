@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime.Aot;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public sealed record BenchmarkResult(
@@ -6,4 +8,8 @@ public sealed record BenchmarkResult(
     BenchmarkStats NativeStats,
     BenchmarkStats GsharpStats,
     bool Success,
-    string ErrorMessage = "");
+    string ErrorMessage = "",
+    GpuKernelLoader.KernelResourceAttributes? NativeAttributes = null,
+    GpuKernelLoader.KernelResourceAttributes? GsharpAttributes = null,
+    int NativeInstructionCount = -1,
+    int GsharpInstructionCount = -1);
