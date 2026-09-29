@@ -77,6 +77,15 @@ Instead of translating AST nodes directly into literal C++ function calls, the `
 > For a detailed explanation of the supported macros, their C# syntax, and the resulting CUDA C++ equivalent code, please refer to the API reference:
 > **[Gpu Class Reference](../03_bcl_api/gpu_class/00_index.md)**.
 
+### 1.2.5 Call-Site Argument Normalization and Constant Default Synthesis
+
+In C++, function call syntax strictly requires arguments to match the declaration parameter order, and omitting optional arguments depends on default values present in the C++ declaration header. To ensure full compatibility with modern C# call-site ergonomics without violating static determinism, `InvocationExpressionTranspilerRule` performs compile-time argument normalization:
+
+1. **Semantic Symbol Resolution**: During AST traversal of an `InvocationExpressionSyntax`, the rule queries `IMethodSymbol.Parameters` from Roslyn's `SemanticModel`.
+2. **Positional and Named Binding**: Each parameter declared in the method signature is sequentially bound. Named arguments (`NameColonSyntax`) are mapped by parameter name and normalized into their declaration sequence, regardless of caller order (e.g., `Method(b: 2, a: 1)` emits `Method(1, 2)`).
+3. **Default Constant Synthesis**: If an optional parameter is omitted by the caller (`IParameterSymbol.HasExplicitDefaultValue`), the transpiler synthesizes the compile-time default constant literal directly into the argument list (e.g., `Method(10)` emits `Method(10, 0)`). Default expressions are extracted from the declaring syntax (`ParameterSyntax.Default`) or formatted deterministically from `ExplicitDefaultValue` into C++ literal syntax (with appropriate type suffixes and `nullptr` mapping).
+4. **Variadic `params` Support**: For methods with `params` array arguments, trailing positional arguments are emitted sequentially without loss of caller ordering.
+
 ## 1.3 Output Buffer Contract & Auto-Allocation
 
 Traditionally, standard C# methods can return arbitrary values, while GPU kernels are required to return `void`. G# bridges this gap by offering two approaches to outputting data:
@@ -108,11 +117,12 @@ The transpiler strictly adheres to the following naming conventions and rules wh
 2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]_Device` is generated.
 3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
+5. **Parameter Default Values Preservation**: If a kernel entry point (`[GpuKernel]`) defines default parameter values (e.g., `int stride = 1`), `WrapperEmitter` preserves those default values in the generated host launcher method signature. Callers on the CPU host can invoke the kernel without providing trailing optional arguments or using C# named arguments directly.
 
 ```csharp
 // Original Kernel Signature
 // public static class MyKernels {
-//     [GpuKernel] public static T KernelName(int arg1) { ... }
+//     [GpuKernel] public static T KernelName(int arg1, int stride = 1) { ... }
 // }
 
 // Generated Launcher Signature (in MyKernelsWrapper class)
@@ -120,6 +130,7 @@ public static partial class MyKernelsWrapper
 {
     public static T[] LaunchKernelName(
         int arg1, // Original non-Constant parameters
+        int stride = 1, // Preserved default parameter value
         uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
         uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
         uint sharedMemBytes = 0,

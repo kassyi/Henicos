@@ -31,6 +31,7 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Reflection** | **Device Only** | The .NET reflection metadata is entirely absent on the GPU. |
 | **Generics** | **Device Only (Partial)** | True runtime generics are unsupported. However, **C++ Template generation is fully supported** for C# generic structs and methods, allowing the AOT transpiler to map C# generics directly to highly optimized C++ templates (`template <typename T>`). |
 | **Expression-Bodied Members (`=>`)** | **Supported** | Transpiler automatically handles `void` and value-returning methods (injects `return` keyword). |
+| **Default & Named Arguments** | **Supported** | Supported across device functions, local methods, and kernel launchers. Named arguments are normalized to declaration order, and omitted optional arguments are synthesized with compile-time default constant literals. |
 | **Ternary Operator (`? :`)** | **Supported** | Standard conditional ternary operators are supported. |
 | **Braceless `if` Statements** | **Supported** | Transpiler automatically injects `{ }` block scoping into the C++ source for single-statement control flow branches. |
 | **Delegates & Lambda Expressions** | **Device Only (Partial)** | Non-capturing lambdas and local functions, or those capturing only value types, are extracted and expanded as C++ `__device__` functions (or lambdas). Complex closures requiring managed heap allocations (e.g., capturing reference types) are not supported. |
