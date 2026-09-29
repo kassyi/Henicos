@@ -39,7 +39,6 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
             enclosingSymbol = enclosingSymbol.ContainingSymbol;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.HostIntrinsicCallError, invocation.GetLocation(),
-            methodSymbol.Name));
+        context.Report(GSharpDiagnostics.HostIntrinsicCallError, invocation, methodSymbol.Name);
     }
 }

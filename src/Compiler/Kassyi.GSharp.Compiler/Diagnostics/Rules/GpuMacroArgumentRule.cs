@@ -84,22 +84,20 @@ internal sealed class GpuMacroArgumentRule
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
             {
-                var diagnostic = Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.UnsupportedSyntax,
-                    args[0].GetLocation(),
+                    args[0],
                     "Gpu.SyncGrid requires a lambda expression argument");
-                context.ReportDiagnostic(diagnostic);
             }
         }
 
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
             !IsCooperativeKernel(context.MethodSymbol))
         {
-            var diagnostic = Diagnostic.Create(
+            context.Report(
                 GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
-                invocation.GetLocation(),
+                invocation,
                 context.MethodSymbol.Name);
-            context.ReportDiagnostic(diagnostic);
         }
     }
 
@@ -114,10 +112,7 @@ internal sealed class GpuMacroArgumentRule
             var constant = context.SemanticModel.GetConstantValue(factorExpr);
             if (!constant.HasValue || constant.Value is not int intVal || intVal < 0)
             {
-                var diagnostic = Diagnostic.Create(
-                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
-                    factorExpr.GetLocation());
-                context.ReportDiagnostic(diagnostic);
+                context.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
             }
         }
 
@@ -129,10 +124,7 @@ internal sealed class GpuMacroArgumentRule
         var loopStmt = GetSupportedLoop(exprStmt);
         if (loopStmt == null)
         {
-            var diagnostic = Diagnostic.Create(
-                GSharpDiagnostics.UnrollHintMustPrecedeLoop,
-                invocation.GetLocation());
-            context.ReportDiagnostic(diagnostic);
+            context.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
         }
         else
         {
@@ -240,10 +232,7 @@ internal sealed class GpuMacroArgumentRule
 
     private void ReportGsh0032(StatementSyntax loopStmt, ref ValidationContext context)
     {
-        var diagnostic = Diagnostic.Create(
-            GSharpDiagnostics.UnrolledLoopMustBeStatic,
-            loopStmt.GetLocation());
-        context.ReportDiagnostic(diagnostic);
+        context.Report(GSharpDiagnostics.UnrolledLoopMustBeStatic, loopStmt);
     }
 
     private void CheckDynamicControlFlow(StatementSyntax loopStmt, ref ValidationContext context)
@@ -265,10 +254,7 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        var diagnostic = Diagnostic.Create(
-            GSharpDiagnostics.UnrolledLoopMayBeIgnored,
-            loopStmt.GetLocation());
-        context.ReportDiagnostic(diagnostic);
+        context.Report(GSharpDiagnostics.UnrolledLoopMayBeIgnored, loopStmt);
     }
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
@@ -280,8 +266,7 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        var diagnostic = Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, expr.GetLocation());
-        context.ReportDiagnostic(diagnostic);
+        context.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, expr);
     }
 
     private void CheckConstant(ExpressionSyntax expr, string paramName, string macroName, ref ValidationContext context)
@@ -292,12 +277,11 @@ internal sealed class GpuMacroArgumentRule
             return;
         }
 
-        var diagnostic = Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.MacroArgumentMustBeConstant,
-            expr.GetLocation(),
+            expr,
             paramName,
             macroName);
-        context.ReportDiagnostic(diagnostic);
     }
 
     private static bool IsCooperativeKernel(IMethodSymbol methodSymbol)

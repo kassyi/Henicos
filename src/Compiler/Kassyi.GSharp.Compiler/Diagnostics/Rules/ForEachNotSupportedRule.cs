@@ -35,11 +35,9 @@ internal sealed class ForEachNotSupportedRule
             }
         }
 
-        var diagnostic = Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.ForeachNotSupported,
-            node.GetLocation(),
+            node,
             context.MethodSymbol.Name);
-
-        context.ReportDiagnostic(diagnostic);
     }
 }

@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Diagnostics.Rules;
+using Kassyi.GSharp.Compiler.Extensions;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
@@ -33,7 +34,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
         if (methodSymbol == null)
         {
             return;
@@ -53,10 +54,10 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         {
             if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.KernelClassMustBePartial,
                     classDecl.Identifier.GetLocation(),
-                    classDecl.Identifier.Text));
+                    classDecl.Identifier.Text);
             }
         }
 

@@ -29,7 +29,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ConcurrentDictionary<IMethodSymbol, bool> inferenceCache)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
         if (methodSymbol == null)
         {
             return;
@@ -204,11 +204,10 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (ContextInferenceEngine.IsParallelDependent(methodSymbol, inferenceCache, context.Compilation))
             {
-                var diagnostic = Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext,
-                    node.GetLocation(),
+                    node,
                     methodSymbol.Name);
-                context.ReportDiagnostic(diagnostic);
             }
         }
     }

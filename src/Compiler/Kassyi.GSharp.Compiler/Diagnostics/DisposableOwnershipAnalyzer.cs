@@ -182,7 +182,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
 
         var location = namedType.Locations.Length > 0 ? namedType.Locations[0] : null;
-        context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.MissingIDisposable, location));
+        context.Report(GSharpDiagnostics.MissingIDisposable, location);
     }
 
     private static void ValidateDisposeImplementation(
@@ -204,13 +204,11 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
             if (isBorrowed && isDisposed)
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposingBorrowedResource,
-                    locationForDispose));
+                context.Report(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
             }
             else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UndisposedGpuScope, locationForDispose,
-                    member.Name));
+                context.Report(GSharpDiagnostics.UndisposedGpuScope, locationForDispose, member.Name);
             }
         }
     }
@@ -271,7 +269,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
         var method = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         if (methodSymbol == null)
         {
             return;
@@ -304,8 +302,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         if (disposes)
         {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposableInDim,
-                method.Identifier.GetLocation()));
+            context.Report(GSharpDiagnostics.DisposableInDim, method.Identifier.GetLocation());
         }
     }
 }

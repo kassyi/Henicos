@@ -66,9 +66,7 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
 
         if (isInsideLoop)
         {
-            var diagnostic = Diagnostic.Create(GSharpDiagnostics.AutoAllocateReturnInLoopWarning,
-                invocation.GetLocation(), identifier.Identifier.Text);
-            context.ReportDiagnostic(diagnostic);
+            context.Report(GSharpDiagnostics.AutoAllocateReturnInLoopWarning, invocation, identifier.Identifier.Text);
         }
     }
 }

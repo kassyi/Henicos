@@ -28,10 +28,10 @@ internal sealed class ProhibitedApiRule
             (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() ||
              symbol.ContainingNamespace.IsSystemOrNumerics()))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
+            context.Report(
                 GSharpDiagnostics.UnsupportedSyntax,
-                node.GetLocation(),
-                $"{symbol.ContainingType.Name}.{symbol.Name}"));
+                node,
+                $"{symbol.ContainingType.Name}.{symbol.Name}");
         }
     }
 }

@@ -11,12 +11,10 @@ internal sealed class LinqNotSupportedRule
 
     public void Analyze(QueryExpressionSyntax node, ref ValidationContext context)
     {
-        var diagnostic = Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.LinqNotSupported,
-            node.GetLocation(),
+            node,
             context.MethodSymbol.Name);
-
-        context.ReportDiagnostic(diagnostic);
     }
 
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
@@ -28,12 +26,10 @@ internal sealed class LinqNotSupportedRule
 
             if (isLinqMethod)
             {
-                var diagnostic = Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.LinqNotSupported,
-                    node.GetLocation(),
+                    node,
                     context.MethodSymbol.Name);
-
-                context.ReportDiagnostic(diagnostic);
             }
         }
     }

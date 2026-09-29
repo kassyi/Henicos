@@ -12,12 +12,11 @@ internal sealed class ParamsModifierNotSupportedRule
     {
         if (node.Modifiers.Any(SyntaxKind.ParamsKeyword))
         {
-            context.ReportDiagnostic(
-                Diagnostic.Create(
-                    GSharpDiagnostics.ParamsModifierNotSupported,
-                    node.GetLocation(),
-                    node.Identifier.Text,
-                    context.MethodSymbol.Name));
+            context.Report(
+                GSharpDiagnostics.ParamsModifierNotSupported,
+                node,
+                node.Identifier.Text,
+                context.MethodSymbol.Name);
         }
     }
 }
