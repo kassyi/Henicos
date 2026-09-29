@@ -76,7 +76,7 @@ public static class GpuBigIntKernels
         [GpuReadOnly] uint[] b,
         uint[] result,
         int numWords,
-        int sign,
+        int sign = 1,
         bool syncThreads = true)
     {
         int tid = ThreadIndex.X;
@@ -163,13 +163,13 @@ public static class GpuBigIntKernels
     [GpuKernel]
     public static void ParallelAddKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords)
     {
-        DeviceAddSubParallel(dA, dB, dResult, numWords, 1, false);
+        DeviceAddSubParallel(dA, dB, dResult, numWords, syncThreads: false);
     }
 
     [GpuKernel]
     public static void ParallelSubKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords)
     {
-        DeviceAddSubParallel(dA, dB, dResult, numWords, -1, false);
+        DeviceAddSubParallel(dA, dB, dResult, numWords, sign: -1, syncThreads: false);
     }
 
     [GpuKernel]
@@ -261,7 +261,7 @@ public static class GpuBigIntKernels
     #region MacroTranspiler & Device Helpers
 
     [GpuDeviceFunction]
-    public static void ExecuteShiftLeft(BigIntKernelContext ctx, int wordShift, int bitShift)
+    public static void ExecuteShiftLeft(BigInt ctx, int wordShift, int bitShift)
     {
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
@@ -286,7 +286,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteShiftRight(BigIntKernelContext ctx, int wordShift, int bitShift)
+    public static void ExecuteShiftRight(BigInt ctx, int wordShift, int bitShift)
     {
         Gpu.GridStrideLoop(ctx.NumberOfWords, i =>
         {
@@ -311,7 +311,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseAnd(ref BigIntKernelContext ctx)
+    public static void ExecuteBitwiseAnd(ref BigInt ctx)
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
@@ -320,7 +320,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseOr(ref BigIntKernelContext ctx)
+    public static void ExecuteBitwiseOr(ref BigInt ctx)
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
@@ -329,7 +329,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseXor(ref BigIntKernelContext ctx)
+    public static void ExecuteBitwiseXor(ref BigInt ctx)
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
@@ -338,7 +338,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseNot(ref BigIntKernelContext ctx)
+    public static void ExecuteBitwiseNot(ref BigInt ctx)
     {
         Gpu.GridStrideLoop(ref ctx, ctx.NumberOfWords, static (ref context, i) =>
         {
@@ -347,7 +347,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteAdd(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    public static void ExecuteAdd(ref BigInt ctx, uint[] result, uint[] left, uint[] right)
     {
         ulong carry = 0;
         for (int i = 0; i < ctx.NumberOfWords; i++)
@@ -357,7 +357,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteSub(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    public static void ExecuteSub(ref BigInt ctx, uint[] result, uint[] left, uint[] right)
     {
         long borrow = 0;
         for (int i = 0; i < ctx.NumberOfWords; i++)
@@ -367,7 +367,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteShiftLeft(ref BigIntKernelContext ctx, uint[] result, uint[] left, int shiftBits)
+    public static void ExecuteShiftLeft(ref BigInt ctx, uint[] result, uint[] left, int shiftBits)
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
@@ -394,7 +394,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteShiftRight(ref BigIntKernelContext ctx, uint[] result, uint[] left, int shiftBits)
+    public static void ExecuteShiftRight(ref BigInt ctx, uint[] result, uint[] left, int shiftBits)
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
@@ -421,7 +421,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseAnd(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    public static void ExecuteBitwiseAnd(ref BigInt ctx, uint[] result, uint[] left, uint[] right)
     {
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {
@@ -430,7 +430,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseOr(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    public static void ExecuteBitwiseOr(ref BigInt ctx, uint[] result, uint[] left, uint[] right)
     {
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {
@@ -439,7 +439,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseXor(ref BigIntKernelContext ctx, uint[] result, uint[] left, uint[] right)
+    public static void ExecuteBitwiseXor(ref BigInt ctx, uint[] result, uint[] left, uint[] right)
     {
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {
@@ -448,7 +448,7 @@ public static class GpuBigIntKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteBitwiseNot(ref BigIntKernelContext ctx, uint[] result, uint[] operand)
+    public static void ExecuteBitwiseNot(ref BigInt ctx, uint[] result, uint[] operand)
     {
         for (int i = 0; i < ctx.NumberOfWords; i++)
         {

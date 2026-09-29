@@ -6,25 +6,41 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntGcdKernels
 {
+    public static class AotContexts
+    {
+        public struct Matrix2x2Apply
+        {
+            [GpuReadOnly] public uint[] A;
+            [GpuReadOnly] public uint[] B;
+            public uint[] DstA;
+            public uint[] DstB;
+            public long U0;
+            public long V0;
+            public long U1;
+            public long V1;
+            public int NumWords;
+        }
+    }
+
     [GpuKernel]
-    public static void ApplyMatrix2x2Kernel(uint[] a, uint[] b, uint[] dstA, uint[] dstB, long u0, long v0, long u1, long v1, int numWords)
+    public static void ApplyMatrix2x2Kernel(AotContexts.Matrix2x2Apply ctx)
     {
         Gpu.SingleThread(() =>
         {
             long carryA = 0;
             long carryB = 0;
-            for (int i = 0; i < numWords; i++)
+            for (int i = 0; i < ctx.NumWords; i++)
             {
-                long valA = a[i];
-                long valB = b[i];
+                long valA = ctx.A[i];
+                long valB = ctx.B[i];
 
-                var nextA = valA * u0 + valB * v0 + carryA;
-                var nextB = valA * u1 + valB * v1 + carryB;
+                var nextA = valA * ctx.U0 + valB * ctx.V0 + carryA;
+                var nextB = valA * ctx.U1 + valB * ctx.V1 + carryB;
 
-                dstA[i] = (uint)(nextA & 0xFFFFFFFF);
+                ctx.DstA[i] = (uint)(nextA & 0xFFFFFFFF);
                 carryA = nextA >> 32;
 
-                dstB[i] = (uint)(nextB & 0xFFFFFFFF);
+                ctx.DstB[i] = (uint)(nextB & 0xFFFFFFFF);
                 carryB = nextB >> 32;
             }
         });
@@ -158,7 +174,7 @@ public static class GpuBigIntGcdKernels
 
     [GpuKernel]
     public static void ExecuteLehmerGcdMacroKernel(
-        uint[] a, uint[] b, uint[] newA, uint[] newB, int[] status, int numWords, int maxIterations)
+        uint[] a, uint[] b, uint[] newA, uint[] newB, int[] status, int numWords, int maxIterations = 1000)
     {
         Gpu.SingleThread(() =>
         {

@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Contexts;
 /// <summary>
 /// Context parameters for NTT-related operations in Fermat sequences.
 /// </summary>
-public struct NttContext
+public struct Ntt
 {
     public int TransformLength;
     public BufferContext Buffers;
@@ -19,23 +19,34 @@ public struct NttContext
 
     public struct TwiddleFactorContext
     {
-        [GpuReadOnly] public uint[] Forward1;
-        [GpuReadOnly] public uint[] Forward2;
-        [GpuReadOnly] public uint[] Forward3;
-        [GpuReadOnly] public uint[] Inverse1;
-        [GpuReadOnly] public uint[] Inverse2;
-        [GpuReadOnly] public uint[] Inverse3;
+        [GpuReadOnly]
+        public uint[] Forward1;
+
+        [GpuReadOnly]
+        public uint[] Forward2;
+
+        [GpuReadOnly]
+        public uint[] Forward3;
+
+        [GpuReadOnly]
+        public uint[] Inverse1;
+
+        [GpuReadOnly]
+        public uint[] Inverse2;
+
+        [GpuReadOnly]
+        public uint[] Inverse3;
     }
 }
 
 /// <summary>
 /// Context parameters for the Fermat sequence computation.
 /// </summary>
-public struct FermatContext
+public struct Fermat
 {
     public BufferContext Buffers;
     public DimensionContext Dimensions;
-    public NttContext Ntt;
+    public Ntt Ntt;
 
     public struct BufferContext
     {
@@ -59,24 +70,40 @@ public struct FermatContext
 /// <summary>
 /// Context parameters for basic BigInt GPU kernels and MacroTranspiler expansions.
 /// </summary>
-public struct BigIntKernelContext
+public struct BigInt
 {
     public OperandContext Operands;
     public int NumberOfWords;
 
     public struct OperandContext
     {
-        [GpuReadOnly] public uint[] LeftOperand;
-        [GpuReadOnly] public uint[] RightOperand;
+        [GpuReadOnly]
+        public uint[] LeftOperand;
+
+        [GpuReadOnly]
+        public uint[] RightOperand;
+
         public uint[] ResultBuffer;
         public long[] CarryBuffer;
     }
 }
 
+public struct DualNtt
+{
+    public uint[] Buffer1;
+    public uint[] Buffer2;
+    public uint[] TemporaryBuffer;
+    [GpuReadOnly] public uint[] Twiddle1;
+    [GpuReadOnly] public uint[] Twiddle2;
+    public int M;
+    public int N1;
+    public int N2;
+}
+
 /// <summary>
 /// Execution arguments for NTT-related kernels.
 /// </summary>
-public struct NumberTheoreticTransformKernelArgs
+public struct NumberTheoreticTransform
 {
     public uint[] Buffer;
     public uint[] TemporaryBuffer;
@@ -99,11 +126,11 @@ public struct NumberTheoreticTransformKernelArgs
 /// <summary>
 /// Context parameters for the Newton-Raphson Sqrt MegaKernel.
 /// </summary>
-public struct SqrtNewtonRaphsonContext
+public struct SqrtNewtonRaphson
 {
     public OperandContext Operands;
     public DimensionContext Dimensions;
-    public NttContext Ntt;
+    public Ntt Ntt;
     public WorkspaceStateContext Workspace;
     public long[] CarryBuffer;
 
@@ -145,11 +172,11 @@ public struct SqrtNewtonRaphsonContext
 /// <summary>
 /// Context parameters for the Newton-Raphson Reciprocal (DivRem) MegaKernel.
 /// </summary>
-public struct ReciprocalNewtonRaphsonContext
+public struct ReciprocalNewtonRaphson
 {
     public OperandContext Operands;
     public DimensionContext Dimensions;
-    public NttContext Ntt;
+    public Ntt Ntt;
     public WorkspaceStateContext Workspace;
     public long[] CarryBuffer;
 

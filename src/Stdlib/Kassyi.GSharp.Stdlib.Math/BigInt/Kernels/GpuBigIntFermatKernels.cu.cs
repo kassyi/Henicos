@@ -64,55 +64,59 @@ public static class GpuBigIntFermatKernels
 
         var gridX = (width + 31) / 32;
         var gridY = (height + 31) / 32;
-        if (BlockIndex.X < gridX * gridY)
+        if (BlockIndex.X >= gridX * gridY)
         {
-            var bx = BlockIndex.X % gridX;
-            var by = BlockIndex.X / gridX;
+            return;
+        }
 
-            if (ThreadIndex.X < 256)
+        var bx = BlockIndex.X % gridX;
+        var by = BlockIndex.X / gridX;
+
+        if (ThreadIndex.X < 256)
+        {
+            var tx = ThreadIndex.X % 32;
+            var ty = ThreadIndex.X / 32;
+
+            var xIndex = bx * 32 + tx;
+            var yIndex = by * 32 + ty;
+
+            Gpu.ForUnroll(0, 4, iter =>
             {
-                var tx = ThreadIndex.X % 32;
-                var ty = ThreadIndex.X / 32;
-
-                var xIndex = bx * 32 + tx;
-                var yIndex = by * 32 + ty;
-
-                Gpu.ForUnroll(0, 4, iter =>
+                var i = iter * 8;
+                if (xIndex < width && yIndex + i < height)
                 {
-                    var i = iter * 8;
-                    if (xIndex < width && yIndex + i < height)
-                    {
-                        Gpu.InlinePtx($"s_mem[({ty} + {i}) * 33 + {tx}] = {idata[(yIndex + i) * width + xIndex]};");
-                    }
-                });
-            }
+                    Gpu.InlinePtx($"s_mem[({ty} + {i}) * 33 + {tx}] = {idata[(yIndex + i) * width + xIndex]};");
+                }
+            });
+        }
 
+        Gpu.SyncThreads();
+
+        if (ThreadIndex.X < 256)
+        {
+            var tx = ThreadIndex.X % 32;
+            var ty = ThreadIndex.X / 32;
+
+            var outXIndex = by * 32 + tx;
+            var outYIndex = bx * 32 + ty;
+
+            Gpu.ForUnroll(0, 4, iter =>
+            {
+                var i = iter * 8;
+                if (outXIndex >= height || outYIndex + i >= width)
+                {
+                    return;
+                }
+
+                uint val = 0;
+                Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
+                odata[(outYIndex + i) * height + outXIndex] = val;
+            });
+        }
+
+        if (syncThreads)
+        {
             Gpu.SyncThreads();
-
-            if (ThreadIndex.X < 256)
-            {
-                var tx = ThreadIndex.X % 32;
-                var ty = ThreadIndex.X / 32;
-
-                var outXIndex = by * 32 + tx;
-                var outYIndex = bx * 32 + ty;
-
-                Gpu.ForUnroll(0, 4, iter =>
-                {
-                    var i = iter * 8;
-                    if (outXIndex < height && outYIndex + i < width)
-                    {
-                        uint val = 0;
-                        Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
-                        odata[(outYIndex + i) * height + outXIndex] = val;
-                    }
-                });
-            }
-
-            if (syncThreads)
-            {
-                Gpu.SyncThreads();
-            }
         }
     }
 
@@ -159,7 +163,7 @@ public static class GpuBigIntFermatKernels
         int numWords,
         int sign)
     {
-        GpuBigIntKernels.DeviceAddSubParallel(a, b, result, numWords, sign, true);
+        GpuBigIntKernels.DeviceAddSubParallel(a, b, result, numWords, sign);
     }
 
     [GpuKernel]
@@ -195,20 +199,19 @@ public static class GpuBigIntFermatKernels
 
             Gpu.SyncThreads();
 
-            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, ctx.Exponent, ctx.OutNumWords, true);
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, 1, true);
+            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, ctx.Exponent, ctx.OutNumWords);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords);
 
             // Subtract Q * 8
-            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 3, ctx.OutNumWords, true);
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, -1, true);
+            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 3, ctx.OutNumWords);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, sign: -1);
 
             // Subtract Q * 2
-            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 1, ctx.OutNumWords, true);
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, -1, true);
+            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 1, ctx.OutNumWords);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, sign: -1);
 
             // Subtract Q * 1
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Quotient, ctx.Remainder, ctx.OutNumWords, -1,
-                true);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Quotient, ctx.Remainder, ctx.OutNumWords, sign: -1);
 
             if (iter >= 2)
             {
