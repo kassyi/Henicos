@@ -90,13 +90,12 @@ public class GpuBigIntMatrix2x2 : IDisposable
             M01 = new GpuUIntBigInteger(workspace, numWords);
             M10 = new GpuUIntBigInteger(workspace, numWords);
             M11 = new GpuUIntBigInteger(workspace, numWords);
+
+            workspace.Track(this);
         }
         catch
         {
-            M00.Dispose();
-            M01.Dispose();
-            M10.Dispose();
-            M11.Dispose();
+            // [WHY] Constituent limbs are tracked by GpuWorkspace and released upon workspace disposal.
             throw;
         }
     }
