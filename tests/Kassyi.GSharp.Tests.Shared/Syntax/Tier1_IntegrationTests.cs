@@ -4,7 +4,6 @@ public class Tier1_IntegrationTests : TranspilerTestBase
 {
     [SkippableFact]
     [Trait("Category", "GpuExecution")]
-    [Trait("FeatureId", "Tier1")]
     public void Test_Tier1_AllInOneKernel_Execution()
     {
         const int count = 256;
