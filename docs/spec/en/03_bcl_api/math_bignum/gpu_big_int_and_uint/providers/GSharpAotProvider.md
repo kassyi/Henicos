@@ -28,24 +28,24 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 | [CopyHostToDevice(IntPtr, UInt32[], Int32)](#copyhosttodeviceintptr-uint32-int32)                                                                              | Copies limb data from host managed memory to GPU device memory.        |
 | [CopyDeviceToHost(UInt32[], IntPtr, Int32)](#copydevicetohostuint32-intptr-int32)                                                                              | Copies limb data from GPU device memory to host managed memory.        |
 | [CopyDeviceToDevice(IntPtr, IntPtr, Int32)](#copydevicetodeviceintptr-intptr-int32)                                                                            | Copies limb data between two GPU device memory locations.              |
-| [Add(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#addgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes addition on GPU.                                              |
-| [Sub(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#subgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes subtraction on GPU.                                           |
-| [Mul(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#mulgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes multiplication on GPU.                                        |
-| [Add(GpuContext, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)](#addgpucontext-gpuuintbiginteger-uint32-gpuuintbiginteger)                                     | Computes scalar addition on GPU.                                       |
-| [Sub(GpuContext, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)](#subgpucontext-gpuuintbiginteger-uint32-gpuuintbiginteger)                                     | Computes scalar subtraction on GPU.                                    |
-| [Mul(GpuContext, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)](#mulgpucontext-gpuuintbiginteger-uint32-gpuuintbiginteger)                                     | Computes scalar multiplication on GPU.                                 |
-| [BitwiseAnd(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwiseandgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise AND on GPU.                                           |
-| [BitwiseOr(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwiseorgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)   | Computes bitwise OR on GPU.                                            |
-| [BitwiseXor(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwisexorgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise XOR on GPU.                                           |
-| [BitwiseNot(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwisenotgpucontext-gpuuintbiginteger-gpuuintbiginteger)                                      | Computes bitwise NOT on GPU.                                           |
-| [ShiftLeft(GpuContext, GpuUIntBigInteger, Int32, GpuUIntBigInteger)](#shiftleftgpucontext-gpuuintbiginteger-int32-gpuuintbiginteger)                           | Computes left bit shift on GPU.                                        |
-| [ShiftRight(GpuContext, GpuUIntBigInteger, Int32, GpuUIntBigInteger)](#shiftrightgpucontext-gpuuintbiginteger-int32-gpuuintbiginteger)                         | Computes right bit shift on GPU.                                       |
-| [Square(GpuContext, IntPtr, Int32)](#squaregpucontext-intptr-int32)                                                                                            | Computes in-place self squaring on GPU.                                |
-| [Gcd(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#gcdgpucontext-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes Greatest Common Divisor on GPU.                               |
-| [IsZero(GpuContext, GpuUIntBigInteger)](#iszerogpucontext-gpuuintbiginteger)                                                                                   | Checks whether operand equals zero on GPU.                             |
-| [IsOne(GpuContext, GpuUIntBigInteger)](#isonegpucontext-gpuuintbiginteger)                                                                                     | Checks whether operand equals one on GPU.                              |
-| [GetBitLength(GpuContext, GpuUIntBigInteger)](#getbitlengthgpucontext-gpuuintbiginteger)                                                                       | Gets the bit length of the operand on GPU.                             |
-| [CompareTo(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger)](#comparetogpucontext-gpuuintbiginteger-gpuuintbiginteger)                                        | Compares two operands on GPU.                                          |
+| [Add(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#addgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes addition on GPU.                                              |
+| [Sub(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#subgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes subtraction on GPU.                                           |
+| [Mul(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#mulgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes multiplication on GPU.                                        |
+| [Add(GpuWorkspace, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)](#addgpuworkspace-gpuuintbiginteger-uint32-gpuuintbiginteger)                                     | Computes scalar addition on GPU.                                       |
+| [Sub(GpuWorkspace, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)](#subgpuworkspace-gpuuintbiginteger-uint32-gpuuintbiginteger)                                     | Computes scalar subtraction on GPU.                                    |
+| [Mul(GpuWorkspace, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)](#mulgpuworkspace-gpuuintbiginteger-uint32-gpuuintbiginteger)                                     | Computes scalar multiplication on GPU.                                 |
+| [BitwiseAnd(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwiseandgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise AND on GPU.                                           |
+| [BitwiseOr(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwiseorgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)   | Computes bitwise OR on GPU.                                            |
+| [BitwiseXor(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwisexorgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise XOR on GPU.                                           |
+| [BitwiseNot(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwisenotgpuworkspace-gpuuintbiginteger-gpuuintbiginteger)                                      | Computes bitwise NOT on GPU.                                           |
+| [ShiftLeft(GpuWorkspace, GpuUIntBigInteger, Int32, GpuUIntBigInteger)](#shiftleftgpuworkspace-gpuuintbiginteger-int32-gpuuintbiginteger)                           | Computes left bit shift on GPU.                                        |
+| [ShiftRight(GpuWorkspace, GpuUIntBigInteger, Int32, GpuUIntBigInteger)](#shiftrightgpuworkspace-gpuuintbiginteger-int32-gpuuintbiginteger)                         | Computes right bit shift on GPU.                                       |
+| [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32)                                                                                            | Computes in-place self squaring on GPU.                                |
+| [Gcd(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#gcdgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes Greatest Common Divisor on GPU.                               |
+| [IsZero(GpuWorkspace, GpuUIntBigInteger)](#iszerogpuworkspace-gpuuintbiginteger)                                                                                   | Checks whether operand equals zero on GPU.                             |
+| [IsOne(GpuWorkspace, GpuUIntBigInteger)](#isonegpuworkspace-gpuuintbiginteger)                                                                                     | Checks whether operand equals one on GPU.                              |
+| [GetBitLength(GpuWorkspace, GpuUIntBigInteger)](#getbitlengthgpuworkspace-gpuuintbiginteger)                                                                       | Gets the bit length of the operand on GPU.                             |
+| [CompareTo(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger)](#comparetogpuworkspace-gpuuintbiginteger-gpuuintbiginteger)                                        | Compares two operands on GPU.                                          |
 
 ## AllocateMemory(Int32)
 
@@ -140,18 +140,18 @@ The source pointer on the device.
 `numWords` _Int32_<br>
 The number of 32-bit words to copy.
 
-## Add(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## Add(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes addition on GPU.
 
 ```csharp
-void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void Add(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -162,18 +162,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## Sub(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## Sub(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes subtraction on GPU.
 
 ```csharp
-void Sub(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void Sub(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -184,18 +184,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## Mul(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## Mul(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes multiplication on GPU.
 
 ```csharp
-void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void Mul(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -206,18 +206,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## Add(GpuContext, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)
+## Add(GpuWorkspace, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)
 
 Computes scalar addition on GPU.
 
 ```csharp
-void Add(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
+void Add(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -228,18 +228,18 @@ The scalar second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## Sub(GpuContext, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)
+## Sub(GpuWorkspace, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)
 
 Computes scalar subtraction on GPU.
 
 ```csharp
-void Sub(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
+void Sub(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -250,18 +250,18 @@ The scalar second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## Mul(GpuContext, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)
+## Mul(GpuWorkspace, GpuUIntBigInteger, UInt32, GpuUIntBigInteger)
 
 Computes scalar multiplication on GPU.
 
 ```csharp
-void Mul(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
+void Mul(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -272,18 +272,18 @@ The scalar second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## BitwiseAnd(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## BitwiseAnd(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes bitwise AND on GPU.
 
 ```csharp
-void BitwiseAnd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void BitwiseAnd(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -294,18 +294,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## BitwiseOr(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## BitwiseOr(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes bitwise OR on GPU.
 
 ```csharp
-void BitwiseOr(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void BitwiseOr(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -316,18 +316,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## BitwiseXor(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## BitwiseXor(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes bitwise XOR on GPU.
 
 ```csharp
-void BitwiseXor(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void BitwiseXor(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -338,18 +338,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## BitwiseNot(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger)
+## BitwiseNot(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes bitwise NOT on GPU.
 
 ```csharp
-void BitwiseNot(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer);
+void BitwiseNot(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The operand.
@@ -357,18 +357,18 @@ The operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## ShiftLeft(GpuContext, GpuUIntBigInteger, Int32, GpuUIntBigInteger)
+## ShiftLeft(GpuWorkspace, GpuUIntBigInteger, Int32, GpuUIntBigInteger)
 
 Computes left bit shift on GPU.
 
 ```csharp
-void ShiftLeft(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
+void ShiftLeft(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The operand to shift.
@@ -379,18 +379,18 @@ The number of bits to shift.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## ShiftRight(GpuContext, GpuUIntBigInteger, Int32, GpuUIntBigInteger)
+## ShiftRight(GpuWorkspace, GpuUIntBigInteger, Int32, GpuUIntBigInteger)
 
 Computes right bit shift on GPU.
 
 ```csharp
-void ShiftRight(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
+void ShiftRight(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The operand to shift.
@@ -401,18 +401,18 @@ The number of bits to shift.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## Square(GpuContext, IntPtr, Int32)
+## Square(GpuWorkspace, IntPtr, Int32)
 
 Computes in-place self squaring on GPU.
 
 ```csharp
-bool Square(GpuContext context, IntPtr devicePointer, int logicalWords);
+bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `devicePointer` _IntPtr_<br>
 The pointer to the device memory containing the operand.
@@ -425,18 +425,18 @@ The logical number of words of the operand.
 _Boolean_<br>
 `true` if successful; otherwise, `false`.
 
-## Gcd(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## Gcd(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Computes Greatest Common Divisor on GPU.
 
 ```csharp
-void Gcd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+void Gcd(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -447,18 +447,18 @@ The second operand.
 `resultBuffer` _GpuUIntBigInteger_<br>
 The buffer to store the result.
 
-## IsZero(GpuContext, GpuUIntBigInteger)
+## IsZero(GpuWorkspace, GpuUIntBigInteger)
 
 Checks whether operand equals zero on GPU.
 
 ```csharp
-bool IsZero(GpuContext context, GpuUIntBigInteger leftOperand);
+bool IsZero(GpuWorkspace workspace, GpuUIntBigInteger leftOperand);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The operand to check.
@@ -468,18 +468,18 @@ The operand to check.
 _Boolean_<br>
 `true` if the operand is zero; otherwise, `false`.
 
-## IsOne(GpuContext, GpuUIntBigInteger)
+## IsOne(GpuWorkspace, GpuUIntBigInteger)
 
 Checks whether operand equals one on GPU.
 
 ```csharp
-bool IsOne(GpuContext context, GpuUIntBigInteger leftOperand);
+bool IsOne(GpuWorkspace workspace, GpuUIntBigInteger leftOperand);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The operand to check.
@@ -489,18 +489,18 @@ The operand to check.
 _Boolean_<br>
 `true` if the operand is one; otherwise, `false`.
 
-## GetBitLength(GpuContext, GpuUIntBigInteger)
+## GetBitLength(GpuWorkspace, GpuUIntBigInteger)
 
 Gets the bit length of the operand on GPU.
 
 ```csharp
-int GetBitLength(GpuContext context, GpuUIntBigInteger leftOperand);
+int GetBitLength(GpuWorkspace workspace, GpuUIntBigInteger leftOperand);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The operand.
@@ -510,18 +510,18 @@ The operand.
 _Int32_<br>
 The bit length.
 
-## CompareTo(GpuContext, GpuUIntBigInteger, GpuUIntBigInteger)
+## CompareTo(GpuWorkspace, GpuUIntBigInteger, GpuUIntBigInteger)
 
 Compares two operands on GPU.
 
 ```csharp
-int CompareTo(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand);
+int CompareTo(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `leftOperand` _GpuUIntBigInteger_<br>
 The first operand.
@@ -540,7 +540,7 @@ A signed integer that indicates the relative values of the operands.
 
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Architecture
 
@@ -560,14 +560,14 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
-using var context = new GpuContext(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
-IGpuExecutionProvider provider = context.Provider;
+using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
+IGpuExecutionProvider provider = workspace.Provider;
 
-using var a = new GpuUIntBigInteger(context, new uint[] { 100 });
-using var b = new GpuUIntBigInteger(context, new uint[] { 50 });
-using var result = new GpuUIntBigInteger(context, 1);
+using var a = new GpuUIntBigInteger(workspace, new uint[] { 100 });
+using var b = new GpuUIntBigInteger(workspace, new uint[] { 50 });
+using var result = new GpuUIntBigInteger(workspace, 1);
 
-provider.BitwiseOr(context, a, b, result);
+provider.BitwiseOr(workspace, a, b, result);
 
 uint[] hostResult = new uint[1];
 provider.CopyDeviceToHost(hostResult, result.DevicePointer, 1);

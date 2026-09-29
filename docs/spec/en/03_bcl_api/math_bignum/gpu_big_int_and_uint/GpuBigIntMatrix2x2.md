@@ -33,20 +33,20 @@ This matrix structure is used to accelerate the Half-GCD (HGCD), Lehmer's GCD, a
 
 | Name | Description |
 | --- | --- |
-| [GpuBigIntMatrix2x2(GpuContext, int, bool)](#gpubigintmatrix2x2gpucontext-int-bool) | Initializes a new instance of the `GpuBigIntMatrix2x2` class with uninitialized memory for each matrix element. |
+| [GpuBigIntMatrix2x2(GpuWorkspace, int, bool)](#gpubigintmatrix2x2gpuworkspace-int-bool) | Initializes a new instance of the `GpuBigIntMatrix2x2` class with uninitialized memory for each matrix element. |
 
-## GpuBigIntMatrix2x2(GpuContext, int, bool)
+## GpuBigIntMatrix2x2(GpuWorkspace, int, bool)
 
 Initializes a new instance of the `GpuBigIntMatrix2x2` class with uninitialized memory for each matrix element.
 
 ```csharp
-public GpuBigIntMatrix2x2(GpuContext context, int numWords, bool isOddStep);
+public GpuBigIntMatrix2x2(GpuWorkspace workspace, int numWords, bool isOddStep);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The parent GPU execution context. Cannot be `null`.
+`workspace` _GpuWorkspace_<br>
+The parent GPU execution workspace. Cannot be `null`.
 
 `numWords` _int_<br>
 The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.
@@ -57,7 +57,7 @@ A value indicating whether this transition matrix represents an odd number of re
 #### Exceptions
 
 `ArgumentNullException`<br>
-Thrown when `context` is `null`.
+Thrown when `workspace` is `null`.
 
 `ArgumentOutOfRangeException`<br>
 Thrown when `numWords` is less than or equal to zero.
@@ -69,19 +69,19 @@ Thrown when GPU global memory allocation fails for any of the matrix elements.
 
 | Name | Description |
 | --- | --- |
-| [Context](#context) | Gets the parent `GpuContext` managing the GPU device memory and execution provider for this matrix. |
+| [Workspace](#workspace) | Gets the parent `GpuWorkspace` managing the GPU device memory and execution provider for this matrix. |
 | [IsOddStep](#isoddstep) | Gets a value indicating whether this matrix represents an odd number of reduction steps in the Euclidean algorithm. |
 | [M00](#m00) | Gets the `GpuUIntBigInteger` element located at row 0, column 0 in GPU device memory. |
 | [M01](#m01) | Gets the `GpuUIntBigInteger` element located at row 0, column 1 in GPU device memory. |
 | [M10](#m10) | Gets the `GpuUIntBigInteger` element located at row 1, column 0 in GPU device memory. |
 | [M11](#m11) | Gets the `GpuUIntBigInteger` element located at row 1, column 1 in GPU device memory. |
 
-## Context
+## Workspace
 
-Gets the parent `GpuContext` managing the GPU device memory and execution provider for this matrix.
+Gets the parent `GpuWorkspace` managing the GPU device memory and execution provider for this matrix.
 
 ```csharp
-public GpuContext Context { get; }
+public GpuWorkspace Context { get; }
 ```
 
 ## IsOddStep
@@ -128,23 +128,23 @@ public GpuUIntBigInteger M11 { get; }
 
 | Name | Description |
 | --- | --- |
-| [Identity(GpuContext, int)](#identitygpucontext-int) | Creates and initializes a 2x2 identity matrix in GPU device memory. |
+| [Identity(GpuWorkspace, int)](#identitygpuworkspace-int) | Creates and initializes a 2x2 identity matrix in GPU device memory. |
 | [Multiply(GpuBigIntMatrix2x2, GpuBigIntMatrix2x2)](#multiplygpubigintmatrix2x2-gpubigintmatrix2x2) | Multiplies two 2x2 GPU BigInteger matrices and returns their product. |
 | [Apply(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#applygpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Applies this 2x2 reduction matrix to a pair of GPU integers. |
 | [Dispose()](#dispose) | Disposes all four constituent instances and releases GPU memory. |
 
-## Identity(GpuContext, int)
+## Identity(GpuWorkspace, int)
 
 Creates and initializes a 2x2 identity matrix ($I = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}$) in GPU device memory.
 
 ```csharp
-public static GpuBigIntMatrix2x2 Identity(GpuContext context, int numWords);
+public static GpuBigIntMatrix2x2 Identity(GpuWorkspace workspace, int numWords);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The parent GPU execution context. Cannot be `null`.
+`workspace` _GpuWorkspace_<br>
+The parent GPU execution workspace. Cannot be `null`.
 
 `numWords` _int_<br>
 The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.
@@ -157,7 +157,7 @@ A new `GpuBigIntMatrix2x2` instance representing the identity matrix.
 #### Exceptions
 
 `ArgumentNullException`<br>
-Thrown when `context` is `null`.
+Thrown when `workspace` is `null`.
 
 `ArgumentOutOfRangeException`<br>
 Thrown when `numWords` is less than or equal to zero.
@@ -192,7 +192,7 @@ A new `GpuBigIntMatrix2x2` instance containing the product of `v` and `u`.
 Thrown when `v` or `u` is `null`.
 
 `ArgumentException`<br>
-Thrown when `v` and `u` belong to different `GpuContext` instances.
+Thrown when `v` and `u` belong to different `GpuWorkspace` instances.
 
 ## Apply(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
@@ -222,7 +222,7 @@ The destination to receive the transformed second element. Cannot be `null`.
 Thrown when `a`, `b`, `outA`, or `outB` is `null`.
 
 `ArgumentException`<br>
-Thrown when any argument does not belong to the same `GpuContext` as this matrix.
+Thrown when any argument does not belong to the same `GpuWorkspace` as this matrix.
 
 ## Dispose()
 
@@ -246,16 +246,16 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 // Execution Context: Host (CPU)
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-using var mat1 = GpuBigIntMatrix2x2.Identity(context, 4);
-using var mat2 = GpuBigIntMatrix2x2.Identity(context, 4);
+using var mat1 = GpuBigIntMatrix2x2.Identity(workspace, 4);
+using var mat2 = GpuBigIntMatrix2x2.Identity(workspace, 4);
 using var matResult = GpuBigIntMatrix2x2.Multiply(mat1, mat2);
 
-using var a = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(100), minWords: 4);
-using var b = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(20), minWords: 4);
-using var outA = new GpuUIntBigInteger(context, 4);
-using var outB = new GpuUIntBigInteger(context, 4);
+using var a = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
+using var b = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(20), minWords: 4);
+using var outA = new GpuUIntBigInteger(workspace, 4);
+using var outB = new GpuUIntBigInteger(workspace, 4);
 
 matResult.Apply(a, b, outA, outB);
 Console.WriteLine($"outA = {outA.ToBigInteger(false)}");

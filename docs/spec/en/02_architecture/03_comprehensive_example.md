@@ -259,11 +259,11 @@ public static partial class ComprehensiveSpecKernel
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var a = new GpuUIntBigInteger(context, 1024);
-        using var b = new GpuUIntBigInteger(context, 1024);
-        using var result = new GpuUIntBigInteger(context, 1024);
+        using var a = new GpuUIntBigInteger(workspace, 1024);
+        using var b = new GpuUIntBigInteger(workspace, 1024);
+        using var result = new GpuUIntBigInteger(workspace, 1024);
 
         // AST Construction: evaluated lazily and dispatched to GPU
         result.Value = a + b;

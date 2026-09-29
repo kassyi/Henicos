@@ -78,7 +78,7 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 * **[BigNum Overview](math_bignum/00_index.md)**
 * **[GPU Big Integer (Signed & Unsigned)](math_bignum/gpu_big_int_and_uint/00_index.md)**
 * **[GPU Big Float](math_bignum/gpu_big_float/00_index.md)**
-* **[GPU Execution Contexts](math_bignum/gpu_context/GpuContext.md)**
+* **[GPU Execution Contexts](math_bignum/gpu_workspace/GpuWorkspace.md)**
 
 ## See also
 

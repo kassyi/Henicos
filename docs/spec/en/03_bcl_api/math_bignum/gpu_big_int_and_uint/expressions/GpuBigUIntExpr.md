@@ -71,7 +71,7 @@ A lazy AST node representing the square root.
 
 ## Remarks
 
-This struct serves as the frontend for operator overloading on GPU Unsigned BigIntegers, avoiding intermediate allocations by building a lightweight AST. The evaluation rents memory from the `GpuContext` buffer pool transparently.
+This struct serves as the frontend for operator overloading on GPU Unsigned BigIntegers, avoiding intermediate allocations by building a lightweight AST. The evaluation rents memory from the `GpuWorkspace` buffer pool transparently.
 
 ## Examples
 
@@ -90,12 +90,12 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 // Execution Context: Host (CPU)
-// Allocate a GPU execution context with 1024 words (4KB) of memory pool.
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+// Allocate a GPU workspace with 1024 words (4KB) of memory pool.
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Upload initial buffers to the GPU device
-using var uintA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(100), minWords: 4);
-using var uintB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(200), minWords: 4);
+using var uintA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
+using var uintB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(200), minWords: 4);
 
 // Build AST node lazy expression wrapper
 GpuBigUIntExpr exprA = uintA;
@@ -106,8 +106,8 @@ var sumExpr = exprA + exprB;
 var prodExpr = sumExpr * exprA;
 
 // Evaluate AST back to a magnitude buffer
-using var dest = new GpuUIntBigInteger(context, 8);
-var finalResult = prodExpr.Node.Evaluate(context, dest);
+using var dest = new GpuUIntBigInteger(workspace, 8);
+var finalResult = prodExpr.Node.Evaluate(workspace, dest);
 
 Console.WriteLine($"Result={finalResult.ToBigInteger(false)}");
 ```

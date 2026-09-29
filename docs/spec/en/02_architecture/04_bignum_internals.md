@@ -204,7 +204,7 @@ The module utilizes a highly decoupled **Multi-Engine Execution Model** (`GpuExe
 
 ```mermaid
 flowchart LR
-    Host["C# GpuBigInteger (Host Wrapper)"] --> Context["GpuContext"]
+    Host["C# GpuBigInteger (Host Wrapper)"] --> Context["GpuWorkspace"]
     Context -->|Provider| Native["LegacyNative (C++ Backend)"]
     Context -->|Provider| AOT["GSharpAot (Pure C# JIT)"]
     Context -->|Provider| CPU["CpuFallback (Native CPU)"]
@@ -217,11 +217,11 @@ flowchart LR
 
 ### Execution Strategy & Memory Management
 
-When `.Evaluate()` is called, the expression tree is executed using an optimized plan managed by `GpuContext`.
+When `.Evaluate()` is called, the expression tree is executed using an optimized plan managed by `GpuWorkspace`.
 
 ```mermaid
 flowchart TD
-    Eval[".Evaluate()"] --> Ctx["GpuContext"]
+    Eval[".Evaluate()"] --> Ctx["GpuWorkspace"]
     Ctx --> Pool["Buffer Pooling (RentTemp)\nZero cudaMalloc overhead"]
     Ctx --> Workspace["WorkspacePointer (IntPtr)\nThread-safe, no global state"]
     Pool --> Engine["GpuExecutionEngine"]

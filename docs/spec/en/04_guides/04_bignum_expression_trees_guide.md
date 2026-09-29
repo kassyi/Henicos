@@ -20,7 +20,7 @@ When you use operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`), the opera
 
 > [!WARNING]
 > **Host-Side Allocations Occur Here**
-> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads *does* allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
+> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuWorkspace` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads *does* allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
 
 **Example: Comprehensive Expression Tree**
 ```csharp
@@ -29,7 +29,7 @@ When you use operator overloads (`+`, `-`, `*`, `/`, `<<`, `>>`, `&`), the opera
 var expr = (gpuA + gpuB) * gpuC - gpuA;
 
 // 2. Evaluate the tree and return the result as a new buffer
-using var gpuResult = expr.Node.Evaluate(context, null);
+using var gpuResult = expr.Node.Evaluate(workspace, null);
 ```
 
 This ensures that intermediate buffers can be efficiently reused, and the sequence of kernel dispatches can be pipelined optimally.
@@ -48,7 +48,7 @@ To prevent this, the G# Roslyn Analyzer introduces **GSH0005** (`GpuBigIntExpr` 
 // GpuBigIntExpr recipe = (gpuA + gpuB) * gpuC - gpuA;
 
 // ✨ CORRECT: Enforced evaluation
-using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Node.Evaluate(context, null);
+using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Node.Evaluate(workspace, null);
 ```
 
 ---
@@ -66,10 +66,10 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 public static void EvaluateBigInt(uint[] hostData, int dynamicValue)
 {
     // 'a' has a dynamically resolved sign at runtime based on 'dynamicValue'
-    using var gpuA = new GpuUIntBigInteger<L1024>(context);
+    using var gpuA = new GpuUIntBigInteger<L1024>(workspace);
     gpuA.SetFrom(dynamicValue);
     GpuBigIntExpr a = gpuA;
-    using var gpuB = new GpuUIntBigInteger<L1024>(context);
+    using var gpuB = new GpuUIntBigInteger<L1024>(workspace);
     gpuB.SetFrom(42);
     GpuBigIntExpr b = gpuB; 
     

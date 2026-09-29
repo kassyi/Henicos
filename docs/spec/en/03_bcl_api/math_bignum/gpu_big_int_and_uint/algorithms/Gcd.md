@@ -59,15 +59,15 @@ using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
-using var context = new GpuContext(1024);
+using var workspace = new GpuWorkspace(1024);
 
-var aVal = GpuUIntBigInteger.FromBigInteger(context, BigInteger.Parse("123456789"));
-var bVal = GpuUIntBigInteger.FromBigInteger(context, BigInteger.Parse("987654321"));
+var aVal = GpuUIntBigInteger.FromBigInteger(workspace, BigInteger.Parse("123456789"));
+var bVal = GpuUIntBigInteger.FromBigInteger(workspace, BigInteger.Parse("987654321"));
 
 var gpuA = new GpuBigInteger(aVal, false);
 var gpuB = new GpuBigInteger(bVal, false);
 
-using var result = new GpuUIntBigInteger(context, aVal.NumWords);
+using var result = new GpuUIntBigInteger(workspace, aVal.NumWords);
 
 // Calculate GCD on the GPU
 GpuBigIntMath.Gcd(gpuA.Value, gpuB.Value, result);
@@ -77,7 +77,7 @@ Console.WriteLine($"GCD Result Size: {result.NumWords} words.");
 
 ## Remarks
 
-This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi-word arithmetic on the GPU. Because this operation requires substantial temporary memory for intermediate divisions, it uses the `GpuContext` memory pool instead of `cudaMalloc`.
+This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi-word arithmetic on the GPU. Because this operation requires substantial temporary memory for intermediate divisions, it uses the `GpuWorkspace` memory pool instead of `cudaMalloc`.
 
 ## HalfGcdCpuReference Class
 

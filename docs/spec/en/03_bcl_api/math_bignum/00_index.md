@@ -15,14 +15,14 @@ The `Kassyi.GSharp.Stdlib.Math` namespace provides high-performance, arbitrary-p
 >
 > The `Stdlib.Math` library offers two distinct execution models:
 >
-> 1. **Host-Orchestrated (Dynamic Precision)**: Types like the non-generic `GpuBigInteger` rely on `GpuContext` memory pools and coordinate thousands of limbs for million-bit arithmetic. These are **Host-Side Only** and cannot be used inside `[GpuKernel]`.
+> 1. **Host-Orchestrated (Dynamic Precision)**: Types like the non-generic `GpuBigInteger` rely on `GpuWorkspace` memory pools and coordinate thousands of limbs for million-bit arithmetic. These are **Host-Side Only** and cannot be used inside `[GpuKernel]`.
 > 2. **GPU-Direct (Fixed Precision)**: Types like `GpuBigFloat<TSize>` and `GpuUIntBigInteger<TSize>` use C# 12 `[InlineArray]` (e.g., `LimbBuffer8`) to allocate fixed-size buffers directly on the stack/registers. These are **100% Zero-Allocation** and execute natively _inside_ `[GpuKernel]`.
 
 ## Namespaces and Components
 
 This module is split into several logical sub-components:
 
-1. **[GpuContext](gpu_context/GpuContext.md)**
+1. **[GpuWorkspace](gpu_workspace/GpuWorkspace.md)**
    The core memory pool and execution state manager required for all lazy-evaluated expressions and multi-precision operations.
 
 2. **[Arbitrary-Precision Integers (GpuBigInt)](gpu_big_int_and_uint/00_index.md)**
@@ -59,14 +59,14 @@ G# enforces a strict Zero-Allocation rule inside GPU kernels. The `Stdlib.Math` 
     ```
 
 - **Host-Orchestrated Types**:
-  Relies entirely on pre-allocated device memory managed by a `GpuContext`. Temporary buffers are checked out from the context's memory pool and recycled instantly, eliminating `cudaMalloc` overhead during execution.
+  Relies entirely on pre-allocated device memory managed by a `GpuWorkspace`. Temporary buffers are checked out from the workspace's memory pool and recycled instantly, eliminating `cudaMalloc` overhead during execution.
 
 > [!IMPORTANT]
 > **Fixed-Size Limits vs. True Arbitrary Precision**
 >
 > While the GPU-Direct `<TSize>` variants are incredibly fast and memory-efficient (zero-allocation), they are fundamentally **fixed-size** (e.g., 256-bit or 512-bit). If a calculation exceeds the maximum capacity of `TSize`, **the higher-order bits are silently truncated**.
 >
-> The _true_ power of GSharp's BigNum implementation lies in the **Host-Orchestrated** model. By using `GpuContext`, you unlock truly arbitrary precision (capable of handling numbers with millions of bits) that seamlessly coordinates distributed computations across thousands of GPU threads without truncation.
+> The _true_ power of GSharp's BigNum implementation lies in the **Host-Orchestrated** model. By using `GpuWorkspace`, you unlock truly arbitrary precision (capable of handling numbers with millions of bits) that seamlessly coordinates distributed computations across thousands of GPU threads without truncation.
 
 ## See also
 

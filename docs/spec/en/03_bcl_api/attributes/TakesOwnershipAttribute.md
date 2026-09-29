@@ -11,12 +11,12 @@ The **`TakesOwnershipAttribute`** marks a dependency-injected GPU resource as be
 ## Syntax
 
 ```csharp
-public ClassConstructor([TakesOwnership] GpuContext context)
+public ClassConstructor([TakesOwnership] GpuWorkspace workspace)
 ```
 
 ## Remarks
 
-- **Borrowing (Default)**: By default, injecting a disposable GPU resource (like `GpuContext` or `GpuBuffer<T>`) into a constructor implies **Borrowing**. The analyzer (e.g., `GSH0020`, `GSH0021`) enforces that borrowed resources must *not* be disposed by the receiving class to prevent double-free errors.
+- **Borrowing (Default)**: By default, injecting a disposable GPU resource (like `GpuWorkspace` or `GpuBuffer<T>`) into a constructor implies **Borrowing**. The analyzer (e.g., `GSH0020`, `GSH0021`) enforces that borrowed resources must *not* be disposed by the receiving class to prevent double-free errors.
 - **Ownership Transfer**: Applying `[TakesOwnership]` explicitly transfers ownership to the receiving class. The analyzer then strictly enforces that the receiving class must implement `IDisposable` and must properly dispose of the resource in its `Dispose` method.
 
 ## Examples
@@ -38,10 +38,10 @@ Example.Run();
 
 public class ComputePipeline : IDisposable
 {
-    private readonly GpuContext _context;
+    private readonly GpuWorkspace _context;
 
     // Explicitly takes ownership of the injected context
-    public ComputePipeline([TakesOwnership] GpuContext context)
+    public ComputePipeline([TakesOwnership] GpuWorkspace workspace)
     {
         _context = context;
     }
@@ -87,7 +87,7 @@ public class Example
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../math_bignum/00_index.md)
-- [GpuContext Class (G#)](../math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace Class (G#)](../math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Guides
 

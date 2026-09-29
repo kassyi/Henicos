@@ -51,18 +51,18 @@ A tuple containing two AST nodes. Evaluating them produces the respective quotie
 ```csharp
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(1024);
+using var workspace = new GpuWorkspace(1024);
 
-var dividend = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, ...));
-var divisor = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, ...));
+var dividend = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, ...));
+var divisor = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, ...));
 
 // 1. Build the Expression Trees
 var (quotientExpr, remainderExpr) = GpuBigIntDivRem.DivRem(dividend, divisor);
 
-// 2. Evaluate both using the context pool
+// 2. Evaluate both using the workspace pool
 // The GPU executes the division kernel once and extracts both results.
-using var quotient = quotientExpr.Node.Evaluate(context, null);
-using var remainder = remainderExpr.Node.Evaluate(context, null);
+using var quotient = quotientExpr.Node.Evaluate(workspace, null);
+using var remainder = remainderExpr.Node.Evaluate(workspace, null);
 
 Console.WriteLine($"Q: {quotient.ToBigInteger()}, R: {remainder.ToBigInteger()}");
 ```

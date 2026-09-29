@@ -82,7 +82,7 @@ Console.WriteLine("GpuBigIntGcdKernels contains static kernel endpoints for GCD 
 
 ## Remarks
 
-This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. These methods cannot be executed directly on the CPU (Host). They are transpiled to CUDA PTX/SASS by the G# Roslyn Source Generator and launched via the `GpuContext`.
+This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. These methods cannot be executed directly on the CPU (Host). They are transpiled to CUDA PTX/SASS by the G# Roslyn Source Generator and launched via the `GpuWorkspace`.
 
 ## See also
 
@@ -90,7 +90,7 @@ This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. 
 
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### BCL API > GPU Class
 

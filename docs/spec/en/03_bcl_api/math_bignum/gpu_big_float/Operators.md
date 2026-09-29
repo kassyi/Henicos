@@ -162,7 +162,7 @@ public class Example
 // TODO: This feature is currently tracked in Issue #194
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(maxWords: 16); // 512-bit precision
+using var workspace = new GpuWorkspace(maxWords: 16); // 512-bit precision
 
 var cReal = new GpuBigFloat(1.234);
 var cImag = new GpuBigFloat(5.678);
@@ -175,7 +175,7 @@ var zImag = new GpuBigFloat(0.0);
 var zRealNewExpr = (zReal * zReal) - (zImag * zImag) + cReal;
 
 // Evaluate dynamically
-using var zRealNew = zRealNewExpr.Node.Evaluate(context, null);
+using var zRealNew = zRealNewExpr.Node.Evaluate(workspace, null);
 */
 ```
 

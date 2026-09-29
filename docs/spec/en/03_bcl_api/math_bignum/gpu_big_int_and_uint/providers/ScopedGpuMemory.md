@@ -87,7 +87,7 @@ Ensures deterministic deallocation of temporary GPU memory buffers upon exiting 
 
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Architecture
 
@@ -102,9 +102,9 @@ using System;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 
-// Initialize GPU context
-using var context = new GpuContext(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
-var provider = context.Provider;
+// Initialize GPU workspace
+using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
+var provider = workspace.Provider;
 
 // Create a scoped GPU memory allocation
 using (var memory = new ScopedGpuMemory(provider, numWords: 256))

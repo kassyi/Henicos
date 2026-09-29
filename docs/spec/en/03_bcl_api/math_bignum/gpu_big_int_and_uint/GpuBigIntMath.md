@@ -37,7 +37,7 @@ public static class GpuBigIntMath
 | [BitwiseXor(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#bitwisexorgpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Performs bitwise XOR on the GPU. |
 | [BitwiseNot(GpuUIntBigInteger, GpuUIntBigInteger)](#bitwisenotgpuuintbiginteger-gpuuintbiginteger) | Performs bitwise NOT on the GPU. |
 | [IsLessThan(GpuUIntBigInteger, GpuUIntBigInteger)](#islessthangpuuintbiginteger-gpuuintbiginteger) | Determines whether `leftOperand` is strictly less than `rightOperand` on the GPU. |
-| [Pow10(GpuContext, int)](#pow10gpucontext-int) | Computes 10 raised to the specified exponent on the GPU using exponentiation by squaring. |
+| [Pow10(GpuWorkspace, int)](#pow10gpuworkspace-int) | Computes 10 raised to the specified exponent on the GPU using exponentiation by squaring. |
 
 ## Add(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
 
@@ -349,18 +349,18 @@ The second operand.
 _bool_<br>
 `true` if `leftOperand` is less than `rightOperand`; otherwise, `false`.
 
-## Pow10(GpuContext, int)
+## Pow10(GpuWorkspace, int)
 
 Computes 10 raised to the specified exponent on the GPU using exponentiation by squaring.
 
 ```csharp
-public static GpuUIntBigInteger Pow10(GpuContext context, int exponent);
+public static GpuUIntBigInteger Pow10(GpuWorkspace workspace, int exponent);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `exponent` _int_<br>
 The exponent.
@@ -389,12 +389,12 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 // Execution Context: Host (CPU)
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Setup initial values
-using var valA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(150), minWords: 4);
-using var valB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(50), minWords: 4);
-using var valSum = new GpuUIntBigInteger(context, 4);
+using var valA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(150), minWords: 4);
+using var valB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(50), minWords: 4);
+using var valSum = new GpuUIntBigInteger(workspace, 4);
 
 // Execute addition
 GpuBigIntMath.Add(valA, valB, valSum);
@@ -404,7 +404,7 @@ GpuBigIntMath.Sub(valA, valB, valSum);
 Console.WriteLine($"Sub={valSum.ToBigInteger(false)}");
 
 // Execute multiplication (needs sum of words for buffer)
-using var valMul = new GpuUIntBigInteger(context, 8);
+using var valMul = new GpuUIntBigInteger(workspace, 8);
 GpuBigIntMath.Mul(valA, valB, valMul);
 Console.WriteLine($"Mul={valMul.ToBigInteger(false)}");
 ```

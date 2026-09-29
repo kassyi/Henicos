@@ -11,7 +11,7 @@ As explained in the earlier guides, `GpuBigInteger` and `GpuBigFloat` are strict
 Every advanced algorithm in `Stdlib.Math` must follow this three-step orchestration pattern on the Host CPU:
 
 1. **Sign Evaluation**: Determine the sign of the output based on the input arguments' `.IsNegative` flags.
-2. **Buffer Checkout**: Checkout temporary unsigned memory buffers (`GpuUIntBigInteger`) from the `GpuContext` memory pool.
+2. **Buffer Checkout**: Checkout temporary unsigned memory buffers (`GpuUIntBigInteger`) from the `GpuWorkspace` memory pool.
 3. **Execution Dispatch**: Dispatch the unsigned math to the GPU, either by reusing existing AST operators or launching a custom `[GpuKernel]`.
 
 Here is the architectural template for a new algorithm, let's call it `MyCustomMath`:
@@ -26,14 +26,14 @@ using Kassyi.GSharp.Stdlib.Math.Contexts;
 public static class MyCustomMath
 {
     // The public API always runs on the Host CPU and accepts the signed wrapper
-    public static GpuBigInteger Compute(GpuContext context, GpuBigInteger a, GpuBigInteger b)
+    public static GpuBigInteger Compute(GpuWorkspace workspace, GpuBigInteger a, GpuBigInteger b)
     {
         // 1. Sign Evaluation (Host-Side)
         bool isResultNegative = a.IsNegative ^ b.IsNegative; // Example: XOR logic for multiplication-like operations
 
         // 2. Dispatch Unsigned Logic
-        using var finalResult = new GpuUIntBigInteger(context, context.MaxWords);
-        DispatchUnsignedLogic(context, a.Value, b.Value, finalResult);
+        using var finalResult = new GpuUIntBigInteger(workspace, workspace.MaxWords);
+        DispatchUnsignedLogic(workspace, a.Value, b.Value, finalResult);
         GpuUIntBigInteger absoluteResult = finalResult;
 
         // 3. Return a new Signed Wrapper
@@ -41,7 +41,7 @@ public static class MyCustomMath
     }
 
     // Implementation depends on chosen strategy (see below)
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
+    private static void DispatchUnsignedLogic(GpuWorkspace workspace, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
         => throw new NotImplementedException();
 }
 ```
@@ -78,7 +78,7 @@ public static class MyCustomMath_StrategyA
 {
     // ... Compute() method from above ...
 
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
+    private static void DispatchUnsignedLogic(GpuWorkspace workspace, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
     {
         // Re-wrap temporarily just to build the AST
         var tempA = new GpuBigInteger(uA);
@@ -88,7 +88,7 @@ public static class MyCustomMath_StrategyA
         var expr = (tempA * tempA) + (tempB * tempB);
 
         // Let the GSharp runtime automatically pool memory and fuse kernels!
-        using var evalResult = expr.Evaluate(context, null);
+        using var evalResult = expr.Evaluate(workspace, null);
         // copy result into output buffer
     }
 }
@@ -148,7 +148,7 @@ for (int i = 0; i < 1000; i++)
 ```
 
 **✅ Good: Hoisting Allocations and Using Context-Bound Types**
-Allocate `GpuUIntBigInteger` buffers once, outside of your hot loops, and reuse them across dispatches. These types encapsulate the underlying `GpuBuffer` and ensure sizes remain strictly compatible with the `GpuContext`.
+Allocate `GpuUIntBigInteger` buffers once, outside of your hot loops, and reuse them across dispatches. These types encapsulate the underlying `GpuBuffer` and ensure sizes remain strictly compatible with the `GpuWorkspace`.
 
 ```csharp
 // Execution Context: Host (CPU)
@@ -160,17 +160,17 @@ public static class MyCustomMath_StrategyB
 {
     // ... Compute() method from above ...
 
-    private static void DispatchUnsignedLogic(GpuContext context, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
+    private static void DispatchUnsignedLogic(GpuWorkspace workspace, GpuUIntBigInteger uA, GpuUIntBigInteger uB, GpuUIntBigInteger finalResult)
     {
         // 1. Allocate context-bound temporary buffers (do this outside loops in real apps)
-        using var scratch1 = new GpuUIntBigInteger(context, context.MaxWords);
-        using var scratch2 = new GpuUIntBigInteger(context, context.MaxWords);
+        using var scratch1 = new GpuUIntBigInteger(workspace, workspace.MaxWords);
+        using var scratch2 = new GpuUIntBigInteger(workspace, workspace.MaxWords);
 
         // 2. Dispatch your custom kernel via the auto-generated wrapper method.
         // The GSharp Source Generator automatically injects Launch{MethodName}
         // methods into the <KernelClass>Wrapper for any [GpuKernel].
         MyCustomMathKernelsWrapper.LaunchMyCustomUnsignedKernel(
-            uA.DevicePointer, uB.DevicePointer, finalResult.DevicePointer, context.MaxWords,
+            uA.DevicePointer, uB.DevicePointer, finalResult.DevicePointer, workspace.MaxWords,
             gridDimX: 1, blockDimX: 1
         );
     }
@@ -181,7 +181,7 @@ public static class MyCustomMath_StrategyB
 
 ## Summary
 
-By properly isolating the **Host-Side Sign Evaluation** from the **GPU-Side Unsigned Math**, and rigorously utilizing the `GpuContext` memory pool, you can seamlessly extend GSharp's `Stdlib.Math` library with any advanced algorithm imaginable.
+By properly isolating the **Host-Side Sign Evaluation** from the **GPU-Side Unsigned Math**, and rigorously utilizing the `GpuWorkspace` memory pool, you can seamlessly extend GSharp's `Stdlib.Math` library with any advanced algorithm imaginable.
 
 ## See also
 
