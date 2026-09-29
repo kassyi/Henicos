@@ -144,6 +144,12 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
+    public override void VisitEqualsValueClause(EqualsValueClauseSyntax node)
+    {
+        // Transpiler rules manually extract the underlying Value expression (e.g., in variable declarations)
+        // or ignore it (e.g., in parameter default values). Therefore, we intentionally do not traverse it.
+    }
+
     /// <inheritdoc />
     public override void VisitParameterList(ParameterListSyntax node)
     {
