@@ -62,7 +62,7 @@ __device__ __forceinline__ unsigned int ModMulMontgomery_PTX(unsigned int a, uns
     return res_hi;
 }
 
-__global__ void Kernel_BenchmarkMul(unsigned int* dataA, unsigned int* dataB, unsigned int* dataOut, int n, unsigned int p, unsigned long long pm) {
+__global__ void Kernel_BenchmarkMul(unsigned int* dataA, unsigned int* dataB, unsigned int* dataOut, int n, unsigned int p = 3221225473u, unsigned long long pm = 13915155169623190ull) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < n) {
         unsigned int a = dataA[idx];
@@ -74,7 +74,7 @@ __global__ void Kernel_BenchmarkMul(unsigned int* dataA, unsigned int* dataB, un
     }
 }
 
-__global__ void Kernel_BenchmarkMont(unsigned int* dataA, unsigned int* dataB, unsigned int* dataOut, int n, unsigned int p, unsigned int p_inv) {
+__global__ void Kernel_BenchmarkMont(unsigned int* dataA, unsigned int* dataB, unsigned int* dataOut, int n, unsigned int p = 3221225473u, unsigned int p_inv = 3221225471u) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < n) {
         unsigned int a = dataA[idx];
@@ -86,7 +86,7 @@ __global__ void Kernel_BenchmarkMont(unsigned int* dataA, unsigned int* dataB, u
     }
 }
 
-__global__ void Kernel_BenchmarkMontPTX(unsigned int* dataA, unsigned int* dataB, unsigned int* dataOut, int n, unsigned int p, unsigned int p_inv) {
+__global__ void Kernel_BenchmarkMontPTX(unsigned int* dataA, unsigned int* dataB, unsigned int* dataOut, int n, unsigned int p = 3221225473u, unsigned int p_inv = 3221225471u) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < n) {
         unsigned int a = dataA[idx];
@@ -128,7 +128,7 @@ int main()
     int gridDim = (n + blockDim - 1) / blockDim;
     
     // Warmup Barrett
-    Kernel_BenchmarkMul<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n, p, pm);
+    Kernel_BenchmarkMul<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n);
     CHECK_CUDA(cudaDeviceSynchronize());
 
     int iterations = 10;
@@ -139,7 +139,7 @@ int main()
     cudaEventRecord(start);
     for (int i = 0; i < iterations; i++)
     {
-        Kernel_BenchmarkMul<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n, p, pm);
+        Kernel_BenchmarkMul<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n);
     }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -147,13 +147,13 @@ int main()
     cudaEventElapsedTime(&ms_barrett, start, stop);
 
     // Warmup Montgomery
-    Kernel_BenchmarkMont<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n, p, p_inv);
+    Kernel_BenchmarkMont<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n);
     CHECK_CUDA(cudaDeviceSynchronize());
 
     cudaEventRecord(start);
     for (int i = 0; i < iterations; i++)
     {
-        Kernel_BenchmarkMont<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n, p, p_inv);
+        Kernel_BenchmarkMont<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n);
     }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -161,13 +161,13 @@ int main()
     cudaEventElapsedTime(&ms_mont, start, stop);
 
     // Warmup Montgomery PTX
-    Kernel_BenchmarkMontPTX<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n, p, p_inv);
+    Kernel_BenchmarkMontPTX<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n);
     CHECK_CUDA(cudaDeviceSynchronize());
 
     cudaEventRecord(start);
     for (int i = 0; i < iterations; i++)
     {
-        Kernel_BenchmarkMontPTX<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n, p, p_inv);
+        Kernel_BenchmarkMontPTX<<<gridDim, blockDim>>>(d_A, d_B, d_Out, n);
     }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
