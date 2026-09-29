@@ -461,15 +461,15 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
         var sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
-        var ctx = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext
+        var ctx = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson
         {
-            Operands = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext_OperandsContext
+            Operands = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson.Operand
             {
                 TargetOperand = targetOperand.DevicePointer,
                 ResultBuffer = resultBuffer.DevicePointer,
                 Constant3 = constant3.DevicePointer
             },
-            Dimensions = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext_DimensionsContext
+            Dimensions = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson.Dimension
             {
                 NumberOfWords = n,
                 MarginWords = marginWords,
@@ -477,10 +477,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
                 MarginBits = marginBits,
                 Iterations = iterations
             },
-            Ntt = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+            Ntt = new GpuBigIntSqrtKernelsWrapper.AotContexts.Ntt
             {
                 TransformLength = m,
-                TwiddleFactors = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+                TwiddleFactors = new GpuBigIntSqrtKernelsWrapper.AotContexts.Ntt.TwiddleFactor
                 {
                     Forward1 = twiddle.Forward1,
                     Forward2 = twiddle.Forward2,
@@ -488,7 +488,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
                     Inverse2 = twiddle.Inverse2
                 }
             },
-            Workspace = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext_WorkspaceContext
+            Workspace = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson.WorkspaceState
             {
                 XSquared = xSquared.DevicePointer,
                 AxSquared = axSquared.DevicePointer,
@@ -695,7 +695,21 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         {
             var threads = m / 2;
             GpuBigIntMulKernelsWrapper.LaunchMultiplyNttSharedRowKernelPtr(
-                buffer, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, 1, m,
+                new GpuBigIntMulKernelsWrapper.AotContexts.NumberTheoreticTransformKernelArgs
+                {
+                    Buffer = buffer,
+                    TemporaryBuffer = tempBuffer,
+                    Twiddle = twiddle,
+                    M = m,
+                    N1 = n1,
+                    N2 = n2,
+                    P = p,
+                    Pm = pm,
+                    ApplyTwiddleBefore = false,
+                    ApplyTwiddleAfter = false,
+                    MaxBlocks = 1,
+                    CurrentL = m
+                },
                 gridDimX: 1, blockDimX: (uint)threads, sharedMemBytes: (uint)((m + (m >> 5)) * 4)
                 , hStream: workspace.Stream);
             return;
@@ -737,8 +751,21 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         var gridDim = (uint)System.Math.Min(65535, maxBlocks);
 
         GpuBigIntMulKernelsWrapper.LaunchMultiplyNttSharedRowKernelPtr(
-            buffer, tempBuffer, twiddle, m, n1, n2, p, pm, applyTwiddleBefore, applyTwiddleAfter, maxBlocks,
-            currentL,
+            new GpuBigIntMulKernelsWrapper.AotContexts.NumberTheoreticTransformKernelArgs
+            {
+                Buffer = buffer,
+                TemporaryBuffer = tempBuffer,
+                Twiddle = twiddle,
+                M = m,
+                N1 = n1,
+                N2 = n2,
+                P = p,
+                Pm = pm,
+                ApplyTwiddleBefore = applyTwiddleBefore,
+                ApplyTwiddleAfter = applyTwiddleAfter,
+                MaxBlocks = maxBlocks,
+                CurrentL = currentL
+            },
             gridDimX: gridDim, blockDimX: blockDim,
             sharedMemBytes: (uint)(System.Math.Max(1055, currentL + (currentL >> 5)) * 4)
             , hStream: workspace.Stream);

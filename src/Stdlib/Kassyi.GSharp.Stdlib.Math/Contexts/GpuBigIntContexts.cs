@@ -6,10 +6,10 @@ namespace Kassyi.GSharp.Stdlib.Math.Contexts;
 public struct NttContext
 {
     public int TransformLength;
-    public BuffersContext Buffers;
-    public TwiddleFactorsContext TwiddleFactors;
+    public BufferContext Buffers;
+    public TwiddleFactorContext TwiddleFactors;
 
-    public struct BuffersContext
+    public struct BufferContext
     {
         public uint[] Buffer1;
         public uint[] Buffer2;
@@ -17,7 +17,7 @@ public struct NttContext
         public uint[] TemporaryBuffer;
     }
 
-    public struct TwiddleFactorsContext
+    public struct TwiddleFactorContext
     {
         [GpuReadOnly] public uint[] Forward1;
         [GpuReadOnly] public uint[] Forward2;
@@ -33,11 +33,11 @@ public struct NttContext
 /// </summary>
 public struct FermatContext
 {
-    public BuffersContext Buffers;
-    public DimensionsContext Dimensions;
+    public BufferContext Buffers;
+    public DimensionContext Dimensions;
     public NttContext Ntt;
 
-    public struct BuffersContext
+    public struct BufferContext
     {
         public uint[] ValueT;
         public uint[] Quotient;
@@ -47,7 +47,7 @@ public struct FermatContext
         public long[] CarryBuffer;
     }
 
-    public struct DimensionsContext
+    public struct DimensionContext
     {
         public int NumberOfWords;
         public int NumberOfWordsExtended;
@@ -61,10 +61,10 @@ public struct FermatContext
 /// </summary>
 public struct BigIntKernelContext
 {
-    public OperandsContext Operands;
+    public OperandContext Operands;
     public int NumberOfWords;
 
-    public struct OperandsContext
+    public struct OperandContext
     {
         [GpuReadOnly] public uint[] LeftOperand;
         [GpuReadOnly] public uint[] RightOperand;
@@ -101,20 +101,20 @@ public struct NumberTheoreticTransformKernelArgs
 /// </summary>
 public struct SqrtNewtonRaphsonContext
 {
-    public OperandsContext Operands;
-    public DimensionsContext Dimensions;
+    public OperandContext Operands;
+    public DimensionContext Dimensions;
     public NttContext Ntt;
-    public WorkspaceContext Workspace;
+    public WorkspaceStateContext Workspace;
     public long[] CarryBuffer;
 
-    public struct OperandsContext
+    public struct OperandContext
     {
         public uint[] TargetOperand;
         public uint[] ResultBuffer;
         public uint[] Constant3;
     }
 
-    public struct DimensionsContext
+    public struct DimensionContext
     {
         public int NumberOfWords;
         public int MarginWords;
@@ -123,7 +123,7 @@ public struct SqrtNewtonRaphsonContext
         public int Iterations;
     }
 
-    public struct WorkspaceContext
+    public struct WorkspaceStateContext
     {
         public uint[] XSquared;
         public uint[] AxSquared;
@@ -147,20 +147,20 @@ public struct SqrtNewtonRaphsonContext
 /// </summary>
 public struct ReciprocalNewtonRaphsonContext
 {
-    public OperandsContext Operands;
-    public DimensionsContext Dimensions;
+    public OperandContext Operands;
+    public DimensionContext Dimensions;
     public NttContext Ntt;
-    public WorkspaceContext Workspace;
+    public WorkspaceStateContext Workspace;
     public long[] CarryBuffer;
 
-    public struct OperandsContext
+    public struct OperandContext
     {
         public uint[] TargetOperand;
         public uint[] ResultBuffer;
         public uint[] Constant;
     }
 
-    public struct DimensionsContext
+    public struct DimensionContext
     {
         public int NumberOfWords;
         public int MarginWords;
@@ -169,7 +169,7 @@ public struct ReciprocalNewtonRaphsonContext
         public int MarginBits;
     }
 
-    public struct WorkspaceContext
+    public struct WorkspaceStateContext
     {
         public uint[] CurrentProduct;
         public uint[] Diff;

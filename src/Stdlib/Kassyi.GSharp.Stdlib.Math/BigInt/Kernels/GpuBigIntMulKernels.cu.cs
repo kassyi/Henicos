@@ -18,27 +18,8 @@ public static class GpuBigIntMulKernels
     }
 
     [GpuKernel]
-    public static void MultiplyNttSharedRowKernel(
-        uint[] buffer, uint[] temporaryBuffer, uint[] twiddle,
-        int m, int n1, int n2, uint p, ulong pm,
-        bool applyTwiddleBefore, bool applyTwiddleAfter,
-        int maxBlocks, int currentL)
+    public static void MultiplyNttSharedRowKernel(NumberTheoreticTransformKernelArgs args)
     {
-        var args = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = buffer,
-            TemporaryBuffer = temporaryBuffer,
-            Twiddle = twiddle,
-            M = m,
-            N1 = n1,
-            N2 = n2,
-            P = p,
-            Pm = pm,
-            ApplyTwiddleBefore = applyTwiddleBefore,
-            ApplyTwiddleAfter = applyTwiddleAfter,
-            MaxBlocks = maxBlocks,
-            CurrentL = currentL
-        };
         GpuBigIntNttKernels.ExecuteNttSharedRow(args);
     }
 

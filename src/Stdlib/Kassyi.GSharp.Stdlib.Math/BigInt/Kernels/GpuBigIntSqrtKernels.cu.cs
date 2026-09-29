@@ -119,7 +119,7 @@ public static class GpuBigIntSqrtKernels
             {
                 var subCtx = new BigIntKernelContext
                 {
-                    Operands = new BigIntKernelContext.OperandsContext { CarryBuffer = ctx.CarryBuffer },
+                    Operands = new BigIntKernelContext.OperandContext { CarryBuffer = ctx.CarryBuffer },
                     NumberOfWords = 3 * n + 2 * marginWords
                 };
                 GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant3,

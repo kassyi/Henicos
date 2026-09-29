@@ -78,13 +78,13 @@ public static class GpuBigIntDivRemKernels
     {
         var ctx = new ReciprocalNewtonRaphsonContext
         {
-            Operands = new ReciprocalNewtonRaphsonContext.OperandsContext
+            Operands = new ReciprocalNewtonRaphsonContext.OperandContext
             {
                 TargetOperand = targetOperand,
                 ResultBuffer = resultBuffer,
                 Constant = constant
             },
-            Dimensions = new ReciprocalNewtonRaphsonContext.DimensionsContext
+            Dimensions = new ReciprocalNewtonRaphsonContext.DimensionContext
             {
                 NumberOfWords = numWords,
                 MarginWords = marginWords,
@@ -95,7 +95,7 @@ public static class GpuBigIntDivRemKernels
             Ntt = new NttContext
             {
                 TransformLength = transformLength,
-                TwiddleFactors = new NttContext.TwiddleFactorsContext
+                TwiddleFactors = new NttContext.TwiddleFactorContext
                 {
                     Forward1 = twiddleF1,
                     Forward2 = twiddleF2,
@@ -103,7 +103,7 @@ public static class GpuBigIntDivRemKernels
                     Inverse2 = twiddleI2
                 }
             },
-            Workspace = new ReciprocalNewtonRaphsonContext.WorkspaceContext
+            Workspace = new ReciprocalNewtonRaphsonContext.WorkspaceStateContext
             {
                 CurrentProduct = currentProduct,
                 Diff = diff,
@@ -133,7 +133,7 @@ public static class GpuBigIntDivRemKernels
             Gpu.SyncGrid();
             var subCtx = new BigIntKernelContext
             {
-                Operands = new BigIntKernelContext.OperandsContext { CarryBuffer = ctx.CarryBuffer },
+                Operands = new BigIntKernelContext.OperandContext { CarryBuffer = ctx.CarryBuffer },
                 NumberOfWords = n + resultWords
             };
             GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant,
