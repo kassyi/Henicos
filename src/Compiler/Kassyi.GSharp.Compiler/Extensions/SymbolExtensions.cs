@@ -23,6 +23,14 @@ internal static class SymbolExtensions
             { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
         };
 
+    public static bool IsSystemLinq(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "Linq",
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
+
     public static bool IsCoreNamespace(this INamespaceSymbol? ns) =>
         ns is
         {
@@ -30,6 +38,12 @@ internal static class SymbolExtensions
             ContainingNamespace:
             { Name: "GSharp", ContainingNamespace: { Name: "Kassyi", ContainingNamespace.IsGlobalNamespace: true } }
         };
+
+    /// <summary>
+    /// Compares two symbols for equality using <see cref="SymbolEqualityComparer.Default"/>.
+    /// </summary>
+    public static bool IsEqualTo(this ISymbol? symbol, ISymbol? other) =>
+        SymbolEqualityComparer.Default.Equals(symbol, other);
 
     public static bool IsSystemNumericsVector(this ITypeSymbol? typeSymbol)
     {
