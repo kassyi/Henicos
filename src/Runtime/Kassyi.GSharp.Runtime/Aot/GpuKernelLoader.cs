@@ -107,7 +107,14 @@ public sealed class GpuKernelLoader
             }
 
             var module = lazyModule.Value.Module;
-            CudaDriverApi.cuModuleUnload(module);
+            try
+            {
+                CudaDriverApi.cuModuleUnload(module);
+            }
+            catch
+            {
+                // Ignore cleanup errors on best-effort basis during Shutdown
+            }
         }
 
         s_functionCache.Clear();
