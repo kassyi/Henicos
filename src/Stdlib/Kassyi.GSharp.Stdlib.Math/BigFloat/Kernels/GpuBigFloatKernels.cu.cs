@@ -7,37 +7,31 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 // Reference/Inspiration: stillwater-sc/universal (Mathematical concepts)
 
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigFloatKernels
+public static partial class GpuBigFloatKernels
 {
-    public static class AotContexts
+    public struct BigFloatAddContext
     {
-        public struct BigFloatAdd
-        {
-            [GpuReadOnly] public uint[] LargerSig;
-            public int LargerWords;
-            [GpuReadOnly] public uint[] SmallerSig;
-            public int SmallerWords;
-            public uint[] ResultSig;
-            public int NumWords;
-            public int WordShift;
-            public int BitShift;
-            public int SignScale;
-        }
+        [GpuReadOnly]
+        public uint[] LargerSig;
+
+        public int LargerWords;
+
+        [GpuReadOnly]
+        public uint[] SmallerSig;
+
+        public int SmallerWords;
+        public uint[] ResultSig;
+        public int NumWords;
+        public int WordShift;
+        public int BitShift;
+        public int SignScale;
     }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint GetShiftedRightWord([GpuReadOnly] uint[] data, int numWords, int destIdx, int wordShift,
         int bitShift)
     {
-        int srcIdx0 = destIdx - wordShift;
-        int
-            srcIdx1 = srcIdx0 +
-                      1; // wait, if we shift right, the bits come from the higher index? No, if we shift a BigInt RIGHT, it means dividing by 2. So the bits move to lower indices.
-
-        // Wait! Let's clarify:
-        // A BigInt is stored in little-endian. data[0] is the least significant word.
-        // If we shift RIGHT (divide by 2), the bits from data[1] move into data[0].
-        // So destIdx receives bits from destIdx + wordShift and destIdx + wordShift + 1.
         int s0 = destIdx + wordShift;
         int s1 = s0 + 1;
 
@@ -53,7 +47,7 @@ public static class GpuBigFloatKernels
     }
 
     [GpuKernel]
-    public static void FloatAddAlignedKernel(AotContexts.BigFloatAdd ctx)
+    public static void FloatAddAlignedKernel(BigFloatAddContext ctx)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;

@@ -4,26 +4,23 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntGcdKernels
+public static partial class GpuBigIntGcdKernels
 {
-    public static class AotContexts
+    public struct Matrix2x2ApplyContext
     {
-        public struct Matrix2x2Apply
-        {
-            [GpuReadOnly] public uint[] A;
-            [GpuReadOnly] public uint[] B;
-            public uint[] DstA;
-            public uint[] DstB;
-            public long U0;
-            public long V0;
-            public long U1;
-            public long V1;
-            public int NumWords;
-        }
+        [GpuReadOnly] public uint[] A;
+        [GpuReadOnly] public uint[] B;
+        public uint[] DstA;
+        public uint[] DstB;
+        public long U0;
+        public long V0;
+        public long U1;
+        public long V1;
+        public int NumWords;
     }
 
     [GpuKernel]
-    public static void ApplyMatrix2x2Kernel(AotContexts.Matrix2x2Apply ctx)
+    public static void ApplyMatrix2x2Kernel(Matrix2x2ApplyContext ctx)
     {
         Gpu.SingleThread(() =>
         {

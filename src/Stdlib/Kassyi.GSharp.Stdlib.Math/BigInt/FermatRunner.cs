@@ -119,8 +119,8 @@ public class FermatRunner : IDisposable
 
         // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
         // Executed in a single block (gridDimX = 1) with 256 threads to allow block-wide synchronization (__syncthreads).
-        GpuBigIntFermatKernelsWrapper.LaunchKernelFermatReduceMegaPtr(
-            new GpuBigIntFermatKernelsWrapper.AotContexts.FermatReduceKernelArgs
+        GpuBigIntFermatKernels.LaunchKernelFermatReduceMegaPtr(
+            new GpuBigIntFermatKernels.AotContexts.FermatReduce
             {
                 ValueT = _valueT.DevicePointer,
                 MulResult = _mulResult.DevicePointer,

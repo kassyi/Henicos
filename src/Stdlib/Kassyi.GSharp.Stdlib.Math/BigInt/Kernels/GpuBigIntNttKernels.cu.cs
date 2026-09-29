@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 // ReSharper disable UnusedType.Global
 // ReSharper disable UnusedMember.Global
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntNttKernels
+public static partial class GpuBigIntNttKernels
 {
 
 

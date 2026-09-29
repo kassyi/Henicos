@@ -4,7 +4,7 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntScalarKernels
+public static partial class GpuBigIntScalarKernels
 {
     [GpuKernel]
     public static void ScalarAddKernel(uint[] dA, uint s, uint[] dResult, int numWords)

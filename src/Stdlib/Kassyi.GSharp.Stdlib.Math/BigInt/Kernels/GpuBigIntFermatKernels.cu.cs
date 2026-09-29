@@ -4,23 +4,20 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 #pragma warning disable GSH0014 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntFermatKernels
+public static partial class GpuBigIntFermatKernels
 {
-    public static class AotContexts
+    public struct FermatReduceContext
     {
-        public struct FermatReduceKernelArgs
-        {
-            public uint[] ValueT;
-            public uint[] MulResult;
-            public uint[] Quotient;
-            public uint[] Remainder;
-            public uint[] Temp;
-            [GpuReadOnly] public uint[] RemainderMask;
-            public int NumWords;
-            public int OutNumWords;
-            public int TotalShiftBits;
-            public int Exponent;
-        }
+        public uint[] ValueT;
+        public uint[] MulResult;
+        public uint[] Quotient;
+        public uint[] Remainder;
+        public uint[] Temp;
+        [GpuReadOnly] public uint[] RemainderMask;
+        public int NumWords;
+        public int OutNumWords;
+        public int TotalShiftBits;
+        public int Exponent;
     }
 
     [GpuDeviceFunction]
@@ -167,7 +164,7 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuKernel]
-    public static void KernelFermatReduceMega(AotContexts.FermatReduceKernelArgs ctx)
+    public static void KernelFermatReduceMega(FermatReduceContext ctx)
     {
         var wordShift = ctx.TotalShiftBits / 32;
         var bitShift = ctx.TotalShiftBits % 32;

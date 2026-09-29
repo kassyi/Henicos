@@ -5,32 +5,29 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntMulKernels
+public static partial class GpuBigIntMulKernels
 {
     // Global Non-Cooperative NTT approach for Multi-Million digit multiplications
 
-    public static class AotContexts
+    public struct NttUnpackContext
     {
-        public struct NttUnpackKernelArgs
-        {
-            [GpuReadOnly]
-            public uint[] OpA;
+        [GpuReadOnly]
+        public uint[] OpA;
 
-            [GpuReadOnly]
-            public uint[] OpB;
+        [GpuReadOnly]
+        public uint[] OpB;
 
-            public uint[] NttBuf1A;
-            public uint[] NttBuf2A;
-            public uint[] NttBuf1B;
-            public uint[] NttBuf2B;
-            public int TransformLength;
-            public int NumWordsA;
-            public int NumWordsB;
-        }
+        public uint[] NttBuf1A;
+        public uint[] NttBuf2A;
+        public uint[] NttBuf1B;
+        public uint[] NttBuf2B;
+        public int TransformLength;
+        public int NumWordsA;
+        public int NumWordsB;
     }
 
     [GpuKernel]
-    public static void MultiplyNttUnpackKernel(AotContexts.NttUnpackKernelArgs ctx)
+    public static void MultiplyNttUnpackKernel(NttUnpackContext ctx)
     {
         GpuBigIntFermatKernels.DeviceUnpack16(ctx.OpA, ctx.NttBuf1A, ctx.NttBuf2A, ctx.TransformLength, ctx.NumWordsA,
             true);
