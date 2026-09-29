@@ -8,7 +8,6 @@ public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
 
     protected override void OnSetup()
     {
-#pragma warning disable GSH0022
         _leftSigs = new GpuUIntBigInteger[BatchSize];
         _rightSigs = new GpuUIntBigInteger[BatchSize];
         _resultSigs = new GpuUIntBigInteger[BatchSize];
@@ -34,12 +33,10 @@ public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
             _ctx.Provider.CopyHostToDevice(_leftSigs[i].DevicePointer, leftData, NumWords, _stream);
             _ctx.Provider.CopyHostToDevice(_rightSigs[i].DevicePointer, rightData, NumWords, _stream);
         }
-#pragma warning restore GSH0022
     }
 
     protected override void OnCleanup()
     {
-#pragma warning disable GSH0021
         if (_leftSigs != null)
         {
             for (int i = 0; i < BatchSize; i++)
@@ -49,7 +46,6 @@ public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
                 _resultSigs[i].Dispose();
             }
         }
-#pragma warning restore GSH0021
     }
 
     protected override void ExecuteBatchMultiply()

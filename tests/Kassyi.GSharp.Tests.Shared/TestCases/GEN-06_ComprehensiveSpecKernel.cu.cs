@@ -236,7 +236,7 @@ public static partial class ComprehensiveSpecKernel
     /// </summary>
     public static void HostSideGpuBigIntDemo()
     {
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var a = new GpuUIntBigInteger(context, 1024);
         using var b = new GpuUIntBigInteger(context, 1024);

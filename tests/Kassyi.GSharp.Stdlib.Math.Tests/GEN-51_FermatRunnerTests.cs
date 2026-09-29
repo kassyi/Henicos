@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
-[Collection("GpuContext")]
+[Collection("GpuWorkspace")]
 [Trait("Category", "GpuExecution")]
 public class GEN_51_FermatRunnerTests
 {

@@ -113,7 +113,7 @@ public static class GpuChudnovskyPi
 
         using var cudaScope = new GpuKernelLoader.CudaContextScope();
 
-        using var context = new GpuContext(maxContextWords);
+        using var context = new GpuWorkspace(maxContextWords);
         var totalStopwatch = Stopwatch.StartNew();
 
         // 1. Compute Binary Splitting tree using Hybrid CPU/GPU execution
@@ -137,7 +137,7 @@ public static class GpuChudnovskyPi
     /// Pi = (426880 * Sqrt(10005 * 10^(2*totalDigits)) * Q) / T
     /// using GPU-accelerated NTT multiplication, Sqrt, and Newton-Raphson division.
     /// </summary>
-    private static GpuUIntBigInteger ComputeFinalPiFraction(GpuContext context, GpuHypergeometricPqt pqt, int digits,
+    private static GpuUIntBigInteger ComputeFinalPiFraction(GpuWorkspace context, GpuHypergeometricPqt pqt, int digits,
         int totalDigits,
         bool asHex)
     {
@@ -153,7 +153,7 @@ public static class GpuChudnovskyPi
         return gpuPiExt;
     }
 
-    private static GpuUIntBigInteger ComputeSqrtBase(GpuContext context, int digits, int totalDigits, bool asHex)
+    private static GpuUIntBigInteger ComputeSqrtBase(GpuWorkspace context, int digits, int totalDigits, bool asHex)
     {
         var swPow = Stopwatch.StartNew();
         GpuUIntBigInteger gpuSqrtBase;
@@ -193,7 +193,7 @@ public static class GpuChudnovskyPi
         return gpuSqrtBase;
     }
 
-    private static GpuUIntBigInteger ComputeNumerator(GpuContext context, GpuUIntBigInteger gpuSqrtBase,
+    private static GpuUIntBigInteger ComputeNumerator(GpuWorkspace context, GpuUIntBigInteger gpuSqrtBase,
         GpuUIntBigInteger pqtQ)
     {
         using var gpuSqrtResult = new GpuUIntBigInteger(context, gpuSqrtBase.NumWords);
@@ -222,7 +222,7 @@ public static class GpuChudnovskyPi
         return gpuNumerator;
     }
 
-    private static GpuUIntBigInteger ExecuteFinalDivision(GpuContext context, GpuUIntBigInteger numerator,
+    private static GpuUIntBigInteger ExecuteFinalDivision(GpuWorkspace context, GpuUIntBigInteger numerator,
         GpuUIntBigInteger denominator)
     {
         var targetWords = Math.Max(numerator.NumWords, denominator.NumWords);
@@ -243,7 +243,7 @@ public static class GpuChudnovskyPi
     /// writing to a file or displaying an abbreviated preview on the console.
     /// </summary>
     private static void WritePiOutput(
-        GpuContext context,
+        GpuWorkspace context,
         GpuUIntBigInteger gpuPiExt,
         int targetWords,
         int digits,
@@ -316,7 +316,7 @@ public static class GpuChudnovskyPi
     }
 
     private static void WriteDecimalPiOutput(
-        GpuContext context,
+        GpuWorkspace context,
         GpuUIntBigInteger gpuPiExt,
         int targetWords,
         int digits,
@@ -335,7 +335,7 @@ public static class GpuChudnovskyPi
         writer.Flush();
     }
 
-    private static GpuHypergeometricPqt ComputeTree(int a, int b, GpuContext context, int thresholdTerms,
+    private static GpuHypergeometricPqt ComputeTree(int a, int b, GpuWorkspace context, int thresholdTerms,
         ProgressState state)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thresholdTerms);
@@ -365,7 +365,7 @@ public static class GpuChudnovskyPi
     }
 
 
-    private static GpuHypergeometricPqt UploadToGpu(GpuContext context, ChudnovskyPi.ChudnovskyPqt cpu)
+    private static GpuHypergeometricPqt UploadToGpu(GpuWorkspace context, ChudnovskyPi.ChudnovskyPqt cpu)
     {
         var sw = Stopwatch.StartNew();
         var pNeg = cpu.P < 0;

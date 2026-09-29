@@ -28,7 +28,7 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     }
 
     protected GpuKernelLoader.CudaContextScope _scope;
-    protected GpuContext _ctx = null!;
+    protected GpuWorkspace _ctx = null!;
     protected IntPtr _stream;
 
     // 精度（ビット幅）のパラメータ
@@ -42,10 +42,8 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     [GlobalSetup]
     public void Setup()
     {
-#pragma warning disable GSH0022
         _scope = new GpuKernelLoader.CudaContextScope();
-        _ctx = new GpuContext(16);
-#pragma warning restore GSH0022
+        _ctx = new GpuWorkspace(16);
         
         _stream = _ctx.Stream;
 
@@ -62,10 +60,8 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     {
         OnCleanup();
 
-#pragma warning disable GSH0021
         _ctx.Dispose();
         _scope.Dispose();
-#pragma warning restore GSH0021
     }
 
     protected abstract void OnSetup();

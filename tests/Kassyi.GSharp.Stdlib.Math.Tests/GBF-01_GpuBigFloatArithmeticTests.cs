@@ -15,7 +15,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests;
 
 public class GBF01_GpuBigFloatArithmeticTests
 {
-    private BigIntExecutionContext CreateContext(GpuContext ctx)
+    private BigIntExecutionContext CreateContext(GpuWorkspace ctx)
     {
         return new BigIntExecutionContext(ctx, ctx.MemoryManager, default!, ctx.Stream);
     }
@@ -25,7 +25,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Divide()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 100 * 2^10 / 3 * 2^5
@@ -58,7 +58,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Divide()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 100 * 2^10 / 3 * 2^5
@@ -91,7 +91,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Divide_Mega()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Generate 2048 words (mega division test > 1024 fast path threshold)
@@ -136,7 +136,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Divide_Mega()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Generate 2048 words (mega division test > 1024 fast path threshold)
@@ -181,7 +181,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Multiply()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 1.5 * 2^10 * 3.0 * 2^5
@@ -216,7 +216,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Multiply()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 1.5 * 2^10 * 3.0 * 2^5
@@ -249,7 +249,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Add()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 3.0 * 2^10 + 3.0 * 2^5
@@ -282,7 +282,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Add()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 3.0 * 2^10 + 3.0 * 2^5
@@ -315,7 +315,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Reciprocal()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 1 / (3 * 2^0)
@@ -343,7 +343,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Reciprocal()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 1 / (3 * 2^0)
@@ -372,7 +372,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Sqrt()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Sqrt(9.0 * 2^10) = 3.0 * 2^5
@@ -405,7 +405,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Sqrt()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 9, 0, 0, 0 });
@@ -437,7 +437,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Rsqrt()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Rsqrt(9.0 * 2^10) = 1 / (3.0 * 2^5)
@@ -470,7 +470,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Rsqrt()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 9, 0, 0, 0 });
@@ -502,7 +502,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Normalize()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 0x00000000_00000001
@@ -531,7 +531,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Normalize()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 0x00000000_00000001
@@ -560,7 +560,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Exp()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Exp(1.0 * 2^0) = e
@@ -593,7 +593,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Exp()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 1, 0, 0, 0 });
@@ -625,7 +625,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Log()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Log(2.0 * 2^0) = ln(2)
@@ -658,7 +658,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Log()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         using var rawValueSig = new GpuUIntBigInteger(ctx, new uint[] { 2, 0, 0, 0 });
@@ -690,7 +690,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_Pow()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // Pow(2.0, 3.0) = 8.0
@@ -729,7 +729,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_Pow()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         using var rawBaseSig = new GpuUIntBigInteger(ctx, new uint[] { 2, 0, 0, 0 });
@@ -767,7 +767,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_DivideByUInt32_Basic()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 1000 / 3
@@ -797,7 +797,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_DivideByUInt32_Basic()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 1000 / 3
@@ -827,7 +827,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_CpuReference_DivideByUInt32_Boundary()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF / (2^32 - 1)
@@ -857,7 +857,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public Task Test_GBF01_GpuReference_DivideByUInt32_Boundary()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
         var execCtx = CreateContext(ctx);
 
         // 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF / (2^32 - 1)
@@ -887,7 +887,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public void Test_GBF01_CpuReference_DivideByUInt32_Zero()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
 
         using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 1000, 0, 0, 0 });
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
@@ -907,7 +907,7 @@ public class GBF01_GpuBigFloatArithmeticTests
     public void Test_GBF01_GpuReference_DivideByUInt32_Zero()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
 
         using var valueSig = new GpuUIntBigInteger(ctx, new uint[] { 1000, 0, 0, 0 });
         using var resultSig = new GpuUIntBigInteger(ctx, 4);

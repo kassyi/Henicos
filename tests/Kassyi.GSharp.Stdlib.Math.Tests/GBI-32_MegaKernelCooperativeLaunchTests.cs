@@ -21,7 +21,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             // We mock SmCount to 2, so it should clamp to 2 and succeed instead of 720 Error.
             int sizeWords = 8192; // 256K bits
             
-            using var context = new GpuContext(sizeWords * 3, GpuExecutionEngine.GSharpAot);
+            using var context = new GpuWorkspace(sizeWords * 3, GpuExecutionEngine.GSharpAot);
             
             // Mock the SM count down to 2
             context.DeviceSmCount = 2;

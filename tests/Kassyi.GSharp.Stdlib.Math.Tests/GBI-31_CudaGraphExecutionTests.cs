@@ -23,7 +23,7 @@ public class GBI_31_CudaGraphExecutionTests
             try
             {
                 int numWords = 4;
-                using var ctx = new GpuContext(numWords, GpuExecutionEngine.GSharpAot);
+                using var ctx = new GpuWorkspace(numWords, GpuExecutionEngine.GSharpAot);
                 using var a = new GpuUIntBigInteger(ctx, numWords);
                 using var b = new GpuUIntBigInteger(ctx, numWords);
                 using var c = new GpuUIntBigInteger(ctx, numWords);
@@ -103,7 +103,7 @@ public class GBI_31_CudaGraphExecutionTests
             try
             {
                 int numWords = 1024;
-                using var ctx = new GpuContext(numWords, GpuExecutionEngine.GSharpAot);
+                using var ctx = new GpuWorkspace(numWords, GpuExecutionEngine.GSharpAot);
                 using var a = new GpuUIntBigInteger(ctx, numWords);
                 using var b = new GpuUIntBigInteger(ctx, numWords);
                 using var c = new GpuUIntBigInteger(ctx, numWords);
@@ -174,7 +174,7 @@ public class GBI_31_CudaGraphExecutionTests
         // If we do this on the xUnit worker thread, subsequent tests will fail with CudaErrorStreamCaptureImplicit.
         var thread = new System.Threading.Thread(() =>
         {
-            using var ctx = new GpuContext(4, GpuExecutionEngine.GSharpAot);
+            using var ctx = new GpuWorkspace(4, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, 4);
 
             try

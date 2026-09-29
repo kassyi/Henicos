@@ -13,7 +13,7 @@ public class GBI30_GpuContextTests
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
-        var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         // Act & Assert
         var exception = Record.Exception(() =>
@@ -45,7 +45,7 @@ public class GBI30_GpuContextTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private WeakReference CreateAndDropContext()
     {
-        var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         return new WeakReference(context);
     }
 
@@ -55,7 +55,7 @@ public class GBI30_GpuContextTests
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
-        var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var provider = GSharpAotProvider.Instance;
         
         // Populate cache by performing an NTT multiplication
@@ -87,7 +87,7 @@ public class GBI30_GpuContextTests
         Parallel.For(0, 8, i =>
         {
             using var scope = new GpuKernelLoader.CudaContextScope();
-            using var ctx = new GpuContext(256, GpuExecutionEngine.GSharpAot);
+            using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
             using var temp1 = ctx.RentTemp(16);
             using var temp2 = ctx.RentTemp(32);
         });
