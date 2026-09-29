@@ -35,16 +35,6 @@ public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
         }
     }
 
-    protected override void OnCleanup()
-    {
-        for (var i = 0; i < BatchSize; i++)
-        {
-            _leftSigs[i].Dispose();
-            _rightSigs[i].Dispose();
-            _resultSigs[i].Dispose();
-        }
-    }
-
     protected override void ExecuteBatchMultiply()
     {
         for (var i = 0; i < BatchSize; i++)

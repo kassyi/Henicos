@@ -15,11 +15,11 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     {
         public GpuBenchmarkConfig()
         {
-            // GPUベンチマークにおけるウォームアップと反復の厳密制御
+            // Strict control of warmup and iterations for GPU benchmarks
             AddJob(Job.Default
                 .WithToolchain(InProcessEmitToolchain.Instance)
-                .WithWarmupCount(5)      // GPU JIT / PTXコンパイルの完全排除
-                .WithIterationCount(15)   // 測定の標準偏差を抑え込む
+                .WithWarmupCount(5)      // Ensure GPU JIT and PTX compilation overhead is completely eliminated
+                .WithIterationCount(15)   // Minimize measurement standard deviation
                 .AsDefault());
             
             AddColumn(new BitsColumn());
@@ -31,11 +31,11 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     protected GpuWorkspace Ctx = null!;
     protected IntPtr Stream;
 
-    // 精度（ビット幅）のパラメータ
+    // Precision parameter (word count / bit width)
     [Params(2048)]
     public int NumWords { get; set; } // 65,536 bits
 
-    // バッチサイズのパラメータ（現在は1要素ずつの直列処理になるため、レイテンシ評価の 1 のみ）
+    // Batch size parameter (currently 1 for latency evaluation under serial processing)
     [Params(1)]
     public int BatchSize { get; set; }
 
@@ -47,9 +47,9 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
         
         Stream = Ctx.Stream;
 
-        // 1. 全バッファを事前に確保（Pinned Memory / Device Memory Arena）
-        // 2. テスト入力データの初期化とGPUへの一括転送
-        // 3. CUDA Event の作成
+        // 1. Pre-allocate all buffers (Pinned Memory / Device Memory Arena)
+        // 2. Initialize test input data and perform bulk transfer to GPU
+        // 3. Create CUDA Events
         OnSetup();
     }
 
@@ -65,12 +65,14 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     }
 
     protected abstract void OnSetup();
-    protected abstract void OnCleanup();
+    protected virtual void OnCleanup()
+    {
+    }
 
     [Benchmark(Baseline = true)]
     public void Multiply()
     {
-        // ホスト-デバイス間の同期を明示的に行い、非同期完了抜けを防止
+        // Explicit host-device synchronization to ensure asynchronous kernel completion
         ExecuteBatchMultiply();
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
     }
