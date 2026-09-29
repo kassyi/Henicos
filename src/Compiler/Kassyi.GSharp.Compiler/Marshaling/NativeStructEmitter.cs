@@ -13,7 +13,7 @@ internal static class NativeStructEmitter
         // This also bypasses a known CLR TypeLoadException bug that occurs when nesting
         // structs containing explicit layouts or arrays if LayoutKind.Sequential is used.
         writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {layout.Size})]");
-        writer.Append("public unsafe struct __Native_");
+        writer.Append("public unsafe struct Aot_");
         writer.AppendFullyQualifiedCppName(s);
         writer.AppendLine();
 
@@ -50,7 +50,7 @@ internal static class NativeStructEmitter
         }
         else if (CudaLayoutRules.IsCustomStruct(field.Type))
         {
-            writer.Append("public __Native_");
+            writer.Append("public Aot_");
             writer.AppendFullyQualifiedCppName(field.Type);
             writer.AppendLine($" {field.Name};");
         }

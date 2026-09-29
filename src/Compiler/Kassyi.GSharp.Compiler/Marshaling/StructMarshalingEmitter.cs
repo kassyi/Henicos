@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
-/// Emits Marshal and Unmarshal helper methods for custom structs, mapping between C# and __Native_* structs.
+/// Emits Marshal and Unmarshal helper methods for custom structs, mapping between C# and Aot_* structs.
 /// </summary>
 internal static class StructMarshalingEmitter
 {
@@ -37,7 +37,7 @@ internal static class StructMarshalingEmitter
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref __Native_");
+            writer.Append(" host, ref Aot_");
             writer.AppendFullyQualifiedCppName(s);
             writer.Append(" native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs");
         }
@@ -116,7 +116,7 @@ internal static class StructMarshalingEmitter
 
                     if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
                     {
-                        writer.Append($"var tempArray = new __Native_");
+                        writer.Append($"var tempArray = new Aot_");
                         writer.AppendFullyQualifiedCppName(arrayType.ElementType);
                         writer.AppendLine($"[host.{member.Name}.Length];");
 
@@ -170,7 +170,7 @@ internal static class StructMarshalingEmitter
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref __Native_");
+            writer.Append(" host, ref Aot_");
             writer.AppendFullyQualifiedCppName(s);
             writer.Append(" native, bool isDevicePtr");
         }
@@ -236,7 +236,7 @@ internal static class StructMarshalingEmitter
             {
                 if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
                 {
-                    writer.Append($"var tempArray = new __Native_");
+                    writer.Append("var tempArray = new Aot_");
                     writer.AppendFullyQualifiedCppName(arrayType.ElementType);
                     writer.AppendLine($"[host.{member.Name}.Length];");
 
@@ -286,7 +286,7 @@ internal static class StructMarshalingEmitter
     {
         if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
         {
-            writer.Append($"int size = {prefix}{name}.Length * sizeof(__Native_");
+            writer.Append($"int size = {prefix}{name}.Length * sizeof(Aot_");
             writer.AppendFullyQualifiedCppName(arrayType.ElementType);
             writer.AppendLine(");");
         }

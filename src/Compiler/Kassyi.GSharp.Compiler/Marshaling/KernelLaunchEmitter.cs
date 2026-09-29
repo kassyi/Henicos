@@ -138,7 +138,7 @@ internal static class KernelLaunchEmitter
 
     private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
     {
-        if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
+        if (isDevicePtr && (p.Type is IArrayTypeSymbol || CudaLayoutRules.IsCustomStruct(p.Type) || p.RefKind is RefKind.Ref or RefKind.Out))
         {
             var kind = p.Type is IArrayTypeSymbol ? "array" : CudaLayoutRules.IsCustomStruct(p.Type) ? "struct" : "scalar";
             writer.AppendLine($"// Marshal device {kind}: {p.Name}");
@@ -167,7 +167,7 @@ internal static class KernelLaunchEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        writer.Append($"__Native_");
+        writer.Append($"Aot_");
         writer.AppendFullyQualifiedCppName(p.Type);
         writer.AppendLine($" native_{p.Name} = default;");
         writer.Append($"Marshal_");
@@ -183,7 +183,7 @@ internal static class KernelLaunchEmitter
         if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
             writer.AppendLine($"// Marshal ref/out struct: {p.Name}");
-            writer.Append($"int {p.Name}_size = sizeof(__Native_");
+            writer.Append($"int {p.Name}_size = sizeof(Aot_");
             writer.AppendFullyQualifiedCppName(p.Type);
             writer.AppendLine(");");
 
@@ -328,8 +328,13 @@ internal static class KernelLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
+    public static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
+        if (isDevicePtr && (p.Type is IArrayTypeSymbol || CudaLayoutRules.IsCustomStruct(p.Type) || p.RefKind is RefKind.Ref or RefKind.Out))
+        {
+            return;
+        }
+
         if (CudaLayoutRules.IsCustomStruct(p.Type))
         {
             WriteCustomStructUnmarshal(writer, p, isDevicePtr);
