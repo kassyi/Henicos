@@ -538,26 +538,26 @@ public static class GpuBigIntNttKernels
             return;
         }
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
-        Gpu.SyncGrid();
+        var argsRow1 = args;
+        argsRow1.Buffer = temporaryBuffer;
+        argsRow1.CurrentL = length1;
+        argsRow1.ApplyTwiddleBefore = false;
+        argsRow1.ApplyTwiddleAfter = true;
+        argsRow1.MaxBlocks = length2;
 
-        args.Buffer = temporaryBuffer;
-        args.CurrentL = length1;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = true;
-        args.MaxBlocks = length2;
-        ExecuteNttSharedRow(args);
-        args.Buffer = buffer; // Restore buffer
-        Gpu.SyncGrid();
+        var argsRow2 = args;
+        argsRow2.CurrentL = length2;
+        argsRow2.ApplyTwiddleBefore = false;
+        argsRow2.ApplyTwiddleAfter = false;
+        argsRow2.MaxBlocks = length1;
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
-        Gpu.SyncGrid();
-
-        args.CurrentL = length2;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = false;
-        args.MaxBlocks = length1;
-        ExecuteNttSharedRow(args);
+        Gpu.SyncGrid(() =>
+        {
+            GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
+            ExecuteNttSharedRow(argsRow1);
+            GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
+            ExecuteNttSharedRow(argsRow2);
+        });
         Gpu.SyncGrid();
     }
 
@@ -581,26 +581,26 @@ public static class GpuBigIntNttKernels
             return;
         }
 
-        args.CurrentL = length2;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = true;
-        args.MaxBlocks = length1;
-        ExecuteNttSharedRow(args);
-        Gpu.SyncGrid();
+        var argsRow1 = args;
+        argsRow1.CurrentL = length2;
+        argsRow1.ApplyTwiddleBefore = false;
+        argsRow1.ApplyTwiddleAfter = true;
+        argsRow1.MaxBlocks = length1;
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
-        Gpu.SyncGrid();
+        var argsRow2 = args;
+        argsRow2.Buffer = temporaryBuffer;
+        argsRow2.CurrentL = length1;
+        argsRow2.ApplyTwiddleBefore = false;
+        argsRow2.ApplyTwiddleAfter = false;
+        argsRow2.MaxBlocks = length2;
 
-        args.Buffer = temporaryBuffer;
-        args.CurrentL = length1;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = false;
-        args.MaxBlocks = length2;
-        ExecuteNttSharedRow(args);
-        args.Buffer = buffer; // Restore buffer
-        Gpu.SyncGrid();
-
-        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
+        Gpu.SyncGrid(() =>
+        {
+            ExecuteNttSharedRow(argsRow1);
+            GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
+            ExecuteNttSharedRow(argsRow2);
+            GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
+        });
         Gpu.SyncGrid();
     }
 
