@@ -75,7 +75,7 @@ internal static class BclIntrinsicMapBuilder
     {
         data = default;
 
-        if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeSymbol) ||
+        if (!attribute.AttributeClass.IsEqualTo(attributeSymbol) ||
             attribute.ConstructorArguments.Length != 4 ||
             attribute.ConstructorArguments[0].Value is not string bclTypeFullName ||
             attribute.ConstructorArguments[1].Value is not string methodName ||
@@ -230,7 +230,7 @@ internal static class BclIntrinsicMapBuilder
                 return false;
             }
 
-            if (!SymbolEqualityComparer.Default.Equals(method.Parameters[i].Type, expectedType))
+            if (!method.Parameters[i].Type.IsEqualTo(expectedType))
             {
                 return false;
             }

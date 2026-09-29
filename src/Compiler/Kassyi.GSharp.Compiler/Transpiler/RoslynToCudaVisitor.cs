@@ -133,7 +133,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 node.GetLocation()));
         }
 
-        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        var typeSymbol = Context.SemanticModel.GetTypeSymbol(node);
         if (typeSymbol != null)
         {
             Context.AppendType(typeSymbol);
@@ -172,7 +172,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Type != null)
         {
-            var typeSymbol = Context.SemanticModel.GetTypeInfo(node.Type).Type;
+            var typeSymbol = Context.SemanticModel.GetTypeSymbol(node.Type);
             if (typeSymbol != null)
             {
                 Context.AppendType(typeSymbol);
@@ -290,7 +290,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return false;
         }
 
-        return Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol
+        return Context.SemanticModel.GetSymbol(invocation) is IMethodSymbol
                {
                    Name: TypeConstants.GpuMacros.SyncGrid,
                    ContainingType.Name: TypeConstants.GpuType,
@@ -344,7 +344,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return false;
         }
 
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol
+        if (semanticModel.GetSymbol(invocation) is not IMethodSymbol
             {
                 Name: TypeConstants.GpuMacros.SyncGrid
             } symbol ||
@@ -454,7 +454,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        var symbol = Context.SemanticModel.GetSymbolInfo(node).Symbol;
+        var symbol = Context.SemanticModel.GetSymbol(node);
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
             Context.Writer.AppendConstantField(field);

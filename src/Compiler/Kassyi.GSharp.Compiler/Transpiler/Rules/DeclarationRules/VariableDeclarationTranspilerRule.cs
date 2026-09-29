@@ -34,7 +34,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     /// <inheritdoc />
     public override void Transpile(VariableDeclarationSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Type);
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
 
         var mapping = AnalyzeVariableMapping(node, typeSymbol);

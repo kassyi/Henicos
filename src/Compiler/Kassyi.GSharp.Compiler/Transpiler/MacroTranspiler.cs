@@ -25,7 +25,7 @@ internal static class MacroTranspiler
     private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement, ref TranspileContext context)
     {
-        if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
+        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
             !symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
@@ -429,16 +429,21 @@ internal static class MacroTranspiler
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
 
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(rightNode);
-        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(rightNode) is not IMethodSymbol methodSymbol)
         {
             return false;
         }
 
-        var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a =>
-                a.AttributeClass?.Name == "GpuOperatorMacroAttribute" &&
-                a.AttributeClass.ContainingNamespace.IsCoreNamespace());
+        AttributeData? macroAttr = null;
+        foreach (var a in methodSymbol.GetAttributes())
+        {
+            if (a.IsAttribute("GpuOperatorMacro") &&
+                a.AttributeClass?.ContainingNamespace.IsCoreNamespace() == true)
+            {
+                macroAttr = a;
+                break;
+            }
+        }
 
         if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {

@@ -34,7 +34,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     /// <inheritdoc />
     public override void Transpile(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Declaration.Type);
         if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
             typeSymbol.ContainingNamespace.IsCoreNamespace())
         {

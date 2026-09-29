@@ -6,11 +6,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 {
     public override void Transpile(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
-        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
+        var symbol = context.SemanticModel.GetSymbol(node);
 
         if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
         {
-            symbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
+            symbol = context.SemanticModel.GetSymbol(invocation);
         }
 
         if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
@@ -24,7 +24,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
-        var memberExprSymbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        var memberExprSymbol = context.SemanticModel.GetSymbol(node.Expression);
         if (TryTranspileEnumAccess(memberExprSymbol, node, ref context))
         {
             return;
@@ -75,8 +75,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         context.Writer.Append(".");
 
         var memberName = node.Name.Identifier.Text;
-        var typeInfo = context.SemanticModel.GetTypeInfo(node.Expression);
-        if (typeInfo.Type != null && context.Dialect.TryMapMemberAccess(typeInfo.Type, memberName, out var mappedName, out var isMethodCall))
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Expression);
+        if (typeSymbol != null && context.Dialect.TryMapMemberAccess(typeSymbol, memberName, out var mappedName, out var isMethodCall))
         {
             if (isMethodCall)
             {
@@ -100,7 +100,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return false;
         }
 
-        var symbol = context.SemanticModel.GetSymbolInfo(node.Expression).Symbol;
+        var symbol = context.SemanticModel.GetSymbol(node.Expression);
         if (symbol is ILocalSymbol localSym)
         {
             if (localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is not VariableDeclaratorSyntax decl)

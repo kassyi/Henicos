@@ -300,7 +300,7 @@ internal static class StructTranspiler
     {
         var firstField = GetFirstInstanceField(structSym);
 
-        if (SymbolEqualityComparer.Default.Equals(conv.ReturnType, structSym))
+        if (conv.ReturnType.IsEqualTo(structSym))
         {
             // Implicit constructor from param type
             context.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym).AppendLine("() {}");

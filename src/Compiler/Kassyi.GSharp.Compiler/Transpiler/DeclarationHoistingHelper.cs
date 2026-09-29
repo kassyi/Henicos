@@ -13,7 +13,7 @@ internal static class DeclarationHoistingHelper
         {
             if (desc is DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax singleVar } declExpr)
             {
-                var typeSymbol = context.SemanticModel.GetTypeInfo(declExpr).Type;
+                var typeSymbol = context.SemanticModel.GetTypeSymbol(declExpr);
                 if (typeSymbol != null)
                 {
                     context.AppendType(typeSymbol);

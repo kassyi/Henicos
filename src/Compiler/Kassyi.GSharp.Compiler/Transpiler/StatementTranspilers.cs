@@ -79,7 +79,7 @@ internal static class StatementTranspilers
             }
             else
             {
-                var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
+                var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Type);
                 context.AppendType(typeSymbol);
                 context.Writer.AppendSpace();
             }
@@ -96,7 +96,7 @@ internal static class StatementTranspilers
     {
         if (node.Declaration != null)
         {
-            var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
+            var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Declaration.Type);
             var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
             DeclarationTranspilerHelper.TranspileCombinedDeclarations(
                 node.Declaration.Variables, typeSymbol, node.Declaration.Type.IsVar, isPointer, ref context);

@@ -11,7 +11,7 @@ internal static class RefSyntaxHelper
     /// </summary>
     public static bool NeedsAddressOf(ExpressionSyntax expression, SemanticModel semanticModel)
     {
-        var symbol = semanticModel.GetSymbolInfo(expression).Symbol;
+        var symbol = semanticModel.GetSymbol(expression);
 
         if (symbol is IParameterSymbol { RefKind: not RefKind.None } ||
             symbol is ILocalSymbol { IsRef: true })
@@ -19,7 +19,7 @@ internal static class RefSyntaxHelper
             return false;
         }
 
-        if (semanticModel.GetTypeInfo(expression).Type is IPointerTypeSymbol)
+        if (semanticModel.GetTypeSymbol(expression) is IPointerTypeSymbol)
         {
             return false;
         }

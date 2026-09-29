@@ -75,16 +75,14 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual bool TryMapIntrinsic(ISymbol symbol, out string mappedExpression)
     {
-        var intrinsicAttr = symbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "CudaIntrinsicAttribute");
+        var intrinsicAttr = symbol.GetAttribute(KnownAttributes.CudaIntrinsic);
         if (intrinsicAttr is { ConstructorArguments.Length: > 0 })
         {
             mappedExpression = intrinsicAttr.ConstructorArguments[0].Value?.ToString() ?? symbol.Name;
             return true;
         }
 
-        var patternAttr = symbol.ContainingType?.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "CudaIntrinsicPatternAttribute");
+        var patternAttr = symbol.ContainingType?.GetAttribute(KnownAttributes.CudaIntrinsicPattern);
         if (patternAttr is { ConstructorArguments.Length: > 0 })
         {
             var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";

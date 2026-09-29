@@ -291,7 +291,7 @@ public static class MethodTranspiler
                 continue;
             }
 
-            var typeSymbol = context.SemanticModel.GetTypeInfo(p.Type).Type;
+            var typeSymbol = context.SemanticModel.GetTypeSymbol(p.Type);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 

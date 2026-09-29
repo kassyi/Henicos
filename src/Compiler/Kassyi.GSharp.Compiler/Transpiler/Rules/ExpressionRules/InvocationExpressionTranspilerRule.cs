@@ -24,7 +24,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
-        if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
         {
             if (TryTranspileCustomInvocation(node, symbol, ref context))
             {

@@ -67,7 +67,7 @@ internal static class CudaLayoutRules
         AttributeData? structLayoutAttr = null;
         foreach (var a in namedStruct.GetAttributes())
         {
-            if (a.AttributeClass?.Name is not ("StructLayoutAttribute" or "StructLayout"))
+            if (!a.IsStructLayoutAttribute())
             {
                 continue;
             }

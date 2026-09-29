@@ -21,7 +21,7 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
     {
         using (context.Writer.Parentheses())
         {
-            context.AppendType(context.SemanticModel.GetTypeInfo(node.Type).Type);
+            context.AppendType(context.SemanticModel.GetTypeSymbol(node.Type));
         }
 
         context.Visitor.Visit(node.Expression);
