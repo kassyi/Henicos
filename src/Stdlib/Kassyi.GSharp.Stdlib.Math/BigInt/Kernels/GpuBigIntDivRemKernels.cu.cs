@@ -30,40 +30,14 @@ public static class GpuBigIntDivRemKernels
         Gpu.SyncGrid();
 
         // 2. Forward NTT A (Prime 1 & 2)
-        var argsA1 = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = ctx.Workspace.NttBuf1A, TemporaryBuffer = ctx.Workspace.TmpBuf,
-            Twiddle = ctx.Ntt.TwiddleFactors.Forward1, M = m, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.Prime1,
-            Pm = GpuBigIntNttKernels.BarrettMagic1
-        };
-        GpuBigIntNttKernels.ExecuteForwardNtt(argsA1);
-
-        var argsA2 = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = ctx.Workspace.NttBuf2A, TemporaryBuffer = ctx.Workspace.TmpBuf,
-            Twiddle = ctx.Ntt.TwiddleFactors.Forward2, M = m, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.Prime2,
-            Pm = GpuBigIntNttKernels.BarrettMagic2
-        };
-        GpuBigIntNttKernels.ExecuteForwardNtt(argsA2);
-        Gpu.SyncGrid();
+        GpuBigIntNttKernels.ExecuteDualForwardNtt(
+            ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A, ctx.Workspace.TmpBuf,
+            ctx.Ntt.TwiddleFactors.Forward1, ctx.Ntt.TwiddleFactors.Forward2, m, n1, n2);
 
         // 3. Forward NTT B (Prime 1 & 2)
-        var argsB1 = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = ctx.Workspace.NttBuf1B, TemporaryBuffer = ctx.Workspace.TmpBuf,
-            Twiddle = ctx.Ntt.TwiddleFactors.Forward1, M = m, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.Prime1,
-            Pm = GpuBigIntNttKernels.BarrettMagic1
-        };
-        GpuBigIntNttKernels.ExecuteForwardNtt(argsB1);
-
-        var argsB2 = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = ctx.Workspace.NttBuf2B, TemporaryBuffer = ctx.Workspace.TmpBuf,
-            Twiddle = ctx.Ntt.TwiddleFactors.Forward2, M = m, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.Prime2,
-            Pm = GpuBigIntNttKernels.BarrettMagic2
-        };
-        GpuBigIntNttKernels.ExecuteForwardNtt(argsB2);
-        Gpu.SyncGrid();
+        GpuBigIntNttKernels.ExecuteDualForwardNtt(
+            ctx.Workspace.NttBuf1B, ctx.Workspace.NttBuf2B, ctx.Workspace.TmpBuf,
+            ctx.Ntt.TwiddleFactors.Forward1, ctx.Ntt.TwiddleFactors.Forward2, m, n1, n2);
 
         // 4. Pointwise Multiply
         GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A,
@@ -71,22 +45,9 @@ public static class GpuBigIntDivRemKernels
         Gpu.SyncGrid();
 
         // 5. Inverse NTT (Prime 1 & 2)
-        var argsI1 = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = ctx.Workspace.NttBuf1A, TemporaryBuffer = ctx.Workspace.TmpBuf,
-            Twiddle = ctx.Ntt.TwiddleFactors.Inverse1, M = m, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.Prime1,
-            Pm = GpuBigIntNttKernels.BarrettMagic1, IsInverse = true
-        };
-        GpuBigIntNttKernels.ExecuteInverseNtt(argsI1);
-
-        var argsI2 = new NumberTheoreticTransformKernelArgs
-        {
-            Buffer = ctx.Workspace.NttBuf2A, TemporaryBuffer = ctx.Workspace.TmpBuf,
-            Twiddle = ctx.Ntt.TwiddleFactors.Inverse2, M = m, N1 = n1, N2 = n2, P = GpuBigIntNttKernels.Prime2,
-            Pm = GpuBigIntNttKernels.BarrettMagic2, IsInverse = true
-        };
-        GpuBigIntNttKernels.ExecuteInverseNtt(argsI2);
-        Gpu.SyncGrid();
+        GpuBigIntNttKernels.ExecuteDualInverseNtt(
+            ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A, ctx.Workspace.TmpBuf,
+            ctx.Ntt.TwiddleFactors.Inverse1, ctx.Ntt.TwiddleFactors.Inverse2, m, n1, n2);
 
         // 6. Compute CRT
         GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A,
