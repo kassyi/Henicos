@@ -35,17 +35,23 @@ AI agents love modern C# features like `ReadOnlySpan<T>` or multi-dimensional ar
 
 ## 3. Host-Side Launcher Execution
 
-### ❌ Hallucination: Calling Kernel Directly or Using ILGPU Syntax
+### ❌ Hallucination: Omitting Partial Modifier or Using ILGPU Syntax
 
-AI agents often invent calls like `Gpu.Launch(...)` (which is ILGPU syntax) or attempt to call `MyKernels.LaunchProcessData(...)` directly on the kernel class.
+AI agents often invent calls like `Gpu.Launch(...)` (ILGPU syntax) or forget to declare the kernel class as `partial`.
 
-- **Rule**: The GSharp Source Generator emits a companion static class suffixed with `Wrapper` (e.g., `MyKernelsWrapper`). Always invoke the launcher via `[ClassName]Wrapper.Launch[KernelName](...)`.
+- **Rule**: The GSharp Source Generator enhances the user's kernel class using Roslyn `partial class` source generation (enforced by `GSH0036`). Kernel classes MUST be declared with the `partial` modifier (e.g., `public partial class MyKernels`). Always invoke the launcher via `[ClassName].Launch[KernelName](...)`.
 
 **✅ Correct Invocation:**
 
 ```csharp
-// The source generator emits a companion static class "MyKernelsWrapper" with prefix "Launch"
-MyKernelsWrapper.LaunchProcessData(data, gridDimX: 10, blockDimX: 256);
+// The kernel class must be partial; launcher methods are injected directly into MyKernels with prefix "Launch"
+public partial class MyKernels
+{
+    [GpuKernel]
+    public static void ProcessData(float[] data) { ... }
+}
+
+MyKernels.LaunchProcessData(data, gridDimX: 10, blockDimX: 256);
 ```
 
 ### ❌ Hallucination: Mishandling Return Types
@@ -58,7 +64,7 @@ If a kernel has a return type (e.g., `public static float Compute()`), the AI mi
 
 ```csharp
 // Kernel signature: public static float Compute()
-float[] results = MyKernelsWrapper.LaunchCompute(gridDimX: 10, blockDimX: 256);
+float[] results = MyKernels.LaunchCompute(gridDimX: 10, blockDimX: 256);
 ```
 
 ## 4. 2D/3D Grid Indexing

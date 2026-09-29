@@ -65,7 +65,7 @@ uint gridDimX = (uint)((width + blockDimX - 1) / blockDimX);
 uint gridDimY = (uint)((height + blockDimY - 1) / blockDimY);
 
 // Launch the kernel via the generated partial class
-ImageKernelsWrapper.LaunchProcessImage(
+ImageKernels.LaunchProcessImage(
     imagePixels, width, height,
     gridDimX: gridDimX, gridDimY: gridDimY,
     blockDimX: blockDimX, blockDimY: blockDimY

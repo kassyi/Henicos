@@ -113,20 +113,20 @@ Once the CUDA C++ string is constructed, `GpuKernelGenerator` injects a launcher
 
 The transpiler strictly adheres to the following naming conventions and rules when emitting the host launcher:
 
-1. **Companion Wrapper Class**: The Source Generator emits a dedicated companion static class named `[ContainingType]Wrapper` (e.g., `MyKernelsWrapper` for `MyKernels`) in the same namespace.
-2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]_Device` is generated.
-3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
+1. **Partial Class Injection**: The Source Generator enhances the user's kernel class (which must be declared with the `partial` modifier, enforced by `GSH0036`) by emitting additional launcher methods and nested interop contexts directly into `[ContainingType]` (e.g., `MyKernels`).
+2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]Ptr` is generated.
+3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, `hStream` defaulting to `default`, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
 5. **Parameter Default Values Preservation**: If a kernel entry point (`[GpuKernel]`) defines default parameter values (e.g., `int stride = 1`), `WrapperEmitter` preserves those default values in the generated host launcher method signature. Callers on the CPU host can invoke the kernel without providing trailing optional arguments or using C# named arguments directly.
 
 ```csharp
 // Original Kernel Signature
-// public static class MyKernels {
+// public partial class MyKernels {
 //     [GpuKernel] public static T KernelName(int arg1, int stride = 1) { ... }
 // }
 
-// Generated Launcher Signature (in MyKernelsWrapper class)
-public static partial class MyKernelsWrapper
+// Generated Launcher Signature (in partial class MyKernels)
+public partial class MyKernels
 {
     public static T[] LaunchKernelName(
         int arg1, // Original non-Constant parameters
@@ -134,6 +134,7 @@ public static partial class MyKernelsWrapper
         uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1,
         uint blockDimX = 1, uint blockDimY = 1, uint blockDimZ = 1,
         uint sharedMemBytes = 0,
+        IntPtr hStream = default,
         ReadOnlySpan<KeyValuePair<string, string>> macros = default);
 }
 ```
@@ -173,7 +174,7 @@ public struct AdvancedContext
     public float[] Data;
 }
 
-public static class MyKernels
+public partial class MyKernels
 {
     [GpuKernel]
     public static void Process(AdvancedContext ctx) { /* ... */ }
@@ -183,12 +184,12 @@ public static class MyKernels
 var ctx = new AdvancedContext { Data = new float[100] };
 
 // ✅ Allowed: The host-array launcher automatically performs deep struct marshaling
-MyKernelsWrapper.LaunchProcess(ctx);
+MyKernels.LaunchProcess(ref ctx);
 
-// ❌ Prohibited: The _Device overload expects pre-allocated device pointers.
+// ❌ Prohibited: The Ptr overload expects pre-allocated device pointers.
 // A struct containing a managed array (T[]) cannot be mapped safely here.
 // Throws NotSupportedException: "Passing a struct with arrays is not supported when isDevicePtr is true."
-MyKernelsWrapper.LaunchProcess_Device(ctx);
+MyKernels.LaunchProcessPtr(ctx);
 ```
 
 - **Scalar Marshaling**: Primitive types are passed directly using zero-allocation pointer pinning via the `fixed` statement (e.g., `fixed (float* p = &val)`). This completely eliminates the need for expensive heap allocations (such as `Marshal.AllocHGlobal`).
