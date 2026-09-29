@@ -4,16 +4,36 @@ namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class BlackScholesKernels
 {
-    [GpuKernel]
-    public static void BlackScholesKernel([In] float[] s, [In] float[] x, [In] float[] t, float r, float v,
-        [Out] float[] callResult,
-        [Out] float[] putResult, int n)
+    public static class AotContexts
     {
-        Gpu.GridStrideLoop(n, tid =>
+        public struct BlackScholes
         {
-            CalculateOptionPrice(s[tid], x[tid], t[tid], r, v, out float c, out float p);
-            callResult[tid] = c;
-            putResult[tid] = p;
+            [GpuReadOnly]
+            public float[] S;
+
+            [GpuReadOnly]
+            public float[] X;
+
+            [GpuReadOnly]
+            public float[] T;
+
+            public float R;
+            public float V;
+            public float[] CallResult;
+            public float[] PutResult;
+            public int N;
+        }
+    }
+
+
+    [GpuKernel]
+    public static void BlackScholesKernel(AotContexts.BlackScholes ctx)
+    {
+        Gpu.GridStrideLoop(ctx.N, tid =>
+        {
+            CalculateOptionPrice(ctx.S[tid], ctx.X[tid], ctx.T[tid], ctx.R, ctx.V, out float c, out float p);
+            ctx.CallResult[tid] = c;
+            ctx.PutResult[tid] = p;
         });
     }
 

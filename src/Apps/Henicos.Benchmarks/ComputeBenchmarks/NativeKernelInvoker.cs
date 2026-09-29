@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -87,6 +88,20 @@ public static unsafe class NativeKernelInvoker
         d_out.CopyToHost(output);
     }
 
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BlackScholesNativeContext
+    {
+        public IntPtr S;
+        public IntPtr X;
+        public IntPtr T;
+        public float R;
+        public float V;
+        public IntPtr CallResult;
+        public IntPtr PutResult;
+        public int N;
+    }
+
     public static void LaunchBlackScholes(
         float[] s, float[] x, float[] t, float r, float v,
         float[] callResult, float[] putResult, int n,
@@ -109,23 +124,23 @@ public static unsafe class NativeKernelInvoker
         using var d_call = new GpuBuffer<float>(callResult.Length);
         using var d_put = new GpuBuffer<float>(putResult.Length);
 
-        IntPtr ps = d_s.DevicePointer;
-        IntPtr px = d_x.DevicePointer;
-        IntPtr pt = d_t.DevicePointer;
-        IntPtr pcall = d_call.DevicePointer;
-        IntPtr pput = d_put.DevicePointer;
+        var ctx = new BlackScholesNativeContext
+        {
+            S = d_s.DevicePointer,
+            X = d_x.DevicePointer,
+            T = d_t.DevicePointer,
+            R = r,
+            V = v,
+            CallResult = d_call.DevicePointer,
+            PutResult = d_put.DevicePointer,
+            N = n
+        };
 
-        void** kernelParams = stackalloc void*[8];
-        kernelParams[0] = &ps;
-        kernelParams[1] = &px;
-        kernelParams[2] = &pt;
-        kernelParams[3] = &r;
-        kernelParams[4] = &v;
-        kernelParams[5] = &pcall;
-        kernelParams[6] = &pput;
-        kernelParams[7] = &n;
+        void** kernelParams = stackalloc void*[1];
+        kernelParams[0] = &ctx;
 
         CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+
             kernel,
             gridDimX, 1, 1,
             blockDimX, 1, 1,

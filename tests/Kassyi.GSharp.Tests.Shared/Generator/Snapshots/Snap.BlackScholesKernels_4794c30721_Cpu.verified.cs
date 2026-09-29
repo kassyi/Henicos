@@ -15,18 +15,280 @@ public partial class BlackScholesKernelsWrapper
 {
 public static partial class AotContexts
 {
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 56)]
+public unsafe partial struct BlackScholes
+{
+public const string DebugName_S = "global::System.Single[]";
+[System.Runtime.InteropServices.FieldOffset(0)]
+public IntPtr S;
+public const string DebugName_X = "global::System.Single[]";
+[System.Runtime.InteropServices.FieldOffset(8)]
+public IntPtr X;
+public const string DebugName_T = "global::System.Single[]";
+[System.Runtime.InteropServices.FieldOffset(16)]
+public IntPtr T;
+public const string DebugName_R = "global::System.Single";
+[System.Runtime.InteropServices.FieldOffset(24)]
+public global::System.Single R;
+public const string DebugName_V = "global::System.Single";
+[System.Runtime.InteropServices.FieldOffset(28)]
+public global::System.Single V;
+public const string DebugName_CallResult = "global::System.Single[]";
+[System.Runtime.InteropServices.FieldOffset(32)]
+public IntPtr CallResult;
+public const string DebugName_PutResult = "global::System.Single[]";
+[System.Runtime.InteropServices.FieldOffset(40)]
+public IntPtr PutResult;
+public const string DebugName_N = "global::System.Int32";
+[System.Runtime.InteropServices.FieldOffset(48)]
+public global::System.Int32 N;
 }
-public const string BlackScholesKernel_Source = @"extern ""C"" __declspec(dllexport) void BlackScholesKernels_BlackScholesKernel(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n){
-for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < n; tid += gridDim.x * blockDim.x)
+public static unsafe void Marshal_BlackScholesKernels_AotContexts_BlackScholes(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes host, ref AotContexts.BlackScholes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+{
+if (host.S != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.S.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.S, size));
+allocatedPtrs?.Add(native.S);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.S, handle.AddrOfPinnedObject(), size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+if (host.X != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.X.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.X, size));
+allocatedPtrs?.Add(native.X);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.X, handle.AddrOfPinnedObject(), size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+if (host.T != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.T.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.T, size));
+allocatedPtrs?.Add(native.T);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.T, handle.AddrOfPinnedObject(), size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+native.R = host.R;
+native.V = host.V;
+if (host.CallResult != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.CallResult.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.CallResult, size));
+allocatedPtrs?.Add(native.CallResult);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.CallResult, handle.AddrOfPinnedObject(), size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+if (host.PutResult != null)
+{
+if (isDevicePtr)
+{
+throw new System.NotSupportedException("Passing a struct with arrays is not supported when isDevicePtr is true.");
+}
+else
+{
+int size = host.PutResult.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.PutResult, size));
+allocatedPtrs?.Add(native.PutResult);
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.PutResult, handle.AddrOfPinnedObject(), size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+}
+native.N = host.N;
+}
+public static unsafe void Unmarshal_BlackScholesKernels_AotContexts_BlackScholes(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes host, ref AotContexts.BlackScholes native, bool isDevicePtr)
+{
+if (host.S != null && !isDevicePtr && native.S != IntPtr.Zero)
+{
+int size = host.S.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.S, size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (host.X != null && !isDevicePtr && native.X != IntPtr.Zero)
+{
+int size = host.X.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.X, size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (host.T != null && !isDevicePtr && native.T != IntPtr.Zero)
+{
+int size = host.T.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.T, size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+host.R = native.R;
+host.V = native.V;
+if (host.CallResult != null && !isDevicePtr && native.CallResult != IntPtr.Zero)
+{
+int size = host.CallResult.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.CallResult, size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+if (host.PutResult != null && !isDevicePtr && native.PutResult != IntPtr.Zero)
+{
+int size = host.PutResult.Length * sizeof(global::System.Single);
+if (size > 0)
+{
+var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.PutResult, size));
+}
+finally
+{
+handle.Free();
+}
+}
+}
+host.N = native.N;
+}
+#pragma warning restore CS8500
+}
+public const string BlackScholesKernel_Source = @"#ifndef __GSHARP_STRUCT_Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_AotContexts_BlackScholes__
+#define __GSHARP_STRUCT_Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_AotContexts_BlackScholes__
+struct Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_AotContexts_BlackScholes
+{
+const float* S;
+const float* X;
+const float* T;
+float R;
+float V;
+float* CallResult;
+float* PutResult;
+int N;
+}
+;
+#endif
+extern ""C"" __declspec(dllexport) void BlackScholesKernels_BlackScholesKernel(Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_AotContexts_BlackScholes ctx){
+for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < ctx.N; tid += gridDim.x * blockDim.x)
 {
 float c;
 float p;
-CalculateOptionPrice(s[tid],x[tid],t[tid],r,v,&c,&p);
-callResult[tid]=c;
-putResult[tid]=p;
+CalculateOptionPrice(ctx.S[tid],ctx.X[tid],ctx.T[tid],ctx.R,ctx.V,&c,&p);
+ctx.CallResult[tid]=c;
+ctx.PutResult[tid]=p;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_BlackScholesKernels_BlackScholesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_BlackScholesKernels_BlackScholesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_AotContexts_BlackScholes ctx)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -36,31 +298,21 @@ for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-BlackScholesKernels_BlackScholesKernel(s, x, t, r, v, callResult, putResult, n);
+BlackScholesKernels_BlackScholesKernel(ctx);
 }
 }
 ";
 public static readonly string BlackScholesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BlackScholesKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void BlackScholesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single* s, global::System.Single* x, global::System.Single* t, global::System.Single r, global::System.Single v, global::System.Single* callResult, global::System.Single* putResult, global::System.Int32 n);
+private unsafe delegate void BlackScholesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes ctx);
 #pragma warning disable CS8500
-public static unsafe void LaunchBlackScholesKernel(global::System.Single[] s, global::System.Single[] x, global::System.Single[] t, global::System.Single r, global::System.Single v, global::System.Single[] callResult, global::System.Single[] putResult, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchBlackScholesKernel(global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.AotContexts.BlackScholes ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (s.Length == 0 || x.Length == 0 || t.Length == 0 || callResult.Length == 0 || putResult.Length == 0){
-return;
-}
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BlackScholesKernel_Delegate>("__gsharp_launch_BlackScholesKernels_BlackScholesKernel", dllPath);
-fixed (global::System.Single* p_s = s)
-fixed (global::System.Single* p_x = x)
-fixed (global::System.Single* p_t = t)
-fixed (global::System.Single* p_callResult = callResult)
-fixed (global::System.Single* p_putResult = putResult)
-{
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_s, p_x, p_t, r, v, p_callResult, p_putResult, n);
-}
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ctx);
 }
 #pragma warning restore CS8500
 }
