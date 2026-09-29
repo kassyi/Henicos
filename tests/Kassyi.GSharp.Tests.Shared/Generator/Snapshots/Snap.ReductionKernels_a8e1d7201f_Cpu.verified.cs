@@ -50,11 +50,11 @@ if(i+blockDim.x<n)
 auto v = input[i+blockDim.x];
 sum+=v.x+v.y+v.z+v.w;
 }
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,16);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,8);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,4);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,2);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,1);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,16,32);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,8,32);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,4,32);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,2,32);
+sum+=__shfl_down_sync(0xFFFFFFFF,sum,1,32);
 int lane = tid%32;
 int warpId = tid/32;
 if(lane==0)
@@ -65,9 +65,9 @@ __syncthreads();
 if(warpId==0)
 {
 float val = ((tid<8)?sdata[tid]:0.0f);
-val+=__shfl_down_sync(0xFFFFFFFF,val,4);
-val+=__shfl_down_sync(0xFFFFFFFF,val,2);
-val+=__shfl_down_sync(0xFFFFFFFF,val,1);
+val+=__shfl_down_sync(0xFFFFFFFF,val,4,32);
+val+=__shfl_down_sync(0xFFFFFFFF,val,2,32);
+val+=__shfl_down_sync(0xFFFFFFFF,val,1,32);
 if(tid==0)
 {
 output[blockIdx.x]=val;

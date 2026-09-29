@@ -17,12 +17,12 @@ public const string WarpPrimitivesKernel_Source = @"extern ""C"" __declspec(dlle
 int tid = threadIdx.x;
 unsigned int mask = __activemask();
 int val = input[tid];
-val=__shfl_sync(mask,val,0);
-val=(int)__shfl_sync(mask,(unsigned int)val,0);
-val=__shfl_down_sync(mask,val,1);
-val=(int)__shfl_down_sync(mask,(unsigned int)val,1);
-val=__shfl_up_sync(mask,val,1);
-val=__shfl_xor_sync(mask,val,1);
+val=__shfl_sync(mask,val,0,32);
+val=(int)__shfl_sync(mask,(unsigned int)val,0,32);
+val=__shfl_down_sync(mask,val,1,32);
+val=(int)__shfl_down_sync(mask,(unsigned int)val,1,32);
+val=__shfl_up_sync(mask,val,1,32);
+val=__shfl_xor_sync(mask,val,1,32);
 output[tid]=val;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_16_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
@@ -84,11 +84,11 @@ int lane = tid%32;
 int warpId = tid/32;
 int val = input[tid];
 unsigned int mask = 0xffffffff;
-val+=__shfl_down_sync(mask,val,16);
-val+=__shfl_down_sync(mask,val,8);
-val+=__shfl_down_sync(mask,val,4);
-val+=__shfl_down_sync(mask,val,2);
-val+=__shfl_down_sync(mask,val,1);
+val+=__shfl_down_sync(mask,val,16,32);
+val+=__shfl_down_sync(mask,val,8,32);
+val+=__shfl_down_sync(mask,val,4,32);
+val+=__shfl_down_sync(mask,val,2,32);
+val+=__shfl_down_sync(mask,val,1,32);
 if(lane==0)
 {
 output[warpId]=val;

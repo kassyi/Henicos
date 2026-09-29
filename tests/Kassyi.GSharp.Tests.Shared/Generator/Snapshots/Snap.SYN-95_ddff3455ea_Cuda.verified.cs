@@ -251,11 +251,11 @@ int lane = tid%32;
 int warpId = tid/32;
 int val = input[tid];
 unsigned int mask = 0xffffffff;
-val+=__shfl_down_sync(mask,val,16);
-val+=__shfl_down_sync(mask,val,8);
-val+=__shfl_down_sync(mask,val,4);
-val+=__shfl_down_sync(mask,val,2);
-val+=__shfl_down_sync(mask,val,1);
+val+=__shfl_down_sync(mask,val,16,32);
+val+=__shfl_down_sync(mask,val,8,32);
+val+=__shfl_down_sync(mask,val,4,32);
+val+=__shfl_down_sync(mask,val,2,32);
+val+=__shfl_down_sync(mask,val,1,32);
 if(lane==0)
 {
 output[warpId]=val;
@@ -419,9 +419,9 @@ public const string WarpShuffleBoundaryKernel_Source = @"extern ""C"" __global__
 int tid = threadIdx.x;
 unsigned int mask = 0xffffffff;
 int val = input[tid];
-outputBoundary0[tid]=__shfl_down_sync(mask,val,0);
-outputBoundary31[tid]=__shfl_down_sync(mask,val,31);
-outputBoundary32[tid]=__shfl_down_sync(mask,val,32);
+outputBoundary0[tid]=__shfl_down_sync(mask,val,0,32);
+outputBoundary31[tid]=__shfl_down_sync(mask,val,31,32);
+outputBoundary32[tid]=__shfl_down_sync(mask,val,32,32);
 }
 ";
 public static readonly string WarpShuffleBoundaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpShuffleBoundaryKernel_Source;
