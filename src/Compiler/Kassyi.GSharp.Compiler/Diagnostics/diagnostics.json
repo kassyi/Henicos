@@ -186,7 +186,8 @@
     "messageFormat": "The Dispose() method does not explicitly invoke .Dispose() on all owned GPU resources (Deprecated, replaced by composite scopes)",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
-    "isEnabledByDefault": false
+    "isEnabledByDefault": false,
+    "isObsolete": true
   },
   {
     "name": "UndisposedGpuScope",
