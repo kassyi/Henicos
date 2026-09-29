@@ -97,27 +97,42 @@ public sealed class GpuKernelLoader
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {
-        using var scope = new CudaContextScope();
-
-        foreach (var lazyModule in s_functionCache.Values)
+        if (!s_isGlobalInit)
         {
-            if (!lazyModule.IsValueCreated)
-            {
-                continue;
-            }
-
-            var module = lazyModule.Value.Module;
-            try
-            {
-                CudaDriverApi.cuModuleUnload(module);
-            }
-            catch
-            {
-                // Ignore cleanup errors on best-effort basis during Shutdown
-            }
+            s_functionCache.Clear();
+            return;
         }
 
-        s_functionCache.Clear();
+        try
+        {
+            using var scope = new CudaContextScope();
+
+            foreach (var lazyModule in s_functionCache.Values)
+            {
+                if (!lazyModule.IsValueCreated)
+                {
+                    continue;
+                }
+
+                var module = lazyModule.Value.Module;
+                try
+                {
+                    CudaDriverApi.cuModuleUnload(module);
+                }
+                catch
+                {
+                    // Ignore cleanup errors on best-effort basis during Shutdown
+                }
+            }
+        }
+        catch
+        {
+            // Ignore context scope initialization errors during shutdown
+        }
+        finally
+        {
+            s_functionCache.Clear();
+        }
     }
 
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
